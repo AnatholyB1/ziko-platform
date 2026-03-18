@@ -6,24 +6,26 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
  * describes metadata, routes and permissions; the dynamic prompt injection is applied
  * in apps/mobile/src/lib/PluginLoader.tsx via buildPersonaSystemPrompt().
  */
-export const personaManifest: PluginManifest = {
+const personaManifest: PluginManifest = {
   id: 'persona',
   name: 'AI Persona & Habits',
   version: '1.0.0',
-  description: 'Customize your AI coach's personality, name, and coaching style. Build daily habit streaks and get personalized motivational support.',
-  author: 'Ziko Team',
-  icon: '🧠',
-  permissions: ['profile:read', 'ai:customize'],
+  description: "Customize your AI coach's personality, name, and coaching style. Build daily habit streaks and get personalised motivational support.",
+  icon: 'person-circle-outline',
+  category: 'persona',
+  price: 'free',
+  requiredPermissions: ['read_profile', 'write_profile'],
+  userDataKeys: ['persona'],
   aiSkills: [],
   // aiSystemPromptAddition is injected dynamically from persona_settings — see PluginLoader
   routes: [
     {
       path: '/(plugins)/persona/customize',
-      component: 'PersonaCustomizeScreen',
       title: 'My AI Coach',
-      inTabBar: true,
-      tabIcon: 'person-circle-outline',
-      tabLabel: 'My Coach',
+      icon: 'person-circle-outline',
+      showInTabBar: true,
     },
   ],
 };
+
+export default personaManifest;

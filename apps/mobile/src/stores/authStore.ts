@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         await get().refreshProfile();
       }
 
-      supabase.auth.onAuthStateChange(async (_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         set({ session, user: session?.user ?? null });
         if (session?.user) {
           await get().refreshProfile();
@@ -41,6 +41,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           set({ profile: null });
         }
       });
+
+      // Store unsubscribe so callers can clean up if needed
+      (get() as any)._authSubscription = subscription;
     } finally {
       set({ isLoading: false, isInitialized: true });
     }
