@@ -93,11 +93,24 @@ export default function PluginStoreScreen() {
           <>
             <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Installed</Text>
             {plugins.filter((p) => userPlugins.includes(p.plugin_id)).map((p) => (
-              <PluginCard key={p.plugin_id} plugin={p} installed onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
-                action={<TouchableOpacity onPress={() => uninstallPlugin(p.plugin_id)}
-                  style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-                  <Text style={{ color: '#F44336', fontWeight: '600', fontSize: 13 }}>Uninstall</Text>
-                </TouchableOpacity>} />
+              <PluginCard key={p.plugin_id} plugin={p} installed onPress={() => {
+                const mainRoute = p.manifest.routes.find((r) => r.showInTabBar) ?? p.manifest.routes[0];
+                if (mainRoute) router.push(mainRoute.path as any);
+              }}
+                action={
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity onPress={() => {
+                      const mainRoute = p.manifest.routes.find((r) => r.showInTabBar) ?? p.manifest.routes[0];
+                      if (mainRoute) router.push(mainRoute.path as any);
+                    }} style={{ backgroundColor: '#6C63FF22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                      <Text style={{ color: '#6C63FF', fontWeight: '600', fontSize: 13 }}>Open</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => uninstallPlugin(p.plugin_id)}
+                      style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                      <Text style={{ color: '#F44336', fontWeight: '600', fontSize: 13 }}>Uninstall</Text>
+                    </TouchableOpacity>
+                  </View>
+                } />
             ))}
             <View style={{ height: 1, backgroundColor: '#2E2E40', marginVertical: 20 }} />
           </>

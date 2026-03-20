@@ -2,18 +2,20 @@ import React from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useAIStore } from '../../src/stores/aiStore';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 
 function AIChatFAB() {
   const toggleChat = useAIStore((s) => s.toggleChat);
+  const { bottom } = useSafeAreaInsets();
   return (
     <TouchableOpacity
       onPress={toggleChat}
       style={{
         position: 'absolute',
-        bottom: 90,
+        bottom: 70 + bottom + 16,
         right: 20,
         width: 56,
         height: 56,
@@ -39,6 +41,7 @@ export default function AppLayout() {
   const profile = useAuthStore((s) => s.profile);
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const manifests = usePluginRegistry((s) => s.manifests);
+  const insets = useSafeAreaInsets();
 
   if (!session) return <Redirect href="/(auth)/login" />;
   if (!profile?.onboarding_done) return <Redirect href="/(auth)/onboarding/step-1" />;
@@ -59,9 +62,9 @@ export default function AppLayout() {
             backgroundColor: '#1A1A24',
             borderTopColor: '#2E2E40',
             borderTopWidth: 1,
-            paddingBottom: 8,
+            paddingBottom: 8 + insets.bottom,
             paddingTop: 8,
-            height: 70,
+            height: 70 + insets.bottom,
           },
           tabBarActiveTintColor: '#6C63FF',
           tabBarInactiveTintColor: '#8888A8',
@@ -96,15 +99,6 @@ export default function AppLayout() {
           }}
         />
         <Tabs.Screen
-          name="ai"
-          options={{
-            title: 'AI Coach',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="sparkles" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="profile"
           options={{
             title: 'Profile',
@@ -113,7 +107,8 @@ export default function AppLayout() {
             ),
           }}
         />
-        {/* Hide plugin-injected screens from default tab bar — they appear via FAB/deep links */}
+        {/* Hidden screens — not shown in tab bar */}
+        <Tabs.Screen name="ai" options={{ href: null }} />
         <Tabs.Screen name="(plugins)" options={{ href: null }} />
       </Tabs>
       <AIChatFAB />

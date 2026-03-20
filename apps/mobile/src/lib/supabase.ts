@@ -1,19 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import { MMKV } from 'react-native-mmkv';
-
-const storage = new MMKV({ id: 'supabase-storage' });
 
 const supabaseStorage = {
-  getItem: (key: string) => {
-    const value = storage.getString(key);
-    return value ?? null;
-  },
-  setItem: (key: string, value: string) => {
-    storage.set(key, value);
-  },
-  removeItem: (key: string) => {
-    storage.delete(key);
-  },
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;

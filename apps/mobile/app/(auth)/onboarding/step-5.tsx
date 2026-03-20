@@ -11,13 +11,14 @@ export default function OnboardingStep5() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFinish = async () => {
-    if (!user) return;
     setIsLoading(true);
     try {
+      const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) return;
       await supabase
         .from('user_profiles')
         .update({ onboarding_done: true })
-        .eq('id', user.id);
+        .eq('id', uid);
       await refreshProfile();
       router.replace('/(app)');
     } finally {

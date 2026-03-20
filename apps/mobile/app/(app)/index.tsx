@@ -150,19 +150,28 @@ export default function DashboardScreen() {
             <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16, marginTop: 28, marginBottom: 12 }}>
               Active Plugins
             </Text>
-            {enabledPlugins.map((pid) => (
-              <TouchableOpacity
-                key={pid}
-                onPress={() => router.push(`/(app)/store/${pid}` as any)}
-                style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#2E2E40', marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12 }}
-              >
-                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#6C63FF22', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="grid" size={18} color="#6C63FF" />
-                </View>
-                <Text style={{ color: '#F0F0F5', fontWeight: '500', fontSize: 14, flex: 1 }}>{pid === 'nutrition' ? '🥗 Nutrition Tracker' : pid === 'persona' ? '🎭 AI Persona' : pid}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#8888A8" />
-              </TouchableOpacity>
-            ))}
+            {enabledPlugins.map((pid) => {
+              const manifests = usePluginRegistry.getState().manifests;
+              const manifest = manifests[pid];
+              // Find the first showInTabBar route, fallback to first route
+              const mainRoute = manifest?.routes.find((r) => r.showInTabBar) ?? manifest?.routes[0];
+              const destination = mainRoute?.path ?? `/(app)/store/${pid}`;
+              return (
+                <TouchableOpacity
+                  key={pid}
+                  onPress={() => router.push(destination as any)}
+                  style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#2E2E40', marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                >
+                  <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#6C63FF22', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="grid" size={18} color="#6C63FF" />
+                  </View>
+                  <Text style={{ color: '#F0F0F5', fontWeight: '500', fontSize: 14, flex: 1 }}>
+                    {pid === 'nutrition' ? '🥗 Nutrition Tracker' : pid === 'persona' ? '🎭 AI Persona' : pid}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color="#8888A8" />
+                </TouchableOpacity>
+              );
+            })}
           </>
         )}
 

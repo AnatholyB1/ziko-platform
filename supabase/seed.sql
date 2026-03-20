@@ -147,6 +147,31 @@ VALUES
   NULL,
   TRUE,
   '1.0.0'
+),
+(
+  'habits',
+  '{
+    "id": "habits",
+    "name": "Daily Habits & Goals",
+    "version": "1.0.0",
+    "description": "Track your daily goals: water, workouts, sleep, nutrition and custom habits. Smart reminders and streaks — fully connected to your AI coach, workout history and nutrition plugin.",
+    "icon": "checkmark-circle-outline",
+    "category": "coaching",
+    "price": "free",
+    "requiredPermissions": ["read_profile", "read_workout_history", "read_nutrition", "notifications"],
+    "userDataKeys": ["habits"],
+    "aiSkills": [
+      {"name": "habit_analysis", "description": "Analyse habit streaks and completion rate", "triggerKeywords": ["habit","streak","routine","daily goal","habitude","objectif"]},
+      {"name": "habit_coaching", "description": "Advice on building good habits", "triggerKeywords": ["build habit","consistency","motivation","tracking","routine"]}
+    ],
+    "routes": [
+      {"path": "/(plugins)/habits/dashboard", "title": "Habits", "icon": "checkmark-circle-outline", "showInTabBar": true},
+      {"path": "/(plugins)/habits/log", "title": "Add Habit", "icon": "add-circle-outline", "showInTabBar": false}
+    ]
+  }'::jsonb,
+  NULL,
+  TRUE,
+  '1.0.0'
 );
 
 -- ============================================================

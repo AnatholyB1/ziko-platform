@@ -10,11 +10,13 @@ export default function OnboardingStep1() {
   const [name, setName] = useState('');
 
   const handleNext = async () => {
-    if (!name.trim() || !user) return;
+    if (!name.trim()) return;
+    const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return;
     await supabase
       .from('user_profiles')
       .update({ name: name.trim() })
-      .eq('id', user.id);
+      .eq('id', uid);
     router.push('/(auth)/onboarding/step-2');
   };
 

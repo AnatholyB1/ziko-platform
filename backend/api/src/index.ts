@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { serve } from '@hono/node-server';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
@@ -49,9 +50,7 @@ app.onError((err, c) => {
 });
 
 const port = parseInt(process.env.PORT ?? '3000', 10);
-console.log(`🚀 Ziko API running on port ${port}`);
 
-export default {
-  port,
-  fetch: app.fetch,
-};
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`🚀 Ziko API running on http://localhost:${port}`);
+});

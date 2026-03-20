@@ -33,6 +33,9 @@ export const usePluginRegistry = create<PluginRegistryState>()((set, get) => ({
       installedPlugins: state.installedPlugins.includes(manifest.id)
         ? state.installedPlugins
         : [...state.installedPlugins, manifest.id],
+      enabledPlugins: state.enabledPlugins.includes(manifest.id)
+        ? state.enabledPlugins
+        : [...state.enabledPlugins, manifest.id],
       manifests: { ...state.manifests, [manifest.id]: manifest },
     })),
 

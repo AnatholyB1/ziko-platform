@@ -7,15 +7,16 @@ import { useAuthStore } from '../stores/authStore';
 
 // Static plugin loaders — Metro bundler requires statically-analyzable imports
 const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>> = {
-  nutrition: () => import('../../../plugins/nutrition/src/manifest') as any,
-  persona: () => import('../../../plugins/persona/src/manifest') as any,
+  nutrition: () => import('@ziko/plugin-nutrition/manifest') as any,
+  persona:   () => import('@ziko/plugin-persona/manifest') as any,
+  habits:    () => import('@ziko/plugin-habits/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */
 async function applyPersonaDynamicPrompt(manifest: PluginManifest, userId: string): Promise<PluginManifest> {
   if (manifest.id !== 'persona') return manifest;
   try {
-    const { buildPersonaSystemPrompt } = await import('../../../plugins/persona/src/store');
+    const { buildPersonaSystemPrompt } = await import('@ziko/plugin-persona/store');
     const { data } = await supabase
       .from('persona_settings')
       .select('*')

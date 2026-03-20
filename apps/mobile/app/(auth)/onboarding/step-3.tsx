@@ -18,8 +18,10 @@ export default function OnboardingStep3() {
   const [selected, setSelected] = useState<FitnessGoal | null>(null);
 
   const handleNext = async () => {
-    if (!selected || !user) return;
-    await supabase.from('user_profiles').update({ goal: selected }).eq('id', user.id);
+    if (!selected) return;
+    const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return;
+    await supabase.from('user_profiles').update({ goal: selected }).eq('id', uid);
     router.push('/(auth)/onboarding/step-4');
   };
 

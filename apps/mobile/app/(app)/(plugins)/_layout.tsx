@@ -6,6 +6,8 @@ export default function PluginsLayout() {
       <Stack.Screen name="nutrition/dashboard" />
       <Stack.Screen name="nutrition/log" />
       <Stack.Screen name="persona/customize" />
+      <Stack.Screen name="habits/dashboard" />
+      <Stack.Screen name="habits/log" />
     </Stack>
   );
 }

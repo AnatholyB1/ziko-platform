@@ -30,6 +30,7 @@
   },
   "packageManager": "npm@10.9.0",
   "dependencies": {
-    "@supabase/supabase-js": "^2.99.2"
+    "@supabase/supabase-js": "^2.99.2",
+    "react-native-worklets": "^0.5.1"
   }
 }

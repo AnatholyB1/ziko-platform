@@ -14,7 +14,9 @@ export default function OnboardingStep2() {
   const isValid = age && weight && height;
 
   const handleNext = async () => {
-    if (!isValid || !user) return;
+    if (!isValid) return;
+    const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return;
     await supabase
       .from('user_profiles')
       .update({
@@ -22,7 +24,7 @@ export default function OnboardingStep2() {
         weight_kg: parseFloat(weight),
         height_cm: parseFloat(height),
       })
-      .eq('id', user.id);
+      .eq('id', uid);
     router.push('/(auth)/onboarding/step-3');
   };
 
