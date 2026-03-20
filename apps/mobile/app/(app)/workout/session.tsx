@@ -9,6 +9,7 @@ import { MotiView } from 'moti';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
+import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -472,6 +473,7 @@ export default function WorkoutSessionScreen() {
       {
         text: 'Finish', onPress: async () => {
           await saveSessionStats();
+          try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
           router.back();
         },
       },
@@ -480,6 +482,7 @@ export default function WorkoutSessionScreen() {
 
   const handleFinish = async () => {
     await saveSessionStats();
+    try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
     router.back();
   };
 

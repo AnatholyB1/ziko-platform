@@ -25,6 +25,7 @@
     "@ziko/ai-client": "*",
     "@ziko/plugin-nutrition": "*",
     "@ziko/plugin-stats": "*",
+    "@ziko/plugin-gamification": "*",
     "@ziko/plugin-persona": "*",
     "@ziko/plugin-sdk": "*",
     "@ziko/ui": "*",

@@ -17,6 +17,7 @@
     "@ziko/plugin-sdk": "*",
     "@ziko/plugin-nutrition": "*",
     "@ziko/plugin-persona": "*",
+    "@ziko/plugin-gamification": "*",
     "zustand": "^5.0.0",
     "date-fns": "^4.0.0"
   },

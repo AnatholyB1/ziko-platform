@@ -11,6 +11,8 @@ export default function PluginsLayout() {
       <Stack.Screen name="stats/dashboard" />
       <Stack.Screen name="stats/exercise" />
       <Stack.Screen name="stats/session" />
+      <Stack.Screen name="gamification/dashboard" />
+      <Stack.Screen name="gamification/shop" />
     </Stack>
   );
 }

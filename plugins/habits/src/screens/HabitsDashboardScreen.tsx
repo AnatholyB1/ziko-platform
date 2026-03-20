@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { colors as C } from '@ziko/ui';
 import { useHabitsStore, DEFAULT_HABITS } from '../store';
 import type { Habit } from '../store';
+import { awardHabitXP } from '@ziko/plugin-gamification/store';
 import {
   requestNotificationPermission,
   scheduleHabitReminder,
@@ -413,6 +414,9 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
       );
     }
     updateLog(habit.id, newValue);
+    if (newValue >= 1) {
+      try { await awardHabitXP(supabase, habit.name); } catch {}
+    }
   };
 
   // ── Increment count habit ────────────────────────────────
@@ -427,6 +431,9 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
       { onConflict: 'habit_id,date' },
     );
     updateLog(habit.id, newValue);
+    if (newValue === habit.target) {
+      try { await awardHabitXP(supabase, habit.name); } catch {}
+    }
   };
 
   // ── Save/remove reminder ──────────────────────────────────
