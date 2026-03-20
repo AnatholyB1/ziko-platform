@@ -29,6 +29,7 @@ interface ProgramExerciseInput {
 
 interface WorkoutState {
   currentSession: WorkoutSession | null;
+  currentWorkoutExercises: (ProgramExercise & { exercises?: Exercise })[];
   activeSets: ActiveSet[];
   restTimer: number | null;
   restTimerMax: number;
@@ -60,6 +61,7 @@ interface WorkoutState {
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   currentSession: null,
+  currentWorkoutExercises: [],
   activeSets: [],
   restTimer: null,
   restTimerMax: 60,
@@ -73,39 +75,57 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
+    // Load workout exercises if starting from a program
+    let workoutExercises: (ProgramExercise & { exercises?: Exercise })[] = [];
+    let programId: string | null = null;
+    if (programWorkoutId) {
+      const { data: peData } = await supabase
+        .from('program_exercises')
+        .select('*, exercises(*)')
+        .eq('workout_id', programWorkoutId)
+        .order('order_index');
+      if (peData) workoutExercises = peData as any;
+
+      // Resolve program_id for the session record
+      const { data: pwData } = await supabase
+        .from('program_workouts')
+        .select('program_id')
+        .eq('id', programWorkoutId)
+        .single();
+      if (pwData) programId = pwData.program_id;
+    }
+
     const { data, error } = await supabase
       .from('workout_sessions')
       .insert({
         user_id: user.id,
         program_workout_id: programWorkoutId ?? null,
+        program_id: programId,
         name: name ?? 'Quick Workout',
         started_at: new Date().toISOString(),
+        day_of_week: new Date().getDay() || 7,
       })
       .select()
       .single();
 
     if (!error && data) {
-      set({ currentSession: data as WorkoutSession, activeSets: [] });
+      set({ currentSession: data as WorkoutSession, activeSets: [], currentWorkoutExercises: workoutExercises });
     }
   },
 
   endSession: async () => {
-    const { currentSession, activeSets } = get();
+    const { currentSession } = get();
     if (!currentSession) return;
 
-    const totalVolume = activeSets
-      .filter((s) => s.completed && s.weight_kg && s.reps)
-      .reduce((acc, s) => acc + (s.weight_kg! * s.reps!), 0);
+    // Only set ended_at if not already set (saveSessionStats may have already updated it)
+    if (!currentSession.ended_at) {
+      await supabase
+        .from('workout_sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', currentSession.id);
+    }
 
-    await supabase
-      .from('workout_sessions')
-      .update({
-        ended_at: new Date().toISOString(),
-        total_volume_kg: totalVolume,
-      })
-      .eq('id', currentSession.id);
-
-    set({ currentSession: null, activeSets: [] });
+    set({ currentSession: null, activeSets: [], currentWorkoutExercises: [] });
   },
 
   addSet: (setData) =>
@@ -193,7 +213,16 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     if (data) {
       const programs = data as WorkoutProgram[];
-      const active = programs.find((p) => p.is_active) ?? null;
+      let active = programs.find((p) => p.is_active) ?? null;
+
+      // Auto-activate if there are programs but none is active
+      if (!active && programs.length > 0) {
+        const first = programs[0];
+        await supabase.from('workout_programs').update({ is_active: true }).eq('id', first.id);
+        first.is_active = true;
+        active = first;
+      }
+
       set({ programs, activeProgram: active });
     }
   },

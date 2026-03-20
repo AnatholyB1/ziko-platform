@@ -116,11 +116,18 @@ export interface WorkoutSession {
   id: string;
   user_id: string;
   program_workout_id: string | null;
+  program_id: string | null;
   name: string | null;
   started_at: string;
   ended_at: string | null;
   notes: string | null;
   total_volume_kg: number | null;
+  total_sets: number | null;
+  total_reps: number | null;
+  total_exercises: number | null;
+  total_rest_seconds: number | null;
+  total_duration_active_seconds: number | null;
+  day_of_week: number | null;
 }
 
 export interface ProgramExercise {
@@ -171,6 +178,43 @@ export interface SessionSet {
   weight_kg: number | null;
   duration_seconds: number | null;
   completed: boolean;
+  rpe: number | null;
+  exercise_order: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  rest_seconds_taken: number | null;
+  prescribed_reps: number | null;
+  prescribed_weight_kg: number | null;
+  prescribed_duration_seconds: number | null;
+  prescribed_rest_seconds: number | null;
+}
+
+export interface SessionExercise {
+  id: string;
+  session_id: string;
+  exercise_id: string;
+  program_exercise_id: string | null;
+  order_index: number;
+  started_at: string | null;
+  completed_at: string | null;
+  prescribed_sets: number | null;
+  prescribed_reps: number | null;
+  prescribed_reps_min: number | null;
+  prescribed_reps_max: number | null;
+  prescribed_duration_seconds: number | null;
+  prescribed_duration_min: number | null;
+  prescribed_duration_max: number | null;
+  prescribed_rest_seconds: number | null;
+  prescribed_weight_kg: number | null;
+  exercise_type: 'reps' | 'repRange' | 'time' | 'timeRange' | null;
+  sets_completed: number;
+  sets_planned: number;
+  total_reps: number;
+  total_volume_kg: number;
+  total_duration_seconds: number;
+  total_rest_seconds: number;
+  avg_rpe: number | null;
+  notes: string | null;
 }
 
 // ── AI Message ────────────────────────────────────────────

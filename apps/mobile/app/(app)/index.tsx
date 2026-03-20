@@ -74,6 +74,7 @@ export default function DashboardScreen() {
   const openChat = useAIStore((s) => s.openChat);
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = React.useState<number | null>(null);
 
   useEffect(() => {
     loadRecentSessions(30);
@@ -148,6 +149,28 @@ export default function DashboardScreen() {
     return new Set(activeProgram.program_workouts.map((w) => w.day_of_week).filter(Boolean) as number[]);
   }, [activeProgram]);
 
+  // Map of dbDay → workout for quick lookup
+  const workoutsByDay = React.useMemo(() => {
+    const map = new Map<number, typeof todaysWorkout>();
+    if (!activeProgram?.program_workouts) return map;
+    activeProgram.program_workouts.forEach((w) => {
+      if (w.day_of_week) map.set(w.day_of_week, w);
+    });
+    return map;
+  }, [activeProgram]);
+
+  // Session dates set for quick "done" check
+  const sessionDates = React.useMemo(() => {
+    return new Set(recentSessions.map((s) => format(new Date(s.started_at), 'yyyy-MM-dd')));
+  }, [recentSessions]);
+
+  // Selected day info
+  const selectedDay = selectedDayIndex !== null ? weekDays[selectedDayIndex] : null;
+  const selectedWorkout = selectedDay ? workoutsByDay.get(selectedDay.dbDay) ?? null : null;
+  const selectedDayDone = selectedDay ? sessionDates.has(format(selectedDay.date, 'yyyy-MM-dd')) : false;
+  const selectedIsPast = selectedDay ? differenceInCalendarDays(new Date(), selectedDay.date) > 0 : false;
+  const selectedIsToday = selectedDay?.isToday ?? false;
+
   const formatExerciseDetail = (pe: ProgramExercise) => {
     const parts: string[] = [];
     if (pe.sets) parts.push(`${pe.sets}×`);
@@ -159,9 +182,9 @@ export default function DashboardScreen() {
     return parts.join(' ');
   };
 
-  const handleStartTodayWorkout = async () => {
-    if (!todaysWorkout) return;
-    await startSession(todaysWorkout.id, todaysWorkout.name);
+  const handleStartWorkout = async (workout: typeof todaysWorkout) => {
+    if (!workout) return;
+    await startSession(workout.id, workout.name);
     router.push('/(app)/workout/session');
   };
 
@@ -209,7 +232,7 @@ export default function DashboardScreen() {
           />
         </MotiView>
 
-        {/* Weekly calendar strip */}
+        {/* Weekly calendar strip — interactive */}
         <MotiView
           from={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -222,79 +245,146 @@ export default function DashboardScreen() {
           <View style={{ flexDirection: 'row', gap: 6 }}>
             {weekDays.map((day, i) => {
               const hasWorkout = scheduledDays.has(day.dbDay);
-              const hadSession = recentSessions.some(
-                (s) => differenceInCalendarDays(day.date, new Date(s.started_at)) === 0,
-              );
+              const hadSession = sessionDates.has(format(day.date, 'yyyy-MM-dd'));
+              const isSelected = selectedDayIndex === i;
+              const isPast = differenceInCalendarDays(new Date(), day.date) > 0;
+
+              let bgColor = 'transparent';
+              let borderW = 0;
+              if (isSelected) { bgColor = colors.primary; borderW = 0; }
+              else if (day.isToday) { bgColor = colors.primary + '18'; borderW = 2; }
+              else if (hasWorkout) { bgColor = colors.surface; borderW = 1; }
+
               return (
-                <View key={i} style={{
-                  flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12,
-                  backgroundColor: day.isToday ? colors.primary : hasWorkout ? colors.surface : 'transparent',
-                  borderWidth: hasWorkout && !day.isToday ? 1 : 0,
-                  borderColor: colors.border,
-                }}>
-                  <Text style={{ color: day.isToday ? '#fff' : colors.textMuted, fontSize: 10, fontWeight: '600' }}>
+                <TouchableOpacity key={i} activeOpacity={0.7}
+                  onPress={() => setSelectedDayIndex(isSelected ? null : i)}
+                  style={{
+                    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12,
+                    backgroundColor: bgColor,
+                    borderWidth: borderW,
+                    borderColor: day.isToday && !isSelected ? colors.primary : colors.border,
+                  }}>
+                  <Text style={{ color: isSelected ? '#fff' : colors.textMuted, fontSize: 10, fontWeight: '600' }}>
                     {DAY_LABELS[i]}
                   </Text>
-                  <Text style={{ color: day.isToday ? '#fff' : colors.text, fontSize: 15, fontWeight: '700', marginTop: 2 }}>
+                  <Text style={{ color: isSelected ? '#fff' : colors.text, fontSize: 15, fontWeight: '700', marginTop: 2 }}>
                     {format(day.date, 'd')}
                   </Text>
-                  {hadSession && (
-                    <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.isToday ? '#fff' : '#4CAF50', marginTop: 3 }} />
+                  {/* Status dot */}
+                  {hadSession && hasWorkout ? (
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isSelected ? '#fff' : '#4CAF50', marginTop: 3 }} />
+                  ) : hasWorkout && !hadSession && isPast ? (
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isSelected ? '#ffffff99' : '#F44336', marginTop: 3 }} />
+                  ) : hasWorkout && !hadSession ? (
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: isSelected ? '#ffffff66' : colors.primary, marginTop: 3 }} />
+                  ) : (
+                    <View style={{ width: 6, height: 6, marginTop: 3 }} />
                   )}
-                  {!hadSession && hasWorkout && (
-                    <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.isToday ? '#ffffff66' : colors.primary, marginTop: 3 }} />
-                  )}
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
+
+          {/* Legend */}
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 10, justifyContent: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#4CAF50' }} />
+              <Text style={{ color: colors.textMuted, fontSize: 10 }}>Done</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+              <Text style={{ color: colors.textMuted, fontSize: 10 }}>Scheduled</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#F44336' }} />
+              <Text style={{ color: colors.textMuted, fontSize: 10 }}>Missed</Text>
+            </View>
+          </View>
         </MotiView>
 
-        {/* Today's workout from active program */}
+        {/* Selected day detail OR today's workout */}
         {activeProgram ? (
           <MotiView
             from={{ opacity: 0, translateY: 8 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 350, delay: 180 }}
             style={{ marginBottom: 24 }}
+            key={selectedDayIndex ?? 'today'}
           >
-            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
-              Today — {format(new Date(), 'EEEE, MMM d')}
-            </Text>
-            {todaysWorkout ? (
-              <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '600' }}>{activeProgram.name}</Text>
-                    <Text style={{ color: colors.text, fontWeight: '700', fontSize: 17, marginTop: 2 }}>{todaysWorkout.name}</Text>
-                    <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>
-                      {todaysWorkout.program_exercises?.length ?? 0} exercises
-                    </Text>
-                  </View>
-                  <TouchableOpacity onPress={handleStartTodayWorkout}
-                    style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 }}>
-                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Start</Text>
-                  </TouchableOpacity>
-                </View>
-                {(todaysWorkout.program_exercises ?? [])
-                  .sort((a, b) => a.order_index - b.order_index)
-                  .map((pe) => (
-                    <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: colors.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="barbell-outline" size={12} color={colors.primary} />
+            {(() => {
+              const dayToShow = selectedDay ?? weekDays.find((d) => d.isToday);
+              const workoutToShow = selectedWorkout ?? (selectedDayIndex === null ? todaysWorkout : null);
+              const isDone = selectedDay ? selectedDayDone : !!todaySession;
+              const dayLabel = dayToShow ? format(dayToShow.date, 'EEEE, MMM d') : format(new Date(), 'EEEE, MMM d');
+              const isToday = selectedIsToday || selectedDayIndex === null;
+              const isPast = selectedDay ? selectedIsPast : false;
+
+              return (
+                <>
+                  <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+                    {isToday ? `Today — ${dayLabel}` : dayLabel}
+                  </Text>
+
+                  {workoutToShow ? (
+                    <View style={{
+                      backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1,
+                      borderColor: isDone ? '#4CAF50' : colors.border,
+                    }}>
+                      {/* Status badge */}
+                      {isDone && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                          <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                          <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>Completed</Text>
+                        </View>
+                      )}
+                      {!isDone && isPast && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                          <Ionicons name="close-circle" size={16} color="#F44336" />
+                          <Text style={{ color: '#F44336', fontSize: 12, fontWeight: '600' }}>Missed</Text>
+                        </View>
+                      )}
+
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '600' }}>{activeProgram.name}</Text>
+                          <Text style={{ color: colors.text, fontWeight: '700', fontSize: 17, marginTop: 2 }}>{workoutToShow.name}</Text>
+                          <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>
+                            {workoutToShow.program_exercises?.length ?? 0} exercises
+                          </Text>
+                        </View>
+                        {!isDone && (isToday || !isPast) && (
+                          <TouchableOpacity onPress={() => handleStartWorkout(workoutToShow)}
+                            style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 }}>
+                            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Start</Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
-                      <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>{pe.exercises?.name ?? 'Exercise'}</Text>
-                      <Text style={{ color: colors.textMuted, fontSize: 11 }}>{formatExerciseDetail(pe)}</Text>
+                      {(workoutToShow.program_exercises ?? [])
+                        .sort((a, b) => a.order_index - b.order_index)
+                        .map((pe) => (
+                          <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <View style={{
+                              width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+                              backgroundColor: isDone ? '#4CAF5022' : colors.primary + '22',
+                            }}>
+                              <Ionicons name={isDone ? 'checkmark' : 'barbell-outline'} size={12} color={isDone ? '#4CAF50' : colors.primary} />
+                            </View>
+                            <Text style={{ color: isDone ? colors.textMuted : colors.text, fontSize: 13, flex: 1,
+                              textDecorationLine: isDone ? 'line-through' : 'none' }}>{pe.exercises?.name ?? 'Exercise'}</Text>
+                            <Text style={{ color: colors.textMuted, fontSize: 11 }}>{formatExerciseDetail(pe)}</Text>
+                          </View>
+                        ))}
                     </View>
-                  ))}
-              </View>
-            ) : (
-              <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}>
-                <Text style={{ fontSize: 28 }}>😌</Text>
-                <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14, marginTop: 8 }}>Rest day</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}>No workout scheduled for today</Text>
-              </View>
-            )}
+                  ) : (
+                    <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 28 }}>😌</Text>
+                      <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14, marginTop: 8 }}>Rest day</Text>
+                      <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}>No workout scheduled</Text>
+                    </View>
+                  )}
+                </>
+              );
+            })()}
           </MotiView>
         ) : (
           <MotiView

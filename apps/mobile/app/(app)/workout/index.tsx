@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useWorkoutStore } from '../../../src/stores/workoutStore';
 
 interface Program {
   id: string;
@@ -22,7 +23,17 @@ export default function WorkoutProgramsScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
-  const [newDays, setNewDays] = useState('3');
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const DAY_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  const toggleDay = (dayIndex: number) => {
+    const dbDay = dayIndex + 1; // 1=Mon..7=Sun
+    setSelectedDays((prev) =>
+      prev.includes(dbDay) ? prev.filter((d) => d !== dbDay) : [...prev, dbDay].sort((a, b) => a - b)
+    );
+  };
 
   const loadPrograms = async () => {
     if (!user) return;
@@ -37,17 +48,32 @@ export default function WorkoutProgramsScreen() {
 
   useEffect(() => { loadPrograms(); }, [user]);
 
+  const setActiveProgram = useWorkoutStore((s) => s.setActiveProgram);
+
   const createProgram = async () => {
-    if (!newName.trim() || !user) return;
+    if (!newName.trim() || !user || selectedDays.length === 0) return;
     const { data, error } = await supabase
       .from('workout_programs')
-      .insert({ user_id: user.id, name: newName.trim(), description: newDesc.trim() || null, days_per_week: parseInt(newDays) })
+      .insert({ user_id: user.id, name: newName.trim(), description: newDesc.trim() || null, days_per_week: selectedDays.length })
       .select()
       .single();
     if (!error && data) {
-      setPrograms([data as Program, ...programs]);
+      // Create a workout day for each selected day
+      const workoutDays = selectedDays.map((dbDay) => ({
+        program_id: data.id,
+        name: DAY_FULL[dbDay - 1],
+        day_of_week: dbDay,
+        order_index: dbDay,
+      }));
+      await supabase.from('program_workouts').insert(workoutDays);
+
+      // Auto-activate the new program so it shows on the home screen
+      await setActiveProgram(data.id);
+
+      // Reload local list to reflect active status
+      await loadPrograms();
       setShowCreate(false);
-      setNewName(''); setNewDesc(''); setNewDays('3');
+      setNewName(''); setNewDesc(''); setSelectedDays([]);
     }
   };
 
@@ -60,6 +86,54 @@ export default function WorkoutProgramsScreen() {
           setPrograms(programs.filter((p) => p.id !== id));
         },
       },
+    ]);
+  };
+
+  const duplicateProgram = async (prog: Program) => {
+    if (!user) return;
+    // 1. Create a copy of the program
+    const { data: newProg, error } = await supabase
+      .from('workout_programs')
+      .insert({ user_id: user.id, name: `${prog.name} (copy)`, description: prog.description, days_per_week: prog.days_per_week })
+      .select()
+      .single();
+    if (error || !newProg) return;
+
+    // 2. Fetch the source program's workouts + exercises
+    const { data: srcWorkouts } = await supabase
+      .from('program_workouts')
+      .select('*, program_exercises(*)')
+      .eq('program_id', prog.id)
+      .order('day_of_week');
+
+    if (srcWorkouts && srcWorkouts.length > 0) {
+      for (const srcW of srcWorkouts) {
+        const { data: newW } = await supabase
+          .from('program_workouts')
+          .insert({ program_id: newProg.id, name: srcW.name, day_of_week: srcW.day_of_week, order_index: srcW.order_index })
+          .select()
+          .single();
+        if (newW && srcW.program_exercises?.length > 0) {
+          const exercises = srcW.program_exercises.map((pe: any) => ({
+            workout_id: newW.id,
+            exercise_id: pe.exercise_id,
+            sets: pe.sets, reps: pe.reps, reps_min: pe.reps_min, reps_max: pe.reps_max,
+            duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
+            rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
+          }));
+          await supabase.from('program_exercises').insert(exercises);
+        }
+      }
+    }
+
+    await loadPrograms();
+  };
+
+  const showProgramActions = (prog: Program) => {
+    Alert.alert(prog.name, undefined, [
+      { text: 'Duplicate', onPress: () => duplicateProgram(prog) },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteProgram(prog.id) },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
@@ -111,14 +185,21 @@ export default function WorkoutProgramsScreen() {
           <TouchableOpacity
             key={program.id}
             onPress={() => router.push(`/(app)/workout/${program.id}` as any)}
-            onLongPress={() => deleteProgram(program.id)}
-            style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 14 }}
+            onLongPress={() => showProgramActions(program)}
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: program.is_active ? '#FF5C1A' : '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 14 }}
           >
             <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="barbell" size={20} color="#FF5C1A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
+                {program.is_active && (
+                  <View style={{ backgroundColor: '#FF5C1A', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Active</Text>
+                  </View>
+                )}
+              </View>
               {program.description && <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
               {program.days_per_week != null && (
                 <Text style={{ color: '#FF5C1A', fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
@@ -147,18 +228,36 @@ export default function WorkoutProgramsScreen() {
           <TextInput value={newDesc} onChangeText={setNewDesc} placeholder="Brief description" placeholderTextColor="#7A7670" multiline numberOfLines={3}
             style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16, height: 80, textAlignVertical: 'top' }} />
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Days per week</Text>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 28 }}>
-            {['2', '3', '4', '5', '6'].map((d) => (
-              <TouchableOpacity key={d} onPress={() => setNewDays(d)}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: newDays === d ? '#FF5C1A' : '#FFFFFF', alignItems: 'center', borderWidth: 1, borderColor: newDays === d ? '#FF5C1A' : '#E2E0DA' }}>
-                <Text style={{ color: newDays === d ? '#fff' : '#7A7670', fontWeight: '600' }}>{d}</Text>
-              </TouchableOpacity>
-            ))}
+          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Training days *</Text>
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+            {DAY_LABELS.map((label, i) => {
+              const dbDay = i + 1;
+              const isSelected = selectedDays.includes(dbDay);
+              return (
+                <TouchableOpacity key={label} onPress={() => toggleDay(i)}
+                  style={{
+                    flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
+                    backgroundColor: isSelected ? '#FF5C1A' : '#FFFFFF',
+                    borderWidth: 1, borderColor: isSelected ? '#FF5C1A' : '#E2E0DA',
+                  }}>
+                  <Text style={{ color: isSelected ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 12 }}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+          {selectedDays.length > 0 && (
+            <Text style={{ color: '#FF5C1A', fontSize: 12, marginBottom: 20 }}>
+              {selectedDays.length} day{selectedDays.length > 1 ? 's' : ''} selected
+            </Text>
+          )}
+          {selectedDays.length === 0 && (
+            <Text style={{ color: '#7A7670', fontSize: 12, marginBottom: 20 }}>
+              Tap the days you want to train
+            </Text>
+          )}
 
-          <TouchableOpacity onPress={createProgram} disabled={!newName.trim()}
-            style={{ backgroundColor: newName.trim() ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+          <TouchableOpacity onPress={createProgram} disabled={!newName.trim() || selectedDays.length === 0}
+            style={{ backgroundColor: newName.trim() && selectedDays.length > 0 ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Create Program</Text>
           </TouchableOpacity>
         </View>

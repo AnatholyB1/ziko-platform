@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { useClipboardStore } from '../../../src/stores/clipboardStore';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 
 const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -65,6 +66,8 @@ export default function ProgramDetailScreen() {
   const startSession = useWorkoutStore((s) => s.startSession);
   const exercises = useWorkoutStore((s) => s.exercises);
   const loadExercises = useWorkoutStore((s) => s.loadExercises);
+  const copiedDay = useClipboardStore((s) => s.copiedDay);
+  const copyDay = useClipboardStore((s) => s.copyDay);
 
   // Add workout day modal
   const [showAddDay, setShowAddDay] = useState(false);
@@ -73,7 +76,7 @@ export default function ProgramDetailScreen() {
 
   // Exercise picker modal
   const [showExercisePicker, setShowExercisePicker] = useState(false);
-  const [targetWorkoutId, setTargetWorkoutId] = useState<string | null>(null);
+  const [targetWorkoutIds, setTargetWorkoutIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
 
@@ -130,12 +133,85 @@ export default function ProgramDetailScreen() {
     ]);
   };
 
-  // ── Open exercise picker for a workout day ───────────────
-  const openExercisePicker = (workoutId: string) => {
-    setTargetWorkoutId(workoutId);
+  // ── Copy day to clipboard ───────────────────────────────
+  const handleCopyDay = (workout: WorkoutDay) => {
+    copyDay({
+      name: workout.name,
+      day_of_week: workout.day_of_week,
+      exercises: (workout.program_exercises ?? []).map((pe) => ({
+        exercise_id: pe.exercise_id,
+        sets: pe.sets, reps: pe.reps, reps_min: pe.reps_min, reps_max: pe.reps_max,
+        duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
+        rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
+      })),
+    });
+    Alert.alert('Copied!', `"${workout.name}" copied to clipboard. You can paste it in any program.`);
+  };
+
+  // ── Duplicate day within this program ────────────────────
+  const handleDuplicateDay = async (workout: WorkoutDay) => {
+    if (!id) return;
+    const { data: newW } = await supabase
+      .from('program_workouts')
+      .insert({ program_id: id, name: `${workout.name} (copy)`, day_of_week: null, order_index: (workouts.length + 1) })
+      .select()
+      .single();
+    if (newW && (workout.program_exercises ?? []).length > 0) {
+      const rows = workout.program_exercises.map((pe) => ({
+        workout_id: newW.id,
+        exercise_id: pe.exercise_id,
+        sets: pe.sets, reps: pe.reps, reps_min: pe.reps_min, reps_max: pe.reps_max,
+        duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
+        rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
+      }));
+      await supabase.from('program_exercises').insert(rows);
+    }
+    await loadProgram();
+  };
+
+  // ── Paste clipboard day into this program ────────────────
+  const handlePasteDay = async () => {
+    if (!id || !copiedDay) return;
+    const { data: newW } = await supabase
+      .from('program_workouts')
+      .insert({ program_id: id, name: copiedDay.name, day_of_week: null, order_index: (workouts.length + 1) })
+      .select()
+      .single();
+    if (newW && copiedDay.exercises.length > 0) {
+      const rows = copiedDay.exercises.map((pe) => ({
+        workout_id: newW.id,
+        exercise_id: pe.exercise_id,
+        sets: pe.sets, reps: pe.reps, reps_min: pe.reps_min, reps_max: pe.reps_max,
+        duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
+        rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
+      }));
+      await supabase.from('program_exercises').insert(rows);
+    }
+    await loadProgram();
+  };
+
+  // ── Day action sheet ────────────────────────────────────
+  const showDayActions = (workout: WorkoutDay) => {
+    Alert.alert(workout.name, undefined, [
+      { text: 'Duplicate', onPress: () => handleDuplicateDay(workout) },
+      { text: 'Copy', onPress: () => handleCopyDay(workout) },
+      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteDay(workout.id, workout.name) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  // ── Open exercise picker for a workout day (or multiple) ─
+  const openExercisePicker = (workoutIds: string[]) => {
+    setTargetWorkoutIds(workoutIds);
     setSearchQuery('');
     setSelectedBodyPart(null);
     setShowExercisePicker(true);
+  };
+
+  const toggleTargetWorkout = (workoutId: string) => {
+    setTargetWorkoutIds((prev) =>
+      prev.includes(workoutId) ? prev.filter((id) => id !== workoutId) : [...prev, workoutId]
+    );
   };
 
   // ── Select exercise → open config ────────────────────────
@@ -146,42 +222,46 @@ export default function ProgramDetailScreen() {
     setShowConfig(true);
   };
 
-  // ── Save exercise config to DB ───────────────────────────
+  // ── Save exercise config to DB (multi-day) ───────────────
   const saveExerciseConfig = async () => {
-    if (!targetWorkoutId || !configExercise) return;
+    if (targetWorkoutIds.length === 0 || !configExercise) return;
 
-    const currentWorkout = workouts.find((w) => w.id === targetWorkoutId);
-    const orderIndex = (currentWorkout?.program_exercises?.length ?? 0);
+    const rows = targetWorkoutIds.map((wId) => {
+      const currentWorkout = workouts.find((w) => w.id === wId);
+      const orderIndex = (currentWorkout?.program_exercises?.length ?? 0);
 
-    const insert: Record<string, unknown> = {
-      workout_id: targetWorkoutId,
-      exercise_id: configExercise.id,
-      sets: parseInt(config.sets) || null,
-      rest_seconds: parseInt(config.restSeconds) || null,
-      weight_kg: parseFloat(config.weightKg) || null,
-      notes: config.notes.trim() || null,
-      order_index: orderIndex,
-      reps: null,
-      reps_min: null,
-      reps_max: null,
-      duration_seconds: null,
-      duration_min: null,
-      duration_max: null,
-    };
+      const row: Record<string, unknown> = {
+        workout_id: wId,
+        exercise_id: configExercise.id,
+        sets: parseInt(config.sets) || null,
+        rest_seconds: parseInt(config.restSeconds) || null,
+        weight_kg: parseFloat(config.weightKg) || null,
+        notes: config.notes.trim() || null,
+        order_index: orderIndex,
+        reps: null,
+        reps_min: null,
+        reps_max: null,
+        duration_seconds: null,
+        duration_min: null,
+        duration_max: null,
+      };
 
-    if (config.repsMode === 'fixed') {
-      insert.reps = parseInt(config.reps) || null;
-    } else if (config.repsMode === 'range') {
-      insert.reps_min = parseInt(config.repsMin) || null;
-      insert.reps_max = parseInt(config.repsMax) || null;
-    } else if (config.repsMode === 'time') {
-      insert.duration_seconds = parseInt(config.duration) || null;
-    } else if (config.repsMode === 'timeRange') {
-      insert.duration_min = parseInt(config.durationMin) || null;
-      insert.duration_max = parseInt(config.durationMax) || null;
-    }
+      if (config.repsMode === 'fixed') {
+        row.reps = parseInt(config.reps) || null;
+      } else if (config.repsMode === 'range') {
+        row.reps_min = parseInt(config.repsMin) || null;
+        row.reps_max = parseInt(config.repsMax) || null;
+      } else if (config.repsMode === 'time') {
+        row.duration_seconds = parseInt(config.duration) || null;
+      } else if (config.repsMode === 'timeRange') {
+        row.duration_min = parseInt(config.durationMin) || null;
+        row.duration_max = parseInt(config.durationMax) || null;
+      }
 
-    await supabase.from('program_exercises').insert(insert);
+      return row;
+    });
+
+    await supabase.from('program_exercises').insert(rows);
     setShowConfig(false);
     setConfigExercise(null);
     await loadProgram();
@@ -268,20 +348,20 @@ export default function ProgramDetailScreen() {
           <View key={workout.id} style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E0DA' }}>
             {/* Day header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <View style={{ flex: 1 }}>
+              <TouchableOpacity onPress={() => showDayActions(workout)} style={{ flex: 1 }}>
                 <Text style={{ color: '#FF5C1A', fontSize: 11, fontWeight: '600' }}>
                   {workout.day_of_week ? DAY_FULL[workout.day_of_week] : 'Any day'}
                 </Text>
                 <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16, marginTop: 2 }}>{workout.name}</Text>
-              </View>
+              </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => showDayActions(workout)}
+                  style={{ backgroundColor: '#F7F6F3', borderRadius: 10, padding: 8 }}>
+                  <Ionicons name="ellipsis-horizontal" size={16} color="#7A7670" />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleStartWorkout(workout)}
                   style={{ backgroundColor: '#FF5C1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
                   <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Start</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteDay(workout.id, workout.name)}
-                  style={{ backgroundColor: '#F4433622', borderRadius: 10, padding: 8 }}>
-                  <Ionicons name="trash-outline" size={16} color="#F44336" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -303,13 +383,31 @@ export default function ProgramDetailScreen() {
               ))}
 
             {/* Add exercise button */}
-            <TouchableOpacity onPress={() => openExercisePicker(workout.id)}
+            <TouchableOpacity onPress={() => openExercisePicker([workout.id])}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6 }}>
               <Ionicons name="add-circle-outline" size={18} color="#FF5C1A" />
               <Text style={{ color: '#FF5C1A', fontSize: 13, fontWeight: '500' }}>Add exercise</Text>
             </TouchableOpacity>
           </View>
         ))}
+
+        {/* Paste copied day */}
+        {copiedDay && (
+          <TouchableOpacity onPress={handlePasteDay}
+            style={{ backgroundColor: '#4CAF5018', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Ionicons name="clipboard-outline" size={18} color="#4CAF50" />
+            <Text style={{ color: '#4CAF50', fontWeight: '600', fontSize: 14 }}>Paste "{copiedDay.name}"</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Add exercise to multiple days */}
+        {workouts.length > 1 && (
+          <TouchableOpacity onPress={() => openExercisePicker(workouts.map((w) => w.id))}
+            style={{ backgroundColor: '#FF5C1A18', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Ionicons name="copy-outline" size={18} color="#FF5C1A" />
+            <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 14 }}>Add exercise to multiple days</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Add workout day button */}
         <TouchableOpacity onPress={() => {
@@ -442,6 +540,42 @@ export default function ProgramDetailScreen() {
               </Text>
             </View>
 
+            {/* Day selector — choose which days to add to */}
+            {workouts.length > 1 && (
+              <>
+                <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Add to days</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const allIds = workouts.map((w) => w.id);
+                      setTargetWorkoutIds(targetWorkoutIds.length === workouts.length ? [] : allIds);
+                    }}
+                    style={{
+                      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                      backgroundColor: targetWorkoutIds.length === workouts.length ? '#FF5C1A' : '#FFFFFF',
+                      borderWidth: 1, borderColor: targetWorkoutIds.length === workouts.length ? '#FF5C1A' : '#E2E0DA',
+                    }}>
+                    <Text style={{ color: targetWorkoutIds.length === workouts.length ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 12 }}>All</Text>
+                  </TouchableOpacity>
+                  {workouts.map((w) => {
+                    const isSelected = targetWorkoutIds.includes(w.id);
+                    return (
+                      <TouchableOpacity key={w.id} onPress={() => toggleTargetWorkout(w.id)}
+                        style={{
+                          paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                          backgroundColor: isSelected ? '#FF5C1A' : '#FFFFFF',
+                          borderWidth: 1, borderColor: isSelected ? '#FF5C1A' : '#E2E0DA',
+                        }}>
+                        <Text style={{ color: isSelected ? '#fff' : '#1C1A17', fontWeight: '500', fontSize: 12 }}>
+                          {w.day_of_week ? DAY_NAMES[w.day_of_week] : w.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
             {/* Sets */}
             <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Number of sets</Text>
             <TextInput value={config.sets} onChangeText={(v) => setConfig({ ...config, sets: v })}
@@ -549,9 +683,11 @@ export default function ProgramDetailScreen() {
               placeholderTextColor="#7A7670"
               style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 24, height: 70, textAlignVertical: 'top' }} />
 
-            <TouchableOpacity onPress={saveExerciseConfig}
-              style={{ backgroundColor: '#FF5C1A', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Add to Workout</Text>
+            <TouchableOpacity onPress={saveExerciseConfig} disabled={targetWorkoutIds.length === 0}
+              style={{ backgroundColor: targetWorkoutIds.length > 0 ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>
+                {targetWorkoutIds.length > 1 ? `Add to ${targetWorkoutIds.length} days` : 'Add to Workout'}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
