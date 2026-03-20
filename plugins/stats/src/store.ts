@@ -55,6 +55,117 @@ export interface PersonalRecord {
   date: string;
 }
 
+// ── Habits Stats Types ──────────────────────────────────
+export interface HabitCompletionPoint {
+  date: string;
+  completed: number;
+  total: number;
+  rate: number;
+}
+
+export interface HabitPerformance {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  type: string;
+  target: number;
+  completionRate: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalCompletions: number;
+}
+
+export interface HabitsOverview {
+  totalHabits: number;
+  avgDailyCompletion: number;
+  bestDay: string;
+  bestDayRate: number;
+  totalCompletions: number;
+  activeDays: number;
+}
+
+// ── Nutrition Stats Types ───────────────────────────────
+export interface NutritionDayPoint {
+  date: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  meals: number;
+}
+
+export interface MealTypeDistribution {
+  type: string;
+  label: string;
+  count: number;
+  avgCalories: number;
+  color: string;
+}
+
+export interface NutritionOverview {
+  totalMeals: number;
+  avgDailyCalories: number;
+  avgProtein: number;
+  avgCarbs: number;
+  avgFat: number;
+  daysTracked: number;
+  topFoods: { name: string; count: number }[];
+}
+
+// ── Gamification Stats Types ────────────────────────────
+export interface XPTimelinePoint {
+  date: string;
+  xp: number;
+  cumulative: number;
+}
+
+export interface XPBySource {
+  source: string;
+  label: string;
+  total: number;
+  count: number;
+  color: string;
+}
+
+export interface CoinFlow {
+  date: string;
+  earned: number;
+  spent: number;
+  balance: number;
+}
+
+export interface GamificationOverview {
+  totalXP: number;
+  currentLevel: number;
+  levelTitle: string;
+  totalCoins: number;
+  coinsSpent: number;
+  currentStreak: number;
+  longestStreak: number;
+  itemsOwned: number;
+  totalPurchases: number;
+  daysActive: number;
+}
+
+// ── AI Stats Types ──────────────────────────────────────
+export interface ConversationActivity {
+  date: string;
+  conversations: number;
+  messages: number;
+}
+
+export interface AIOverview {
+  totalConversations: number;
+  totalMessages: number;
+  userMessages: number;
+  assistantMessages: number;
+  avgMessagesPerConvo: number;
+  avgConvosPerWeek: number;
+  longestConversation: { id: string; title: string; messageCount: number } | null;
+  activeDays: number;
+}
+
 // ── Store ────────────────────────────────────────────────
 interface StatsState {
   period: Period;
@@ -425,5 +536,476 @@ export async function fetchSessionDetail(supabase: any, sessionId: string) {
     session: sessionRes.data,
     exercises: exercisesRes.data ?? [],
     sets: setsRes.data ?? [],
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// HABITS STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchHabitsCompletionTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<HabitCompletionPoint[]> {
+  // Get all active habits to know total per day
+  const { data: habits } = await supabase.from('habits').select('id').eq('is_active', true);
+  const totalHabits = habits?.length ?? 0;
+  if (totalHabits === 0) return [];
+
+  let q = supabase.from('habit_logs').select('date, habit_id, value').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data: logs } = await q;
+  if (!logs || logs.length === 0) return [];
+
+  // Get habit targets to know completion
+  const { data: habitsWithTarget } = await supabase.from('habits').select('id, target').eq('is_active', true);
+  const targetMap: Record<string, number> = {};
+  for (const h of (habitsWithTarget ?? [])) targetMap[h.id] = h.target;
+
+  const byDay: Record<string, { completed: number; total: number }> = {};
+  for (const log of logs) {
+    const day = log.date;
+    if (!byDay[day]) byDay[day] = { completed: 0, total: totalHabits };
+    if (log.value >= (targetMap[log.habit_id] ?? 1)) byDay[day].completed++;
+  }
+
+  return Object.entries(byDay)
+    .map(([date, d]) => ({
+      date,
+      completed: d.completed,
+      total: d.total,
+      rate: Math.round((d.completed / d.total) * 100),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchHabitPerformances(
+  supabase: any, cutoff: string | null,
+): Promise<HabitPerformance[]> {
+  const { data: habits } = await supabase
+    .from('habits').select('*').eq('is_active', true).order('sort_order');
+  if (!habits) return [];
+
+  let q = supabase.from('habit_logs').select('habit_id, date, value').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data: logs } = await q;
+
+  const logsByHabit: Record<string, { date: string; value: number }[]> = {};
+  for (const l of (logs ?? [])) {
+    if (!logsByHabit[l.habit_id]) logsByHabit[l.habit_id] = [];
+    logsByHabit[l.habit_id].push(l);
+  }
+
+  return habits.map((h: any) => {
+    const hLogs = logsByHabit[h.id] ?? [];
+    const completions = hLogs.filter(l => l.value >= h.target);
+    const totalDays = new Set(hLogs.map(l => l.date)).size || 1;
+
+    // Calculate streaks
+    const completedDates = completions.map(l => l.date).sort();
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let streak = 0;
+    for (let i = 0; i < completedDates.length; i++) {
+      if (i === 0) { streak = 1; }
+      else {
+        const prev = new Date(completedDates[i - 1]);
+        const curr = new Date(completedDates[i]);
+        const diff = (curr.getTime() - prev.getTime()) / 86400000;
+        streak = diff === 1 ? streak + 1 : 1;
+      }
+      longestStreak = Math.max(longestStreak, streak);
+    }
+    // Check if current streak is still active (last date is today or yesterday)
+    if (completedDates.length > 0) {
+      const lastDate = new Date(completedDates[completedDates.length - 1]);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      lastDate.setHours(0, 0, 0, 0);
+      const diffDays = (today.getTime() - lastDate.getTime()) / 86400000;
+      currentStreak = diffDays <= 1 ? streak : 0;
+    }
+
+    return {
+      id: h.id,
+      name: h.name,
+      emoji: h.emoji,
+      color: h.color,
+      type: h.type,
+      target: h.target,
+      completionRate: Math.round((completions.length / totalDays) * 100),
+      currentStreak,
+      longestStreak,
+      totalCompletions: completions.length,
+    };
+  });
+}
+
+export async function fetchHabitsOverview(
+  supabase: any, cutoff: string | null,
+): Promise<HabitsOverview> {
+  const { data: habits } = await supabase.from('habits').select('id, target').eq('is_active', true);
+  const totalHabits = habits?.length ?? 0;
+
+  let q = supabase.from('habit_logs').select('habit_id, date, value');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data: logs } = await q;
+
+  if (!logs || logs.length === 0 || totalHabits === 0) {
+    return { totalHabits, avgDailyCompletion: 0, bestDay: '', bestDayRate: 0, totalCompletions: 0, activeDays: 0 };
+  }
+
+  const targetMap: Record<string, number> = {};
+  for (const h of habits) targetMap[h.id] = h.target;
+
+  const byDay: Record<string, number> = {};
+  let totalCompletions = 0;
+  for (const l of logs) {
+    if (l.value >= (targetMap[l.habit_id] ?? 1)) {
+      byDay[l.date] = (byDay[l.date] ?? 0) + 1;
+      totalCompletions++;
+    }
+  }
+
+  const days = Object.entries(byDay);
+  const activeDays = days.length;
+  const avgDailyCompletion = activeDays > 0
+    ? Math.round(days.reduce((s, [, c]) => s + (c / totalHabits) * 100, 0) / activeDays)
+    : 0;
+
+  let bestDay = '';
+  let bestDayRate = 0;
+  for (const [date, count] of days) {
+    const rate = (count / totalHabits) * 100;
+    if (rate > bestDayRate) { bestDay = date; bestDayRate = Math.round(rate); }
+  }
+
+  return { totalHabits, avgDailyCompletion, bestDay, bestDayRate, totalCompletions, activeDays };
+}
+
+// ════════════════════════════════════════════════════════
+// NUTRITION STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchNutritionTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<NutritionDayPoint[]> {
+  let q = supabase
+    .from('nutrition_logs')
+    .select('date, calories, protein_g, carbs_g, fat_g')
+    .order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+
+  const byDay: Record<string, NutritionDayPoint> = {};
+  for (const row of data) {
+    if (!byDay[row.date]) byDay[row.date] = { date: row.date, calories: 0, protein: 0, carbs: 0, fat: 0, meals: 0 };
+    byDay[row.date].calories += row.calories ?? 0;
+    byDay[row.date].protein += Number(row.protein_g) || 0;
+    byDay[row.date].carbs += Number(row.carbs_g) || 0;
+    byDay[row.date].fat += Number(row.fat_g) || 0;
+    byDay[row.date].meals++;
+  }
+
+  return Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchMealTypeDistribution(
+  supabase: any, cutoff: string | null,
+): Promise<MealTypeDistribution[]> {
+  let q = supabase.from('nutrition_logs').select('meal_type, calories');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+
+  const LABELS: Record<string, string> = {
+    breakfast: 'Petit-déj', lunch: 'Déjeuner', dinner: 'Dîner', snack: 'Snack',
+  };
+  const COLORS: Record<string, string> = {
+    breakfast: '#FF5C1A', lunch: '#2563EB', dinner: '#7C3AED', snack: '#10B981',
+  };
+
+  const groups: Record<string, { count: number; totalCal: number }> = {};
+  for (const row of data) {
+    const t = row.meal_type;
+    if (!groups[t]) groups[t] = { count: 0, totalCal: 0 };
+    groups[t].count++;
+    groups[t].totalCal += row.calories ?? 0;
+  }
+
+  return Object.entries(groups)
+    .map(([type, g]) => ({
+      type,
+      label: LABELS[type] ?? type,
+      count: g.count,
+      avgCalories: g.count > 0 ? Math.round(g.totalCal / g.count) : 0,
+      color: COLORS[type] ?? '#9CA3AF',
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export async function fetchNutritionOverview(
+  supabase: any, cutoff: string | null,
+): Promise<NutritionOverview> {
+  let q = supabase.from('nutrition_logs').select('date, food_name, calories, protein_g, carbs_g, fat_g');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+
+  if (!data || data.length === 0) {
+    return { totalMeals: 0, avgDailyCalories: 0, avgProtein: 0, avgCarbs: 0, avgFat: 0, daysTracked: 0, topFoods: [] };
+  }
+
+  const days = new Set(data.map((r: any) => r.date));
+  const daysTracked = days.size;
+  const totalCal = data.reduce((s: number, r: any) => s + (r.calories ?? 0), 0);
+  const totalP = data.reduce((s: number, r: any) => s + (Number(r.protein_g) || 0), 0);
+  const totalC = data.reduce((s: number, r: any) => s + (Number(r.carbs_g) || 0), 0);
+  const totalF = data.reduce((s: number, r: any) => s + (Number(r.fat_g) || 0), 0);
+
+  // Top foods
+  const foodCounts: Record<string, number> = {};
+  for (const r of data) { foodCounts[r.food_name] = (foodCounts[r.food_name] ?? 0) + 1; }
+  const topFoods = Object.entries(foodCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return {
+    totalMeals: data.length,
+    avgDailyCalories: Math.round(totalCal / daysTracked),
+    avgProtein: Math.round(totalP / daysTracked),
+    avgCarbs: Math.round(totalC / daysTracked),
+    avgFat: Math.round(totalF / daysTracked),
+    daysTracked,
+    topFoods,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// GAMIFICATION STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchXPTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<XPTimelinePoint[]> {
+  let q = supabase
+    .from('xp_transactions')
+    .select('amount, created_at')
+    .order('created_at');
+  if (cutoff) q = q.gte('created_at', cutoff);
+  const { data } = await q;
+  if (!data) return [];
+
+  const byDay: Record<string, number> = {};
+  for (const row of data) {
+    const day = row.created_at.split('T')[0];
+    byDay[day] = (byDay[day] ?? 0) + row.amount;
+  }
+
+  let cumulative = 0;
+  return Object.entries(byDay)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, xp]) => {
+      cumulative += xp;
+      return { date, xp, cumulative };
+    });
+}
+
+export async function fetchXPBySource(
+  supabase: any, cutoff: string | null,
+): Promise<XPBySource[]> {
+  let q = supabase.from('xp_transactions').select('source, amount');
+  if (cutoff) q = q.gte('created_at', cutoff);
+  const { data } = await q;
+  if (!data) return [];
+
+  const LABELS: Record<string, string> = {
+    workout: 'Séances', habit: 'Habitudes', streak_bonus: 'Bonus streak',
+    level_up: 'Level up', achievement: 'Succès',
+  };
+  const COLORS: Record<string, string> = {
+    workout: '#FF5C1A', habit: '#10B981', streak_bonus: '#F59E0B',
+    level_up: '#7C3AED', achievement: '#2563EB',
+  };
+
+  const groups: Record<string, { total: number; count: number }> = {};
+  for (const row of data) {
+    if (!groups[row.source]) groups[row.source] = { total: 0, count: 0 };
+    groups[row.source].total += row.amount;
+    groups[row.source].count++;
+  }
+
+  return Object.entries(groups)
+    .map(([source, g]) => ({
+      source,
+      label: LABELS[source] ?? source,
+      total: g.total,
+      count: g.count,
+      color: COLORS[source] ?? '#9CA3AF',
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+export async function fetchCoinFlow(
+  supabase: any, cutoff: string | null,
+): Promise<CoinFlow[]> {
+  let q = supabase.from('coin_transactions').select('amount, created_at').order('created_at');
+  if (cutoff) q = q.gte('created_at', cutoff);
+  const { data } = await q;
+  if (!data) return [];
+
+  const byDay: Record<string, { earned: number; spent: number }> = {};
+  for (const row of data) {
+    const day = row.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { earned: 0, spent: 0 };
+    if (row.amount >= 0) byDay[day].earned += row.amount;
+    else byDay[day].spent += Math.abs(row.amount);
+  }
+
+  let balance = 0;
+  return Object.entries(byDay)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, d]) => {
+      balance += d.earned - d.spent;
+      return { date, earned: d.earned, spent: d.spent, balance };
+    });
+}
+
+export async function fetchGamificationOverview(
+  supabase: any, cutoff: string | null,
+): Promise<GamificationOverview> {
+  const [profileRes, xpRes, coinRes, inventoryRes, levelRes] = await Promise.all([
+    supabase.from('user_gamification').select('*').maybeSingle(),
+    (() => { let q = supabase.from('xp_transactions').select('amount, source, created_at');
+      if (cutoff) q = q.gte('created_at', cutoff); return q; })(),
+    (() => { let q = supabase.from('coin_transactions').select('amount, created_at');
+      if (cutoff) q = q.gte('created_at', cutoff); return q; })(),
+    supabase.from('user_inventory').select('id'),
+    supabase.from('level_definitions').select('title').eq('level', 1).maybeSingle(),
+  ]);
+
+  const profile = profileRes.data;
+  const xpData = xpRes.data ?? [];
+  const coinData = coinRes.data ?? [];
+
+  const totalXP = profile?.xp ?? 0;
+  const currentLevel = profile?.level ?? 1;
+  const levelTitle = profile?.equipped_title ?? levelRes.data?.title ?? 'Débutant';
+  const totalCoins = profile?.coins ?? 0;
+  const coinsSpent = coinData
+    .filter((c: any) => c.amount < 0)
+    .reduce((s: number, c: any) => s + Math.abs(c.amount), 0);
+
+  const activeDates = new Set(xpData.map((x: any) => x.created_at.split('T')[0]));
+  const totalPurchases = coinData.filter((c: any) => c.amount < 0).length;
+
+  return {
+    totalXP,
+    currentLevel,
+    levelTitle,
+    totalCoins,
+    coinsSpent,
+    currentStreak: profile?.current_streak ?? 0,
+    longestStreak: profile?.longest_streak ?? 0,
+    itemsOwned: inventoryRes.data?.length ?? 0,
+    totalPurchases,
+    daysActive: activeDates.size,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// AI / CONVERSATION STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchConversationActivity(
+  supabase: any, cutoff: string | null,
+): Promise<ConversationActivity[]> {
+  let cq = supabase.from('ai_conversations').select('id, created_at').order('created_at');
+  if (cutoff) cq = cq.gte('created_at', cutoff);
+  const { data: convos } = await cq;
+  if (!convos || convos.length === 0) return [];
+
+  let mq = supabase.from('ai_messages').select('conversation_id, created_at').order('created_at');
+  if (cutoff) mq = mq.gte('created_at', cutoff);
+  const { data: msgs } = await mq;
+
+  const byDay: Record<string, { conversations: Set<string>; messages: number }> = {};
+  for (const c of convos) {
+    const day = c.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { conversations: new Set(), messages: 0 };
+    byDay[day].conversations.add(c.id);
+  }
+  for (const m of (msgs ?? [])) {
+    const day = m.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { conversations: new Set(), messages: 0 };
+    byDay[day].messages++;
+  }
+
+  return Object.entries(byDay)
+    .map(([date, d]) => ({ date, conversations: d.conversations.size, messages: d.messages }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchAIOverview(
+  supabase: any, cutoff: string | null,
+): Promise<AIOverview> {
+  let cq = supabase.from('ai_conversations').select('id, title, created_at');
+  if (cutoff) cq = cq.gte('created_at', cutoff);
+  const { data: convos } = await cq;
+
+  let mq = supabase.from('ai_messages').select('conversation_id, role, created_at');
+  if (cutoff) mq = mq.gte('created_at', cutoff);
+  const { data: msgs } = await mq;
+
+  const totalConversations = convos?.length ?? 0;
+  const totalMessages = msgs?.length ?? 0;
+  const userMessages = msgs?.filter((m: any) => m.role === 'user').length ?? 0;
+  const assistantMessages = msgs?.filter((m: any) => m.role === 'assistant').length ?? 0;
+
+  const avgMessagesPerConvo = totalConversations > 0
+    ? Math.round((totalMessages / totalConversations) * 10) / 10
+    : 0;
+
+  // Messages per conversation for longest
+  const msgCountByConvo: Record<string, number> = {};
+  for (const m of (msgs ?? [])) {
+    msgCountByConvo[m.conversation_id] = (msgCountByConvo[m.conversation_id] ?? 0) + 1;
+  }
+
+  let longestConversation: AIOverview['longestConversation'] = null;
+  if (convos && convos.length > 0) {
+    let maxCount = 0;
+    for (const c of convos) {
+      const cnt = msgCountByConvo[c.id] ?? 0;
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        longestConversation = { id: c.id, title: c.title ?? 'Sans titre', messageCount: cnt };
+      }
+    }
+  }
+
+  // Active days
+  const activeDates = new Set((msgs ?? []).map((m: any) => m.created_at.split('T')[0]));
+
+  // Avg conversations per week
+  const weeks = new Set((convos ?? []).map((c: any) => {
+    const d = new Date(c.created_at);
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay() + 1);
+    return weekStart.toISOString().split('T')[0];
+  }));
+  const avgConvosPerWeek = weeks.size > 0
+    ? Math.round((totalConversations / weeks.size) * 10) / 10
+    : 0;
+
+  return {
+    totalConversations,
+    totalMessages,
+    userMessages,
+    assistantMessages,
+    avgMessagesPerConvo,
+    avgConvosPerWeek,
+    longestConversation,
+    activeDays: activeDates.size,
   };
 }

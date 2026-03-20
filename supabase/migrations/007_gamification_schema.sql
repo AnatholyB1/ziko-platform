@@ -170,3 +170,68 @@ ALTER TABLE public.user_inventory ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "user_inventory_own" ON public.user_inventory
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- ────────────────────────────────────────────────────────────
+-- 7. REGISTER PLUGINS
+-- ────────────────────────────────────────────────────────────
+
+-- Gamification plugin
+INSERT INTO public.plugins_registry (plugin_id, manifest, bundle_url, is_active, version)
+VALUES (
+  'gamification',
+  '{
+    "id": "gamification",
+    "name": "Récompenses",
+    "version": "1.0.0",
+    "description": "Gagne de l''XP et des pièces en t''entraînant et en complétant tes habitudes. Monte de niveau et débloque des objets dans la boutique !",
+    "icon": "trophy",
+    "category": "coaching",
+    "price": "free",
+    "requiredPermissions": ["read_profile", "read_workout_history"],
+    "userDataKeys": ["gamification"],
+    "aiSkills": [
+      {"name": "gamification_info", "description": "Answer questions about user level, XP, coins, streak, and shop items", "triggerKeywords": ["level","niveau","xp","coins","pièces","streak","série","boutique","shop","récompense","badge","titre"]}
+    ],
+    "routes": [
+      {"path": "/(plugins)/gamification/dashboard", "title": "Récompenses", "icon": "trophy", "showInTabBar": true},
+      {"path": "/(plugins)/gamification/shop", "title": "Boutique", "icon": "cart", "showInTabBar": false}
+    ]
+  }'::jsonb,
+  NULL,
+  TRUE,
+  '1.0.0'
+)
+ON CONFLICT (plugin_id) DO UPDATE
+  SET manifest = EXCLUDED.manifest,
+      version  = EXCLUDED.version;
+
+-- Stats / Analytics plugin (read-only, no tables needed)
+INSERT INTO public.plugins_registry (plugin_id, manifest, bundle_url, is_active, version)
+VALUES (
+  'stats',
+  '{
+    "id": "stats",
+    "name": "Analytics",
+    "version": "1.0.0",
+    "description": "Centre d''analytics complet — séances, habitudes, nutrition, gamification, conversations IA. Charts interactifs, KPIs, tendances.",
+    "icon": "stats-chart",
+    "category": "analytics",
+    "price": "free",
+    "requiredPermissions": ["read_profile", "read_workout_history", "read_habits", "read_nutrition"],
+    "userDataKeys": ["stats", "habits", "nutrition", "gamification", "ai"],
+    "aiSkills": [
+      {"name": "full_analytics", "description": "Answer questions about workout stats, habits, nutrition macros, gamification XP/levels, and AI conversation activity", "triggerKeywords": ["stats","analytics","progress","PR","statistiques","évolution","progrès","habitudes","nutrition","calories","XP","niveau","streak","coins"]}
+    ],
+    "routes": [
+      {"path": "/(plugins)/stats/dashboard", "title": "Analytics", "icon": "stats-chart", "showInTabBar": true},
+      {"path": "/(plugins)/stats/exercise", "title": "Exercise Stats", "icon": "barbell", "showInTabBar": false},
+      {"path": "/(plugins)/stats/session", "title": "Session Detail", "icon": "document-text", "showInTabBar": false}
+    ]
+  }'::jsonb,
+  NULL,
+  TRUE,
+  '1.0.0'
+)
+ON CONFLICT (plugin_id) DO UPDATE
+  SET manifest = EXCLUDED.manifest,
+      version  = EXCLUDED.version;

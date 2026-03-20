@@ -5,24 +5,26 @@ const statsManifest: PluginManifest = {
   name: 'Analytics',
   version: '1.0.0',
   description:
-    'Visualize your workout data with interactive charts — volume trends, muscle distribution, exercise progression, RPE tracking and more.',
+    'Centre d\'analytics complet — séances, habitudes, nutrition, gamification, conversations IA. Charts interactifs, KPIs, tendances.',
   icon: 'stats-chart',
   category: 'analytics',
   price: 'free',
-  requiredPermissions: ['read_profile', 'read_workout_history'],
-  userDataKeys: ['stats'],
+  requiredPermissions: ['read_profile', 'read_workout_history', 'read_habits', 'read_nutrition'],
+  userDataKeys: ['stats', 'habits', 'nutrition', 'gamification', 'ai'],
 
   aiSkills: [
     {
-      name: 'workout_analytics',
+      name: 'full_analytics',
       description:
-        'Answer questions about workout trends, volume progression, exercise PRs, and training frequency',
+        'Answer questions about workout stats, habits completion, nutrition macros, gamification XP/levels, and AI conversation activity',
       triggerKeywords: [
         'stats', 'analytics', 'progress', 'PR', 'personal record',
         'volume', 'trend', 'progression', 'how much', 'how many sessions',
-        'statistiques', 'évolution', 'progrès',
+        'statistiques', 'évolution', 'progrès', 'habitudes', 'nutrition',
+        'calories', 'macros', 'protéines', 'XP', 'level', 'niveau',
+        'streak', 'coins', 'pièces', 'conversations', 'coach',
       ],
-      contextProvider: () => ({ skill: 'workout_analytics' }),
+      contextProvider: () => ({ skill: 'full_analytics' }),
     },
   ],
 

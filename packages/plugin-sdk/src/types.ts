@@ -8,6 +8,8 @@ export type Permission =
   | 'write_profile'
   | 'read_workout_history'
   | 'write_workout'
+  | 'read_habits'
+  | 'write_habits'
   | 'read_nutrition'
   | 'write_nutrition'
   | 'read_ai_history'

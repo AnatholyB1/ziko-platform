@@ -107,6 +107,9 @@ export const useGamificationStore = create<GamificationState>()((set) => ({
 
 // ── Helpers ─────────────────────────────────────────────
 function computeLevelProgress(xp: number, levels: LevelDef[]) {
+  if (levels.length === 0) {
+    return { currentLevel: { level: 1, xp_required: 0, title: 'Débutant', reward_coins: 0 } as LevelDef, nextLevel: null, xpToNext: 0, xpProgress: 1 };
+  }
   const sorted = [...levels].sort((a, b) => a.xp_required - b.xp_required);
   let currentLevel = sorted[0];
   let nextLevel: LevelDef | null = null;

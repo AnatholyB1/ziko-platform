@@ -97,7 +97,8 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
             key={p.value}
             onPress={() => setPeriod(p.value)}
             style={{
-              paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+              height: 36, paddingHorizontal: 16, borderRadius: 20,
+              justifyContent: 'center',
               backgroundColor: period === p.value ? '#FF5C1A' : '#FFFFFF',
               borderWidth: 1,
               borderColor: period === p.value ? '#FF5C1A' : '#E2E0DA',
