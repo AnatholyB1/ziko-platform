@@ -8,6 +8,9 @@ export default function PluginsLayout() {
       <Stack.Screen name="persona/customize" />
       <Stack.Screen name="habits/dashboard" />
       <Stack.Screen name="habits/log" />
+      <Stack.Screen name="stats/dashboard" />
+      <Stack.Screen name="stats/exercise" />
+      <Stack.Screen name="stats/session" />
     </Stack>
   );
 }

@@ -10,6 +10,7 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   nutrition: () => import('@ziko/plugin-nutrition/manifest') as any,
   persona:   () => import('@ziko/plugin-persona/manifest') as any,
   habits:    () => import('@ziko/plugin-habits/manifest') as any,
+  stats:     () => import('@ziko/plugin-stats/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */
