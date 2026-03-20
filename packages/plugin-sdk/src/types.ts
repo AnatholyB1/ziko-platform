@@ -123,6 +123,45 @@ export interface WorkoutSession {
   total_volume_kg: number | null;
 }
 
+export interface ProgramExercise {
+  id: string;
+  workout_id: string;
+  exercise_id: string;
+  sets: number | null;
+  reps: number | null;
+  reps_min: number | null;
+  reps_max: number | null;
+  duration_seconds: number | null;
+  duration_min: number | null;
+  duration_max: number | null;
+  rest_seconds: number | null;
+  weight_kg: number | null;
+  notes: string | null;
+  order_index: number;
+  exercises?: Exercise;
+}
+
+export interface ProgramWorkout {
+  id: string;
+  program_id: string;
+  day_of_week: number | null;
+  name: string;
+  order_index: number;
+  program_exercises?: ProgramExercise[];
+}
+
+export interface WorkoutProgram {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  days_per_week: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  program_workouts?: ProgramWorkout[];
+}
+
 export interface SessionSet {
   id: string;
   session_id: string;

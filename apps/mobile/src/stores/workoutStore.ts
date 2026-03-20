@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { WorkoutSession, Exercise } from '@ziko/plugin-sdk';
+import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramExercise } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 
@@ -12,6 +12,21 @@ interface ActiveSet {
   completed: boolean;
 }
 
+interface ProgramExerciseInput {
+  exercise_id: string;
+  sets: number | null;
+  reps: number | null;
+  reps_min: number | null;
+  reps_max: number | null;
+  duration_seconds: number | null;
+  duration_min: number | null;
+  duration_max: number | null;
+  rest_seconds: number | null;
+  weight_kg: number | null;
+  notes: string | null;
+  order_index: number;
+}
+
 interface WorkoutState {
   currentSession: WorkoutSession | null;
   activeSets: ActiveSet[];
@@ -20,6 +35,8 @@ interface WorkoutState {
   isTimerRunning: boolean;
   recentSessions: WorkoutSession[];
   exercises: Exercise[];
+  programs: WorkoutProgram[];
+  activeProgram: WorkoutProgram | null;
 
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   endSession: () => Promise<void>;
@@ -30,6 +47,15 @@ interface WorkoutState {
   tickRestTimer: () => void;
   loadRecentSessions: (days?: number) => Promise<void>;
   loadExercises: () => Promise<void>;
+  loadPrograms: () => Promise<void>;
+  loadProgramDetail: (programId: string) => Promise<WorkoutProgram | null>;
+  setActiveProgram: (programId: string) => Promise<void>;
+  addWorkoutDay: (programId: string, name: string, dayOfWeek: number) => Promise<ProgramWorkout | null>;
+  deleteWorkoutDay: (workoutId: string) => Promise<void>;
+  addExerciseToWorkout: (workoutId: string, exercise: ProgramExerciseInput) => Promise<ProgramExercise | null>;
+  updateProgramExercise: (exerciseId: string, data: Partial<ProgramExerciseInput>) => Promise<void>;
+  removeProgramExercise: (exerciseId: string) => Promise<void>;
+  reorderProgramExercises: (workoutId: string, exerciseIds: string[]) => Promise<void>;
 }
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
@@ -40,6 +66,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   isTimerRunning: false,
   recentSessions: [],
   exercises: [],
+  programs: [],
+  activeProgram: null,
 
   startSession: async (programWorkoutId, name) => {
     const user = useAuthStore.getState().user;
@@ -151,5 +179,97 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .order('name');
 
     if (data) set({ exercises: data as Exercise[] });
+  },
+
+  loadPrograms: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('workout_programs')
+      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups)))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const programs = data as WorkoutProgram[];
+      const active = programs.find((p) => p.is_active) ?? null;
+      set({ programs, activeProgram: active });
+    }
+  },
+
+  loadProgramDetail: async (programId) => {
+    const { data } = await supabase
+      .from('workout_programs')
+      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups, body_part, equipment, target_muscle)))')
+      .eq('id', programId)
+      .single();
+
+    return (data as WorkoutProgram) ?? null;
+  },
+
+  setActiveProgram: async (programId) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    // Deactivate all first
+    await supabase
+      .from('workout_programs')
+      .update({ is_active: false })
+      .eq('user_id', user.id);
+
+    // Activate selected
+    await supabase
+      .from('workout_programs')
+      .update({ is_active: true })
+      .eq('id', programId);
+
+    // Reload
+    await get().loadPrograms();
+  },
+
+  addWorkoutDay: async (programId, name, dayOfWeek) => {
+    const { data } = await supabase
+      .from('program_workouts')
+      .insert({ program_id: programId, name, day_of_week: dayOfWeek, order_index: dayOfWeek })
+      .select()
+      .single();
+
+    return (data as ProgramWorkout) ?? null;
+  },
+
+  deleteWorkoutDay: async (workoutId) => {
+    await supabase.from('program_workouts').delete().eq('id', workoutId);
+  },
+
+  addExerciseToWorkout: async (workoutId, exercise) => {
+    const { data } = await supabase
+      .from('program_exercises')
+      .insert({ workout_id: workoutId, ...exercise })
+      .select('*, exercises(name, muscle_groups)')
+      .single();
+
+    return (data as ProgramExercise) ?? null;
+  },
+
+  updateProgramExercise: async (exerciseId, updates) => {
+    await supabase
+      .from('program_exercises')
+      .update(updates)
+      .eq('id', exerciseId);
+  },
+
+  removeProgramExercise: async (exerciseId) => {
+    await supabase
+      .from('program_exercises')
+      .delete()
+      .eq('id', exerciseId);
+  },
+
+  reorderProgramExercises: async (workoutId, exerciseIds) => {
+    const updates = exerciseIds.map((id, idx) =>
+      supabase.from('program_exercises').update({ order_index: idx }).eq('id', id)
+    );
+    await Promise.all(updates);
   },
 }));

@@ -9,7 +9,8 @@ import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { useAIStore } from '../../src/stores/aiStore';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { colors, Card, ProgressBar } from '@ziko/ui';
-import { format, startOfDay, differenceInCalendarDays } from 'date-fns';
+import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
+import type { ProgramExercise } from '@ziko/plugin-sdk';
 
 function StreakBadge({ count }: { count: number }) {
   return (
@@ -67,17 +68,21 @@ export default function DashboardScreen() {
   const profile = useAuthStore((s) => s.profile);
   const recentSessions = useWorkoutStore((s) => s.recentSessions);
   const loadRecentSessions = useWorkoutStore((s) => s.loadRecentSessions);
+  const activeProgram = useWorkoutStore((s) => s.activeProgram);
+  const loadPrograms = useWorkoutStore((s) => s.loadPrograms);
+  const startSession = useWorkoutStore((s) => s.startSession);
   const openChat = useAIStore((s) => s.openChat);
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const [refreshing, setRefreshing] = React.useState(false);
 
   useEffect(() => {
     loadRecentSessions(30);
+    loadPrograms();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadRecentSessions(30);
+    await Promise.all([loadRecentSessions(30), loadPrograms()]);
     setRefreshing(false);
   };
 
@@ -111,6 +116,54 @@ export default function DashboardScreen() {
     if (h < 18) return 'Good afternoon';
     return 'Good evening';
   }, []);
+
+  // ── Weekly calendar data ──────────────────────────────────
+  // JS getDay: 0=Sun, DB day_of_week: 1=Mon..7=Sun
+  const jsToDb = (jsDay: number) => (jsDay === 0 ? 7 : jsDay);
+  const todayDbDay = jsToDb(getDay(new Date()));
+
+  const weekDays = React.useMemo(() => {
+    const today = startOfDay(new Date());
+    const jsToday = getDay(today); // 0=Sun
+    const mondayOffset = jsToday === 0 ? -6 : 1 - jsToday;
+    const monday = addDays(today, mondayOffset);
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(monday, i);
+      const dbDay = i + 1; // 1=Mon..7=Sun
+      return { date, dbDay, isToday: differenceInCalendarDays(date, today) === 0 };
+    });
+  }, []);
+
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Find today's workout from the active program
+  const todaysWorkout = React.useMemo(() => {
+    if (!activeProgram?.program_workouts) return null;
+    return activeProgram.program_workouts.find((w) => w.day_of_week === todayDbDay) ?? null;
+  }, [activeProgram, todayDbDay]);
+
+  // Scheduled days set from active program
+  const scheduledDays = React.useMemo(() => {
+    if (!activeProgram?.program_workouts) return new Set<number>();
+    return new Set(activeProgram.program_workouts.map((w) => w.day_of_week).filter(Boolean) as number[]);
+  }, [activeProgram]);
+
+  const formatExerciseDetail = (pe: ProgramExercise) => {
+    const parts: string[] = [];
+    if (pe.sets) parts.push(`${pe.sets}×`);
+    if (pe.reps) parts.push(`${pe.reps}`);
+    else if (pe.reps_min && pe.reps_max) parts.push(`${pe.reps_min}-${pe.reps_max}`);
+    else if (pe.duration_seconds) parts.push(`${pe.duration_seconds}s`);
+    else if (pe.duration_min && pe.duration_max) parts.push(`${pe.duration_min}-${pe.duration_max}s`);
+    if (pe.weight_kg) parts.push(`@ ${pe.weight_kg}kg`);
+    return parts.join(' ');
+  };
+
+  const handleStartTodayWorkout = async () => {
+    if (!todaysWorkout) return;
+    await startSession(todaysWorkout.id, todaysWorkout.name);
+    router.push('/(app)/workout/session');
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -156,15 +209,110 @@ export default function DashboardScreen() {
           />
         </MotiView>
 
-        {/* Today summary */}
-        <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
-          Today — {format(new Date(), 'EEEE, MMM d')}
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
-          <DaySummaryCard title="This week" value={weeklyCount} icon="🏋️" color={colors.primary} delay={0} />
-          <DaySummaryCard title="Today" value={todaySession ? '✔' : '—'} icon="⚡" color={todaySession ? colors.accent : colors.textMuted} delay={80} />
-          <DaySummaryCard title="Goal" value={profile?.goal?.replace('_', ' ') ?? '—'} icon="🎯" color={colors.warning} delay={160} />
-        </View>
+        {/* Weekly calendar strip */}
+        <MotiView
+          from={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ type: 'timing', duration: 400, delay: 120 }}
+          style={{ marginBottom: 20 }}
+        >
+          <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+            This week
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {weekDays.map((day, i) => {
+              const hasWorkout = scheduledDays.has(day.dbDay);
+              const hadSession = recentSessions.some(
+                (s) => differenceInCalendarDays(day.date, new Date(s.started_at)) === 0,
+              );
+              return (
+                <View key={i} style={{
+                  flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12,
+                  backgroundColor: day.isToday ? colors.primary : hasWorkout ? colors.surface : 'transparent',
+                  borderWidth: hasWorkout && !day.isToday ? 1 : 0,
+                  borderColor: colors.border,
+                }}>
+                  <Text style={{ color: day.isToday ? '#fff' : colors.textMuted, fontSize: 10, fontWeight: '600' }}>
+                    {DAY_LABELS[i]}
+                  </Text>
+                  <Text style={{ color: day.isToday ? '#fff' : colors.text, fontSize: 15, fontWeight: '700', marginTop: 2 }}>
+                    {format(day.date, 'd')}
+                  </Text>
+                  {hadSession && (
+                    <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.isToday ? '#fff' : '#4CAF50', marginTop: 3 }} />
+                  )}
+                  {!hadSession && hasWorkout && (
+                    <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: day.isToday ? '#ffffff66' : colors.primary, marginTop: 3 }} />
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </MotiView>
+
+        {/* Today's workout from active program */}
+        {activeProgram ? (
+          <MotiView
+            from={{ opacity: 0, translateY: 8 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 350, delay: 180 }}
+            style={{ marginBottom: 24 }}
+          >
+            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+              Today — {format(new Date(), 'EEEE, MMM d')}
+            </Text>
+            {todaysWorkout ? (
+              <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '600' }}>{activeProgram.name}</Text>
+                    <Text style={{ color: colors.text, fontWeight: '700', fontSize: 17, marginTop: 2 }}>{todaysWorkout.name}</Text>
+                    <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>
+                      {todaysWorkout.program_exercises?.length ?? 0} exercises
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={handleStartTodayWorkout}
+                    style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12 }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Start</Text>
+                  </TouchableOpacity>
+                </View>
+                {(todaysWorkout.program_exercises ?? [])
+                  .sort((a, b) => a.order_index - b.order_index)
+                  .map((pe) => (
+                    <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: colors.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="barbell-outline" size={12} color={colors.primary} />
+                      </View>
+                      <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>{pe.exercises?.name ?? 'Exercise'}</Text>
+                      <Text style={{ color: colors.textMuted, fontSize: 11 }}>{formatExerciseDetail(pe)}</Text>
+                    </View>
+                  ))}
+              </View>
+            ) : (
+              <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}>
+                <Text style={{ fontSize: 28 }}>😌</Text>
+                <Text style={{ color: colors.text, fontWeight: '600', fontSize: 14, marginTop: 8 }}>Rest day</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 4 }}>No workout scheduled for today</Text>
+              </View>
+            )}
+          </MotiView>
+        ) : (
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', duration: 400, delay: 180 }}
+            style={{ marginBottom: 24 }}
+          >
+            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+              Today — {format(new Date(), 'EEEE, MMM d')}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <DaySummaryCard title="This week" value={weeklyCount} icon="🏋️" color={colors.primary} delay={0} />
+              <DaySummaryCard title="Today" value={todaySession ? '✔' : '—'} icon="⚡" color={todaySession ? colors.accent : colors.textMuted} delay={80} />
+              <DaySummaryCard title="Goal" value={profile?.goal?.replace('_', ' ') ?? '—'} icon="🎯" color={colors.warning} delay={160} />
+            </View>
+          </MotiView>
+        )}
 
         {/* Quick actions */}
         <Text style={{ color: colors.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>

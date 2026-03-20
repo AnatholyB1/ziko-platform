@@ -159,7 +159,7 @@ export default function WorkoutSessionScreen() {
                   placeholder="12"
                   placeholderTextColor="#7A7670"
                   keyboardType="number-pad"
-                  style={{ flex: 1, backgroundColor: '#252535', borderRadius: 8, padding: 10, color: '#1C1A17', textAlign: 'center' }}
+                  style={{ flex: 1, backgroundColor: '#F7F6F3', borderRadius: 8, padding: 10, color: '#1C1A17', textAlign: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}
                 />
                 <TextInput
                   value={set.weight}
@@ -167,7 +167,7 @@ export default function WorkoutSessionScreen() {
                   placeholder="60"
                   placeholderTextColor="#7A7670"
                   keyboardType="decimal-pad"
-                  style={{ flex: 1, backgroundColor: '#252535', borderRadius: 8, padding: 10, color: '#1C1A17', textAlign: 'center' }}
+                  style={{ flex: 1, backgroundColor: '#F7F6F3', borderRadius: 8, padding: 10, color: '#1C1A17', textAlign: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}
                 />
                 <TouchableOpacity onPress={() => completeSetHandler(exIdx, setIdx)} style={{ backgroundColor: '#4CAF5022', borderRadius: 8, padding: 8 }}>
                   <Ionicons name="checkmark" size={16} color="#4CAF50" />
