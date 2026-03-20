@@ -5,8 +5,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import { router } from 'expo-router';
 import { format } from 'date-fns';
+import { colors as C } from '@ziko/ui';
 import { useHabitsStore, DEFAULT_HABITS } from '../store';
 import type { Habit } from '../store';
 import {
@@ -43,12 +45,17 @@ function getMotivation(style = 'motivational', completed: number, total: number)
 // ── Progress Ring ─────────────────────────────────────────
 function ProgressRing({ completed, total }: { completed: number; total: number }) {
   const pct = total > 0 ? completed / total : 0;
-  const color = pct === 1 ? '#4CAF50' : pct >= 0.5 ? '#6C63FF' : '#FF9800';
+  const color = pct === 1 ? C.accent : pct >= 0.5 ? C.primary : C.warning;
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', width: 80, height: 80 }}>
+    <MotiView
+      from={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: 'spring', damping: 14 }}
+      style={{ alignItems: 'center', justifyContent: 'center', width: 80, height: 80 }}
+    >
       <View style={{
         width: 80, height: 80, borderRadius: 40,
-        borderWidth: 6, borderColor: '#2E2E40',
+        borderWidth: 6, borderColor: C.border,
         alignItems: 'center', justifyContent: 'center',
       }}>
         <View style={{
@@ -57,10 +64,10 @@ function ProgressRing({ completed, total }: { completed: number; total: number }
           borderTopColor: color,
           transform: [{ rotate: `${pct * 360 - 90}deg` }],
         }} />
-        <Text style={{ color: '#F0F0F5', fontWeight: '800', fontSize: 18 }}>{completed}</Text>
-        <Text style={{ color: '#8888A8', fontSize: 11 }}>/ {total}</Text>
+        <Text style={{ color: C.text, fontWeight: '800', fontSize: 18 }}>{completed}</Text>
+        <Text style={{ color: C.textMuted, fontSize: 11 }}>/ {total}</Text>
       </View>
-    </View>
+    </MotiView>
   );
 }
 
@@ -84,14 +91,19 @@ function HabitCard({
   const isAuto = habit.source !== 'manual';
 
   return (
-    <View style={{
-      backgroundColor: '#1A1A24',
-      borderRadius: 16,
-      padding: 16,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: isCompleted ? habit.color + '66' : '#2E2E40',
-    }}>
+    <MotiView
+      from={{ opacity: 0, translateY: 8 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: 'timing', duration: 300 }}
+      style={{
+        backgroundColor: C.surface,
+        borderRadius: 18,
+        padding: 16,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: isCompleted ? habit.color + '66' : C.border,
+      }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         {/* Emoji + color dot */}
         <View style={{
@@ -105,15 +117,15 @@ function HabitCard({
         {/* Name + streak */}
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 15 }}>{habit.name}</Text>
+            <Text style={{ color: C.text, fontWeight: '600', fontSize: 15 }}>{habit.name}</Text>
             {isAuto && (
-              <View style={{ backgroundColor: '#2E2E40', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                <Text style={{ color: '#8888A8', fontSize: 10 }}>auto</Text>
+              <View style={{ backgroundColor: C.surfaceLight, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                <Text style={{ color: C.textMuted, fontSize: 10 }}>auto</Text>
               </View>
             )}
           </View>
           {streak > 0 && (
-            <Text style={{ color: '#FF9800', fontSize: 12, marginTop: 2 }}>🔥 {streak} day streak</Text>
+            <Text style={{ color: C.warning, fontSize: 12, marginTop: 2 }}>🔥 {streak} day streak</Text>
           )}
         </View>
 
@@ -122,7 +134,7 @@ function HabitCard({
           <Ionicons
             name={habit.reminder_time ? 'notifications' : 'notifications-outline'}
             size={18}
-            color={habit.reminder_time ? habit.color : '#8888A8'}
+            color={habit.reminder_time ? habit.color : C.textMuted}
           />
         </TouchableOpacity>
       </View>
@@ -135,7 +147,7 @@ function HabitCard({
             disabled={isAuto}
             style={{
               flex: 1,
-              backgroundColor: isCompleted ? habit.color : '#2E2E40',
+              backgroundColor: isCompleted ? habit.color : C.surfaceLight,
               borderRadius: 12,
               paddingVertical: 12,
               alignItems: 'center',
@@ -148,9 +160,9 @@ function HabitCard({
             <Ionicons
               name={isCompleted ? 'checkmark-circle' : 'ellipse-outline'}
               size={20}
-              color={isCompleted ? '#fff' : '#8888A8'}
+              color={isCompleted ? '#fff' : C.textMuted}
             />
-            <Text style={{ color: isCompleted ? '#fff' : '#8888A8', fontWeight: '600', fontSize: 14 }}>
+            <Text style={{ color: isCompleted ? '#fff' : C.textMuted, fontWeight: '600', fontSize: 14 }}>
               {isCompleted ? 'Done!' : isAuto ? 'Auto-tracked' : 'Mark done'}
             </Text>
           </TouchableOpacity>
@@ -159,16 +171,16 @@ function HabitCard({
             {/* Count progress bar + buttons */}
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                <Text style={{ color: '#8888A8', fontSize: 13 }}>
+                <Text style={{ color: C.textMuted, fontSize: 13 }}>
                   {value} / {habit.target} {habit.unit ?? ''}
                 </Text>
-                {isCompleted && <Text style={{ color: '#4CAF50', fontSize: 13 }}>✓ Goal reached!</Text>}
+                {isCompleted && <Text style={{ color: C.accent, fontSize: 13 }}>✓ Goal reached!</Text>}
               </View>
-              <View style={{ height: 6, backgroundColor: '#2E2E40', borderRadius: 3 }}>
+              <View style={{ height: 6, backgroundColor: C.border, borderRadius: 3 }}>
                 <View style={{
                   width: `${Math.min((value / habit.target) * 100, 100)}%`,
                   height: '100%',
-                  backgroundColor: isCompleted ? '#4CAF50' : habit.color,
+                  backgroundColor: isCompleted ? C.accent : habit.color,
                   borderRadius: 3,
                 }} />
               </View>
@@ -186,7 +198,7 @@ function HabitCard({
           </>
         )}
       </View>
-    </View>
+    </MotiView>
   );
 }
 
@@ -210,24 +222,24 @@ function ReminderModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#1A1A24', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
-          <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 18, marginBottom: 4 }}>
+        <View style={{ backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+          <Text style={{ color: C.text, fontWeight: '700', fontSize: 18, marginBottom: 4 }}>
             {habit?.emoji} Set Reminder
           </Text>
-          <Text style={{ color: '#8888A8', fontSize: 14, marginBottom: 20 }}>
+          <Text style={{ color: C.textMuted, fontSize: 14, marginBottom: 20 }}>
             Daily reminder at what time for "{habit?.name}"?
           </Text>
           <TextInput
             value={time}
             onChangeText={setTime}
             placeholder="HH:MM"
-            placeholderTextColor="#8888A8"
+            placeholderTextColor={C.textMuted}
             keyboardType="numbers-and-punctuation"
             style={{
-              backgroundColor: '#0F0F14',
+              backgroundColor: C.background,
               borderRadius: 12,
               padding: 14,
-              color: '#F0F0F5',
+              color: C.text,
               fontSize: 22,
               textAlign: 'center',
               letterSpacing: 4,
@@ -236,7 +248,7 @@ function ReminderModal({
           />
           <TouchableOpacity
             onPress={() => onSave(time)}
-            style={{ backgroundColor: '#6C63FF', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 }}
+            style={{ backgroundColor: C.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 }}
           >
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Save Reminder</Text>
           </TouchableOpacity>
@@ -245,11 +257,11 @@ function ReminderModal({
               onPress={onRemove}
               style={{ borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 8 }}
             >
-              <Text style={{ color: '#F44336', fontSize: 14 }}>Remove Reminder</Text>
+              <Text style={{ color: C.error, fontSize: 14 }}>Remove Reminder</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={onClose} style={{ padding: 14, alignItems: 'center' }}>
-            <Text style={{ color: '#8888A8', fontSize: 14 }}>Cancel</Text>
+            <Text style={{ color: C.textMuted, fontSize: 14 }}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -448,25 +460,30 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
   const motivation = getMotivation(coachingStyle, completedCount, activeHabits.length);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.background }}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
       >
         {/* Header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <MotiView
+          from={{ opacity: 0, translateY: -10 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 380 }}
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}
+        >
           <View>
-            <Text style={{ color: '#8888A8', fontSize: 13 }}>
+            <Text style={{ color: C.textMuted, fontSize: 13 }}>
               {format(new Date(), 'EEEE, MMM d')}
             </Text>
-            <Text style={{ color: '#F0F0F5', fontSize: 22, fontWeight: '800', marginTop: 2 }}>
+            <Text style={{ color: C.text, fontSize: 22, fontWeight: '800', marginTop: 2 }}>
               Daily Habits
             </Text>
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(plugins)/habits/log' as any)}
             style={{
-              backgroundColor: '#6C63FF',
+              backgroundColor: C.primary,
               borderRadius: 12,
               width: 40, height: 40,
               alignItems: 'center', justifyContent: 'center',
@@ -474,78 +491,92 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
           >
             <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
-        </View>
+        </MotiView>
 
         {/* Progress summary */}
-        <View style={{
-          backgroundColor: '#1A1A24',
-          borderRadius: 20,
-          padding: 20,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 20,
-          marginBottom: 24,
-          borderWidth: 1,
-          borderColor: '#2E2E40',
-        }}>
+        <MotiView
+          from={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', delay: 80 }}
+          style={{
+            backgroundColor: C.surface,
+            borderRadius: 20,
+            padding: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 20,
+            marginBottom: 24,
+            borderWidth: 1,
+            borderColor: C.border,
+          }}
+        >
           <ProgressRing completed={completedCount} total={activeHabits.length} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16 }}>
+            <Text style={{ color: C.text, fontWeight: '700', fontSize: 16 }}>
               {completedCount === activeHabits.length && activeHabits.length > 0
                 ? '🏆 Perfect day!'
                 : `${completedCount} of ${activeHabits.length} done`}
             </Text>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginTop: 4, lineHeight: 18 }}>
+            <Text style={{ color: C.textMuted, fontSize: 13, marginTop: 4, lineHeight: 18 }}>
               {motivation}
             </Text>
-            <Text style={{ color: '#6C63FF', fontSize: 12, marginTop: 6 }}>
+            <Text style={{ color: C.primary, fontSize: 12, marginTop: 6 }}>
               — {agentName}
             </Text>
           </View>
-        </View>
+        </MotiView>
 
         {/* Cross-plugin: nutrition card */}
         {calorieGoal > 0 && (
-          <View style={{
-            backgroundColor: '#4CAF5011',
-            borderRadius: 16,
-            padding: 14,
-            marginBottom: 16,
-            borderWidth: 1,
-            borderColor: '#4CAF5033',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-          }}>
+          <MotiView
+            from={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ type: 'timing', duration: 350, delay: 160 }}
+            style={{
+              backgroundColor: C.accent + '11',
+              borderRadius: 16,
+              padding: 14,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: C.accent + '33',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
             <Text style={{ fontSize: 22 }}>🥗</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 14 }}>
+              <Text style={{ color: C.text, fontWeight: '600', fontSize: 14 }}>
                 Nutrition today
               </Text>
-              <View style={{ height: 4, backgroundColor: '#2E2E40', borderRadius: 2, marginTop: 6 }}>
+              <View style={{ height: 4, backgroundColor: C.border, borderRadius: 2, marginTop: 6 }}>
                 <View style={{
                   width: `${Math.min((totalCalories / calorieGoal) * 100, 100)}%`,
-                  height: '100%', backgroundColor: '#4CAF50', borderRadius: 2,
+                  height: '100%', backgroundColor: C.accent, borderRadius: 2,
                 }} />
               </View>
             </View>
-            <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize: 14 }}>
+            <Text style={{ color: C.accent, fontWeight: '700', fontSize: 14 }}>
               {totalCalories} / {calorieGoal} kcal
             </Text>
-          </View>
+          </MotiView>
         )}
 
         {/* Habit cards */}
         {isLoading && habits.length === 0 ? (
-          <Text style={{ color: '#8888A8', textAlign: 'center', marginTop: 40 }}>Loading habits…</Text>
+          <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 40 }}>Loading habits…</Text>
         ) : activeHabits.length === 0 ? (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            style={{ alignItems: 'center', marginTop: 40 }}
+          >
             <Text style={{ fontSize: 48, marginBottom: 16 }}>🌱</Text>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 18, marginBottom: 8 }}>No habits yet</Text>
-            <Text style={{ color: '#8888A8', textAlign: 'center', fontSize: 14 }}>
+            <Text style={{ color: C.text, fontWeight: '700', fontSize: 18, marginBottom: 8 }}>No habits yet</Text>
+            <Text style={{ color: C.textMuted, textAlign: 'center', fontSize: 14 }}>
               Tap + to add your first habit, or pull to refresh to auto-create defaults.
             </Text>
-          </View>
+          </MotiView>
         ) : (
           activeHabits.map((habit) => (
             <HabitCard

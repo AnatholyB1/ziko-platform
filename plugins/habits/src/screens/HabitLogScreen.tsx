@@ -16,7 +16,7 @@ let usePersonaStore: any = null;
 try { usePersonaStore = require('@ziko/plugin-persona').usePersonaStore; } catch {}
 
 const EMOJI_OPTIONS = ['✅', '💧', '🏋️', '🥗', '😴', '📚', '🧘', '🚶', '🏃', '💊', '🧠', '❤️', '🎯', '🌿', '☀️', '🍎', '🚴', '🧹', '📝', '🎵'];
-const COLOR_OPTIONS = ['#6C63FF', '#2196F3', '#4CAF50', '#FF9800', '#F44336', '#9C27B0', '#00BCD4', '#FF6584', '#FF5722', '#607D8B'];
+const COLOR_OPTIONS = ['#FF5C1A', '#2196F3', '#4CAF50', '#FF9800', '#F44336', '#9C27B0', '#00BCD4', '#FF6584', '#FF5722', '#607D8B'];
 
 export default function HabitLogScreen({ supabase }: { supabase: any }) {
   const agentName = usePersonaStore ? usePersonaStore((s: any) => s.agentName) : 'Ziko';
@@ -24,7 +24,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
 
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('✅');
-  const [color, setColor] = useState('#6C63FF');
+  const [color, setColor] = useState('#FF5C1A');
   const [type, setType] = useState<'boolean' | 'count'>('boolean');
   const [target, setTarget] = useState('1');
   const [unit, setUnit] = useState('');
@@ -81,14 +81,14 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="arrow-back" size={24} color="#6C63FF" />
+            <Ionicons name="arrow-back" size={24} color="#FF5C1A" />
           </TouchableOpacity>
-          <Text style={{ color: '#F0F0F5', fontWeight: '800', fontSize: 22 }}>New Habit</Text>
+          <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 22 }}>New Habit</Text>
         </View>
 
         {/* Name */}
@@ -97,7 +97,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
           value={name}
           onChangeText={setName}
           placeholder="e.g. Drink water"
-          placeholderTextColor="#8888A8"
+          placeholderTextColor="#7A7670"
           style={input}
           autoFocus
         />
@@ -111,7 +111,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
               onPress={() => setEmoji(e)}
               style={{
                 width: 48, height: 48, borderRadius: 14, marginRight: 8,
-                backgroundColor: emoji === e ? color + '44' : '#1A1A24',
+                backgroundColor: emoji === e ? color + '44' : '#FFFFFF',
                 borderWidth: 2, borderColor: emoji === e ? color : 'transparent',
                 alignItems: 'center', justifyContent: 'center',
               }}
@@ -147,12 +147,12 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
               onPress={() => setType(t)}
               style={{
                 flex: 1, paddingVertical: 12, borderRadius: 12,
-                backgroundColor: type === t ? '#6C63FF' : '#1A1A24',
-                borderWidth: 1, borderColor: type === t ? '#6C63FF' : '#2E2E40',
+                backgroundColor: type === t ? '#FF5C1A' : '#FFFFFF',
+                borderWidth: 1, borderColor: type === t ? '#FF5C1A' : '#E2E0DA',
                 alignItems: 'center',
               }}
             >
-              <Text style={{ color: type === t ? '#fff' : '#8888A8', fontWeight: '600' }}>
+              <Text style={{ color: type === t ? '#fff' : '#7A7670', fontWeight: '600' }}>
                 {t === 'boolean' ? '✅ Done / Not done' : '🔢 Count'}
               </Text>
             </TouchableOpacity>
@@ -170,14 +170,14 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
                 keyboardType="number-pad"
                 style={[input, { flex: 1 }]}
                 placeholder="8"
-                placeholderTextColor="#8888A8"
+                placeholderTextColor="#7A7670"
               />
               <TextInput
                 value={unit}
                 onChangeText={setUnit}
                 style={[input, { flex: 2 }]}
                 placeholder="glasses, km, minutes…"
-                placeholderTextColor="#8888A8"
+                placeholderTextColor="#7A7670"
               />
             </View>
           </>
@@ -189,25 +189,25 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
           value={reminderTime}
           onChangeText={setReminderTime}
           placeholder="08:30"
-          placeholderTextColor="#8888A8"
+          placeholderTextColor="#7A7670"
           keyboardType="numbers-and-punctuation"
           style={input}
         />
-        <Text style={{ color: '#8888A8', fontSize: 12, marginTop: -12, marginBottom: 20 }}>
+        <Text style={{ color: '#7A7670', fontSize: 12, marginTop: -12, marginBottom: 20 }}>
           Format HH:MM — leave empty for no reminder
         </Text>
 
         {/* Preview */}
         <View style={{
-          backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginBottom: 28,
+          backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 28,
           borderWidth: 1, borderColor: color + '44', flexDirection: 'row', alignItems: 'center', gap: 12,
         }}>
           <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: color + '22', alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontSize: 24 }}>{emoji}</Text>
           </View>
           <View>
-            <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 15 }}>{name || 'Habit name'}</Text>
-            <Text style={{ color: '#8888A8', fontSize: 12, marginTop: 2 }}>
+            <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>{name || 'Habit name'}</Text>
+            <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 2 }}>
               {type === 'count' ? `Target: ${target} ${unit || 'times'}/day` : 'Daily checkbox'}
               {reminderTime ? `  ·  ⏰ ${reminderTime}` : ''}
             </Text>
@@ -219,11 +219,11 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
           onPress={handleSave}
           disabled={!isValid || isSaving}
           style={{
-            backgroundColor: isValid ? '#6C63FF' : '#2E2E40',
+            backgroundColor: isValid ? '#FF5C1A' : '#E2E0DA',
             borderRadius: 14, paddingVertical: 16, alignItems: 'center',
           }}
         >
-          <Text style={{ color: isValid ? '#fff' : '#8888A8', fontWeight: '700', fontSize: 16 }}>
+          <Text style={{ color: isValid ? '#fff' : '#7A7670', fontWeight: '700', fontSize: 16 }}>
             {isSaving ? 'Saving…' : 'Create Habit'}
           </Text>
         </TouchableOpacity>
@@ -232,15 +232,15 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
   );
 }
 
-const label: any = { color: '#8888A8', fontSize: 13, fontWeight: '500', marginBottom: 8 };
+const label: any = { color: '#7A7670', fontSize: 13, fontWeight: '500', marginBottom: 8 };
 const input: any = {
-  backgroundColor: '#1A1A24',
+  backgroundColor: '#FFFFFF',
   borderRadius: 12,
   borderWidth: 1,
-  borderColor: '#2E2E40',
+  borderColor: '#E2E0DA',
   paddingHorizontal: 16,
   paddingVertical: 14,
-  color: '#F0F0F5',
+  color: '#1C1A17',
   fontSize: 15,
   marginBottom: 20,
 };

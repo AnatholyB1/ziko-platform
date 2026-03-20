@@ -58,14 +58,14 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
   const previewPrompt = `You are ${agentName}, a ${coachingStyle} fitness coach with traits: ${traits.join(', ')}.${backstory ? ` ${backstory}` : ''}`;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#8888A8" />
+          <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#F0F0F5' }}>🧠 My AI Coach</Text>
+        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#1C1A17' }}>🧠 My AI Coach</Text>
         <TouchableOpacity onPress={savePersona} disabled={saving}
-          style={{ backgroundColor: '#6C63FF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, opacity: saving ? 0.6 : 1 }}>
+          style={{ backgroundColor: '#FF5C1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, opacity: saving ? 0.6 : 1 }}>
           <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -74,21 +74,21 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
 
         {/* Agent name */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#8888A8', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
             Coach Name
           </Text>
           <TextInput
             value={agentName}
             onChangeText={setAgentName}
             placeholder="Name your AI coach…"
-            placeholderTextColor="#8888A8"
-            style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 12, color: '#F0F0F5', fontSize: 16, fontWeight: '600' }}
+            placeholderTextColor="#7A7670"
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', fontSize: 16, fontWeight: '600' }}
           />
         </View>
 
         {/* Coaching style */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#8888A8', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
             Coaching Style
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -96,10 +96,10 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
               const active = coachingStyle === style.id;
               return (
                 <TouchableOpacity key={style.id} onPress={() => setCoachingStyle(style.id as any)}
-                  style={{ flex: 1, minWidth: '45%', backgroundColor: active ? '#6C63FF20' : '#1A1A24', borderRadius: 14, borderWidth: 1.5, borderColor: active ? '#6C63FF' : '#2E2E40', padding: 12 }}>
+                  style={{ flex: 1, minWidth: '45%', backgroundColor: active ? '#FF5C1A20' : '#FFFFFF', borderRadius: 14, borderWidth: 1.5, borderColor: active ? '#FF5C1A' : '#E2E0DA', padding: 12 }}>
                   <Text style={{ fontSize: 20, marginBottom: 4 }}>{style.emoji}</Text>
-                  <Text style={{ color: active ? '#6C63FF' : '#F0F0F5', fontWeight: '600', fontSize: 14 }}>{style.label}</Text>
-                  <Text style={{ color: '#8888A8', fontSize: 11 }}>{style.desc}</Text>
+                  <Text style={{ color: active ? '#FF5C1A' : '#1C1A17', fontWeight: '600', fontSize: 14 }}>{style.label}</Text>
+                  <Text style={{ color: '#7A7670', fontSize: 11 }}>{style.desc}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -108,7 +108,7 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
 
         {/* Traits */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#8888A8', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
             Personality Traits ({traits.length}/5)
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -117,8 +117,8 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
               const atMax = traits.length >= 5 && !active;
               return (
                 <TouchableOpacity key={trait} onPress={() => !atMax && toggleTrait(trait)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: active ? '#6C63FF' : '#1A1A24', borderWidth: 1, borderColor: active ? '#6C63FF' : '#2E2E40', opacity: atMax ? 0.4 : 1 }}>
-                  <Text style={{ color: active ? '#fff' : '#8888A8', fontWeight: '600', fontSize: 13 }}>{trait}</Text>
+                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: active ? '#FF5C1A' : '#FFFFFF', borderWidth: 1, borderColor: active ? '#FF5C1A' : '#E2E0DA', opacity: atMax ? 0.4 : 1 }}>
+                  <Text style={{ color: active ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 13 }}>{trait}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -127,64 +127,64 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
 
         {/* Backstory */}
         <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#8888A8', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+          <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
             Coach Backstory (optional)
           </Text>
           <TextInput
             value={backstory}
             onChangeText={setBackstory}
             placeholder="Give your coach a story or special instructions…"
-            placeholderTextColor="#8888A8"
+            placeholderTextColor="#7A7670"
             multiline
             numberOfLines={4}
-            style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 12, color: '#F0F0F5', fontSize: 14, minHeight: 100, textAlignVertical: 'top' }}
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', fontSize: 14, minHeight: 100, textAlignVertical: 'top' }}
           />
         </View>
 
         {/* Preview */}
         <TouchableOpacity onPress={() => setPreviewOpen(!previewOpen)}
-          style={{ backgroundColor: '#1A1A24', borderRadius: 14, borderWidth: 1, borderColor: '#2E2E40', padding: 14, marginBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: '#6C63FF', fontWeight: '600' }}>Preview System Prompt</Text>
-          <Ionicons name={previewOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#6C63FF" />
+          style={{ backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E0DA', padding: 14, marginBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>Preview System Prompt</Text>
+          <Ionicons name={previewOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#FF5C1A" />
         </TouchableOpacity>
         {previewOpen && (
-          <View style={{ backgroundColor: '#0D0D18', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', padding: 14, marginTop: -16, marginBottom: 24 }}>
-            <Text style={{ color: '#8888A8', fontSize: 12, fontFamily: 'monospace' }}>{previewPrompt}</Text>
+          <View style={{ backgroundColor: '#0D0D18', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', padding: 14, marginTop: -16, marginBottom: 24 }}>
+            <Text style={{ color: '#7A7670', fontSize: 12, fontFamily: 'monospace' }}>{previewPrompt}</Text>
           </View>
         )}
 
         {/* Habits */}
         <View style={{ marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={{ color: '#8888A8', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>
               Daily Habits
             </Text>
             <TouchableOpacity onPress={() => setShowHabitModal(true)}>
-              <Ionicons name="add-circle" size={22} color="#6C63FF" />
+              <Ionicons name="add-circle" size={22} color="#FF5C1A" />
             </TouchableOpacity>
           </View>
 
           {habits.length === 0 ? (
-            <Text style={{ color: '#8888A8', fontSize: 13 }}>No habits yet. Add some to track daily!</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13 }}>No habits yet. Add some to track daily!</Text>
           ) : (
             habits.map((habit) => {
               const done = habit.completedDates.includes(today);
               return (
-                <View key={habit.id} style={{ backgroundColor: '#1A1A24', borderRadius: 14, borderWidth: 1, borderColor: done ? '#6C63FF40' : '#2E2E40', padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
+                <View key={habit.id} style={{ backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: done ? '#FF5C1A40' : '#E2E0DA', padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
                   <TouchableOpacity onPress={() => completeHabit(habit.id, today)} style={{ marginRight: 12 }}>
-                    <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: done ? '#6C63FF' : '#8888A8', backgroundColor: done ? '#6C63FF' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: done ? '#FF5C1A' : '#7A7670', backgroundColor: done ? '#FF5C1A' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                       {done && <Ionicons name="checkmark" size={14} color="#fff" />}
                     </View>
                   </TouchableOpacity>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: done ? '#8888A8' : '#F0F0F5', fontWeight: '500', textDecorationLine: done ? 'line-through' : undefined }}>{habit.label}</Text>
-                    <Text style={{ color: '#8888A8', fontSize: 11 }}>{habit.frequency}</Text>
+                    <Text style={{ color: done ? '#7A7670' : '#1C1A17', fontWeight: '500', textDecorationLine: done ? 'line-through' : undefined }}>{habit.label}</Text>
+                    <Text style={{ color: '#7A7670', fontSize: 11 }}>{habit.frequency}</Text>
                   </View>
                   <TouchableOpacity onPress={() => Alert.alert('Remove', `Remove "${habit.label}"?`, [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Remove', style: 'destructive', onPress: () => removeHabit(habit.id) },
                   ])}>
-                    <Ionicons name="trash-outline" size={18} color="#8888A8" />
+                    <Ionicons name="trash-outline" size={18} color="#7A7670" />
                   </TouchableOpacity>
                 </View>
               );
@@ -196,29 +196,29 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
       {/* Add habit modal */}
       <Modal visible={showHabitModal} animationType="fade" transparent>
         <View style={{ flex: 1, backgroundColor: '#00000080', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: '#1A1A24', borderRadius: 20, padding: 24 }}>
-            <Text style={{ color: '#F0F0F5', fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Add Habit</Text>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24 }}>
+            <Text style={{ color: '#1C1A17', fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Add Habit</Text>
             <TextInput
               value={newHabit}
               onChangeText={setNewHabit}
               placeholder="e.g. Drink 2L water"
-              placeholderTextColor="#8888A8"
+              placeholderTextColor="#7A7670"
               autoFocus
-              style={{ backgroundColor: '#0F0F14', borderRadius: 10, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 14, paddingVertical: 10, color: '#F0F0F5', marginBottom: 12 }}
+              style={{ backgroundColor: '#F7F6F3', borderRadius: 10, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 14, paddingVertical: 10, color: '#1C1A17', marginBottom: 12 }}
             />
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
               {(['daily', 'weekly'] as const).map((f) => (
                 <TouchableOpacity key={f} onPress={() => setNewHabitFrequency(f)}
-                  style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: newHabitFrequency === f ? '#6C63FF' : '#0F0F14', alignItems: 'center', borderWidth: 1, borderColor: newHabitFrequency === f ? '#6C63FF' : '#2E2E40' }}>
-                  <Text style={{ color: newHabitFrequency === f ? '#fff' : '#8888A8', fontWeight: '600', textTransform: 'capitalize' }}>{f}</Text>
+                  style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: newHabitFrequency === f ? '#FF5C1A' : '#F7F6F3', alignItems: 'center', borderWidth: 1, borderColor: newHabitFrequency === f ? '#FF5C1A' : '#E2E0DA' }}>
+                  <Text style={{ color: newHabitFrequency === f ? '#fff' : '#7A7670', fontWeight: '600', textTransform: 'capitalize' }}>{f}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={() => setShowHabitModal(false)} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#0F0F14', alignItems: 'center', borderWidth: 1, borderColor: '#2E2E40' }}>
-                <Text style={{ color: '#8888A8', fontWeight: '600' }}>Cancel</Text>
+              <TouchableOpacity onPress={() => setShowHabitModal(false)} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#F7F6F3', alignItems: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}>
+                <Text style={{ color: '#7A7670', fontWeight: '600' }}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={submitHabit} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#6C63FF', alignItems: 'center' }}>
+              <TouchableOpacity onPress={submitHabit} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#FF5C1A', alignItems: 'center' }}>
                 <Text style={{ color: '#fff', fontWeight: '700' }}>Add</Text>
               </TouchableOpacity>
             </View>

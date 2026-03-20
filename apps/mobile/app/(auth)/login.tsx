@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -11,7 +10,10 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
+import { Button, Input, colors, spacing } from '@ziko/ui';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -41,7 +43,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -50,118 +52,95 @@ export default function LoginScreen() {
           contentContainerStyle={{ flexGrow: 1, padding: 24 }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={{ marginTop: 48, marginBottom: 48 }}>
-            <Text style={{ fontSize: 44, fontWeight: '800', color: '#6C63FF', letterSpacing: -1 }}>
+          {/* Logo + tagline */}
+          <MotiView
+            from={{ opacity: 0, translateY: -16 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 500 }}
+            style={{ marginTop: 48, marginBottom: 48 }}
+          >
+            <Text style={{ fontSize: 44, fontWeight: '800', color: colors.primary, letterSpacing: -1 }}>
               Ziko
             </Text>
-            <Text style={{ fontSize: 16, color: '#8888A8', marginTop: 8 }}>
-              Your AI fitness coach
+            <Text style={{ fontSize: 16, color: colors.textMuted, marginTop: 6 }}>
+              Your AI fitness coach âœ¦
             </Text>
-          </View>
+          </MotiView>
 
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#F0F0F5', marginBottom: 32 }}>
-            Welcome back
-          </Text>
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'timing', duration: 450, delay: 100 }}
+          >
+            <Text style={{ fontSize: 26, fontWeight: '700', color: colors.text, marginBottom: 28 }}>
+              Welcome back
+            </Text>
 
-          {/* Email */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Email</Text>
-            <TextInput
+            <Input
+              label="Email"
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
-              placeholderTextColor="#8888A8"
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              style={{
-                backgroundColor: '#1A1A24',
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: '#2E2E40',
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: '#F0F0F5',
-                fontSize: 15,
-              }}
             />
-          </View>
 
-          {/* Password */}
-          <View style={{ marginBottom: 8 }}>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Password</Text>
-            <TextInput
+            <Input
+              label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor="#8888A8"
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               secureTextEntry
               autoComplete="password"
-              style={{
-                backgroundColor: '#1A1A24',
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: '#2E2E40',
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                color: '#F0F0F5',
-                fontSize: 15,
-              }}
             />
-          </View>
 
-          {/* Sign in button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoading}
-            style={{
-              backgroundColor: isLoading ? '#5A52D5' : '#6C63FF',
-              borderRadius: 12,
-              paddingVertical: 16,
-              alignItems: 'center',
-              marginTop: 24,
-              opacity: isLoading ? 0.7 : 1,
-            }}
-          >
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>
-              {isLoading ? 'Signing in…' : 'Sign In'}
-            </Text>
-          </TouchableOpacity>
+            <Button
+              title={isLoading ? 'Signing inâ€¦' : 'Sign In'}
+              onPress={handleLogin}
+              loading={isLoading}
+              size="lg"
+              style={{ marginTop: 8, borderRadius: 14 }}
+            />
 
-          {/* Divider */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#2E2E40' }} />
-            <Text style={{ color: '#8888A8', marginHorizontal: 12, fontSize: 13 }}>or</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: '#2E2E40' }} />
-          </View>
+            {/* Divider */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              <Text style={{ color: colors.textMuted, marginHorizontal: 12, fontSize: 13 }}>or</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            </View>
 
-          {/* Google */}
-          <TouchableOpacity
-            onPress={handleGoogleLogin}
-            style={{
-              backgroundColor: '#1A1A24',
-              borderRadius: 12,
-              paddingVertical: 14,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: '#2E2E40',
-            }}
-          >
-            <Text style={{ color: '#F0F0F5', fontWeight: '500', fontSize: 15 }}>
-              Continue with Google
-            </Text>
-          </TouchableOpacity>
+            {/* Google */}
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                paddingVertical: 15,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: colors.border,
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 10,
+              }}
+            >
+              <Ionicons name="logo-google" size={18} color={colors.text} />
+              <Text style={{ color: colors.text, fontWeight: '500', fontSize: 15 }}>
+                Continue with Google
+              </Text>
+            </TouchableOpacity>
 
-          {/* Register link */}
-          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-            <Text style={{ color: '#8888A8' }}>Don't have an account? </Text>
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={{ color: '#6C63FF', fontWeight: '600' }}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
+            {/* Register link */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl }}>
+              <Text style={{ color: colors.textMuted }}>Don't have an account? </Text>
+              <Link href="/(auth)/register" asChild>
+                <TouchableOpacity>
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign Up</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+          </MotiView>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

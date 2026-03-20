@@ -32,7 +32,7 @@ const MEAL_ICONS: Record<MealType, string> = {
 function MacroBar({ value, goal, color }: { value: number; goal: number; color: string }) {
   const pct = Math.min((value / goal) * 100, 100);
   return (
-    <View style={{ height: 6, backgroundColor: '#2E2E40', borderRadius: 3, overflow: 'hidden' }}>
+    <View style={{ height: 6, backgroundColor: '#E2E0DA', borderRadius: 3, overflow: 'hidden' }}>
       <View style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: 3 }} />
     </View>
   );
@@ -115,40 +115,40 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
   }), {} as Record<MealType, typeof todayLogs>);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#8888A8" />
+          <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#F0F0F5' }}>
+        <Text style={{ flex: 1, fontSize: 24, fontWeight: '800', color: '#1C1A17' }}>
           🥗 Nutrition
         </Text>
         <TouchableOpacity onPress={() => setShowLogModal(true)}
-          style={{ backgroundColor: '#6C63FF', borderRadius: 10, padding: 8 }}>
+          style={{ backgroundColor: '#FF5C1A', borderRadius: 10, padding: 8 }}>
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5C1A" />}>
 
         {/* Date */}
-        <Text style={{ color: '#8888A8', fontSize: 14, marginBottom: 16 }}>
+        <Text style={{ color: '#7A7670', fontSize: 14, marginBottom: 16 }}>
           {format(parseISO(selectedDate), 'EEEE, MMMM d')}
         </Text>
 
         {/* Calories ring summary */}
-        <View style={{ backgroundColor: '#1A1A24', borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#2E2E40' }}>
+        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
             <View>
-              <Text style={{ color: '#F0F0F5', fontWeight: '800', fontSize: 32 }}>{Math.round(totals.kcal)}</Text>
-              <Text style={{ color: '#8888A8', fontSize: 13 }}>of {calorieGoal} kcal</Text>
+              <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 32 }}>{Math.round(totals.kcal)}</Text>
+              <Text style={{ color: '#7A7670', fontSize: 13 }}>of {calorieGoal} kcal</Text>
             </View>
             <Text style={{ color: calorieGoal - totals.kcal > 0 ? '#4CAF50' : '#F44336', fontWeight: '600' }}>
               {calorieGoal - totals.kcal > 0 ? `${Math.round(calorieGoal - totals.kcal)} remaining` : 'Over goal'}
             </Text>
           </View>
-          <MacroBar value={totals.kcal} goal={calorieGoal} color="#6C63FF" />
+          <MacroBar value={totals.kcal} goal={calorieGoal} color="#FF5C1A" />
         </View>
 
         {/* Macros */}
@@ -158,10 +158,10 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
             { label: 'Carbs', value: totals.carbs, goal: calorieGoal / 4, unit: 'g', color: '#FF9800' },
             { label: 'Fat', value: totals.fat, goal: calorieGoal / 9, unit: 'g', color: '#FF6584' },
           ].map((macro) => (
-            <View key={macro.label} style={{ flex: 1, backgroundColor: '#1A1A24', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#2E2E40' }}>
+            <View key={macro.label} style={{ flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#E2E0DA' }}>
               <Text style={{ color: macro.color, fontWeight: '700', fontSize: 16 }}>{Math.round(macro.value)}</Text>
-              <Text style={{ color: '#8888A8', fontSize: 11 }}>{macro.unit}</Text>
-              <Text style={{ color: '#8888A8', fontSize: 11, marginTop: 4 }}>{macro.label}</Text>
+              <Text style={{ color: '#7A7670', fontSize: 11 }}>{macro.unit}</Text>
+              <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 4 }}>{macro.label}</Text>
               <View style={{ marginTop: 6 }}>
                 <MacroBar value={macro.value} goal={macro.goal} color={macro.color} />
               </View>
@@ -173,27 +173,27 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
         {MEAL_TYPES.map((mealType) => (
           <View key={mealType} style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 15 }}>
+              <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>
                 {MEAL_ICONS[mealType]} {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
               </Text>
               <TouchableOpacity onPress={() => { setSelectedMeal(mealType); setShowLogModal(true); }}>
-                <Ionicons name="add-circle-outline" size={20} color="#6C63FF" />
+                <Ionicons name="add-circle-outline" size={20} color="#FF5C1A" />
               </TouchableOpacity>
             </View>
 
             {mealGroups[mealType].length === 0 ? (
-              <Text style={{ color: '#8888A8', fontSize: 13, paddingLeft: 4 }}>Nothing logged yet</Text>
+              <Text style={{ color: '#7A7670', fontSize: 13, paddingLeft: 4 }}>Nothing logged yet</Text>
             ) : (
               mealGroups[mealType].map((log) => (
                 <TouchableOpacity key={log.id} onLongPress={() => deleteLog(log.id)}
-                  style={{ backgroundColor: '#1A1A24', borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#2E2E40', flexDirection: 'row', alignItems: 'center' }}>
+                  style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#F0F0F5', fontWeight: '500', fontSize: 14 }}>{log.food_name}</Text>
-                    <Text style={{ color: '#8888A8', fontSize: 11, marginTop: 2 }}>
+                    <Text style={{ color: '#1C1A17', fontWeight: '500', fontSize: 14 }}>{log.food_name}</Text>
+                    <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 2 }}>
                       P: {log.protein_g}g · C: {log.carbs_g}g · F: {log.fat_g}g
                     </Text>
                   </View>
-                  <Text style={{ color: '#6C63FF', fontWeight: '600' }}>{Math.round(log.calories)} kcal</Text>
+                  <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>{Math.round(log.calories)} kcal</Text>
                 </TouchableOpacity>
               ))
             )}
@@ -203,11 +203,11 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
 
       {/* Log modal */}
       <Modal visible={showLogModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: '#0F0F14', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: '#F7F6F3', padding: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <Text style={{ color: '#F0F0F5', fontSize: 20, fontWeight: '700' }}>Log Food</Text>
+            <Text style={{ color: '#1C1A17', fontSize: 20, fontWeight: '700' }}>Log Food</Text>
             <TouchableOpacity onPress={() => { setShowLogModal(false); setFoodSearch(''); setFoodResults([]); }}>
-              <Ionicons name="close" size={24} color="#8888A8" />
+              <Ionicons name="close" size={24} color="#7A7670" />
             </TouchableOpacity>
           </View>
 
@@ -215,7 +215,7 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
             {MEAL_TYPES.map((type) => (
               <TouchableOpacity key={type} onPress={() => setSelectedMeal(type)}
-                style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: selectedMeal === type ? '#6C63FF' : '#1A1A24', alignItems: 'center', borderWidth: 1, borderColor: selectedMeal === type ? '#6C63FF' : '#2E2E40' }}>
+                style={{ flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: selectedMeal === type ? '#FF5C1A' : '#FFFFFF', alignItems: 'center', borderWidth: 1, borderColor: selectedMeal === type ? '#FF5C1A' : '#E2E0DA' }}>
                 <Text style={{ fontSize: 16 }}>{MEAL_ICONS[type]}</Text>
               </TouchableOpacity>
             ))}
@@ -225,21 +225,21 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
             value={foodSearch}
             onChangeText={(v) => { setFoodSearch(v); searchFood(v); }}
             placeholder="Search food…"
-            placeholderTextColor="#8888A8"
-            style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 12, color: '#F0F0F5', marginBottom: 16 }}
+            placeholderTextColor="#7A7670"
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', marginBottom: 16 }}
           />
 
           <ScrollView>
             {foodResults.map((food) => (
               <TouchableOpacity key={food.id} onPress={() => logFood(food)}
-                style={{ backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#2E2E40', flexDirection: 'row', alignItems: 'center' }}>
+                style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#F0F0F5', fontWeight: '500' }}>{food.name}</Text>
-                  <Text style={{ color: '#8888A8', fontSize: 12, marginTop: 2 }}>
+                  <Text style={{ color: '#1C1A17', fontWeight: '500' }}>{food.name}</Text>
+                  <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 2 }}>
                     per {food.serving_g}g · P:{food.protein_g}g C:{food.carbs_g}g F:{food.fat_g}g
                   </Text>
                 </View>
-                <Text style={{ color: '#6C63FF', fontWeight: '600' }}>{food.calories} kcal</Text>
+                <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>{food.calories} kcal</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>

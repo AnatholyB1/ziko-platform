@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/HabitsDashboardScreen": "./src/screens/HabitsDashboardScreen.tsx",
+    "./screens/HabitLogScreen": "./src/screens/HabitLogScreen.tsx"
+  },
   "scripts": {
     "type-check": "tsc --noEmit"
   },
@@ -14,6 +21,8 @@
     "date-fns": "^4.0.0"
   },
   "peerDependencies": {
+    "expo-constants": "*",
+    "expo-notifications": "*",
     "react": "^19.0.0",
     "react-native": "^0.81.0"
   }

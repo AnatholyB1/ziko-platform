@@ -70,7 +70,8 @@ export const usePluginRegistry = create<PluginRegistryState>()((set, get) => ({
 }));
 
 // ── Per-plugin Zustand store factory ─────────────────────
-const pluginStores: Record<string, ReturnType<typeof create>> = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pluginStores: Record<string, any> = {};
 
 export function usePluginStore<T extends object>(
   pluginId: string,

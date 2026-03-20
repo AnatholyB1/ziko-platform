@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
+    "@gluestack-style/react": "^1.0.57",
+    "@gluestack-ui/config": "^1.1.20",
+    "@gluestack-ui/themed": "^1.1.73",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.47.0",
     "@tanstack/react-query": "^5.62.0",
@@ -37,6 +40,7 @@
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "moti": "^0.29.0",
+    "motion": "^12.38.0",
     "nativewind": "^4.1.0",
     "react": "^19.1.0",
     "react-native": "^0.81.5",

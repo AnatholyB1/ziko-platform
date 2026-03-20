@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/PersonaCustomizeScreen": "./src/screens/PersonaCustomizeScreen.tsx"
+  },
   "scripts": {
     "type-check": "tsc --noEmit"
   },
@@ -12,7 +18,7 @@
     "date-fns": "^4.0.0"
   },
   "peerDependencies": {
-    "react": "^18.3.2",
-    "react-native": "^0.76.3"
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
   }
 }

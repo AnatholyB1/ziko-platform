@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/NutritionDashboard": "./src/screens/NutritionDashboard.tsx",
+    "./screens/LogMealScreen": "./src/screens/LogMealScreen.tsx"
+  },
   "scripts": {
     "type-check": "tsc --noEmit"
   },
@@ -10,6 +17,10 @@
     "@ziko/plugin-sdk": "*",
     "@supabase/supabase-js": "^2.47.0",
     "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

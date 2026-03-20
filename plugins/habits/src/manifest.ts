@@ -32,6 +32,46 @@ const habitsManifest: PluginManifest = {
     },
   ],
 
+  aiTools: [
+    {
+      name: 'habits_get_today',
+      description: "Get the user's active habits and their completion status for today.",
+      parameters: { type: 'object', properties: {} },
+    },
+    {
+      name: 'habits_log',
+      description: 'Mark a habit as done or update its count value for today.',
+      parameters: {
+        type: 'object',
+        properties: {
+          habit_id: { type: 'string', description: 'UUID of the habit to log' },
+          value: { type: 'integer', description: 'Value to log (1 for boolean habits)' },
+        },
+        required: ['habit_id'],
+      },
+    },
+    {
+      name: 'habits_get_streaks',
+      description: "Get the current streak for each of the user's habits.",
+      parameters: { type: 'object', properties: {} },
+    },
+    {
+      name: 'habits_create',
+      description: 'Create a new habit for the user.',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Name of the habit' },
+          emoji: { type: 'string', description: 'Single emoji' },
+          type: { type: 'string', enum: ['boolean', 'count'] },
+          target: { type: 'integer', description: 'Target value' },
+          unit: { type: 'string', description: 'Unit for count habits' },
+        },
+        required: ['name'],
+      },
+    },
+  ],
+
   aiSystemPromptAddition: `
 ## Daily Habits Plugin
 You have access to the user's daily habit tracker. When they ask about their habits or consistency:

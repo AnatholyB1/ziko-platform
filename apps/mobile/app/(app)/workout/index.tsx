@@ -64,10 +64,10 @@ export default function WorkoutProgramsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
-        <Text style={{ flex: 1, fontSize: 26, fontWeight: '800', color: '#F0F0F5' }}>Workout</Text>
-        <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#6C63FF', borderRadius: 10, padding: 8 }}>
+        <Text style={{ flex: 1, fontSize: 26, fontWeight: '800', color: '#1C1A17' }}>Workout</Text>
+        <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#FF5C1A', borderRadius: 10, padding: 8 }}>
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -75,7 +75,7 @@ export default function WorkoutProgramsScreen() {
       {/* Quick start */}
       <TouchableOpacity
         onPress={() => router.push('/(app)/workout/session')}
-        style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: '#6C63FF', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+        style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: '#FF5C1A', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
       >
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#ffffff22', alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="flash" size={22} color="#fff" />
@@ -89,19 +89,19 @@ export default function WorkoutProgramsScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-          <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16 }}>My Programs</Text>
+          <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>My Programs</Text>
           <TouchableOpacity onPress={() => router.push('/(app)/workout/history')}>
-            <Text style={{ color: '#6C63FF', fontSize: 14 }}>History →</Text>
+            <Text style={{ color: '#FF5C1A', fontSize: 14 }}>History →</Text>
           </TouchableOpacity>
         </View>
 
-        {isLoading && <Text style={{ color: '#8888A8', textAlign: 'center', marginTop: 40 }}>Loading…</Text>}
+        {isLoading && <Text style={{ color: '#7A7670', textAlign: 'center', marginTop: 40 }}>Loading…</Text>}
         {!isLoading && programs.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
             <Text style={{ fontSize: 40 }}>📋</Text>
-            <Text style={{ color: '#F0F0F5', fontSize: 16, fontWeight: '600', marginTop: 12 }}>No programs yet</Text>
-            <Text style={{ color: '#8888A8', marginTop: 8, textAlign: 'center' }}>Create your first workout program to get started</Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#6C63FF', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>
+            <Text style={{ color: '#1C1A17', fontSize: 16, fontWeight: '600', marginTop: 12 }}>No programs yet</Text>
+            <Text style={{ color: '#7A7670', marginTop: 8, textAlign: 'center' }}>Create your first workout program to get started</Text>
+            <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#FF5C1A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>
               <Text style={{ color: '#fff', fontWeight: '600' }}>Create Program</Text>
             </TouchableOpacity>
           </View>
@@ -112,53 +112,53 @@ export default function WorkoutProgramsScreen() {
             key={program.id}
             onPress={() => router.push(`/(app)/workout/${program.id}` as any)}
             onLongPress={() => deleteProgram(program.id)}
-            style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#2E2E40', flexDirection: 'row', alignItems: 'center', gap: 14 }}
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 14 }}
           >
-            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#6C63FF22', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="barbell" size={20} color="#6C63FF" />
+            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="barbell" size={20} color="#FF5C1A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
-              {program.description && <Text style={{ color: '#8888A8', fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
-              {program.days_per_week && (
-                <Text style={{ color: '#6C63FF', fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
+              <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
+              {program.description && <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
+              {program.days_per_week != null && (
+                <Text style={{ color: '#FF5C1A', fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#8888A8" />
+            <Ionicons name="chevron-forward" size={16} color="#7A7670" />
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {/* Create Program Modal */}
       <Modal visible={showCreate} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: '#0F0F14', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: '#F7F6F3', padding: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-            <Text style={{ color: '#F0F0F5', fontSize: 22, fontWeight: '700' }}>New Program</Text>
+            <Text style={{ color: '#1C1A17', fontSize: 22, fontWeight: '700' }}>New Program</Text>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
-              <Ionicons name="close" size={24} color="#8888A8" />
+              <Ionicons name="close" size={24} color="#7A7670" />
             </TouchableOpacity>
           </View>
 
-          <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Program name *</Text>
-          <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. PPL, Upper/Lower" placeholderTextColor="#8888A8"
-            style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 14, color: '#F0F0F5', marginBottom: 16 }} />
+          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Program name *</Text>
+          <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. PPL, Upper/Lower" placeholderTextColor="#7A7670"
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
 
-          <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Description (optional)</Text>
-          <TextInput value={newDesc} onChangeText={setNewDesc} placeholder="Brief description" placeholderTextColor="#8888A8" multiline numberOfLines={3}
-            style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 14, color: '#F0F0F5', marginBottom: 16, height: 80, textAlignVertical: 'top' }} />
+          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Description (optional)</Text>
+          <TextInput value={newDesc} onChangeText={setNewDesc} placeholder="Brief description" placeholderTextColor="#7A7670" multiline numberOfLines={3}
+            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16, height: 80, textAlignVertical: 'top' }} />
 
-          <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Days per week</Text>
+          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Days per week</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 28 }}>
             {['2', '3', '4', '5', '6'].map((d) => (
               <TouchableOpacity key={d} onPress={() => setNewDays(d)}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: newDays === d ? '#6C63FF' : '#1A1A24', alignItems: 'center', borderWidth: 1, borderColor: newDays === d ? '#6C63FF' : '#2E2E40' }}>
-                <Text style={{ color: newDays === d ? '#fff' : '#8888A8', fontWeight: '600' }}>{d}</Text>
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: newDays === d ? '#FF5C1A' : '#FFFFFF', alignItems: 'center', borderWidth: 1, borderColor: newDays === d ? '#FF5C1A' : '#E2E0DA' }}>
+                <Text style={{ color: newDays === d ? '#fff' : '#7A7670', fontWeight: '600' }}>{d}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <TouchableOpacity onPress={createProgram} disabled={!newName.trim()}
-            style={{ backgroundColor: newName.trim() ? '#6C63FF' : '#2E2E40', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+            style={{ backgroundColor: newName.trim() ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Create Program</Text>
           </TouchableOpacity>
         </View>

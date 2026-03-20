@@ -132,7 +132,7 @@ export const DEFAULT_HABITS: Omit<Habit, 'id' | 'user_id'>[] = [
   {
     name: 'Workout',
     emoji: '🏋️',
-    color: '#6C63FF',
+    color: '#FF5C1A',
     type: 'boolean',
     target: 1,
     unit: null,

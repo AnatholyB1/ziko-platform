@@ -1,5 +1,5 @@
 import React from 'react';
-import LogMealScreen from '@ziko/plugin-nutrition/src/screens/LogMealScreen';
+import LogMealScreen from '@ziko/plugin-nutrition/screens/LogMealScreen';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function NutritionLogRoute() {

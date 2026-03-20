@@ -23,6 +23,27 @@ export interface AISkill {
   contextProvider: () => Record<string, unknown>;
 }
 
+export interface AIToolParameter {
+  type: 'string' | 'number' | 'integer' | 'boolean';
+  description?: string;
+  enum?: string[];
+}
+
+/**
+ * Declares an AI tool that the agent can invoke on behalf of the user.
+ * The actual server-side implementation lives in backend/api/src/tools/.
+ * This schema is used to generate the JSON Schema sent to the LLM.
+ */
+export interface AITool {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, AIToolParameter>;
+    required?: string[];
+  };
+}
+
 // ── Plugin Routes ─────────────────────────────────────────
 export interface PluginRoute {
   /** Expo Router path, e.g. "/(plugins)/nutrition/log" */
@@ -54,6 +75,7 @@ export interface PluginManifest {
   /** Zustand store keys this plugin reads / writes */
   userDataKeys: string[];
   aiSkills: AISkill[];
+  aiTools?: AITool[];
   aiPersonaTraits?: string[];
   /** Appended to the AI system prompt when this plugin is active */
   aiSystemPromptAddition?: string;

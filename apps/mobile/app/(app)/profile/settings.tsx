@@ -26,13 +26,13 @@ export default function SettingsScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const fieldStyle = {
-    backgroundColor: '#1A1A24',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2E2E40',
+    borderColor: '#E2E0DA',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#F0F0F5',
+    color: '#1C1A17',
     fontSize: 15,
     marginBottom: 16,
   } as const;
@@ -58,39 +58,39 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#8888A8" />
+          <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#F0F0F5' }}>Edit Profile</Text>
+        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#1C1A17' }}>Edit Profile</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
-        <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Full name</Text>
-        <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#8888A8" style={fieldStyle} />
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Full name</Text>
+        <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#7A7670" style={fieldStyle} />
 
-        <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Age</Text>
-        <TextInput value={age} onChangeText={setAge} placeholder="25" placeholderTextColor="#8888A8" keyboardType="number-pad" style={fieldStyle} />
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Age</Text>
+        <TextInput value={age} onChangeText={setAge} placeholder="25" placeholderTextColor="#7A7670" keyboardType="number-pad" style={fieldStyle} />
 
-        <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Weight (kg)</Text>
-        <TextInput value={weight} onChangeText={setWeight} placeholder="75" placeholderTextColor="#8888A8" keyboardType="decimal-pad" style={fieldStyle} />
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Weight (kg)</Text>
+        <TextInput value={weight} onChangeText={setWeight} placeholder="75" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
 
-        <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Height (cm)</Text>
-        <TextInput value={height} onChangeText={setHeight} placeholder="175" placeholderTextColor="#8888A8" keyboardType="decimal-pad" style={fieldStyle} />
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Height (cm)</Text>
+        <TextInput value={height} onChangeText={setHeight} placeholder="175" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
 
-        <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 10 }}>Fitness Goal</Text>
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 10 }}>Fitness Goal</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
           {GOALS.map((g) => (
             <TouchableOpacity key={g.id} onPress={() => setGoal(g.id)}
-              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: goal === g.id ? '#6C63FF' : '#1A1A24', borderWidth: 1, borderColor: goal === g.id ? '#6C63FF' : '#2E2E40' }}>
-              <Text style={{ color: goal === g.id ? '#fff' : '#8888A8', fontWeight: '500', fontSize: 14 }}>{g.label}</Text>
+              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: goal === g.id ? '#FF5C1A' : '#FFFFFF', borderWidth: 1, borderColor: goal === g.id ? '#FF5C1A' : '#E2E0DA' }}>
+              <Text style={{ color: goal === g.id ? '#fff' : '#7A7670', fontWeight: '500', fontSize: 14 }}>{g.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity onPress={handleSave} disabled={isSaving}
-          style={{ backgroundColor: isSaving ? '#5A52D5' : '#6C63FF', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: isSaving ? 0.7 : 1 }}>
+          style={{ backgroundColor: isSaving ? '#5A52D5' : '#FF5C1A', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: isSaving ? 0.7 : 1 }}>
           <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{isSaving ? 'Saving…' : 'Save Changes'}</Text>
         </TouchableOpacity>
       </ScrollView>

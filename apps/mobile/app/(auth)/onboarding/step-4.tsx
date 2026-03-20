@@ -12,19 +12,19 @@ const FEATURES = [
 
 export default function OnboardingStep4() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flex: 1, padding: 24 }}>
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= 4 ? '#6C63FF' : '#2E2E40' }} />
+            <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= 4 ? '#FF5C1A' : '#E2E0DA' }} />
           ))}
         </View>
 
-        <Text style={{ color: '#8888A8', marginTop: 32, fontSize: 13 }}>Step 4 of 5</Text>
-        <Text style={{ fontSize: 28, fontWeight: '700', color: '#F0F0F5', marginTop: 8 }}>
+        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>Step 4 of 5</Text>
+        <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
           What Ziko offers
         </Text>
-        <Text style={{ color: '#8888A8', marginTop: 8, fontSize: 15, marginBottom: 32 }}>
+        <Text style={{ color: '#7A7670', marginTop: 8, fontSize: 15, marginBottom: 32 }}>
           A complete fitness platform that grows with you.
         </Text>
 
@@ -33,10 +33,10 @@ export default function OnboardingStep4() {
             <View
               key={f.title}
               style={{
-                backgroundColor: '#1A1A24',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 16,
                 borderWidth: 1,
-                borderColor: '#2E2E40',
+                borderColor: '#E2E0DA',
                 padding: 20,
                 marginBottom: 12,
                 flexDirection: 'row',
@@ -46,18 +46,18 @@ export default function OnboardingStep4() {
             >
               <Text style={{ fontSize: 28 }}>{f.emoji}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 16 }}>{f.title}</Text>
-                <Text style={{ color: '#8888A8', fontSize: 13, marginTop: 2 }}>{f.desc}</Text>
+                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 16 }}>{f.title}</Text>
+                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{f.desc}</Text>
               </View>
             </View>
           ))}
         </ScrollView>
 
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, marginBottom: 16 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2E2E40' }}>
-            <Text style={{ color: '#8888A8', fontWeight: '600' }}>Back</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}>
+            <Text style={{ color: '#7A7670', fontWeight: '600' }}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(auth)/onboarding/step-5')} style={{ flex: 2, backgroundColor: '#6C63FF', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/onboarding/step-5')} style={{ flex: 2, backgroundColor: '#FF5C1A', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Continue →</Text>
           </TouchableOpacity>
         </View>

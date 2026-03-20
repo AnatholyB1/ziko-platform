@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+﻿import React, { useState } from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { colors, Input, Button } from '@ziko/ui';
 
 export default function OnboardingStep1() {
   const user = useAuthStore((s) => s.user);
@@ -21,66 +23,65 @@ export default function OnboardingStep1() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, padding: 24 }}>
-        {/* Progress */}
+        {/* Progress dots */}
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <View
+            <MotiView
               key={i}
+              from={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ type: 'spring', delay: i * 60 }}
               style={{
-                flex: 1,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: i <= 1 ? '#6C63FF' : '#2E2E40',
+                flex: 1, height: 4, borderRadius: 2,
+                backgroundColor: i <= 1 ? colors.primary : colors.border,
               }}
             />
           ))}
         </View>
 
-        <Text style={{ color: '#8888A8', marginTop: 32, fontSize: 13 }}>Step 1 of 5</Text>
-        <Text style={{ fontSize: 28, fontWeight: '700', color: '#F0F0F5', marginTop: 8 }}>
-          What's your name?
-        </Text>
-        <Text style={{ color: '#8888A8', marginTop: 8, fontSize: 15 }}>
-          Let's personalise your experience.
-        </Text>
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 400, delay: 200 }}
+        >
+          <Text style={{ color: colors.textMuted, marginTop: 32, fontSize: 13 }}>Step 1 of 5</Text>
+          <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text, marginTop: 8 }}>
+            What's your name?
+          </Text>
+          <Text style={{ color: colors.textMuted, marginTop: 8, fontSize: 15 }}>
+            Let's personalise your experience.
+          </Text>
 
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Your first name"
-          placeholderTextColor="#8888A8"
-          autoFocus
-          style={{
-            backgroundColor: '#1A1A24',
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: '#2E2E40',
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            color: '#F0F0F5',
-            fontSize: 18,
-            marginTop: 32,
-          }}
-        />
+          <View style={{ marginTop: 32 }}>
+            <Input
+              value={name}
+              onChangeText={setName}
+              placeholder="Your first name"
+              autoFocus
+              style={{ fontSize: 18 }}
+            />
+          </View>
+        </MotiView>
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity
-          onPress={handleNext}
-          disabled={!name.trim()}
-          style={{
-            backgroundColor: name.trim() ? '#6C63FF' : '#2E2E40',
-            borderRadius: 12,
-            paddingVertical: 16,
-            alignItems: 'center',
-            marginBottom: 16,
-          }}
+        <MotiView
+          from={{ opacity: 0, translateY: 16 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'timing', duration: 350, delay: 350 }}
         >
-          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Continue →</Text>
-        </TouchableOpacity>
+          <Button
+            title="Continue â†’"
+            onPress={handleNext}
+            disabled={!name.trim()}
+            size="lg"
+            style={{ borderRadius: 14, marginBottom: 16 }}
+          />
+        </MotiView>
       </View>
     </SafeAreaView>
   );
 }
+

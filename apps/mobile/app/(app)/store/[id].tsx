@@ -17,63 +17,63 @@ export default function PluginDetailScreen() {
   }, [id]);
 
   if (!manifest) return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14', alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: '#8888A8' }}>Loading…</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: '#7A7670' }}>Loading…</Text>
     </SafeAreaView>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#8888A8" />
+          <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#F0F0F5' }}>{manifest.name}</Text>
+        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#1C1A17' }}>{manifest.name}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
-        <View style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#2E2E40' }}>
-          <Text style={{ color: '#8888A8', fontSize: 13 }}>Description</Text>
-          <Text style={{ color: '#F0F0F5', fontSize: 15, marginTop: 6, lineHeight: 22 }}>{manifest.description}</Text>
+        <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
+          <Text style={{ color: '#7A7670', fontSize: 13 }}>Description</Text>
+          <Text style={{ color: '#1C1A17', fontSize: 15, marginTop: 6, lineHeight: 22 }}>{manifest.description}</Text>
         </View>
 
         {manifest.aiSkills?.length > 0 && (
-          <View style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#2E2E40' }}>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
+            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
               🤖 AI Skills
             </Text>
             {manifest.aiSkills.map((skill) => (
               <View key={skill.name} style={{ marginBottom: 10 }}>
-                <Text style={{ color: '#6C63FF', fontWeight: '600', fontSize: 14 }}>{skill.name}</Text>
-                <Text style={{ color: '#8888A8', fontSize: 13, marginTop: 2 }}>{skill.description}</Text>
+                <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 14 }}>{skill.name}</Text>
+                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{skill.description}</Text>
               </View>
             ))}
           </View>
         )}
 
         {manifest.requiredPermissions?.length > 0 && (
-          <View style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#2E2E40' }}>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
+            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
               🔐 Required Permissions
             </Text>
             {manifest.requiredPermissions.map((perm) => (
               <View key={perm} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Ionicons name="shield-checkmark-outline" size={14} color="#8888A8" />
-                <Text style={{ color: '#8888A8', fontSize: 13 }}>{perm}</Text>
+                <Ionicons name="shield-checkmark-outline" size={14} color="#7A7670" />
+                <Text style={{ color: '#7A7670', fontSize: 13 }}>{perm}</Text>
               </View>
             ))}
           </View>
         )}
 
         {manifest.routes?.length > 0 && (
-          <View style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#2E2E40' }}>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
+            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
               📍 Added Routes
             </Text>
             {manifest.routes.map((route) => (
               <View key={route.path} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Ionicons name="link-outline" size={14} color="#8888A8" />
-                <Text style={{ color: '#8888A8', fontSize: 13 }}>{route.title}</Text>
+                <Ionicons name="link-outline" size={14} color="#7A7670" />
+                <Text style={{ color: '#7A7670', fontSize: 13 }}>{route.title}</Text>
               </View>
             ))}
           </View>

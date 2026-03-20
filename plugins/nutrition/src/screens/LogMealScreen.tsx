@@ -95,32 +95,32 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="chevron-back" size={24} color="#8888A8" />
+            <Ionicons name="chevron-back" size={24} color="#7A7670" />
           </TouchableOpacity>
-          <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#F0F0F5' }}>Log Meal</Text>
-          {saving && <ActivityIndicator color="#6C63FF" />}
+          <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#1C1A17' }}>Log Meal</Text>
+          {saving && <ActivityIndicator color="#FF5C1A" />}
         </View>
 
         {/* Meal type selector */}
         <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 20, marginBottom: 16 }}>
           {MEAL_TYPES.map((t) => (
-            <TouchableOpacity key={t} onPress={() => setMealType(t)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: mealType === t ? '#6C63FF' : '#1A1A24', alignItems: 'center', borderWidth: 1, borderColor: mealType === t ? '#6C63FF' : '#2E2E40' }}>
-              <Text style={{ color: mealType === t ? '#fff' : '#8888A8', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>{t}</Text>
+            <TouchableOpacity key={t} onPress={() => setMealType(t)} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: mealType === t ? '#FF5C1A' : '#FFFFFF', alignItems: 'center', borderWidth: 1, borderColor: mealType === t ? '#FF5C1A' : '#E2E0DA' }}>
+              <Text style={{ color: mealType === t ? '#fff' : '#7A7670', fontSize: 12, fontWeight: '600', textTransform: 'capitalize' }}>{t}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Tab toggle */}
-        <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: '#1A1A24', borderRadius: 12, padding: 4, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4, marginBottom: 16 }}>
           {(['search', 'custom'] as const).map((t) => (
             <TouchableOpacity key={t} onPress={() => setTab(t)}
-              style={{ flex: 1, paddingVertical: 8, borderRadius: 9, backgroundColor: tab === t ? '#6C63FF' : 'transparent', alignItems: 'center' }}>
-              <Text style={{ color: tab === t ? '#fff' : '#8888A8', fontWeight: '600', fontSize: 14, textTransform: 'capitalize' }}>{t === 'custom' ? 'Custom Entry' : 'Search'}</Text>
+              style={{ flex: 1, paddingVertical: 8, borderRadius: 9, backgroundColor: tab === t ? '#FF5C1A' : 'transparent', alignItems: 'center' }}>
+              <Text style={{ color: tab === t ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 14, textTransform: 'capitalize' }}>{t === 'custom' ? 'Custom Entry' : 'Search'}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -131,35 +131,35 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
               value={query}
               onChangeText={setQuery}
               placeholder="Search food database…"
-              placeholderTextColor="#8888A8"
-              style={{ backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 16, paddingVertical: 12, color: '#F0F0F5', marginBottom: 12, fontSize: 15 }}
+              placeholderTextColor="#7A7670"
+              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', marginBottom: 12, fontSize: 15 }}
               autoFocus
             />
 
             {loading ? (
-              <ActivityIndicator color="#6C63FF" style={{ marginTop: 24 }} />
+              <ActivityIndicator color="#FF5C1A" style={{ marginTop: 24 }} />
             ) : (
               <FlatList
                 data={results}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity onPress={() => logFood(item)}
-                    style={{ backgroundColor: '#1A1A24', borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#2E2E40', flexDirection: 'row', alignItems: 'center' }}>
+                    style={{ backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center' }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#F0F0F5', fontWeight: '600', fontSize: 14 }}>{item.name}</Text>
-                      {item.brand && <Text style={{ color: '#8888A8', fontSize: 11 }}>{item.brand}</Text>}
-                      <Text style={{ color: '#8888A8', fontSize: 11, marginTop: 2 }}>
+                      <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 14 }}>{item.name}</Text>
+                      {item.brand && <Text style={{ color: '#7A7670', fontSize: 11 }}>{item.brand}</Text>}
+                      <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 2 }}>
                         {item.serving_g}g · P{item.protein_g}g · C{item.carbs_g}g · F{item.fat_g}g
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: '#6C63FF', fontWeight: '700' }}>{item.calories}</Text>
-                      <Text style={{ color: '#8888A8', fontSize: 11 }}>kcal</Text>
+                      <Text style={{ color: '#FF5C1A', fontWeight: '700' }}>{item.calories}</Text>
+                      <Text style={{ color: '#7A7670', fontSize: 11 }}>kcal</Text>
                     </View>
                   </TouchableOpacity>
                 )}
                 ListEmptyComponent={
-                  query ? <Text style={{ color: '#8888A8', textAlign: 'center', marginTop: 32 }}>No results for "{query}"</Text> : null
+                  query ? <Text style={{ color: '#7A7670', textAlign: 'center', marginTop: 32 }}>No results for "{query}"</Text> : null
                 }
               />
             )}
@@ -175,20 +175,20 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
               { key: 'fat_g', label: 'Fat (g)', placeholder: '0', keyboard: 'numeric' },
             ].map(({ key, label, placeholder, keyboard }) => (
               <View key={key} style={{ marginBottom: 12 }}>
-                <Text style={{ color: '#8888A8', fontSize: 12, marginBottom: 4 }}>{label}</Text>
+                <Text style={{ color: '#7A7670', fontSize: 12, marginBottom: 4 }}>{label}</Text>
                 <TextInput
                   value={(custom as any)[key]}
                   onChangeText={(v) => setCustom((c) => ({ ...c, [key]: v }))}
                   placeholder={placeholder}
-                  placeholderTextColor="#8888A8"
+                  placeholderTextColor="#7A7670"
                   keyboardType={keyboard as any}
-                  style={{ backgroundColor: '#1A1A24', borderRadius: 10, borderWidth: 1, borderColor: '#2E2E40', paddingHorizontal: 14, paddingVertical: 10, color: '#F0F0F5', fontSize: 15 }}
+                  style={{ backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 14, paddingVertical: 10, color: '#1C1A17', fontSize: 15 }}
                 />
               </View>
             ))}
 
             <TouchableOpacity onPress={submitCustom} disabled={saving}
-              style={{ backgroundColor: '#6C63FF', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8, opacity: saving ? 0.6 : 1 }}>
+              style={{ backgroundColor: '#FF5C1A', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8, opacity: saving ? 0.6 : 1 }}>
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Save Entry</Text>
             </TouchableOpacity>
           </View>

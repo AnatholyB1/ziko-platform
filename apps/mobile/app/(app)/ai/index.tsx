@@ -26,12 +26,12 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
           borderRadius: isUser ? 18 : 18,
           borderBottomRightRadius: isUser ? 4 : 18,
           borderBottomLeftRadius: isUser ? 18 : 4,
-          backgroundColor: isUser ? '#6C63FF' : '#1A1A24',
+          backgroundColor: isUser ? '#FF5C1A' : '#FFFFFF',
           borderWidth: isUser ? 0 : 1,
-          borderColor: '#2E2E40',
+          borderColor: '#E2E0DA',
         }}
       >
-        <Text style={{ color: '#F0F0F5', fontSize: 15, lineHeight: 22 }}>{content}</Text>
+        <Text style={{ color: '#1C1A17', fontSize: 15, lineHeight: 22 }}>{content}</Text>
       </View>
     </View>
   );
@@ -80,15 +80,15 @@ export default function AIScreen() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
-      <View style={{ paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#2E2E40' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#E2E0DA' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#6C63FF', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="sparkles" size={16} color="#fff" />
           </View>
           <View>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16 }}>Ziko AI Coach</Text>
-            <Text style={{ color: isStreaming ? '#4CAF50' : '#8888A8', fontSize: 11 }}>
+            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>Ziko AI Coach</Text>
+            <Text style={{ color: isStreaming ? '#4CAF50' : '#7A7670', fontSize: 11 }}>
               {isStreaming ? '● Thinking…' : '● Online'}
             </Text>
           </View>
@@ -104,17 +104,17 @@ export default function AIScreen() {
           contentContainerStyle={{ paddingVertical: 16 }}
           ListEmptyComponent={
             <View style={{ padding: 24 }}>
-              <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
+              <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
                 Hi! I'm your AI fitness coach 💪
               </Text>
-              <Text style={{ color: '#8888A8', textAlign: 'center', marginBottom: 28 }}>
+              <Text style={{ color: '#7A7670', textAlign: 'center', marginBottom: 28 }}>
                 Ask me anything about training, nutrition, recovery, or your goals.
               </Text>
-              <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 12 }}>Try these:</Text>
+              <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 12 }}>Try these:</Text>
               {suggestions.map((s) => (
                 <TouchableOpacity key={s} onPress={() => setInput(s)}
-                  style={{ backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#2E2E40' }}>
-                  <Text style={{ color: '#F0F0F5', fontSize: 14 }}>{s}</Text>
+                  style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E0DA' }}>
+                  <Text style={{ color: '#1C1A17', fontSize: 14 }}>{s}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -122,24 +122,24 @@ export default function AIScreen() {
         />
 
         {/* Input */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#2E2E40', backgroundColor: '#0F0F14' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, borderTopWidth: 1, borderTopColor: '#E2E0DA', backgroundColor: '#F7F6F3' }}>
           <TextInput
             value={input}
             onChangeText={setInput}
             placeholder="Ask your coach…"
-            placeholderTextColor="#8888A8"
+            placeholderTextColor="#7A7670"
             multiline
             maxLength={1000}
             style={{
               flex: 1,
-              backgroundColor: '#1A1A24',
+              backgroundColor: '#FFFFFF',
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
-              color: '#F0F0F5',
+              color: '#1C1A17',
               fontSize: 15,
               borderWidth: 1,
-              borderColor: '#2E2E40',
+              borderColor: '#E2E0DA',
               maxHeight: 100,
             }}
           />
@@ -150,7 +150,7 @@ export default function AIScreen() {
               width: 44,
               height: 44,
               borderRadius: 22,
-              backgroundColor: input.trim() && !isStreaming ? '#6C63FF' : '#2E2E40',
+              backgroundColor: input.trim() && !isStreaming ? '#FF5C1A' : '#E2E0DA',
               alignItems: 'center',
               justifyContent: 'center',
             }}

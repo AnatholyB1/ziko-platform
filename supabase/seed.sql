@@ -108,7 +108,7 @@ VALUES
     "name": "Nutrition Tracker",
     "version": "1.0.0",
     "description": "Track your daily nutrition: log meals, monitor macros, and get AI-powered dietary advice tailored to your fitness goals.",
-    "icon": "nutrition-icon",
+    "icon": "restaurant",
     "category": "nutrition",
     "price": "free",
     "requiredPermissions": ["read_profile", "read_workout_history"],

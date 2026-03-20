@@ -9,14 +9,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#6C63FF',
-        'primary-dark': '#5A52D5',
-        secondary: '#FF6584',
-        background: '#0F0F14',
-        surface: '#1A1A24',
-        'surface-light': '#252535',
-        border: '#2E2E40',
-        'text-muted': '#8888A8',
+        primary: '#FF5C1A',
+        'primary-dark': '#D94A10',
+        accent: '#FF9500',
+        background: '#F7F6F3',
+        surface: '#FFFFFF',
+        'surface-light': '#EFEFEC',
+        border: '#E2E0DA',
+        'text-base': '#1C1A17',
+        'text-muted': '#7A7670',
+        success: '#22C55E',
+        warning: '#F59E0B',
+        error: '#EF4444',
       },
       fontFamily: {
         sans: ['Inter', 'System'],

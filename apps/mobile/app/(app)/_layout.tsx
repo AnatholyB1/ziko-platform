@@ -20,10 +20,10 @@ function AIChatFAB() {
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#6C63FF',
+        backgroundColor: '#FF5C1A',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#6C63FF',
+        shadowColor: '#FF5C1A',
         shadowOpacity: 0.5,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
@@ -59,15 +59,15 @@ export default function AppLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: '#1A1A24',
-            borderTopColor: '#2E2E40',
+            backgroundColor: '#FFFFFF',
+            borderTopColor: '#E2E0DA',
             borderTopWidth: 1,
             paddingBottom: 8 + insets.bottom,
             paddingTop: 8,
             height: 70 + insets.bottom,
           },
-          tabBarActiveTintColor: '#6C63FF',
-          tabBarInactiveTintColor: '#8888A8',
+          tabBarActiveTintColor: '#FF5C1A',
+          tabBarInactiveTintColor: '#7A7670',
           tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         }}
       >

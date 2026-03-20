@@ -46,50 +46,50 @@ export default function RegisterScreen() {
   };
 
   const fieldStyle = {
-    backgroundColor: '#1A1A24',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2E2E40',
+    borderColor: '#E2E0DA',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#F0F0F5',
+    color: '#1C1A17',
     fontSize: 15,
   } as const;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24 }} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8, marginBottom: 32 }}>
-            <Text style={{ color: '#6C63FF', fontSize: 15 }}>← Back</Text>
+            <Text style={{ color: '#FF5C1A', fontSize: 15 }}>← Back</Text>
           </TouchableOpacity>
 
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#F0F0F5', marginBottom: 8 }}>
+          <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginBottom: 8 }}>
             Create account
           </Text>
-          <Text style={{ color: '#8888A8', fontSize: 15, marginBottom: 32 }}>
+          <Text style={{ color: '#7A7670', fontSize: 15, marginBottom: 32 }}>
             Start your fitness journey today
           </Text>
 
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Full name</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Full name</Text>
             <TextInput
               value={name}
               onChangeText={setName}
               placeholder="John Doe"
-              placeholderTextColor="#8888A8"
+              placeholderTextColor="#7A7670"
               autoComplete="name"
               style={fieldStyle}
             />
           </View>
 
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Email</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Email</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
-              placeholderTextColor="#8888A8"
+              placeholderTextColor="#7A7670"
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
@@ -98,12 +98,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={{ marginBottom: 24 }}>
-            <Text style={{ color: '#8888A8', fontSize: 13, marginBottom: 6 }}>Password</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Password</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
               placeholder="Min. 8 characters"
-              placeholderTextColor="#8888A8"
+              placeholderTextColor="#7A7670"
               secureTextEntry
               style={fieldStyle}
             />
@@ -113,7 +113,7 @@ export default function RegisterScreen() {
             onPress={handleRegister}
             disabled={isLoading}
             style={{
-              backgroundColor: isLoading ? '#5A52D5' : '#6C63FF',
+              backgroundColor: isLoading ? '#5A52D5' : '#FF5C1A',
               borderRadius: 12,
               paddingVertical: 16,
               alignItems: 'center',
@@ -126,10 +126,10 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-            <Text style={{ color: '#8888A8' }}>Already have an account? </Text>
+            <Text style={{ color: '#7A7670' }}>Already have an account? </Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity>
-                <Text style={{ color: '#6C63FF', fontWeight: '600' }}>Sign In</Text>
+                <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>Sign In</Text>
               </TouchableOpacity>
             </Link>
           </View>

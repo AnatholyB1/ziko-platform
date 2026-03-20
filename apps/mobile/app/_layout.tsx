@@ -40,7 +40,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <PluginLoader>
-            <StatusBar style="light" backgroundColor="#0F0F14" />
+            <StatusBar style="dark" backgroundColor="#F7F6F3" />
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(app)" options={{ headerShown: false }} />

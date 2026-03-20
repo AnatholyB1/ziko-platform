@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -16,7 +16,7 @@ interface RegistryPlugin {
 
 const CATEGORY_COLORS: Record<string, string> = {
   nutrition: '#4CAF50',
-  coaching: '#6C63FF',
+  coaching: '#FF5C1A',
   persona: '#FF6584',
   analytics: '#FF9800',
   social: '#00BCD4',
@@ -79,19 +79,19 @@ export default function PluginStoreScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0F0F14' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ padding: 20, paddingBottom: 12 }}>
-        <Text style={{ fontSize: 26, fontWeight: '800', color: '#F0F0F5' }}>Plugin Store</Text>
-        <Text style={{ color: '#8888A8', fontSize: 14, marginTop: 4 }}>Extend Ziko with powerful features</Text>
+        <Text style={{ fontSize: 26, fontWeight: '800', color: '#1C1A17' }}>Plugin Store</Text>
+        <Text style={{ color: '#7A7670', fontSize: 14, marginTop: 4 }}>Extend Ziko with powerful features</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5C1A" />}
       >
         {userPlugins.length > 0 && (
           <>
-            <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Installed</Text>
+            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Installed</Text>
             {plugins.filter((p) => userPlugins.includes(p.plugin_id)).map((p) => (
               <PluginCard key={p.plugin_id} plugin={p} installed onPress={() => {
                 const mainRoute = p.manifest.routes.find((r) => r.showInTabBar) ?? p.manifest.routes[0];
@@ -102,8 +102,8 @@ export default function PluginStoreScreen() {
                     <TouchableOpacity onPress={() => {
                       const mainRoute = p.manifest.routes.find((r) => r.showInTabBar) ?? p.manifest.routes[0];
                       if (mainRoute) router.push(mainRoute.path as any);
-                    }} style={{ backgroundColor: '#6C63FF22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-                      <Text style={{ color: '#6C63FF', fontWeight: '600', fontSize: 13 }}>Open</Text>
+                    }} style={{ backgroundColor: '#FF5C1A22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                      <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 13 }}>Open</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => uninstallPlugin(p.plugin_id)}
                       style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
@@ -112,15 +112,15 @@ export default function PluginStoreScreen() {
                   </View>
                 } />
             ))}
-            <View style={{ height: 1, backgroundColor: '#2E2E40', marginVertical: 20 }} />
+            <View style={{ height: 1, backgroundColor: '#E2E0DA', marginVertical: 20 }} />
           </>
         )}
 
-        <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Available</Text>
+        <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Available</Text>
         {plugins.filter((p) => !userPlugins.includes(p.plugin_id)).map((p) => (
           <PluginCard key={p.plugin_id} plugin={p} installed={false} onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
             action={<TouchableOpacity onPress={() => installPlugin(p.plugin_id, p.manifest)}
-              style={{ backgroundColor: '#6C63FF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+              style={{ backgroundColor: '#FF5C1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
               <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>
                 {p.manifest.price === 'free' ? 'Install Free' : `€${p.manifest.price}`}
               </Text>
@@ -135,32 +135,33 @@ function PluginCard({ plugin, installed, onPress, action }: {
   plugin: RegistryPlugin;
   installed: boolean;
   onPress: () => void;
-  action: React.ReactNode;
+  action: ReactNode;
 }) {
   const m = plugin.manifest;
-  const color = CATEGORY_COLORS[m.category] ?? '#6C63FF';
+  const color = CATEGORY_COLORS[m.category] ?? '#FF5C1A';
   return (
     <TouchableOpacity onPress={onPress}
-      style={{ backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: installed ? '#6C63FF44' : '#2E2E40' }}>
+      style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: installed ? '#FF5C1A44' : '#E2E0DA' }}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
         <View style={{ width: 50, height: 50, borderRadius: 14, backgroundColor: color + '22', alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="grid" size={22} color={color} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#F0F0F5', fontWeight: '700', fontSize: 15 }}>{m.name}</Text>
+          <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15 }}>{m.name}</Text>
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
             <View style={{ backgroundColor: color + '22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
               <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{m.category}</Text>
             </View>
             <View style={{ backgroundColor: '#252535', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
-              <Text style={{ color: '#8888A8', fontSize: 11 }}>{m.price === 'free' ? 'Free' : `€${m.price}`}</Text>
+              <Text style={{ color: '#7A7670', fontSize: 11 }}>{m.price === 'free' ? 'Free' : `€${m.price}`}</Text>
             </View>
           </View>
-          <Text style={{ color: '#8888A8', fontSize: 13, marginTop: 8, lineHeight: 18 }}>{m.description}</Text>
+          <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 8, lineHeight: 18 }}>{m.description}</Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
-        {action}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {action as any}
       </View>
     </TouchableOpacity>
   );
