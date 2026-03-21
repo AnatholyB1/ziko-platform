@@ -7,12 +7,20 @@ import { useAuthStore } from '../stores/authStore';
 
 // Static plugin loaders — Metro bundler requires statically-analyzable imports
 const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>> = {
-  nutrition: () => import('@ziko/plugin-nutrition/manifest') as any,
-  persona:   () => import('@ziko/plugin-persona/manifest') as any,
-  habits:    () => import('@ziko/plugin-habits/manifest') as any,
+  nutrition:     () => import('@ziko/plugin-nutrition/manifest') as any,
+  persona:       () => import('@ziko/plugin-persona/manifest') as any,
+  habits:        () => import('@ziko/plugin-habits/manifest') as any,
   stats:         () => import('@ziko/plugin-stats/manifest') as any,
   gamification:  () => import('@ziko/plugin-gamification/manifest') as any,
   community:     () => import('@ziko/plugin-community/manifest') as any,
+  stretching:    () => import('@ziko/plugin-stretching/manifest') as any,
+  sleep:         () => import('@ziko/plugin-sleep/manifest') as any,
+  measurements:  () => import('@ziko/plugin-measurements/manifest') as any,
+  timer:         () => import('@ziko/plugin-timer/manifest') as any,
+  'ai-programs': () => import('@ziko/plugin-ai-programs/manifest') as any,
+  journal:       () => import('@ziko/plugin-journal/manifest') as any,
+  hydration:     () => import('@ziko/plugin-hydration/manifest') as any,
+  cardio:        () => import('@ziko/plugin-cardio/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */

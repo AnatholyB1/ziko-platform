@@ -1,0 +1,24 @@
+{
+  "name": "@ziko/plugin-ai-programs",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/AIProgramsDashboard": "./src/screens/AIProgramsDashboard.tsx",
+    "./screens/GenerateProgram": "./src/screens/GenerateProgram.tsx"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*",
+    "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  }
+}

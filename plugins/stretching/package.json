@@ -1,0 +1,24 @@
+{
+  "name": "@ziko/plugin-stretching",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/StretchingDashboard": "./src/screens/StretchingDashboard.tsx",
+    "./screens/StretchingSession": "./src/screens/StretchingSession.tsx"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*",
+    "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  }
+}

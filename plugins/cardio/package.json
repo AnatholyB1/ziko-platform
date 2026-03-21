@@ -1,0 +1,24 @@
+{
+  "name": "@ziko/plugin-cardio",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/CardioDashboard": "./src/screens/CardioDashboard.tsx",
+    "./screens/CardioLog": "./src/screens/CardioLog.tsx"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*",
+    "@ziko/ui": "*",
+    "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "expo-router": "*"
+  }
+}

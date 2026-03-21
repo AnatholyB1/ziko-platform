@@ -1,0 +1,25 @@
+{
+  "name": "@ziko/plugin-sleep",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/SleepDashboard": "./src/screens/SleepDashboard.tsx",
+    "./screens/SleepLog": "./src/screens/SleepLog.tsx"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*",
+    "zustand": "^5.0.0",
+    "date-fns": "^4.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  }
+}

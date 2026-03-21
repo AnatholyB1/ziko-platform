@@ -15,21 +15,32 @@ Project context and conventions for AI assistants working in this codebase.
 ```
 apps/mobile/          → Expo SDK 54 + Expo Router v4 (iOS & Android)
 packages/
-  plugin-sdk/         → Plugin contracts, TS types, shared hooks
+  plugin-sdk/         → Plugin contracts, TS types, shared hooks, i18n, theme
   ai-client/          → AIBridge — SSE streaming AI agent client
   ui/                 → Shared React Native component library
-plugins/
+plugins/              → 14 plugins total
   habits/             → Daily Habits & Goals plugin
   nutrition/          → Nutrition Tracker plugin
-  persona/            → AI Persona plugin
-backend/api/          → Hono v4 REST API (AI orchestrator + plugin management)
+  persona/            → AI Persona & coaching style
+  stats/              → Analytics & charts
+  gamification/       → XP, levels, coins, shop
+  community/          → Friends, challenges, chat, leaderboards
+  stretching/         → Stretching & mobility routines
+  sleep/              → Sleep tracking & recovery score
+  measurements/       → Body measurements & progression
+  timer/              → Tabata, HIIT, EMOM timers
+  ai-programs/        → AI-generated workout programs
+  journal/            → Mood, energy, stress journal
+  hydration/          → Daily water intake tracking
+  cardio/             → Running, cycling, swimming tracking
+backend/api/          → Hono v4 REST API (deployed on Vercel)
   src/
     routes/ai.ts      → AI chat endpoints (stream + sync)
     tools/            → AI tool implementations (habits, nutrition, registry)
     context/          → Context layers (user.ts, conversation.ts)
     middleware/auth.ts → Supabase JWT auth middleware
 supabase/
-  migrations/         → SQL schema (RLS, triggers, extensions)
+  migrations/         → 12 SQL migrations (RLS, triggers, extensions)
   seed.sql            → Default exercises, plugins registry, food database
 ```
 
@@ -77,15 +88,22 @@ npm run dev              # Start API with tsx watch (auto-loads .env)
 ### `apps/mobile/.env` (prefix: `EXPO_PUBLIC_`)
 ```
 EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=       ← NOT EXPO_PUBLIC_SUPABASE_KEY
-EXPO_PUBLIC_API_URL=                 ← Hono API base URL
+EXPO_PUBLIC_SUPABASE_KEY=            ← publishable key (NOT ANON_KEY)
+EXPO_PUBLIC_API_URL=                 ← Hono API base URL (https://ziko-api-lilac.vercel.app)
 ```
 
 ### `backend/api/.env`
 ```
 SUPABASE_URL=
-SUPABASE_SERVICE_KEY=                ← NOT SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_PUBLISHABLE_KEY=           ← publishable key (NOT SERVICE_KEY)
 ANTHROPIC_API_KEY=
+```
+
+### `.gitignore` pattern
+```
+.env
+.env.*
+!.env.example
 ```
 
 ---
@@ -123,7 +141,7 @@ ANTHROPIC_API_KEY=
    - `getOrCreateConversation(userId, conversationId?)` → loads/creates conversation + message history
    - `appendMessages(conversationId, messages)` → persists user + assistant messages
    - `updateConversationTitle(conversationId, title)` → auto-titles from first user message
-3. **Tool Context** — 8 tools (4 habits + 4 nutrition) registered in `backend/api/src/tools/registry.ts`
+3. **Tool Context** — tools registered in `backend/api/src/tools/registry.ts` (habits + nutrition + plugin AI tools)
 
 ### AI SDK v6 Key Differences (from v3)
 - `inputSchema` (not `parameters`)
@@ -167,13 +185,20 @@ export default manifest;
 - `routes[].path` — Expo Router path, e.g. `"/(plugins)/habits/dashboard"`
 - `aiTools` — optional array of `AITool` schemas for function calling
 
-### `PluginLoader`
+### `PluginLoader` (`apps/mobile/src/lib/PluginLoader.tsx`)
 - Reads `mod.default` — the manifest **must** be a default export
+- Static `PLUGIN_LOADERS` map with `() => import('@ziko/plugin-{id}/manifest') as any`
+- Currently registers 14 plugins: nutrition, persona, habits, stats, gamification, community, stretching, sleep, measurements, timer, ai-programs, journal, hydration, cardio
 - Plugin screens are registered as Expo Router file-based routes under `app/(app)/(plugins)/`
+
+### Route Files
+- Each plugin screen has a thin wrapper in `apps/mobile/app/(app)/(plugins)/<plugin>/<screen>.tsx`
+- Pattern: imports screen component + supabase, renders `<ScreenComponent supabase={supabase} />`
 
 ### AI Skills & Tools
 - Each plugin can declare `aiSkills` with `triggerKeywords` for automatic context injection
 - Each plugin can declare `aiTools` with JSON Schema parameters for function calling
+- `aiSystemPromptAddition` — injected into global system prompt when plugin is active
 
 ---
 
@@ -194,6 +219,26 @@ export default manifest;
 
 ### Nutrition Plugin Tables (`003_nutrition_schema.sql`)
 - `nutrition_logs` — meal entries (date, meal_type, food_name, calories, protein_g, carbs_g, fat_g, serving_g)
+
+### Extended Tables (`004`–`011`)
+- `004` — exercises extended fields
+- `005` — program_exercises extended
+- `006` — session analytics
+- `007` — gamification schema (user_xp, shop_items, user_inventory)
+- `008` — plugin reviews
+- `009` — community schema (friendships, challenges, chat)
+- `010` — banners & themes
+- `011` — name_fr column
+
+### New Plugin Tables (`012_new_plugins_schema.sql`)
+- `stretching_logs` — routine name, duration, exercises (JSONB)
+- `sleep_logs` — bedtime, wake_time, duration_hours, quality 1-5 (unique per user+date)
+- `body_measurements` — weight_kg, body_fat_pct, waist/chest/arm/thigh/hip_cm, photo_url
+- `timer_presets` — user custom timer presets (type, work_sec, rest_sec, rounds)
+- `ai_generated_programs` — AI-created workout programs (goal, split, program_data JSONB)
+- `journal_entries` — mood/energy/stress 1-5, context (pre/post workout, morning, evening), notes
+- `hydration_logs` — amount_ml per entry, date
+- `cardio_sessions` — activity_type, duration_min, distance_km, calories, pace, heart_rate
 
 ### RLS Policy Pattern
 Every table uses Row Level Security:
@@ -227,7 +272,7 @@ CREATE POLICY "<table>_own" ON public.<table>
 
 ## Backend API (Hono)
 
-Base URL: `http://localhost:3000`
+Local: `http://localhost:3000` · Production: `https://ziko-api-lilac.vercel.app`
 
 | Route              | Description                               |
 |--------------------|-------------------------------------------|
@@ -243,11 +288,54 @@ Auth middleware (`src/middleware/auth.ts`) validates Supabase Bearer token via `
 
 ---
 
+## Theme System
+
+- 7 themes available (stored in `useThemeStore` from `@ziko/plugin-sdk`)
+- 8 profile banners
+- Light sport theme — no dark mode
+- Plugins access theme via `useThemeStore((s) => s.theme)`
+
+---
+
+## Internationalization (i18n)
+
+- Uses `useTranslation()` hook from `@ziko/plugin-sdk`
+- ~500+ keys per locale
+- Translation files in plugin-sdk
+- All user-facing strings should use `t('key')` pattern
+
+---
+
+## Plugin Catalog (14 plugins)
+
+| Plugin | ID | AI Skills | AI Tools | Category |
+|--------|----|-----------|----------|----------|
+| Daily Habits & Goals | `habits` | habit_analysis, habit_coaching | 4 tools | coaching |
+| Nutrition Tracker | `nutrition` | meal_planning, calorie_feedback, nutrition_coaching | 4 tools | nutrition |
+| AI Persona | `persona` | — | — | persona |
+| Analytics | `stats` | full_analytics | — | analytics |
+| Récompenses | `gamification` | gamification_info | — | coaching |
+| Communauté | `community` | community_info | — | social |
+| Stretching & Mobilité | `stretching` | stretching_recommendation, stretching_coaching | stretching_get_routines, stretching_log_session, stretching_get_history | training |
+| Sommeil & Récupération | `sleep` | sleep_analysis, recovery_coaching | sleep_log, sleep_get_history, sleep_get_recovery_score | health |
+| Mesures & Progression | `measurements` | body_progress | measurements_log, measurements_get_history, measurements_get_progress | health |
+| Timer & Chrono | `timer` | timer_recommendation | timer_get_presets, timer_create_preset | training |
+| Programmes IA | `ai-programs` | program_generation, program_adaptation | ai_programs_generate, ai_programs_list, ai_programs_adjust | training |
+| Journal & Mindset | `journal` | mood_analysis, mindset_coaching | journal_log_mood, journal_get_history, journal_get_trends | coaching |
+| Hydratation | `hydration` | hydration_tracking | hydration_log, hydration_get_today, hydration_set_goal | health |
+| Cardio & Running | `cardio` | cardio_analysis, running_coaching | cardio_log_session, cardio_get_history, cardio_get_stats | training |
+
+---
+
 ## Known Bugs Fixed
 
-- `EXPO_PUBLIC_SUPABASE_KEY` → renamed to `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` → renamed to `EXPO_PUBLIC_SUPABASE_KEY` (publishable key)
+- `SUPABASE_SERVICE_KEY` → removed from backend, replaced with `SUPABASE_PUBLISHABLE_KEY`
 - `plugins/persona/src/manifest.ts` — fixed to `export default` with correct field names
 - `authStore.ts` — `onAuthStateChange` subscription now properly stored and cleaned up
 - Design system migrated from dark Indigo+Emerald to light sport orange (#FF5C1A) palette
 - AI SDK v6 API differences from v3 (inputSchema, stepCountIs, input/output)
 - `findLast` not available in ES2016 target — use `filter` + last element instead
+- `.env.production` removed from git tracking (security fix)
+- Removed `name_fr` from Supabase queries
+- All screens use `paddingBottom: 100` for tab bar clearance

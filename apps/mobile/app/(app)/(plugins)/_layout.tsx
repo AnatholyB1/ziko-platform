@@ -22,6 +22,20 @@ export default function PluginsLayout() {
       <Stack.Screen name="community/create-challenge" />
       <Stack.Screen name="community/compare" />
       <Stack.Screen name="community/invite" />
+      <Stack.Screen name="stretching/dashboard" />
+      <Stack.Screen name="stretching/session" />
+      <Stack.Screen name="sleep/dashboard" />
+      <Stack.Screen name="sleep/log" />
+      <Stack.Screen name="measurements/dashboard" />
+      <Stack.Screen name="measurements/log" />
+      <Stack.Screen name="timer/dashboard" />
+      <Stack.Screen name="ai-programs/dashboard" />
+      <Stack.Screen name="ai-programs/generate" />
+      <Stack.Screen name="journal/dashboard" />
+      <Stack.Screen name="journal/entry" />
+      <Stack.Screen name="hydration/dashboard" />
+      <Stack.Screen name="cardio/dashboard" />
+      <Stack.Screen name="cardio/log" />
     </Stack>
   );
 }
