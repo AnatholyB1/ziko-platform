@@ -13,6 +13,15 @@ export default function PluginsLayout() {
       <Stack.Screen name="stats/session" />
       <Stack.Screen name="gamification/dashboard" />
       <Stack.Screen name="gamification/shop" />
+      <Stack.Screen name="community/dashboard" />
+      <Stack.Screen name="community/friends" />
+      <Stack.Screen name="community/chat" />
+      <Stack.Screen name="community/conversation" />
+      <Stack.Screen name="community/challenges" />
+      <Stack.Screen name="community/challenge-detail" />
+      <Stack.Screen name="community/create-challenge" />
+      <Stack.Screen name="community/compare" />
+      <Stack.Screen name="community/invite" />
     </Stack>
   );
 }

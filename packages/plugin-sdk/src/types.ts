@@ -13,6 +13,8 @@ export type Permission =
   | 'read_nutrition'
   | 'write_nutrition'
   | 'read_ai_history'
+  | 'read_community'
+  | 'write_community'
   | 'notifications'
   | 'camera';
 

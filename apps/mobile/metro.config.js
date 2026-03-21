@@ -22,7 +22,10 @@ config.resolver.extraNodeModules = {
   '@ziko/ui':               path.resolve(monorepoRoot, 'packages/ui/src'),
   '@ziko/plugin-nutrition': path.resolve(monorepoRoot, 'plugins/nutrition/src'),
   '@ziko/plugin-persona':   path.resolve(monorepoRoot, 'plugins/persona/src'),
-  '@ziko/plugin-habits':    path.resolve(monorepoRoot, 'plugins/habits/src'),
+  '@ziko/plugin-habits':       path.resolve(monorepoRoot, 'plugins/habits/src'),
+  '@ziko/plugin-stats':        path.resolve(monorepoRoot, 'plugins/stats/src'),
+  '@ziko/plugin-gamification': path.resolve(monorepoRoot, 'plugins/gamification/src'),
+  '@ziko/plugin-community':    path.resolve(monorepoRoot, 'plugins/community/src'),
 };
 
 module.exports = config;

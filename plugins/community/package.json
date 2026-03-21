@@ -1,0 +1,35 @@
+{
+  "name": "@ziko/plugin-community",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./store": "./src/store.ts",
+    "./screens/CommunityDashboard": "./src/screens/CommunityDashboard.tsx",
+    "./screens/FriendsScreen": "./src/screens/FriendsScreen.tsx",
+    "./screens/ChatListScreen": "./src/screens/ChatListScreen.tsx",
+    "./screens/ConversationScreen": "./src/screens/ConversationScreen.tsx",
+    "./screens/ChallengesScreen": "./src/screens/ChallengesScreen.tsx",
+    "./screens/ChallengeDetailScreen": "./src/screens/ChallengeDetailScreen.tsx",
+    "./screens/CreateChallengeScreen": "./src/screens/CreateChallengeScreen.tsx",
+    "./screens/CompareScreen": "./src/screens/CompareScreen.tsx",
+    "./screens/InviteScreen": "./src/screens/InviteScreen.tsx"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*",
+    "@supabase/supabase-js": "^2.47.0",
+    "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
