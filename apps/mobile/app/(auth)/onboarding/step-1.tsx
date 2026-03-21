@@ -73,7 +73,7 @@ export default function OnboardingStep1() {
           transition={{ type: 'timing', duration: 350, delay: 350 }}
         >
           <Button
-            title="Continue â†’"
+            title="Continue →"
             onPress={handleNext}
             disabled={!name.trim()}
             size="lg"

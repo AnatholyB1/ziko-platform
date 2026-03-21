@@ -35,13 +35,22 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F7F6F3"
+          "backgroundColor": "#F7F6F3",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 200
         }
       ],
       "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9b672c1a-10c4-4d66-882c-b9a08294650f"
+      }
+    },
+    "owner": "anatholyb"
   }
 }

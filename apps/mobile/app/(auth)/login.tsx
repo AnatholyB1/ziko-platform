@@ -63,7 +63,7 @@ export default function LoginScreen() {
               Ziko
             </Text>
             <Text style={{ fontSize: 16, color: colors.textMuted, marginTop: 6 }}>
-              Your AI fitness coach âœ¦
+              Your AI fitness coach ✦
             </Text>
           </MotiView>
 
@@ -90,13 +90,13 @@ export default function LoginScreen() {
               label="Password"
               value={password}
               onChangeText={setPassword}
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               secureTextEntry
               autoComplete="password"
             />
 
             <Button
-              title={isLoading ? 'Signing inâ€¦' : 'Sign In'}
+              title={isLoading ? 'Signing in…' : 'Sign In'}
               onPress={handleLogin}
               loading={isLoading}
               size="lg"
