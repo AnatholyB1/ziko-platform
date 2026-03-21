@@ -14,15 +14,17 @@ import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
 import { Button, Input, colors, spacing } from '@ziko/ui';
+import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('general.error'), t('auth.fillAll'));
       return;
     }
     setIsLoading(true);
@@ -63,7 +65,7 @@ export default function LoginScreen() {
               Ziko
             </Text>
             <Text style={{ fontSize: 16, color: colors.textMuted, marginTop: 6 }}>
-              Your AI fitness coach ✦
+              {t('auth.tagline')}
             </Text>
           </MotiView>
 
@@ -73,11 +75,11 @@ export default function LoginScreen() {
             transition={{ type: 'timing', duration: 450, delay: 100 }}
           >
             <Text style={{ fontSize: 26, fontWeight: '700', color: colors.text, marginBottom: 28 }}>
-              Welcome back
+              {t('auth.welcomeBack')}
             </Text>
 
             <Input
-              label="Email"
+              label={t('auth.email')}
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
@@ -87,7 +89,7 @@ export default function LoginScreen() {
             />
 
             <Input
-              label="Password"
+              label={t('auth.password')}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
@@ -96,7 +98,7 @@ export default function LoginScreen() {
             />
 
             <Button
-              title={isLoading ? 'Signing in…' : 'Sign In'}
+              title={isLoading ? t('general.loading') : t('auth.login')}
               onPress={handleLogin}
               loading={isLoading}
               size="lg"
@@ -106,7 +108,7 @@ export default function LoginScreen() {
             {/* Divider */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <Text style={{ color: colors.textMuted, marginHorizontal: 12, fontSize: 13 }}>or</Text>
+              <Text style={{ color: colors.textMuted, marginHorizontal: 12, fontSize: 13 }}>{t('general.or')}</Text>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
 
@@ -127,16 +129,16 @@ export default function LoginScreen() {
             >
               <Ionicons name="logo-google" size={18} color={colors.text} />
               <Text style={{ color: colors.text, fontWeight: '500', fontSize: 15 }}>
-                Continue with Google
+                Continuer avec Google
               </Text>
             </TouchableOpacity>
 
             {/* Register link */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl }}>
-              <Text style={{ color: colors.textMuted }}>Don't have an account? </Text>
+              <Text style={{ color: colors.textMuted }}>{t('auth.noAccount')} </Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
-                  <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign Up</Text>
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>{t('auth.register')}</Text>
                 </TouchableOpacity>
               </Link>
             </View>

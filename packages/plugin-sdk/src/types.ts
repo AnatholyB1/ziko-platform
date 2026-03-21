@@ -109,6 +109,7 @@ export interface UserProfile {
 export interface Exercise {
   id: string;
   name: string;
+  name_fr?: string | null;
   category: string;
   muscle_groups: string[];
   instructions: string | null;

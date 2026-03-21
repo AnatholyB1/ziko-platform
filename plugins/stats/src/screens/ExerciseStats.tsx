@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Dimensions, RefreshControl,
 } from 'react-native';
+import { useThemeStore } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -20,16 +21,18 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: 'Tout', value: 'all' },
 ];
 
-const chartBase = {
-  backgroundColor: '#FFFFFF',
-  backgroundGradientFrom: '#FFFFFF',
-  backgroundGradientTo: '#FFFFFF',
-  decimalCount: 0,
-  labelColor: () => '#6B6963',
-  propsForDots: { r: '4', strokeWidth: '2' },
-  propsForBackgroundLines: { stroke: '#E2E0DA', strokeDasharray: '' },
-  style: { borderRadius: 12 },
-};
+function getChartBase(theme: any) {
+  return {
+    backgroundColor: theme.surface,
+    backgroundGradientFrom: theme.surface,
+    backgroundGradientTo: theme.surface,
+    decimalCount: 0,
+    labelColor: () => theme.muted,
+    propsForDots: { r: '4', strokeWidth: '2' },
+    propsForBackgroundLines: { stroke: theme.border, strokeDasharray: '' },
+    style: { borderRadius: 12 },
+  };
+}
 
 function shortDate(iso: string): string {
   const d = new Date(iso);
@@ -43,6 +46,7 @@ function pickLabels(labels: string[], max: number): string[] {
 }
 
 export default function ExerciseStats({ supabase }: { supabase: any }) {
+  const theme = useThemeStore((s) => s.theme);
   const { exerciseId, exerciseName } = useLocalSearchParams<{
     exerciseId: string;
     exerciseName: string;
@@ -73,7 +77,7 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
   })();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
@@ -83,10 +87,10 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
           <Ionicons name="arrow-back" size={24} color="#1C1A17" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: '#1C1A17' }} numberOfLines={1}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text }} numberOfLines={1}>
             {exerciseName ?? 'Exercice'}
           </Text>
-          <Text style={{ fontSize: 13, color: '#6B6963' }}>Progression</Text>
+          <Text style={{ fontSize: 13, color: theme.muted }}>Progression</Text>
         </View>
       </View>
 
@@ -99,14 +103,14 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
             style={{
               height: 36, paddingHorizontal: 16, borderRadius: 20,
               justifyContent: 'center',
-              backgroundColor: period === p.value ? '#FF5C1A' : '#FFFFFF',
+              backgroundColor: period === p.value ? theme.primary : theme.surface,
               borderWidth: 1,
-              borderColor: period === p.value ? '#FF5C1A' : '#E2E0DA',
+              borderColor: period === p.value ? theme.primary : theme.border,
             }}
           >
             <Text style={{
               fontSize: 14, fontWeight: '600',
-              color: period === p.value ? '#FFFFFF' : '#6B6963',
+              color: period === p.value ? theme.surface : theme.muted,
             }}>
               {p.label}
             </Text>
@@ -117,12 +121,12 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 16, paddingBottom: 80 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor="#FF5C1A" />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {/* KPI row */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <MiniKPI label="Max" value={`${maxWeight}kg`} color="#FF5C1A" />
+          <MiniKPI label="Max" value={`${maxWeight}kg`} color={theme.primary} />
           <MiniKPI
             label="Δ"
             value={`${weightDelta >= 0 ? '+' : ''}${weightDelta}kg`}
@@ -143,9 +147,9 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
               width={CHART_W}
               height={200}
               chartConfig={{
-                ...chartBase,
+                ...getChartBase(theme),
                 color: (o = 1) => `rgba(255, 92, 26, ${o})`,
-                propsForDots: { ...chartBase.propsForDots, stroke: '#FF5C1A' },
+                propsForDots: { ...getChartBase(theme).propsForDots, stroke: theme.primary },
               }}
               bezier
               style={{ borderRadius: 12 }}
@@ -166,9 +170,9 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
               width={CHART_W}
               height={200}
               chartConfig={{
-                ...chartBase,
+                ...getChartBase(theme),
                 color: (o = 1) => `rgba(37, 99, 235, ${o})`,
-                propsForDots: { ...chartBase.propsForDots, stroke: '#2563EB' },
+                propsForDots: { ...getChartBase(theme).propsForDots, stroke: '#2563EB' },
               }}
               bezier
               style={{ borderRadius: 12 }}
@@ -189,9 +193,9 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
               width={CHART_W}
               height={200}
               chartConfig={{
-                ...chartBase,
+                ...getChartBase(theme),
                 color: (o = 1) => `rgba(16, 185, 129, ${o})`,
-                propsForDots: { ...chartBase.propsForDots, stroke: '#10B981' },
+                propsForDots: { ...getChartBase(theme).propsForDots, stroke: '#10B981' },
               }}
               bezier
               style={{ borderRadius: 12 }}
@@ -217,9 +221,9 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
               width={CHART_W}
               height={200}
               chartConfig={{
-                ...chartBase,
+                ...getChartBase(theme),
                 color: (o = 1) => `rgba(124, 58, 237, ${o})`,
-                propsForDots: { ...chartBase.propsForDots, stroke: '#7C3AED' },
+                propsForDots: { ...getChartBase(theme).propsForDots, stroke: '#7C3AED' },
               }}
               bezier
               style={{ borderRadius: 12 }}
@@ -232,23 +236,23 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
         {/* Raw data table */}
         {data.length > 0 && (
           <Card title="Historique">
-            <View style={{ flexDirection: 'row', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E2E0DA' }}>
-              <Text style={{ flex: 1, fontSize: 12, fontWeight: '700', color: '#6B6963' }}>Date</Text>
-              <Text style={{ width: 60, fontSize: 12, fontWeight: '700', color: '#6B6963', textAlign: 'right' }}>Poids</Text>
-              <Text style={{ width: 50, fontSize: 12, fontWeight: '700', color: '#6B6963', textAlign: 'right' }}>Reps</Text>
-              <Text style={{ width: 60, fontSize: 12, fontWeight: '700', color: '#6B6963', textAlign: 'right' }}>Volume</Text>
-              <Text style={{ width: 40, fontSize: 12, fontWeight: '700', color: '#6B6963', textAlign: 'right' }}>RPE</Text>
+            <View style={{ flexDirection: 'row', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+              <Text style={{ flex: 1, fontSize: 12, fontWeight: '700', color: theme.muted }}>Date</Text>
+              <Text style={{ width: 60, fontSize: 12, fontWeight: '700', color: theme.muted, textAlign: 'right' }}>Poids</Text>
+              <Text style={{ width: 50, fontSize: 12, fontWeight: '700', color: theme.muted, textAlign: 'right' }}>Reps</Text>
+              <Text style={{ width: 60, fontSize: 12, fontWeight: '700', color: theme.muted, textAlign: 'right' }}>Volume</Text>
+              <Text style={{ width: 40, fontSize: 12, fontWeight: '700', color: theme.muted, textAlign: 'right' }}>RPE</Text>
             </View>
             {[...data].reverse().map((d) => (
               <View key={d.date} style={{
                 flexDirection: 'row', paddingVertical: 8,
-                borderBottomWidth: 1, borderBottomColor: '#F7F6F3',
+                borderBottomWidth: 1, borderBottomColor: theme.background,
               }}>
-                <Text style={{ flex: 1, fontSize: 13, color: '#1C1A17' }}>{shortDate(d.date)}</Text>
-                <Text style={{ width: 60, fontSize: 13, color: '#1C1A17', textAlign: 'right' }}>{d.max_weight}kg</Text>
-                <Text style={{ width: 50, fontSize: 13, color: '#1C1A17', textAlign: 'right' }}>{d.avg_reps}</Text>
-                <Text style={{ width: 60, fontSize: 13, color: '#1C1A17', textAlign: 'right' }}>{d.total_volume}kg</Text>
-                <Text style={{ width: 40, fontSize: 13, color: '#6B6963', textAlign: 'right' }}>
+                <Text style={{ flex: 1, fontSize: 13, color: theme.text }}>{shortDate(d.date)}</Text>
+                <Text style={{ width: 60, fontSize: 13, color: theme.text, textAlign: 'right' }}>{d.max_weight}kg</Text>
+                <Text style={{ width: 50, fontSize: 13, color: theme.text, textAlign: 'right' }}>{d.avg_reps}</Text>
+                <Text style={{ width: 60, fontSize: 13, color: theme.text, textAlign: 'right' }}>{d.total_volume}kg</Text>
+                <Text style={{ width: 40, fontSize: 13, color: theme.muted, textAlign: 'right' }}>
                   {d.avg_rpe != null ? d.avg_rpe : '—'}
                 </Text>
               </View>
@@ -260,7 +264,7 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
         {!loading && data.length === 0 && (
           <View style={{ alignItems: 'center', paddingVertical: 60 }}>
             <Ionicons name="bar-chart-outline" size={48} color="#E2E0DA" />
-            <Text style={{ fontSize: 14, color: '#6B6963', marginTop: 8, textAlign: 'center' }}>
+            <Text style={{ fontSize: 14, color: theme.muted, marginTop: 8, textAlign: 'center' }}>
               Aucune donnée pour cet exercice
             </Text>
           </View>
@@ -274,11 +278,11 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
 function MiniKPI({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <View style={{
-      flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
-      borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center',
+      flex: 1, backgroundColor: theme.surface, borderRadius: 12, padding: 12,
+      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
     }}>
       <Text style={{ fontSize: 16, fontWeight: '800', color }}>{value}</Text>
-      <Text style={{ fontSize: 11, color: '#6B6963', marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -286,10 +290,10 @@ function MiniKPI({ label, value, color }: { label: string; value: string; color:
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={{
-      backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-      borderWidth: 1, borderColor: '#E2E0DA',
+      backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+      borderWidth: 1, borderColor: theme.border,
     }}>
-      <Text style={{ fontSize: 16, fontWeight: '700', color: '#1C1A17', marginBottom: 12 }}>
+      <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 12 }}>
         {title}
       </Text>
       {children}

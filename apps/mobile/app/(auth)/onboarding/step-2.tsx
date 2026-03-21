@@ -4,8 +4,10 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function OnboardingStep2() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
@@ -49,28 +51,28 @@ export default function OnboardingStep2() {
           ))}
         </View>
 
-        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>Step 2 of 5</Text>
+        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '2', total: '5' })}</Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
-          Your measurements
+          {t('onboarding.measurements')}
         </Text>
         <Text style={{ color: '#7A7670', marginTop: 8, fontSize: 15, marginBottom: 32 }}>
-          Used to calculate your caloric needs and track progress.
+          {t('onboarding.measurementsDesc')}
         </Text>
 
-        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Age</Text>
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('onboarding.age')}</Text>
         <TextInput value={age} onChangeText={setAge} placeholder="25" placeholderTextColor="#7A7670" keyboardType="number-pad" style={fieldStyle} />
-        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Weight (kg)</Text>
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('onboarding.weight')}</Text>
         <TextInput value={weight} onChangeText={setWeight} placeholder="75" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
-        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Height (cm)</Text>
+        <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('onboarding.height')}</Text>
         <TextInput value={height} onChangeText={setHeight} placeholder="175" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
 
         <View style={{ flex: 1 }} />
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}>
-            <Text style={{ color: '#7A7670', fontWeight: '600' }}>Back</Text>
+            <Text style={{ color: '#7A7670', fontWeight: '600' }}>{t('general.back')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleNext} disabled={!isValid} style={{ flex: 2, backgroundColor: isValid ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Continue →</Text>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('onboarding.continue')}</Text>
           </TouchableOpacity>
         </View>
       </View>

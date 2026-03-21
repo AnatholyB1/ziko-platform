@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { useThemeStore } from '../../../src/stores/themeStore';
+import { usePluginRegistry } from '@ziko/plugin-sdk';
+import { useTranslation } from '@ziko/plugin-sdk';
+import { useCommunityStore, loadCommunity, shareProgram } from '@ziko/plugin-community';
 
 interface Program {
   id: string;
@@ -17,15 +21,22 @@ interface Program {
 }
 
 export default function WorkoutProgramsScreen() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
+  const communityEnabled = enabledPlugins.includes('community');
+  const friends = useCommunityStore((s) => s.friends);
+  const theme = useThemeStore((s) => s.theme);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [shareModalProgram, setShareModalProgram] = useState<Program | null>(null);
+  const [sharing, setSharing] = useState(false);
 
-  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const DAY_LABELS = [t('day.mon'), t('day.tue'), t('day.wed'), t('day.thu'), t('day.fri'), t('day.sat'), t('day.sun')];
   const DAY_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const toggleDay = (dayIndex: number) => {
@@ -47,6 +58,10 @@ export default function WorkoutProgramsScreen() {
   };
 
   useEffect(() => { loadPrograms(); }, [user]);
+
+  useEffect(() => {
+    if (communityEnabled) loadCommunity(supabase);
+  }, [communityEnabled]);
 
   const setActiveProgram = useWorkoutStore((s) => s.setActiveProgram);
 
@@ -130,18 +145,37 @@ export default function WorkoutProgramsScreen() {
   };
 
   const showProgramActions = (prog: Program) => {
-    Alert.alert(prog.name, undefined, [
+    const buttons: any[] = [
       { text: 'Duplicate', onPress: () => duplicateProgram(prog) },
+    ];
+    if (communityEnabled) {
+      buttons.push({ text: 'Share with friend', onPress: () => setShareModalProgram(prog) });
+    }
+    buttons.push(
       { text: 'Delete', style: 'destructive', onPress: () => deleteProgram(prog.id) },
       { text: 'Cancel', style: 'cancel' },
-    ]);
+    );
+    Alert.alert(prog.name, undefined, buttons);
+  };
+
+  const handleShareToFriend = async (friendId: string) => {
+    if (!shareModalProgram) return;
+    setSharing(true);
+    try {
+      await shareProgram(supabase, friendId, shareModalProgram.id);
+      Alert.alert('Partagé !', 'Le programme a été envoyé à ton ami.');
+      setShareModalProgram(null);
+    } catch {
+      Alert.alert('Erreur', 'Impossible de partager le programme.');
+    }
+    setSharing(false);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
-        <Text style={{ flex: 1, fontSize: 26, fontWeight: '800', color: '#1C1A17' }}>Workout</Text>
-        <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#FF5C1A', borderRadius: 10, padding: 8 }}>
+        <Text style={{ flex: 1, fontSize: 26, fontWeight: '800', color: theme.text }}>{t('workout.title')}</Text>
+        <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: theme.primary, borderRadius: 10, padding: 8 }}>
           <Ionicons name="add" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -149,34 +183,34 @@ export default function WorkoutProgramsScreen() {
       {/* Quick start */}
       <TouchableOpacity
         onPress={() => router.push('/(app)/workout/session')}
-        style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: '#FF5C1A', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+        style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: theme.primary, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
       >
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#ffffff22', alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="flash" size={22} color="#fff" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Quick Workout</Text>
-          <Text style={{ color: '#ffffff99', fontSize: 13 }}>Start a free session now</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('workout.quickStart')}</Text>
+          <Text style={{ color: '#ffffff99', fontSize: 13 }}>{t('workout.quickStartDesc')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color="#ffffff88" />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-          <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>My Programs</Text>
+          <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{t('workout.myPrograms')}</Text>
           <TouchableOpacity onPress={() => router.push('/(app)/workout/history')}>
-            <Text style={{ color: '#FF5C1A', fontSize: 14 }}>History →</Text>
+            <Text style={{ color: theme.primary, fontSize: 14 }}>{t('workout.history')} →</Text>
           </TouchableOpacity>
         </View>
 
-        {isLoading && <Text style={{ color: '#7A7670', textAlign: 'center', marginTop: 40 }}>Loading…</Text>}
+        {isLoading && <Text style={{ color: theme.muted, textAlign: 'center', marginTop: 40 }}>Loading…</Text>}
         {!isLoading && programs.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
             <Text style={{ fontSize: 40 }}>📋</Text>
-            <Text style={{ color: '#1C1A17', fontSize: 16, fontWeight: '600', marginTop: 12 }}>No programs yet</Text>
-            <Text style={{ color: '#7A7670', marginTop: 8, textAlign: 'center' }}>Create your first workout program to get started</Text>
-            <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: '#FF5C1A', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Create Program</Text>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.noPrograms')}</Text>
+            <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.noProgramsDesc')}</Text>
+            <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: theme.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{t('workout.createProgram')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -186,23 +220,23 @@ export default function WorkoutProgramsScreen() {
             key={program.id}
             onPress={() => router.push(`/(app)/workout/${program.id}` as any)}
             onLongPress={() => showProgramActions(program)}
-            style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: program.is_active ? '#FF5C1A' : '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 14 }}
+            style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: program.is_active ? theme.primary : theme.border, flexDirection: 'row', alignItems: 'center', gap: 14 }}
           >
-            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="barbell" size={20} color="#FF5C1A" />
+            <View style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="barbell" size={20} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 15 }}>{program.name}</Text>
                 {program.is_active && (
-                  <View style={{ backgroundColor: '#FF5C1A', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <View style={{ backgroundColor: theme.primary, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
                     <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>Active</Text>
                   </View>
                 )}
               </View>
-              {program.description && <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
+              {program.description && <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
               {program.days_per_week != null && (
-                <Text style={{ color: '#FF5C1A', fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
+                <Text style={{ color: theme.primary, fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
               )}
             </View>
             <Ionicons name="chevron-forward" size={16} color="#7A7670" />
@@ -212,23 +246,23 @@ export default function WorkoutProgramsScreen() {
 
       {/* Create Program Modal */}
       <Modal visible={showCreate} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: '#F7F6F3', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-            <Text style={{ color: '#1C1A17', fontSize: 22, fontWeight: '700' }}>New Program</Text>
+            <Text style={{ color: theme.text, fontSize: 22, fontWeight: '700' }}>{t('workout.newProgram')}</Text>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
               <Ionicons name="close" size={24} color="#7A7670" />
             </TouchableOpacity>
           </View>
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Program name *</Text>
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.programName')} *</Text>
           <TextInput value={newName} onChangeText={setNewName} placeholder="e.g. PPL, Upper/Lower" placeholderTextColor="#7A7670"
-            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+            style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Description (optional)</Text>
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>Description (optional)</Text>
           <TextInput value={newDesc} onChangeText={setNewDesc} placeholder="Brief description" placeholderTextColor="#7A7670" multiline numberOfLines={3}
-            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16, height: 80, textAlignVertical: 'top' }} />
+            style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16, height: 80, textAlignVertical: 'top' }} />
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Training days *</Text>
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.trainingDays')} *</Text>
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
             {DAY_LABELS.map((label, i) => {
               const dbDay = i + 1;
@@ -237,29 +271,82 @@ export default function WorkoutProgramsScreen() {
                 <TouchableOpacity key={label} onPress={() => toggleDay(i)}
                   style={{
                     flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
-                    backgroundColor: isSelected ? '#FF5C1A' : '#FFFFFF',
-                    borderWidth: 1, borderColor: isSelected ? '#FF5C1A' : '#E2E0DA',
+                    backgroundColor: isSelected ? theme.primary : theme.surface,
+                    borderWidth: 1, borderColor: isSelected ? theme.primary : theme.border,
                   }}>
-                  <Text style={{ color: isSelected ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 12 }}>{label}</Text>
+                  <Text style={{ color: isSelected ? '#fff' : theme.muted, fontWeight: '600', fontSize: 12 }}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
           {selectedDays.length > 0 && (
-            <Text style={{ color: '#FF5C1A', fontSize: 12, marginBottom: 20 }}>
+            <Text style={{ color: theme.primary, fontSize: 12, marginBottom: 20 }}>
               {selectedDays.length} day{selectedDays.length > 1 ? 's' : ''} selected
             </Text>
           )}
           {selectedDays.length === 0 && (
-            <Text style={{ color: '#7A7670', fontSize: 12, marginBottom: 20 }}>
+            <Text style={{ color: theme.muted, fontSize: 12, marginBottom: 20 }}>
               Tap the days you want to train
             </Text>
           )}
 
           <TouchableOpacity onPress={createProgram} disabled={!newName.trim() || selectedDays.length === 0}
-            style={{ backgroundColor: newName.trim() && selectedDays.length > 0 ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Create Program</Text>
+            style={{ backgroundColor: newName.trim() && selectedDays.length > 0 ? theme.primary : theme.border, borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('workout.createProgram')}</Text>
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Share with friend Modal */}
+      <Modal visible={!!shareModalProgram} animationType="slide" presentationStyle="pageSheet">
+        <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700' }}>Partager avec un ami</Text>
+            <TouchableOpacity onPress={() => setShareModalProgram(null)}>
+              <Ionicons name="close" size={24} color="#7A7670" />
+            </TouchableOpacity>
+          </View>
+          {shareModalProgram && (
+            <View style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Ionicons name="barbell" size={18} color={theme.primary} />
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 15 }}>{shareModalProgram.name}</Text>
+            </View>
+          )}
+          {friends.length === 0 ? (
+            <View style={{ alignItems: 'center', marginTop: 48 }}>
+              <Ionicons name="people-outline" size={40} color="#E2E0DA" />
+              <Text style={{ color: theme.muted, fontSize: 14, marginTop: 12 }}>Aucun ami pour le moment</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={friends}
+              keyExtractor={(f) => f.id}
+              renderItem={({ item: friend }) => (
+                <TouchableOpacity
+                  onPress={() => handleShareToFriend(friend.id)}
+                  disabled={sharing}
+                  style={{
+                    backgroundColor: theme.surface, borderRadius: 14, padding: 14, marginBottom: 8,
+                    borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+                  }}
+                >
+                  <View style={{
+                    width: 40, height: 40, borderRadius: 20, backgroundColor: theme.primary + '22',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.primary }}>
+                      {(friend.name ?? '?')[0].toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={{ flex: 1, color: theme.text, fontWeight: '600', fontSize: 15 }}>
+                    {friend.name ?? 'Unknown'}
+                  </Text>
+                  <Ionicons name="send" size={18} color={theme.primary} />
+                </TouchableOpacity>
+              )}
+            />
+          )}
+          {sharing && <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 20 }} />}
         </View>
       </Modal>
     </SafeAreaView>

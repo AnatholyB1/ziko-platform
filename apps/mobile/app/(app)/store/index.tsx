@@ -8,7 +8,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { usePluginRegistry } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore } from '../../../src/stores/themeStore';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 
 // ── Types ─────────────────────────────────────────────────
@@ -27,21 +28,32 @@ interface ReviewAgg {
 // ── Constants ─────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
 
-const CATEGORY_META: Record<string, { label: string; color: string; icon: string }> = {
-  all:       { label: 'Tout',        color: '#1C1A17', icon: 'apps' },
-  coaching:  { label: 'Coaching',    color: '#FF5C1A', icon: 'fitness' },
-  nutrition: { label: 'Nutrition',   color: '#4CAF50', icon: 'leaf' },
-  analytics: { label: 'Analytics',   color: '#FF9800', icon: 'stats-chart' },
-  persona:   { label: 'Personnalité',color: '#FF6584', icon: 'person-circle' },
-  social:    { label: 'Social',      color: '#00BCD4', icon: 'people' },
+const CATEGORY_BASE: Record<string, { labelKey: string; color: string | null; icon: string }> = {
+  all:       { labelKey: 'store.catAll',       color: null, icon: 'apps' },
+  coaching:  { labelKey: 'store.catCoaching',  color: null, icon: 'fitness' },
+  nutrition: { labelKey: 'store.catNutrition', color: '#4CAF50', icon: 'leaf' },
+  analytics: { labelKey: 'store.catAnalytics', color: '#FF9800', icon: 'stats-chart' },
+  persona:   { labelKey: 'store.catPersona',   color: '#FF6584', icon: 'person-circle' },
+  social:    { labelKey: 'store.catSocial',    color: '#00BCD4', icon: 'people' },
 };
 
-const CATEGORIES = Object.keys(CATEGORY_META);
+const CATEGORIES = Object.keys(CATEGORY_BASE);
+
+function getCategoryMeta(theme: any) {
+  return Object.fromEntries(
+    Object.entries(CATEGORY_BASE).map(([k, v]) => [
+      k,
+      { ...v, color: v.color ?? (k === 'coaching' ? theme.primary : theme.text) },
+    ])
+  );
+}
 
 // ── Main screen ───────────────────────────────────────────
 export default function PluginStoreScreen() {
   const user = useAuthStore((s) => s.user);
   const { registerPlugin } = usePluginRegistry();
+  const theme = useThemeStore((s) => s.theme);
+  const { t } = useTranslation();
 
   const [plugins, setPlugins] = useState<RegistryPlugin[]>([]);
   const [userPlugins, setUserPlugins] = useState<string[]>([]);
@@ -83,14 +95,14 @@ export default function PluginStoreScreen() {
     if (!user) return;
     const perms = manifest.requiredPermissions ?? [];
     Alert.alert(
-      `Installer ${manifest.name} ?`,
+      t('store.installConfirm', { name: manifest.name }),
       perms.length > 0
-        ? `Ce plugin nécessite :\n${perms.map((p) => `• ${p}`).join('\n')}`
-        : 'Aucune permission spéciale requise.',
+        ? t('store.permRequired', { perms: perms.map((p) => `• ${p}`).join('\n') })
+        : t('store.noPerm'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('general.cancel'), style: 'cancel' },
         {
-          text: 'Installer', onPress: async () => {
+          text: t('store.install'), onPress: async () => {
             const { error } = await supabase.from('user_plugins').upsert({ user_id: user.id, plugin_id: pluginId, is_enabled: true });
             if (!error) {
               setUserPlugins((prev) => [...prev, pluginId]);
@@ -104,10 +116,10 @@ export default function PluginStoreScreen() {
 
   const uninstallPlugin = async (pluginId: string) => {
     if (!user) return;
-    Alert.alert('Désinstaller ?', 'Ce plugin sera retiré de votre appareil.', [
-      { text: 'Annuler', style: 'cancel' },
+    Alert.alert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
+      { text: t('general.cancel'), style: 'cancel' },
       {
-        text: 'Désinstaller', style: 'destructive', onPress: async () => {
+        text: t('store.uninstall'), style: 'destructive', onPress: async () => {
           await supabase.from('user_plugins').delete().eq('user_id', user.id).eq('plugin_id', pluginId);
           setUserPlugins((prev) => prev.filter((id) => id !== pluginId));
         },
@@ -137,26 +149,26 @@ export default function PluginStoreScreen() {
 
   // ── Render ─────────────────────
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: '#1C1A17' }}>Store</Text>
-        <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>Découvre et installe des plugins</Text>
+        <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text }}>{t('store.title')}</Text>
+        <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>{t('store.discover')}</Text>
       </View>
 
       {/* Search bar */}
       <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
         <View style={{
-          flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
-          borderRadius: 14, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 14, height: 44,
+          flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface,
+          borderRadius: 14, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, height: 44,
         }}>
           <Ionicons name="search" size={18} color="#7A7670" />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Rechercher un plugin…"
+            placeholder={t('store.searchPlugin')}
             placeholderTextColor="#B0ADA8"
-            style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#1C1A17' }}
+            style={{ flex: 1, marginLeft: 10, fontSize: 14, color: theme.text }}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
@@ -170,19 +182,20 @@ export default function PluginStoreScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 8 }}>
         {CATEGORIES.map((cat) => {
-          const meta = CATEGORY_META[cat];
+          const categoryMeta = getCategoryMeta(theme);
+          const meta = categoryMeta[cat];
           const active = cat === category;
           return (
             <TouchableOpacity key={cat} onPress={() => setCategory(cat)}
               style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
                 height: 36, paddingHorizontal: 14, borderRadius: 20,
-                backgroundColor: active ? '#1C1A17' : '#FFFFFF',
-                borderWidth: 1, borderColor: active ? '#1C1A17' : '#E2E0DA',
+                backgroundColor: active ? theme.text : theme.surface,
+                borderWidth: 1, borderColor: active ? theme.text : theme.border,
               }}>
-              <Ionicons name={meta.icon as any} size={14} color={active ? '#FFFFFF' : meta.color} />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#FFFFFF' : '#1C1A17' }}>
-                {meta.label}
+              <Ionicons name={meta.icon as any} size={14} color={active ? theme.surface : meta.color} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: active ? theme.surface : theme.text }}>
+                {t(meta.labelKey)}
               </Text>
             </TouchableOpacity>
           );
@@ -191,12 +204,12 @@ export default function PluginStoreScreen() {
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5C1A" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
       >
         {/* Installed section */}
         {installed.length > 0 && (
           <>
-            <SectionTitle icon="checkmark-circle" label={`Installés (${installed.length})`} />
+            <SectionTitle icon="checkmark-circle" label={t('store.installedCount', { count: String(installed.length) })} />
             {installed.map((p) => (
               <PluginCard key={p.plugin_id} plugin={p} installed rating={getRating(p.plugin_id)}
                 onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
@@ -207,14 +220,14 @@ export default function PluginStoreScreen() {
                 onUninstall={() => uninstallPlugin(p.plugin_id)}
               />
             ))}
-            <View style={{ height: 1, backgroundColor: '#E2E0DA', marginVertical: 16 }} />
+            <View style={{ height: 1, backgroundColor: theme.border, marginVertical: 16 }} />
           </>
         )}
 
         {/* Available section */}
         {available.length > 0 && (
           <>
-            <SectionTitle icon="sparkles" label={`Disponibles (${available.length})`} />
+            <SectionTitle icon="sparkles" label={t('store.availableCount', { count: String(available.length) })} />
             {available.map((p) => (
               <PluginCard key={p.plugin_id} plugin={p} installed={false} rating={getRating(p.plugin_id)}
                 onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
@@ -227,7 +240,7 @@ export default function PluginStoreScreen() {
         {filtered.length === 0 && (
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
             <Ionicons name="search-outline" size={48} color="#E2E0DA" />
-            <Text style={{ color: '#7A7670', fontSize: 15, marginTop: 12 }}>Aucun plugin trouvé</Text>
+            <Text style={{ color: theme.muted, fontSize: 15, marginTop: 12 }}>{t('store.noPlugins')}</Text>
           </View>
         )}
       </ScrollView>
@@ -237,10 +250,11 @@ export default function PluginStoreScreen() {
 
 // ── Section title ──────────────────────────────────────────
 function SectionTitle({ icon, label }: { icon: string; label: string }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 4 }}>
-      <Ionicons name={icon as any} size={18} color="#FF5C1A" />
-      <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>{label}</Text>
+      <Ionicons name={icon as any} size={18} color={theme.primary} />
+      <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{label}</Text>
     </View>
   );
 }
@@ -270,15 +284,18 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
   onInstall: () => void;
   onUninstall?: () => void;
 }) {
+  const theme = useThemeStore((s) => s.theme);
+  const { t } = useTranslation();
   const m = plugin.manifest;
-  const catMeta = CATEGORY_META[m.category] ?? CATEGORY_META.coaching;
+  const categoryMeta = getCategoryMeta(theme);
+  const catMeta = categoryMeta[m.category] ?? categoryMeta.coaching;
   const color = catMeta.color;
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7}
       style={{
-        backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16, marginBottom: 10,
-        borderWidth: 1, borderColor: installed ? '#FF5C1A33' : '#E2E0DA',
+        backgroundColor: theme.surface, borderRadius: 18, padding: 16, marginBottom: 10,
+        borderWidth: 1, borderColor: installed ? theme.primary + '33' : theme.border,
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
         elevation: 2,
       }}>
@@ -294,10 +311,10 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
         {/* Info */}
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>{m.name}</Text>
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{m.name}</Text>
             {installed && (
-              <View style={{ backgroundColor: '#FF5C1A18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                <Text style={{ color: '#FF5C1A', fontSize: 10, fontWeight: '700' }}>INSTALLÉ</Text>
+              <View style={{ backgroundColor: theme.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
+                <Text style={{ color: theme.primary, fontSize: 10, fontWeight: '700' }}>{t('store.installed').toUpperCase()}</Text>
               </View>
             )}
           </View>
@@ -305,18 +322,18 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
           {/* Category + rating */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
             <View style={{ backgroundColor: color + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-              <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{catMeta.label}</Text>
+              <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{t(catMeta.labelKey)}</Text>
             </View>
             {rating && (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Stars rating={rating.avg} size={11} />
-                <Text style={{ color: '#7A7670', fontSize: 11 }}>{rating.avg.toFixed(1)} ({rating.count})</Text>
+                <Text style={{ color: theme.muted, fontSize: 11 }}>{rating.avg.toFixed(1)} ({rating.count})</Text>
               </View>
             )}
           </View>
 
           {/* Description */}
-          <Text numberOfLines={2} style={{ color: '#7A7670', fontSize: 13, marginTop: 6, lineHeight: 18 }}>
+          <Text numberOfLines={2} style={{ color: theme.muted, fontSize: 13, marginTop: 6, lineHeight: 18 }}>
             {m.description}
           </Text>
         </View>
@@ -327,15 +344,15 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
         {/* Price tag */}
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize: 13 }}>
-            {m.price === 'free' ? 'Gratuit' : `${m.price} €`}
+            {m.price === 'free' ? t('store.free') : `${m.price} €`}
           </Text>
         </View>
 
         {installed ? (
           <>
             <TouchableOpacity onPress={onInstall}
-              style={{ backgroundColor: '#FF5C1A', borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Ouvrir</Text>
+              style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{t('store.open')}</Text>
             </TouchableOpacity>
             {onUninstall && (
               <TouchableOpacity onPress={onUninstall}
@@ -346,8 +363,8 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
           </>
         ) : (
           <TouchableOpacity onPress={onInstall}
-            style={{ backgroundColor: '#FF5C1A', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 9 }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Installer</Text>
+            style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 9 }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{t('store.install')}</Text>
           </TouchableOpacity>
         )}
       </View>

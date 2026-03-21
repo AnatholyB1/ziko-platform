@@ -12,6 +12,7 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   habits:    () => import('@ziko/plugin-habits/manifest') as any,
   stats:         () => import('@ziko/plugin-stats/manifest') as any,
   gamification:  () => import('@ziko/plugin-gamification/manifest') as any,
+  community:     () => import('@ziko/plugin-community/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */

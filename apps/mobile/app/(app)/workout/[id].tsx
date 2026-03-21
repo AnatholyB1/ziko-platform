@@ -7,11 +7,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { useThemeStore } from '../../../src/stores/themeStore';
 import { useClipboardStore } from '../../../src/stores/clipboardStore';
+import { useTranslation } from '@ziko/plugin-sdk';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 
-const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DAY_FULL = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 interface ProgramDetail {
   id: string;
@@ -67,7 +67,12 @@ export default function ProgramDetailScreen() {
   const exercises = useWorkoutStore((s) => s.exercises);
   const loadExercises = useWorkoutStore((s) => s.loadExercises);
   const copiedDay = useClipboardStore((s) => s.copiedDay);
+  const theme = useThemeStore((s) => s.theme);
   const copyDay = useClipboardStore((s) => s.copyDay);
+  const { t, tExercise } = useTranslation();
+
+  const DAY_NAMES_T = ['', t('workout.dayMon'), t('workout.dayTue'), t('workout.dayWed'), t('workout.dayThu'), t('workout.dayFri'), t('workout.daySat'), t('workout.daySun')];
+  const DAY_FULL_T = ['', t('workout.dayMonFull'), t('workout.dayTueFull'), t('workout.dayWedFull'), t('workout.dayThuFull'), t('workout.dayFriFull'), t('workout.daySatFull'), t('workout.daySunFull')];
 
   // Add workout day modal
   const [showAddDay, setShowAddDay] = useState(false);
@@ -122,10 +127,10 @@ export default function ProgramDetailScreen() {
   };
 
   const handleDeleteDay = (workoutId: string, name: string) => {
-    Alert.alert('Delete Workout Day', `Remove "${name}" and all its exercises?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('workout.deleteDay'), t('workout.deleteDayConfirm', { name }), [
+      { text: t('general.cancel'), style: 'cancel' },
       {
-        text: 'Delete', style: 'destructive', onPress: async () => {
+        text: t('general.delete'), style: 'destructive', onPress: async () => {
           await supabase.from('program_workouts').delete().eq('id', workoutId);
           await loadProgram();
         },
@@ -145,7 +150,7 @@ export default function ProgramDetailScreen() {
         rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
       })),
     });
-    Alert.alert('Copied!', `"${workout.name}" copied to clipboard. You can paste it in any program.`);
+    Alert.alert(t('workout.copied'), t('workout.copiedDesc', { name: workout.name }));
   };
 
   // ── Duplicate day within this program ────────────────────
@@ -193,10 +198,10 @@ export default function ProgramDetailScreen() {
   // ── Day action sheet ────────────────────────────────────
   const showDayActions = (workout: WorkoutDay) => {
     Alert.alert(workout.name, undefined, [
-      { text: 'Duplicate', onPress: () => handleDuplicateDay(workout) },
-      { text: 'Copy', onPress: () => handleCopyDay(workout) },
-      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteDay(workout.id, workout.name) },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('workout.duplicate'), onPress: () => handleDuplicateDay(workout) },
+      { text: t('workout.copy'), onPress: () => handleCopyDay(workout) },
+      { text: t('general.delete'), style: 'destructive', onPress: () => handleDeleteDay(workout.id, workout.name) },
+      { text: t('general.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -269,10 +274,10 @@ export default function ProgramDetailScreen() {
 
   // ── Delete exercise from workout ─────────────────────────
   const handleDeleteExercise = (peId: string) => {
-    Alert.alert('Remove Exercise', 'Remove this exercise from the workout?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('workout.removeExercise'), t('workout.removeExerciseConfirm'), [
+      { text: t('general.cancel'), style: 'cancel' },
       {
-        text: 'Remove', style: 'destructive', onPress: async () => {
+        text: t('workout.remove'), style: 'destructive', onPress: async () => {
           await supabase.from('program_exercises').delete().eq('id', peId);
           await loadProgram();
         },
@@ -289,7 +294,7 @@ export default function ProgramDetailScreen() {
     if (!id) return;
     const store = useWorkoutStore.getState();
     await store.setActiveProgram(id);
-    Alert.alert('Program Active', 'This program is now your active training program.');
+    Alert.alert(t('workout.programActive'), t('workout.programActiveDesc'));
     loadProgram();
   };
 
@@ -297,7 +302,8 @@ export default function ProgramDetailScreen() {
   const bodyParts = [...new Set(exercises.map((e) => (e as any).body_part).filter(Boolean))].sort();
 
   const filteredExercises = exercises.filter((e) => {
-    const matchSearch = !searchQuery || e.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchSearch = !searchQuery || e.name.toLowerCase().includes(q);
     const matchBodyPart = !selectedBodyPart || (e as any).body_part === selectedBodyPart;
     return matchSearch && matchBodyPart;
   });
@@ -317,51 +323,51 @@ export default function ProgramDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: '#1C1A17' }} numberOfLines={1}>
-            {program?.name ?? 'Program'}
+          <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }} numberOfLines={1}>
+            {program?.name ?? t('workout.programFallback')}
           </Text>
           {program?.is_active && (
-            <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>Active program</Text>
+            <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>{t('workout.activeProgram')}</Text>
           )}
         </View>
         {!program?.is_active && (
-          <TouchableOpacity onPress={handleSetActive} style={{ backgroundColor: '#FF5C1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Set Active</Text>
+          <TouchableOpacity onPress={handleSetActive} style={{ backgroundColor: theme.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>{t('workout.setActive')}</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
         {program?.description ? (
-          <Text style={{ color: '#7A7670', fontSize: 14, marginBottom: 20 }}>{program.description}</Text>
+          <Text style={{ color: theme.muted, fontSize: 14, marginBottom: 20 }}>{program.description}</Text>
         ) : null}
 
         {/* Workout days */}
         {workouts.map((workout) => (
-          <View key={workout.id} style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E0DA' }}>
+          <View key={workout.id} style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
             {/* Day header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <TouchableOpacity onPress={() => showDayActions(workout)} style={{ flex: 1 }}>
-                <Text style={{ color: '#FF5C1A', fontSize: 11, fontWeight: '600' }}>
-                  {workout.day_of_week ? DAY_FULL[workout.day_of_week] : 'Any day'}
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600' }}>
+                  {workout.day_of_week ? DAY_FULL_T[workout.day_of_week] : t('workout.anyDay')}
                 </Text>
-                <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16, marginTop: 2 }}>{workout.name}</Text>
+                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 2 }}>{workout.name}</Text>
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity onPress={() => showDayActions(workout)}
-                  style={{ backgroundColor: '#F7F6F3', borderRadius: 10, padding: 8 }}>
+                  style={{ backgroundColor: theme.background, borderRadius: 10, padding: 8 }}>
                   <Ionicons name="ellipsis-horizontal" size={16} color="#7A7670" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleStartWorkout(workout)}
-                  style={{ backgroundColor: '#FF5C1A', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Start</Text>
+                  style={{ backgroundColor: theme.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>{t('workout.start')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -371,13 +377,13 @@ export default function ProgramDetailScreen() {
               .sort((a, b) => a.order_index - b.order_index)
               .map((pe) => (
                 <TouchableOpacity key={pe.id} onLongPress={() => handleDeleteExercise(pe.id)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: '#F7F6F3', borderRadius: 10, padding: 10 }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="barbell-outline" size={14} color="#FF5C1A" />
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: theme.background, borderRadius: 10, padding: 10 }}>
+                  <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="barbell-outline" size={14} color={theme.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#1C1A17', fontSize: 13, fontWeight: '500' }}>{pe.exercises?.name ?? 'Exercise'}</Text>
-                    <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 1 }}>{formatExerciseDetail(pe)}</Text>
+                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>{tExercise(pe.exercises?.name ?? t('workout.exerciseFallback'))}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11, marginTop: 1 }}>{formatExerciseDetail(pe)}</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -385,8 +391,8 @@ export default function ProgramDetailScreen() {
             {/* Add exercise button */}
             <TouchableOpacity onPress={() => openExercisePicker([workout.id])}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, paddingVertical: 6 }}>
-              <Ionicons name="add-circle-outline" size={18} color="#FF5C1A" />
-              <Text style={{ color: '#FF5C1A', fontSize: 13, fontWeight: '500' }}>Add exercise</Text>
+              <Ionicons name="add-circle-outline" size={18} color={theme.primary} />
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '500' }}>{t('workout.addExercise')}</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -396,16 +402,16 @@ export default function ProgramDetailScreen() {
           <TouchableOpacity onPress={handlePasteDay}
             style={{ backgroundColor: '#4CAF5018', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <Ionicons name="clipboard-outline" size={18} color="#4CAF50" />
-            <Text style={{ color: '#4CAF50', fontWeight: '600', fontSize: 14 }}>Paste "{copiedDay.name}"</Text>
+            <Text style={{ color: '#4CAF50', fontWeight: '600', fontSize: 14 }}>{t('workout.paste', { name: copiedDay.name })}</Text>
           </TouchableOpacity>
         )}
 
         {/* Add exercise to multiple days */}
         {workouts.length > 1 && (
           <TouchableOpacity onPress={() => openExercisePicker(workouts.map((w) => w.id))}
-            style={{ backgroundColor: '#FF5C1A18', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Ionicons name="copy-outline" size={18} color="#FF5C1A" />
-            <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 14 }}>Add exercise to multiple days</Text>
+            style={{ backgroundColor: theme.primary + '18', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Ionicons name="copy-outline" size={18} color={theme.primary} />
+            <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>{t('workout.addExerciseMultiple')}</Text>
           </TouchableOpacity>
         )}
 
@@ -416,28 +422,28 @@ export default function ProgramDetailScreen() {
           setDayName('');
           setShowAddDay(true);
         }}
-          style={{ borderWidth: 1.5, borderColor: '#FF5C1A', borderStyle: 'dashed', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-          <Ionicons name="add" size={20} color="#FF5C1A" />
-          <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 15 }}>Add Workout Day</Text>
+          style={{ borderWidth: 1.5, borderColor: theme.primary, borderStyle: 'dashed', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+          <Ionicons name="add" size={20} color={theme.primary} />
+          <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 15 }}>{t('workout.addWorkoutDay')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
       {/* ── Add Day Modal ──────────────────────────────────── */}
       <Modal visible={showAddDay} animationType="slide" presentationStyle="pageSheet">
-        <View style={{ flex: 1, backgroundColor: '#F7F6F3', padding: 24 }}>
+        <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-            <Text style={{ color: '#1C1A17', fontSize: 22, fontWeight: '700' }}>Add Workout Day</Text>
+            <Text style={{ color: theme.text, fontSize: 22, fontWeight: '700' }}>{t('workout.addWorkoutDay')}</Text>
             <TouchableOpacity onPress={() => setShowAddDay(false)}>
               <Ionicons name="close" size={24} color="#7A7670" />
             </TouchableOpacity>
           </View>
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Workout name *</Text>
-          <TextInput value={dayName} onChangeText={setDayName} placeholder="e.g. Push, Legs, Upper Body"
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.workoutName')}</Text>
+          <TextInput value={dayName} onChangeText={setDayName} placeholder={t('workout.workoutNamePlaceholder')}
             placeholderTextColor="#7A7670"
-            style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 20 }} />
+            style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 20 }} />
 
-          <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Day of the week</Text>
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.dayOfWeek')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
             {[1, 2, 3, 4, 5, 6, 7].map((d) => {
               const used = usedDays.includes(d);
@@ -446,12 +452,12 @@ export default function ProgramDetailScreen() {
                 <TouchableOpacity key={d} disabled={used} onPress={() => setSelectedDay(d)}
                   style={{
                     width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: selected ? '#FF5C1A' : used ? '#E2E0DA' : '#FFFFFF',
-                    borderWidth: 1, borderColor: selected ? '#FF5C1A' : '#E2E0DA',
+                    backgroundColor: selected ? theme.primary : used ? theme.border : theme.surface,
+                    borderWidth: 1, borderColor: selected ? theme.primary : theme.border,
                     opacity: used ? 0.5 : 1,
                   }}>
-                  <Text style={{ color: selected ? '#fff' : used ? '#7A7670' : '#1C1A17', fontWeight: '600', fontSize: 13 }}>
-                    {DAY_NAMES[d]}
+                  <Text style={{ color: selected ? '#fff' : used ? theme.muted : theme.text, fontWeight: '600', fontSize: 13 }}>
+                    {DAY_NAMES_T[d]}
                   </Text>
                 </TouchableOpacity>
               );
@@ -459,18 +465,18 @@ export default function ProgramDetailScreen() {
           </View>
 
           <TouchableOpacity onPress={handleAddDay} disabled={!dayName.trim()}
-            style={{ backgroundColor: dayName.trim() ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Add Day</Text>
+            style={{ backgroundColor: dayName.trim() ? theme.primary : theme.border, borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('workout.addDay')}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
       {/* ── Exercise Picker Modal ─────────────────────────── */}
       <Modal visible={showExercisePicker} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           <View style={{ padding: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ color: '#1C1A17', fontSize: 20, fontWeight: '700' }}>Choose Exercise</Text>
+              <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700' }}>{t('workout.chooseExercise')}</Text>
               <TouchableOpacity onPress={() => setShowExercisePicker(false)}>
                 <Ionicons name="close" size={24} color="#7A7670" />
               </TouchableOpacity>
@@ -478,22 +484,22 @@ export default function ProgramDetailScreen() {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search exercises…"
+              placeholder={t('workout.searchExercises')}
               placeholderTextColor="#7A7670"
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', marginBottom: 12 }}
+              style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 12, color: theme.text, marginBottom: 12 }}
             />
             {/* Body part filter */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12, maxHeight: 36 }}>
               <TouchableOpacity onPress={() => setSelectedBodyPart(null)}
                 style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, marginRight: 6,
-                  backgroundColor: !selectedBodyPart ? '#FF5C1A' : '#FFFFFF', borderWidth: 1, borderColor: !selectedBodyPart ? '#FF5C1A' : '#E2E0DA' }}>
-                <Text style={{ color: !selectedBodyPart ? '#fff' : '#7A7670', fontSize: 12, fontWeight: '500' }}>All</Text>
+                  backgroundColor: !selectedBodyPart ? theme.primary : theme.surface, borderWidth: 1, borderColor: !selectedBodyPart ? theme.primary : theme.border }}>
+                <Text style={{ color: !selectedBodyPart ? '#fff' : theme.muted, fontSize: 12, fontWeight: '500' }}>{t('workout.all')}</Text>
               </TouchableOpacity>
               {bodyParts.map((bp) => (
                 <TouchableOpacity key={bp} onPress={() => setSelectedBodyPart(bp === selectedBodyPart ? null : bp)}
                   style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, marginRight: 6,
-                    backgroundColor: selectedBodyPart === bp ? '#FF5C1A' : '#FFFFFF', borderWidth: 1, borderColor: selectedBodyPart === bp ? '#FF5C1A' : '#E2E0DA' }}>
-                  <Text style={{ color: selectedBodyPart === bp ? '#fff' : '#7A7670', fontSize: 12, fontWeight: '500', textTransform: 'capitalize' }}>{bp}</Text>
+                    backgroundColor: selectedBodyPart === bp ? theme.primary : theme.surface, borderWidth: 1, borderColor: selectedBodyPart === bp ? theme.primary : theme.border }}>
+                  <Text style={{ color: selectedBodyPart === bp ? '#fff' : theme.muted, fontSize: 12, fontWeight: '500', textTransform: 'capitalize' }}>{bp}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -504,17 +510,17 @@ export default function ProgramDetailScreen() {
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
             renderItem={({ item: ex }) => (
               <TouchableOpacity onPress={() => selectExercise(ex)}
-                style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="barbell-outline" size={16} color="#FF5C1A" />
+                style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="barbell-outline" size={16} color={theme.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#1C1A17', fontWeight: '500', fontSize: 14 }}>{ex.name}</Text>
-                  <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 2 }}>
+                  <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14 }}>{ex.name}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>
                     {[(ex as any).body_part, (ex as any).target_muscle].filter(Boolean).join(' · ') || ex.muscle_groups.join(', ')}
                   </Text>
                 </View>
-                <Ionicons name="add-circle-outline" size={20} color="#FF5C1A" />
+                <Ionicons name="add-circle-outline" size={20} color={theme.primary} />
               </TouchableOpacity>
             )}
           />
@@ -523,19 +529,19 @@ export default function ProgramDetailScreen() {
 
       {/* ── Exercise Config Modal ─────────────────────────── */}
       <Modal visible={showConfig} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           <ScrollView contentContainerStyle={{ padding: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ color: '#1C1A17', fontSize: 20, fontWeight: '700' }}>Configure Exercise</Text>
+              <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700' }}>{t('workout.configureExercise')}</Text>
               <TouchableOpacity onPress={() => { setShowConfig(false); setConfigExercise(null); }}>
                 <Ionicons name="close" size={24} color="#7A7670" />
               </TouchableOpacity>
             </View>
 
             {/* Exercise name */}
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', marginBottom: 20 }}>
-              <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 16 }}>{configExercise?.name}</Text>
-              <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 4 }}>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 20 }}>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{configExercise?.name}</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>
                 {[(configExercise as any)?.body_part, (configExercise as any)?.target_muscle].filter(Boolean).join(' · ') || configExercise?.muscle_groups.join(', ')}
               </Text>
             </View>
@@ -543,7 +549,7 @@ export default function ProgramDetailScreen() {
             {/* Day selector — choose which days to add to */}
             {workouts.length > 1 && (
               <>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Add to days</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.addToDays')}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
                   <TouchableOpacity
                     onPress={() => {
@@ -552,10 +558,10 @@ export default function ProgramDetailScreen() {
                     }}
                     style={{
                       paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                      backgroundColor: targetWorkoutIds.length === workouts.length ? '#FF5C1A' : '#FFFFFF',
-                      borderWidth: 1, borderColor: targetWorkoutIds.length === workouts.length ? '#FF5C1A' : '#E2E0DA',
+                      backgroundColor: targetWorkoutIds.length === workouts.length ? theme.primary : theme.surface,
+                      borderWidth: 1, borderColor: targetWorkoutIds.length === workouts.length ? theme.primary : theme.border,
                     }}>
-                    <Text style={{ color: targetWorkoutIds.length === workouts.length ? '#fff' : '#7A7670', fontWeight: '600', fontSize: 12 }}>All</Text>
+                    <Text style={{ color: targetWorkoutIds.length === workouts.length ? '#fff' : theme.muted, fontWeight: '600', fontSize: 12 }}>{t('workout.all')}</Text>
                   </TouchableOpacity>
                   {workouts.map((w) => {
                     const isSelected = targetWorkoutIds.includes(w.id);
@@ -563,11 +569,11 @@ export default function ProgramDetailScreen() {
                       <TouchableOpacity key={w.id} onPress={() => toggleTargetWorkout(w.id)}
                         style={{
                           paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                          backgroundColor: isSelected ? '#FF5C1A' : '#FFFFFF',
-                          borderWidth: 1, borderColor: isSelected ? '#FF5C1A' : '#E2E0DA',
+                          backgroundColor: isSelected ? theme.primary : theme.surface,
+                          borderWidth: 1, borderColor: isSelected ? theme.primary : theme.border,
                         }}>
-                        <Text style={{ color: isSelected ? '#fff' : '#1C1A17', fontWeight: '500', fontSize: 12 }}>
-                          {w.day_of_week ? DAY_NAMES[w.day_of_week] : w.name}
+                        <Text style={{ color: isSelected ? '#fff' : theme.text, fontWeight: '500', fontSize: 12 }}>
+                          {w.day_of_week ? DAY_NAMES_T[w.day_of_week] : w.name}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -577,28 +583,28 @@ export default function ProgramDetailScreen() {
             )}
 
             {/* Sets */}
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Number of sets</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.numSets')}</Text>
             <TextInput value={config.sets} onChangeText={(v) => setConfig({ ...config, sets: v })}
               keyboardType="number-pad" placeholder="3"
               placeholderTextColor="#7A7670"
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+              style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
 
             {/* Reps mode selector */}
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 8 }}>Reps / Duration mode</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.repsDurationMode')}</Text>
             <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
               {[
-                { key: 'fixed' as const, label: 'Fixed reps' },
-                { key: 'range' as const, label: 'Rep range' },
-                { key: 'time' as const, label: 'Time' },
-                { key: 'timeRange' as const, label: 'Time range' },
+                { key: 'fixed' as const, label: t('workout.fixedReps') },
+                { key: 'range' as const, label: t('workout.repRange') },
+                { key: 'time' as const, label: t('workout.time') },
+                { key: 'timeRange' as const, label: t('workout.timeRange') },
               ].map((m) => (
                 <TouchableOpacity key={m.key} onPress={() => setConfig({ ...config, repsMode: m.key })}
                   style={{
                     flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
-                    backgroundColor: config.repsMode === m.key ? '#FF5C1A' : '#FFFFFF',
-                    borderWidth: 1, borderColor: config.repsMode === m.key ? '#FF5C1A' : '#E2E0DA',
+                    backgroundColor: config.repsMode === m.key ? theme.primary : theme.surface,
+                    borderWidth: 1, borderColor: config.repsMode === m.key ? theme.primary : theme.border,
                   }}>
-                  <Text style={{ color: config.repsMode === m.key ? '#fff' : '#7A7670', fontWeight: '500', fontSize: 11 }}>{m.label}</Text>
+                  <Text style={{ color: config.repsMode === m.key ? '#fff' : theme.muted, fontWeight: '500', fontSize: 11 }}>{m.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -606,87 +612,87 @@ export default function ProgramDetailScreen() {
             {/* Reps inputs based on mode */}
             {config.repsMode === 'fixed' && (
               <>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Reps</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.reps')}</Text>
                 <TextInput value={config.reps} onChangeText={(v) => setConfig({ ...config, reps: v })}
                   keyboardType="number-pad" placeholder="10"
                   placeholderTextColor="#7A7670"
-                  style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+                  style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
               </>
             )}
 
             {config.repsMode === 'range' && (
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Min reps</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.minReps')}</Text>
                   <TextInput value={config.repsMin} onChangeText={(v) => setConfig({ ...config, repsMin: v })}
                     keyboardType="number-pad" placeholder="8"
                     placeholderTextColor="#7A7670"
-                    style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17' }} />
+                    style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text }} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Max reps</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.maxReps')}</Text>
                   <TextInput value={config.repsMax} onChangeText={(v) => setConfig({ ...config, repsMax: v })}
                     keyboardType="number-pad" placeholder="12"
                     placeholderTextColor="#7A7670"
-                    style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17' }} />
+                    style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text }} />
                 </View>
               </View>
             )}
 
             {config.repsMode === 'time' && (
               <>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Duration (seconds)</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.durationSec')}</Text>
                 <TextInput value={config.duration} onChangeText={(v) => setConfig({ ...config, duration: v })}
                   keyboardType="number-pad" placeholder="30"
                   placeholderTextColor="#7A7670"
-                  style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+                  style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
               </>
             )}
 
             {config.repsMode === 'timeRange' && (
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Min (seconds)</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.minSec')}</Text>
                   <TextInput value={config.durationMin} onChangeText={(v) => setConfig({ ...config, durationMin: v })}
                     keyboardType="number-pad" placeholder="30"
                     placeholderTextColor="#7A7670"
-                    style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17' }} />
+                    style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text }} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Max (seconds)</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.maxSec')}</Text>
                   <TextInput value={config.durationMax} onChangeText={(v) => setConfig({ ...config, durationMax: v })}
                     keyboardType="number-pad" placeholder="60"
                     placeholderTextColor="#7A7670"
-                    style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17' }} />
+                    style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text }} />
                 </View>
               </View>
             )}
 
             {/* Rest time */}
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Rest between sets (seconds)</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.restBetween')}</Text>
             <TextInput value={config.restSeconds} onChangeText={(v) => setConfig({ ...config, restSeconds: v })}
               keyboardType="number-pad" placeholder="90"
               placeholderTextColor="#7A7670"
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+              style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
 
             {/* Weight */}
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Weight (kg) — optional</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.weightOptional')}</Text>
             <TextInput value={config.weightKg} onChangeText={(v) => setConfig({ ...config, weightKg: v })}
               keyboardType="decimal-pad" placeholder="0"
               placeholderTextColor="#7A7670"
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 16 }} />
+              style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 16 }} />
 
             {/* Notes */}
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Notes — optional</Text>
+            <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.notesOptional')}</Text>
             <TextInput value={config.notes} onChangeText={(v) => setConfig({ ...config, notes: v })}
-              placeholder="e.g. tempo 3-1-2, pause at bottom" multiline
+              placeholder={t('workout.notesPlaceholder')} multiline
               placeholderTextColor="#7A7670"
-              style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 14, color: '#1C1A17', marginBottom: 24, height: 70, textAlignVertical: 'top' }} />
+              style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 14, color: theme.text, marginBottom: 24, height: 70, textAlignVertical: 'top' }} />
 
             <TouchableOpacity onPress={saveExerciseConfig} disabled={targetWorkoutIds.length === 0}
-              style={{ backgroundColor: targetWorkoutIds.length > 0 ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
+              style={{ backgroundColor: targetWorkoutIds.length > 0 ? theme.primary : theme.border, borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
               <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>
-                {targetWorkoutIds.length > 1 ? `Add to ${targetWorkoutIds.length} days` : 'Add to Workout'}
+                {targetWorkoutIds.length > 1 ? t('workout.addToNDays', { count: String(targetWorkoutIds.length) }) : t('workout.addToWorkout')}
               </Text>
             </TouchableOpacity>
           </ScrollView>

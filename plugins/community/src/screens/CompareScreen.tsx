@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
+import { useThemeStore } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -81,43 +82,44 @@ interface CompareRowProps {
 }
 
 function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps) {
+  const theme = useThemeStore((s) => s.theme);
   const myWins = myVal > theirVal;
   const tied = myVal === theirVal;
 
   return (
     <View style={{
-      backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 10,
-      borderWidth: 1, borderColor: '#E2E0DA',
+      backgroundColor: theme.surface, borderRadius: 14, padding: 16, marginBottom: 10,
+      borderWidth: 1, borderColor: theme.border,
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12, gap: 6 }}>
         <Ionicons name={icon as any} size={16} color="#7A7670" />
-        <Text style={{ fontSize: 13, color: '#7A7670', fontWeight: '600' }}>{label}</Text>
+        <Text style={{ fontSize: 13, color: theme.muted, fontWeight: '600' }}>{label}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {/* My value */}
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{
             fontSize: 24, fontWeight: '800',
-            color: myWins ? '#FF5C1A' : tied ? '#1C1A17' : '#7A7670',
+            color: myWins ? theme.primary : tied ? theme.text : theme.muted,
           }}>
             {formatNumber(myVal)}
           </Text>
-          {unit ? <Text style={{ fontSize: 11, color: '#7A7670', marginTop: 2 }}>{unit}</Text> : null}
+          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unit}</Text> : null}
         </View>
 
         {/* VS indicator */}
         <View style={{
           width: 36, height: 36, borderRadius: 18,
-          backgroundColor: tied ? '#E2E0DA20' : myWins ? '#FF5C1A14' : '#7A767014',
+          backgroundColor: tied ? '#E2E0DA20' : myWins ? theme.primary + '14' : '#7A767014',
           alignItems: 'center', justifyContent: 'center',
         }}>
           {tied ? (
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#7A7670' }}>=</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: theme.muted }}>=</Text>
           ) : (
             <Ionicons
               name={myWins ? 'arrow-back' : 'arrow-forward'}
               size={16}
-              color={myWins ? '#FF5C1A' : '#7A7670'}
+              color={myWins ? theme.primary : theme.muted}
             />
           )}
         </View>
@@ -126,11 +128,11 @@ function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={{
             fontSize: 24, fontWeight: '800',
-            color: !myWins && !tied ? '#FF5C1A' : tied ? '#1C1A17' : '#7A7670',
+            color: !myWins && !tied ? theme.primary : tied ? theme.text : theme.muted,
           }}>
             {formatNumber(theirVal)}
           </Text>
-          {unit ? <Text style={{ fontSize: 11, color: '#7A7670', marginTop: 2 }}>{unit}</Text> : null}
+          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unit}</Text> : null}
         </View>
       </View>
     </View>
@@ -138,6 +140,7 @@ function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps
 }
 
 export default function CompareScreen({ supabase }: { supabase: any }) {
+  const theme = useThemeStore((s) => s.theme);
   const params = useLocalSearchParams<{ friendId?: string }>();
   const { friends } = useCommunityStore();
   const [selectedFriend, setSelectedFriend] = useState(params.friendId || '');
@@ -189,24 +192,24 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
   ].filter(Boolean).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 12 }}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1C1A17" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#1C1A17', flex: 1 }}>Comparer</Text>
+        <Text style={{ fontSize: 22, fontWeight: '700', color: theme.text, flex: 1 }}>Comparer</Text>
       </View>
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadStats} tintColor="#FF5C1A" />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadStats} tintColor={theme.primary} />}
       >
         {/* Friend selector */}
         {!params.friendId && friends.length > 0 && (
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1C1A17', marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginBottom: 8 }}>
               Choisis un ami à comparer
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -219,20 +222,20 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
                     style={{
                       flexDirection: 'row', alignItems: 'center', gap: 8,
                       paddingHorizontal: 14, height: 40, borderRadius: 20,
-                      backgroundColor: active ? '#FF5C1A' : '#FFFFFF',
-                      borderWidth: 1, borderColor: active ? '#FF5C1A' : '#E2E0DA',
+                      backgroundColor: active ? theme.primary : theme.surface,
+                      borderWidth: 1, borderColor: active ? theme.primary : theme.border,
                     }}
                   >
                     <View style={{
                       width: 26, height: 26, borderRadius: 13,
-                      backgroundColor: active ? '#FFFFFF30' : '#FF5C1A18',
+                      backgroundColor: active ? '#FFFFFF30' : theme.primary + '18',
                       alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#FFFFFF' : '#FF5C1A' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? theme.surface : theme.primary }}>
                         {(f.name || '?')[0].toUpperCase()}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#FFFFFF' : '#1C1A17' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: active ? theme.surface : theme.text }}>
                       {f.name || 'Ami'}
                     </Text>
                   </TouchableOpacity>
@@ -245,12 +248,12 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
         {!selectedFriend ? (
           <View style={{ alignItems: 'center', paddingVertical: 60 }}>
             <Ionicons name="stats-chart-outline" size={48} color="#E2E0DA" />
-            <Text style={{ fontSize: 16, color: '#7A7670', marginTop: 12 }}>
+            <Text style={{ fontSize: 16, color: theme.muted, marginTop: 12 }}>
               Sélectionne un ami pour comparer vos stats
             </Text>
           </View>
         ) : loading ? (
-          <ActivityIndicator color="#FF5C1A" size="large" style={{ marginTop: 40 }} />
+          <ActivityIndicator color={theme.primary} size="large" style={{ marginTop: 40 }} />
         ) : (
           <>
             {/* VS Header */}
@@ -261,34 +264,34 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <View style={{
                   width: 56, height: 56, borderRadius: 28,
-                  backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Ionicons name="person" size={28} color="#FF5C1A" />
+                  <Ionicons name="person" size={28} color={theme.primary} />
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1C1A17', marginTop: 6 }}>Toi</Text>
-                <Text style={{ fontSize: 20, fontWeight: '800', color: '#FF5C1A' }}>{myWins}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginTop: 6 }}>Toi</Text>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: theme.primary }}>{myWins}</Text>
               </View>
 
               <View style={{
                 width: 48, height: 48, borderRadius: 24,
-                backgroundColor: '#1C1A17', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: theme.text, alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14 }}>VS</Text>
+                <Text style={{ color: theme.surface, fontWeight: '800', fontSize: 14 }}>VS</Text>
               </View>
 
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <View style={{
                   width: 56, height: 56, borderRadius: 28,
-                  backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '700', color: '#FF5C1A' }}>
+                  <Text style={{ fontSize: 22, fontWeight: '700', color: theme.primary }}>
                     {(friend?.name || '?')[0].toUpperCase()}
                   </Text>
                 </View>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#1C1A17', marginTop: 6 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, marginTop: 6 }}>
                   {friend?.name || 'Ami'}
                 </Text>
-                <Text style={{ fontSize: 20, fontWeight: '800', color: '#7A7670' }}>{theirWins}</Text>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: theme.muted }}>{theirWins}</Text>
               </View>
             </View>
 

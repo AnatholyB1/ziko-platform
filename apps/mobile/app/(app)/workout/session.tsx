@@ -7,8 +7,10 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
+import { useTranslation } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -56,12 +58,14 @@ interface TrackedSet {
 type Phase = 'review' | 'exercise' | 'rest' | 'complete';
 
 export default function WorkoutSessionScreen() {
+  const { t, tExercise, tMuscle } = useTranslation();
   const currentSession = useWorkoutStore((s) => s.currentSession);
   const workoutExercises = useWorkoutStore((s) => s.currentWorkoutExercises);
   const endSession = useWorkoutStore((s) => s.endSession);
   const exercises = useWorkoutStore((s) => s.exercises);
   const loadExercises = useWorkoutStore((s) => s.loadExercises);
   const startSession = useWorkoutStore((s) => s.startSession);
+  const theme = useThemeStore((s) => s.theme);
 
   const isGuided = workoutExercises.length > 0;
 
@@ -106,7 +110,7 @@ export default function WorkoutSessionScreen() {
     if (exercises.length === 0) loadExercises();
     // Start a free session if no guided workout
     if (!isGuided && !currentSession) {
-      startSession(undefined, 'Quick Workout');
+      startSession(undefined, t('workout.quickStart'));
     }
   }, []);
 
@@ -468,10 +472,10 @@ export default function WorkoutSessionScreen() {
 
   // ── End session ────────────────────────────────────────
   const handleEndSession = () => {
-    Alert.alert('End Workout', 'Are you sure you want to finish?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('workout.endWorkout'), t('workout.endWorkoutConfirm'), [
+      { text: t('general.cancel'), style: 'cancel' },
       {
-        text: 'Finish', onPress: async () => {
+        text: t('workout.finish'), onPress: async () => {
           await saveSessionStats();
           try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
           router.back();
@@ -558,21 +562,21 @@ export default function WorkoutSessionScreen() {
     // ── REVIEW PHASE ─────────────────────────────────────
     if (phase === 'review') {
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
             <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
               <Ionicons name="chevron-back" size={24} color="#7A7670" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 20 }}>
+              <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>
                 {currentSession?.name ?? 'Workout'}
               </Text>
-              <Text style={{ color: '#7A7670', fontSize: 13 }}>{totalExercises} exercises</Text>
+              <Text style={{ color: theme.muted, fontSize: 13 }}>{totalExercises} exercises</Text>
             </View>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 120 }}>
-            <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
               Program Overview
             </Text>
 
@@ -584,39 +588,39 @@ export default function WorkoutSessionScreen() {
                 transition={{ type: 'timing', duration: 300, delay: idx * 60 }}
               >
                 <View style={{
-                  backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10,
-                  borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 14,
+                  backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 10,
+                  borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 14,
                 }}>
                   <View style={{
-                    width: 40, height: 40, borderRadius: 12, backgroundColor: '#FF5C1A18',
+                    width: 40, height: 40, borderRadius: 12, backgroundColor: theme.primary + '18',
                     alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Text style={{ color: '#FF5C1A', fontWeight: '800', fontSize: 16 }}>{idx + 1}</Text>
+                    <Text style={{ color: theme.primary, fontWeight: '800', fontSize: 16 }}>{idx + 1}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15 }}>
-                      {pe.exercises?.name ?? 'Exercise'}
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>
+                      {tExercise(pe.exercises?.name ?? 'Exercise')}
                     </Text>
-                    <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 3 }}>
+                    <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
                       {describeExercise(pe)}
                     </Text>
                     {pe.notes ? (
-                      <Text style={{ color: '#FF5C1A', fontSize: 11, marginTop: 3, fontStyle: 'italic' }}>
+                      <Text style={{ color: theme.primary, fontSize: 11, marginTop: 3, fontStyle: 'italic' }}>
                         {pe.notes}
                       </Text>
                     ) : null}
                   </View>
                   {needsTimer(pe) && (
-                    <Ionicons name="timer-outline" size={18} color="#FF5C1A" />
+                    <Ionicons name="timer-outline" size={18} color={theme.primary} />
                   )}
                 </View>
               </MotiView>
             ))}
           </ScrollView>
 
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: '#F7F6F3' }}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
             <TouchableOpacity onPress={startWorkout}
-              style={{ backgroundColor: '#FF5C1A', borderRadius: 16, paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+              style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
               <Ionicons name="play" size={20} color="#fff" />
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Start Workout</Text>
             </TouchableOpacity>
@@ -639,17 +643,17 @@ export default function WorkoutSessionScreen() {
       const hitMax = mode === 'timeRange' && exTimer >= (currentEx.duration_max ?? 0);
 
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 8 }}>
             <TouchableOpacity onPress={handleEndSession} style={{ marginRight: 12 }}>
               <Ionicons name="chevron-back" size={24} color="#7A7670" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#7A7670', fontSize: 12 }}>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>
                 Exercise {currentExIdx + 1}/{totalExercises} · Set {currentSetIdx + 1}/{allSets.length}
               </Text>
-              <Text style={{ color: '#FF5C1A', fontSize: 13, fontWeight: '600' }}>{formatTime(elapsed)}</Text>
+              <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '600' }}>{formatTime(elapsed)}</Text>
             </View>
             <TouchableOpacity onPress={handleEndSession}
               style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
@@ -664,11 +668,11 @@ export default function WorkoutSessionScreen() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring' }}
             >
-              <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 24, textAlign: 'center', marginBottom: 4 }}>
-                {currentEx.exercises?.name ?? 'Exercise'}
+              <Text style={{ color: theme.text, fontWeight: '800', fontSize: 24, textAlign: 'center', marginBottom: 4 }}>
+                {tExercise(currentEx.exercises?.name ?? 'Exercise')}
               </Text>
               {currentEx.notes ? (
-                <Text style={{ color: '#FF5C1A', fontSize: 12, textAlign: 'center', marginBottom: 8, fontStyle: 'italic' }}>
+                <Text style={{ color: theme.primary, fontSize: 12, textAlign: 'center', marginBottom: 8, fontStyle: 'italic' }}>
                   {currentEx.notes}
                 </Text>
               ) : null}
@@ -685,12 +689,12 @@ export default function WorkoutSessionScreen() {
                 <View style={{
                   width: 200, height: 200, borderRadius: 100,
                   borderWidth: 8,
-                  borderColor: hitMax ? '#4CAF50' : hitMin ? '#FF5C1A' : '#E2E0DA',
-                  alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF',
+                  borderColor: hitMax ? '#4CAF50' : hitMin ? theme.primary : theme.border,
+                  alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surface,
                 }}>
                   <Text style={{
                     fontSize: 42, fontWeight: '800',
-                    color: hitMax ? '#4CAF50' : hitMin ? '#FF5C1A' : '#1C1A17',
+                    color: hitMax ? '#4CAF50' : hitMin ? theme.primary : theme.text,
                   }}>
                     {formatTime(exTimer)}
                   </Text>
@@ -713,7 +717,7 @@ export default function WorkoutSessionScreen() {
                       )}
                     </View>
                   ) : (
-                    <Text style={{ color: '#7A7670', fontSize: 12, marginTop: 4 }}>
+                    <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>
                       Target: {formatTime(currentEx.duration_seconds ?? 0)}
                     </Text>
                   )}
@@ -722,22 +726,22 @@ export default function WorkoutSessionScreen() {
                 {/* Time range progress bar */}
                 {mode === 'timeRange' && (
                   <View style={{ width: SCREEN_W - 80, marginTop: 16 }}>
-                    <View style={{ height: 8, backgroundColor: '#E2E0DA', borderRadius: 4 }}>
+                    <View style={{ height: 8, backgroundColor: theme.border, borderRadius: 4 }}>
                       {timeMax > 0 && (
                         <View style={{
                           position: 'absolute', left: `${(timeMin / timeMax) * 100}%`,
-                          top: -3, width: 2, height: 14, backgroundColor: '#FF5C1A', borderRadius: 1,
+                          top: -3, width: 2, height: 14, backgroundColor: theme.primary, borderRadius: 1,
                         }} />
                       )}
                       <View style={{
                         height: 8, borderRadius: 4,
-                        backgroundColor: hitMin ? '#4CAF50' : '#FF5C1A',
+                        backgroundColor: hitMin ? '#4CAF50' : theme.primary,
                         width: `${Math.min(timerProgress * 100, 100)}%`,
                       }} />
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                      <Text style={{ color: '#7A7670', fontSize: 10 }}>0s</Text>
-                      <Text style={{ color: '#FF5C1A', fontSize: 10, fontWeight: '600' }}>min {timeMin}s</Text>
+                      <Text style={{ color: theme.muted, fontSize: 10 }}>0s</Text>
+                      <Text style={{ color: theme.primary, fontSize: 10, fontWeight: '600' }}>min {timeMin}s</Text>
                       <Text style={{ color: '#4CAF50', fontSize: 10, fontWeight: '600' }}>max {timeMax}s</Text>
                     </View>
                   </View>
@@ -747,7 +751,7 @@ export default function WorkoutSessionScreen() {
                 <View style={{ flexDirection: 'row', gap: 16, marginTop: 20 }}>
                   {!exTimerRunning ? (
                     <TouchableOpacity onPress={() => setExTimerRunning(true)}
-                      style={{ backgroundColor: '#FF5C1A', borderRadius: 16, paddingHorizontal: 32, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      style={{ backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 32, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Ionicons name="play" size={18} color="#fff" />
                       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
                         {exTimer > 0 ? 'Resume' : 'Start Timer'}
@@ -762,7 +766,7 @@ export default function WorkoutSessionScreen() {
                   )}
                   {exTimer > 0 && (
                     <TouchableOpacity onPress={() => { setExTimer(0); setExTimerRunning(false); }}
-                      style={{ backgroundColor: '#E2E0DA', borderRadius: 16, padding: 14 }}>
+                      style={{ backgroundColor: theme.border, borderRadius: 16, padding: 14 }}>
                       <Ionicons name="refresh" size={18} color="#7A7670" />
                     </TouchableOpacity>
                   )}
@@ -780,24 +784,24 @@ export default function WorkoutSessionScreen() {
               >
                 <View style={{
                   width: 200, height: 200, borderRadius: 100,
-                  borderWidth: 8, borderColor: '#FF5C1A',
-                  alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF',
+                  borderWidth: 8, borderColor: theme.primary,
+                  alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surface,
                 }}>
                   {mode === 'repRange' ? (
                     <>
-                      <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600' }}>TARGET</Text>
-                      <Text style={{ fontSize: 40, fontWeight: '800', color: '#1C1A17' }}>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ fontSize: 40, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps_min}-{currentEx.reps_max}
                       </Text>
-                      <Text style={{ color: '#7A7670', fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600' }}>TARGET</Text>
-                      <Text style={{ fontSize: 48, fontWeight: '800', color: '#1C1A17' }}>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ fontSize: 48, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps ?? '?'}
                       </Text>
-                      <Text style={{ color: '#7A7670', fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
                     </>
                   )}
                 </View>
@@ -805,18 +809,18 @@ export default function WorkoutSessionScreen() {
             )}
 
             {/* Editable fields */}
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', marginBottom: 16 }}>
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 16 }}>
               {/* Sets count */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600' }}>Sets</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Sets</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <TouchableOpacity onPress={() => updateSetsCount(allSets.length - 1)}
-                    style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
+                    style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="remove" size={16} color="#7A7670" />
                   </TouchableOpacity>
-                  <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 18, minWidth: 24, textAlign: 'center' }}>{allSets.length}</Text>
+                  <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, minWidth: 24, textAlign: 'center' }}>{allSets.length}</Text>
                   <TouchableOpacity onPress={() => updateSetsCount(allSets.length + 1)}
-                    style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
+                    style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="add" size={16} color="#7A7670" />
                   </TouchableOpacity>
                 </View>
@@ -825,7 +829,7 @@ export default function WorkoutSessionScreen() {
               {/* Reps (only for non-timed) */}
               {!isTimedEx && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600' }}>
+                  <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>
                     {mode === 'repRange' ? `Reps done (${currentEx.reps_min}-${currentEx.reps_max})` : 'Reps done'}
                   </Text>
                   <TextInput
@@ -835,8 +839,8 @@ export default function WorkoutSessionScreen() {
                     placeholder={String(currentEx.reps ?? currentEx.reps_min ?? '10')}
                     placeholderTextColor="#7A7670"
                     style={{
-                      backgroundColor: '#F7F6F3', borderRadius: 10, borderWidth: 1, borderColor: '#E2E0DA',
-                      paddingHorizontal: 16, paddingVertical: 10, color: '#1C1A17', fontWeight: '700',
+                      backgroundColor: theme.background, borderRadius: 10, borderWidth: 1, borderColor: theme.border,
+                      paddingHorizontal: 16, paddingVertical: 10, color: theme.text, fontWeight: '700',
                       fontSize: 18, width: 80, textAlign: 'center',
                     }}
                   />
@@ -845,7 +849,7 @@ export default function WorkoutSessionScreen() {
 
               {/* Weight */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#7A7670', fontSize: 13, fontWeight: '600' }}>Weight (kg)</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Weight (kg)</Text>
                 <TextInput
                   value={editWeight}
                   onChangeText={setEditWeight}
@@ -853,8 +857,8 @@ export default function WorkoutSessionScreen() {
                   placeholder={String(currentEx.weight_kg ?? '0')}
                   placeholderTextColor="#7A7670"
                   style={{
-                    backgroundColor: '#F7F6F3', borderRadius: 10, borderWidth: 1, borderColor: '#E2E0DA',
-                    paddingHorizontal: 16, paddingVertical: 10, color: '#1C1A17', fontWeight: '700',
+                    backgroundColor: theme.background, borderRadius: 10, borderWidth: 1, borderColor: theme.border,
+                    paddingHorizontal: 16, paddingVertical: 10, color: theme.text, fontWeight: '700',
                     fontSize: 18, width: 80, textAlign: 'center',
                   }}
                 />
@@ -867,12 +871,12 @@ export default function WorkoutSessionScreen() {
                 <TouchableOpacity key={i} onPress={() => { if (!s.completed) { setCurrentSetIdx(i); initSetEdits(currentExIdx, i); } }}>
                   <View style={{
                     width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: s.completed ? '#4CAF50' : i === currentSetIdx ? '#FF5C1A' : '#E2E0DA',
+                    backgroundColor: s.completed ? '#4CAF50' : i === currentSetIdx ? theme.primary : theme.border,
                   }}>
                     {s.completed ? (
                       <Ionicons name="checkmark" size={16} color="#fff" />
                     ) : (
-                      <Text style={{ color: i === currentSetIdx ? '#fff' : '#7A7670', fontWeight: '700', fontSize: 13 }}>{i + 1}</Text>
+                      <Text style={{ color: i === currentSetIdx ? '#fff' : theme.muted, fontWeight: '700', fontSize: 13 }}>{i + 1}</Text>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -887,21 +891,21 @@ export default function WorkoutSessionScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: currentExIdx === 0 ? 0.3 : 1 }}
               >
                 <Ionicons name="chevron-back" size={16} color="#7A7670" />
-                <Text style={{ color: '#7A7670', fontSize: 13 }}>Prev exercise</Text>
+                <Text style={{ color: theme.muted, fontSize: 13 }}>Prev exercise</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={currentExIdx >= totalExercises - 1}
                 onPress={() => goToExercise(currentExIdx + 1, 0)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: currentExIdx >= totalExercises - 1 ? 0.3 : 1 }}
               >
-                <Text style={{ color: '#7A7670', fontSize: 13 }}>Next exercise</Text>
+                <Text style={{ color: theme.muted, fontSize: 13 }}>Next exercise</Text>
                 <Ionicons name="chevron-forward" size={16} color="#7A7670" />
               </TouchableOpacity>
             </View>
 
             {/* RPE selector */}
             <View style={{ marginTop: 16 }}>
-              <Text style={{ color: '#7A7670', fontSize: 12, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
+              <Text style={{ color: theme.muted, fontSize: 12, fontWeight: '600', marginBottom: 8, textAlign: 'center' }}>
                 RPE (Perceived Effort)
               </Text>
               <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
@@ -912,10 +916,10 @@ export default function WorkoutSessionScreen() {
                     <TouchableOpacity key={val} onPress={() => setEditRpe(selected ? null : val)}
                       style={{
                         width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: selected ? rpeColor : '#F7F6F3',
-                        borderWidth: 1, borderColor: selected ? rpeColor : '#E2E0DA',
+                        backgroundColor: selected ? rpeColor : theme.background,
+                        borderWidth: 1, borderColor: selected ? rpeColor : theme.border,
                       }}>
-                      <Text style={{ color: selected ? '#fff' : '#7A7670', fontWeight: '700', fontSize: 12 }}>{val}</Text>
+                      <Text style={{ color: selected ? '#fff' : theme.muted, fontWeight: '700', fontSize: 12 }}>{val}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -924,11 +928,11 @@ export default function WorkoutSessionScreen() {
           </ScrollView>
 
           {/* Complete set button */}
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: '#F7F6F3' }}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
             <TouchableOpacity onPress={completeCurrentSet}
               disabled={isTimedEx && !exTimerRunning && exTimer === 0}
               style={{
-                backgroundColor: (isTimedEx && !exTimerRunning && exTimer === 0) ? '#E2E0DA' : '#4CAF50',
+                backgroundColor: (isTimedEx && !exTimerRunning && exTimer === 0) ? theme.border : '#4CAF50',
                 borderRadius: 16, paddingVertical: 18, alignItems: 'center',
                 flexDirection: 'row', justifyContent: 'center', gap: 8,
               }}>
@@ -955,50 +959,50 @@ export default function WorkoutSessionScreen() {
         : `Next: Set ${nextSetIdx + 1}`;
 
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <MotiView
               from={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring' }}
             >
-              <Text style={{ color: '#7A7670', fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 }}>
+              <Text style={{ color: theme.muted, fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 }}>
                 Rest Time
               </Text>
 
               <View style={{
                 width: 220, height: 220, borderRadius: 110,
-                borderWidth: 10, borderColor: '#FF5C1A',
-                alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF',
+                borderWidth: 10, borderColor: theme.primary,
+                alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surface,
                 alignSelf: 'center',
               }}>
-                <Text style={{ fontSize: 52, fontWeight: '800', color: '#1C1A17' }}>
+                <Text style={{ fontSize: 52, fontWeight: '800', color: theme.text }}>
                   {formatTime(restTimer)}
                 </Text>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 4 }}>
+                <Text style={{ color: theme.muted, fontSize: 13, marginTop: 4 }}>
                   / {formatTime(restTimerMax)}
                 </Text>
               </View>
 
               {/* Progress bar */}
-              <View style={{ width: SCREEN_W - 80, height: 6, backgroundColor: '#E2E0DA', borderRadius: 3, marginTop: 24, alignSelf: 'center' }}>
+              <View style={{ width: SCREEN_W - 80, height: 6, backgroundColor: theme.border, borderRadius: 3, marginTop: 24, alignSelf: 'center' }}>
                 <View
-                  style={{ height: 6, borderRadius: 3, backgroundColor: '#FF5C1A', width: `${restProgress * 100}%` }}
+                  style={{ height: 6, borderRadius: 3, backgroundColor: theme.primary, width: `${restProgress * 100}%` }}
                 />
               </View>
 
-              <Text style={{ color: '#7A7670', fontSize: 14, textAlign: 'center', marginTop: 24 }}>
+              <Text style={{ color: theme.muted, fontSize: 14, textAlign: 'center', marginTop: 24 }}>
                 {nextLabel}
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 16, marginTop: 24, justifyContent: 'center' }}>
                 <TouchableOpacity onPress={() => setRestTimer((t) => Math.max(0, t - 15))}
-                  style={{ backgroundColor: '#F7F6F3', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#E2E0DA' }}>
-                  <Text style={{ color: '#7A7670', fontWeight: '600', fontSize: 13 }}>-15s</Text>
+                  style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.border }}>
+                  <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>-15s</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setRestTimer((t) => t + 15)}
-                  style={{ backgroundColor: '#F7F6F3', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#E2E0DA' }}>
-                  <Text style={{ color: '#7A7670', fontWeight: '600', fontSize: 13 }}>+15s</Text>
+                  style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.border }}>
+                  <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>+15s</Text>
                 </TouchableOpacity>
               </View>
             </MotiView>
@@ -1006,7 +1010,7 @@ export default function WorkoutSessionScreen() {
 
           <View style={{ padding: 20, paddingBottom: 36 }}>
             <TouchableOpacity onPress={skipRest}
-              style={{ backgroundColor: '#FF5C1A', borderRadius: 16, paddingVertical: 18, alignItems: 'center' }}>
+              style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center' }}>
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Skip Rest</Text>
             </TouchableOpacity>
           </View>
@@ -1032,7 +1036,7 @@ export default function WorkoutSessionScreen() {
       });
 
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 20, paddingBottom: 120 }}>
             <MotiView
               from={{ scale: 0.5, opacity: 0 }}
@@ -1040,39 +1044,39 @@ export default function WorkoutSessionScreen() {
               transition={{ type: 'spring', damping: 12 }}
             >
               <Text style={{ fontSize: 64, textAlign: 'center' }}>🎉</Text>
-              <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 28, textAlign: 'center', marginTop: 16 }}>
-                Workout Complete!
+              <Text style={{ color: theme.text, fontWeight: '800', fontSize: 28, textAlign: 'center', marginTop: 16 }}>
+                {t('workout.complete')}
               </Text>
-              <Text style={{ color: '#7A7670', fontSize: 15, textAlign: 'center', marginTop: 8 }}>
-                Great job finishing your session
+              <Text style={{ color: theme.muted, fontSize: 15, textAlign: 'center', marginTop: 8 }}>
+                {t('workout.completeDesc')}
               </Text>
 
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 32, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center', minWidth: 80 }}>
-                  <Ionicons name="time-outline" size={20} color="#FF5C1A" />
-                  <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 18, marginTop: 6 }}>{formatTime(elapsed)}</Text>
-                  <Text style={{ color: '#7A7670', fontSize: 10, marginTop: 2 }}>Duration</Text>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', minWidth: 80 }}>
+                  <Ionicons name="time-outline" size={20} color={theme.primary} />
+                  <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginTop: 6 }}>{formatTime(elapsed)}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>{t('workout.duration')}</Text>
                 </View>
-                <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center', minWidth: 80 }}>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', minWidth: 80 }}>
                   <Ionicons name="checkmark-done-outline" size={20} color="#4CAF50" />
-                  <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 18, marginTop: 6 }}>{totalSetsCount}</Text>
-                  <Text style={{ color: '#7A7670', fontSize: 10, marginTop: 2 }}>Sets</Text>
+                  <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginTop: 6 }}>{totalSetsCount}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>{t('workout.sets')}</Text>
                 </View>
-                <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center', minWidth: 80 }}>
-                  <Ionicons name="fitness-outline" size={20} color="#FF5C1A" />
-                  <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 18, marginTop: 6 }}>{totalRepsCount}</Text>
-                  <Text style={{ color: '#7A7670', fontSize: 10, marginTop: 2 }}>Reps</Text>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', minWidth: 80 }}>
+                  <Ionicons name="fitness-outline" size={20} color={theme.primary} />
+                  <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginTop: 6 }}>{totalRepsCount}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>{t('workout.reps')}</Text>
                 </View>
-                <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center', minWidth: 80 }}>
-                  <Ionicons name="barbell-outline" size={20} color="#FF5C1A" />
-                  <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 18, marginTop: 6 }}>{Math.round(totalVolume)}</Text>
-                  <Text style={{ color: '#7A7670', fontSize: 10, marginTop: 2 }}>Vol. (kg)</Text>
+                <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', minWidth: 80 }}>
+                  <Ionicons name="barbell-outline" size={20} color={theme.primary} />
+                  <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginTop: 6 }}>{Math.round(totalVolume)}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>Vol. (kg)</Text>
                 </View>
                 {totalRestSec > 0 && (
-                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center', minWidth: 80 }}>
+                  <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', minWidth: 80 }}>
                     <Ionicons name="hourglass-outline" size={20} color="#7A7670" />
-                    <Text style={{ color: '#1C1A17', fontWeight: '800', fontSize: 18, marginTop: 6 }}>{formatTime(totalRestSec)}</Text>
-                    <Text style={{ color: '#7A7670', fontSize: 10, marginTop: 2 }}>Rest</Text>
+                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginTop: 6 }}>{formatTime(totalRestSec)}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>{t('workout.rest')}</Text>
                   </View>
                 )}
               </View>
@@ -1083,9 +1087,9 @@ export default function WorkoutSessionScreen() {
                   const done = sets.filter((s) => s.completed).length;
                   return (
                     <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                      <Ionicons name={done === sets.length ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={done === sets.length ? '#4CAF50' : '#E2E0DA'} />
-                      <Text style={{ color: '#1C1A17', fontSize: 14, flex: 1 }}>{pe.exercises?.name ?? 'Exercise'}</Text>
-                      <Text style={{ color: '#7A7670', fontSize: 12 }}>{done}/{sets.length} sets</Text>
+                      <Ionicons name={done === sets.length ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={done === sets.length ? '#4CAF50' : theme.border} />
+                      <Text style={{ color: theme.text, fontSize: 14, flex: 1 }}>{pe.exercises?.name ?? 'Exercise'}</Text>
+                      <Text style={{ color: theme.muted, fontSize: 12 }}>{done}/{sets.length} sets</Text>
                     </View>
                   );
                 })}
@@ -1093,10 +1097,10 @@ export default function WorkoutSessionScreen() {
             </MotiView>
           </ScrollView>
 
-          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: '#F7F6F3' }}>
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
             <TouchableOpacity onPress={handleFinish}
-              style={{ backgroundColor: '#FF5C1A', borderRadius: 16, paddingVertical: 18, alignItems: 'center' }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Finish & Save</Text>
+              style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>{t('workout.finishSave')}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -1108,14 +1112,14 @@ export default function WorkoutSessionScreen() {
   // FREE WORKOUT (no program)
   // ═══════════════════════════════════════════════════════
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 18 }}>Quick Workout</Text>
-          <Text style={{ color: '#FF5C1A', fontSize: 14, fontWeight: '600' }}>{formatTime(elapsed)}</Text>
+          <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18 }}>{t('workout.quickStart')}</Text>
+          <Text style={{ color: theme.primary, fontSize: 14, fontWeight: '600' }}>{formatTime(elapsed)}</Text>
         </View>
         <TouchableOpacity onPress={handleEndSession}
           style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
@@ -1127,34 +1131,34 @@ export default function WorkoutSessionScreen() {
         {freeExercises.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
             <Text style={{ fontSize: 40 }}>🏋️</Text>
-            <Text style={{ color: '#1C1A17', fontSize: 16, fontWeight: '600', marginTop: 12 }}>Add your first exercise</Text>
-            <Text style={{ color: '#7A7670', marginTop: 8, textAlign: 'center' }}>Tap the button below to pick exercises</Text>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.addFirstExercise')}</Text>
+            <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.addFirstExerciseDesc')}</Text>
           </View>
         )}
 
         {freeExercises.map((ex, exIdx) => (
-          <View key={`${ex.id}-${exIdx}`} style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E0DA' }}>
-            <Text style={{ color: '#1C1A17', fontWeight: '700', fontSize: 15, marginBottom: 12 }}>{ex.name}</Text>
+          <View key={`${ex.id}-${exIdx}`} style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>{ex.name}</Text>
             <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-              <Text style={{ color: '#7A7670', fontSize: 12, width: 30 }}>Set</Text>
-              <Text style={{ color: '#7A7670', fontSize: 12, flex: 1, textAlign: 'center' }}>Reps</Text>
-              <Text style={{ color: '#7A7670', fontSize: 12, flex: 1, textAlign: 'center' }}>Weight (kg)</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, width: 30 }}>Set</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, flex: 1, textAlign: 'center' }}>Reps</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, flex: 1, textAlign: 'center' }}>Weight (kg)</Text>
               <View style={{ width: 40 }} />
             </View>
             {ex.sets.map((s, setIdx) => (
               <View key={setIdx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 }}>
-                <Text style={{ color: '#7A7670', fontSize: 14, width: 22 }}>{setIdx + 1}</Text>
+                <Text style={{ color: theme.muted, fontSize: 14, width: 22 }}>{setIdx + 1}</Text>
                 <TextInput value={s.reps} onChangeText={(v) => updateFreeSet(exIdx, setIdx, 'reps', v)}
                   placeholder="12" placeholderTextColor="#7A7670" keyboardType="number-pad"
                   style={{
-                    flex: 1, backgroundColor: s.completed ? '#4CAF5018' : '#F7F6F3', borderRadius: 8, padding: 10,
-                    color: '#1C1A17', textAlign: 'center', borderWidth: 1, borderColor: s.completed ? '#4CAF50' : '#E2E0DA',
+                    flex: 1, backgroundColor: s.completed ? '#4CAF5018' : theme.background, borderRadius: 8, padding: 10,
+                    color: theme.text, textAlign: 'center', borderWidth: 1, borderColor: s.completed ? '#4CAF50' : theme.border,
                   }} />
                 <TextInput value={s.weight} onChangeText={(v) => updateFreeSet(exIdx, setIdx, 'weight', v)}
                   placeholder="60" placeholderTextColor="#7A7670" keyboardType="decimal-pad"
                   style={{
-                    flex: 1, backgroundColor: s.completed ? '#4CAF5018' : '#F7F6F3', borderRadius: 8, padding: 10,
-                    color: '#1C1A17', textAlign: 'center', borderWidth: 1, borderColor: s.completed ? '#4CAF50' : '#E2E0DA',
+                    flex: 1, backgroundColor: s.completed ? '#4CAF5018' : theme.background, borderRadius: 8, padding: 10,
+                    color: theme.text, textAlign: 'center', borderWidth: 1, borderColor: s.completed ? '#4CAF50' : theme.border,
                   }} />
                 <TouchableOpacity onPress={() => completeFreeSet(exIdx, setIdx)} disabled={s.completed}
                   style={{ backgroundColor: s.completed ? '#4CAF50' : '#4CAF5022', borderRadius: 8, padding: 8 }}>
@@ -1163,43 +1167,43 @@ export default function WorkoutSessionScreen() {
               </View>
             ))}
             <TouchableOpacity onPress={() => addFreeSet(exIdx)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
-              <Ionicons name="add-circle-outline" size={16} color="#FF5C1A" />
-              <Text style={{ color: '#FF5C1A', fontSize: 13 }}>Add Set</Text>
+              <Ionicons name="add-circle-outline" size={16} color={theme.primary} />
+              <Text style={{ color: theme.primary, fontSize: 13 }}>{t('workout.addSet')}</Text>
             </TouchableOpacity>
           </View>
         ))}
 
         <TouchableOpacity onPress={() => { setSearchQuery(''); setShowPicker(true); }}
-          style={{ borderWidth: 1.5, borderColor: '#FF5C1A', borderStyle: 'dashed', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
-          <Ionicons name="add" size={20} color="#FF5C1A" />
-          <Text style={{ color: '#FF5C1A', fontWeight: '600', fontSize: 15 }}>Add Exercise</Text>
+          style={{ borderWidth: 1.5, borderColor: theme.primary, borderStyle: 'dashed', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+          <Ionicons name="add" size={20} color={theme.primary} />
+          <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 15 }}>{t('workout.addExercise')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
       {showPicker && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F7F6F3' }}>
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.background }}>
           <SafeAreaView style={{ flex: 1 }}>
             <View style={{ padding: 20 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ color: '#1C1A17', fontSize: 20, fontWeight: '700' }}>Choose Exercise</Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: '700' }}>{t('workout.chooseExercise')}</Text>
                 <TouchableOpacity onPress={() => setShowPicker(false)}>
                   <Ionicons name="close" size={24} color="#7A7670" />
                 </TouchableOpacity>
               </View>
               <TextInput value={searchQuery} onChangeText={setSearchQuery}
-                placeholder="Search exercises…" placeholderTextColor="#7A7670"
-                style={{ backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', paddingHorizontal: 16, paddingVertical: 12, color: '#1C1A17', marginBottom: 12 }} />
+                placeholder={t('workout.searchExercise')} placeholderTextColor="#7A7670"
+                style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 12, color: theme.text, marginBottom: 12 }} />
             </View>
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}>
               {filteredExercises.map((ex) => (
                 <TouchableOpacity key={ex.id} onPress={() => addFreeExercise(ex)}
-                  style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: '#FF5C1A22', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="barbell-outline" size={16} color="#FF5C1A" />
+                  style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="barbell-outline" size={16} color={theme.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#1C1A17', fontWeight: '500', fontSize: 14 }}>{ex.name}</Text>
-                    <Text style={{ color: '#7A7670', fontSize: 11, marginTop: 2 }}>{ex.muscle_groups.join(', ')}</Text>
+                    <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14 }}>{ex.name}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>{ex.muscle_groups.join(', ')}</Text>
                   </View>
                 </TouchableOpacity>
               ))}

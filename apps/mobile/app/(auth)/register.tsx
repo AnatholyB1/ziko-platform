@@ -12,8 +12,10 @@ import {
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
+import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,11 +23,11 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('general.error'), t('auth.fillAll'));
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      Alert.alert(t('general.error'), t('auth.passwordMin'));
       return;
     }
 
@@ -61,18 +63,18 @@ export default function RegisterScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24 }} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 8, marginBottom: 32 }}>
-            <Text style={{ color: '#FF5C1A', fontSize: 15 }}>← Back</Text>
+            <Text style={{ color: '#FF5C1A', fontSize: 15 }}>← {t('general.back')}</Text>
           </TouchableOpacity>
 
           <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginBottom: 8 }}>
-            Create account
+            {t('auth.createAccount')}
           </Text>
           <Text style={{ color: '#7A7670', fontSize: 15, marginBottom: 32 }}>
-            Start your fitness journey today
+            {t('auth.startJourney')}
           </Text>
 
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Full name</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('auth.fullName')}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -84,7 +86,7 @@ export default function RegisterScreen() {
           </View>
 
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Email</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('auth.email')}</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
@@ -98,7 +100,7 @@ export default function RegisterScreen() {
           </View>
 
           <View style={{ marginBottom: 24 }}>
-            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>Password</Text>
+            <Text style={{ color: '#7A7670', fontSize: 13, marginBottom: 6 }}>{t('auth.password')}</Text>
             <TextInput
               value={password}
               onChangeText={setPassword}
@@ -121,15 +123,15 @@ export default function RegisterScreen() {
             }}
           >
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>
-              {isLoading ? 'Creating account…' : 'Create Account'}
+              {isLoading ? t('general.loading') : t('auth.createAccount')}
             </Text>
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 32 }}>
-            <Text style={{ color: '#7A7670' }}>Already have an account? </Text>
+            <Text style={{ color: '#7A7670' }}>{t('auth.haveAccount')} </Text>
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity>
-                <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>Sign In</Text>
+                <Text style={{ color: '#FF5C1A', fontWeight: '600' }}>{t('auth.login')}</Text>
               </TouchableOpacity>
             </Link>
           </View>

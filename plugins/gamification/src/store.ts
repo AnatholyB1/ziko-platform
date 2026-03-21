@@ -18,6 +18,8 @@ export interface GamificationProfile {
   last_activity_date: string | null;
   equipped_title: string;
   equipped_badge: string | null;
+  equipped_banner_name: string | null;
+  equipped_theme: string | null;
 }
 
 export interface Transaction {
@@ -32,7 +34,7 @@ export interface ShopItem {
   id: string;
   name: string;
   description: string | null;
-  category: 'title' | 'badge' | 'theme';
+  category: 'title' | 'badge' | 'theme' | 'banner';
   price: number;
   icon: string | null;
   level_required: number;
@@ -454,6 +456,38 @@ export async function equipItem(supabase: any, itemId: string, category: string)
       await supabase
         .from('user_gamification')
         .update({ equipped_badge: shopItem.icon, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+    }
+  }
+
+  // If it's a banner, update equipped_banner_name
+  if (category === 'banner') {
+    const { data: shopItem } = await supabase
+      .from('shop_items')
+      .select('name')
+      .eq('id', itemId)
+      .single();
+
+    if (shopItem) {
+      await supabase
+        .from('user_gamification')
+        .update({ equipped_banner_name: shopItem.name, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+    }
+  }
+
+  // If it's a theme, update equipped_theme
+  if (category === 'theme') {
+    const { data: shopItem } = await supabase
+      .from('shop_items')
+      .select('name')
+      .eq('id', itemId)
+      .single();
+
+    if (shopItem) {
+      await supabase
+        .from('user_gamification')
+        .update({ equipped_theme: shopItem.name, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }
   }

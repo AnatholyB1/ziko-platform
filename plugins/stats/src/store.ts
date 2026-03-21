@@ -148,6 +148,33 @@ export interface GamificationOverview {
   daysActive: number;
 }
 
+// ── Community Stats Types ───────────────────────────────
+export interface CommunityOverview {
+  totalFriends: number;
+  messagesSent: number;
+  challengesTotal: number;
+  challengesWon: number;
+  challengesLost: number;
+  challengesTied: number;
+  xpGifted: number;
+  xpReceived: number;
+  coinsGifted: number;
+  coinsReceived: number;
+  programsShared: number;
+  groupWorkoutsDone: number;
+  encouragementsSent: number;
+  encouragementsReceived: number;
+  invitesSent: number;
+  invitesAccepted: number;
+  reactionsSent: number;
+}
+
+export interface CommunityActivityPoint {
+  date: string;
+  messages: number;
+  reactions: number;
+}
+
 // ── AI Stats Types ──────────────────────────────────────
 export interface ConversationActivity {
   date: string;
@@ -1008,4 +1035,85 @@ export async function fetchAIOverview(
     longestConversation,
     activeDays: activeDates.size,
   };
+}
+
+// ════════════════════════════════════════════════════════
+// COMMUNITY STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchCommunityOverview(
+  supabase: any, cutoff: string | null,
+): Promise<CommunityOverview> {
+  const [statsRes, friendsRes] = await Promise.all([
+    supabase.from('community_user_stats').select('*').maybeSingle(),
+    supabase.from('friendships').select('id').eq('status', 'accepted'),
+  ]);
+
+  const s = statsRes.data;
+  const totalFriends = friendsRes.data?.length ?? 0;
+
+  if (!s) {
+    return {
+      totalFriends,
+      messagesSent: 0, challengesTotal: 0, challengesWon: 0,
+      challengesLost: 0, challengesTied: 0,
+      xpGifted: 0, xpReceived: 0, coinsGifted: 0, coinsReceived: 0,
+      programsShared: 0, groupWorkoutsDone: 0,
+      encouragementsSent: 0, encouragementsReceived: 0,
+      invitesSent: 0, invitesAccepted: 0, reactionsSent: 0,
+    };
+  }
+
+  return {
+    totalFriends,
+    messagesSent: s.messages_sent,
+    challengesTotal: s.challenges_won + s.challenges_lost + s.challenges_tied,
+    challengesWon: s.challenges_won,
+    challengesLost: s.challenges_lost,
+    challengesTied: s.challenges_tied,
+    xpGifted: s.xp_gifted,
+    xpReceived: s.xp_received,
+    coinsGifted: s.coins_gifted,
+    coinsReceived: s.coins_received,
+    programsShared: s.programs_shared,
+    groupWorkoutsDone: s.group_workouts_done,
+    encouragementsSent: s.encouragements_sent,
+    encouragementsReceived: s.encouragements_received,
+    invitesSent: s.invites_sent,
+    invitesAccepted: s.invites_accepted,
+    reactionsSent: s.reactions_sent,
+  };
+}
+
+export async function fetchCommunityActivity(
+  supabase: any, cutoff: string | null,
+): Promise<CommunityActivityPoint[]> {
+  let q = supabase
+    .from('community_messages')
+    .select('created_at')
+    .order('created_at');
+  if (cutoff) q = q.gte('created_at', cutoff);
+  const { data: msgs } = await q;
+  if (!msgs || msgs.length === 0) return [];
+
+  const byDay: Record<string, { messages: number; reactions: number }> = {};
+  for (const m of msgs) {
+    const day = m.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { messages: 0, reactions: 0 };
+    byDay[day].messages++;
+  }
+
+  // Also grab reactions
+  let rq = supabase.from('screen_reactions').select('created_at').order('created_at');
+  if (cutoff) rq = rq.gte('created_at', cutoff);
+  const { data: reactions } = await rq;
+  for (const r of (reactions ?? [])) {
+    const day = r.created_at.split('T')[0];
+    if (!byDay[day]) byDay[day] = { messages: 0, reactions: 0 };
+    byDay[day].reactions++;
+  }
+
+  return Object.entries(byDay)
+    .map(([date, d]) => ({ date, messages: d.messages, reactions: d.reactions }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }

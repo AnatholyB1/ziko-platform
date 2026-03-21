@@ -6,8 +6,10 @@ import { MotiView } from 'moti';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import { colors, Input, Button } from '@ziko/ui';
+import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function OnboardingStep1() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [name, setName] = useState('');
 
@@ -46,19 +48,19 @@ export default function OnboardingStep1() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 400, delay: 200 }}
         >
-          <Text style={{ color: colors.textMuted, marginTop: 32, fontSize: 13 }}>Step 1 of 5</Text>
+          <Text style={{ color: colors.textMuted, marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '1', total: '5' })}</Text>
           <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text, marginTop: 8 }}>
-            What's your name?
+            {t('onboarding.whatsYourName')}
           </Text>
           <Text style={{ color: colors.textMuted, marginTop: 8, fontSize: 15 }}>
-            Let's personalise your experience.
+            {t('onboarding.personalise')}
           </Text>
 
           <View style={{ marginTop: 32 }}>
             <Input
               value={name}
               onChangeText={setName}
-              placeholder="Your first name"
+              placeholder={t('onboarding.firstName')}
               autoFocus
               style={{ fontSize: 18 }}
             />
@@ -73,7 +75,7 @@ export default function OnboardingStep1() {
           transition={{ type: 'timing', duration: 350, delay: 350 }}
         >
           <Button
-            title="Continue →"
+            title={t('onboarding.continue')}
             onPress={handleNext}
             disabled={!name.trim()}
             size="lg"

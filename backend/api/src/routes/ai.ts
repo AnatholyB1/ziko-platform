@@ -226,4 +226,88 @@ router.post('/chat', async (c) => {
   return c.json({ content: text, conversation_id: convo.conversationId });
 });
 
+// ─── Vision: Food Nutrition Analysis ──────────────────────────────
+
+router.post('/vision/nutrition', async (c) => {
+  const { image, meal_context } = await c.req.json<{
+    image: string; // base64 encoded image
+    meal_context?: string;
+  }>();
+
+  if (!image) return c.json({ error: 'image (base64) is required' }, 400);
+
+  // Validate base64 size (max ~10MB raw)
+  if (image.length > 14_000_000) {
+    return c.json({ error: 'Image too large (max 10MB)' }, 413);
+  }
+
+  // Detect media type from base64 header or default to jpeg
+  let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
+  let base64Data = image;
+  const dataUrlMatch = image.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
+  if (dataUrlMatch) {
+    mediaType = dataUrlMatch[1] as typeof mediaType;
+    base64Data = image.slice(dataUrlMatch[0].length);
+  }
+
+  const prompt = `Analyze this food image and estimate the nutritional content.
+
+${meal_context ? `Context: ${meal_context}` : ''}
+
+Return ONLY a valid JSON object (no markdown, no explanation) with this exact structure:
+{
+  "foods": [
+    {
+      "food_name": "name of the food item",
+      "calories": number,
+      "protein_g": number,
+      "carbs_g": number,
+      "fat_g": number,
+      "serving_g": number,
+      "confidence": "high" | "medium" | "low"
+    }
+  ],
+  "description": "brief description of what you see in the image"
+}
+
+Rules:
+- Identify ALL distinct food items visible in the image
+- Estimate realistic portion sizes based on visual cues
+- Use standard nutritional databases as reference for macros
+- If you cannot identify food in the image, return: {"foods": [], "description": "No food detected"}
+- Numbers should be rounded to 1 decimal place`;
+
+  try {
+    const { text } = await generateText({
+      model: AGENT_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              image: base64Data,
+              mediaType,
+            },
+            {
+              type: 'text',
+              text: prompt,
+            },
+          ],
+        },
+      ],
+    });
+
+    // Parse the JSON response
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+    const result = JSON.parse(cleaned);
+
+    return c.json(result);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Vision Error]', msg);
+    return c.json({ error: 'Failed to analyze image' }, 500);
+  }
+});
+
 export { router as aiRouter };

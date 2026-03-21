@@ -207,7 +207,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     const { data } = await supabase
       .from('workout_programs')
-      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups)))')
+      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups, category)))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 

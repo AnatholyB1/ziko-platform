@@ -2,15 +2,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from '@ziko/plugin-sdk';
 
 const FEATURES = [
-  { emoji: '🏋️', title: 'Workout Tracker', desc: 'Log sessions, track PRs, rest timer' },
-  { emoji: '🤖', title: 'AI Coach', desc: 'Personalised advice anytime, anywhere' },
-  { emoji: '🔌', title: 'Plugin Store', desc: 'Add Nutrition Tracker, custom AI personas and more' },
-  { emoji: '📊', title: 'Progress Charts', desc: 'Visualise your improvement over time' },
+  { emoji: '🏋️', titleKey: 'onboarding.featureWorkout', descKey: 'onboarding.featureWorkoutDesc' },
+  { emoji: '🤖', titleKey: 'onboarding.featureAI', descKey: 'onboarding.featureAIDesc' },
+  { emoji: '🔌', titleKey: 'onboarding.featurePlugins', descKey: 'onboarding.featurePluginsDesc' },
+  { emoji: '📊', titleKey: 'onboarding.featureCharts', descKey: 'onboarding.featureChartsDesc' },
 ];
 
 export default function OnboardingStep4() {
+  const { t } = useTranslation();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <View style={{ flex: 1, padding: 24 }}>
@@ -20,12 +22,12 @@ export default function OnboardingStep4() {
           ))}
         </View>
 
-        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>Step 4 of 5</Text>
+        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '4', total: '5' })}</Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
-          What Ziko offers
+          {t('onboarding.whatZikoOffers')}
         </Text>
         <Text style={{ color: '#7A7670', marginTop: 8, fontSize: 15, marginBottom: 32 }}>
-          A complete fitness platform that grows with you.
+          {t('onboarding.whatZikoOffersDesc')}
         </Text>
 
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -46,8 +48,8 @@ export default function OnboardingStep4() {
             >
               <Text style={{ fontSize: 28 }}>{f.emoji}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 16 }}>{f.title}</Text>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{f.desc}</Text>
+                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 16 }}>{t(f.titleKey)}</Text>
+                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{t(f.descKey)}</Text>
               </View>
             </View>
           ))}
@@ -55,10 +57,10 @@ export default function OnboardingStep4() {
 
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, marginBottom: 16 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}>
-            <Text style={{ color: '#7A7670', fontWeight: '600' }}>Back</Text>
+            <Text style={{ color: '#7A7670', fontWeight: '600' }}>{t('general.back')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/(auth)/onboarding/step-5')} style={{ flex: 2, backgroundColor: '#FF5C1A', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Continue →</Text>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('onboarding.continue')}</Text>
           </TouchableOpacity>
         </View>
       </View>

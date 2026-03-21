@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
+    "@ziko/plugin-community": "*",
     "@supabase/supabase-js": "^2.47.0",
     "zustand": "^5.0.0"
   },

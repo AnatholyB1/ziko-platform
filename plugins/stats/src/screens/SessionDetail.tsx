@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
+import { useThemeStore } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,14 +16,15 @@ function formatDuration(seconds: number): string {
   return `${m}m${s.toString().padStart(2, '0')}s`;
 }
 
-function rpeColor(rpe: number): string {
+function rpeColor(rpe: number, theme: any): string {
   if (rpe <= 3) return '#10B981';
   if (rpe <= 6) return '#F59E0B';
-  if (rpe <= 8) return '#FF5C1A';
+  if (rpe <= 8) return theme.primary;
   return '#EF4444';
 }
 
 export default function SessionDetail({ supabase }: { supabase: any }) {
+  const theme = useThemeStore((s) => s.theme);
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
 
   const [session, setSession] = useState<any>(null);
@@ -43,8 +45,8 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
 
   if (!session && !loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: '#6B6963' }}>Séance introuvable</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: theme.muted }}>Séance introuvable</Text>
       </SafeAreaView>
     );
   }
@@ -56,7 +58,7 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
   const date = session ? new Date(session.started_at) : new Date();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
@@ -66,10 +68,10 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
           <Ionicons name="arrow-back" size={24} color="#1C1A17" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: '#1C1A17' }} numberOfLines={1}>
+          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text }} numberOfLines={1}>
             {session?.name ?? 'Séance libre'}
           </Text>
-          <Text style={{ fontSize: 13, color: '#6B6963' }}>
+          <Text style={{ fontSize: 13, color: theme.muted }}>
             {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </Text>
         </View>
@@ -78,7 +80,7 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 16, paddingBottom: 80 }}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor="#FF5C1A" />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {/* Summary KPIs */}
@@ -111,8 +113,8 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
             <View
               key={ex.id}
               style={{
-                backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-                borderWidth: 1, borderColor: '#E2E0DA',
+                backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+                borderWidth: 1, borderColor: theme.border,
               }}
             >
               {/* Exercise header */}
@@ -126,11 +128,11 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: '#1C1A17' }} numberOfLines={1}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }} numberOfLines={1}>
                     {exIdx + 1}. {exName}
                   </Text>
                   {muscles.length > 0 && (
-                    <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 2 }}>
+                    <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>
                       {muscles.join(', ')}
                     </Text>
                   )}
@@ -142,13 +144,13 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
               {(ex.prescribed_sets != null || ex.sets_completed > 0) && (
                 <View style={{
                   flexDirection: 'row', gap: 16, marginTop: 10, paddingTop: 10,
-                  borderTopWidth: 1, borderTopColor: '#F7F6F3',
+                  borderTopWidth: 1, borderTopColor: theme.background,
                 }}>
                   <MiniStat label="Séries" value={`${ex.sets_completed}/${ex.sets_planned ?? '?'}`} />
                   <MiniStat label="Reps" value={`${ex.total_reps}`} />
                   <MiniStat label="Volume" value={`${Math.round(ex.total_volume_kg)}kg`} />
                   {ex.avg_rpe != null && (
-                    <MiniStat label="RPE" value={`${ex.avg_rpe}`} color={rpeColor(ex.avg_rpe)} />
+                    <MiniStat label="RPE" value={`${ex.avg_rpe}`} color={rpeColor(ex.avg_rpe, theme)} />
                   )}
                 </View>
               )}
@@ -159,50 +161,50 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
                   {/* Table header */}
                   <View style={{
                     flexDirection: 'row', paddingVertical: 6,
-                    borderBottomWidth: 1, borderBottomColor: '#E2E0DA',
+                    borderBottomWidth: 1, borderBottomColor: theme.border,
                   }}>
-                    <Text style={{ width: 36, fontSize: 11, fontWeight: '700', color: '#6B6963' }}>Set</Text>
-                    <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: '#6B6963', textAlign: 'center' }}>Poids</Text>
-                    <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: '#6B6963', textAlign: 'center' }}>Reps</Text>
-                    <Text style={{ width: 40, fontSize: 11, fontWeight: '700', color: '#6B6963', textAlign: 'center' }}>RPE</Text>
-                    <Text style={{ width: 50, fontSize: 11, fontWeight: '700', color: '#6B6963', textAlign: 'right' }}>Repos</Text>
+                    <Text style={{ width: 36, fontSize: 11, fontWeight: '700', color: theme.muted }}>Set</Text>
+                    <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: theme.muted, textAlign: 'center' }}>Poids</Text>
+                    <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: theme.muted, textAlign: 'center' }}>Reps</Text>
+                    <Text style={{ width: 40, fontSize: 11, fontWeight: '700', color: theme.muted, textAlign: 'center' }}>RPE</Text>
+                    <Text style={{ width: 50, fontSize: 11, fontWeight: '700', color: theme.muted, textAlign: 'right' }}>Repos</Text>
                   </View>
                   {exSets.map((s: any) => (
                     <View
                       key={s.id}
                       style={{
                         flexDirection: 'row', paddingVertical: 8,
-                        borderBottomWidth: 1, borderBottomColor: '#F7F6F3',
+                        borderBottomWidth: 1, borderBottomColor: theme.background,
                         opacity: s.completed ? 1 : 0.5,
                       }}
                     >
-                      <Text style={{ width: 36, fontSize: 13, color: '#1C1A17' }}>
+                      <Text style={{ width: 36, fontSize: 13, color: theme.text }}>
                         {s.set_number}
                       </Text>
-                      <Text style={{ flex: 1, fontSize: 13, color: '#1C1A17', textAlign: 'center' }}>
+                      <Text style={{ flex: 1, fontSize: 13, color: theme.text, textAlign: 'center' }}>
                         {s.weight_kg != null ? `${s.weight_kg}kg` : '—'}
                         {s.prescribed_weight_kg != null && s.weight_kg !== s.prescribed_weight_kg && (
-                          <Text style={{ fontSize: 11, color: '#6B6963' }}>
+                          <Text style={{ fontSize: 11, color: theme.muted }}>
                             {' '}({s.prescribed_weight_kg})
                           </Text>
                         )}
                       </Text>
-                      <Text style={{ flex: 1, fontSize: 13, color: '#1C1A17', textAlign: 'center' }}>
+                      <Text style={{ flex: 1, fontSize: 13, color: theme.text, textAlign: 'center' }}>
                         {s.reps ?? '—'}
                         {s.prescribed_reps != null && s.reps !== s.prescribed_reps && (
-                          <Text style={{ fontSize: 11, color: '#6B6963' }}>
+                          <Text style={{ fontSize: 11, color: theme.muted }}>
                             {' '}({s.prescribed_reps})
                           </Text>
                         )}
                       </Text>
                       <Text style={{
                         width: 40, fontSize: 13, textAlign: 'center',
-                        color: s.rpe != null ? rpeColor(s.rpe) : '#6B6963',
+                        color: s.rpe != null ? rpeColor(s.rpe, theme) : theme.muted,
                         fontWeight: s.rpe != null ? '700' : '400',
                       }}>
                         {s.rpe ?? '—'}
                       </Text>
-                      <Text style={{ width: 50, fontSize: 13, color: '#6B6963', textAlign: 'right' }}>
+                      <Text style={{ width: 50, fontSize: 13, color: theme.muted, textAlign: 'right' }}>
                         {s.rest_seconds_taken != null ? `${s.rest_seconds_taken}s` : '—'}
                       </Text>
                     </View>
@@ -217,7 +219,7 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
         {!loading && exercises.length === 0 && (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
             <Ionicons name="document-text-outline" size={48} color="#E2E0DA" />
-            <Text style={{ fontSize: 14, color: '#6B6963', marginTop: 8 }}>
+            <Text style={{ fontSize: 14, color: theme.muted, marginTop: 8 }}>
               Aucun détail disponible
             </Text>
           </View>
@@ -229,23 +231,25 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
 
 // ── Sub-components ──────────────────────────────────────
 function SummaryKPI({ icon, label, value }: { icon: string; label: string; value: string }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={{
-      minWidth: '30%', flex: 1, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
-      borderWidth: 1, borderColor: '#E2E0DA', alignItems: 'center',
+      minWidth: '30%', flex: 1, backgroundColor: theme.surface, borderRadius: 12, padding: 12,
+      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
     }}>
-      <Ionicons name={icon as any} size={18} color="#FF5C1A" />
-      <Text style={{ fontSize: 16, fontWeight: '800', color: '#1C1A17', marginTop: 4 }}>{value}</Text>
-      <Text style={{ fontSize: 11, color: '#6B6963', marginTop: 2 }}>{label}</Text>
+      <Ionicons name={icon as any} size={18} color={theme.primary} />
+      <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
 
 function MiniStat({ label, value, color }: { label: string; value: string; color?: string }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={{ alignItems: 'center' }}>
-      <Text style={{ fontSize: 14, fontWeight: '700', color: color ?? '#1C1A17' }}>{value}</Text>
-      <Text style={{ fontSize: 10, color: '#6B6963' }}>{label}</Text>
+      <Text style={{ fontSize: 14, fontWeight: '700', color: color ?? theme.text }}>{value}</Text>
+      <Text style={{ fontSize: 10, color: theme.muted }}>{label}</Text>
     </View>
   );
 }

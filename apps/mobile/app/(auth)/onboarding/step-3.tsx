@@ -4,16 +4,18 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { useTranslation } from '@ziko/plugin-sdk';
 import type { FitnessGoal } from '@ziko/plugin-sdk';
 
-const GOALS: { id: FitnessGoal; label: string; emoji: string; description: string }[] = [
-  { id: 'muscle_gain', label: 'Build Muscle', emoji: '💪', description: 'Increase muscle mass and strength' },
-  { id: 'fat_loss', label: 'Lose Fat', emoji: '🔥', description: 'Reduce body fat while preserving muscle' },
-  { id: 'maintenance', label: 'Stay in Shape', emoji: '⚖️', description: 'Maintain current physique and health' },
-  { id: 'endurance', label: 'Build Endurance', emoji: '🏃', description: 'Improve cardiovascular fitness and stamina' },
+const GOALS: { id: FitnessGoal; labelKey: string; emoji: string; descKey: string }[] = [
+  { id: 'muscle_gain', labelKey: 'onboarding.goalMuscle', emoji: '💪', descKey: 'onboarding.goalMuscleDesc' },
+  { id: 'fat_loss', labelKey: 'onboarding.goalFatLoss', emoji: '🔥', descKey: 'onboarding.goalFatLossDesc' },
+  { id: 'maintenance', labelKey: 'onboarding.goalMaintenance', emoji: '⚖️', descKey: 'onboarding.goalMaintenanceDesc' },
+  { id: 'endurance', labelKey: 'onboarding.goalEndurance', emoji: '🏃', descKey: 'onboarding.goalEnduranceDesc' },
 ];
 
 export default function OnboardingStep3() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [selected, setSelected] = useState<FitnessGoal | null>(null);
 
@@ -34,12 +36,12 @@ export default function OnboardingStep3() {
           ))}
         </View>
 
-        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>Step 3 of 5</Text>
+        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '3', total: '5' })}</Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
-          What's your goal?
+          {t('onboarding.goal')}
         </Text>
         <Text style={{ color: '#7A7670', marginTop: 8, fontSize: 15, marginBottom: 32 }}>
-          This helps Ziko personalise your programme and advice.
+          {t('onboarding.goalDesc')}
         </Text>
 
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -48,7 +50,7 @@ export default function OnboardingStep3() {
               key={goal.id}
               onPress={() => setSelected(goal.id)}
               style={{
-                backgroundColor: selected === goal.id ? '#FF5C1A22' : '#FFFFFF',
+                backgroundColor: selected === goal.id ? theme.primary + '22' : '#FFFFFF',
                 borderRadius: 16,
                 borderWidth: 1.5,
                 borderColor: selected === goal.id ? '#FF5C1A' : '#E2E0DA',
@@ -61,8 +63,8 @@ export default function OnboardingStep3() {
             >
               <Text style={{ fontSize: 28 }}>{goal.emoji}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 16 }}>{goal.label}</Text>
-                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{goal.description}</Text>
+                <Text style={{ color: '#1C1A17', fontWeight: '600', fontSize: 16 }}>{t(goal.labelKey)}</Text>
+                <Text style={{ color: '#7A7670', fontSize: 13, marginTop: 2 }}>{t(goal.descKey)}</Text>
               </View>
               {selected === goal.id && (
                 <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center' }}>
@@ -75,10 +77,10 @@ export default function OnboardingStep3() {
 
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 16, marginBottom: 16 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E0DA' }}>
-            <Text style={{ color: '#7A7670', fontWeight: '600' }}>Back</Text>
+            <Text style={{ color: '#7A7670', fontWeight: '600' }}>{t('general.back')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleNext} disabled={!selected} style={{ flex: 2, backgroundColor: selected ? '#FF5C1A' : '#E2E0DA', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Continue →</Text>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('onboarding.continue')}</Text>
           </TouchableOpacity>
         </View>
       </View>
