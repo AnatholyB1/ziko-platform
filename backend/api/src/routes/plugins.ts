@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const adminClient = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
+  process.env.SUPABASE_PUBLISHABLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
