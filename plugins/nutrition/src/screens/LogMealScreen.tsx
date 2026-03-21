@@ -274,7 +274,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
             )}
           </View>
         ) : tab === 'scan' ? (
-          <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 40 }}>
+          <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 100 }}>
             {!scanImage ? (
               <View style={{ alignItems: 'center', paddingTop: 40 }}>
                 <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>

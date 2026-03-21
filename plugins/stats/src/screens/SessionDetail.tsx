@@ -79,7 +79,7 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 16, paddingBottom: 80 }}
+        contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={theme.primary} />}
         showsVerticalScrollIndicator={false}
       >

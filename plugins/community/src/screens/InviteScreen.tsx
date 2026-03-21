@@ -139,7 +139,7 @@ export default function InviteScreen({ supabase }: { supabase: any }) {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
         keyboardShouldPersistTaps="handled"
       >

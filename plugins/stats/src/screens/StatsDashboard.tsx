@@ -178,7 +178,7 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
       {/* Category tabs */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingTop: 4, paddingBottom: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingTop: 4, paddingBottom: 100 }}
       >
         {tabs.map((t) => (
           <TouchableOpacity

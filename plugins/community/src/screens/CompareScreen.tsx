@@ -203,7 +203,7 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadStats} tintColor={theme.primary} />}
       >
         {/* Friend selector */}

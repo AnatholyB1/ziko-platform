@@ -87,7 +87,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
