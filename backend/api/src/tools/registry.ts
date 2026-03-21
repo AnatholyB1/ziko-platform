@@ -1,6 +1,22 @@
-import type { AITool } from '@ziko/plugin-sdk';
 import * as HabitsTools from './habits.js';
 import * as NutritionTools from './nutrition.js';
+
+// Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
+export interface AIToolParameter {
+  type: 'string' | 'number' | 'integer' | 'boolean';
+  description?: string;
+  enum?: string[];
+}
+
+export interface AITool {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, AIToolParameter>;
+    required?: string[];
+  };
+}
 
 // ── Tool executor type ─────────────────────────────────────
 export interface ToolExecutor {
