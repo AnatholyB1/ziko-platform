@@ -2,10 +2,5 @@
   "buildCommand": "",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/app" }
-  ],
-  "functions": {
-    "api/app.ts": {
-      "runtime": "@vercel/node@3"
-    }
-  }
+  ]
 }
