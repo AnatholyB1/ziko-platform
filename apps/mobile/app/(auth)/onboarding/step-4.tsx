@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from '@ziko/plugin-sdk';
@@ -22,7 +23,14 @@ export default function OnboardingStep4() {
           ))}
         </View>
 
-        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '4', total: '5' })}</Text>
+        <Image
+          source={require('../../../assets/image/step4.png')}
+          style={{ width: '100%', height: 180, alignSelf: 'center', marginTop: 16 }}
+          contentFit="contain"
+          transition={300}
+        />
+
+        <Text style={{ color: '#7A7670', marginTop: 24, fontSize: 13 }}>{t('onboarding.step', { current: '4', total: '5' })}</Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
           {t('onboarding.whatZikoOffers')}
         </Text>
@@ -33,7 +41,7 @@ export default function OnboardingStep4() {
         <ScrollView showsVerticalScrollIndicator={false}>
           {FEATURES.map((f) => (
             <View
-              key={f.title}
+              key={f.titleKey}
               style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: 16,

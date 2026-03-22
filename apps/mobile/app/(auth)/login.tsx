@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
@@ -61,9 +62,12 @@ export default function LoginScreen() {
             transition={{ type: 'timing', duration: 500 }}
             style={{ marginTop: 48, marginBottom: 48 }}
           >
-            <Text style={{ fontSize: 44, fontWeight: '800', color: colors.primary, letterSpacing: -1 }}>
-              Ziko
-            </Text>
+            <Image
+              source={require('../../assets/image/logo.png')}
+              style={{ width: 160, height: 50 }}
+              contentFit="contain"
+              transition={300}
+            />
             <Text style={{ fontSize: 16, color: colors.textMuted, marginTop: 6 }}>
               {t('auth.tagline')}
             </Text>

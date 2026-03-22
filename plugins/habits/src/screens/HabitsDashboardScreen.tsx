@@ -27,6 +27,14 @@ try { usePersonaStore = require('@ziko/plugin-persona').usePersonaStore; } catch
 let useNutritionStore: any = null;
 try { useNutritionStore = require('@ziko/plugin-nutrition').useNutritionStore; } catch {}
 
+// Cross-plugin: hydration store for water progress
+let useHydrationStore: any = null;
+try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+
+// Cross-plugin: sleep store for sleep tracking
+let useSleepStore: any = null;
+try { useSleepStore = require('@ziko/plugin-sleep').useSleepStore; } catch {}
+
 // ── Motivational messages by coaching style ──────────────
 const MOTIVATIONAL = {
   motivational: ['You\'re crushing it! 🔥', 'Keep the momentum going!', 'Every rep counts! 💪'],
@@ -298,6 +306,31 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
   const calorieGoal = useNutritionStore ? useNutritionStore((s: any) => s.calorieGoal) : 0;
   const totalCalories: number = nutritionLogs.reduce((sum: number, l: any) => sum + (l.calories ?? 0), 0);
 
+  // Cross-plugin: hydration progress
+  const hydrationLogs: any[] = useHydrationStore ? useHydrationStore((s: any) => s.logs) : [];
+  const hydrationGoalMl: number = useHydrationStore ? useHydrationStore((s: any) => s.goalMl) : 2500;
+  const hydrationTodayTotal: number = (() => {
+    const today = new Date().toISOString().split('T')[0];
+    return hydrationLogs.filter((l: any) => l.date === today).reduce((sum: number, l: any) => sum + (l.amount_ml ?? 0), 0);
+  })();
+  const hydrationProgress = hydrationGoalMl > 0 ? Math.min(hydrationTodayTotal / hydrationGoalMl, 1) : 0;
+
+  // Cross-plugin: sleep progress
+  const sleepLogs: any[] = useSleepStore ? useSleepStore((s: any) => s.logs) : [];
+  const todaySleep = (() => {
+    const today = new Date().toISOString().split('T')[0];
+    return sleepLogs.find((l: any) => l.date === today) ?? null;
+  })();
+  const sleepDurationH = todaySleep?.duration_hours ?? 0;
+  const sleepQuality = todaySleep?.quality ?? 0;
+  const sleepRecovery = (() => {
+    if (!sleepLogs.length) return 0;
+    const recent = sleepLogs.slice(0, 3);
+    const avgQ = recent.reduce((s: number, l: any) => s + (l.quality ?? 0), 0) / recent.length;
+    const avgD = recent.reduce((s: number, l: any) => s + (l.duration_hours ?? 0), 0) / recent.length;
+    return Math.round(Math.min(avgD / 8, 1) * 60 + (avgQ / 5) * 40);
+  })();
+
   // ── Load data ────────────────────────────────────────────
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -397,14 +430,72 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
           }
         }
       }
+      // Auto-sync: hydration_auto habits — sync from hydration_logs
+      const autoHydrationHabits = (habitsData as Habit[]).filter((h) => h.source === 'hydration_auto');
+      if (autoHydrationHabits.length > 0) {
+        const { data: hydrationRows } = await supabase
+          .from('hydration_logs')
+          .select('amount_ml')
+          .eq('user_id', user.id)
+          .eq('date', today);
+        if (hydrationRows && hydrationRows.length > 0) {
+          const totalMl = hydrationRows.reduce((s: number, r: any) => s + (r.amount_ml ?? 0), 0);
+          const glasses = Math.floor(totalMl / 250);
+          for (const h of autoHydrationHabits) {
+            const currentVal = (todayData ?? []).find((l: any) => l.habit_id === h.id)?.value ?? 0;
+            if (glasses !== currentVal && glasses > 0) {
+              await supabase.from('habit_logs').upsert({
+                habit_id: h.id, user_id: user.id, date: today, value: glasses,
+              }, { onConflict: 'habit_id,date' });
+              updateLog(h.id, glasses);
+            }
+          }
+        }
+      }
+      // Auto-sync: sleep_auto habits — sync from sleep_logs
+      const autoSleepHabits = (habitsData as Habit[]).filter((h) => h.source === 'sleep_auto');
+      if (autoSleepHabits.length > 0) {
+        const { data: sleepRows } = await supabase
+          .from('sleep_logs')
+          .select('duration_hours')
+          .eq('user_id', user.id)
+          .eq('date', today)
+          .limit(1);
+        if (sleepRows && sleepRows.length > 0) {
+          for (const h of autoSleepHabits) {
+            const alreadyLogged = (todayData ?? []).find((l: any) => l.habit_id === h.id);
+            if (!alreadyLogged) {
+              await supabase.from('habit_logs').upsert({
+                habit_id: h.id, user_id: user.id, date: today, value: 1,
+              }, { onConflict: 'habit_id,date' });
+              updateLog(h.id, 1);
+            }
+          }
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   }, [agentName]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Pre-load cross-plugin stores so cards show immediately
+    if (useHydrationStore) useHydrationStore.getState().loadToday?.(supabase);
+    if (useSleepStore) useSleepStore.getState().loadRecent?.(supabase);
+  }, []);
 
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (useHydrationStore) useHydrationStore.setState({ _loaded: false });
+    if (useSleepStore) useSleepStore.setState({ _loaded: false });
+    await Promise.all([
+      load(),
+      useHydrationStore?.getState().loadToday?.(supabase),
+      useSleepStore?.getState().loadRecent?.(supabase),
+    ]);
+    setRefreshing(false);
+  };
 
   // ── Toggle boolean habit ─────────────────────────────────
   const handleToggle = async (habit: Habit) => {
@@ -577,6 +668,97 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
           </MotiView>
         )}
 
+        {/* Cross-plugin: hydration card */}
+        {useHydrationStore && (
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/hydration/dashboard' as any)}
+            activeOpacity={0.7}
+          >
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ type: 'timing', duration: 350, delay: 200 }}
+              style={{
+                backgroundColor: '#2196F3' + '11',
+                borderRadius: 16,
+                padding: 14,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: '#2196F3' + '33',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <Text style={{ fontSize: 22 }}>💧</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
+                  Hydratation
+                </Text>
+                <View style={{ height: 4, backgroundColor: theme.border, borderRadius: 2, marginTop: 6 }}>
+                  <View style={{
+                    width: `${Math.round(hydrationProgress * 100)}%`,
+                    height: '100%', backgroundColor: '#2196F3', borderRadius: 2,
+                  }} />
+                </View>
+              </View>
+              <Text style={{ color: '#2196F3', fontWeight: '700', fontSize: 14 }}>
+                {hydrationTodayTotal >= 1000 ? `${(hydrationTodayTotal / 1000).toFixed(1)}L` : `${hydrationTodayTotal}ml`} / {(hydrationGoalMl / 1000).toFixed(1)}L
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color="#2196F3" />
+            </MotiView>
+          </TouchableOpacity>
+        )}
+
+        {/* Cross-plugin: sleep card */}
+        {useSleepStore && (
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/sleep/dashboard' as any)}
+            activeOpacity={0.7}
+          >
+            <MotiView
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ type: 'timing', duration: 350, delay: 240 }}
+              style={{
+                backgroundColor: '#9C27B0' + '11',
+                borderRadius: 16,
+                padding: 14,
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: '#9C27B0' + '33',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <Text style={{ fontSize: 22 }}>😴</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
+                  Sommeil
+                </Text>
+                {todaySleep ? (
+                  <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                    <Text style={{ color: theme.muted, fontSize: 12 }}>
+                      {Math.floor(sleepDurationH)}h{Math.round((sleepDurationH % 1) * 60) > 0 ? `${Math.round((sleepDurationH % 1) * 60)}min` : ''}
+                    </Text>
+                    <Text style={{ color: theme.muted, fontSize: 12 }}>
+                      Qualité {sleepQuality}/5 ⭐
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>Pas encore loggé aujourd'hui</Text>
+                )}
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ color: '#9C27B0', fontWeight: '800', fontSize: 18 }}>{sleepRecovery}</Text>
+                <Text style={{ color: '#9C27B0', fontSize: 10 }}>récup.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color="#9C27B0" />
+            </MotiView>
+          </TouchableOpacity>
+        )}
+
         {/* Habit cards */}
         {isLoading && habits.length === 0 ? (
           <Text style={{ color: theme.muted, textAlign: 'center', marginTop: 40 }}>{t('habits.loadingHabits')}</Text>
@@ -593,7 +775,10 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
             </Text>
           </MotiView>
         ) : (
-          activeHabits.map((habit) => (
+          activeHabits
+            .filter((habit) => !(useHydrationStore && (habit.source === 'hydration_auto' || (habit.emoji === '💧' && habit.type === 'count'))))
+            .filter((habit) => !(useSleepStore && (habit.source === 'sleep_auto' || (habit.emoji === '😴' && habit.type === 'boolean'))))
+            .map((habit) => (
             <HabitCard
               key={habit.id}
               habit={habit}

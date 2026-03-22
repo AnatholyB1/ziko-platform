@@ -1,5 +1,6 @@
 ﻿import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,12 +8,40 @@ import { MotiView } from 'moti';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { useAIStore } from '../../src/stores/aiStore';
+import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { colors, Card, ProgressBar } from '@ziko/ui';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import type { ProgramExercise } from '@ziko/plugin-sdk';
+
+const PLUGIN_IMAGES: Record<string, any> = {
+  habits: require('../../assets/image/plugin_habits.png'),
+  nutrition: require('../../assets/image/plugin_nutrition.png'),
+  persona: require('../../assets/image/plugin_persona.png'),
+  stats: require('../../assets/image/plugin_stats.png'),
+  gamification: require('../../assets/image/plugin_gamification.png'),
+  community: require('../../assets/image/plugin_community.png'),
+  stretching: require('../../assets/image/plugin_stretching.png'),
+  sleep: require('../../assets/image/plugin_sleep.png'),
+  measurements: require('../../assets/image/plugin_measurements.png'),
+  timer: require('../../assets/image/plugin_timer.png'),
+  'ai-programs': require('../../assets/image/plugin_ai_programs.png'),
+  journal: require('../../assets/image/plugin_journal.png'),
+  hydration: require('../../assets/image/plugin_hydration.png'),
+  cardio: require('../../assets/image/plugin_cardio.png'),
+};
+
+// Cross-plugin stores (optional, fail gracefully)
+let useSleepStore: any = null;
+try { useSleepStore = require('@ziko/plugin-sleep').useSleepStore; } catch {}
+let useHydrationStore: any = null;
+try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+let useJournalStore: any = null;
+try { useJournalStore = require('@ziko/plugin-journal').useJournalStore; } catch {}
+let useMeasurementsStore: any = null;
+try { useMeasurementsStore = require('@ziko/plugin-measurements').useMeasurementsStore; } catch {}
 
 function StreakBadge({ count, primary }: { count: number; primary?: string }) {
   return (
@@ -68,6 +97,9 @@ function QuickActionBtn({ icon, label, onPress, primary = false, delay = 0 }: {
   );
 }
 
+// Stable empty array ref — never create [] inside a Zustand selector
+const EMPTY: any[] = [];
+
 export default function DashboardScreen() {
   const { t, tExercise } = useTranslation();
   const profile = useAuthStore((s) => s.profile);
@@ -83,14 +115,64 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = React.useState<number | null>(null);
 
+  // Cross-plugin: wellness data (must be at top level for hooks)
+  // Select raw store properties only — never call functions or use ?? inside selectors
+  const sleepLogs: any[] = useSleepStore ? useSleepStore((s: any) => s.logs) : EMPTY;
+  const hydrationLogs: any[] = useHydrationStore ? useHydrationStore((s: any) => s.logs) : EMPTY;
+  const hydrationGoal: number = useHydrationStore ? useHydrationStore((s: any) => s.goalMl) : 2500;
+  const journalEntries: any[] = useJournalStore ? useJournalStore((s: any) => s.entries) : EMPTY;
+  const measurementsList: any[] = useMeasurementsStore ? useMeasurementsStore((s: any) => s.measurements) : EMPTY;
+
+  // Compute recovery from raw sleep logs (avoids calling function inside selector)
+  const sleepRecovery = React.useMemo(() => {
+    if (!sleepLogs?.length) return 0;
+    const recent = sleepLogs.slice(0, 3);
+    const avgQuality = recent.reduce((s: number, l: any) => s + (l.quality ?? 0), 0) / recent.length;
+    const avgDuration = recent.reduce((s: number, l: any) => s + (l.duration_hours ?? 0), 0) / recent.length;
+    const durationScore = Math.min(avgDuration / 8, 1) * 60;
+    const qualityScore = (avgQuality / 5) * 40;
+    return Math.round(durationScore + qualityScore);
+  }, [sleepLogs]);
+
+  const hydrationTodayMl = React.useMemo(() => {
+    if (!hydrationLogs?.length) return 0;
+    const today = new Date().toISOString().split('T')[0];
+    return hydrationLogs.filter((l: any) => l.date === today).reduce((s: number, l: any) => s + (l.amount_ml ?? 0), 0);
+  }, [hydrationLogs]);
+  const waterPct = hydrationGoal > 0 ? Math.round(Math.min(hydrationTodayMl / hydrationGoal, 1) * 100) : 0;
+  const avgMood = React.useMemo(() => {
+    if (!journalEntries?.length) return 0;
+    const recent = journalEntries.slice(0, 7);
+    return recent.reduce((s: number, e: any) => s + (e.mood ?? 0), 0) / recent.length;
+  }, [journalEntries]);
+  const latestWeight = measurementsList?.length > 0 ? measurementsList[0]?.weight_kg ?? null : null;
+  const hasWellnessPlugin = !!(useSleepStore || useHydrationStore || useJournalStore || useMeasurementsStore);
+
   useEffect(() => {
     loadRecentSessions(30);
     loadPrograms();
+    // Pre-load cross-plugin data so wellness section shows immediately
+    if (useHydrationStore) useHydrationStore.getState().loadToday?.(supabase);
+    if (useSleepStore) useSleepStore.getState().loadRecent?.(supabase);
+    if (useJournalStore) useJournalStore.getState().loadRecent?.(supabase);
+    if (useMeasurementsStore) useMeasurementsStore.getState().loadRecent?.(supabase);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadRecentSessions(30), loadPrograms()]);
+    // Reset _loaded flags so stores re-fetch
+    if (useHydrationStore) useHydrationStore.setState({ _loaded: false });
+    if (useSleepStore) useSleepStore.setState({ _loaded: false });
+    if (useJournalStore) useJournalStore.setState({ _loaded: false });
+    if (useMeasurementsStore) useMeasurementsStore.setState({ _loaded: false });
+    await Promise.all([
+      loadRecentSessions(30),
+      loadPrograms(),
+      useHydrationStore?.getState().loadToday?.(supabase),
+      useSleepStore?.getState().loadRecent?.(supabase),
+      useJournalStore?.getState().loadRecent?.(supabase),
+      useMeasurementsStore?.getState().loadRecent?.(supabase),
+    ]);
     setRefreshing(false);
   };
 
@@ -426,6 +508,74 @@ export default function DashboardScreen() {
           <QuickActionBtn icon="sparkles" label={t('home.askAI')} onPress={openChat} delay={320} />
         </View>
 
+        {/* Daily wellness summary — cross-plugin data */}
+        {hasWellnessPlugin && (
+            <MotiView
+              from={{ opacity: 0, translateY: 8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'timing', duration: 350, delay: 240 }}
+              style={{ marginBottom: 16 }}
+            >
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 10 }}>
+                Bien-être du jour
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {useSleepStore && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(app)/(plugins)/sleep/dashboard' as any)}
+                    style={{
+                      flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 12,
+                      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="moon" size={18} color="#9C27B0" />
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 4 }}>{sleepRecovery}%</Text>
+                    <Text style={{ color: theme.muted, fontSize: 10 }}>Récup.</Text>
+                  </TouchableOpacity>
+                )}
+                {useHydrationStore && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(app)/(plugins)/hydration/dashboard' as any)}
+                    style={{
+                      flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 12,
+                      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="water" size={18} color="#2196F3" />
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 4 }}>{waterPct}%</Text>
+                    <Text style={{ color: theme.muted, fontSize: 10 }}>Eau</Text>
+                  </TouchableOpacity>
+                )}
+                {useJournalStore && avgMood > 0 && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(app)/(plugins)/journal/dashboard' as any)}
+                    style={{
+                      flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 12,
+                      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="happy" size={18} color="#4CAF50" />
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 4 }}>{avgMood.toFixed(1)}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 10 }}>Humeur</Text>
+                  </TouchableOpacity>
+                )}
+                {latestWeight && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/(app)/(plugins)/measurements/dashboard' as any)}
+                    style={{
+                      flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 12,
+                      borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons name="scale" size={18} color="#FF9800" />
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 4 }}>{latestWeight}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 10 }}>kg</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </MotiView>
+        )}
+
         {/* Calorie tracker shortcut - nutrition plugin */}
         {enabledPlugins.includes('nutrition') && (
           <MotiView
@@ -488,40 +638,43 @@ export default function DashboardScreen() {
           </MotiView>
         )}
 
-        {/* Plugin widgets */}
+        {/* Plugin widgets — compact grid */}
         {enabledPlugins.length > 0 && (
           <>
             <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginTop: 28, marginBottom: 12 }}>
               {t('home.activePlugins')}
             </Text>
-            {enabledPlugins.map((pid, i) => {
-              const manifests = usePluginRegistry.getState().manifests;
-              const manifest = manifests[pid];
-              const mainRoute = manifest?.routes.find((r) => r.showInTabBar) ?? manifest?.routes[0];
-              const destination = mainRoute?.path ?? `/(app)/store/${pid}`;
-              return (
-                <MotiView
-                  key={pid}
-                  from={{ opacity: 0, translateX: -12 }}
-                  animate={{ opacity: 1, translateX: 0 }}
-                  transition={{ type: 'timing', duration: 350, delay: i * 60 }}
-                >
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'flex-start' }}>
+              {enabledPlugins.map((pid) => {
+                const manifests = usePluginRegistry.getState().manifests;
+                const manifest = manifests[pid];
+                const mainRoute = manifest?.routes.find((r) => r.showInTabBar) ?? manifest?.routes[0];
+                const destination = mainRoute?.path ?? `/(app)/store/${pid}`;
+                return (
                   <TouchableOpacity
+                    key={pid}
                     onPress={() => router.push(destination as any)}
                     activeOpacity={0.75}
-                    style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                    style={{ alignItems: 'center' }}
                   >
-                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name={(manifest?.icon as any) ?? 'grid'} size={18} color={theme.primary} />
-                    </View>
-                    <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14, flex: 1 }}>
+                    {PLUGIN_IMAGES[pid] ? (
+                      <Image
+                        source={PLUGIN_IMAGES[pid]}
+                        style={{ width: 76, height: 76, borderRadius: 18, borderWidth: 2, borderColor: theme.border }}
+                        cachePolicy="memory-disk"
+                      />
+                    ) : (
+                      <View style={{ width: 76, height: 76, borderRadius: 18, backgroundColor: theme.primary + '18', borderWidth: 2, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name={(manifest?.icon as any) ?? 'grid'} size={32} color={theme.primary} />
+                      </View>
+                    )}
+                    <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11, marginTop: 4, textAlign: 'center', maxWidth: 80 }}>
                       {manifest?.name ?? pid}
                     </Text>
-                    <Ionicons name="chevron-forward" size={16} color={theme.muted} />
                   </TouchableOpacity>
-                </MotiView>
-              );
-            })}
+                );
+              })}
+            </View>
           </>
         )}
 

@@ -1094,6 +1094,47 @@ export default function WorkoutSessionScreen() {
                   );
                 })}
               </View>
+
+              {/* Post-workout suggestions */}
+              <View style={{ marginTop: 28, width: SCREEN_W - 60 }}>
+                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+                  Et maintenant ?
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+                  <TouchableOpacity
+                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/stretching/session' as any)); }}
+                    style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 24 }}>🧘</Text>
+                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Stretching</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11 }}>Retour au calme</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/journal/entry' as any)); }}
+                    style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 24 }}>📝</Text>
+                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Journal</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11 }}>Humeur post-séance</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/hydration/dashboard' as any)); }}
+                    style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 24 }}>💧</Text>
+                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Hydratation</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11 }}>Boire de l'eau</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/nutrition/log' as any)); }}
+                    style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 24 }}>🥗</Text>
+                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Nutrition</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11 }}>Repas post-workout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </MotiView>
           </ScrollView>
 

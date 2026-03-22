@@ -9,6 +9,13 @@ import { useThemeStore } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS, formatPace } from '../store';
 import type { CardioSession } from '../store';
 
+// Cross-plugin: measurements for weight display
+let useMeasurementsStore: any = null;
+try { useMeasurementsStore = require('@ziko/plugin-measurements').useMeasurementsStore; } catch {}
+// Cross-plugin: hydration
+let useHydrationStore: any = null;
+try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+
 export default function CardioDashboard({ supabase }: { supabase: any }) {
   const { sessions, setSessions, loading, setLoading, getTotalDistance, getTotalDuration, getSessionCount } = useCardioStore();
   const theme = useThemeStore((s) => s.theme);
@@ -136,10 +143,49 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
         </View>
 
         {/* Stats */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
           {renderStat('Distance', `${totalDist.toFixed(1)} km`, 'map-outline', '#FF5722')}
           {renderStat('Durée', `${totalDur} min`, 'time-outline', '#2196F3')}
           {renderStat('Sessions', `${sessionCount}`, 'calendar-outline', '#4CAF50')}
+        </View>
+
+        {/* Cross-plugin quick stats */}
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
+          {useMeasurementsStore && (() => {
+            const mStore = useMeasurementsStore();
+            const latest = mStore.getLatest();
+            if (!latest?.weight_kg) return null;
+            return (
+              <TouchableOpacity
+                onPress={() => router.push('/(app)/(plugins)/measurements/dashboard' as any)}
+                style={{
+                  flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 14,
+                  borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                }}
+              >
+                <Ionicons name="scale-outline" size={20} color="#FF9800" />
+                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, marginTop: 6 }}>{latest.weight_kg} kg</Text>
+                <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>Poids actuel</Text>
+              </TouchableOpacity>
+            );
+          })()}
+          {useHydrationStore && (() => {
+            const hStore = useHydrationStore();
+            const waterPct = Math.round(hStore.getTodayProgress() * 100);
+            return (
+              <TouchableOpacity
+                onPress={() => router.push('/(app)/(plugins)/hydration/dashboard' as any)}
+                style={{
+                  flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 14,
+                  borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+                }}
+              >
+                <Ionicons name="water-outline" size={20} color="#2196F3" />
+                <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, marginTop: 6 }}>{waterPct}%</Text>
+                <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>Hydratation</Text>
+              </TouchableOpacity>
+            );
+          })()}
         </View>
 
         {/* Sessions list */}

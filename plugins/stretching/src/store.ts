@@ -12,10 +12,11 @@ export interface StretchExercise {
 export interface StretchRoutine {
   id: string;
   name: string;
-  type: 'pre_workout' | 'post_workout' | 'recovery' | 'full_body';
+  type: 'pre_workout' | 'post_workout' | 'recovery' | 'full_body' | 'custom';
   muscle_groups: string[];
   duration_minutes: number;
   exercises: StretchExercise[];
+  is_custom?: boolean;
 }
 
 export interface StretchLog {
@@ -29,13 +30,19 @@ export interface StretchLog {
 
 interface StretchingState {
   routines: StretchRoutine[];
+  customRoutines: StretchRoutine[];
   logs: StretchLog[];
   isLoading: boolean;
   activeRoutine: StretchRoutine | null;
   currentExerciseIndex: number;
 
   setRoutines: (r: StretchRoutine[]) => void;
+  setCustomRoutines: (r: StretchRoutine[]) => void;
+  addCustomRoutine: (r: StretchRoutine) => void;
+  updateCustomRoutine: (r: StretchRoutine) => void;
+  deleteCustomRoutine: (id: string) => void;
   setLogs: (l: StretchLog[]) => void;
+  addLog: (l: StretchLog) => void;
   setIsLoading: (b: boolean) => void;
   startRoutine: (r: StretchRoutine) => void;
   nextExercise: () => void;
@@ -44,13 +51,19 @@ interface StretchingState {
 
 export const useStretchingStore = create<StretchingState>()((set, get) => ({
   routines: [],
+  customRoutines: [],
   logs: [],
   isLoading: false,
   activeRoutine: null,
   currentExerciseIndex: 0,
 
   setRoutines: (routines) => set({ routines }),
+  setCustomRoutines: (customRoutines) => set({ customRoutines }),
+  addCustomRoutine: (r) => set({ customRoutines: [...get().customRoutines, r] }),
+  updateCustomRoutine: (r) => set({ customRoutines: get().customRoutines.map((c) => c.id === r.id ? r : c) }),
+  deleteCustomRoutine: (id) => set({ customRoutines: get().customRoutines.filter((c) => c.id !== id) }),
   setLogs: (logs) => set({ logs }),
+  addLog: (l) => set({ logs: [l, ...get().logs] }),
   setIsLoading: (isLoading) => set({ isLoading }),
   startRoutine: (routine) => set({ activeRoutine: routine, currentExerciseIndex: 0 }),
   nextExercise: () => {

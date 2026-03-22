@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -36,7 +37,14 @@ export default function OnboardingStep3() {
           ))}
         </View>
 
-        <Text style={{ color: '#7A7670', marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '3', total: '5' })}</Text>
+        <Image
+          source={require('../../../assets/image/step3.png')}
+          style={{ width: '100%', height: 180, alignSelf: 'center', marginTop: 16 }}
+          contentFit="contain"
+          transition={300}
+        />
+
+        <Text style={{ color: '#7A7670', marginTop: 24, fontSize: 13 }}>{t('onboarding.step', { current: '3', total: '5' })}</Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginTop: 8 }}>
           {t('onboarding.goal')}
         </Text>
@@ -50,7 +58,7 @@ export default function OnboardingStep3() {
               key={goal.id}
               onPress={() => setSelected(goal.id)}
               style={{
-                backgroundColor: selected === goal.id ? theme.primary + '22' : '#FFFFFF',
+                backgroundColor: selected === goal.id ? '#FF5C1A' + '22' : '#FFFFFF',
                 borderRadius: 16,
                 borderWidth: 1.5,
                 borderColor: selected === goal.id ? '#FF5C1A' : '#E2E0DA',

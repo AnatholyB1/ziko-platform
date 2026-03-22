@@ -142,9 +142,66 @@ export default function StretchingDashboard({ supabase }: { supabase: any }) {
         <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 12 }}>
           Routines disponibles
         </Text>
+
+        {/* Suggestion based on last workout */}
+        {(() => {
+          const lastLog = logs[0];
+          const today = new Date().toISOString().split('T')[0];
+          const didStretchToday = lastLog?.date === today;
+          if (didStretchToday) return null;
+          return (
+            <View style={{
+              backgroundColor: theme.primary + '12', borderRadius: 14, padding: 14, marginBottom: 16,
+              borderWidth: 1, borderColor: theme.primary + '33', flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}>
+              <Ionicons name="bulb-outline" size={20} color={theme.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Pensez à vous étirer !</Text>
+                <Text style={{ color: theme.muted, fontSize: 12 }}>Aucun stretching aujourd'hui. Essayez un retour au calme après votre séance.</Text>
+              </View>
+            </View>
+          );
+        })()}
+
         {BUILT_IN_ROUTINES.map((r) => (
           <RoutineCard key={r.id} routine={r} theme={theme} />
         ))}
+
+        {/* Quick links to related plugins */}
+        <View style={{ marginTop: 20, gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/workout/session' as any)}
+            style={{
+              backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+              borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="barbell" size={18} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Démarrer un workout</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant ou après</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/sleep/dashboard' as any)}
+            style={{
+              backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+              borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#9C27B018', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="moon" size={18} color="#9C27B0" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Sommeil & Récupération</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>Le stretching améliore le sommeil</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

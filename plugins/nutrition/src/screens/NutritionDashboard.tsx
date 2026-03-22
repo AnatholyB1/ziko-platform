@@ -9,6 +9,10 @@ import { useNutritionStore } from '../store';
 import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
 import { format, parseISO } from 'date-fns';
 
+// Cross-plugin: hydration
+let useHydrationStore: any = null;
+try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
 
@@ -150,6 +154,41 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
             </View>
           ))}
         </View>
+
+        {/* Hydration cross-link */}
+        {useHydrationStore && (() => {
+          const hydStore = useHydrationStore();
+          const todayWater = hydStore.getTodayTotal();
+          const waterProgress = hydStore.getTodayProgress();
+          const goalMl = hydStore.goalMl;
+          return (
+            <TouchableOpacity
+              onPress={() => router.push('/(app)/(plugins)/hydration/dashboard' as any)}
+              activeOpacity={0.75}
+              style={{
+                backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+                marginBottom: 16, borderWidth: 1, borderColor: '#2196F3' + '44',
+                flexDirection: 'row', alignItems: 'center', gap: 14,
+              }}
+            >
+              <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: '#2196F318', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="water" size={22} color="#2196F3" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Hydratation</Text>
+                <Text style={{ color: theme.muted, fontSize: 12 }}>
+                  {todayWater >= 1000 ? `${(todayWater / 1000).toFixed(1)}L` : `${todayWater}ml`} / {(goalMl / 1000).toFixed(1)}L
+                </Text>
+              </View>
+              <View style={{ width: 40, alignItems: 'center' }}>
+                <Text style={{ color: waterProgress >= 1 ? '#4CAF50' : '#2196F3', fontWeight: '700', fontSize: 14 }}>
+                  {Math.round(waterProgress * 100)}%
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+            </TouchableOpacity>
+          );
+        })()}
 
         {/* Meal sections */}
         {MEAL_TYPES.map((mealType) => (

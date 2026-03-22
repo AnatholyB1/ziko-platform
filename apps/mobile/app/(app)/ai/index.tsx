@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -146,6 +147,12 @@ export default function AIScreen() {
           contentContainerStyle={{ paddingVertical: 16 }}
           ListEmptyComponent={
             <View style={{ padding: 24 }}>
+              <Image
+                source={require('../../../assets/image/no_ai_conv.png')}
+                style={{ width: 180, height: 180, alignSelf: 'center', marginBottom: 16 }}
+                contentFit="contain"
+                transition={300}
+              />
               <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, textAlign: 'center', marginBottom: 8 }}>
                 {t('ai.welcome')}
               </Text>

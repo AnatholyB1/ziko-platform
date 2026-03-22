@@ -6,6 +6,10 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useSleepStore } from '../store';
 
+// Cross-plugin: journal for mood/energy correlation
+let useJournalStore: any = null;
+try { useJournalStore = require('@ziko/plugin-journal').useJournalStore; } catch {}
+
 function QualityStars({ quality, theme }: { quality: number; theme: any }) {
   return (
     <View style={{ flexDirection: 'row' }}>
@@ -95,6 +99,44 @@ export default function SleepDashboard({ supabase }: { supabase: any }) {
           </View>
         </View>
 
+        {/* Mood/Energy correlation from Journal */}
+        {useJournalStore && (() => {
+          const jStore = useJournalStore();
+          const avgMood = jStore.getAverageMood(7);
+          const avgEnergy = jStore.getAverageEnergy(7);
+          if (avgMood <= 0 && avgEnergy <= 0) return null;
+          return (
+            <TouchableOpacity
+              onPress={() => router.push('/(app)/(plugins)/journal/dashboard' as any)}
+              activeOpacity={0.75}
+              style={{
+                backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginTop: 16,
+                borderWidth: 1, borderColor: theme.border,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Ionicons name="link" size={14} color={theme.primary} />
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Impact sur le bien-être</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="happy-outline" size={16} color="#4CAF50" />
+                  <Text style={{ color: theme.text, fontWeight: '600' }}>Humeur {avgMood.toFixed(1)}/5</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Ionicons name="flash-outline" size={16} color="#FF9800" />
+                  <Text style={{ color: theme.text, fontWeight: '600' }}>Énergie {avgEnergy.toFixed(1)}/5</Text>
+                </View>
+              </View>
+              <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8 }}>
+                {avgQuality >= 3.5 && avgEnergy >= 3.5 ? '✓ Bon sommeil = bonne énergie' :
+                 avgQuality < 3 && avgEnergy < 3 ? '⚠ Sommeil faible → énergie basse' :
+                 'Voir le journal pour plus de détails'}
+              </Text>
+            </TouchableOpacity>
+          );
+        })()}
+
         {/* Log button */}
         <TouchableOpacity
           onPress={() => router.push('/(app)/(plugins)/sleep/log')}
@@ -111,8 +153,9 @@ export default function SleepDashboard({ supabase }: { supabase: any }) {
           Historique récent
         </Text>
         {logs.slice(0, 10).map((log) => {
-          const h = Math.floor(log.duration_minutes / 60);
-          const m = log.duration_minutes % 60;
+          const totalMins = Math.round(log.duration_hours * 60);
+          const h = Math.floor(totalMins / 60);
+          const m = totalMins % 60;
           return (
             <View key={log.id} style={{
               backgroundColor: theme.surface, borderRadius: 12, padding: 14,

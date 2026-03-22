@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -37,7 +38,12 @@ export default function OnboardingStep5() {
           ))}
         </View>
 
-        <Text style={{ fontSize: 64, marginBottom: 24 }}>🎉</Text>
+        <Image
+          source={require('../../../assets/image/renard.png')}
+          style={{ width: 160, height: 160, marginBottom: 24 }}
+          contentFit="contain"
+          transition={300}
+        />
         <Text style={{ fontSize: 32, fontWeight: '800', color: '#1C1A17', textAlign: 'center' }}>
           {t('onboarding.allSet')}
         </Text>
@@ -48,7 +54,7 @@ export default function OnboardingStep5() {
         <View style={{ marginTop: 48, gap: 12, width: '100%' }}>
           {[t('onboarding.bullet1'), t('onboarding.bullet2'), t('onboarding.bullet3')].map((item) => (
             <View key={item} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FF5C1A' + '22', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FF5C1A', fontSize: 12 }}>✓</Text>
               </View>
               <Text style={{ color: '#1C1A17', fontSize: 15 }}>{item}</Text>

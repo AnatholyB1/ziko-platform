@@ -9,8 +9,8 @@ export interface Habit {
   type: 'boolean' | 'count';
   target: number;
   unit: string | null;
-  /** 'manual' | 'workout_auto' = auto-sync from workout sessions | 'nutrition_auto' = auto-sync from nutrition logs */
-  source: 'manual' | 'workout_auto' | 'nutrition_auto';
+  /** 'manual' | 'workout_auto' = auto-sync from workout sessions | 'nutrition_auto' = auto-sync from nutrition logs | 'hydration_auto' = auto-sync from hydration logs | 'sleep_auto' = auto-sync from sleep logs */
+  source: 'manual' | 'workout_auto' | 'nutrition_auto' | 'hydration_auto' | 'sleep_auto';
   reminder_time: string | null; // 'HH:MM'
   is_active: boolean;
   sort_order: number;
@@ -124,7 +124,7 @@ export const DEFAULT_HABITS: Omit<Habit, 'id' | 'user_id'>[] = [
     type: 'count',
     target: 8,
     unit: 'glasses',
-    source: 'manual',
+    source: 'hydration_auto',
     reminder_time: '09:00',
     is_active: true,
     sort_order: 0,
@@ -160,7 +160,7 @@ export const DEFAULT_HABITS: Omit<Habit, 'id' | 'user_id'>[] = [
     type: 'boolean',
     target: 1,
     unit: null,
-    source: 'manual',
+    source: 'sleep_auto',
     reminder_time: '22:00',
     is_active: true,
     sort_order: 3,

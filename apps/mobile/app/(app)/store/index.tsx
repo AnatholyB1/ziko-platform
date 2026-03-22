@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
   Alert, TextInput, Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,23 @@ interface ReviewAgg {
 
 // ── Constants ─────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
+
+const PLUGIN_IMAGES: Record<string, any> = {
+  habits: require('../../../assets/image/plugin_habits.png'),
+  nutrition: require('../../../assets/image/plugin_nutrition.png'),
+  persona: require('../../../assets/image/plugin_persona.png'),
+  stats: require('../../../assets/image/plugin_stats.png'),
+  gamification: require('../../../assets/image/plugin_gamification.png'),
+  community: require('../../../assets/image/plugin_community.png'),
+  stretching: require('../../../assets/image/plugin_stretching.png'),
+  sleep: require('../../../assets/image/plugin_sleep.png'),
+  measurements: require('../../../assets/image/plugin_measurements.png'),
+  timer: require('../../../assets/image/plugin_timer.png'),
+  'ai-programs': require('../../../assets/image/plugin_ai_programs.png'),
+  journal: require('../../../assets/image/plugin_journal.png'),
+  hydration: require('../../../assets/image/plugin_hydration.png'),
+  cardio: require('../../../assets/image/plugin_cardio.png'),
+};
 
 const CATEGORY_BASE: Record<string, { labelKey: string; color: string | null; icon: string }> = {
   all:       { labelKey: 'store.catAll',       color: null, icon: 'apps' },
@@ -276,7 +294,7 @@ function Stars({ rating, size = 12 }: { rating: number; size?: number }) {
 }
 
 // ── Plugin card ───────────────────────────────────────────
-function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall }: {
+const PluginCard = React.memo(function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall }: {
   plugin: RegistryPlugin;
   installed: boolean;
   rating?: ReviewAgg;
@@ -301,12 +319,21 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
       }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         {/* Icon */}
-        <View style={{
-          width: 56, height: 56, borderRadius: 16, backgroundColor: color + '18',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Ionicons name={(m.icon || 'grid') as any} size={26} color={color} />
-        </View>
+        {PLUGIN_IMAGES[plugin.plugin_id] ? (
+          <Image
+            source={PLUGIN_IMAGES[plugin.plugin_id]}
+            style={{ width: 56, height: 56, borderRadius: 16 }}
+            cachePolicy="memory-disk"
+            recyclingKey={plugin.plugin_id}
+          />
+        ) : (
+          <View style={{
+            width: 56, height: 56, borderRadius: 16, backgroundColor: color + '18',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Ionicons name={(m.icon || 'grid') as any} size={26} color={color} />
+          </View>
+        )}
 
         {/* Info */}
         <View style={{ flex: 1 }}>
@@ -370,4 +397,4 @@ function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall
       </View>
     </TouchableOpacity>
   );
-}
+});

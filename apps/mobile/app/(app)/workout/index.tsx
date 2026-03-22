@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -206,7 +207,12 @@ export default function WorkoutProgramsScreen() {
         {isLoading && <Text style={{ color: theme.muted, textAlign: 'center', marginTop: 40 }}>Loading…</Text>}
         {!isLoading && programs.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
-            <Text style={{ fontSize: 40 }}>📋</Text>
+            <Image
+              source={require('../../../assets/image/no_training.png')}
+              style={{ width: 180, height: 180, marginBottom: 8 }}
+              contentFit="contain"
+              transition={300}
+            />
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.noPrograms')}</Text>
             <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.noProgramsDesc')}</Text>
             <TouchableOpacity onPress={() => setShowCreate(true)} style={{ backgroundColor: theme.primary, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>

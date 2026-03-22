@@ -6,6 +6,10 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useMeasurementsStore } from '../store';
 
+// Cross-plugin: nutrition for calorie info
+let useNutritionStore: any = null;
+try { useNutritionStore = require('@ziko/plugin-nutrition').useNutritionStore; } catch {}
+
 function StatCard({ label, value, unit, diff, theme }: { label: string; value: number | null; unit: string; diff: number; theme: any }) {
   const diffColor = diff > 0 ? '#4CAF50' : diff < 0 ? '#F44336' : theme.muted;
   return (
@@ -113,6 +117,53 @@ export default function MeasurementsDashboard({ supabase }: { supabase: any }) {
             ))}
           </>
         )}
+
+        {/* Cross-plugin links */}
+        <View style={{ marginTop: 20, gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/stats/dashboard' as any)}
+            style={{
+              backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+              borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="stats-chart" size={18} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Statistiques complètes</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>Voir toutes les analytics</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+          {useNutritionStore && (() => {
+            const nStore = useNutritionStore();
+            const totals = nStore.todayLogs.reduce(
+              (acc: any, l: any) => ({ kcal: acc.kcal + (l.calories ?? 0), protein: acc.protein + (l.protein_g ?? 0) }),
+              { kcal: 0, protein: 0 },
+            );
+            return (
+              <TouchableOpacity
+                onPress={() => router.push('/(app)/(plugins)/nutrition/dashboard' as any)}
+                style={{
+                  backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+                  borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+                }}
+              >
+                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#4CAF5018', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 18 }}>🥗</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Nutrition</Text>
+                  <Text style={{ color: theme.muted, fontSize: 12 }}>
+                    {totals.kcal > 0 ? `${Math.round(totals.kcal)} kcal · ${Math.round(totals.protein)}g prot aujourd'hui` : 'Suivre les calories pour progresser'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+              </TouchableOpacity>
+            );
+          })()}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

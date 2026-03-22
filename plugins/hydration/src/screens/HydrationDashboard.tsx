@@ -4,8 +4,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useHydrationStore } from '../store';
+
+// Cross-plugin: habits store for water habit sync
+let useHabitsStore: any = null;
+try { useHabitsStore = require('@ziko/plugin-habits').useHabitsStore; } catch {}
 
 const QUICK_AMOUNTS = [
   { label: 'Verre', ml: 250, icon: '🥛' },
@@ -19,6 +24,13 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Cross-plugin: habits data (select individually to avoid infinite loop)
+  const habitsHabits = useHabitsStore ? useHabitsStore((s: any) => s.habits) : [];
+  const habitsGetStreak = useHabitsStore ? useHabitsStore((s: any) => s.getStreak) : null;
+  const habitsUpdateLog = useHabitsStore ? useHabitsStore((s: any) => s.updateLog) : null;
+  const waterHabit = habitsHabits?.find((h: any) => h.source === 'hydration_auto' || h.emoji === '💧');
+  const waterStreak = waterHabit && habitsGetStreak ? habitsGetStreak(waterHabit.id) : 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +81,18 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
 
       if (error) throw error;
       addLog(data);
+
+      // Cross-plugin: sync water habit in habits plugin
+      if (waterHabit && userId) {
+        const newTotal = getTodayTotal() + ml;
+        const glasses = Math.floor(newTotal / 250);
+        try {
+          await supabase.from('habit_logs').upsert({
+            habit_id: waterHabit.id, user_id: userId, date: today, value: glasses,
+          }, { onConflict: 'habit_id,date' });
+          habitsUpdateLog?.(waterHabit.id, glasses);
+        } catch {}
+      }
     } catch (err: any) {
       Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder');
     }
@@ -186,6 +210,67 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
             ))}
           </>
         )}
+
+        {/* Cross-plugin: habits link */}
+        {useHabitsStore && waterHabit && (
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/habits/dashboard' as any)}
+            style={{
+              backgroundColor: '#2196F3' + '11', borderRadius: 16, padding: 14,
+              marginBottom: 16, borderWidth: 1, borderColor: '#2196F3' + '33',
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#2196F318', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="checkmark-done" size={20} color="#2196F3" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
+                Habitude Eau {useHabitsStore ? `— ${Math.floor(getTodayTotal() / 250)} / ${waterHabit.target} verres` : ''}
+              </Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>
+                {waterStreak > 0 ? `🔥 ${waterStreak} jours consécutifs` : 'Synchronisé avec vos habitudes'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#2196F3" />
+          </TouchableOpacity>
+        )}
+
+        {/* Cross-plugin links */}
+        <View style={{ marginTop: 20, gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/nutrition/dashboard' as any)}
+            style={{
+              backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+              borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 18 }}>🥗</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Nutrition</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>Suivre vos repas en plus de l'eau</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/workout/session' as any)}
+            style={{
+              backgroundColor: theme.surface, borderRadius: 14, padding: 14,
+              borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="barbell" size={18} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Avant le workout</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>Pensez à bien boire avant la séance</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

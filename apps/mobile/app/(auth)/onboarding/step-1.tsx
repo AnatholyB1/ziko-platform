@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
@@ -48,7 +49,14 @@ export default function OnboardingStep1() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 400, delay: 200 }}
         >
-          <Text style={{ color: colors.textMuted, marginTop: 32, fontSize: 13 }}>{t('onboarding.step', { current: '1', total: '5' })}</Text>
+          <Image
+            source={require('../../../assets/image/step1.png')}
+            style={{ width: '100%', height: 180, alignSelf: 'center', marginTop: 24 }}
+            contentFit="contain"
+            transition={300}
+          />
+
+          <Text style={{ color: colors.textMuted, marginTop: 24, fontSize: 13 }}>{t('onboarding.step', { current: '1', total: '5' })}</Text>
           <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text, marginTop: 8 }}>
             {t('onboarding.whatsYourName')}
           </Text>

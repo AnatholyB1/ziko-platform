@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, Alert,
   TextInput, KeyboardAvoidingView, Platform, RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,23 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
+
+const PLUGIN_IMAGES: Record<string, any> = {
+  habits: require('../../../assets/image/plugin_habits.png'),
+  nutrition: require('../../../assets/image/plugin_nutrition.png'),
+  persona: require('../../../assets/image/plugin_persona.png'),
+  stats: require('../../../assets/image/plugin_stats.png'),
+  gamification: require('../../../assets/image/plugin_gamification.png'),
+  community: require('../../../assets/image/plugin_community.png'),
+  stretching: require('../../../assets/image/plugin_stretching.png'),
+  sleep: require('../../../assets/image/plugin_sleep.png'),
+  measurements: require('../../../assets/image/plugin_measurements.png'),
+  timer: require('../../../assets/image/plugin_timer.png'),
+  'ai-programs': require('../../../assets/image/plugin_ai_programs.png'),
+  journal: require('../../../assets/image/plugin_journal.png'),
+  hydration: require('../../../assets/image/plugin_hydration.png'),
+  cardio: require('../../../assets/image/plugin_cardio.png'),
+};
 
 // ── Types ─────────────────────────────────────────────────
 interface Review {
@@ -218,12 +236,20 @@ export default function PluginDetailScreen() {
           {/* Hero section */}
           <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <View style={{
-                width: 72, height: 72, borderRadius: 20, backgroundColor: catMeta.color + '18',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Ionicons name={(manifest.icon || 'grid') as any} size={32} color={catMeta.color} />
-              </View>
+              {PLUGIN_IMAGES[id ?? ''] ? (
+                <Image
+                  source={PLUGIN_IMAGES[id ?? '']}
+                  style={{ width: 72, height: 72, borderRadius: 20 }}
+                  transition={200}
+                />
+              ) : (
+                <View style={{
+                  width: 72, height: 72, borderRadius: 20, backgroundColor: catMeta.color + '18',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name={(manifest.icon || 'grid') as any} size={32} color={catMeta.color} />
+                </View>
+              )}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }}>{manifest.name}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>

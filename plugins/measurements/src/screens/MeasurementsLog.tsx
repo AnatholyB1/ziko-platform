@@ -48,7 +48,10 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
     setSaving(true);
     const date = new Date().toISOString().split('T')[0];
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
       const { data, error } = await supabase.from('body_measurements').insert({
+        user_id: user.id,
         date,
         weight_kg: toNum(weight), body_fat_pct: toNum(bodyFat),
         waist_cm: toNum(waist), chest_cm: toNum(chest),

@@ -9,6 +9,13 @@ import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
 import { useJournalStore } from '../store';
 import type { JournalEntry } from '../store';
 
+// Cross-plugin: sleep for recovery correlation
+let useSleepStore: any = null;
+try { useSleepStore = require('@ziko/plugin-sleep').useSleepStore; } catch {}
+// Cross-plugin: workout store for last session
+let useWorkoutStoreExt: any = null;
+try { useWorkoutStoreExt = require('@ziko/plugin-cardio').useCardioStore; } catch {}
+
 const MOOD_EMOJI = ['😞', '😕', '😐', '🙂', '😄'];
 const CONTEXT_LABELS: Record<string, string> = {
   pre_workout: 'Pré-séance',
@@ -132,6 +139,36 @@ export default function JournalDashboard({ supabase }: { supabase: any }) {
           {renderStat('Énergie', avgEnergy, 'flash-outline', '#FF9800')}
           {renderStat('Stress', avgStress, 'pulse-outline', '#F44336')}
         </View>
+
+        {/* Cross-plugin insights */}
+        {(useSleepStore) && (() => {
+          const sleepData = useSleepStore ? useSleepStore() : null;
+          const lastSleep = sleepData?.logs?.[0];
+          const recoveryScore = sleepData?.getRecoveryScore?.() ?? 0;
+          if (!lastSleep) return null;
+          const recoveryColor = recoveryScore >= 70 ? '#4CAF50' : recoveryScore >= 40 ? '#FF9800' : '#F44336';
+          return (
+            <TouchableOpacity
+              onPress={() => router.push('/(app)/(plugins)/sleep/dashboard' as any)}
+              activeOpacity={0.75}
+              style={{
+                backgroundColor: theme.surface, borderRadius: 16, padding: 14, marginBottom: 16,
+                borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 12,
+              }}
+            >
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#9C27B018', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="moon" size={18} color="#9C27B0" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
+                  Sommeil : {lastSleep.duration_hours ? `${Math.floor(lastSleep.duration_hours)}h${Math.round((lastSleep.duration_hours % 1) * 60) > 0 ? Math.round((lastSleep.duration_hours % 1) * 60) : ''}` : '—'}
+                </Text>
+                <Text style={{ color: theme.muted, fontSize: 12 }}>Qualité {lastSleep.quality}/5 · Récup. {recoveryScore}%</Text>
+              </View>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: recoveryColor }} />
+            </TouchableOpacity>
+          );
+        })()}
 
         {/* Entries */}
         {loading && entries.length === 0 ? (

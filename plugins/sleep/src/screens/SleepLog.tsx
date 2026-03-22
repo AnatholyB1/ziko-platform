@@ -6,6 +6,56 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useSleepStore } from '../store';
 
+function pad(n: number) {
+  return String(n).padStart(2, '0');
+}
+
+function StepperDigit({ value, max, onUp, onDown, theme }: {
+  value: number; max: number; onUp: () => void; onDown: () => void; theme: any;
+}) {
+  return (
+    <View style={{ alignItems: 'center', width: 56 }}>
+      <TouchableOpacity onPress={onUp} style={{ padding: 8 }}>
+        <Ionicons name="chevron-up" size={28} color={theme.primary} />
+      </TouchableOpacity>
+      <View style={{
+        backgroundColor: theme.primary + '15', borderRadius: 10,
+        width: 52, height: 52, justifyContent: 'center', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: 26, fontWeight: '800', color: theme.text }}>{pad(value)}</Text>
+      </View>
+      <TouchableOpacity onPress={onDown} style={{ padding: 8 }}>
+        <Ionicons name="chevron-down" size={28} color={theme.primary} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function TimePicker({ value, onChange, theme }: {
+  value: string; onChange: (v: string) => void; theme: any;
+}) {
+  const [hh, mm] = value.split(':').map(Number);
+  const setH = (d: number) => {
+    const next = (hh + d + 24) % 24;
+    onChange(`${pad(next)}:${pad(mm)}`);
+  };
+  const setM = (d: number) => {
+    const next = (mm + d + 60) % 60;
+    onChange(`${pad(hh)}:${pad(next)}`);
+  };
+  return (
+    <View style={{
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1,
+      borderColor: theme.border, paddingHorizontal: 16, paddingVertical: 4,
+    }}>
+      <StepperDigit value={hh} max={23} onUp={() => setH(1)} onDown={() => setH(-1)} theme={theme} />
+      <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, marginHorizontal: 6 }}>:</Text>
+      <StepperDigit value={mm} max={55} onUp={() => setM(5)} onDown={() => setM(-5)} theme={theme} />
+    </View>
+  );
+}
+
 export default function SleepLog({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { addLog } = useSleepStore();
@@ -30,9 +80,12 @@ export default function SleepLog({ supabase }: { supabase: any }) {
     const duration = calculateDuration();
     const date = new Date().toISOString().split('T')[0];
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
       const { data, error } = await supabase.from('sleep_logs').insert({
+        user_id: user.id,
         date, bedtime, wake_time: wakeTime,
-        duration_minutes: duration, quality,
+        duration_hours: parseFloat((duration / 60).toFixed(2)), quality,
         notes: notes || null,
       }).select().single();
       if (error) throw error;
@@ -45,8 +98,8 @@ export default function SleepLog({ supabase }: { supabase: any }) {
   };
 
   const duration = calculateDuration();
-  const h = Math.floor(duration / 60);
-  const m = duration % 60;
+  const dh = Math.floor(duration / 60);
+  const dm = duration % 60;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -60,28 +113,16 @@ export default function SleepLog({ supabase }: { supabase: any }) {
         </View>
 
         {/* Bedtime */}
-        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginBottom: 8 }}>Heure de coucher</Text>
-        <TextInput
-          value={bedtime} onChangeText={setBedtime}
-          placeholder="23:00" placeholderTextColor={theme.muted}
-          style={{
-            backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-            borderWidth: 1, borderColor: theme.border, color: theme.text,
-            fontSize: 18, textAlign: 'center', fontWeight: '700',
-          }}
-        />
+        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginBottom: 8 }}>
+          <Ionicons name="moon-outline" size={16} color={theme.primary} /> Heure de coucher
+        </Text>
+        <TimePicker value={bedtime} onChange={setBedtime} theme={theme} />
 
         {/* Wake time */}
-        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginTop: 20, marginBottom: 8 }}>Heure de réveil</Text>
-        <TextInput
-          value={wakeTime} onChangeText={setWakeTime}
-          placeholder="07:00" placeholderTextColor={theme.muted}
-          style={{
-            backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-            borderWidth: 1, borderColor: theme.border, color: theme.text,
-            fontSize: 18, textAlign: 'center', fontWeight: '700',
-          }}
-        />
+        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginTop: 20, marginBottom: 8 }}>
+          <Ionicons name="sunny-outline" size={16} color={theme.primary} /> Heure de réveil
+        </Text>
+        <TimePicker value={wakeTime} onChange={setWakeTime} theme={theme} />
 
         {/* Duration preview */}
         <View style={{
@@ -89,7 +130,7 @@ export default function SleepLog({ supabase }: { supabase: any }) {
           marginTop: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center',
         }}>
           <Text style={{ color: theme.muted, fontSize: 13 }}>Durée estimée</Text>
-          <Text style={{ color: theme.primary, fontSize: 28, fontWeight: '800' }}>{h}h{m > 0 ? ` ${m}min` : ''}</Text>
+          <Text style={{ color: theme.primary, fontSize: 28, fontWeight: '800' }}>{dh}h{dm > 0 ? ` ${dm}min` : ''}</Text>
         </View>
 
         {/* Quality */}
