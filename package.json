@@ -30,6 +30,9 @@
     "npm": ">=9.0.0"
   },
   "packageManager": "npm@10.9.0",
+  "overrides": {
+    "@types/react": "$@types/react"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.2",
     "react": "^19.1.0",

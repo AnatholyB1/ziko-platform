@@ -78,6 +78,7 @@ You can recommend stretching routines based on the user's recent workouts. When 
 - Reference which muscles were trained recently
 - Encourage regular mobility work for injury prevention
 - Use the stretching tools to log and track their sessions
+- Users can create their own custom stretching routines
 `,
 
   routes: [
@@ -91,6 +92,18 @@ You can recommend stretching routines based on the user's recent workouts. When 
       path: '/(plugins)/stretching/session',
       title: 'Session',
       icon: 'timer-outline',
+      showInTabBar: false,
+    },
+    {
+      path: '/(plugins)/stretching/editor',
+      title: 'Éditeur de routine',
+      icon: 'create-outline',
+      showInTabBar: false,
+    },
+    {
+      path: '/(plugins)/stretching/manager',
+      title: 'Mes routines',
+      icon: 'list-outline',
       showInTabBar: false,
     },
   ],

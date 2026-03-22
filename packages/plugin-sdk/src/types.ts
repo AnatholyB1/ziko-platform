@@ -64,7 +64,9 @@ export type PluginCategory =
   | 'coaching'
   | 'persona'
   | 'analytics'
-  | 'social';
+  | 'social'
+  | 'training'
+  | 'health';
 
 export interface PluginManifest {
   id: string;

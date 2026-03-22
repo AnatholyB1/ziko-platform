@@ -8,6 +8,7 @@ import * as AiProgramsTools from './ai-programs.js';
 import * as JournalTools from './journal.js';
 import * as HydrationTools from './hydration.js';
 import * as CardioTools from './cardio.js';
+import * as NavigationTools from './navigation.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -158,6 +159,7 @@ const executors: Record<string, ToolExecutor['execute']> = {
   cardio_log_session: CardioTools.cardio_log_session,
   cardio_get_history: CardioTools.cardio_get_history,
   cardio_get_stats: CardioTools.cardio_get_stats,
+  app_navigate: NavigationTools.app_navigate,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -435,6 +437,21 @@ const cardioToolSchemas: AITool[] = [
   },
 ];
 
+const navigationToolSchemas: AITool[] = [
+  {
+    name: 'app_navigate',
+    description: `Navigate the user to a screen in the app. Call this AFTER creating/logging data to take the user to the relevant screen. Available screens: timer_dashboard (params: autoStartPresetId), timer_editor (params: presetId), timer_manager, cardio_dashboard, cardio_log (params: prefill_activity, prefill_duration, prefill_calories, prefill_notes), habits_dashboard, habits_log, nutrition_dashboard, nutrition_log, sleep_dashboard, sleep_log, stretching_dashboard, measurements_dashboard, measurements_log, journal_dashboard, journal_entry, hydration_dashboard, ai_programs_dashboard, ai_programs_generate, stats_dashboard, gamification_dashboard, gamification_shop, community_dashboard, community_friends, community_challenges, workout_home, profile.`,
+    parameters: {
+      type: 'object',
+      properties: {
+        screen: { type: 'string', description: 'Screen identifier (e.g. timer_dashboard, cardio_log, habits_dashboard)' },
+        params: { type: 'string', description: 'JSON-encoded params object for the screen (e.g. {"autoStartPresetId":"uuid"})' },
+      },
+      required: ['screen'],
+    },
+  },
+];
+
 export const allToolSchemas: AITool[] = [
   ...habitsToolSchemas,
   ...nutritionToolSchemas,
@@ -446,6 +463,7 @@ export const allToolSchemas: AITool[] = [
   ...journalToolSchemas,
   ...hydrationToolSchemas,
   ...cardioToolSchemas,
+  ...navigationToolSchemas,
 ];
 
 export function getToolExecutor(name: string): ToolExecutor['execute'] | undefined {

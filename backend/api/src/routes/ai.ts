@@ -31,7 +31,18 @@ You also orchestrate actions on their behalf using the tools at your disposal.
 - You can chain multiple tool calls in a single turn (e.g. fetch habits + nutrition summary to give a daily recap).
 - After executing tools, synthesise the results into a clear, personalised response.
 - Be concise unless the user asks for detail. Use markdown sparingly.
-- Always speak in the same language as the user (French, English, etc.).`;
+- Always speak in the same language as the user (French, English, etc.).
+
+## App Navigation
+You can navigate the user directly to any screen in the app using the app_navigate tool.
+**Always call app_navigate after performing an action** to take the user to the relevant screen.
+Examples:
+- User says "lance un chrono HIIT 4 rounds 20s/10s" → call timer_create_preset, then app_navigate to timer_dashboard with autoStartPresetId set to the created preset ID.
+- User says "log 500ml d'eau" → call hydration_log, then app_navigate to hydration_dashboard.
+- User says "montre mes stats" → app_navigate to stats_dashboard.
+- User says "enregistre que j'ai dormi de 23h à 7h" → call sleep_log, then app_navigate to sleep_dashboard.
+- User asks to create a workout program → call ai_programs_generate, then app_navigate to ai_programs_dashboard.
+Only navigate when it makes sense (user requests action or wants to see something). Don't navigate for simple informational questions.`;
 
 function buildSystemPrompt(userCtx: UserContext): string {
   const sections: string[] = [BASE_SYSTEM];
@@ -157,16 +168,28 @@ router.post('/chat/stream', async (c) => {
 
   return stream(c, async (s) => {
     const chunks: string[] = [];
+    const actions: unknown[] = [];
     try {
       // Send conversation_id first so client can track it
       await s.write(
         `data: ${JSON.stringify({ type: 'meta', conversation_id: convo.conversationId })}\n\n`,
       );
 
-      for await (const text of result.textStream) {
-        chunks.push(text);
-        await s.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
+      for await (const part of result.fullStream) {
+        if (part.type === 'text-delta') {
+          chunks.push(part.text);
+          await s.write(`data: ${JSON.stringify({ type: 'chunk', content: part.text })}\n\n`);
+        } else if (part.type === 'tool-result' && part.toolName === 'app_navigate') {
+          const action = ((part as any).output ?? (part as any).result)?._action;
+          if (action) actions.push(action);
+        }
       }
+
+      // Emit collected actions before DONE
+      if (actions.length > 0) {
+        await s.write(`data: ${JSON.stringify({ type: 'actions', actions })}\n\n`);
+      }
+
       await s.write('data: [DONE]\n\n');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Stream error';
@@ -209,7 +232,7 @@ router.post('/chat', async (c) => {
     updateConversationTitle(convo.conversationId, lastUserMsg.content);
   }
 
-  const { text } = await generateText({
+  const result = await generateText({
     model: AGENT_MODEL,
     system: systemPrompt,
     messages: allMessages,
@@ -217,13 +240,30 @@ router.post('/chat', async (c) => {
     stopWhen: stepCountIs(5),
   });
 
+  const { text } = result;
+
+  // Extract navigation actions from tool results
+  const actions: unknown[] = [];
+  try {
+    for (const step of result.steps ?? []) {
+      for (const tr of step.toolResults ?? []) {
+        if (tr.toolName === 'app_navigate') {
+          const action = ((tr as any).output ?? (tr as any).result)?._action;
+          if (action) actions.push(action);
+        }
+      }
+    }
+  } catch {
+    // Actions extraction is best-effort
+  }
+
   // Persist messages
   const toSave: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   if (lastUserMsg) toSave.push({ role: 'user', content: lastUserMsg.content });
   if (text) toSave.push({ role: 'assistant', content: text });
   await appendMessages(convo.conversationId, toSave);
 
-  return c.json({ content: text, conversation_id: convo.conversationId });
+  return c.json({ content: text, conversation_id: convo.conversationId, actions });
 });
 
 // ─── Vision: Food Nutrition Analysis ──────────────────────────────

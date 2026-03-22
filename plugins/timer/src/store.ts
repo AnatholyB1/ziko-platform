@@ -19,11 +19,16 @@ interface TimerState {
   isWork: boolean;
   isRunning: boolean;
   isPaused: boolean;
+  elapsedSeconds: number;
+  startedAt: number | null;
 
   setPresets: (p: TimerPreset[]) => void;
   setCustomPresets: (p: TimerPreset[]) => void;
+  addCustomPreset: (p: TimerPreset) => void;
+  removeCustomPreset: (id: string) => void;
+  updateCustomPreset: (id: string, p: Partial<TimerPreset>) => void;
   startTimer: (preset: TimerPreset) => void;
-  tick: () => boolean; // returns true if timer ended
+  tick: () => boolean;
   togglePause: () => void;
   stopTimer: () => void;
 }
@@ -47,9 +52,16 @@ export const useTimerStore = create<TimerState>()((set, get) => ({
   isWork: true,
   isRunning: false,
   isPaused: false,
+  elapsedSeconds: 0,
+  startedAt: null,
 
   setPresets: (presets) => set({ presets }),
   setCustomPresets: (customPresets) => set({ customPresets }),
+  addCustomPreset: (preset) => set((s) => ({ customPresets: [...s.customPresets, preset] })),
+  removeCustomPreset: (id) => set((s) => ({ customPresets: s.customPresets.filter((p) => p.id !== id) })),
+  updateCustomPreset: (id, updates) => set((s) => ({
+    customPresets: s.customPresets.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+  })),
 
   startTimer: (preset) => set({
     activePreset: preset,
@@ -58,11 +70,15 @@ export const useTimerStore = create<TimerState>()((set, get) => ({
     isWork: preset.work_seconds > 0,
     isRunning: true,
     isPaused: false,
+    elapsedSeconds: 0,
+    startedAt: Date.now(),
   }),
 
   tick: () => {
-    const { timeLeft, isWork, currentRound, activePreset } = get();
+    const { timeLeft, isWork, currentRound, activePreset, elapsedSeconds } = get();
     if (!activePreset) return true;
+
+    set({ elapsedSeconds: elapsedSeconds + 1 });
 
     if (timeLeft > 1) {
       set({ timeLeft: timeLeft - 1 });
@@ -71,7 +87,6 @@ export const useTimerStore = create<TimerState>()((set, get) => ({
 
     // Time's up for this interval
     if (isWork && activePreset.rest_seconds > 0) {
-      // Switch to rest
       set({ timeLeft: activePreset.rest_seconds, isWork: false });
       return false;
     }
@@ -92,7 +107,10 @@ export const useTimerStore = create<TimerState>()((set, get) => ({
   },
 
   togglePause: () => set((s) => ({ isPaused: !s.isPaused })),
-  stopTimer: () => set({ activePreset: null, isRunning: false, isPaused: false, currentRound: 1, timeLeft: 0 }),
+  stopTimer: () => set({
+    activePreset: null, isRunning: false, isPaused: false,
+    currentRound: 1, timeLeft: 0, elapsedSeconds: 0, startedAt: null,
+  }),
 }));
 
 export { BUILTIN_PRESETS };

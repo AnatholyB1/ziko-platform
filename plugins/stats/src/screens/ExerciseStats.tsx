@@ -276,6 +276,7 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
 
 // ── Sub-components ──────────────────────────────────────
 function MiniKPI({ label, value, color }: { label: string; value: string; color: string }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={{
       flex: 1, backgroundColor: theme.surface, borderRadius: 12, padding: 12,
@@ -288,6 +289,7 @@ function MiniKPI({ label, value, color }: { label: string; value: string; color:
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={{
       backgroundColor: theme.surface, borderRadius: 16, padding: 16,

@@ -193,6 +193,114 @@ export interface AIOverview {
   activeDays: number;
 }
 
+// ── Sleep Stats Types ───────────────────────────────────
+export interface SleepDayPoint {
+  date: string;
+  duration_hours: number;
+  quality: number;
+  bedtime: string;
+  wake_time: string;
+}
+
+export interface SleepOverview {
+  totalLogs: number;
+  avgDuration: number;
+  avgQuality: number;
+  bestQualityDate: string;
+  longestSleep: number;
+  shortestSleep: number;
+  daysTracked: number;
+}
+
+// ── Stretching Stats Types ──────────────────────────────
+export interface StretchingDayPoint {
+  date: string;
+  sessions: number;
+  totalDurationSec: number;
+}
+
+export interface StretchingOverview {
+  totalSessions: number;
+  totalDurationMin: number;
+  avgDurationMin: number;
+  daysTracked: number;
+  topRoutines: { name: string; count: number }[];
+}
+
+// ── Measurements Stats Types ────────────────────────────
+export interface MeasurementPoint {
+  date: string;
+  weight_kg: number | null;
+  body_fat_pct: number | null;
+  waist_cm: number | null;
+  chest_cm: number | null;
+  arm_cm: number | null;
+  thigh_cm: number | null;
+  hip_cm: number | null;
+}
+
+export interface MeasurementsOverview {
+  totalEntries: number;
+  latestWeight: number | null;
+  weightChange: number | null;
+  latestBodyFat: number | null;
+  bodyFatChange: number | null;
+  daysTracked: number;
+}
+
+// ── Journal Stats Types ─────────────────────────────────
+export interface JournalDayPoint {
+  date: string;
+  mood: number;
+  energy: number;
+  stress: number;
+}
+
+export interface JournalOverview {
+  totalEntries: number;
+  avgMood: number;
+  avgEnergy: number;
+  avgStress: number;
+  bestMoodDate: string;
+  daysTracked: number;
+  contextDistribution: { context: string; count: number; color: string }[];
+}
+
+// ── Hydration Stats Types ───────────────────────────────
+export interface HydrationDayPoint {
+  date: string;
+  total_ml: number;
+}
+
+export interface HydrationOverview {
+  totalLogs: number;
+  avgDailyMl: number;
+  bestDayMl: number;
+  bestDayDate: string;
+  daysTracked: number;
+  totalLiters: number;
+}
+
+// ── Cardio Stats Types ──────────────────────────────────
+export interface CardioDayPoint {
+  date: string;
+  duration_min: number;
+  distance_km: number;
+  calories: number;
+}
+
+export interface CardioOverview {
+  totalSessions: number;
+  totalDurationMin: number;
+  totalDistanceKm: number;
+  totalCalories: number;
+  avgDurationMin: number;
+  avgPace: number | null;
+  avgHeartRate: number | null;
+  daysTracked: number;
+  activityDistribution: { type: string; count: number; color: string }[];
+}
+
 // ── Store ────────────────────────────────────────────────
 interface StatsState {
   period: Period;
@@ -1116,4 +1224,334 @@ export async function fetchCommunityActivity(
   return Object.entries(byDay)
     .map(([date, d]) => ({ date, messages: d.messages, reactions: d.reactions }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// ════════════════════════════════════════════════════════
+// SLEEP STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchSleepTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<SleepDayPoint[]> {
+  let q = supabase.from('sleep_logs').select('date, duration_hours, quality, bedtime, wake_time').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  return data.map((r: any) => ({
+    date: r.date,
+    duration_hours: Number(r.duration_hours),
+    quality: r.quality,
+    bedtime: r.bedtime,
+    wake_time: r.wake_time,
+  }));
+}
+
+export async function fetchSleepOverview(
+  supabase: any, cutoff: string | null,
+): Promise<SleepOverview> {
+  let q = supabase.from('sleep_logs').select('date, duration_hours, quality');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalLogs: 0, avgDuration: 0, avgQuality: 0, bestQualityDate: '', longestSleep: 0, shortestSleep: 0, daysTracked: 0 };
+  }
+  const durations = data.map((r: any) => Number(r.duration_hours));
+  const qualities = data.map((r: any) => r.quality);
+  const bestIdx = qualities.indexOf(Math.max(...qualities));
+  return {
+    totalLogs: data.length,
+    avgDuration: +(durations.reduce((a: number, b: number) => a + b, 0) / durations.length).toFixed(1),
+    avgQuality: +(qualities.reduce((a: number, b: number) => a + b, 0) / qualities.length).toFixed(1),
+    bestQualityDate: data[bestIdx]?.date ?? '',
+    longestSleep: Math.max(...durations),
+    shortestSleep: Math.min(...durations),
+    daysTracked: new Set(data.map((r: any) => r.date)).size,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// STRETCHING STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchStretchingTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<StretchingDayPoint[]> {
+  let q = supabase.from('stretching_logs').select('date, duration_sec').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  const byDay: Record<string, { sessions: number; totalDurationSec: number }> = {};
+  for (const r of data) {
+    if (!byDay[r.date]) byDay[r.date] = { sessions: 0, totalDurationSec: 0 };
+    byDay[r.date].sessions++;
+    byDay[r.date].totalDurationSec += r.duration_sec ?? 0;
+  }
+  return Object.entries(byDay)
+    .map(([date, d]) => ({ date, ...d }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchStretchingOverview(
+  supabase: any, cutoff: string | null,
+): Promise<StretchingOverview> {
+  let q = supabase.from('stretching_logs').select('date, routine_name, duration_sec');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalSessions: 0, totalDurationMin: 0, avgDurationMin: 0, daysTracked: 0, topRoutines: [] };
+  }
+  const totalDurationSec = data.reduce((s: number, r: any) => s + (r.duration_sec ?? 0), 0);
+  const routineCounts: Record<string, number> = {};
+  for (const r of data) { routineCounts[r.routine_name] = (routineCounts[r.routine_name] ?? 0) + 1; }
+  const topRoutines = Object.entries(routineCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  return {
+    totalSessions: data.length,
+    totalDurationMin: Math.round(totalDurationSec / 60),
+    avgDurationMin: Math.round(totalDurationSec / data.length / 60),
+    daysTracked: new Set(data.map((r: any) => r.date)).size,
+    topRoutines,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// MEASUREMENTS STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchMeasurementsTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<MeasurementPoint[]> {
+  let q = supabase.from('body_measurements')
+    .select('date, weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, thigh_cm, hip_cm')
+    .order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  return data.map((r: any) => ({
+    date: r.date,
+    weight_kg: r.weight_kg != null ? Number(r.weight_kg) : null,
+    body_fat_pct: r.body_fat_pct != null ? Number(r.body_fat_pct) : null,
+    waist_cm: r.waist_cm != null ? Number(r.waist_cm) : null,
+    chest_cm: r.chest_cm != null ? Number(r.chest_cm) : null,
+    arm_cm: r.arm_cm != null ? Number(r.arm_cm) : null,
+    thigh_cm: r.thigh_cm != null ? Number(r.thigh_cm) : null,
+    hip_cm: r.hip_cm != null ? Number(r.hip_cm) : null,
+  }));
+}
+
+export async function fetchMeasurementsOverview(
+  supabase: any, cutoff: string | null,
+): Promise<MeasurementsOverview> {
+  let q = supabase.from('body_measurements')
+    .select('date, weight_kg, body_fat_pct')
+    .order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalEntries: 0, latestWeight: null, weightChange: null, latestBodyFat: null, bodyFatChange: null, daysTracked: 0 };
+  }
+  const weights = data.filter((r: any) => r.weight_kg != null);
+  const fats = data.filter((r: any) => r.body_fat_pct != null);
+  const latestWeight = weights.length > 0 ? Number(weights[weights.length - 1].weight_kg) : null;
+  const weightChange = weights.length >= 2 ? +(latestWeight! - Number(weights[0].weight_kg)).toFixed(1) : null;
+  const latestBodyFat = fats.length > 0 ? Number(fats[fats.length - 1].body_fat_pct) : null;
+  const bodyFatChange = fats.length >= 2 ? +(latestBodyFat! - Number(fats[0].body_fat_pct)).toFixed(1) : null;
+  return {
+    totalEntries: data.length,
+    latestWeight,
+    weightChange,
+    latestBodyFat,
+    bodyFatChange,
+    daysTracked: new Set(data.map((r: any) => r.date)).size,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// JOURNAL STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchJournalTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<JournalDayPoint[]> {
+  let q = supabase.from('journal_entries').select('date, mood, energy, stress').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  const byDay: Record<string, { moods: number[]; energies: number[]; stresses: number[] }> = {};
+  for (const r of data) {
+    if (!byDay[r.date]) byDay[r.date] = { moods: [], energies: [], stresses: [] };
+    byDay[r.date].moods.push(r.mood);
+    byDay[r.date].energies.push(r.energy);
+    byDay[r.date].stresses.push(r.stress);
+  }
+  return Object.entries(byDay)
+    .map(([date, d]) => ({
+      date,
+      mood: +(d.moods.reduce((a, b) => a + b, 0) / d.moods.length).toFixed(1),
+      energy: +(d.energies.reduce((a, b) => a + b, 0) / d.energies.length).toFixed(1),
+      stress: +(d.stresses.reduce((a, b) => a + b, 0) / d.stresses.length).toFixed(1),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchJournalOverview(
+  supabase: any, cutoff: string | null,
+): Promise<JournalOverview> {
+  let q = supabase.from('journal_entries').select('date, mood, energy, stress, context');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalEntries: 0, avgMood: 0, avgEnergy: 0, avgStress: 0, bestMoodDate: '', daysTracked: 0, contextDistribution: [] };
+  }
+  const avgMood = +(data.reduce((s: number, r: any) => s + r.mood, 0) / data.length).toFixed(1);
+  const avgEnergy = +(data.reduce((s: number, r: any) => s + r.energy, 0) / data.length).toFixed(1);
+  const avgStress = +(data.reduce((s: number, r: any) => s + r.stress, 0) / data.length).toFixed(1);
+
+  let bestMoodDate = '';
+  let bestMood = 0;
+  for (const r of data) {
+    if (r.mood > bestMood) { bestMood = r.mood; bestMoodDate = r.date; }
+  }
+
+  const CONTEXT_COLORS: Record<string, string> = {
+    morning: '#F59E0B', evening: '#7C3AED', pre_workout: '#FF5C1A',
+    post_workout: '#10B981', general: '#2563EB',
+  };
+  const CONTEXT_LABELS: Record<string, string> = {
+    morning: 'Matin', evening: 'Soir', pre_workout: 'Pré-entraînement',
+    post_workout: 'Post-entraînement', general: 'Général',
+  };
+  const ctxCounts: Record<string, number> = {};
+  for (const r of data) { ctxCounts[r.context] = (ctxCounts[r.context] ?? 0) + 1; }
+  const contextDistribution = Object.entries(ctxCounts)
+    .map(([context, count]) => ({
+      context: CONTEXT_LABELS[context] ?? context,
+      count,
+      color: CONTEXT_COLORS[context] ?? '#9CA3AF',
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalEntries: data.length,
+    avgMood, avgEnergy, avgStress,
+    bestMoodDate,
+    daysTracked: new Set(data.map((r: any) => r.date)).size,
+    contextDistribution,
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// HYDRATION STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchHydrationTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<HydrationDayPoint[]> {
+  let q = supabase.from('hydration_logs').select('date, amount_ml').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  const byDay: Record<string, number> = {};
+  for (const r of data) { byDay[r.date] = (byDay[r.date] ?? 0) + r.amount_ml; }
+  return Object.entries(byDay)
+    .map(([date, total_ml]) => ({ date, total_ml }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchHydrationOverview(
+  supabase: any, cutoff: string | null,
+): Promise<HydrationOverview> {
+  let q = supabase.from('hydration_logs').select('date, amount_ml');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalLogs: 0, avgDailyMl: 0, bestDayMl: 0, bestDayDate: '', daysTracked: 0, totalLiters: 0 };
+  }
+  const byDay: Record<string, number> = {};
+  for (const r of data) { byDay[r.date] = (byDay[r.date] ?? 0) + r.amount_ml; }
+  const days = Object.entries(byDay);
+  const totalMl = days.reduce((s, [, ml]) => s + ml, 0);
+  let bestDayMl = 0;
+  let bestDayDate = '';
+  for (const [date, ml] of days) {
+    if (ml > bestDayMl) { bestDayMl = ml; bestDayDate = date; }
+  }
+  return {
+    totalLogs: data.length,
+    avgDailyMl: Math.round(totalMl / days.length),
+    bestDayMl,
+    bestDayDate,
+    daysTracked: days.length,
+    totalLiters: +(totalMl / 1000).toFixed(1),
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// CARDIO STATS FETCHERS
+// ════════════════════════════════════════════════════════
+
+export async function fetchCardioTimeline(
+  supabase: any, cutoff: string | null,
+): Promise<CardioDayPoint[]> {
+  let q = supabase.from('cardio_sessions').select('date, duration_min, distance_km, calories_burned').order('date');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data) return [];
+  const byDay: Record<string, { duration_min: number; distance_km: number; calories: number }> = {};
+  for (const r of data) {
+    if (!byDay[r.date]) byDay[r.date] = { duration_min: 0, distance_km: 0, calories: 0 };
+    byDay[r.date].duration_min += Number(r.duration_min) || 0;
+    byDay[r.date].distance_km += Number(r.distance_km) || 0;
+    byDay[r.date].calories += r.calories_burned ?? 0;
+  }
+  return Object.entries(byDay)
+    .map(([date, d]) => ({ date, duration_min: Math.round(d.duration_min), distance_km: +d.distance_km.toFixed(1), calories: d.calories }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function fetchCardioOverview(
+  supabase: any, cutoff: string | null,
+): Promise<CardioOverview> {
+  let q = supabase.from('cardio_sessions').select('date, activity_type, duration_min, distance_km, calories_burned, avg_heart_rate, avg_pace_sec_per_km');
+  if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
+  const { data } = await q;
+  if (!data || data.length === 0) {
+    return { totalSessions: 0, totalDurationMin: 0, totalDistanceKm: 0, totalCalories: 0, avgDurationMin: 0, avgPace: null, avgHeartRate: null, daysTracked: 0, activityDistribution: [] };
+  }
+  const totalDurationMin = Math.round(data.reduce((s: number, r: any) => s + (Number(r.duration_min) || 0), 0));
+  const totalDistanceKm = +data.reduce((s: number, r: any) => s + (Number(r.distance_km) || 0), 0).toFixed(1);
+  const totalCalories = data.reduce((s: number, r: any) => s + (r.calories_burned ?? 0), 0);
+
+  const hrs = data.filter((r: any) => r.avg_heart_rate != null);
+  const avgHeartRate = hrs.length > 0 ? Math.round(hrs.reduce((s: number, r: any) => s + r.avg_heart_rate, 0) / hrs.length) : null;
+  const paces = data.filter((r: any) => r.avg_pace_sec_per_km != null);
+  const avgPace = paces.length > 0 ? Math.round(paces.reduce((s: number, r: any) => s + r.avg_pace_sec_per_km, 0) / paces.length) : null;
+
+  const ACTIVITY_COLORS: Record<string, string> = {
+    running: '#FF5C1A', cycling: '#2563EB', swimming: '#06B6D4', hiit: '#EF4444',
+    walking: '#10B981', elliptical: '#7C3AED', rowing: '#F59E0B', other: '#9CA3AF',
+  };
+  const ACTIVITY_LABELS: Record<string, string> = {
+    running: 'Course', cycling: 'Vélo', swimming: 'Natation', hiit: 'HIIT',
+    walking: 'Marche', elliptical: 'Elliptique', rowing: 'Rameur', other: 'Autre',
+  };
+  const typeCounts: Record<string, number> = {};
+  for (const r of data) { typeCounts[r.activity_type] = (typeCounts[r.activity_type] ?? 0) + 1; }
+  const activityDistribution = Object.entries(typeCounts)
+    .map(([type, count]) => ({ type: ACTIVITY_LABELS[type] ?? type, count, color: ACTIVITY_COLORS[type] ?? '#9CA3AF' }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalSessions: data.length,
+    totalDurationMin,
+    totalDistanceKm,
+    totalCalories,
+    avgDurationMin: Math.round(totalDurationMin / data.length),
+    avgPace,
+    avgHeartRate,
+    daysTracked: new Set(data.map((r: any) => r.date)).size,
+    activityDistribution,
+  };
 }

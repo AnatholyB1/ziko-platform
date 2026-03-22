@@ -9,13 +9,13 @@ import { useStretchingStore } from '../store';
 export default function StretchingSession({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { routineId } = useLocalSearchParams<{ routineId: string }>();
-  const { routines, startRoutine, nextExercise, stopRoutine, activeRoutine, currentExerciseIndex } = useStretchingStore();
+  const { routines, customRoutines, startRoutine, nextExercise, stopRoutine, activeRoutine, currentExerciseIndex } = useStretchingStore();
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const routine = routines.find((r) => r.id === routineId);
+    const routine = routines.find((r) => r.id === routineId) ?? customRoutines.find((r) => r.id === routineId);
     if (routine) startRoutine(routine);
     return () => { stopRoutine(); if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [routineId]);

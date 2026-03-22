@@ -15,15 +15,27 @@ import {
   fetchGamificationOverview, fetchXPTimeline, fetchXPBySource,
   fetchAIOverview, fetchConversationActivity,
   fetchCommunityOverview, fetchCommunityActivity,
+  fetchSleepOverview, fetchSleepTimeline,
+  fetchStretchingOverview, fetchStretchingTimeline,
+  fetchMeasurementsOverview, fetchMeasurementsTimeline,
+  fetchJournalOverview, fetchJournalTimeline,
+  fetchHydrationOverview, fetchHydrationTimeline,
+  fetchCardioOverview, fetchCardioTimeline,
   type Period, type HabitsOverview, type NutritionOverview,
   type GamificationOverview, type AIOverview, type CommunityOverview,
   type HabitCompletionPoint, type NutritionDayPoint, type CommunityActivityPoint,
   type XPTimelinePoint, type ConversationActivity,
   type HabitPerformance, type MealTypeDistribution, type XPBySource,
+  type SleepOverview, type SleepDayPoint,
+  type StretchingOverview, type StretchingDayPoint,
+  type MeasurementsOverview, type MeasurementPoint,
+  type JournalOverview, type JournalDayPoint,
+  type HydrationOverview, type HydrationDayPoint,
+  type CardioOverview, type CardioDayPoint,
 } from '../store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const CHART_W = SCREEN_W - 48;
+const CHART_W = SCREEN_W - 72;
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '7J', value: '7d' },
@@ -32,7 +44,8 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: 'Tout', value: 'all' },
 ];
 
-type Tab = 'workout' | 'habits' | 'nutrition' | 'gamification' | 'ai' | 'community';
+type Tab = 'workout' | 'habits' | 'nutrition' | 'gamification' | 'ai' | 'community'
+  | 'sleep' | 'stretching' | 'measurements' | 'journal' | 'hydration' | 'cardio';
 
 const BASE_TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'workout', label: 'Séances', icon: 'barbell' },
@@ -40,6 +53,15 @@ const BASE_TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'nutrition', label: 'Nutrition', icon: 'nutrition' },
   { key: 'gamification', label: 'Récompenses', icon: 'trophy' },
   { key: 'ai', label: 'IA', icon: 'chatbubble-ellipses' },
+];
+
+const PLUGIN_TABS: { key: Tab; label: string; icon: string; pluginId: string }[] = [
+  { key: 'sleep', label: 'Sommeil', icon: 'moon', pluginId: 'sleep' },
+  { key: 'stretching', label: 'Stretching', icon: 'body', pluginId: 'stretching' },
+  { key: 'measurements', label: 'Mesures', icon: 'resize', pluginId: 'measurements' },
+  { key: 'journal', label: 'Journal', icon: 'journal', pluginId: 'journal' },
+  { key: 'hydration', label: 'Hydratation', icon: 'water', pluginId: 'hydration' },
+  { key: 'cardio', label: 'Cardio', icon: 'bicycle', pluginId: 'cardio' },
 ];
 
 function getChartConfig(theme: any) {
@@ -93,12 +115,15 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
   } = useStatsStore();
 
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
-  const communityEnabled = enabledPlugins.includes('community');
 
   const tabs = useMemo(() => {
-    if (!communityEnabled) return BASE_TABS;
-    return [...BASE_TABS, { key: 'community' as Tab, label: 'Social', icon: 'people' }];
-  }, [communityEnabled]);
+    const result = [...BASE_TABS];
+    for (const pt of PLUGIN_TABS) {
+      if (enabledPlugins.includes(pt.pluginId)) result.push(pt);
+    }
+    if (enabledPlugins.includes('community')) result.push({ key: 'community' as Tab, label: 'Social', icon: 'people' });
+    return result;
+  }, [enabledPlugins]);
 
   const [activeTab, setActiveTab] = useState<Tab>('workout');
 
@@ -116,6 +141,18 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
   const [convoActivity, setConvoActivity] = useState<ConversationActivity[]>([]);
   const [communityOverview, setCommunityOverview] = useState<CommunityOverview | null>(null);
   const [communityActivity, setCommunityActivity] = useState<CommunityActivityPoint[]>([]);
+  const [sleepOverview, setSleepOverview] = useState<SleepOverview | null>(null);
+  const [sleepTimeline, setSleepTimeline] = useState<SleepDayPoint[]>([]);
+  const [stretchingOverview, setStretchingOverview] = useState<StretchingOverview | null>(null);
+  const [stretchingTimeline, setStretchingTimeline] = useState<StretchingDayPoint[]>([]);
+  const [measurementsOverview, setMeasurementsOverview] = useState<MeasurementsOverview | null>(null);
+  const [measurementsTimeline, setMeasurementsTimeline] = useState<MeasurementPoint[]>([]);
+  const [journalOverview, setJournalOverview] = useState<JournalOverview | null>(null);
+  const [journalTimeline, setJournalTimeline] = useState<JournalDayPoint[]>([]);
+  const [hydrationOverview, setHydrationOverview] = useState<HydrationOverview | null>(null);
+  const [hydrationTimeline, setHydrationTimeline] = useState<HydrationDayPoint[]>([]);
+  const [cardioOverview, setCardioOverview] = useState<CardioOverview | null>(null);
+  const [cardioTimeline, setCardioTimeline] = useState<CardioDayPoint[]>([]);
   const [tabLoading, setTabLoading] = useState(false);
 
   const cutoff = getCutoff(period);
@@ -158,6 +195,42 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
           fetchCommunityActivity(supabase, cutoff),
         ]);
         setCommunityOverview(ov); setCommunityActivity(act);
+      } else if (tab === 'sleep') {
+        const [ov, tl] = await Promise.all([
+          fetchSleepOverview(supabase, cutoff),
+          fetchSleepTimeline(supabase, cutoff),
+        ]);
+        setSleepOverview(ov); setSleepTimeline(tl);
+      } else if (tab === 'stretching') {
+        const [ov, tl] = await Promise.all([
+          fetchStretchingOverview(supabase, cutoff),
+          fetchStretchingTimeline(supabase, cutoff),
+        ]);
+        setStretchingOverview(ov); setStretchingTimeline(tl);
+      } else if (tab === 'measurements') {
+        const [ov, tl] = await Promise.all([
+          fetchMeasurementsOverview(supabase, cutoff),
+          fetchMeasurementsTimeline(supabase, cutoff),
+        ]);
+        setMeasurementsOverview(ov); setMeasurementsTimeline(tl);
+      } else if (tab === 'journal') {
+        const [ov, tl] = await Promise.all([
+          fetchJournalOverview(supabase, cutoff),
+          fetchJournalTimeline(supabase, cutoff),
+        ]);
+        setJournalOverview(ov); setJournalTimeline(tl);
+      } else if (tab === 'hydration') {
+        const [ov, tl] = await Promise.all([
+          fetchHydrationOverview(supabase, cutoff),
+          fetchHydrationTimeline(supabase, cutoff),
+        ]);
+        setHydrationOverview(ov); setHydrationTimeline(tl);
+      } else if (tab === 'cardio') {
+        const [ov, tl] = await Promise.all([
+          fetchCardioOverview(supabase, cutoff),
+          fetchCardioTimeline(supabase, cutoff),
+        ]);
+        setCardioOverview(ov); setCardioTimeline(tl);
       }
     } finally {
       setTabLoading(false);
@@ -178,7 +251,8 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
       {/* Category tabs */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingTop: 4, paddingBottom: 100 }}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 6, paddingVertical: 8 }}
       >
         {tabs.map((t) => (
           <TouchableOpacity
@@ -261,6 +335,24 @@ export default function StatsDashboard({ supabase }: { supabase: any }) {
         />}
         {activeTab === 'community' && <CommunityTab
           overview={communityOverview} activity={communityActivity} loading={tabLoading}
+        />}
+        {activeTab === 'sleep' && <SleepTab
+          overview={sleepOverview} timeline={sleepTimeline} loading={tabLoading}
+        />}
+        {activeTab === 'stretching' && <StretchingTab
+          overview={stretchingOverview} timeline={stretchingTimeline} loading={tabLoading}
+        />}
+        {activeTab === 'measurements' && <MeasurementsTab
+          overview={measurementsOverview} timeline={measurementsTimeline} loading={tabLoading}
+        />}
+        {activeTab === 'journal' && <JournalTab
+          overview={journalOverview} timeline={journalTimeline} loading={tabLoading}
+        />}
+        {activeTab === 'hydration' && <HydrationTab
+          overview={hydrationOverview} timeline={hydrationTimeline} loading={tabLoading}
+        />}
+        {activeTab === 'cardio' && <CardioTab
+          overview={cardioOverview} timeline={cardioTimeline} loading={tabLoading}
         />}
       </ScrollView>
     </SafeAreaView>
@@ -918,6 +1010,408 @@ function CommunityTab({ overview, activity, loading }: {
   );
 }
 
+// ════════════════════════════════════════════════════════
+// SLEEP TAB
+// ════════════════════════════════════════════════════════
+function SleepTab({ overview, timeline, loading }: {
+  overview: SleepOverview | null;
+  timeline: SleepDayPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalLogs === 0) return <EmptyState icon="moon-outline" text="Pas encore de données sommeil.\nLog tes nuits pour suivre ta récupération !" />;
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="moon-outline" label="Nuits loguées" value={`${overview.totalLogs}`} color="#7C3AED" />
+        <KPICard icon="time-outline" label="Durée moy." value={`${overview.avgDuration}h`} color="#2563EB" />
+        <KPICard icon="star-outline" label="Qualité moy." value={`${overview.avgQuality}/5`} color="#F59E0B" />
+        <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color="#10B981" />
+      </View>
+
+      {timeline.length > 1 && (
+        <ChartCard title="Durée de sommeil (heures)" icon="trending-up">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.duration_hours || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(124, 58, 237, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+
+      {timeline.length > 1 && (
+        <ChartCard title="Qualité du sommeil" icon="star">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.quality || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(245, 158, 11, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+
+      <ChartCard title="Résumé" icon="information-circle">
+        <View style={{ gap: 10 }}>
+          <StatRow label="Plus longue nuit" value={`${overview.longestSleep}h`} icon="🌙" />
+          <StatRow label="Plus courte nuit" value={`${overview.shortestSleep}h`} icon="⏰" />
+          <StatRow label="Qualité moyenne" value={`${overview.avgQuality}/5`} icon="⭐" />
+        </View>
+      </ChartCard>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// STRETCHING TAB
+// ════════════════════════════════════════════════════════
+function StretchingTab({ overview, timeline, loading }: {
+  overview: StretchingOverview | null;
+  timeline: StretchingDayPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalSessions === 0) return <EmptyState icon="body-outline" text="Pas encore de sessions stretching.\nLance une routine pour voir tes stats !" />;
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="body-outline" label="Sessions" value={`${overview.totalSessions}`} color={theme.primary} />
+        <KPICard icon="time-outline" label="Durée totale" value={`${overview.totalDurationMin}min`} color="#2563EB" />
+        <KPICard icon="timer-outline" label="Durée moy." value={`${overview.avgDurationMin}min`} color="#7C3AED" />
+        <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.daysTracked}`} color="#10B981" />
+      </View>
+
+      {timeline.length > 1 && (
+        <ChartCard title="Sessions par jour" icon="bar-chart">
+          <BarChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.sessions || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(255, 92, 26, ${o})` }}
+            style={{ borderRadius: 12 }} fromZero showValuesOnTopOfBars
+            yAxisLabel="" yAxisSuffix=""
+          />
+        </ChartCard>
+      )}
+
+      {timeline.length > 1 && (
+        <ChartCard title="Durée quotidienne (min)" icon="trending-up">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => Math.round(t.totalDurationSec / 60) || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(37, 99, 235, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+
+      {overview.topRoutines.length > 0 && (
+        <ChartCard title="Routines favorites" icon="list">
+          {overview.topRoutines.map((r, i) => (
+            <View key={r.name} style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              paddingVertical: 10, borderBottomWidth: i < overview.topRoutines.length - 1 ? 1 : 0, borderBottomColor: theme.border,
+            }}>
+              <Text style={{ fontSize: 14, color: theme.text, flex: 1 }} numberOfLines={1}>{r.name}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: theme.primary }}>{r.count}x</Text>
+            </View>
+          ))}
+        </ChartCard>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// MEASUREMENTS TAB
+// ════════════════════════════════════════════════════════
+function MeasurementsTab({ overview, timeline, loading }: {
+  overview: MeasurementsOverview | null;
+  timeline: MeasurementPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalEntries === 0) return <EmptyState icon="resize-outline" text="Pas encore de mesures.\nEnregistre tes mensurations pour suivre ta progression !" />;
+
+  const weightData = timeline.filter(t => t.weight_kg != null);
+  const fatData = timeline.filter(t => t.body_fat_pct != null);
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="scale-outline" label="Poids actuel" value={overview.latestWeight != null ? `${overview.latestWeight}kg` : '—'} color={theme.primary} />
+        <KPICard icon="trending-up-outline" label="Évolution" value={overview.weightChange != null ? `${overview.weightChange > 0 ? '+' : ''}${overview.weightChange}kg` : '—'} color={overview.weightChange != null && overview.weightChange <= 0 ? '#10B981' : '#EF4444'} />
+        <KPICard icon="fitness-outline" label="Body fat" value={overview.latestBodyFat != null ? `${overview.latestBodyFat}%` : '—'} color="#7C3AED" />
+        <KPICard icon="calendar-outline" label="Entrées" value={`${overview.totalEntries}`} color="#2563EB" />
+      </View>
+
+      {weightData.length > 1 && (
+        <ChartCard title="Évolution du poids (kg)" icon="trending-up">
+          <LineChart
+            data={{
+              labels: pickLabels(weightData.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: weightData.map(t => t.weight_kg!) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(255, 92, 26, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false}
+          />
+        </ChartCard>
+      )}
+
+      {fatData.length > 1 && (
+        <ChartCard title="Masse grasse (%)" icon="analytics">
+          <LineChart
+            data={{
+              labels: pickLabels(fatData.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: fatData.map(t => t.body_fat_pct!) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(124, 58, 237, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false}
+          />
+        </ChartCard>
+      )}
+
+      {timeline.length > 0 && (
+        <ChartCard title="Dernières mesures" icon="list">
+          <View style={{ gap: 10 }}>
+            {(() => {
+              const last = timeline[timeline.length - 1];
+              const items = [
+                { label: 'Poids', value: last.weight_kg != null ? `${last.weight_kg} kg` : null, icon: '⚖️' },
+                { label: 'Body fat', value: last.body_fat_pct != null ? `${last.body_fat_pct}%` : null, icon: '📊' },
+                { label: 'Tour de taille', value: last.waist_cm != null ? `${last.waist_cm} cm` : null, icon: '📏' },
+                { label: 'Poitrine', value: last.chest_cm != null ? `${last.chest_cm} cm` : null, icon: '💪' },
+                { label: 'Bras', value: last.arm_cm != null ? `${last.arm_cm} cm` : null, icon: '💪' },
+                { label: 'Cuisse', value: last.thigh_cm != null ? `${last.thigh_cm} cm` : null, icon: '🦵' },
+                { label: 'Hanches', value: last.hip_cm != null ? `${last.hip_cm} cm` : null, icon: '📐' },
+              ].filter(i => i.value != null);
+              return items.map(i => <StatRow key={i.label} label={i.label} value={i.value!} icon={i.icon} />);
+            })()}
+          </View>
+        </ChartCard>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// JOURNAL TAB
+// ════════════════════════════════════════════════════════
+function JournalTab({ overview, timeline, loading }: {
+  overview: JournalOverview | null;
+  timeline: JournalDayPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalEntries === 0) return <EmptyState icon="journal-outline" text="Pas encore d'entrées journal.\nNote ton humeur pour suivre ton bien-être !" />;
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="journal-outline" label="Entrées" value={`${overview.totalEntries}`} color={theme.primary} />
+        <KPICard icon="happy-outline" label="Humeur moy." value={`${overview.avgMood}/5`} color="#F59E0B" />
+        <KPICard icon="flash-outline" label="Énergie moy." value={`${overview.avgEnergy}/5`} color="#10B981" />
+        <KPICard icon="pulse-outline" label="Stress moy." value={`${overview.avgStress}/5`} color="#EF4444" />
+      </View>
+
+      {timeline.length > 1 && (
+        <ChartCard title="Humeur, Énergie & Stress" icon="analytics">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [
+                { data: timeline.map(t => t.mood || 0), color: (o = 1) => `rgba(245, 158, 11, ${o})` },
+                { data: timeline.map(t => t.energy || 0), color: (o = 1) => `rgba(16, 185, 129, ${o})` },
+                { data: timeline.map(t => t.stress || 0), color: (o = 1) => `rgba(239, 68, 68, ${o})` },
+              ],
+              legend: ['Humeur', 'Énergie', 'Stress'],
+            }}
+            width={CHART_W} height={220}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(245, 158, 11, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+
+      {overview.contextDistribution.length > 0 && (
+        <ChartCard title="Contexte des entrées" icon="pie-chart">
+          <PieChart
+            data={overview.contextDistribution.map(c => ({
+              name: c.context, population: c.count, color: c.color,
+              legendFontColor: theme.muted, legendFontSize: 12,
+            }))}
+            width={CHART_W} height={200} chartConfig={getChartConfig(theme)}
+            accessor="population" backgroundColor="transparent" paddingLeft="8" absolute={false}
+          />
+        </ChartCard>
+      )}
+
+      <ChartCard title="Résumé" icon="information-circle">
+        <View style={{ gap: 10 }}>
+          <StatRow label="Jours trackés" value={`${overview.daysTracked}`} icon="📅" />
+          <StatRow label="Meilleur jour" value={overview.bestMoodDate ? shortDate(overview.bestMoodDate) : '—'} icon="😊" />
+          <StatRow label="Humeur moyenne" value={`${overview.avgMood}/5`} icon="🎭" />
+          <StatRow label="Stress moyen" value={`${overview.avgStress}/5`} icon="😰" />
+        </View>
+      </ChartCard>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// HYDRATION TAB
+// ════════════════════════════════════════════════════════
+function HydrationTab({ overview, timeline, loading }: {
+  overview: HydrationOverview | null;
+  timeline: HydrationDayPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalLogs === 0) return <EmptyState icon="water-outline" text="Pas encore de données hydratation.\nLog ton eau pour suivre ta consommation !" />;
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="water-outline" label="Total" value={`${overview.totalLiters}L`} color="#06B6D4" />
+        <KPICard icon="trending-up-outline" label="Moy./jour" value={`${overview.avgDailyMl}ml`} color="#2563EB" />
+        <KPICard icon="trophy-outline" label="Meilleur jour" value={`${overview.bestDayMl}ml`} color="#10B981" />
+        <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color="#7C3AED" />
+      </View>
+
+      {timeline.length > 1 && (
+        <ChartCard title="Consommation quotidienne (ml)" icon="bar-chart">
+          <BarChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.total_ml || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(6, 182, 212, ${o})` }}
+            style={{ borderRadius: 12 }} fromZero showValuesOnTopOfBars
+            yAxisLabel="" yAxisSuffix=""
+          />
+        </ChartCard>
+      )}
+
+      {timeline.length > 1 && (
+        <ChartCard title="Tendance hydratation" icon="trending-up">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.total_ml || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(37, 99, 235, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// CARDIO TAB
+// ════════════════════════════════════════════════════════
+function CardioTab({ overview, timeline, loading }: {
+  overview: CardioOverview | null;
+  timeline: CardioDayPoint[];
+  loading: boolean;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  if (loading && !overview) return <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 40 }} />;
+  if (!overview || overview.totalSessions === 0) return <EmptyState icon="bicycle-outline" text="Pas encore de sessions cardio.\nLog une course ou un vélo pour voir tes stats !" />;
+
+  const formatPace = (secPerKm: number) => {
+    const min = Math.floor(secPerKm / 60);
+    const sec = secPerKm % 60;
+    return `${min}'${sec.toString().padStart(2, '0')}"`;
+  };
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <KPICard icon="bicycle-outline" label="Sessions" value={`${overview.totalSessions}`} color={theme.primary} />
+        <KPICard icon="map-outline" label="Distance" value={`${overview.totalDistanceKm}km`} color="#2563EB" />
+        <KPICard icon="flame-outline" label="Calories" value={`${overview.totalCalories}`} color="#EF4444" />
+        <KPICard icon="time-outline" label="Durée moy." value={`${overview.avgDurationMin}min`} color="#7C3AED" />
+      </View>
+
+      {timeline.length > 1 && (
+        <ChartCard title="Distance par jour (km)" icon="trending-up">
+          <LineChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.distance_km || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(37, 99, 235, ${o})` }}
+            bezier style={{ borderRadius: 12 }} withVerticalLines={false} fromZero
+          />
+        </ChartCard>
+      )}
+
+      {timeline.length > 1 && (
+        <ChartCard title="Calories brûlées par jour" icon="flame">
+          <BarChart
+            data={{
+              labels: pickLabels(timeline.map(t => shortDate(t.date)), 6),
+              datasets: [{ data: timeline.map(t => t.calories || 0) }],
+            }}
+            width={CHART_W} height={200}
+            chartConfig={{ ...getChartConfig(theme), color: (o = 1) => `rgba(239, 68, 68, ${o})` }}
+            style={{ borderRadius: 12 }} fromZero showValuesOnTopOfBars
+            yAxisLabel="" yAxisSuffix=""
+          />
+        </ChartCard>
+      )}
+
+      {overview.activityDistribution.length > 0 && (
+        <ChartCard title="Types d'activité" icon="pie-chart">
+          <PieChart
+            data={overview.activityDistribution.map(a => ({
+              name: a.type, population: a.count, color: a.color,
+              legendFontColor: theme.muted, legendFontSize: 12,
+            }))}
+            width={CHART_W} height={200} chartConfig={getChartConfig(theme)}
+            accessor="population" backgroundColor="transparent" paddingLeft="8" absolute={false}
+          />
+        </ChartCard>
+      )}
+
+      <ChartCard title="Résumé" icon="information-circle">
+        <View style={{ gap: 10 }}>
+          <StatRow label="Durée totale" value={`${Math.round(overview.totalDurationMin)}min`} icon="⏱️" />
+          <StatRow label="Distance totale" value={`${overview.totalDistanceKm}km`} icon="🗺️" />
+          {overview.avgPace != null && <StatRow label="Allure moy." value={formatPace(overview.avgPace)} icon="🏃" />}
+          {overview.avgHeartRate != null && <StatRow label="FC moy." value={`${overview.avgHeartRate} bpm`} icon="❤️" />}
+          <StatRow label="Jours actifs" value={`${overview.daysTracked}`} icon="📅" />
+        </View>
+      </ChartCard>
+    </>
+  );
+}
+
 // ── Sub-components ──────────────────────────────────────
 function KPICard({ icon, label, value, color }: {
   icon: string; label: string; value: string; color: string;
@@ -945,7 +1439,7 @@ function ChartCard({ title, icon, children }: {
   return (
     <View style={{
       backgroundColor: theme.surface, borderRadius: 16, padding: 16,
-      borderWidth: 1, borderColor: theme.border,
+      borderWidth: 1, borderColor: theme.border, overflow: 'hidden',
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <Ionicons name={icon as any} size={18} color={theme.primary} />

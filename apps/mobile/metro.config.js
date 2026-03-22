@@ -26,6 +26,14 @@ config.resolver.extraNodeModules = {
   '@ziko/plugin-stats':        path.resolve(monorepoRoot, 'plugins/stats/src'),
   '@ziko/plugin-gamification': path.resolve(monorepoRoot, 'plugins/gamification/src'),
   '@ziko/plugin-community':    path.resolve(monorepoRoot, 'plugins/community/src'),
+  '@ziko/plugin-stretching':   path.resolve(monorepoRoot, 'plugins/stretching/src'),
+  '@ziko/plugin-sleep':        path.resolve(monorepoRoot, 'plugins/sleep/src'),
+  '@ziko/plugin-measurements': path.resolve(monorepoRoot, 'plugins/measurements/src'),
+  '@ziko/plugin-timer':        path.resolve(monorepoRoot, 'plugins/timer/src'),
+  '@ziko/plugin-ai-programs':  path.resolve(monorepoRoot, 'plugins/ai-programs/src'),
+  '@ziko/plugin-journal':      path.resolve(monorepoRoot, 'plugins/journal/src'),
+  '@ziko/plugin-hydration':    path.resolve(monorepoRoot, 'plugins/hydration/src'),
+  '@ziko/plugin-cardio':       path.resolve(monorepoRoot, 'plugins/cardio/src'),
 };
 
 module.exports = config;

@@ -63,6 +63,18 @@ You can help users set up workout timers. When they mention HIIT, Tabata, EMOM o
       icon: 'timer-outline',
       showInTabBar: true,
     },
+    {
+      path: '/(plugins)/timer/manager',
+      title: 'Gérer les chronos',
+      icon: 'settings-outline',
+      showInTabBar: false,
+    },
+    {
+      path: '/(plugins)/timer/editor',
+      title: 'Éditeur chrono',
+      icon: 'create-outline',
+      showInTabBar: false,
+    },
   ],
 };
 

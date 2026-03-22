@@ -19,9 +19,18 @@ export interface AIRequestPayload {
 
 // ── SSE chunk from the agent ─────────────────────────────
 export interface AIStreamChunk {
-  type: 'chunk' | 'done' | 'error';
+  type: 'chunk' | 'done' | 'error' | 'actions' | 'meta';
   content?: string;
   error?: string;
+  actions?: AIAction[];
+  conversation_id?: string;
+}
+
+// ── AI Action (navigation, etc.) ──────────────────────────
+export interface AIAction {
+  type: 'navigate';
+  screen: string;
+  params?: Record<string, string>;
 }
 
 // ── Core system prompt ────────────────────────────────────
@@ -118,6 +127,7 @@ export class AIBridge {
     userContext: AIRequestPayload['user_context'],
     onChunk: (text: string) => void,
     signal?: AbortSignal,
+    onActions?: (actions: AIAction[]) => void,
   ): Promise<void> {
     const systemPrompt = this.buildSystemPrompt(
       userContext.profile,
@@ -176,6 +186,8 @@ export class AIBridge {
             const chunk: AIStreamChunk = JSON.parse(data);
             if (chunk.type === 'chunk' && chunk.content) {
               onChunk(chunk.content);
+            } else if (chunk.type === 'actions' && chunk.actions && onActions) {
+              onActions(chunk.actions);
             } else if (chunk.type === 'error') {
               throw new Error(chunk.error ?? 'Stream error');
             }
@@ -231,7 +243,7 @@ export class AIBridge {
       throw new Error(`AI API error ${response.status}: ${error}`);
     }
 
-    const data = await response.json();
-    return data.content ?? data.message ?? '';
+    const data = (await response.json()) as Record<string, unknown>;
+    return (data.content ?? data.message ?? '') as string;
   }
 }

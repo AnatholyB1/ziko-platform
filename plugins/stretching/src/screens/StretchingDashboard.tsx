@@ -81,19 +81,28 @@ function RoutineCard({ routine, theme }: { routine: StretchRoutine; theme: any }
 
 export default function StretchingDashboard({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
-  const { logs, setLogs, setRoutines, isLoading, setIsLoading } = useStretchingStore();
+  const { logs, setLogs, setRoutines, customRoutines, setCustomRoutines, isLoading, setIsLoading } = useStretchingStore();
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setRoutines(BUILT_IN_ROUTINES);
     try {
-      const { data } = await supabase
-        .from('stretching_logs')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(20);
-      if (data) setLogs(data);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const [logsRes, routinesRes] = await Promise.all([
+          supabase.from('stretching_logs').select('*').order('date', { ascending: false }).limit(20),
+          supabase.from('stretching_routines').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        ]);
+        if (logsRes.data) setLogs(logsRes.data);
+        if (routinesRes.data) {
+          setCustomRoutines(routinesRes.data.map((r: any) => ({
+            ...r, is_custom: true,
+            muscle_groups: r.muscle_groups ?? [],
+            exercises: r.exercises ?? [],
+          })));
+        }
+      }
     } catch {}
     setIsLoading(false);
   }, [supabase]);
@@ -139,9 +148,11 @@ export default function StretchingDashboard({ supabase }: { supabase: any }) {
         </View>
 
         {/* Routines */}
-        <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 12 }}>
-          Routines disponibles
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700' }}>
+            Routines prédéfinies
+          </Text>
+        </View>
 
         {/* Suggestion based on last workout */}
         {(() => {
@@ -167,6 +178,46 @@ export default function StretchingDashboard({ supabase }: { supabase: any }) {
           <RoutineCard key={r.id} routine={r} theme={theme} />
         ))}
 
+        {/* Custom routines */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700' }}>
+            Mes routines
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/(app)/(plugins)/stretching/manager' as any)}>
+            <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>Gérer</Text>
+          </TouchableOpacity>
+        </View>
+
+        {customRoutines.length === 0 ? (
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/(plugins)/stretching/editor' as any)}
+            style={{
+              borderWidth: 2, borderColor: theme.primary + '44', borderStyle: 'dashed',
+              borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 12, gap: 8,
+            }}
+          >
+            <Ionicons name="add-circle-outline" size={28} color={theme.primary} />
+            <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>Créer ma routine</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>Compose ta propre séance d'étirements</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            {customRoutines.map((r) => (
+              <RoutineCard key={r.id} routine={r} theme={theme} />
+            ))}
+            <TouchableOpacity
+              onPress={() => router.push('/(app)/(plugins)/stretching/editor' as any)}
+              style={{
+                borderWidth: 2, borderColor: theme.primary + '44', borderStyle: 'dashed',
+                borderRadius: 14, padding: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={theme.primary} />
+              <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 14 }}>Nouvelle routine</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
         {/* Quick links to related plugins */}
         <View style={{ marginTop: 20, gap: 8 }}>
           <TouchableOpacity
@@ -177,11 +228,11 @@ export default function StretchingDashboard({ supabase }: { supabase: any }) {
             }}
           >
             <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="barbell" size={18} color={theme.primary} />
+              <Ionicons name="flash" size={18} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Démarrer un workout</Text>
-              <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant ou après</Text>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Séance rapide</Text>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>Démarrer un workout libre</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={theme.muted} />
           </TouchableOpacity>

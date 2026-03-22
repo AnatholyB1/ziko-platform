@@ -8,7 +8,9 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/StretchingDashboard": "./src/screens/StretchingDashboard.tsx",
-    "./screens/StretchingSession": "./src/screens/StretchingSession.tsx"
+    "./screens/StretchingSession": "./src/screens/StretchingSession.tsx",
+    "./screens/RoutineEditor": "./src/screens/RoutineEditor.tsx",
+    "./screens/RoutineManager": "./src/screens/RoutineManager.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

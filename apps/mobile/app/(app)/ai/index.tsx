@@ -19,6 +19,52 @@ import { useThemeStore } from '../../../src/stores/themeStore';
 import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
 import { useCommunityStore, loadCommunity, getOrCreateDMConversation } from '@ziko/plugin-community';
 import { supabase } from '../../../src/lib/supabase';
+import type { AIAction } from '@ziko/ai-client';
+
+// ── Screen mapping: AI screen IDs → Expo Router paths ──────
+const SCREEN_MAP: Record<string, string> = {
+  timer_dashboard: '/(plugins)/timer/dashboard',
+  timer_editor: '/(plugins)/timer/editor',
+  timer_manager: '/(plugins)/timer/manager',
+  cardio_dashboard: '/(plugins)/cardio/dashboard',
+  cardio_log: '/(plugins)/cardio/log',
+  habits_dashboard: '/(plugins)/habits/dashboard',
+  habits_log: '/(plugins)/habits/log',
+  nutrition_dashboard: '/(plugins)/nutrition/dashboard',
+  nutrition_log: '/(plugins)/nutrition/log',
+  sleep_dashboard: '/(plugins)/sleep/dashboard',
+  sleep_log: '/(plugins)/sleep/log',
+  stretching_dashboard: '/(plugins)/stretching/dashboard',
+  measurements_dashboard: '/(plugins)/measurements/dashboard',
+  measurements_log: '/(plugins)/measurements/log',
+  journal_dashboard: '/(plugins)/journal/dashboard',
+  journal_entry: '/(plugins)/journal/entry',
+  hydration_dashboard: '/(plugins)/hydration/dashboard',
+  ai_programs_dashboard: '/(plugins)/ai-programs/dashboard',
+  ai_programs_generate: '/(plugins)/ai-programs/generate',
+  stats_dashboard: '/(plugins)/stats/dashboard',
+  gamification_dashboard: '/(plugins)/gamification/dashboard',
+  gamification_shop: '/(plugins)/gamification/shop',
+  community_dashboard: '/(plugins)/community/dashboard',
+  community_friends: '/(plugins)/community/friends',
+  community_challenges: '/(plugins)/community/challenges',
+  workout_home: '/workout',
+  profile: '/profile',
+};
+
+function executeAIActions(actions: AIAction[]) {
+  for (const action of actions) {
+    if (action.type === 'navigate') {
+      const path = SCREEN_MAP[action.screen];
+      if (path) {
+        // Small delay so user sees the AI response first
+        setTimeout(() => {
+          router.push({ pathname: path as any, params: action.params ?? {} });
+        }, 800);
+      }
+    }
+  }
+}
 
 function MessageBubble({ role, content }: { role: string; content: string }) {
   const isUser = role === 'user';
@@ -50,6 +96,8 @@ export default function AIScreen() {
   const streamingContent = useAIStore((s) => s.streamingContent);
   const sendMessage = useAIStore((s) => s.sendMessage);
   const createConversation = useAIStore((s) => s.createConversation);
+  const pendingActions = useAIStore((s) => s.pendingActions);
+  const clearActions = useAIStore((s) => s.clearActions);
   const theme = useThemeStore((s) => s.theme);
   const { t } = useTranslation();
   const [input, setInput] = useState('');
@@ -64,6 +112,14 @@ export default function AIScreen() {
   useEffect(() => {
     createConversation().catch(() => {});
   }, []);
+
+  // Execute AI actions after streaming completes
+  useEffect(() => {
+    if (!isStreaming && pendingActions.length > 0) {
+      executeAIActions(pendingActions);
+      clearActions();
+    }
+  }, [isStreaming, pendingActions]);
 
   useEffect(() => {
     if (communityEnabled) loadCommunity(supabase);

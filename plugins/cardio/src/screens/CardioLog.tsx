@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS } from '../store';
 
@@ -13,13 +13,19 @@ const ACTIVITY_TYPES = Object.entries(ACTIVITY_LABELS);
 export default function CardioLog({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { addSession } = useCardioStore();
+  const params = useLocalSearchParams<{
+    prefill_activity?: string;
+    prefill_duration?: string;
+    prefill_calories?: string;
+    prefill_notes?: string;
+  }>();
 
-  const [activityType, setActivityType] = useState('running');
-  const [durationMin, setDurationMin] = useState('');
+  const [activityType, setActivityType] = useState(params.prefill_activity || 'running');
+  const [durationMin, setDurationMin] = useState(params.prefill_duration || '');
   const [distanceKm, setDistanceKm] = useState('');
-  const [caloriesBurned, setCaloriesBurned] = useState('');
+  const [caloriesBurned, setCaloriesBurned] = useState(params.prefill_calories || '');
   const [avgHeartRate, setAvgHeartRate] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(params.prefill_notes || '');
   const [saving, setSaving] = useState(false);
 
   const isValid = durationMin.trim().length > 0 && parseFloat(durationMin) > 0;

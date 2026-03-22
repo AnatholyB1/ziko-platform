@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AIMessage, AIConversation } from '@ziko/plugin-sdk';
+import type { AIAction } from '@ziko/ai-client';
 import { supabase } from '../lib/supabase';
 import { aiBridge } from '../lib/ai';
 import { useAuthStore } from './authStore';
@@ -12,6 +13,7 @@ interface AIStore {
   streamingContent: string;
   isChatOpen: boolean;
   activePluginContext: Record<string, unknown>;
+  pendingActions: AIAction[];
 
   openChat: () => void;
   closeChat: () => void;
@@ -24,6 +26,7 @@ interface AIStore {
 
   sendMessage: (content: string) => Promise<void>;
   setPluginContext: (pluginId: string, context: unknown) => void;
+  clearActions: () => void;
 }
 
 export const useAIStore = create<AIStore>()((set, get) => ({
@@ -34,6 +37,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
   streamingContent: '',
   isChatOpen: false,
   activePluginContext: {},
+  pendingActions: [],
 
   openChat: () => set({ isChatOpen: true }),
   closeChat: () => set({ isChatOpen: false }),
@@ -116,7 +120,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
       content,
     });
 
-    set({ isStreaming: true, streamingContent: '' });
+    set({ isStreaming: true, streamingContent: '', pendingActions: [] });
 
     let fullResponse = '';
 
@@ -134,6 +138,10 @@ export const useAIStore = create<AIStore>()((set, get) => ({
         (chunk) => {
           fullResponse += chunk;
           set({ streamingContent: fullResponse });
+        },
+        undefined,
+        (actions) => {
+          set({ pendingActions: actions });
         },
       );
     } catch (err) {
@@ -177,4 +185,6 @@ export const useAIStore = create<AIStore>()((set, get) => ({
     set((s) => ({
       activePluginContext: { ...s.activePluginContext, [pluginId]: context },
     })),
+
+  clearActions: () => set({ pendingActions: [] }),
 }));

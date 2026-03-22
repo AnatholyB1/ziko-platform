@@ -114,6 +114,8 @@ export interface Challenge {
   created_at: string;
   participants?: ChallengeParticipant[];
   teams?: ChallengeTeam[];
+  challenge_participants?: ChallengeParticipant[];
+  challenge_teams?: ChallengeTeam[];
 }
 
 export interface ChallengeTeam {

@@ -29,6 +29,8 @@ export default function PluginsLayout() {
       <Stack.Screen name="measurements/dashboard" />
       <Stack.Screen name="measurements/log" />
       <Stack.Screen name="timer/dashboard" />
+      <Stack.Screen name="timer/manager" />
+      <Stack.Screen name="timer/editor" />
       <Stack.Screen name="ai-programs/dashboard" />
       <Stack.Screen name="ai-programs/generate" />
       <Stack.Screen name="journal/dashboard" />

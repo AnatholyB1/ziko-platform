@@ -10,7 +10,7 @@ import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
-import { useTranslation } from '@ziko/plugin-sdk';
+import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -68,10 +68,12 @@ export default function WorkoutSessionScreen() {
   const theme = useThemeStore((s) => s.theme);
 
   const isGuided = workoutExercises.length > 0;
+  const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
+  const hasStretching = enabledPlugins.includes('stretching');
 
   // ── Session elapsed timer ──────────────────────────────
   const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // ── Guided workout state ───────────────────────────────
   const [phase, setPhase] = useState<Phase>('review');
@@ -82,12 +84,12 @@ export default function WorkoutSessionScreen() {
   // ── Exercise timer (for timed exercises) ───────────────
   const [exTimer, setExTimer] = useState(0);
   const [exTimerRunning, setExTimerRunning] = useState(false);
-  const exTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const exTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // ── Rest timer ─────────────────────────────────────────
   const [restTimer, setRestTimer] = useState(0);
   const [restTimerMax, setRestTimerMax] = useState(0);
-  const restRef = useRef<ReturnType<typeof setInterval>>();
+  const restRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // ── Editable values for current set ────────────────────
   const [editReps, setEditReps] = useState('');
@@ -428,21 +430,35 @@ export default function WorkoutSessionScreen() {
     let totalDurationActiveSec = 0;
     let exercisesCount = 0;
 
-    trackedSets.forEach((sets) => {
-      const completedSets = sets.filter((s) => s.completed);
-      if (completedSets.length > 0) exercisesCount++;
-      completedSets.forEach((s) => {
-        totalSetsCount++;
-        totalRepsCount += s.reps ?? 0;
-        totalVolume += (s.reps ?? 0) * (s.weight_kg ?? 0);
-        totalRestSec += s.rest_seconds_taken ?? 0;
-        if (s.started_at && s.completed_at) {
-          totalDurationActiveSec += Math.round(
-            (new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000
-          );
-        }
+    if (isGuided) {
+      trackedSets.forEach((sets) => {
+        const completedSets = sets.filter((s) => s.completed);
+        if (completedSets.length > 0) exercisesCount++;
+        completedSets.forEach((s) => {
+          totalSetsCount++;
+          totalRepsCount += s.reps ?? 0;
+          totalVolume += (s.reps ?? 0) * (s.weight_kg ?? 0);
+          totalRestSec += s.rest_seconds_taken ?? 0;
+          if (s.started_at && s.completed_at) {
+            totalDurationActiveSec += Math.round(
+              (new Date(s.completed_at).getTime() - new Date(s.started_at).getTime()) / 1000
+            );
+          }
+        });
       });
-    });
+    } else {
+      for (const ex of freeExercises) {
+        const completedSets = ex.sets.filter((s) => s.completed);
+        if (completedSets.length > 0) exercisesCount++;
+        completedSets.forEach((s) => {
+          totalSetsCount++;
+          const reps = parseInt(s.reps) || 0;
+          const weight = parseFloat(s.weight) || 0;
+          totalRepsCount += reps;
+          totalVolume += reps * weight;
+        });
+      }
+    }
 
     // Resolve program_id from the workout
     let programId: string | null = null;
@@ -619,6 +635,22 @@ export default function WorkoutSessionScreen() {
           </ScrollView>
 
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
+            {hasStretching && (
+              <TouchableOpacity
+                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
+                style={{
+                  backgroundColor: '#FF980015', borderRadius: 14, padding: 14, marginBottom: 12,
+                  borderWidth: 1, borderColor: '#FF980044', flexDirection: 'row', alignItems: 'center', gap: 10,
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>🔥</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
+                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant la séance</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={startWorkout}
               style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
               <Ionicons name="play" size={20} color="#fff" />
@@ -1102,7 +1134,7 @@ export default function WorkoutSessionScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/stretching/session' as any)); }}
+                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/stretching/dashboard' as any)); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
                     <Text style={{ fontSize: 24 }}>🧘</Text>
@@ -1174,6 +1206,23 @@ export default function WorkoutSessionScreen() {
             <Text style={{ fontSize: 40 }}>🏋️</Text>
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.addFirstExercise')}</Text>
             <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.addFirstExerciseDesc')}</Text>
+            {hasStretching && (
+              <TouchableOpacity
+                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
+                style={{
+                  backgroundColor: '#FF980015', borderRadius: 14, padding: 14, marginTop: 20,
+                  borderWidth: 1, borderColor: '#FF980044', flexDirection: 'row', alignItems: 'center', gap: 10,
+                  width: '100%',
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>🔥</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
+                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant ta séance</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
