@@ -39,6 +39,9 @@ export default function PluginsLayout() {
       <Stack.Screen name="cardio/dashboard" />
       <Stack.Screen name="cardio/log" />
       <Stack.Screen name="wearables/dashboard" />
+      <Stack.Screen name="supplements/list" />
+      <Stack.Screen name="supplements/detail" />
+      <Stack.Screen name="supplements/compare" />
     </Stack>
   );
 }

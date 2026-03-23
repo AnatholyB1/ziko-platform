@@ -6,6 +6,7 @@ import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { bugsRouter } from './routes/bugs.js';
+import { supplementsRouter } from './routes/supplements.js';
 
 const app = new Hono();
 
@@ -42,6 +43,7 @@ app.route('/ai', aiRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
 app.route('/bugs', bugsRouter);
+app.route('/supplements', supplementsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
