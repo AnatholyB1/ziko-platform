@@ -173,6 +173,11 @@ export interface WorkoutProgram {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  cycle_weeks: number | null;
+  progression_type: 'increment' | 'percentage' | null;
+  progression_value: number | null;
+  current_cycle_week: number | null;
+  cycle_start_date: string | null;
   program_workouts?: ProgramWorkout[];
 }
 

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useTranslation, useI18nStore, type FitnessGoal, showAlert } from '@ziko/plugin-sdk';
 import { showBugReport } from '../../../src/components/BugReportModal';
+import { decode } from 'base64-arraybuffer';
 
 const GOALS: { id: FitnessGoal; labelKey: string }[] = [
   { id: 'muscle_gain', labelKey: 'profile.goalMuscle' },
@@ -29,6 +31,47 @@ export default function SettingsScreen() {
   const [height, setHeight] = useState(profile?.height_cm?.toString() ?? '');
   const [goal, setGoal] = useState<FitnessGoal | null>(profile?.goal ?? null);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const pickAndUploadAvatar = async () => {
+    if (!user) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (result.canceled || !result.assets[0].base64) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const asset = result.assets[0];
+      const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, decode(asset.base64!), {
+          contentType: mimeType,
+          upsert: true,
+        });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+      setAvatarUrl(publicUrl);
+      await refreshProfile();
+    } catch (err: any) {
+      showAlert(t('general.error'), err.message ?? t('profile.avatarUploadError'));
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const fieldStyle = {
     backgroundColor: theme.surface,
@@ -72,6 +115,35 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
+        {/* Avatar upload */}
+        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <TouchableOpacity onPress={pickAndUploadAvatar} disabled={isUploadingAvatar}
+            style={{ position: 'relative' }}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.border }} />
+            ) : (
+              <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>
+                  {profile?.name?.[0]?.toUpperCase() ?? '?'}
+                </Text>
+              </View>
+            )}
+            <View style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 32, height: 32, borderRadius: 16,
+              backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
+              borderWidth: 3, borderColor: theme.background,
+            }}>
+              {isUploadingAvatar ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="camera" size={14} color="#fff" />
+              )}
+            </View>
+          </TouchableOpacity>
+          <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8 }}>{t('profile.changePhoto')}</Text>
+        </View>
+
         <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('profile.fullName')}</Text>
         <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#7A7670" style={fieldStyle} />
 

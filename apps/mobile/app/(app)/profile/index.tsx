@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,25 +77,38 @@ export default function ProfileScreen() {
                   alignItems: 'center', justifyContent: 'center',
                 }}
               >
+                {profile?.avatar_url ? (
+                  <Image source={{ uri: profile.avatar_url }} style={{
+                    width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
+                    borderWidth: 3, borderColor: theme.background,
+                  }} />
+                ) : (
+                  <View style={{
+                    width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
+                    backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
+                    borderWidth: 3, borderColor: theme.background,
+                  }}>
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>
+                      {profile?.name?.[0]?.toUpperCase() ?? '?'}
+                    </Text>
+                  </View>
+                )}
+              </LinearGradient>
+            ) : (
+              profile?.avatar_url ? (
+                <Image source={{ uri: profile.avatar_url }} style={{
+                  width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
+                }} />
+              ) : (
                 <View style={{
                   width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
                   backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 3, borderColor: theme.background,
                 }}>
                   <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>
                     {profile?.name?.[0]?.toUpperCase() ?? '?'}
                   </Text>
                 </View>
-              </LinearGradient>
-            ) : (
-              <View style={{
-                width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
-                backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>
-                  {profile?.name?.[0]?.toUpperCase() ?? '?'}
-                </Text>
-              </View>
+              )
             )}
           </View>
 

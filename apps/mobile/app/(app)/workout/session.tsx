@@ -69,7 +69,18 @@ export default function WorkoutSessionScreen() {
   const exercises = useWorkoutStore((s) => s.exercises);
   const loadExercises = useWorkoutStore((s) => s.loadExercises);
   const startSession = useWorkoutStore((s) => s.startSession);
+  const cycleConfig = useWorkoutStore((s) => s.cycleConfig);
   const theme = useThemeStore((s) => s.theme);
+
+  // ── Cycle weight helper ────────────────────────────────
+  const getCycledWeight = (baseWeight: number | null): number | null => {
+    if (!baseWeight || !cycleConfig) return baseWeight;
+    const weekOffset = (cycleConfig.current_cycle_week - 1);
+    if (cycleConfig.progression_type === 'increment') {
+      return Math.round((baseWeight + weekOffset * cycleConfig.progression_value) * 100) / 100;
+    }
+    return Math.round(baseWeight * (1 + weekOffset * cycleConfig.progression_value / 100) * 100) / 100;
+  };
 
   const isGuided = workoutExercises.length > 0;
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
@@ -183,18 +194,19 @@ export default function WorkoutSessionScreen() {
       const numSets = pe.sets ?? 3;
       const mode = getExMode(pe);
       const prescribedDuration = mode === 'timeRange' ? pe.duration_max : pe.duration_seconds;
+      const cycledWeight = getCycledWeight(pe.weight_kg);
       const sets: TrackedSet[] = Array.from({ length: numSets }, (_, i) => ({
         setNumber: i + 1,
         completed: false,
         reps: pe.reps ?? null,
-        weight_kg: pe.weight_kg ?? null,
+        weight_kg: cycledWeight,
         duration_seconds: pe.duration_seconds ?? null,
         rpe: null,
         started_at: null,
         completed_at: null,
         rest_seconds_taken: null,
         prescribed_reps: pe.reps ?? pe.reps_min ?? null,
-        prescribed_weight_kg: pe.weight_kg ?? null,
+        prescribed_weight_kg: cycledWeight,
         prescribed_duration_seconds: prescribedDuration ?? null,
         prescribed_rest_seconds: pe.rest_seconds ?? null,
       }));
@@ -215,12 +227,13 @@ export default function WorkoutSessionScreen() {
     const sets = trackedSets.get(exIdx) ?? [];
     const s = sets[setIdx];
     if (!pe) return;
+    const cycledWeight = getCycledWeight(pe.weight_kg);
     setEditSets(String(sets.length));
     setEditReps(String(s?.reps ?? pe.reps ?? pe.reps_min ?? ''));
-    setEditWeight(String(s?.weight_kg ?? pe.weight_kg ?? ''));
+    setEditWeight(String(s?.weight_kg ?? cycledWeight ?? ''));
     setExTimer(0);
     setExTimerRunning(false);
-  }, [workoutExercises, trackedSets]);
+  }, [workoutExercises, trackedSets, cycleConfig]);
 
   const goToExercise = (exIdx: number, setIdx: number = 0) => {
     setCurrentExIdx(exIdx);
@@ -255,7 +268,7 @@ export default function WorkoutSessionScreen() {
           prescribed_duration_min: pe.duration_min ?? null,
           prescribed_duration_max: pe.duration_max ?? null,
           prescribed_rest_seconds: pe.rest_seconds ?? null,
-          prescribed_weight_kg: pe.weight_kg ?? null,
+          prescribed_weight_kg: getCycledWeight(pe.weight_kg) ?? null,
           exercise_type: mode,
           sets_planned: (trackedSets.get(exIdx) ?? []).length,
         }).select('id').single().then(({ data }) => {
@@ -279,6 +292,7 @@ export default function WorkoutSessionScreen() {
     const pe = workoutExercises[currentExIdx];
     const mode = getExMode(pe);
     const prescribedDuration = mode === 'timeRange' ? pe.duration_max : pe.duration_seconds;
+    const cycledWeight = getCycledWeight(pe.weight_kg);
     setTrackedSets((prev) => {
       const map = new Map(prev);
       const existing = map.get(currentExIdx) ?? [];
@@ -287,14 +301,14 @@ export default function WorkoutSessionScreen() {
           setNumber: existing.length + i + 1,
           completed: false,
           reps: pe.reps ?? null,
-          weight_kg: pe.weight_kg ?? null,
+          weight_kg: cycledWeight,
           duration_seconds: pe.duration_seconds ?? null,
           rpe: null,
           started_at: null,
           completed_at: null,
           rest_seconds_taken: null,
           prescribed_reps: pe.reps ?? pe.reps_min ?? null,
-          prescribed_weight_kg: pe.weight_kg ?? null,
+          prescribed_weight_kg: cycledWeight,
           prescribed_duration_seconds: prescribedDuration ?? null,
           prescribed_rest_seconds: pe.rest_seconds ?? null,
         }));
@@ -343,7 +357,7 @@ export default function WorkoutSessionScreen() {
       completed_at: completedAt,
       rest_seconds_taken: restSecondsTaken,
       prescribed_reps: currentEx.reps ?? currentEx.reps_min ?? null,
-      prescribed_weight_kg: currentEx.weight_kg ?? null,
+      prescribed_weight_kg: getCycledWeight(currentEx.weight_kg) ?? null,
       prescribed_duration_seconds: prescribedDuration ?? null,
       prescribed_rest_seconds: currentEx.rest_seconds ?? null,
     });
@@ -917,12 +931,19 @@ export default function WorkoutSessionScreen() {
 
               {/* Weight */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Weight (kg)</Text>
+                <View>
+                  <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Weight (kg)</Text>
+                  {cycleConfig && currentEx.weight_kg && getCycledWeight(currentEx.weight_kg) !== currentEx.weight_kg && (
+                    <Text style={{ color: theme.primary, fontSize: 10, marginTop: 1 }}>
+                      {t('workout.cycleWeekLabel', { current: String(cycleConfig.current_cycle_week), total: String(cycleConfig.cycle_weeks) })} · {t('workout.baseWeight')}: {currentEx.weight_kg}kg
+                    </Text>
+                  )}
+                </View>
                 <TextInput
                   value={editWeight}
                   onChangeText={setEditWeight}
                   keyboardType="decimal-pad"
-                  placeholder={String(currentEx.weight_kg ?? '0')}
+                  placeholder={String(getCycledWeight(currentEx.weight_kg) ?? '0')}
                   placeholderTextColor="#7A7670"
                   style={{
                     backgroundColor: theme.background, borderRadius: 10, borderWidth: 1, borderColor: theme.border,

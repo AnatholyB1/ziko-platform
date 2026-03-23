@@ -38,6 +38,7 @@ interface WorkoutState {
   exercises: Exercise[];
   programs: WorkoutProgram[];
   activeProgram: WorkoutProgram | null;
+  cycleConfig: { cycle_weeks: number; progression_type: 'increment' | 'percentage'; progression_value: number; current_cycle_week: number } | null;
 
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   endSession: () => Promise<void>;
@@ -70,6 +71,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   exercises: [],
   programs: [],
   activeProgram: null,
+  cycleConfig: null,
 
   startSession: async (programWorkoutId, name) => {
     const user = useAuthStore.getState().user;
@@ -78,6 +80,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     // Load workout exercises if starting from a program
     let workoutExercises: (ProgramExercise & { exercises?: Exercise })[] = [];
     let programId: string | null = null;
+    let cycleConfig: WorkoutState['cycleConfig'] = null;
     if (programWorkoutId) {
       const { data: peData } = await supabase
         .from('program_exercises')
@@ -93,6 +96,23 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .eq('id', programWorkoutId)
         .single();
       if (pwData) programId = pwData.program_id;
+
+      // Load cycle config from the program
+      if (programId) {
+        const { data: progData } = await supabase
+          .from('workout_programs')
+          .select('cycle_weeks, progression_type, progression_value, current_cycle_week')
+          .eq('id', programId)
+          .single();
+        if (progData?.cycle_weeks && progData?.progression_type && progData?.progression_value) {
+          cycleConfig = {
+            cycle_weeks: progData.cycle_weeks,
+            progression_type: progData.progression_type as 'increment' | 'percentage',
+            progression_value: progData.progression_value,
+            current_cycle_week: progData.current_cycle_week ?? 1,
+          };
+        }
+      }
     }
 
     const { data, error } = await supabase
@@ -109,7 +129,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .single();
 
     if (!error && data) {
-      set({ currentSession: data as WorkoutSession, activeSets: [], currentWorkoutExercises: workoutExercises });
+      set({ currentSession: data as WorkoutSession, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
     }
   },
 
@@ -125,7 +145,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .eq('id', currentSession.id);
     }
 
-    set({ currentSession: null, activeSets: [], currentWorkoutExercises: [] });
+    set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },
 
   addSet: (setData) =>

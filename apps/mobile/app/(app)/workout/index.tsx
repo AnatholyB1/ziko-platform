@@ -243,7 +243,7 @@ export default function WorkoutProgramsScreen() {
               </View>
               {program.description && <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>{program.description}</Text>}
               {program.days_per_week != null && (
-                <Text style={{ color: theme.primary, fontSize: 12, marginTop: 4 }}>{program.days_per_week}x / week</Text>
+                <Text style={{ color: theme.primary, fontSize: 12, marginTop: 4 }}>{program.days_per_week}{t('workout.daysPerWeekShort')}</Text>
               )}
             </View>
             <Ionicons name="chevron-forward" size={16} color="#7A7670" />

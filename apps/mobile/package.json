@@ -31,6 +31,7 @@
     "@ziko/plugin-sdk": "*",
     "@ziko/plugin-stats": "*",
     "@ziko/ui": "*",
+    "base64-arraybuffer": "^1.0.2",
     "date-fns": "^4.1.0",
     "expo": "~54.0.0",
     "expo-constants": "~18.0.13",

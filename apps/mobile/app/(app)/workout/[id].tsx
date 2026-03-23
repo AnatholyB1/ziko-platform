@@ -20,6 +20,11 @@ interface ProgramDetail {
   description: string | null;
   days_per_week: number | null;
   is_active: boolean;
+  cycle_weeks: number | null;
+  progression_type: 'increment' | 'percentage' | null;
+  progression_value: number | null;
+  current_cycle_week: number | null;
+  cycle_start_date: string | null;
 }
 
 interface WorkoutDay {
@@ -86,10 +91,21 @@ export default function ProgramDetailScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string | null>(null);
 
+  // Edit program name
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState('');
+
+  // Move day modal
+  const [showMoveDay, setShowMoveDay] = useState(false);
+  const [movingWorkout, setMovingWorkout] = useState<WorkoutDay | null>(null);
+
   // Exercise config modal
   const [showConfig, setShowConfig] = useState(false);
   const [configExercise, setConfigExercise] = useState<Exercise | null>(null);
   const [config, setConfig] = useState<ExerciseConfig>(defaultConfig);
+
+  // Cycle config
+  const [showCycleConfig, setShowCycleConfig] = useState(false);
 
   const loadProgram = useCallback(async () => {
     if (!id) return;
@@ -101,7 +117,15 @@ export default function ProgramDetailScreen() {
       .select('*, program_exercises(*, exercises(name, muscle_groups))')
       .eq('program_id', id)
       .order('day_of_week');
-    setWorkouts((wkts ?? []) as WorkoutDay[]);
+    const workoutList = (wkts ?? []) as WorkoutDay[];
+    setWorkouts(workoutList);
+
+    // Auto-sync days_per_week with actual workout count
+    const actualDays = workoutList.length;
+    if (prog && prog.days_per_week !== actualDays) {
+      await supabase.from('workout_programs').update({ days_per_week: actualDays }).eq('id', id);
+      setProgram((prev) => prev ? { ...prev, days_per_week: actualDays } : prev);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -196,9 +220,49 @@ export default function ProgramDetailScreen() {
     await loadProgram();
   };
 
+  // ── Move day to another day of the week ────────────────
+  const handleMoveDay = (workout: WorkoutDay) => {
+    setMovingWorkout(workout);
+    setShowMoveDay(true);
+  };
+
+  const confirmMoveDay = async (newDay: number | null) => {
+    if (!movingWorkout) return;
+    await supabase
+      .from('program_workouts')
+      .update({ day_of_week: newDay, order_index: newDay ?? movingWorkout.order_index })
+      .eq('id', movingWorkout.id);
+    setShowMoveDay(false);
+    setMovingWorkout(null);
+    await loadProgram();
+  };
+
+  // ── Swap two days ───────────────────────────────────────
+  const handleSwapDay = async (newDay: number) => {
+    if (!movingWorkout) return;
+    // Find the workout currently occupying the target day
+    const targetWorkout = workouts.find((w) => w.day_of_week === newDay);
+    if (targetWorkout) {
+      // Swap: move target to source's day
+      await supabase
+        .from('program_workouts')
+        .update({ day_of_week: movingWorkout.day_of_week, order_index: movingWorkout.day_of_week ?? targetWorkout.order_index })
+        .eq('id', targetWorkout.id);
+    }
+    // Move source to new day
+    await supabase
+      .from('program_workouts')
+      .update({ day_of_week: newDay, order_index: newDay })
+      .eq('id', movingWorkout.id);
+    setShowMoveDay(false);
+    setMovingWorkout(null);
+    await loadProgram();
+  };
+
   // ── Day action sheet ────────────────────────────────────
   const showDayActions = (workout: WorkoutDay) => {
     showAlert(workout.name, undefined, [
+      { text: t('workout.moveDay'), onPress: () => handleMoveDay(workout) },
       { text: t('workout.duplicate'), onPress: () => handleDuplicateDay(workout) },
       { text: t('workout.copy'), onPress: () => handleCopyDay(workout) },
       { text: t('general.delete'), style: 'destructive', onPress: () => handleDeleteDay(workout.id, workout.name) },
@@ -299,6 +363,50 @@ export default function ProgramDetailScreen() {
     loadProgram();
   };
 
+  // ── Cycle helpers ──────────────────────────────────────
+  const getCycledWeight = (baseWeight: number | null, week: number): number | null => {
+    if (!baseWeight || !program?.cycle_weeks || !program?.progression_type || !program?.progression_value) return baseWeight;
+    const weekOffset = (week - 1);
+    if (program.progression_type === 'increment') {
+      return Math.round((baseWeight + weekOffset * program.progression_value) * 100) / 100;
+    }
+    // percentage: add X% of base per week
+    return Math.round(baseWeight * (1 + weekOffset * program.progression_value / 100) * 100) / 100;
+  };
+
+  const currentWeek = program?.current_cycle_week ?? 1;
+
+  const handleSaveCycleConfig = async (
+    cycleWeeks: number | null,
+    progressionType: 'increment' | 'percentage' | null,
+    progressionValue: number | null,
+  ) => {
+    if (!id) return;
+    const update: Record<string, unknown> = {
+      cycle_weeks: cycleWeeks,
+      progression_type: progressionType,
+      progression_value: progressionValue,
+      current_cycle_week: cycleWeeks ? 1 : null,
+      cycle_start_date: cycleWeeks ? new Date().toISOString().split('T')[0] : null,
+    };
+    await supabase.from('workout_programs').update(update).eq('id', id);
+    setProgram((prev) => prev ? { ...prev, ...update } as ProgramDetail : prev);
+    setShowCycleConfig(false);
+  };
+
+  const handleAdvanceWeek = async (direction: 1 | -1) => {
+    if (!id || !program?.cycle_weeks) return;
+    const newWeek = Math.max(1, Math.min(program.cycle_weeks, currentWeek + direction));
+    await supabase.from('workout_programs').update({ current_cycle_week: newWeek }).eq('id', id);
+    setProgram((prev) => prev ? { ...prev, current_cycle_week: newWeek } : prev);
+  };
+
+  const handleResetCycle = async () => {
+    if (!id) return;
+    await supabase.from('workout_programs').update({ current_cycle_week: 1, cycle_start_date: new Date().toISOString().split('T')[0] }).eq('id', id);
+    setProgram((prev) => prev ? { ...prev, current_cycle_week: 1, cycle_start_date: new Date().toISOString().split('T')[0] } : prev);
+  };
+
   // ── Filtered exercises for picker ────────────────────────
   const bodyParts = [...new Set(exercises.map((e) => (e as any).body_part).filter(Boolean))].sort();
 
@@ -318,7 +426,14 @@ export default function ProgramDetailScreen() {
     else if (pe.duration_seconds) parts.push(`${pe.duration_seconds}s`);
     else if (pe.duration_min && pe.duration_max) parts.push(`${pe.duration_min}-${pe.duration_max}s`);
 
-    if (pe.weight_kg) parts.push(`@ ${pe.weight_kg}kg`);
+    if (pe.weight_kg) {
+      const cycled = getCycledWeight(pe.weight_kg, currentWeek);
+      if (cycled && program?.cycle_weeks && cycled !== pe.weight_kg) {
+        parts.push(`@ ${cycled}kg`);
+      } else {
+        parts.push(`@ ${pe.weight_kg}kg`);
+      }
+    }
     if (pe.rest_seconds) parts.push(`| ${pe.rest_seconds}s rest`);
     return parts.join(' ');
   };
@@ -331,12 +446,56 @@ export default function ProgramDetailScreen() {
           <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }} numberOfLines={1}>
-            {program?.name ?? t('workout.programFallback')}
-          </Text>
-          {program?.is_active && (
-            <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>{t('workout.activeProgram')}</Text>
+          {editingName ? (
+            <TextInput
+              value={editName}
+              onChangeText={setEditName}
+              autoFocus
+              onBlur={async () => {
+                const trimmed = editName.trim();
+                if (trimmed && trimmed !== program?.name && id) {
+                  await supabase.from('workout_programs').update({ name: trimmed }).eq('id', id);
+                  setProgram((prev) => prev ? { ...prev, name: trimmed } : prev);
+                }
+                setEditingName(false);
+              }}
+              onSubmitEditing={async () => {
+                const trimmed = editName.trim();
+                if (trimmed && trimmed !== program?.name && id) {
+                  await supabase.from('workout_programs').update({ name: trimmed }).eq('id', id);
+                  setProgram((prev) => prev ? { ...prev, name: trimmed } : prev);
+                }
+                setEditingName(false);
+              }}
+              style={{ fontSize: 22, fontWeight: '800', color: theme.text, padding: 0, margin: 0, borderBottomWidth: 2, borderBottomColor: theme.primary }}
+              returnKeyType="done"
+            />
+          ) : (
+            <TouchableOpacity onPress={() => { setEditName(program?.name ?? ''); setEditingName(true); }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }} numberOfLines={1}>
+                  {program?.name ?? t('workout.programFallback')}
+                </Text>
+                <Ionicons name="pencil" size={14} color={theme.muted} />
+              </View>
+            </TouchableOpacity>
           )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            {program?.is_active && (
+              <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>{t('workout.activeProgram')}</Text>
+            )}
+            <Text style={{ color: theme.muted, fontSize: 12 }}>
+              {workouts.length}{t('workout.daysPerWeekShort')}
+            </Text>
+            {program?.cycle_weeks && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
+                <Ionicons name="trending-up" size={11} color={theme.primary} />
+                <Text style={{ color: theme.primary, fontSize: 11, fontWeight: '600' }}>
+                  {t('workout.cycleWeekLabel', { current: String(currentWeek), total: String(program.cycle_weeks) })}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
         {!program?.is_active && (
           <TouchableOpacity onPress={handleSetActive} style={{ backgroundColor: theme.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
@@ -349,6 +508,76 @@ export default function ProgramDetailScreen() {
         {program?.description ? (
           <Text style={{ color: theme.muted, fontSize: 14, marginBottom: 20 }}>{program.description}</Text>
         ) : null}
+
+        {/* ── Cycle / Progressive Overload Section ──────────── */}
+        {program?.cycle_weeks ? (
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.primary + '40' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="trending-up" size={16} color={theme.primary} />
+                </View>
+                <View>
+                  <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>{t('workout.progressiveOverload')}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 11 }}>
+                    {program.progression_type === 'increment'
+                      ? t('workout.cycleDescIncrement', { value: String(program.progression_value ?? 0) })
+                      : t('workout.cycleDescPercentage', { value: String(program.progression_value ?? 0) })}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setShowCycleConfig(true)}>
+                <Ionicons name="settings-outline" size={18} color={theme.muted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Week progress bar */}
+            <View style={{ flexDirection: 'row', gap: 4, marginBottom: 10 }}>
+              {Array.from({ length: program.cycle_weeks }, (_, i) => i + 1).map((w) => (
+                <View key={w} style={{
+                  flex: 1, height: 6, borderRadius: 3,
+                  backgroundColor: w <= currentWeek ? theme.primary : theme.border,
+                }} />
+              ))}
+            </View>
+
+            {/* Week navigation */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <TouchableOpacity disabled={currentWeek <= 1} onPress={() => handleAdvanceWeek(-1)}
+                style={{ padding: 8, opacity: currentWeek <= 1 ? 0.3 : 1 }}>
+                <Ionicons name="chevron-back" size={18} color={theme.text} />
+              </TouchableOpacity>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 14 }}>
+                {t('workout.cycleWeekOf', { current: String(currentWeek), total: String(program.cycle_weeks) })}
+              </Text>
+              <TouchableOpacity disabled={currentWeek >= program.cycle_weeks} onPress={() => handleAdvanceWeek(1)}
+                style={{ padding: 8, opacity: currentWeek >= program.cycle_weeks ? 0.3 : 1 }}>
+                <Ionicons name="chevron-forward" size={18} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Reset cycle */}
+            {currentWeek >= program.cycle_weeks && (
+              <TouchableOpacity onPress={handleResetCycle}
+                style={{ backgroundColor: theme.primary + '18', borderRadius: 10, padding: 10, marginTop: 8, alignItems: 'center' }}>
+                <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 13 }}>{t('workout.resetCycle')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => setShowCycleConfig(true)}
+            style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: theme.border,
+              flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: theme.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="trending-up-outline" size={16} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{t('workout.enableCycling')}</Text>
+              <Text style={{ color: theme.muted, fontSize: 11 }}>{t('workout.enableCyclingDesc')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+          </TouchableOpacity>
+        )}
 
         {/* Workout days */}
         {workouts.map((workout) => (
@@ -428,6 +657,92 @@ export default function ProgramDetailScreen() {
           <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 15 }}>{t('workout.addWorkoutDay')}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* ── Move Day Modal ─────────────────────────────────── */}
+      <Modal visible={showMoveDay} animationType="slide" presentationStyle="pageSheet">
+        <View style={{ flex: 1, backgroundColor: theme.background, padding: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+            <Text style={{ color: theme.text, fontSize: 22, fontWeight: '700' }}>{t('workout.moveDayTitle')}</Text>
+            <TouchableOpacity onPress={() => { setShowMoveDay(false); setMovingWorkout(null); }}>
+              <Ionicons name="close" size={24} color="#7A7670" />
+            </TouchableOpacity>
+          </View>
+
+          {movingWorkout && (
+            <View style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ color: theme.muted, fontSize: 12 }}>{t('workout.movingFrom')}</Text>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginTop: 2 }}>
+                {movingWorkout.name} — {movingWorkout.day_of_week ? DAY_FULL_T[movingWorkout.day_of_week] : t('workout.anyDay')}
+              </Text>
+            </View>
+          )}
+
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 12 }}>{t('workout.selectNewDay')}</Text>
+          <View style={{ gap: 8 }}>
+            {[1, 2, 3, 4, 5, 6, 7].map((d) => {
+              const isCurrent = movingWorkout?.day_of_week === d;
+              const occupiedBy = workouts.find((w) => w.day_of_week === d && w.id !== movingWorkout?.id);
+              return (
+                <TouchableOpacity
+                  key={d}
+                  disabled={isCurrent}
+                  onPress={() => occupiedBy ? handleSwapDay(d) : confirmMoveDay(d)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                    padding: 14, borderRadius: 12,
+                    backgroundColor: isCurrent ? theme.primary + '15' : theme.surface,
+                    borderWidth: 1.5,
+                    borderColor: isCurrent ? theme.primary : theme.border,
+                    opacity: isCurrent ? 0.6 : 1,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      backgroundColor: isCurrent ? theme.primary + '22' : theme.background,
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Text style={{ color: isCurrent ? theme.primary : theme.text, fontWeight: '700', fontSize: 13 }}>
+                        {DAY_NAMES_T[d]}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={{ color: theme.text, fontWeight: '600', fontSize: 15 }}>{DAY_FULL_T[d]}</Text>
+                      {occupiedBy && (
+                        <Text style={{ color: theme.muted, fontSize: 12, marginTop: 1 }}>
+                          {occupiedBy.name} — {t('workout.willSwap')}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  {isCurrent ? (
+                    <Ionicons name="checkmark-circle" size={22} color={theme.primary} />
+                  ) : occupiedBy ? (
+                    <Ionicons name="swap-horizontal" size={20} color={theme.primary} />
+                  ) : (
+                    <Ionicons name="arrow-forward" size={20} color={theme.muted} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+
+            {/* Option to unassign day */}
+            {movingWorkout?.day_of_week && (
+              <TouchableOpacity
+                onPress={() => confirmMoveDay(null)}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  gap: 8, padding: 14, borderRadius: 12, marginTop: 8,
+                  backgroundColor: theme.background, borderWidth: 1, borderColor: theme.border,
+                }}
+              >
+                <Ionicons name="close-circle-outline" size={18} color={theme.muted} />
+                <Text style={{ color: theme.muted, fontWeight: '500', fontSize: 14 }}>{t('workout.unassignDay')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Add Day Modal ──────────────────────────────────── */}
       <Modal visible={showAddDay} animationType="slide" presentationStyle="pageSheet">
@@ -699,6 +1014,187 @@ export default function ProgramDetailScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* ── Cycle Config Modal ────────────────────────────── */}
+      <CycleConfigModal
+        visible={showCycleConfig}
+        onClose={() => setShowCycleConfig(false)}
+        onSave={handleSaveCycleConfig}
+        onDisable={() => handleSaveCycleConfig(null, null, null)}
+        initialWeeks={program?.cycle_weeks ?? 4}
+        initialType={program?.progression_type ?? 'increment'}
+        initialValue={program?.progression_value ?? 2.5}
+        hasCycle={!!program?.cycle_weeks}
+        theme={theme}
+        t={t}
+      />
     </SafeAreaView>
+  );
+}
+
+// ── Cycle Config Modal Component ─────────────────────────
+function CycleConfigModal({
+  visible, onClose, onSave, onDisable,
+  initialWeeks, initialType, initialValue, hasCycle,
+  theme, t,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (weeks: number, type: 'increment' | 'percentage', value: number) => void;
+  onDisable: () => void;
+  initialWeeks: number;
+  initialType: 'increment' | 'percentage';
+  initialValue: number;
+  hasCycle: boolean;
+  theme: any;
+  t: (key: string, params?: Record<string, string>) => string;
+}) {
+  const [weeks, setWeeks] = useState(String(initialWeeks));
+  const [type, setType] = useState<'increment' | 'percentage'>(initialType);
+  const [value, setValue] = useState(String(initialValue));
+
+  useEffect(() => {
+    if (visible) {
+      setWeeks(String(initialWeeks));
+      setType(initialType);
+      setValue(String(initialValue));
+    }
+  }, [visible]);
+
+  const parsedWeeks = parseInt(weeks) || 4;
+  const parsedValue = parseFloat(value) || 0;
+
+  // Preview: show weight for each week with a 60kg example
+  const exampleBase = 60;
+  const previewWeights = Array.from({ length: Math.min(parsedWeeks, 12) }, (_, i) => {
+    const w = i + 1;
+    if (type === 'increment') return Math.round((exampleBase + i * parsedValue) * 100) / 100;
+    return Math.round(exampleBase * (1 + i * parsedValue / 100) * 100) / 100;
+  });
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+        <ScrollView contentContainerStyle={{ padding: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <Text style={{ color: theme.text, fontSize: 22, fontWeight: '700' }}>{t('workout.cycleConfigTitle')}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={24} color="#7A7670" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Explanation */}
+          <View style={{ backgroundColor: theme.primary + '12', borderRadius: 12, padding: 14, marginBottom: 20 }}>
+            <Text style={{ color: theme.text, fontSize: 13, lineHeight: 20 }}>
+              {t('workout.cycleExplanation')}
+            </Text>
+          </View>
+
+          {/* Cycle length */}
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('workout.cycleWeeks')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => { const n = Math.max(2, parsedWeeks - 1); setWeeks(String(n)); }}
+              style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="remove" size={18} color={theme.text} />
+            </TouchableOpacity>
+            <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center', paddingVertical: 10 }}>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 20 }}>{parsedWeeks}</Text>
+              <Text style={{ color: theme.muted, fontSize: 11 }}>{t('workout.weeks')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => { const n = Math.min(12, parsedWeeks + 1); setWeeks(String(n)); }}
+              style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="add" size={18} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Progression type */}
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.progressionType')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => { setType('increment'); setValue('2.5'); }}
+              style={{
+                flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
+                backgroundColor: type === 'increment' ? theme.primary : theme.surface,
+                borderWidth: 1.5, borderColor: type === 'increment' ? theme.primary : theme.border,
+              }}>
+              <Ionicons name="add-circle-outline" size={22} color={type === 'increment' ? '#fff' : theme.text} />
+              <Text style={{ color: type === 'increment' ? '#fff' : theme.text, fontWeight: '700', fontSize: 14, marginTop: 6 }}>
+                {t('workout.incrementKg')}
+              </Text>
+              <Text style={{ color: type === 'increment' ? '#fff' + 'CC' : theme.muted, fontSize: 11, marginTop: 2, textAlign: 'center' }}>
+                {t('workout.incrementKgDesc')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setType('percentage'); setValue('5'); }}
+              style={{
+                flex: 1, padding: 14, borderRadius: 12, alignItems: 'center',
+                backgroundColor: type === 'percentage' ? theme.primary : theme.surface,
+                borderWidth: 1.5, borderColor: type === 'percentage' ? theme.primary : theme.border,
+              }}>
+              <Ionicons name="trending-up-outline" size={22} color={type === 'percentage' ? '#fff' : theme.text} />
+              <Text style={{ color: type === 'percentage' ? '#fff' : theme.text, fontWeight: '700', fontSize: 14, marginTop: 6 }}>
+                {t('workout.percentageMode')}
+              </Text>
+              <Text style={{ color: type === 'percentage' ? '#fff' + 'CC' : theme.muted, fontSize: 11, marginTop: 2, textAlign: 'center' }}>
+                {t('workout.percentageModeDesc')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Progression value */}
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>
+            {type === 'increment' ? t('workout.incrementValue') : t('workout.percentageValue')}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => { const n = Math.max(0.5, parsedValue - (type === 'increment' ? 0.5 : 1)); setValue(String(n)); }}
+              style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="remove" size={18} color={theme.text} />
+            </TouchableOpacity>
+            <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center', paddingVertical: 10 }}>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 20 }}>
+                {parsedValue}{type === 'increment' ? ' kg' : ' %'}
+              </Text>
+              <Text style={{ color: theme.muted, fontSize: 11 }}>{t('workout.perWeek')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => { const n = Math.min(type === 'increment' ? 20 : 50, parsedValue + (type === 'increment' ? 0.5 : 1)); setValue(String(n)); }}
+              style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="add" size={18} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Preview */}
+          <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 8 }}>{t('workout.cyclePreview')}</Text>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border, padding: 14, marginBottom: 24 }}>
+            <Text style={{ color: theme.muted, fontSize: 11, marginBottom: 8 }}>
+              {t('workout.cyclePreviewExample')}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {previewWeights.map((w, i) => (
+                <View key={i} style={{
+                  backgroundColor: theme.primary + '15', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+                  minWidth: 70, alignItems: 'center',
+                }}>
+                  <Text style={{ color: theme.muted, fontSize: 10 }}>S{i + 1}</Text>
+                  <Text style={{ color: theme.text, fontWeight: '700', fontSize: 14 }}>{w}kg</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Save */}
+          <TouchableOpacity onPress={() => onSave(parsedWeeks, type, parsedValue)}
+            style={{ backgroundColor: theme.primary, borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{t('workout.saveCycleConfig')}</Text>
+          </TouchableOpacity>
+
+          {/* Disable cycling */}
+          {hasCycle && (
+            <TouchableOpacity onPress={onDisable}
+              style={{ borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ color: '#E53E3E', fontWeight: '500', fontSize: 14 }}>{t('workout.disableCycling')}</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
