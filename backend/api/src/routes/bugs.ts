@@ -55,13 +55,14 @@ router.post('/', async (c) => {
         `| Expo SDK | ${di.expoSdk ?? 'N/A'} |`,
       ].join('\n');
 
+      // First attempt with labels, fallback without if labels don't exist
       const labels = [
         'bug',
         `severity:${severity ?? 'medium'}`,
         `category:${category ?? 'other'}`,
       ];
 
-      const res = await fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
+      const makeRequest = (withLabels: boolean) => fetch(`https://api.github.com/repos/${githubRepo}/issues`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${githubToken}`,
@@ -70,11 +71,18 @@ router.post('/', async (c) => {
           'X-GitHub-Api-Version': '2022-11-28',
         },
         body: JSON.stringify({
-          title: `[Bug] ${title}`,
+          title: `[Bug] [${severity ?? 'medium'}] ${title}`,
           body: issueBody,
-          labels,
+          ...(withLabels ? { labels } : {}),
         }),
       });
+
+      let res = await makeRequest(true);
+      // If labels don't exist (422), retry without them
+      if (res.status === 422) {
+        console.warn('[GitHub Issue] Labels not found, retrying without labels');
+        res = await makeRequest(false);
+      }
 
       if (res.ok) {
         const issue = await res.json() as { html_url: string };
