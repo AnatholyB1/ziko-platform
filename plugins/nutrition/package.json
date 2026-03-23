@@ -8,7 +8,8 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/NutritionDashboard": "./src/screens/NutritionDashboard.tsx",
-    "./screens/LogMealScreen": "./src/screens/LogMealScreen.tsx"
+    "./screens/LogMealScreen": "./src/screens/LogMealScreen.tsx",
+    "./screens/TDEECalculatorScreen": "./src/screens/TDEECalculatorScreen.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

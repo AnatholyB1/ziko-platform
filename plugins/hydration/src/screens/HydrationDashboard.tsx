@@ -358,7 +358,7 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
                 {editingContainer ? 'Modifier le récipient' : 'Ajouter un récipient'}
               </Text>
 
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
                 {['🥤', '🫗', '☕', '🍵', '🧃', '🥛', '🍶', '💧', '🧴', '🏺'].map((emoji) => (
                   <TouchableOpacity key={emoji} onPress={() => setNewIcon(emoji)} style={{
                     width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',

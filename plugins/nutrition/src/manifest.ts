@@ -102,6 +102,12 @@ You have access to the user's daily nutrition logs. When discussing food or diet
       showInTabBar: false,
     },
     {
+      path: '/(plugins)/nutrition/calculator',
+      title: 'TDEE Calculator',
+      icon: 'calculator',
+      showInTabBar: false,
+    },
+    {
       path: '/(plugins)/nutrition/dashboard',
       title: 'Nutrition',
       icon: 'leaf',

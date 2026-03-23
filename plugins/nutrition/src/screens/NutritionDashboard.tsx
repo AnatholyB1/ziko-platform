@@ -34,7 +34,7 @@ function MacroBar({ value, goal, color }: { value: number; goal: number; color: 
 }
 
 export default function NutritionDashboard({ supabase }: { supabase: any }) {
-  const { todayLogs, setTodayLogs, calorieGoal, proteinGoal, removeLog, selectedDate } = useNutritionStore();
+  const { todayLogs, setTodayLogs, calorieGoal, proteinGoal, carbsGoal, fatGoal, removeLog, selectedDate } = useNutritionStore();
   const theme = useThemeStore((s) => s.theme);
   const { t, tMeal } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
@@ -138,11 +138,11 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
         </View>
 
         {/* Macros */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
           {[
             { label: t('macro.protein'), value: totals.protein, goal: proteinGoal, unit: 'g', color: '#4CAF50' },
-            { label: t('macro.carbs'), value: totals.carbs, goal: calorieGoal / 4, unit: 'g', color: '#FF9800' },
-            { label: t('macro.fat'), value: totals.fat, goal: calorieGoal / 9, unit: 'g', color: '#FF6584' },
+            { label: t('macro.carbs'), value: totals.carbs, goal: carbsGoal, unit: 'g', color: '#FF9800' },
+            { label: t('macro.fat'), value: totals.fat, goal: fatGoal, unit: 'g', color: '#FF6584' },
           ].map((macro) => (
             <View key={macro.label} style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 12, borderWidth: 1, borderColor: theme.border }}>
               <Text style={{ color: macro.color, fontWeight: '700', fontSize: 16 }}>{Math.round(macro.value)}</Text>
@@ -154,6 +154,26 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
             </View>
           ))}
         </View>
+
+        {/* TDEE Calculator link */}
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/(plugins)/nutrition/calculator' as any)}
+          activeOpacity={0.75}
+          style={{
+            backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+            marginBottom: 16, borderWidth: 1, borderColor: theme.primary + '44',
+            flexDirection: 'row', alignItems: 'center', gap: 14,
+          }}
+        >
+          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: theme.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="calculator" size={22} color={theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Calculateur TDEE</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>Calculer vos objectifs personnalisés</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+        </TouchableOpacity>
 
         {/* Hydration cross-link */}
         {useHydrationStore && (() => {

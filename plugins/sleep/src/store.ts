@@ -15,10 +15,13 @@ interface SleepState {
   logs: SleepLog[];
   isLoading: boolean;
   _loaded: boolean;
+  sleepGoalHours: number;
 
   setLogs: (l: SleepLog[]) => void;
   setIsLoading: (b: boolean) => void;
   addLog: (l: SleepLog) => void;
+  setSleepGoalHours: (h: number) => void;
+  saveSleepGoal: (supabase: any) => Promise<void>;
 
   getAverageDuration: (days?: number) => number;
   getAverageQuality: (days?: number) => number;
@@ -30,10 +33,23 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
   logs: [],
   isLoading: false,
   _loaded: false,
+  sleepGoalHours: 8,
 
   setLogs: (logs) => set({ logs }),
   setIsLoading: (isLoading) => set({ isLoading }),
   addLog: (log) => set((s) => ({ logs: [log, ...s.logs] })),
+  setSleepGoalHours: (h) => set({ sleepGoalHours: h }),
+
+  saveSleepGoal: async (supabase: any) => {
+    const { sleepGoalHours } = get();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('user_plugins').upsert({
+      user_id: user.id,
+      plugin_id: 'sleep',
+      settings: { sleep_goal_hours: sleepGoalHours },
+    }, { onConflict: 'user_id,plugin_id' });
+  },
 
   getAverageDuration: (days = 7) => {
     const recent = get().logs.slice(0, days);
@@ -64,13 +80,25 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from('sleep_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
-        .limit(14);
-      set({ logs: data ?? [] });
+      const [{ data }, { data: pluginData }] = await Promise.all([
+        supabase
+          .from('sleep_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+          .limit(14),
+        supabase
+          .from('user_plugins')
+          .select('settings')
+          .eq('user_id', user.id)
+          .eq('plugin_id', 'sleep')
+          .single(),
+      ]);
+      const updates: Partial<SleepState> = { logs: data ?? [] };
+      if (pluginData?.settings?.sleep_goal_hours) {
+        updates.sleepGoalHours = pluginData.settings.sleep_goal_hours;
+      }
+      set(updates);
     } finally {
       set({ isLoading: false });
     }
