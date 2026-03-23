@@ -13,6 +13,9 @@ import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 
+let useHydrationStore: any = null;
+try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+
 const { width: SCREEN_W } = Dimensions.get('window');
 
 type ExerciseWithInfo = ProgramExercise & { exercises?: Exercise };
@@ -70,6 +73,29 @@ export default function WorkoutSessionScreen() {
   const isGuided = workoutExercises.length > 0;
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const hasStretching = enabledPlugins.includes('stretching');
+  const hasHydration = enabledPlugins.includes('hydration');
+
+  // ── Hydration quick-add ────────────────────────────────
+  const hydrationStore = useHydrationStore?.();
+  const favContainer = hydrationStore?.getFavoriteContainer?.();
+  const [waterAdded, setWaterAdded] = useState(0);
+
+  const handleQuickWater = async () => {
+    if (!favContainer || !hydrationStore) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('hydration_logs')
+        .insert({ user_id: user.id, amount_ml: favContainer.ml, date: today })
+        .select('*')
+        .single();
+      if (error) throw error;
+      hydrationStore.addLog(data);
+      setWaterAdded((w) => w + favContainer.ml);
+    } catch {}
+  };
 
   // ── Session elapsed timer ──────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -691,6 +717,15 @@ export default function WorkoutSessionScreen() {
               style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
               <Text style={{ color: '#F44336', fontWeight: '600', fontSize: 13 }}>End</Text>
             </TouchableOpacity>
+            {hasHydration && favContainer && (
+              <TouchableOpacity onPress={handleQuickWater}
+                style={{ backgroundColor: '#2196F322', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+                <Text style={{ color: '#2196F3', fontWeight: '600', fontSize: 13 }}>
+                  {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
@@ -1032,6 +1067,13 @@ export default function WorkoutSessionScreen() {
                   style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.border }}>
                   <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>-15s</Text>
                 </TouchableOpacity>
+                {hasHydration && favContainer && (
+                  <TouchableOpacity onPress={handleQuickWater}
+                    style={{ backgroundColor: '#2196F318', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#2196F344', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 16 }}>{favContainer.icon}</Text>
+                    <Text style={{ color: '#2196F3', fontWeight: '600', fontSize: 13 }}>{favContainer.ml}ml</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => setRestTimer((t) => t + 15)}
                   style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.border }}>
                   <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>+15s</Text>
@@ -1198,6 +1240,15 @@ export default function WorkoutSessionScreen() {
           style={{ backgroundColor: '#F4433622', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
           <Text style={{ color: '#F44336', fontWeight: '600', fontSize: 14 }}>End</Text>
         </TouchableOpacity>
+        {hasHydration && favContainer && (
+          <TouchableOpacity onPress={handleQuickWater}
+            style={{ backgroundColor: '#2196F322', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+            <Text style={{ color: '#2196F3', fontWeight: '600', fontSize: 13 }}>
+              {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 120 }}>

@@ -31,6 +31,8 @@ export const NAVIGABLE_SCREENS: Record<string, { label: string; params?: string[
   journal_entry: { label: 'Nouvelle entrée journal' },
   // Hydration
   hydration_dashboard: { label: 'Hydratation' },
+  // Wearables
+  wearables_dashboard: { label: 'Wearables' },
   // AI Programs
   ai_programs_dashboard: { label: 'Programmes IA' },
   ai_programs_generate: { label: 'Générer programme' },

@@ -1,29 +1,33 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useHydrationStore } from '../store';
+import type { Container } from '../store';
 
 // Cross-plugin: habits store for water habit sync
 let useHabitsStore: any = null;
 try { useHabitsStore = require('@ziko/plugin-habits').useHabitsStore; } catch {}
 
-const QUICK_AMOUNTS = [
-  { label: 'Verre', ml: 250, icon: '🥛' },
-  { label: 'Bouteille', ml: 500, icon: '🧴' },
-  { label: 'Grande bouteille', ml: 750, icon: '🍶' },
-  { label: 'Litre', ml: 1000, icon: '💧' },
-];
-
 export default function HydrationDashboard({ supabase }: { supabase: any }) {
-  const { logs, setLogs, goalMl, setGoalMl, loading, setLoading, getTodayTotal, getTodayProgress, addLog } = useHydrationStore();
+  const {
+    logs, setLogs, goalMl, setGoalMl, loading, setLoading,
+    getTodayTotal, getTodayProgress, addLog,
+    containers, addContainer, updateContainer, removeContainer,
+    favoriteContainerId, setFavoriteContainer, saveSettings,
+  } = useHydrationStore();
   const theme = useThemeStore((s) => s.theme);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showContainerModal, setShowContainerModal] = useState(false);
+  const [editingContainer, setEditingContainer] = useState<Container | null>(null);
+  const [newLabel, setNewLabel] = useState('');
+  const [newMl, setNewMl] = useState('');
+  const [newIcon, setNewIcon] = useState('🥤');
 
   // Cross-plugin: habits data (select individually to avoid infinite loop)
   const habitsHabits = useHabitsStore ? useHabitsStore((s: any) => s.habits) : [];
@@ -164,25 +168,39 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
           )}
         </View>
 
-        {/* Quick add buttons */}
-        <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginBottom: 12 }}>Ajouter</Text>
+        {/* Quick add buttons from containers */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>Ajouter</Text>
+          <TouchableOpacity onPress={() => setShowContainerModal(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="settings-outline" size={16} color={theme.primary} />
+            <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '600' }}>Récipients</Text>
+          </TouchableOpacity>
+        </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-          {QUICK_AMOUNTS.map((item) => (
-            <TouchableOpacity
-              key={item.ml}
-              onPress={() => handleAddWater(item.ml)}
-              style={{
-                flex: 1, minWidth: '45%',
-                backgroundColor: theme.surface, borderRadius: 16, padding: 16,
-                borderWidth: 1, borderColor: theme.border,
-                alignItems: 'center', gap: 6,
-              }}
-            >
-              <Text style={{ fontSize: 28 }}>{item.icon}</Text>
-              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{item.label}</Text>
-              <Text style={{ color: theme.muted, fontSize: 12 }}>{item.ml}ml</Text>
-            </TouchableOpacity>
-          ))}
+          {containers.map((item) => {
+            const isFav = favoriteContainerId === item.id;
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => handleAddWater(item.ml)}
+                style={{
+                  flex: 1, minWidth: '45%',
+                  backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+                  borderWidth: isFav ? 2 : 1, borderColor: isFav ? theme.primary : theme.border,
+                  alignItems: 'center', gap: 6,
+                }}
+              >
+                {isFav && (
+                  <View style={{ position: 'absolute', top: 8, right: 8 }}>
+                    <Ionicons name="star" size={14} color={theme.primary} />
+                  </View>
+                )}
+                <Text style={{ fontSize: 28 }}>{item.icon}</Text>
+                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{item.label}</Text>
+                <Text style={{ color: theme.muted, fontSize: 12 }}>{item.ml}ml</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Today's log */}
@@ -272,6 +290,147 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Container management modal */}
+      <Modal visible={showContainerModal} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
+            <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>Mes récipients</Text>
+            <TouchableOpacity onPress={() => { setShowContainerModal(false); setEditingContainer(null); }}>
+              <Ionicons name="close" size={24} color={theme.muted} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 100 }}>
+            {containers.map((c) => {
+              const isFav = favoriteContainerId === c.id;
+              return (
+                <View key={c.id} style={{
+                  backgroundColor: theme.surface, borderRadius: 14, padding: 14, marginBottom: 10,
+                  borderWidth: isFav ? 2 : 1, borderColor: isFav ? theme.primary : theme.border,
+                  flexDirection: 'row', alignItems: 'center', gap: 12,
+                }}>
+                  <Text style={{ fontSize: 28 }}>{c.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontWeight: '600', fontSize: 15 }}>{c.label}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 12 }}>{c.ml}ml</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => {
+                    setFavoriteContainer(isFav ? null : c.id);
+                    saveSettings(supabase);
+                  }} style={{ padding: 6 }}>
+                    <Ionicons name={isFav ? 'star' : 'star-outline'} size={20} color={isFav ? theme.primary : theme.muted} />
+                  </TouchableOpacity>
+                  {!c.isDefault && (
+                    <>
+                      <TouchableOpacity onPress={() => {
+                        setEditingContainer(c);
+                        setNewLabel(c.label);
+                        setNewMl(String(c.ml));
+                        setNewIcon(c.icon);
+                      }} style={{ padding: 6 }}>
+                        <Ionicons name="pencil-outline" size={18} color={theme.muted} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => {
+                        Alert.alert('Supprimer', `Supprimer "${c.label}" ?`, [
+                          { text: 'Annuler', style: 'cancel' },
+                          { text: 'Supprimer', style: 'destructive', onPress: () => { removeContainer(c.id); saveSettings(supabase); } },
+                        ]);
+                      }} style={{ padding: 6 }}>
+                        <Ionicons name="trash-outline" size={18} color="#F44336" />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              );
+            })}
+
+            <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8, marginBottom: 16 }}>
+              ⭐ Le récipient favori sera utilisé comme bouton rapide pendant vos entraînements.
+            </Text>
+
+            {/* Add / Edit container form */}
+            <View style={{
+              backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+              borderWidth: 1, borderColor: theme.border,
+            }}>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>
+                {editingContainer ? 'Modifier le récipient' : 'Ajouter un récipient'}
+              </Text>
+
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                {['🥤', '🫗', '☕', '🍵', '🧃', '🥛', '🍶', '💧', '🧴', '🏺'].map((emoji) => (
+                  <TouchableOpacity key={emoji} onPress={() => setNewIcon(emoji)} style={{
+                    width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: newIcon === emoji ? theme.primary + '22' : theme.background,
+                    borderWidth: 1, borderColor: newIcon === emoji ? theme.primary : theme.border,
+                  }}>
+                    <Text style={{ fontSize: 18 }}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TextInput
+                value={newLabel}
+                onChangeText={setNewLabel}
+                placeholder="Nom (ex: Shaker)"
+                placeholderTextColor={theme.muted}
+                style={{
+                  backgroundColor: theme.background, borderRadius: 10, borderWidth: 1, borderColor: theme.border,
+                  paddingHorizontal: 14, paddingVertical: 10, color: theme.text, fontSize: 14, marginBottom: 10,
+                }}
+              />
+
+              <TextInput
+                value={newMl}
+                onChangeText={setNewMl}
+                placeholder="Contenance en ml (ex: 600)"
+                placeholderTextColor={theme.muted}
+                keyboardType="number-pad"
+                style={{
+                  backgroundColor: theme.background, borderRadius: 10, borderWidth: 1, borderColor: theme.border,
+                  paddingHorizontal: 14, paddingVertical: 10, color: theme.text, fontSize: 14, marginBottom: 14,
+                }}
+              />
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                {editingContainer && (
+                  <TouchableOpacity
+                    onPress={() => { setEditingContainer(null); setNewLabel(''); setNewMl(''); setNewIcon('🥤'); }}
+                    style={{ flex: 1, backgroundColor: theme.background, borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}
+                  >
+                    <Text style={{ color: theme.muted, fontWeight: '600' }}>Annuler</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => {
+                    const ml = parseInt(newMl);
+                    if (!newLabel.trim() || !ml || ml <= 0) {
+                      Alert.alert('Erreur', 'Remplissez le nom et la contenance.');
+                      return;
+                    }
+                    if (editingContainer) {
+                      updateContainer(editingContainer.id, { label: newLabel.trim(), ml, icon: newIcon });
+                      setEditingContainer(null);
+                    } else {
+                      addContainer({ id: `custom-${Date.now()}`, label: newLabel.trim(), ml, icon: newIcon });
+                    }
+                    setNewLabel('');
+                    setNewMl('');
+                    setNewIcon('🥤');
+                    saveSettings(supabase);
+                  }}
+                  style={{ flex: 1, backgroundColor: theme.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>
+                    {editingContainer ? 'Modifier' : 'Ajouter'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

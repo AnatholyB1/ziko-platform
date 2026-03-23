@@ -38,6 +38,7 @@ export default function PluginsLayout() {
       <Stack.Screen name="hydration/dashboard" />
       <Stack.Screen name="cardio/dashboard" />
       <Stack.Screen name="cardio/log" />
+      <Stack.Screen name="wearables/dashboard" />
     </Stack>
   );
 }

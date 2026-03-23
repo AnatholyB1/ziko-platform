@@ -15,14 +15,36 @@
     },
     "ios": {
       "bundleIdentifier": "com.ziko.mobile",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Ziko reads your health data (steps, heart rate, sleep, workouts) to sync with your fitness profile.",
+        "NSHealthUpdateUsageDescription": "Ziko writes workout data back to Apple Health."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.background-delivery": true,
+        "com.apple.developer.healthkit.access": []
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/image/adaptive-icon.png",
         "backgroundColor": "#F7F6F3"
       },
-      "package": "com.ziko.mobile"
+      "package": "com.ziko.mobile",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_BODY_FAT",
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.health.WRITE_STEPS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +62,20 @@
           "imageWidth": 200
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-health-connect",
+        {
+          "requestPermissions": {
+            "read": [
+              "Steps", "HeartRate", "SleepSession", "Distance",
+              "TotalCaloriesBurned", "ActiveCaloriesBurned",
+              "ExerciseSession", "Weight", "BodyFat"
+            ],
+            "write": ["ExerciseSession", "Steps"]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

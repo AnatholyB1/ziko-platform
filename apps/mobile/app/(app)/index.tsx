@@ -1,6 +1,5 @@
 ﻿import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,21 +15,22 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import type { ProgramExercise } from '@ziko/plugin-sdk';
 
-const PLUGIN_IMAGES: Record<string, any> = {
-  habits: require('../../assets/image/plugin_habits.png'),
-  nutrition: require('../../assets/image/plugin_nutrition.png'),
-  persona: require('../../assets/image/plugin_persona.png'),
-  stats: require('../../assets/image/plugin_stats.png'),
-  gamification: require('../../assets/image/plugin_gamification.png'),
-  community: require('../../assets/image/plugin_community.png'),
-  stretching: require('../../assets/image/plugin_stretching.png'),
-  sleep: require('../../assets/image/plugin_sleep.png'),
-  measurements: require('../../assets/image/plugin_measurements.png'),
-  timer: require('../../assets/image/plugin_timer.png'),
-  'ai-programs': require('../../assets/image/plugin_ai_programs.png'),
-  journal: require('../../assets/image/plugin_journal.png'),
-  hydration: require('../../assets/image/plugin_hydration.png'),
-  cardio: require('../../assets/image/plugin_cardio.png'),
+const PLUGIN_ICON_COLORS: Record<string, string> = {
+  habits: '#FF5C1A',
+  nutrition: '#4CAF50',
+  persona: '#FF6584',
+  stats: '#FF9800',
+  gamification: '#FF5C1A',
+  community: '#00BCD4',
+  stretching: '#FF5C1A',
+  sleep: '#673AB7',
+  measurements: '#009688',
+  timer: '#FF5C1A',
+  'ai-programs': '#2196F3',
+  journal: '#FF5C1A',
+  hydration: '#2196F3',
+  cardio: '#F44336',
+  wearables: '#E91E63',
 };
 
 // Cross-plugin stores (optional, fail gracefully)
@@ -657,17 +657,9 @@ export default function DashboardScreen() {
                     activeOpacity={0.75}
                     style={{ alignItems: 'center' }}
                   >
-                    {PLUGIN_IMAGES[pid] ? (
-                      <Image
-                        source={PLUGIN_IMAGES[pid]}
-                        style={{ width: 76, height: 76, borderRadius: 18, borderWidth: 2, borderColor: theme.border }}
-                        cachePolicy="memory-disk"
-                      />
-                    ) : (
-                      <View style={{ width: 76, height: 76, borderRadius: 18, backgroundColor: theme.primary + '18', borderWidth: 2, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name={(manifest?.icon as any) ?? 'grid'} size={32} color={theme.primary} />
-                      </View>
-                    )}
+                    <View style={{ width: 76, height: 76, borderRadius: 18, backgroundColor: (PLUGIN_ICON_COLORS[pid] ?? theme.primary) + '18', borderWidth: 2, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={(manifest?.icon as any) ?? 'grid'} size={32} color={PLUGIN_ICON_COLORS[pid] ?? theme.primary} />
+                    </View>
                     <Text numberOfLines={1} style={{ color: theme.muted, fontSize: 11, marginTop: 4, textAlign: 'center', maxWidth: 80 }}>
                       {manifest?.name ?? pid}
                     </Text>

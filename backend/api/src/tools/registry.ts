@@ -8,6 +8,7 @@ import * as AiProgramsTools from './ai-programs.js';
 import * as JournalTools from './journal.js';
 import * as HydrationTools from './hydration.js';
 import * as CardioTools from './cardio.js';
+import * as WearablesTools from './wearables.js';
 import * as NavigationTools from './navigation.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
@@ -159,6 +160,10 @@ const executors: Record<string, ToolExecutor['execute']> = {
   cardio_log_session: CardioTools.cardio_log_session,
   cardio_get_history: CardioTools.cardio_get_history,
   cardio_get_stats: CardioTools.cardio_get_stats,
+  wearables_get_steps: WearablesTools.wearables_get_steps,
+  wearables_get_heart_rate: WearablesTools.wearables_get_heart_rate,
+  wearables_get_summary: WearablesTools.wearables_get_summary,
+  wearables_sync_status: WearablesTools.wearables_sync_status,
   app_navigate: NavigationTools.app_navigate,
 };
 
@@ -437,10 +442,50 @@ const cardioToolSchemas: AITool[] = [
   },
 ];
 
+const wearablesToolSchemas: AITool[] = [
+  {
+    name: 'wearables_get_steps',
+    description: 'Get step count from wearable data for a date range.',
+    parameters: {
+      type: 'object',
+      properties: {
+        start_date: { type: 'string', description: 'Start date (YYYY-MM-DD), defaults to today' },
+        end_date: { type: 'string', description: 'End date (YYYY-MM-DD), defaults to today' },
+      },
+    },
+  },
+  {
+    name: 'wearables_get_heart_rate',
+    description: 'Get heart rate data from wearable for a date range.',
+    parameters: {
+      type: 'object',
+      properties: {
+        start_date: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
+        end_date: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+      },
+    },
+  },
+  {
+    name: 'wearables_get_summary',
+    description: 'Get a full health summary (steps, calories, heart rate, sleep) for a date.',
+    parameters: {
+      type: 'object',
+      properties: {
+        date: { type: 'string', description: 'Date (YYYY-MM-DD), defaults to today' },
+      },
+    },
+  },
+  {
+    name: 'wearables_sync_status',
+    description: 'Get the current sync status and last sync timestamps for each data type.',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
 const navigationToolSchemas: AITool[] = [
   {
     name: 'app_navigate',
-    description: `Navigate the user to a screen in the app. Call this AFTER creating/logging data to take the user to the relevant screen. Available screens: timer_dashboard (params: autoStartPresetId), timer_editor (params: presetId), timer_manager, cardio_dashboard, cardio_log (params: prefill_activity, prefill_duration, prefill_calories, prefill_notes), habits_dashboard, habits_log, nutrition_dashboard, nutrition_log, sleep_dashboard, sleep_log, stretching_dashboard, measurements_dashboard, measurements_log, journal_dashboard, journal_entry, hydration_dashboard, ai_programs_dashboard, ai_programs_generate, stats_dashboard, gamification_dashboard, gamification_shop, community_dashboard, community_friends, community_challenges, workout_home, profile.`,
+    description: `Navigate the user to a screen in the app. Call this AFTER creating/logging data to take the user to the relevant screen. Available screens: timer_dashboard (params: autoStartPresetId), timer_editor (params: presetId), timer_manager, cardio_dashboard, cardio_log (params: prefill_activity, prefill_duration, prefill_calories, prefill_notes), habits_dashboard, habits_log, nutrition_dashboard, nutrition_log, sleep_dashboard, sleep_log, stretching_dashboard, measurements_dashboard, measurements_log, journal_dashboard, journal_entry, hydration_dashboard, wearables_dashboard, ai_programs_dashboard, ai_programs_generate, stats_dashboard, gamification_dashboard, gamification_shop, community_dashboard, community_friends, community_challenges, workout_home, profile.`,
     parameters: {
       type: 'object',
       properties: {
@@ -463,6 +508,7 @@ export const allToolSchemas: AITool[] = [
   ...journalToolSchemas,
   ...hydrationToolSchemas,
   ...cardioToolSchemas,
+  ...wearablesToolSchemas,
   ...navigationToolSchemas,
 ];
 
