@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, FlatList,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
+import { showAlert } from '@ziko/plugin-sdk';
 import { useClipboardStore } from '../../../src/stores/clipboardStore';
 import { useTranslation } from '@ziko/plugin-sdk';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
@@ -127,7 +128,7 @@ export default function ProgramDetailScreen() {
   };
 
   const handleDeleteDay = (workoutId: string, name: string) => {
-    Alert.alert(t('workout.deleteDay'), t('workout.deleteDayConfirm', { name }), [
+    showAlert(t('workout.deleteDay'), t('workout.deleteDayConfirm', { name }), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('general.delete'), style: 'destructive', onPress: async () => {
@@ -150,7 +151,7 @@ export default function ProgramDetailScreen() {
         rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
       })),
     });
-    Alert.alert(t('workout.copied'), t('workout.copiedDesc', { name: workout.name }));
+    showAlert(t('workout.copied'), t('workout.copiedDesc', { name: workout.name }));
   };
 
   // ── Duplicate day within this program ────────────────────
@@ -197,7 +198,7 @@ export default function ProgramDetailScreen() {
 
   // ── Day action sheet ────────────────────────────────────
   const showDayActions = (workout: WorkoutDay) => {
-    Alert.alert(workout.name, undefined, [
+    showAlert(workout.name, undefined, [
       { text: t('workout.duplicate'), onPress: () => handleDuplicateDay(workout) },
       { text: t('workout.copy'), onPress: () => handleCopyDay(workout) },
       { text: t('general.delete'), style: 'destructive', onPress: () => handleDeleteDay(workout.id, workout.name) },
@@ -274,7 +275,7 @@ export default function ProgramDetailScreen() {
 
   // ── Delete exercise from workout ─────────────────────────
   const handleDeleteExercise = (peId: string) => {
-    Alert.alert(t('workout.removeExercise'), t('workout.removeExerciseConfirm'), [
+    showAlert(t('workout.removeExercise'), t('workout.removeExerciseConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('workout.remove'), style: 'destructive', onPress: async () => {
@@ -294,7 +295,7 @@ export default function ProgramDetailScreen() {
     if (!id) return;
     const store = useWorkoutStore.getState();
     await store.setActiveProgram(id);
-    Alert.alert(t('workout.programActive'), t('workout.programActiveDesc'));
+    showAlert(t('workout.programActive'), t('workout.programActiveDesc'));
     loadProgram();
   };
 

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Alert,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useHabitsStore } from '../store';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import type { Habit } from '../store';
 import {
   requestNotificationPermission,
@@ -47,7 +47,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
 
       // Validate reminder time format if provided
       if (reminderTime && !/^\d{1,2}:\d{2}$/.test(reminderTime)) {
-        Alert.alert(t('habits.invalidTime'), t('habits.invalidTimeDesc'));
+        showAlert(t('habits.invalidTime'), t('habits.invalidTimeDesc'));
         return;
       }
 
@@ -79,7 +79,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
       setHabits([...habits, data as Habit]);
       router.back();
     } catch (err: any) {
-      Alert.alert(t('general.error'), err.message ?? 'Failed to save habit');
+      showAlert(t('general.error'), err.message ?? 'Failed to save habit');
     } finally {
       setIsSaving(false);
     }

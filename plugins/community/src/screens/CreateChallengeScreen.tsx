@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Alert,
+  View, Text, ScrollView, TouchableOpacity, TextInput,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -36,8 +36,8 @@ export default function CreateChallengeScreen({ supabase }: { supabase: any }) {
   };
 
   const handleCreate = async () => {
-    if (!title.trim()) return Alert.alert('Erreur', 'Donne un titre au défi');
-    if (!endDate) return Alert.alert('Erreur', 'Choisis une date de fin');
+    if (!title.trim()) return showAlert('Erreur', 'Donne un titre au défi');
+    if (!endDate) return showAlert('Erreur', 'Choisis une date de fin');
 
     setSubmitting(true);
     try {
@@ -54,7 +54,7 @@ export default function CreateChallengeScreen({ supabase }: { supabase: any }) {
       });
 
       if (result) {
-        Alert.alert('Créé !', 'Ton défi a été créé');
+        showAlert('Créé !', 'Ton défi a été créé');
         router.back();
       }
     } finally {

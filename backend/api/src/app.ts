@@ -5,6 +5,7 @@ import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { bugsRouter } from './routes/bugs.js';
 
 const app = new Hono();
 
@@ -40,6 +41,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.route('/ai', aiRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
+app.route('/bugs', bugsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

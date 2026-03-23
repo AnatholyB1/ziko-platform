@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl
+  View, Text, ScrollView, TouchableOpacity, RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useNutritionStore } from '../store';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { format, parseISO } from 'date-fns';
 
 // Cross-plugin: hydration
@@ -56,7 +56,7 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
   const goToLog = () => router.push('/(app)/(plugins)/nutrition/log');
 
   const deleteLog = (id: string) => {
-    Alert.alert(t('general.remove'), t('nutrition.removeEntry'), [
+    showAlert(t('general.remove'), t('nutrition.removeEntry'), [
       { text: t('general.cancel'), style: 'cancel' },
       { text: t('general.remove'), style: 'destructive', onPress: async () => {
         await supabase.from('nutrition_logs').delete().eq('id', id);

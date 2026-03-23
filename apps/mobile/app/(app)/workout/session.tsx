@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Alert, Dimensions,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
+import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
@@ -514,7 +515,7 @@ export default function WorkoutSessionScreen() {
 
   // ── End session ────────────────────────────────────────
   const handleEndSession = () => {
-    Alert.alert(t('workout.endWorkout'), t('workout.endWorkoutConfirm'), [
+    showAlert(t('workout.endWorkout'), t('workout.endWorkoutConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('workout.finish'), onPress: async () => {

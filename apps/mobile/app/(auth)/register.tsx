@@ -7,8 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
+import { showAlert } from '@ziko/plugin-sdk';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../src/lib/supabase';
@@ -23,11 +23,11 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert(t('general.error'), t('auth.fillAll'));
+      showAlert(t('general.error'), t('auth.fillAll'));
       return;
     }
     if (password.length < 8) {
-      Alert.alert(t('general.error'), t('auth.passwordMin'));
+      showAlert(t('general.error'), t('auth.passwordMin'));
       return;
     }
 
@@ -41,7 +41,7 @@ export default function RegisterScreen() {
       if (error) throw error;
       router.replace('/(auth)/onboarding/step-1');
     } catch (err: any) {
-      Alert.alert('Registration failed', err.message ?? 'An error occurred');
+      showAlert('Registration failed', err.message ?? 'An error occurred');
     } finally {
       setIsLoading(false);
     }

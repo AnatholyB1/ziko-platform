@@ -5,6 +5,8 @@
 export * from './types';
 export * from './theme';
 export * from './i18n';
+export { useAlertStore, showAlert } from './alert';
+export type { AlertButton } from './alert';
 export {
   usePluginRegistry,
   usePluginStore,

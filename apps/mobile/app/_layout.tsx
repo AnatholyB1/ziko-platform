@@ -9,6 +9,8 @@ import { useAuthStore } from '../src/stores/authStore';
 import { PluginLoader } from '../src/lib/PluginLoader';
 import { useThemeStore } from '../src/stores/themeStore';
 import { supabase } from '../src/lib/supabase';
+import CustomAlert from '../src/components/CustomAlert';
+import BugReportModal from '../src/components/BugReportModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -65,6 +67,8 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(app)" options={{ headerShown: false }} />
             </Stack>
+            <CustomAlert />
+            <BugReportModal />
           </PluginLoader>
         </QueryClientProvider>
       </SafeAreaProvider>

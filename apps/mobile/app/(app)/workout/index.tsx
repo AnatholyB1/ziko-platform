@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, TextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { showAlert } from '@ziko/plugin-sdk';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -94,7 +95,7 @@ export default function WorkoutProgramsScreen() {
   };
 
   const deleteProgram = (id: string) => {
-    Alert.alert('Delete Program', 'This will delete the program and all its workouts.', [
+    showAlert('Delete Program', 'This will delete the program and all its workouts.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
@@ -156,7 +157,7 @@ export default function WorkoutProgramsScreen() {
       { text: 'Delete', style: 'destructive', onPress: () => deleteProgram(prog.id) },
       { text: 'Cancel', style: 'cancel' },
     );
-    Alert.alert(prog.name, undefined, buttons);
+    showAlert(prog.name, undefined, buttons);
   };
 
   const handleShareToFriend = async (friendId: string) => {
@@ -164,10 +165,10 @@ export default function WorkoutProgramsScreen() {
     setSharing(true);
     try {
       await shareProgram(supabase, friendId, shareModalProgram.id);
-      Alert.alert('Partagé !', 'Le programme a été envoyé à ton ami.');
+      showAlert('Partagé !', 'Le programme a été envoyé à ton ami.');
       setShareModalProgram(null);
     } catch {
-      Alert.alert('Erreur', 'Impossible de partager le programme.');
+      showAlert('Erreur', 'Impossible de partager le programme.');
     }
     setSharing(false);
   };

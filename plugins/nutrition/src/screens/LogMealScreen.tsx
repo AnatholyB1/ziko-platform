@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Image
+  View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useNutritionStore } from '../store';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -78,7 +78,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   const saveLog = async (entry: Omit<any, 'id' | 'created_at'>) => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { Alert.alert(t('general.error'), t('nutrition.notAuth')); setSaving(false); return; }
+    if (!user) { showAlert(t('general.error'), t('nutrition.notAuth')); setSaving(false); return; }
     const { data, error } = await supabase.from('nutrition_logs').insert({
       ...entry,
       user_id: user.id,
@@ -86,7 +86,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       meal_type: mealType,
     }).select().single();
     setSaving(false);
-    if (error) { Alert.alert(t('general.error'), error.message); return; }
+    if (error) { showAlert(t('general.error'), error.message); return; }
     addLog(data);
     router.back();
   };
@@ -104,7 +104,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
 
   const submitCustom = () => {
     if (!custom.name.trim() || !custom.calories) {
-      Alert.alert(t('general.required'), t('nutrition.required'));
+      showAlert(t('general.required'), t('nutrition.required'));
       return;
     }
     saveLog({
@@ -122,14 +122,14 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('nutrition.permRequired'), t('nutrition.permCamera'));
+        showAlert(t('nutrition.permRequired'), t('nutrition.permCamera'));
         return;
       }
       result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(t('nutrition.permRequired'), t('nutrition.permGallery'));
+        showAlert(t('nutrition.permRequired'), t('nutrition.permGallery'));
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
@@ -148,7 +148,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) { Alert.alert(t('general.error'), t('nutrition.notAuth')); setAnalyzing(false); return; }
+      if (!token) { showAlert(t('general.error'), t('nutrition.notAuth')); setAnalyzing(false); return; }
 
       const res = await fetch(`${apiUrl}/ai/vision/nutrition`, {
         method: 'POST',
@@ -161,7 +161,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Analysis failed' }));
-        Alert.alert('Error', err.error || 'Failed to analyze image');
+        showAlert('Error', err.error || 'Failed to analyze image');
         setAnalyzing(false);
         return;
       }
@@ -170,7 +170,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       setScanResults(data.foods ?? []);
       setScanDescription(data.description ?? '');
     } catch (e: any) {
-      Alert.alert(t('general.error'), e.message || 'Network error');
+      showAlert(t('general.error'), e.message || 'Network error');
     }
     setAnalyzing(false);
   };

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useNutritionStore, calculateTDEE } from '../store';
 import type { TDEEProfile } from '../store';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 
 // Cross-plugin stores (optional)
 let useHydrationStore: any = null;
@@ -177,13 +177,13 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
         if (sleepStore.saveSleepGoal) await sleepStore.saveSleepGoal(supabase);
       }
 
-      Alert.alert(
+      showAlert(
         'Objectifs mis à jour ✅',
         `Calories: ${result.targetCalories} kcal\nProtéines: ${result.proteinGoal}g\nGlucides: ${result.carbsGoal}g\nLipides: ${result.fatGoal}g\nEau: ${(result.waterGoalMl / 1000).toFixed(1)}L\nSommeil: ${result.sleepGoalHours}h`,
         [{ text: 'OK', onPress: () => router.back() }],
       );
     } catch {
-      Alert.alert('Erreur', 'Impossible de sauvegarder les objectifs.');
+      showAlert('Erreur', 'Impossible de sauvegarder les objectifs.');
     } finally {
       setSaving(false);
     }

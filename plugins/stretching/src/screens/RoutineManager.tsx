@@ -1,9 +1,9 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useStretchingStore } from '../store';
 import type { StretchRoutine } from '../store';
 
@@ -48,7 +48,7 @@ export default function RoutineManager({ supabase }: { supabase: any }) {
   }, [loadCustomRoutines]);
 
   const handleDelete = (routine: StretchRoutine) => {
-    Alert.alert(
+    showAlert(
       'Supprimer',
       `Supprimer "${routine.name}" ? Cette action est irréversible.`,
       [

@@ -1,11 +1,11 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useThemeStore, BANNER_REGISTRY } from '../../../src/stores/themeStore';
-import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import { useGamificationStore, loadGamification } from '@ziko/plugin-gamification/store';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   useEffect(() => { load(); }, [load]);
 
   const handleSignOut = () => {
-    Alert.alert(t('profile.signOut'), t('profile.signOutConfirm'), [
+    showAlert(t('profile.signOut'), t('profile.signOutConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       { text: t('profile.signOut'), style: 'destructive', onPress: signOut },
     ]);

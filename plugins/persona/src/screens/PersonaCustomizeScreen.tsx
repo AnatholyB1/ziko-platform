@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Alert, Switch
+  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { usePersonaStore } from '../store';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { format } from 'date-fns';
 
 const ALL_TRAIT_KEYS: string[] = [
@@ -53,8 +53,8 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
       habits,
     });
     setSaving(false);
-    if (error) { Alert.alert(t('general.error'), error.message); return; }
-    Alert.alert(t('persona.saved'), t('persona.savedDesc'));
+    if (error) { showAlert(t('general.error'), error.message); return; }
+    showAlert(t('persona.saved'), t('persona.savedDesc'));
   };
 
   const submitHabit = () => {
@@ -190,7 +190,7 @@ export default function PersonaCustomizeScreen({ supabase }: { supabase: any }) 
                     <Text style={{ color: done ? theme.muted : theme.text, fontWeight: '500', textDecorationLine: done ? 'line-through' : undefined }}>{habit.label}</Text>
                     <Text style={{ color: theme.muted, fontSize: 11 }}>{habit.frequency}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => Alert.alert(t('persona.removeHabit'), t('persona.removeHabitConfirm', { name: habit.label }), [
+                  <TouchableOpacity onPress={() => showAlert(t('persona.removeHabit'), t('persona.removeHabitConfirm', { name: habit.label }), [
                     { text: t('general.cancel'), style: 'cancel' },
                     { text: t('persona.removeHabit'), style: 'destructive', onPress: () => removeHabit(habit.id) },
                   ])}>

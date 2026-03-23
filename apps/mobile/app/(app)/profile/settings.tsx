@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
-import { useTranslation, useI18nStore, type FitnessGoal } from '@ziko/plugin-sdk';
+import { useTranslation, useI18nStore, type FitnessGoal, showAlert } from '@ziko/plugin-sdk';
+import { showBugReport } from '../../../src/components/BugReportModal';
 
 const GOALS: { id: FitnessGoal; labelKey: string }[] = [
   { id: 'muscle_gain', labelKey: 'profile.goalMuscle' },
@@ -53,10 +54,10 @@ export default function SettingsScreen() {
     }).eq('id', user.id);
 
     if (error) {
-      Alert.alert(t('general.error'), error.message);
+      showAlert(t('general.error'), error.message);
     } else {
       await refreshProfile();
-      Alert.alert(t('profile.saved'), t('profile.savedDesc'));
+      showAlert(t('profile.saved'), t('profile.savedDesc'));
     }
     setIsSaving(false);
   };
@@ -108,6 +109,21 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={handleSave} disabled={isSaving}
           style={{ backgroundColor: isSaving ? '#5A52D5' : theme.primary, borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: isSaving ? 0.7 : 1 }}>
           <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{isSaving ? t('habits.saving') : t('profile.saveChanges')}</Text>
+        </TouchableOpacity>
+
+        {/* Bug Report Link */}
+        <TouchableOpacity
+          onPress={() => showBugReport()}
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+            gap: 8, marginTop: 24, paddingVertical: 14, borderRadius: 12,
+            backgroundColor: '#EF444410', borderWidth: 1, borderColor: '#EF444430',
+          }}
+        >
+          <Ionicons name="bug" size={18} color="#EF4444" />
+          <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 14 }}>
+            {t('bugReport.reportBug')}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

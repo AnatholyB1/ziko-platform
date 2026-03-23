@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Modal,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl, TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useHydrationStore } from '../store';
 import type { Container } from '../store';
 
@@ -98,7 +98,7 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
         } catch {}
       }
     } catch (err: any) {
-      Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
     }
   };
 
@@ -332,7 +332,7 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
                         <Ionicons name="pencil-outline" size={18} color={theme.muted} />
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => {
-                        Alert.alert('Supprimer', `Supprimer "${c.label}" ?`, [
+                        showAlert('Supprimer', `Supprimer "${c.label}" ?`, [
                           { text: 'Annuler', style: 'cancel' },
                           { text: 'Supprimer', style: 'destructive', onPress: () => { removeContainer(c.id); saveSettings(supabase); } },
                         ]);
@@ -406,7 +406,7 @@ export default function HydrationDashboard({ supabase }: { supabase: any }) {
                   onPress={() => {
                     const ml = parseInt(newMl);
                     if (!newLabel.trim() || !ml || ml <= 0) {
-                      Alert.alert('Erreur', 'Remplissez le nom et la contenance.');
+                      showAlert('Erreur', 'Remplissez le nom et la contenance.');
                       return;
                     }
                     if (editingContainer) {

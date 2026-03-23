@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, Platform, Linking,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl, Platform, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useWearablesStore } from '../store';
 import type { HealthSummary, StepData } from '../store';
 
@@ -98,7 +98,7 @@ export default function WearablesDashboard({ supabase }: { supabase: any }) {
       await initialize();
       if (!useWearablesStore.getState().syncStatus.isConnected) {
         if (Platform.OS === 'android') {
-          Alert.alert(
+          showAlert(
             'Health Connect requis',
             'L\'application Health Connect est nécessaire pour synchroniser vos données de santé. Voulez-vous l\'installer depuis le Play Store ?',
             [
@@ -110,7 +110,7 @@ export default function WearablesDashboard({ supabase }: { supabase: any }) {
             ],
           );
         } else {
-          Alert.alert('Non disponible', 'Apple Health n\'est pas disponible sur cet appareil.');
+          showAlert('Non disponible', 'Apple Health n\'est pas disponible sur cet appareil.');
         }
         return;
       }
@@ -118,7 +118,7 @@ export default function WearablesDashboard({ supabase }: { supabase: any }) {
     if (!syncStatus.permissionsGranted) {
       const granted = await requestPermissions();
       if (!granted) {
-        Alert.alert('Permissions refusées', 'Autorisez l\'accès aux données de santé dans les réglages.');
+        showAlert('Permissions refusées', 'Autorisez l\'accès aux données de santé dans les réglages.');
         return;
       }
     }

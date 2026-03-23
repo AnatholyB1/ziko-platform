@@ -6,8 +6,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
+import { showAlert } from '@ziko/plugin-sdk';
 import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +25,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert(t('general.error'), t('auth.fillAll'));
+      showAlert(t('general.error'), t('auth.fillAll'));
       return;
     }
     setIsLoading(true);
@@ -34,7 +34,7 @@ export default function LoginScreen() {
       if (error) throw error;
       router.replace('/(app)');
     } catch (err: any) {
-      Alert.alert('Login failed', err.message ?? 'An error occurred');
+      showAlert('Login failed', err.message ?? 'An error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +42,7 @@ export default function LoginScreen() {
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    if (error) Alert.alert('Error', error.message);
+    if (error) showAlert('Error', error.message);
   };
 
   return (

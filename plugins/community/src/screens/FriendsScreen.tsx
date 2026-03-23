@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, Alert,
+  View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -54,7 +54,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
 
   const handleAddFriend = async (userId: string) => {
     await sendFriendRequest(supabase, userId);
-    Alert.alert('Envoyé !', 'Demande d\'ami envoyée');
+    showAlert('Envoyé !', 'Demande d\'ami envoyée');
     setResults((prev) => prev.filter((u) => u.id !== userId));
   };
 
@@ -69,14 +69,14 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
   };
 
   const handleRemove = (friendshipId: string, name: string) => {
-    Alert.alert('Retirer', `Retirer ${name || 'cet ami'} de ta liste ?`, [
+    showAlert('Retirer', `Retirer ${name || 'cet ami'} de ta liste ?`, [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Retirer', style: 'destructive', onPress: async () => { await removeFriend(supabase, friendshipId); load(); } },
     ]);
   };
 
   const handleGift = (friend: FriendProfile) => {
-    Alert.alert(
+    showAlert(
       `Cadeau pour ${friend.name || 'Ami'}`,
       'Que veux-tu envoyer ?',
       [
@@ -85,7 +85,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
         { text: '⭐ 10 XP', onPress: () => sendXpGift(supabase, friend.id, 10, 'Cadeau !') },
         { text: '🪙 5 Pièces', onPress: async () => {
           try { await sendCoinGift(supabase, friend.id, 5, 'Cadeau !'); }
-          catch { Alert.alert('Erreur', 'Pas assez de pièces'); }
+          catch { showAlert('Erreur', 'Pas assez de pièces'); }
         }},
       ]
     );

@@ -8,6 +8,39 @@ import { router } from 'expo-router';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { useTranslation } from '@ziko/plugin-sdk';
+import { showBugReport } from '../../src/components/BugReportModal';
+
+function BugReportFAB() {
+  const theme = useThemeStore((s) => s.theme);
+  const { bottom } = useSafeAreaInsets();
+  return (
+    <TouchableOpacity
+      onPress={() => showBugReport()}
+      activeOpacity={0.8}
+      style={{
+        position: 'absolute',
+        bottom: 80 + bottom,
+        left: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: theme.surface,
+        borderWidth: 1,
+        borderColor: theme.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.12,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 5,
+        zIndex: 1000,
+      }}
+    >
+      <Ionicons name="bug" size={20} color="#EF4444" />
+    </TouchableOpacity>
+  );
+}
 
 function ChatFAB() {
   const theme = useThemeStore((s) => s.theme);
@@ -121,6 +154,7 @@ export default function AppLayout() {
         <Tabs.Screen name="(plugins)" options={{ href: null }} />
       </Tabs>
       <ChatFAB />
+      <BugReportFAB />
     </>
   );
 }

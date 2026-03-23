@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Alert,
+  View, Text, ScrollView, TouchableOpacity,
   TextInput, KeyboardAvoidingView, Platform, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { showAlert } from '@ziko/plugin-sdk';
 
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
@@ -108,7 +109,7 @@ export default function PluginDetailScreen() {
   const install = async () => {
     if (!user || !manifest || !id) return;
     const perms = manifest.requiredPermissions ?? [];
-    Alert.alert(
+    showAlert(
       t('store.installConfirm', { name: manifest.name }),
       perms.length > 0
         ? t('store.permRequired', { perms: perms.map((p) => `• ${t(PERM_KEYS[p] || '') || p}`).join('\n') })
@@ -127,7 +128,7 @@ export default function PluginDetailScreen() {
 
   const uninstall = async () => {
     if (!user || !id) return;
-    Alert.alert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
+    showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('store.uninstall'), style: 'destructive', onPress: async () => {
@@ -171,7 +172,7 @@ export default function PluginDetailScreen() {
 
   const deleteReview = async () => {
     if (!myReview) return;
-    Alert.alert(t('store.deleteReviewConfirm'), '', [
+    showAlert(t('store.deleteReviewConfirm'), '', [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('general.delete'), style: 'destructive', onPress: async () => {
