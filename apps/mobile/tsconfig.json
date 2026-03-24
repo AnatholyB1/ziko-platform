@@ -15,6 +15,9 @@
       ],
       "@app/*": [
         "./app/*"
+      ],
+      "@ziko/sounds": [
+        "./src/lib/sounds"
       ]
     },
     "noEmit": true,

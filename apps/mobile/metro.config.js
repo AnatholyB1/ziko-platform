@@ -34,6 +34,7 @@ config.resolver.extraNodeModules = {
   '@ziko/plugin-journal':      path.resolve(monorepoRoot, 'plugins/journal/src'),
   '@ziko/plugin-hydration':    path.resolve(monorepoRoot, 'plugins/hydration/src'),
   '@ziko/plugin-cardio':       path.resolve(monorepoRoot, 'plugins/cardio/src'),
+  '@ziko/sounds':              path.resolve(projectRoot, 'src/lib/sounds'),
 };
 
 module.exports = config;

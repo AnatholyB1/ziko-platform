@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useThemeStore, usePluginRegistry } from '@ziko/plugin-sdk';
 import { useTimerStore, BUILTIN_PRESETS } from '../store';
 import type { TimerPreset } from '../store';
+import { playSound, playCountdownBeep, unloadSounds, isSoundEnabled, setSoundEnabled } from '@ziko/sounds';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -83,6 +84,7 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
   const [completedElapsed, setCompletedElapsed] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const autoStartHandled = useRef(false);
 
   // Load custom presets from Supabase
@@ -167,13 +169,30 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
+        const prevIsWork = useTimerStore.getState().isWork;
+        const prevRound = useTimerStore.getState().currentRound;
         const ended = tick();
         if (ended) {
           Vibration.vibrate([0, 400, 200, 400]);
+          playSound('complete');
           const store = useTimerStore.getState();
           setCompletedPreset(store.activePreset);
           setCompletedElapsed(store.elapsedSeconds);
           setCompleted(true);
+        } else {
+          const store = useTimerStore.getState();
+          // Phase transition sounds
+          if (store.isWork !== prevIsWork || store.currentRound !== prevRound) {
+            if (store.isWork) {
+              playSound('start');
+            } else {
+              playSound('rest');
+            }
+            Vibration.vibrate(200);
+          } else {
+            // Countdown beeps for last 3 seconds
+            playCountdownBeep(store.timeLeft);
+          }
         }
       }, 1000);
     }
@@ -325,6 +344,16 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
 
           {/* Controls */}
           <View style={{ flexDirection: 'row', gap: 20, marginTop: 40 }}>
+            <TouchableOpacity
+              onPress={() => { const next = !soundOn; setSoundOn(next); setSoundEnabled(next); }}
+              style={{
+                width: 48, height: 48, borderRadius: 24,
+                backgroundColor: theme.surface, justifyContent: 'center', alignItems: 'center',
+                borderWidth: 1, borderColor: theme.border,
+              }}
+            >
+              <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={22} color={soundOn ? theme.primary : theme.muted} />
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={togglePause}
               style={{

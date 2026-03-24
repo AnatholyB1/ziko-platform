@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions, Vibration,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -13,6 +13,7 @@ import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
+import { playSound, playCountdownBeep, isSoundEnabled, setSoundEnabled } from '../../../src/lib/sounds';
 
 let useHydrationStore: any = null;
 try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
@@ -128,6 +129,7 @@ export default function WorkoutSessionScreen() {
   const [restTimer, setRestTimer] = useState(0);
   const [restTimerMax, setRestTimerMax] = useState(0);
   const restRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
 
   // ── Editable values for current set ────────────────────
   const [editReps, setEditReps] = useState('');
@@ -177,8 +179,12 @@ export default function WorkoutSessionScreen() {
         setRestTimer((t) => {
           if (t <= 1) {
             clearInterval(restRef.current);
+            playSound('complete');
+            Vibration.vibrate([0, 400, 200, 400]);
             return 0;
           }
+          // Countdown beeps for last 3 seconds
+          playCountdownBeep(t - 1);
           return t - 1;
         });
       }, 1000);
@@ -422,6 +428,7 @@ export default function WorkoutSessionScreen() {
     setRestTimerMax(restSec);
     setRestTimer(restSec);
     setPhase('rest');
+    playSound('rest');
   };
 
   // ── Skip / advance after rest ──────────────────────────
@@ -1088,6 +1095,10 @@ export default function WorkoutSessionScreen() {
                 <TouchableOpacity onPress={() => setRestTimer((t) => Math.max(0, t - 15))}
                   style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.border }}>
                   <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>-15s</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { const next = !soundOn; setSoundOn(next); setSoundEnabled(next); }}
+                  style={{ backgroundColor: theme.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: soundOn ? theme.primary + '22' : theme.border }}>
+                  <Ionicons name={soundOn ? 'volume-high' : 'volume-mute'} size={18} color={soundOn ? theme.primary : theme.muted} />
                 </TouchableOpacity>
                 {hasHydration && favContainer && (
                   <TouchableOpacity onPress={handleQuickWater}
