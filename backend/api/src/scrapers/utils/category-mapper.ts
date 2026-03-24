@@ -1,54 +1,75 @@
 /**
  * Category mapper — maps product types and tags from various stores
  * to our supplement_categories slugs.
+ *
+ * IMPORTANT: Order matters! Specific categories MUST come before broad ones.
+ * e.g. 'collagen' before 'protein', 'omega' before 'vitamins'.
+ * The first match wins.
  */
 
-const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  'protein': [
-    'protein', 'protéine', 'protéines', 'proteines', 'whey', 'isolate',
-    'caséine', 'casein', 'isolat',
-  ],
-  'creatine': [
+/** Categories ordered from most-specific to least-specific */
+const CATEGORY_KEYWORDS: [string, string[]][] = [
+  // ── Specific categories first ──
+  ['collagen', [
+    'collagène', 'collagene', 'collagen', 'peptan',
+  ]],
+  ['creatine', [
     'créatine', 'creatine', 'creapure',
-  ],
-  'bcaa-eaa': [
+  ]],
+  ['omega', [
+    'omega', 'oméga', 'huile de poisson', 'fish oil', 'epa', 'dha',
+    'krill oil', 'cod liver oil',
+  ]],
+  ['gainer', [
+    'gainer', 'gainers', 'mass gainer', 'prise de masse', 'weight gainer',
+    'serious mass',
+  ]],
+  ['joints', [
+    'articulation', 'articulations', 'joints', 'joint support', 'joint restore',
+    'joint care', 'joint comfort', 'glucosamine', 'chondroïtine', 'chondroitine',
+    'chondroitin', 'cissus',
+  ]],
+  ['sleep-recovery', [
+    'sommeil', 'sleep', 'récupération', 'mélatonine', 'melatonine',
+    'melatonin', 'zma',
+  ]],
+  ['fat-burner', [
+    'brûleur', 'bruleur', 'fat burner', 'fat-burner', 'thermogénique',
+    'thermogenique', 'thermogenic', 'minceur', 'détox', 'detox',
+    'cla', 'conjugated linoleic', 'glucomannan',
+    'raspberry ketone', 'green tea extract', 'cutting edge',
+    'l-carnitine', 'carnitine',
+  ]],
+  ['greens', [
+    'greens', 'super greens', 'supergreens', 'greens powder', 'critical greens',
+    'complete greens',
+  ]],
+  ['bcaa-eaa', [
     'bcaa', 'eaa', 'acides aminés', 'acides amines', 'amino acid', 'amino acids',
     'aminoacid', 'leucine', 'glutamine',
-  ],
-  'pre-workout': [
+  ]],
+  ['pre-workout', [
     'pre-workout', 'pre workout', 'pre-work-out', 'preworkout', 'booster',
     'pre-work out', 'pre work out',
-  ],
-  'vitamins': [
+  ]],
+  // ── Broad categories last ──
+  ['protein', [
+    'protein', 'protéine', 'protéines', 'proteines', 'whey', 'isolate',
+    'caséine', 'casein', 'isolat',
+  ]],
+  ['vitamins', [
     'vitamine', 'vitamines', 'vitamin', 'vitamins', 'multivitamin', 'multivitamines',
     'mineral', 'minéraux', 'mineraux', 'zinc', 'magnesium', 'magnésium',
-    'bien-être', 'well-being', 'wellbeing', 'greens', 'super green',
-  ],
-  'omega': [
-    'omega', 'oméga', 'huile de poisson', 'fish oil', 'epa', 'dha',
-  ],
-  'collagen': [
-    'collagène', 'collagene', 'collagen', 'peptan',
-  ],
-  'gainer': [
-    'gainer', 'gainers', 'mass gainer', 'prise de masse', 'weight gainer',
-  ],
-  'fat-burner': [
-    'brûleur', 'bruleur', 'fat burner', 'fat-burner', 'thermogénique',
-    'thermogenique', 'perte de poids', 'weight loss', 'minceur', 'détox', 'detox',
-  ],
-  'joints': [
-    'articulation', 'articulations', 'joints', 'joint', 'glucosamine',
-    'chondroïtine', 'chondroitine',
-  ],
-  'sleep-recovery': [
-    'sommeil', 'sleep', 'récupération', 'recovery', 'mélatonine', 'melatonine',
-    'melatonin', 'zma',
-  ],
-  'greens': [
-    'super greens', 'supergreens', 'greens powder',
-  ],
-};
+    'bien-être', 'well-being', 'wellbeing',
+  ]],
+];
+
+/** Product name patterns that should always be excluded (not supplements) */
+const EXCLUDED_NAME_PATTERNS = [
+  'shaker', 'bottle', 'bag', 'belt', 'pad', 'sleeve', 'towel', 'glove',
+  't-shirt', 'tank top', 'hoodie', 'legging', 'shorts',
+  'gym bag', 'water bottle',
+];
 
 /**
  * Map a product type string and/or array of tags to our category slug.
@@ -57,14 +78,32 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
  * Returns null if no category matched — the product should be skipped.
  */
 export function mapToCategory(productType: string, tags: string[] = [], title?: string): string | null {
-  const inputs = [
+  const titleLower = title?.toLowerCase().trim() ?? '';
+
+  // Exclude non-supplement products by name
+  if (titleLower && EXCLUDED_NAME_PATTERNS.some(p => titleLower.includes(p))) {
+    return null;
+  }
+
+  const tagInputs = [
     productType.toLowerCase().trim(),
     ...tags.map(t => t.toLowerCase().trim()),
-    ...(title ? [title.toLowerCase().trim()] : []),
   ].filter(Boolean);
 
-  for (const [slug, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    for (const input of inputs) {
+  // Pass 1: check title first — gives priority to what the product actually IS
+  if (titleLower) {
+    for (const [slug, keywords] of CATEGORY_KEYWORDS) {
+      for (const keyword of keywords) {
+        if (titleLower === keyword || titleLower.includes(keyword)) {
+          return slug;
+        }
+      }
+    }
+  }
+
+  // Pass 2: fall back to product type + tags
+  for (const [slug, keywords] of CATEGORY_KEYWORDS) {
+    for (const input of tagInputs) {
       for (const keyword of keywords) {
         if (input === keyword || input.includes(keyword)) {
           return slug;
@@ -74,25 +113,4 @@ export function mapToCategory(productType: string, tags: string[] = [], title?: 
   }
 
   return null;
-}
-
-/**
- * Map Eric Favre API category strings to our category slugs.
- */
-const EF_CATEGORY_MAP: Record<string, string> = {
-  'proteins': 'protein',
-  'boosters & pre work out': 'pre-workout',
-  'gainers': 'gainer',
-  'bcaa & amino acids': 'bcaa-eaa',
-  'collagen': 'collagen',
-  'detox & weight loss': 'fat-burner',
-  'general well-being': 'vitamins',
-  'joint comfort & relaxants': 'joints',
-  'endurance & performance': 'pre-workout',
-  'sportdiet': 'protein',
-};
-
-/** Eric Favre-specific category mapping */
-export function mapEricFavreCategory(category: string): string | null {
-  return EF_CATEGORY_MAP[category.toLowerCase().trim()] ?? null;
 }

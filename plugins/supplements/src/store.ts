@@ -70,12 +70,14 @@ interface SupplementsState {
   setSelectedCategory: (cat: string | null) => void;
   setSelectedBrand: (brand: string | null) => void;
   setSearchQuery: (q: string) => void;
-  addToCompare: (s: Supplement) => void;
+  addToCompare: (s: Supplement) => boolean;
   removeFromCompare: (id: string) => void;
   clearCompare: () => void;
   toggleFavorite: (id: string) => void;
   setFavorites: (ids: string[]) => void;
 }
+
+export const MAX_COMPARE = 10;
 
 export const useSupplementsStore = create<SupplementsState>()((set, get) => ({
   categories: [],
@@ -96,11 +98,13 @@ export const useSupplementsStore = create<SupplementsState>()((set, get) => ({
   setSelectedBrand: (selectedBrand) => set({ selectedBrand }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-  addToCompare: (s) => set((state) => {
-    if (state.compareList.length >= 4) return state;
-    if (state.compareList.find((c) => c.id === s.id)) return state;
-    return { compareList: [...state.compareList, s] };
-  }),
+  addToCompare: (s) => {
+    const state = get();
+    if (state.compareList.length >= MAX_COMPARE) return false;
+    if (state.compareList.find((c) => c.id === s.id)) return false;
+    set({ compareList: [...state.compareList, s] });
+    return true;
+  },
 
   removeFromCompare: (id) => set((state) => ({
     compareList: state.compareList.filter((c) => c.id !== id),

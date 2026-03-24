@@ -103,21 +103,17 @@ INSERT INTO public.supplement_categories (name, slug, icon, display_order) VALUE
   ('Super Greens', 'greens', 'nutrition', 12)
 ON CONFLICT (slug) DO NOTHING;
 
--- ── Seed brands ──────────────────────────────────────────
+-- ── Seed brands (11 active scrapers) ─────────────────────
 INSERT INTO public.supplement_brands (name, slug, website_url, country) VALUES
   ('Optimum Nutrition', 'optimum-nutrition', 'https://www.optimumnutrition.com', 'US'),
   ('MyProtein', 'myprotein', 'https://www.myprotein.fr', 'UK'),
   ('Nutrimuscle', 'nutrimuscle', 'https://www.nutrimuscle.com', 'FR'),
-  ('Eric Favre', 'eric-favre', 'https://www.ericfavre.com', 'FR'),
   ('Eafit', 'eafit', 'https://www.eafit.com', 'FR'),
   ('Nutri&Co', 'nutri-co', 'https://www.nutri.co', 'FR'),
   ('NOW Foods', 'now-foods', 'https://www.nowfoods.com', 'US'),
   ('Scitec Nutrition', 'scitec', 'https://www.scitecnutrition.com', 'HU'),
   ('BioTech USA', 'biotech-usa', 'https://www.biotechusa.com', 'HU'),
-  ('Dymatize', 'dymatize', 'https://www.dymatize.com', 'US'),
-  ('BSN', 'bsn', 'https://www.bsn.com', 'US'),
   ('MuscleTech', 'muscletech', 'https://www.muscletech.com', 'US'),
   ('Applied Nutrition', 'applied-nutrition', 'https://www.appliednutrition.uk', 'UK'),
-  ('Bulk', 'bulk', 'https://www.bulk.com', 'UK'),
-  ('Prozis', 'prozis', 'https://www.prozis.com', 'PT')
+  ('Bulk', 'bulk', 'https://www.bulk.com', 'UK')
 ON CONFLICT (slug) DO NOTHING;

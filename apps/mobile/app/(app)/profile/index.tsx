@@ -276,6 +276,7 @@ export default function ProfileScreen() {
           { icon: 'person-outline', label: t('profile.editProfile'), onPress: () => router.push('/(app)/profile/settings') },
           { icon: 'grid-outline', label: t('store.managePlugins'), onPress: () => router.push('/(app)/store') },
           ...(gamifEnabled ? [{ icon: 'cart-outline', label: t('store.shop'), onPress: () => router.push('/(app)/(plugins)/gamification/shop' as any) }] : []),
+          { icon: 'flask-outline', label: t('supplements.title'), onPress: () => router.push('/(app)/(plugins)/supplements/list' as any) },
           { icon: 'chatbubble-outline', label: t('ai.title'), onPress: () => router.push('/(app)/ai') },
           { icon: 'help-circle-outline', label: t('profile.helpSupport'), onPress: () => {} },
         ].map((item) => (

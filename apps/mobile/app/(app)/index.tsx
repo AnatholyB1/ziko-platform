@@ -507,6 +507,9 @@ export default function DashboardScreen() {
           <QuickActionBtn icon="storefront" label={t('home.shop')} onPress={() => router.push('/(app)/(plugins)/gamification/shop' as any)} delay={260} />
           <QuickActionBtn icon="sparkles" label={t('home.askAI')} onPress={openChat} delay={320} />
         </View>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 8 }}>
+          <QuickActionBtn icon="flask" label={t('home.supplements')} onPress={() => router.push('/(app)/(plugins)/supplements/list' as any)} delay={380} />
+        </View>
 
         {/* Daily wellness summary — cross-plugin data */}
         {hasWellnessPlugin && (

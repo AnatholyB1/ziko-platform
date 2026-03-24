@@ -197,6 +197,21 @@ export default function WorkoutProgramsScreen() {
         <Ionicons name="chevron-forward" size={18} color="#ffffff88" />
       </TouchableOpacity>
 
+      {/* Supplements tip */}
+      <TouchableOpacity
+        onPress={() => router.push('/(app)/(plugins)/supplements/list' as any)}
+        style={{ marginHorizontal: 20, marginBottom: 16, backgroundColor: theme.surface, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#FF9800' + '44' }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#FF980018', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="flask" size={20} color="#FF9800" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{t('workout.supplementsTip')}</Text>
+          <Text style={{ color: theme.muted, fontSize: 12 }}>{t('workout.supplementsTipDesc')}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+      </TouchableOpacity>
+
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
           <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{t('workout.myPrograms')}</Text>

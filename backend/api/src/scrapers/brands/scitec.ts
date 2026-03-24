@@ -1,40 +1,42 @@
 import type { BrandScraper, ScrapedProduct, ScraperResult } from '../types.js';
-import { fetchShopifyProducts, stripHtml, getCheapestVariant, extractFlavors } from '../utils/shopify.js';
+import { fetchScitecProducts } from '../utils/scitec-parser.js';
 import { mapToCategory } from '../utils/category-mapper.js';
+import { parseServingFromName } from '../utils/shopify.js';
 
 export class ScitecScraper implements BrandScraper {
   brandSlug = 'scitec';
   brandName = 'Scitec Nutrition';
 
   async scrape(): Promise<ScraperResult> {
-    const { products: rawProducts, errors } = await fetchShopifyProducts('https://www.scitecnutrition.com');
+    const { products: rawProducts, errors } = await fetchScitecProducts();
 
     if (rawProducts.length === 0) {
-      return { brandSlug: this.brandSlug, products: [], errors: [...errors, 'No products found — store may not be Shopify-based'] };
+      return {
+        brandSlug: this.brandSlug,
+        products: [],
+        errors: [...errors, 'No products found from scitec.fr'],
+      };
     }
 
     const scraped: ScrapedProduct[] = [];
 
     for (const product of rawProducts) {
-      const categorySlug = mapToCategory(product.product_type, product.tags);
+      const categorySlug = mapToCategory('', [], product.categoryText);
       if (!categorySlug) continue;
 
-      const variant = getCheapestVariant(product.variants);
-      if (!variant) continue;
-
-      const price = parseFloat(variant.price);
-      if (isNaN(price) || price <= 0) continue;
+      const nameServing = parseServingFromName(product.name);
 
       scraped.push({
-        name: product.title,
+        name: product.name,
         categorySlug,
-        description: product.body_html ? stripHtml(product.body_html).slice(0, 500) || undefined : undefined,
-        imageUrl: product.images?.[0]?.src,
-        flavors: extractFlavors(product.options),
-        sourceUrl: `https://www.scitecnutrition.com/products/${product.handle}`,
-        price,
+        imageUrl: product.imageUrl,
+        flavors: product.flavors.length ? product.flavors : undefined,
+        sourceUrl: product.sourceUrl,
+        price: product.price,
         currency: 'EUR',
-        inStock: variant.available ?? true,
+        inStock: product.inStock,
+        servingSize: nameServing.servingSize,
+        servingsPerContainer: nameServing.servingsPerContainer,
       });
     }
 

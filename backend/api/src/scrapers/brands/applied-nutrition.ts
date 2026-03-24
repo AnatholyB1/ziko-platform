@@ -4,7 +4,7 @@
  */
 
 import type { BrandScraper, ScrapedProduct, ScraperResult } from '../types.js';
-import { fetchShopifyProducts, stripHtml, getCheapestVariant, extractFlavors } from '../utils/shopify.js';
+import { fetchShopifyProducts, stripHtml, getCheapestVariant, extractFlavors, extractSize, parseServingFromHtml, parseServingFromName } from '../utils/shopify.js';
 import { mapToCategory } from '../utils/category-mapper.js';
 
 const EXCLUDED_TAGS = ['bogos-gift'];
@@ -21,13 +21,16 @@ export class AppliedNutritionScraper implements BrandScraper {
       if (product.tags.some(t => EXCLUDED_TAGS.includes(t.toLowerCase()))) continue;
       if (parseFloat(product.variants[0]?.price ?? '0') === 0) continue;
 
-      const categorySlug = mapToCategory(product.product_type, product.tags);
+      const categorySlug = mapToCategory(product.product_type, product.tags, product.title);
       if (!categorySlug) continue;
 
       const variant = getCheapestVariant(product.variants);
       if (!variant) continue;
 
       const flavors = extractFlavors(product.options);
+      const size = extractSize(product.options, variant);
+      const htmlServing = parseServingFromHtml(product.body_html || '');
+      const nameServing = parseServingFromName(product.title);
 
       scraped.push({
         name: product.title,
@@ -39,6 +42,9 @@ export class AppliedNutritionScraper implements BrandScraper {
         currency: 'GBP',
         inStock: product.variants.some(v => v.available),
         flavors: flavors.length > 0 ? flavors : undefined,
+        servingSize: htmlServing.servingSize || size || nameServing.servingSize,
+        servingsPerContainer: htmlServing.servingsPerContainer || nameServing.servingsPerContainer,
+        nutritionPerServing: htmlServing.nutritionPerServing,
       });
     }
 

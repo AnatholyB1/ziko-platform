@@ -1,7 +1,8 @@
 import React from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Image,
+  View, Text, ScrollView, TouchableOpacity,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -47,6 +48,7 @@ export default function SupplementCompareScreen() {
     );
   }
 
+  const LABEL_WIDTH = 110;
   const colWidth = Math.max(140, (300 / compareList.length));
 
   return (
@@ -68,14 +70,16 @@ export default function SupplementCompareScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ padding: 20 }}>
           <View>
-            {/* Product headers */}
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+            {/* Product headers — offset by label width to align with data columns */}
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16, paddingLeft: LABEL_WIDTH + 12 }}>
               {compareList.map((s) => (
-                <View key={s.id} style={{
-                  width: colWidth, alignItems: 'center',
-                  backgroundColor: theme.surface, borderRadius: 16, padding: 12,
-                  borderWidth: 1, borderColor: theme.border,
-                }}>
+                <TouchableOpacity key={s.id} activeOpacity={0.7}
+                  onPress={() => router.push(`/(app)/(plugins)/supplements/detail?id=${s.id}` as any)}
+                  style={{
+                    width: colWidth, alignItems: 'center',
+                    backgroundColor: theme.surface, borderRadius: 16, padding: 12,
+                    borderWidth: 1, borderColor: theme.border,
+                  }}>
                   <TouchableOpacity
                     onPress={() => removeFromCompare(s.id)}
                     style={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
@@ -83,7 +87,10 @@ export default function SupplementCompareScreen() {
                   </TouchableOpacity>
                   {s.image_url ? (
                     <Image source={{ uri: s.image_url }}
-                      style={{ width: 60, height: 60, borderRadius: 10, marginBottom: 8 }} />
+                      style={{ width: 60, height: 60, borderRadius: 10, marginBottom: 8 }}
+                      transition={200}
+                      contentFit="cover"
+                      cachePolicy="disk" />
                   ) : (
                     <View style={{
                       width: 60, height: 60, borderRadius: 10, backgroundColor: theme.primary + '14',
@@ -99,7 +106,7 @@ export default function SupplementCompareScreen() {
                   <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>
                     {s.supplement_brands?.name}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
 
@@ -123,80 +130,92 @@ export default function SupplementCompareScreen() {
               }}
             />
 
-            {/* Price per serving */}
-            <CompareRow
-              label={t('supplements.pricePerServing')}
-              theme={theme}
-              colWidth={colWidth}
-              values={compareList.map((s) => (
-                s.latest_price?.price_per_serving
-                  ? `${s.latest_price.price_per_serving.toFixed(2)}€`
-                  : '-'
-              ))}
-              highlightBest
-              compareList={compareList}
-              getBestIdx={(items) => {
-                let bestIdx = -1; let bestVal = Infinity;
-                items.forEach((s, i) => {
-                  const p = s.latest_price?.price_per_serving;
-                  if (p != null && p < bestVal) { bestVal = p; bestIdx = i; }
-                });
-                return bestIdx;
-              }}
-            />
-
-            {/* Serving size */}
-            <CompareRow
-              label={t('supplements.servingSize')}
-              theme={theme}
-              colWidth={colWidth}
-              values={compareList.map((s) => s.serving_size ?? '-')}
-            />
-
-            {/* Servings per container */}
-            <CompareRow
-              label={t('supplements.servingsPerContainer')}
-              theme={theme}
-              colWidth={colWidth}
-              values={compareList.map((s) => (
-                s.servings_per_container ? String(s.servings_per_container) : '-'
-              ))}
-              highlightBest
-              compareList={compareList}
-              getBestIdx={(items) => {
-                let bestIdx = -1; let bestVal = 0;
-                items.forEach((s, i) => {
-                  const v = s.servings_per_container;
-                  if (v != null && v > bestVal) { bestVal = v; bestIdx = i; }
-                });
-                return bestIdx;
-              }}
-            />
-
-            {/* Nutrition rows */}
-            {allNutritionKeys.map((key) => (
+            {/* Price per serving — hide if all null */}
+            {compareList.some((s) => s.latest_price?.price_per_serving != null) && (
               <CompareRow
-                key={key}
-                label={t(`supplements.nutrient.${key}`) !== `supplements.nutrient.${key}`
-                  ? t(`supplements.nutrient.${key}`) : key}
+                label={t('supplements.pricePerServing')}
                 theme={theme}
                 colWidth={colWidth}
-                values={compareList.map((s) => {
-                  const val = s.nutrition_per_serving?.[key];
-                  return val != null ? String(val) : '-';
-                })}
+                values={compareList.map((s) => (
+                  s.latest_price?.price_per_serving
+                    ? `${s.latest_price.price_per_serving.toFixed(2)}€`
+                    : '-'
+                ))}
+                highlightBest
+                compareList={compareList}
+                getBestIdx={(items) => {
+                  let bestIdx = -1; let bestVal = Infinity;
+                  items.forEach((s, i) => {
+                    const p = s.latest_price?.price_per_serving;
+                    if (p != null && p < bestVal) { bestVal = p; bestIdx = i; }
+                  });
+                  return bestIdx;
+                }}
               />
-            ))}
+            )}
 
-            {/* Flavors count */}
-            <CompareRow
-              label={t('supplements.flavors')}
-              theme={theme}
-              colWidth={colWidth}
-              values={compareList.map((s) => (
-                s.flavors ? String(s.flavors.length) : '-'
-              ))}
-            />
+            {/* Serving size — hide if all null */}
+            {compareList.some((s) => s.serving_size != null) && (
+              <CompareRow
+                label={t('supplements.servingSize')}
+                theme={theme}
+                colWidth={colWidth}
+                values={compareList.map((s) => s.serving_size ?? '-')}
+              />
+            )}
+
+            {/* Servings per container — hide if all null */}
+            {compareList.some((s) => s.servings_per_container != null) && (
+              <CompareRow
+                label={t('supplements.servingsPerContainer')}
+                theme={theme}
+                colWidth={colWidth}
+                values={compareList.map((s) => (
+                  s.servings_per_container ? String(s.servings_per_container) : '-'
+                ))}
+                highlightBest
+                compareList={compareList}
+                getBestIdx={(items) => {
+                  let bestIdx = -1; let bestVal = 0;
+                  items.forEach((s, i) => {
+                    const v = s.servings_per_container;
+                    if (v != null && v > bestVal) { bestVal = v; bestIdx = i; }
+                  });
+                  return bestIdx;
+                }}
+              />
+            )}
+
+            {/* Nutrition rows — only show rows where at least one supplement has data */}
+            {allNutritionKeys.map((key) => {
+              const hasData = compareList.some((s) => s.nutrition_per_serving?.[key] != null);
+              if (!hasData) return null;
+              return (
+                <CompareRow
+                  key={key}
+                  label={t(`supplements.nutrient.${key}`) !== `supplements.nutrient.${key}`
+                    ? t(`supplements.nutrient.${key}`) : key}
+                  theme={theme}
+                  colWidth={colWidth}
+                  values={compareList.map((s) => {
+                    const val = s.nutrition_per_serving?.[key];
+                    return val != null ? String(val) : '-';
+                  })}
+                />
+              );
+            })}
+
+            {/* Flavors count — hide if all null */}
+            {compareList.some((s) => s.flavors && s.flavors.length > 0) && (
+              <CompareRow
+                label={t('supplements.flavors')}
+                theme={theme}
+                colWidth={colWidth}
+                values={compareList.map((s) => (
+                  s.flavors ? String(s.flavors.length) : '-'
+                ))}
+              />
+            )}
           </View>
         </ScrollView>
       </ScrollView>

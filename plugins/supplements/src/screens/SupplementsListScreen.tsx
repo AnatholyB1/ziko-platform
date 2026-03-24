@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl, Image,
+  View, Text, FlatList, ScrollView, TouchableOpacity, TextInput, RefreshControl,
+  ActivityIndicator, Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
-import { useSupplementsStore } from '../store';
+import { useSupplementsStore, MAX_COMPARE } from '../store';
 import type { Supplement, SupplementCategory, SupplementBrand } from '../store';
 
 export default function SupplementsListScreen({ supabase }: { supabase: any }) {
@@ -22,6 +24,9 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
   } = useSupplementsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [showBrands, setShowBrands] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 30;
 
   const loadData = async () => {
     setLoading(true);
@@ -41,20 +46,26 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
     setLoading(false);
   };
 
-  const loadSupplements = async () => {
+  const loadSupplements = async (append = false) => {
+    const offset = append ? supplements.length : 0;
+
     let query = supabase
       .from('supplements')
-      .select('*, supplement_brands(*), supplement_categories(*)')
-      .order('name');
+      .select('*, supplement_brands(*), supplement_categories(*)');
 
     if (selectedCategory) query = query.eq('category_id', selectedCategory);
     if (selectedBrand) query = query.eq('brand_id', selectedBrand);
     if (searchQuery.trim()) query = query.ilike('name', `%${searchQuery.trim()}%`);
 
-    const { data } = await query.limit(50);
+    // Sort by most recently scraped (trending = recently active products)
+    query = query.order('last_scraped_at', { ascending: false, nullsFirst: false });
+
+    query = query.range(offset, offset + PAGE_SIZE - 1);
+
+    const { data } = await query;
     if (data) {
-      // Load latest price for each supplement
       const ids = data.map((s: any) => s.id);
+      let latestPrices: Record<string, any> = {};
       if (ids.length > 0) {
         const { data: prices } = await supabase
           .from('supplement_prices')
@@ -62,24 +73,38 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
           .in('supplement_id', ids)
           .order('scraped_at', { ascending: false });
 
-        const latestPrices: Record<string, any> = {};
         (prices ?? []).forEach((p: any) => {
           if (!latestPrices[p.supplement_id]) latestPrices[p.supplement_id] = p;
         });
-
-        setSupplements(data.map((s: any) => ({
-          ...s,
-          latest_price: latestPrices[s.id] || null,
-        })));
-      } else {
-        setSupplements([]);
       }
+
+      const mapped = data.map((s: any) => ({
+        ...s,
+        latest_price: latestPrices[s.id] || null,
+      }));
+
+      if (append) {
+        setSupplements([...supplements, ...mapped]);
+      } else {
+        setSupplements(mapped);
+      }
+      setHasMore(data.length === PAGE_SIZE);
+    } else if (!append) {
+      setSupplements([]);
+      setHasMore(false);
     }
   };
 
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    await loadSupplements(true);
+    setLoadingMore(false);
+  };
+
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]);
-  useFocusEffect(useCallback(() => { loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]));
+  useEffect(() => { setHasMore(true); loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]);
+  useFocusEffect(useCallback(() => { setHasMore(true); loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -125,7 +150,7 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
               flexDirection: 'row', alignItems: 'center', gap: 6,
             }}>
             <Ionicons name="git-compare" size={16} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{compareList.length}</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{compareList.length}/{MAX_COMPARE}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -154,8 +179,8 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
 
       {/* Category filter chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        style={{ height: 44, marginBottom: 8 }}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 8, alignItems: 'center' }}>
+        style={{ flexShrink: 0, marginBottom: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 6, gap: 8, alignItems: 'center' }}>
         <TouchableOpacity
           onPress={() => setSelectedCategory(null)}
           style={{
@@ -176,12 +201,21 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
               backgroundColor: selectedCategory === cat.id ? theme.primary : theme.surface,
               borderWidth: 1, borderColor: selectedCategory === cat.id ? theme.primary : theme.border,
             }}>
-            <Text style={{
-              color: selectedCategory === cat.id ? '#fff' : theme.text,
-              fontWeight: '600', fontSize: 13,
-            }}>
-              {cat.icon ? `${cat.icon} ` : ''}{cat.name}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              {cat.icon ? (
+                <Ionicons
+                  name={cat.icon as any}
+                  size={14}
+                  color={selectedCategory === cat.id ? '#fff' : theme.text}
+                />
+              ) : null}
+              <Text style={{
+                color: selectedCategory === cat.id ? '#fff' : theme.text,
+                fontWeight: '600', fontSize: 13,
+              }}>
+                {cat.name}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -201,8 +235,8 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
 
       {showBrands && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          style={{ height: 40, marginBottom: 4 }}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 8, alignItems: 'center' }}>
+          style={{ flexShrink: 0, marginBottom: 4 }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 6, gap: 8, alignItems: 'center' }}>
           <TouchableOpacity
             onPress={() => setSelectedBrand(null)}
             style={{
@@ -235,23 +269,27 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
       )}
 
       {/* Product list */}
-      <ScrollView
+      <FlatList
+        data={supplements}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}>
-
-        {supplements.length === 0 && !isLoading && (
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        ListEmptyComponent={!isLoading ? (
           <View style={{ alignItems: 'center', paddingTop: 60 }}>
             <Ionicons name="flask-outline" size={48} color={theme.muted} />
             <Text style={{ color: theme.muted, fontSize: 15, marginTop: 12 }}>{t('supplements.noResults')}</Text>
           </View>
-        )}
-
-        {supplements.map((s) => {
+        ) : null}
+        ListFooterComponent={loadingMore ? (
+          <ActivityIndicator size="small" color={theme.primary} style={{ paddingVertical: 16 }} />
+        ) : null}
+        renderItem={({ item: s }) => {
           const isFav = favorites.includes(s.id);
           const inCompare = compareList.some((c) => c.id === s.id);
           return (
             <TouchableOpacity
-              key={s.id}
               onPress={() => openDetail(s)}
               activeOpacity={0.7}
               style={{
@@ -264,6 +302,9 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
                 <Image
                   source={{ uri: s.image_url }}
                   style={{ width: 64, height: 64, borderRadius: 12, backgroundColor: theme.border }}
+                  transition={200}
+                  contentFit="cover"
+                  cachePolicy="disk"
                 />
               ) : (
                 <View style={{
@@ -330,15 +371,20 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
                   <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22}
                     color={isFav ? '#F44336' : theme.muted} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => inCompare ? undefined : addToCompare(s)}>
+                <TouchableOpacity onPress={() => {
+                  if (inCompare) return;
+                  if (!addToCompare(s)) {
+                    Alert.alert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
+                  }
+                }}>
                   <Ionicons name={inCompare ? 'checkmark-circle' : 'git-compare-outline'} size={20}
                     color={inCompare ? '#4CAF50' : theme.muted} />
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
           );
-        })}
-      </ScrollView>
+        }}
+      />
     </SafeAreaView>
   );
 }

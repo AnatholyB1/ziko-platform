@@ -2,7 +2,7 @@
  * Scraper Registry — orchestrates all brand scrapers
  *
  * Add new brand scrapers by importing them and adding to SCRAPERS array.
- * The cron job calls runAllScrapers() daily.
+ * The cron job calls runAllScrapers() weekly (Monday 3 AM UTC).
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -10,36 +10,28 @@ import type { BrandScraper, ScrapedProduct, ScraperResult } from './types.js';
 import { NutrimuscleScraper } from './brands/nutrimuscle.js';
 import { MyProteinScraper } from './brands/myprotein.js';
 import { OptimumNutritionScraper } from './brands/optimum-nutrition.js';
-import { EricFavreScraper } from './brands/eric-favre.js';
 import { EafitScraper } from './brands/eafit.js';
 import { NutriCoScraper } from './brands/nutri-co.js';
 import { NowFoodsScraper } from './brands/now-foods.js';
 import { ScitecScraper } from './brands/scitec.js';
 import { BioTechUSAScraper } from './brands/biotech-usa.js';
-import { DymatizeScraper } from './brands/dymatize.js';
-import { BSNScraper } from './brands/bsn.js';
 import { MuscleTechScraper } from './brands/muscletech.js';
 import { AppliedNutritionScraper } from './brands/applied-nutrition.js';
 import { BulkScraper } from './brands/bulk.js';
-import { ProzisScraper } from './brands/prozis.js';
 
 // ── Registered scrapers ──────────────────────────────────
 const SCRAPERS: BrandScraper[] = [
   new NutrimuscleScraper(),
   new MyProteinScraper(),
   new OptimumNutritionScraper(),
-  new EricFavreScraper(),
   new EafitScraper(),
   new NutriCoScraper(),
   new NowFoodsScraper(),
   new ScitecScraper(),
   new BioTechUSAScraper(),
-  new DymatizeScraper(),
-  new BSNScraper(),
   new MuscleTechScraper(),
   new AppliedNutritionScraper(),
   new BulkScraper(),
-  new ProzisScraper(),
 ];
 
 interface ScrapeRunResult {

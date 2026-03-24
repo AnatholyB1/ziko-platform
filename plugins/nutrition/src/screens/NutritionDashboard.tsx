@@ -175,6 +175,26 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
           <Ionicons name="chevron-forward" size={16} color={theme.muted} />
         </TouchableOpacity>
 
+        {/* Supplements cross-link */}
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/(plugins)/supplements/list' as any)}
+          activeOpacity={0.75}
+          style={{
+            backgroundColor: theme.surface, borderRadius: 16, padding: 16,
+            marginBottom: 16, borderWidth: 1, borderColor: '#FF9800' + '44',
+            flexDirection: 'row', alignItems: 'center', gap: 14,
+          }}
+        >
+          <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: '#FF980018', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="flask" size={22} color="#FF9800" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{t('supplements.title')}</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>{t('nutrition.supplementsHint')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={theme.muted} />
+        </TouchableOpacity>
+
         {/* Hydration cross-link */}
         {useHydrationStore && (() => {
           const hydStore = useHydrationStore();

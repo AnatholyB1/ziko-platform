@@ -621,6 +621,10 @@ const fr: TranslationDict = {
 
   // ── Supplements ──
   'supplements.title': 'Compléments',
+  'nutrition.supplementsHint': 'Comparer et trouver les meilleurs compléments',
+  'workout.supplementsTip': 'Optimise ta nutrition',
+  'workout.supplementsTipDesc': 'Découvre les compléments adaptés à ton entraînement',
+  'home.supplements': 'Compléments',
   'supplements.searchPlaceholder': 'Rechercher un complément...',
   'supplements.allCategories': 'Toutes',
   'supplements.allBrands': 'Toutes',
@@ -633,6 +637,8 @@ const fr: TranslationDict = {
   'supplements.source': 'Source',
   'supplements.addToCompare': 'Ajouter au comparateur',
   'supplements.addedToCompare': 'Ajouté au comparateur',
+  'supplements.compareFull': 'Comparateur plein',
+  'supplements.compareFullMsg': 'Vous avez atteint la limite de 10 éléments dans le comparateur.',
   'supplements.compare': 'Comparer',
   'supplements.clearAll': 'Tout effacer',
   'supplements.emptyCompare': 'Ajoutez des compléments depuis le catalogue pour les comparer',
@@ -1280,6 +1286,10 @@ const en: TranslationDict = {
 
   // ── Supplements ──
   'supplements.title': 'Supplements',
+  'nutrition.supplementsHint': 'Compare and find the best supplements',
+  'workout.supplementsTip': 'Optimize your nutrition',
+  'workout.supplementsTipDesc': 'Discover supplements tailored to your training',
+  'home.supplements': 'Supplements',
   'supplements.searchPlaceholder': 'Search supplements...',
   'supplements.allCategories': 'All',
   'supplements.allBrands': 'All',
@@ -1292,6 +1302,8 @@ const en: TranslationDict = {
   'supplements.source': 'Source',
   'supplements.addToCompare': 'Add to compare',
   'supplements.addedToCompare': 'Added to compare',
+  'supplements.compareFull': 'Compare list full',
+  'supplements.compareFullMsg': 'You have reached the limit of 10 items in the comparator.',
   'supplements.compare': 'Compare',
   'supplements.clearAll': 'Clear all',
   'supplements.emptyCompare': 'Add supplements from the catalog to compare them',

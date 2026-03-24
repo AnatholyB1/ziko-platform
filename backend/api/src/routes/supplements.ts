@@ -126,7 +126,7 @@ router.delete('/favorites/:supplementId', authMiddleware, async (c) => {
 
 // ── Cron endpoint — scrape supplements ───────────────────
 
-/** GET /supplements/cron/scrape — triggered by Vercel Cron daily */
+/** GET /supplements/cron/scrape — triggered by Vercel Cron weekly (Monday 3 AM UTC) */
 router.get('/cron/scrape', async (c) => {
   // Verify cron secret (Vercel sends CRON_SECRET header)
   const authHeader = c.req.header('authorization');

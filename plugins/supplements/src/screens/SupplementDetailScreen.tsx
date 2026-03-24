@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Image, Linking,
+  View, Text, ScrollView, TouchableOpacity, Linking, Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
-import { useSupplementsStore } from '../store';
+import { useSupplementsStore, MAX_COMPARE } from '../store';
 import type { Supplement, SupplementPrice } from '../store';
 
 export default function SupplementDetailScreen({ supabase }: { supabase: any }) {
@@ -92,7 +93,10 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
         <View style={{ alignItems: 'center', marginBottom: 20 }}>
           {supplement.image_url ? (
             <Image source={{ uri: supplement.image_url }}
-              style={{ width: 180, height: 180, borderRadius: 20, backgroundColor: theme.border, marginBottom: 16 }} />
+              style={{ width: 180, height: 180, borderRadius: 20, backgroundColor: theme.border, marginBottom: 16 }}
+              transition={300}
+              contentFit="cover"
+              cachePolicy="disk" />
           ) : (
             <View style={{
               width: 180, height: 180, borderRadius: 20, backgroundColor: theme.primary + '14',
@@ -134,7 +138,12 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
 
         {/* Compare button */}
         <TouchableOpacity
-          onPress={() => inCompare ? undefined : addToCompare(supplement)}
+          onPress={() => {
+            if (inCompare) return;
+            if (!addToCompare({ ...supplement, latest_price: cheapest })) {
+              Alert.alert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
+            }
+          }}
           style={{
             backgroundColor: inCompare ? '#4CAF50' : theme.surface,
             borderRadius: 12, padding: 14, marginBottom: 16,
@@ -144,7 +153,7 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
           <Ionicons name={inCompare ? 'checkmark-circle' : 'git-compare-outline'} size={20}
             color={inCompare ? '#fff' : theme.primary} />
           <Text style={{ color: inCompare ? '#fff' : theme.primary, fontWeight: '700', fontSize: 14 }}>
-            {inCompare ? t('supplements.addedToCompare') : t('supplements.addToCompare')}
+            {inCompare ? t('supplements.addedToCompare') : `${t('supplements.addToCompare')} (${compareList.length}/${MAX_COMPARE})`}
           </Text>
         </TouchableOpacity>
 

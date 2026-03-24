@@ -1,6 +1,7 @@
 import type { BrandScraper, ScrapedProduct, ScraperResult } from '../types.js';
 import { fetchAllEafitProducts } from '../utils/eafit-parser.js';
 import { mapToCategory } from '../utils/category-mapper.js';
+import { parseServingFromName } from '../utils/shopify.js';
 
 export class EafitScraper implements BrandScraper {
   brandSlug = 'eafit';
@@ -16,6 +17,8 @@ export class EafitScraper implements BrandScraper {
 
       if (!product.price || product.price <= 0) continue;
 
+      const nameServing = parseServingFromName(product.name);
+
       scraped.push({
         name: product.name,
         categorySlug,
@@ -24,6 +27,8 @@ export class EafitScraper implements BrandScraper {
         price: product.price,
         currency: 'EUR',
         inStock: product.inStock,
+        servingSize: nameServing.servingSize,
+        servingsPerContainer: nameServing.servingsPerContainer,
       });
     }
 

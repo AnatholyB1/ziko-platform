@@ -1,5 +1,7 @@
 import type { BrandScraper, ScrapedProduct, ScraperResult } from '../types.js';
 import { MYPROTEIN_CATEGORIES, fetchMyProteinCategory } from '../utils/myprotein-parser.js';
+import { mapToCategory } from '../utils/category-mapper.js';
+import { parseServingFromName } from '../utils/shopify.js';
 
 export class MyProteinScraper implements BrandScraper {
   brandSlug = 'myprotein';
@@ -23,14 +25,20 @@ export class MyProteinScraper implements BrandScraper {
           // Skip products without a price
           if (!product.price || product.price <= 0) continue;
 
+          // Use title-based category when it overrides the page category
+          const resolvedCategory = mapToCategory('', [], product.name) ?? categorySlug;
+          const nameServing = parseServingFromName(product.name);
+
           scraped.push({
             name: product.name,
-            categorySlug,
+            categorySlug: resolvedCategory,
             imageUrl: product.imageUrl || undefined,
             sourceUrl: product.url,
             price: product.price,
             currency: 'EUR',
             inStock: true,
+            servingSize: nameServing.servingSize,
+            servingsPerContainer: nameServing.servingsPerContainer,
           });
         }
       } catch (err: any) {

@@ -1,5 +1,5 @@
 import type { BrandScraper, ScrapedProduct, ScraperResult } from '../types.js';
-import { fetchShopifyProducts, stripHtml, getCheapestVariant, extractFlavors } from '../utils/shopify.js';
+import { fetchShopifyProducts, stripHtml, getCheapestVariant, extractFlavors, extractSize, parseServingFromHtml, parseServingFromName } from '../utils/shopify.js';
 import { mapToCategory } from '../utils/category-mapper.js';
 
 export class OptimumNutritionScraper implements BrandScraper {
@@ -26,16 +26,24 @@ export class OptimumNutritionScraper implements BrandScraper {
       const price = parseFloat(variant.price);
       if (isNaN(price) || price <= 0) continue;
 
+      const flavors = extractFlavors(product.options);
+      const size = extractSize(product.options, variant);
+      const htmlServing = parseServingFromHtml(product.body_html || '');
+      const nameServing = parseServingFromName(product.title);
+
       scraped.push({
         name: product.title,
         categorySlug,
         description: product.body_html ? stripHtml(product.body_html).slice(0, 500) || undefined : undefined,
         imageUrl: product.images?.[0]?.src,
-        flavors: extractFlavors(product.options),
+        flavors,
         sourceUrl: `https://www.optimumnutrition.com/products/${product.handle}`,
         price,
         currency: 'EUR',
         inStock: variant.available ?? true,
+        servingSize: htmlServing.servingSize || size || nameServing.servingSize,
+        servingsPerContainer: htmlServing.servingsPerContainer || nameServing.servingsPerContainer,
+        nutritionPerServing: htmlServing.nutritionPerServing,
       });
     }
 
