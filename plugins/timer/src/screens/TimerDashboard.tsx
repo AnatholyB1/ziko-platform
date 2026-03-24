@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Vibration, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Vibration, RefreshControl, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,7 +19,9 @@ function PresetCard({ preset, theme, onStart, showBadge }: {
 }) {
   const typeColors: Record<string, string> = {
     tabata: '#F44336', hiit: '#FF9800', emom: '#2196F3', custom: '#9C27B0',
+    hyrox: '#FF5C1A', functional: '#4CAF50',
   };
+  const typeColor = typeColors[preset.type] ?? '#9C27B0';
   const totalSeconds = (preset.work_seconds + preset.rest_seconds) * preset.rounds;
   const totalMin = Math.ceil(totalSeconds / 60);
 
@@ -34,20 +36,20 @@ function PresetCard({ preset, theme, onStart, showBadge }: {
     >
       <View style={{
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: typeColors[preset.type] + '20',
+        backgroundColor: typeColor + '20',
         justifyContent: 'center', alignItems: 'center', marginRight: 14,
       }}>
-        <Ionicons name="timer" size={22} color={typeColors[preset.type]} />
+        <Ionicons name={preset.type === 'hyrox' ? 'trophy' : preset.type === 'functional' ? 'barbell' : 'timer'} size={22} color={typeColor} />
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700' }}>{preset.name}</Text>
           {showBadge && (
             <View style={{
-              backgroundColor: typeColors[preset.type] + '22', borderRadius: 6,
+              backgroundColor: typeColor + '22', borderRadius: 6,
               paddingHorizontal: 6, paddingVertical: 2,
             }}>
-              <Text style={{ color: typeColors[preset.type], fontSize: 10, fontWeight: '700' }}>PERSO</Text>
+              <Text style={{ color: typeColor, fontSize: 10, fontWeight: '700' }}>PERSO</Text>
             </View>
           )}
         </View>
@@ -55,6 +57,7 @@ function PresetCard({ preset, theme, onStart, showBadge }: {
           {preset.work_seconds > 0 ? `${preset.work_seconds}s work` : ''}
           {preset.rest_seconds > 0 ? ` / ${preset.rest_seconds}s rest` : ''}
           {' · '}{preset.rounds} rounds · ~{totalMin} min
+          {preset.exercises && preset.exercises.length > 0 ? ` · ${preset.exercises.length} exercices` : ''}
         </Text>
       </View>
       <Ionicons name="play" size={24} color={theme.primary} />
@@ -65,6 +68,8 @@ function PresetCard({ preset, theme, onStart, showBadge }: {
 // Map timer type to cardio activity_type
 function timerTypeToCardioActivity(type: string): string {
   if (type === 'hiit' || type === 'tabata') return 'hiit';
+  if (type === 'hyrox') return 'hyrox';
+  if (type === 'functional') return 'functional';
   return 'other';
 }
 
@@ -108,6 +113,7 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
         rest_seconds: d.rest_sec,
         rounds: d.rounds,
         is_builtin: false,
+        exercises: d.exercises ?? undefined,
       }));
       setCustomPresets(mapped);
     } catch {
@@ -149,6 +155,7 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
               rest_seconds: data.rest_sec,
               rounds: data.rounds,
               is_builtin: false,
+              exercises: data.exercises ?? undefined,
             };
             startTimer(mapped);
           }
@@ -225,6 +232,57 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
     });
   };
 
+  const handleSaveWorkout = async () => {
+    if (!completedPreset || !supabase) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date().toISOString();
+      const durationMin = Math.round(completedElapsed / 60);
+      const estCalories = Math.round(completedElapsed / 60 * 10);
+
+      // Create workout session
+      const { data: session, error: sessionError } = await supabase
+        .from('workout_sessions')
+        .insert({
+          user_id: user.id,
+          program_id: null,
+          started_at: today,
+          ended_at: today,
+          duration_minutes: durationMin,
+          notes: `${completedPreset.name} — ${completedPreset.rounds} rounds`,
+          calories_burned: estCalories,
+        })
+        .select('id')
+        .single();
+      if (sessionError) throw sessionError;
+
+      // Create session_exercises for each exercise in the preset
+      if (completedPreset.exercises && completedPreset.exercises.length > 0) {
+        const sessionExercises = completedPreset.exercises.map((ex, idx) => ({
+          session_id: session.id,
+          exercise_id: null,
+          exercise_name: ex.name,
+          order_index: idx + 1,
+          notes: [
+            ex.reps ? `${ex.reps} reps` : null,
+            ex.distance_m ? `${ex.distance_m}m` : null,
+            ex.weight_kg ? `${ex.weight_kg}kg` : null,
+            ex.notes ?? null,
+          ].filter(Boolean).join(' · '),
+        }));
+
+        await supabase.from('session_exercises').insert(sessionExercises);
+      }
+
+      handleDismissComplete();
+      Alert.alert('✅ Séance sauvegardée', 'Ta séance a été enregistrée dans ton historique !');
+    } catch (err: any) {
+      Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder la séance');
+    }
+  };
+
   // Completion screen
   if (completed && completedPreset) {
     const elapsedMin = Math.floor(completedElapsed / 60);
@@ -284,6 +342,22 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
             </TouchableOpacity>
           )}
 
+          {/* Save as workout session */}
+          <TouchableOpacity
+            onPress={handleSaveWorkout}
+            style={{
+              backgroundColor: '#4CAF50', borderRadius: 14,
+              paddingHorizontal: 28, paddingVertical: 16, marginTop: 12,
+              flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="barbell" size={22} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
+              Sauvegarder comme séance
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={handleDismissComplete}
             style={{
@@ -336,6 +410,35 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
           <Text style={{ color: theme.muted, fontSize: 13, marginTop: 6 }}>
             Temps écoulé : {formatTime(elapsedSeconds)}
           </Text>
+
+          {/* Current exercise */}
+          {isWork && activePreset.exercises && activePreset.exercises.length > 0 && (() => {
+            const exIdx = Math.min(currentRound - 1, activePreset.exercises.length - 1);
+            const ex = activePreset.exercises[exIdx];
+            const parts: string[] = [];
+            if (ex.reps) parts.push(`${ex.reps} reps`);
+            if (ex.distance_m) parts.push(`${ex.distance_m}m`);
+            if (ex.weight_kg) parts.push(`${ex.weight_kg}kg`);
+            if (ex.notes) parts.push(ex.notes);
+            return (
+              <View style={{
+                backgroundColor: currentColor + '15', borderRadius: 14, padding: 16,
+                marginTop: 16, width: '90%', borderWidth: 1, borderColor: currentColor + '40',
+              }}>
+                <Text style={{ color: currentColor, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                  EXERCICE DU ROUND
+                </Text>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: '800', marginTop: 4 }}>
+                  {ex.name}
+                </Text>
+                {parts.length > 0 && (
+                  <Text style={{ color: theme.muted, fontSize: 14, marginTop: 4 }}>
+                    {parts.join(' · ')}
+                  </Text>
+                )}
+              </View>
+            );
+          })()}
 
           {/* Progress bar */}
           <View style={{ width: '80%', height: 6, backgroundColor: theme.border, borderRadius: 3, marginTop: 16 }}>
@@ -392,7 +495,7 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
             <Text style={{ color: theme.text, fontSize: 28, fontWeight: '800' }}>Timer</Text>
-            <Text style={{ color: theme.muted, fontSize: 14, marginTop: 4 }}>HIIT · Tabata · EMOM · Repos</Text>
+            <Text style={{ color: theme.muted, fontSize: 14, marginTop: 4 }}>HIIT · Tabata · EMOM · Hyrox</Text>
           </View>
           <TouchableOpacity
             onPress={() => router.push('/(plugins)/timer/manager' as any)}

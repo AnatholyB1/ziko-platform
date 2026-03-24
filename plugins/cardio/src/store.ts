@@ -1,14 +1,25 @@
 import { create } from 'zustand';
 
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  timestamp: number;
+  altitude?: number;
+}
+
 export interface CardioSession {
   id: string;
   user_id: string;
-  activity_type: 'running' | 'cycling' | 'swimming' | 'hiit' | 'walking' | 'elliptical' | 'rowing' | 'other';
+  title: string | null;
+  activity_type: 'running' | 'cycling' | 'swimming' | 'hiit' | 'walking' | 'elliptical' | 'rowing' | 'other' | 'hyrox' | 'functional';
   duration_min: number;
   distance_km: number | null;
   calories_burned: number | null;
   avg_heart_rate: number | null;
   avg_pace_sec_per_km: number | null;
+  elevation_gain_m: number | null;
+  max_speed_kmh: number | null;
+  route_data: RoutePoint[] | null;
   notes: string;
   date: string;
   created_at: string;
@@ -33,6 +44,8 @@ export const ACTIVITY_LABELS: Record<string, { label: string; emoji: string; col
   walking: { label: 'Marche', emoji: '🚶', color: '#4CAF50' },
   elliptical: { label: 'Elliptique', emoji: '🏋️', color: '#9C27B0' },
   rowing: { label: 'Rameur', emoji: '🚣', color: '#607D8B' },
+  hyrox: { label: 'Hyrox', emoji: '🏆', color: '#FF5C1A' },
+  functional: { label: 'Fonctionnel', emoji: '🔥', color: '#4CAF50' },
   other: { label: 'Autre', emoji: '💪', color: '#795548' },
 };
 

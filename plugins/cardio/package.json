@@ -9,7 +9,9 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/CardioDashboard": "./src/screens/CardioDashboard.tsx",
-    "./screens/CardioLog": "./src/screens/CardioLog.tsx"
+    "./screens/CardioLog": "./src/screens/CardioLog.tsx",
+    "./screens/CardioTracker": "./src/screens/CardioTracker.tsx",
+    "./screens/CardioDetail": "./src/screens/CardioDetail.tsx"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",

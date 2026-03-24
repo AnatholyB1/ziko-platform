@@ -1,13 +1,22 @@
 import { create } from 'zustand';
 
+export interface TimerExercise {
+  name: string;
+  reps?: number;
+  distance_m?: number;
+  weight_kg?: number;
+  notes?: string;
+}
+
 export interface TimerPreset {
   id: string;
   name: string;
-  type: 'hiit' | 'tabata' | 'emom' | 'custom';
+  type: 'hiit' | 'tabata' | 'emom' | 'custom' | 'hyrox' | 'functional';
   work_seconds: number;
   rest_seconds: number;
   rounds: number;
   is_builtin: boolean;
+  exercises?: TimerExercise[];
 }
 
 interface TimerState {
@@ -41,6 +50,42 @@ const BUILTIN_PRESETS: TimerPreset[] = [
   { id: 'emom-2', name: 'EMOM 2 min', type: 'emom', work_seconds: 120, rest_seconds: 0, rounds: 5, is_builtin: true },
   { id: 'rest-60', name: 'Repos 60s', type: 'custom', work_seconds: 0, rest_seconds: 60, rounds: 1, is_builtin: true },
   { id: 'rest-90', name: 'Repos 90s', type: 'custom', work_seconds: 0, rest_seconds: 90, rounds: 1, is_builtin: true },
+  {
+    id: 'hyrox-classic',
+    name: 'Hyrox Classic',
+    type: 'hyrox',
+    work_seconds: 300,
+    rest_seconds: 60,
+    rounds: 8,
+    is_builtin: true,
+    exercises: [
+      { name: 'Ski Erg', distance_m: 1000 },
+      { name: 'Sled Push', distance_m: 50, notes: '~102 kg' },
+      { name: 'Sled Pull', distance_m: 50 },
+      { name: 'Burpee Broad Jumps', distance_m: 80 },
+      { name: 'Rowing', distance_m: 1000 },
+      { name: "Farmer's Carry", distance_m: 200, weight_kg: 24 },
+      { name: 'Sandbag Lunges', distance_m: 100, weight_kg: 20 },
+      { name: 'Wall Balls', reps: 100, weight_kg: 6 },
+    ],
+  },
+  {
+    id: 'functional-hiit',
+    name: 'Functional HIIT',
+    type: 'functional',
+    work_seconds: 45,
+    rest_seconds: 15,
+    rounds: 6,
+    is_builtin: true,
+    exercises: [
+      { name: 'Kettlebell Swings', reps: 20, weight_kg: 16 },
+      { name: 'Box Jumps', reps: 10 },
+      { name: 'Burpees', reps: 8 },
+      { name: 'Battle Ropes', notes: '45s continu' },
+      { name: 'Tire Flips', reps: 5, notes: 'ou med ball slam' },
+      { name: 'Sled Push', distance_m: 20 },
+    ],
+  },
 ];
 
 export const useTimerStore = create<TimerState>()((set, get) => ({

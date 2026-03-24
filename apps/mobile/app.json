@@ -18,7 +18,9 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSHealthShareUsageDescription": "Ziko reads your health data (steps, heart rate, sleep, workouts) to sync with your fitness profile.",
-        "NSHealthUpdateUsageDescription": "Ziko writes workout data back to Apple Health."
+        "NSHealthUpdateUsageDescription": "Ziko writes workout data back to Apple Health.",
+        "NSLocationWhenInUseUsageDescription": "Ziko utilise votre position GPS pour enregistrer vos parcours de course et de vélo.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Ziko utilise votre position GPS pour enregistrer vos parcours en arrière-plan."
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
@@ -43,7 +45,11 @@
         "android.permission.health.READ_WEIGHT",
         "android.permission.health.READ_BODY_FAT",
         "android.permission.health.WRITE_EXERCISE",
-        "android.permission.health.WRITE_STEPS"
+        "android.permission.health.WRITE_STEPS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
