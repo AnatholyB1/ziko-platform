@@ -77,7 +77,12 @@ Plans:
   2. `next build` output shows all `[locale]/*` routes as `○` (static) — no regressions from Phase 3 content work
   3. `/sitemap.xml` and `/robots.txt` return valid responses and are accessible at those paths
   4. Lighthouse audit on the production URL shows Core Web Vitals passing — hero image loads with `priority`, and `sizes` prop is set correctly on all `next/image` usages
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — OG metadata, metadataBase, generateMetadata on all pages, translation strings, and OG image
+- [ ] 04-02-PLAN.md — Sitemap and robots.txt auto-generation via Next.js file conventions
+- [ ] 04-03-PLAN.md — Hero next/image with placeholder PNG and final static build verification gate
+**UI hint**: no
 
 ### Phase 5: Launch
 **Goal**: The site is publicly accessible on the production custom domain with HTTPS, all pre-launch checklist items verified, and a decision made on analytics
@@ -99,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. RGPD Compliance | 2/3 | In Progress|  |
 | 3. Marketing Content | 0/3 | Not started | - |
-| 4. SEO + Performance | 0/TBD | Not started | - |
+| 4. SEO + Performance | 0/3 | Not started | - |
 | 5. Launch | 0/TBD | Not started | - |
 
 ---
