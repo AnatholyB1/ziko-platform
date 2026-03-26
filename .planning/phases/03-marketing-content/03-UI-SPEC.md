@@ -57,10 +57,10 @@ Exceptions:
 |------|------|--------|-------------|-------|
 | Body | 16px | 400 (regular) | 1.5 | Plugin descriptions, pricing card value props, nav links |
 | Label | 14px | 400 (regular) | 1.4 | Footer links, copyright, secondary meta text (already established in Footer) |
-| Heading | 20px | 600 (semibold) | 1.3 | Plugin category headings, pricing card title |
-| Display | 36px (mobile: 28px) | 700 (bold) | 1.15 | Hero headline only |
+| Heading | 20px | 700 (bold) | 1.3 | Plugin category headings, pricing card title, section headings |
+| Display | 36px (mobile: 28px) | 700 (bold) | 1.15 | Hero headline, pricing price display ("0€") |
 
-Font family: Inter (self-hosted). No third font weight beyond 400 / 600 / 700 — these three cover all roles above.
+Font family: Inter (self-hosted). Exactly 2 weights declared: 400 (regular) and 700 (bold).
 
 Responsive display: Hero headline uses `text-3xl` (30px) on mobile, `text-4xl` (36px) on `md:` breakpoint and above.
 
@@ -81,15 +81,16 @@ Responsive display: Hero headline uses `text-3xl` (30px) on mobile, `text-4xl` (
 **Accent (`#FF5C1A`) is reserved exclusively for:**
 1. App Store CTA button background (Hero)
 2. Play Store CTA button background (Hero)
-3. "Download free" CTA button background (Pricing)
-4. "Télécharger" / "Download" button in sticky header
+3. "Download for free" CTA button background (Pricing)
+4. "Télécharger l'app" / "Download the app" button in sticky header
 5. Header bottom border (1px — matches Footer top border pattern)
 6. Hero subline icon accent (Ionicons checkmark icons, if used in value prop list)
 7. Logo text "Ziko" in header (text treatment, orange color)
+8. Pricing card highlight border (`border-2 border-primary`) — single card on page, orange border signals the featured free-tier offer
 
-Accent is NOT used on: plugin card icons, category headings, body text, card borders, or any decorative element.
+Accent is NOT used on: plugin card icons, category headings, body text, or any decorative element outside the list above.
 
-Plugin card icons: `text-text` (`#1C1A17`) at 24px — neutral, not orange. Accent reserved for CTAs only.
+Plugin card icons: `text-text` (`#1C1A17`) at 24px — neutral, not orange. Accent reserved for CTAs and featured elements only.
 
 ---
 
@@ -106,10 +107,10 @@ Pattern: Server Component — mirrors Footer.tsx exactly (getTranslations, Link 
 | Height | `h-14` (56px) |
 | Background | `bg-white` with `border-b border-border` |
 | Logo | Text "Ziko" in `text-primary font-bold text-xl` — no SVG (none available) |
-| Nav right | FR | EN locale links + "Télécharger" / "Download" CTA button |
+| Nav right | FR | EN locale links + "Télécharger l'app" / "Download the app" CTA button |
 | Locale switcher | Two `Link` components with `locale` prop: FR → `/`, EN → `/en/` |
-| CTA button | `bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold` — links to `#` placeholder |
-| Locale link active state | Current locale: `font-semibold text-text`, other: `text-muted hover:text-text` |
+| CTA button | `bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold` — links to `#` placeholder |
+| Locale link active state | Current locale: `font-bold text-text`, other: `text-muted hover:text-text` |
 
 ### Hero Section
 
@@ -123,8 +124,8 @@ Layout: Split two-column on `md:` and above, stacked single-column on mobile.
 | Headline | `text-3xl md:text-4xl font-bold text-text leading-tight` (line-height 1.15) |
 | Subline | `text-base text-muted leading-relaxed` (16px, weight 400, line-height 1.5) |
 | CTA row | `flex gap-4 mt-2` — App Store left, Play Store right |
-| App Store button | `bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm` — href `#` |
-| Play Store button | `bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm` — href `#` |
+| App Store button | `bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm` — href `#` |
+| Play Store button | `bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm` — href `#` |
 | Right column | `flex justify-center items-center md:w-1/2` |
 
 Phone Device Frame (CSS-only):
@@ -149,14 +150,14 @@ File: `src/components/marketing/PluginShowcase.tsx`
 | Element | Spec |
 |---------|------|
 | Section padding | `py-24` |
-| Section heading | "Nos 17 plugins" / "Our 17 plugins" — `text-2xl font-semibold text-text mb-4` (20px) |
+| Section heading | "Nos 17 plugins" / "Our 17 plugins" — `text-xl font-bold text-text mb-4` (20px) |
 | Layout | Category sections stacked vertically (not tabs) — simpler, static, no JS |
-| Category heading | `text-sm font-semibold uppercase tracking-wide text-muted mb-4` |
+| Category heading | `text-sm font-bold uppercase tracking-wide text-muted mb-4` |
 | Category section gap | `mb-12` between each category block |
 | Plugin grid | `grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4` within each category |
 | Plugin card | `bg-white border border-border rounded-xl p-4 flex flex-col gap-2` |
 | Plugin icon | Ionicons from react-icons/io5 — 24px, `text-text` color |
-| Plugin name | `text-sm font-semibold text-text` |
+| Plugin name | `text-sm font-bold text-text` |
 | Plugin description | `text-sm text-muted leading-relaxed` (1 sentence) |
 
 Plugin categories and icon mapping (from CLAUDE.md plugin catalog):
@@ -176,12 +177,12 @@ File: `src/components/marketing/Pricing.tsx`
 | Element | Spec |
 |---------|------|
 | Section padding | `py-24` |
-| Section heading | "Gratuit pour toujours" / "Free forever" — `text-2xl font-semibold text-text mb-8` |
-| Card | `bg-white border-2 border-primary rounded-2xl p-8 max-w-sm mx-auto` — orange border signals the highlight card |
-| Price display | "0€" in `text-5xl font-bold text-text` + "/mois" in `text-muted text-base` |
+| Section heading | "Gratuit pour toujours" / "Free forever" — `text-xl font-bold text-text mb-8` (20px) |
+| Card | `bg-white border-2 border-primary rounded-2xl p-8 max-w-sm mx-auto` — orange border signals the featured free-tier offer (accent reserved-for item 8) |
+| Price display | "0€" in `text-4xl font-bold text-text` + "/mois" in `text-muted text-base` |
 | Value props list | Unordered list — 3 bullets at `text-sm text-text leading-relaxed gap-2` |
 | Bullet icon | Ionicons `checkmark-circle-outline` at 18px, `text-primary` |
-| CTA | Full-width `bg-primary text-white py-3 rounded-xl font-semibold text-base` — href `#` |
+| CTA | Full-width `bg-primary text-white py-3 rounded-xl font-bold text-base` — href `#` |
 
 ---
 
@@ -270,7 +271,7 @@ Plugin descriptions (34 strings — one sentence per plugin per locale):
 |---------|----|----|
 | Logo text | «Ziko» | "Ziko" |
 | Language switcher | «FR» / «EN» | "FR" / "EN" |
-| CTA button | «Télécharger» | "Download" |
+| CTA button | «Télécharger l'app» | "Download the app" |
 
 ### Empty States
 
