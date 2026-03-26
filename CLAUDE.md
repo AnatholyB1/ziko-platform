@@ -15,12 +15,12 @@ Project context and conventions for AI assistants working in this codebase.
 ```
 apps/mobile/          → Expo SDK 54 + Expo Router v4 (iOS & Android)
 packages/
-  plugin-sdk/         → Plugin contracts, TS types, shared hooks, i18n, theme
+  plugin-sdk/         → Plugin contracts, TS types, shared hooks, i18n, theme, alert
   ai-client/          → AIBridge — SSE streaming AI agent client
   ui/                 → Shared React Native component library
-plugins/              → 14 plugins total
+plugins/              → 17 plugins total
   habits/             → Daily Habits & Goals plugin
-  nutrition/          → Nutrition Tracker plugin
+  nutrition/          → Nutrition Tracker + TDEE Calculator
   persona/            → AI Persona & coaching style
   stats/              → Analytics & charts
   gamification/       → XP, levels, coins, shop
@@ -28,11 +28,14 @@ plugins/              → 14 plugins total
   stretching/         → Stretching & mobility routines
   sleep/              → Sleep tracking & recovery score
   measurements/       → Body measurements & progression
-  timer/              → Tabata, HIIT, EMOM timers
+  timer/              → Tabata, HIIT, EMOM, Hyrox timers + exercises
   ai-programs/        → AI-generated workout programs
   journal/            → Mood, energy, stress journal
   hydration/          → Daily water intake tracking
-  cardio/             → Running, cycling, swimming tracking
+  cardio/             → Running, cycling, Hyrox — GPS live tracking (Strava-like)
+  supplements/        → Supplement catalog + price comparator
+  wearables/          → Apple Health / Health Connect integration
+  rpe/                → RPE Calculator & 1RM estimator
 backend/api/          → Hono v4 REST API (deployed on Vercel)
   src/
     routes/ai.ts      → AI chat endpoints (stream + sync)
@@ -40,7 +43,7 @@ backend/api/          → Hono v4 REST API (deployed on Vercel)
     context/          → Context layers (user.ts, conversation.ts)
     middleware/auth.ts → Supabase JWT auth middleware
 supabase/
-  migrations/         → 12 SQL migrations (RLS, triggers, extensions)
+  migrations/         → 21 SQL migrations (RLS, triggers, extensions)
   seed.sql            → Default exercises, plugins registry, food database
 ```
 
@@ -74,11 +77,14 @@ npm run type-check       # TypeScript check all
 From `apps/mobile/`:
 ```bash
 npx expo start           # Start Expo dev server
+eas build --platform android --profile production  # EAS cloud build (Android)
+eas build --platform ios --profile production       # EAS cloud build (iOS)
 ```
 
 From `backend/api/`:
 ```bash
 npm run dev              # Start API with tsx watch (auto-loads .env)
+vercel --prod --yes      # Deploy to Vercel production
 ```
 
 ---
@@ -188,7 +194,7 @@ export default manifest;
 ### `PluginLoader` (`apps/mobile/src/lib/PluginLoader.tsx`)
 - Reads `mod.default` — the manifest **must** be a default export
 - Static `PLUGIN_LOADERS` map with `() => import('@ziko/plugin-{id}/manifest') as any`
-- Currently registers 14 plugins: nutrition, persona, habits, stats, gamification, community, stretching, sleep, measurements, timer, ai-programs, journal, hydration, cardio
+- Currently registers 17 plugins: nutrition, persona, habits, stats, gamification, community, stretching, sleep, measurements, timer, ai-programs, journal, hydration, cardio, wearables, supplements, rpe
 - Plugin screens are registered as Expo Router file-based routes under `app/(app)/(plugins)/`
 
 ### Route Files
@@ -239,6 +245,17 @@ export default manifest;
 - `journal_entries` — mood/energy/stress 1-5, context (pre/post workout, morning, evening), notes
 - `hydration_logs` — amount_ml per entry, date
 - `cardio_sessions` — activity_type, duration_min, distance_km, calories, pace, heart_rate
+
+### Additional Tables (`013`–`021`)
+- `013` — `stretching_routines` — custom user routines (name, type, muscle_groups[], exercises JSONB)
+- `014` — `health_sync_log`, `wearable_daily_summary` — wearable sync tracking + cached daily health data
+- `015` — `bug_reports` — in-app bug reports (title, description, severity, category, device_info JSONB, status)
+- `016` — program cycles schema
+- `017` — avatars storage
+- `018` — `supplement_brands`, `supplement_categories`, `supplements`, `supplement_prices` — full catalog + price comparator
+- `019` — remove dead supplement brands
+- `020` — `timer_presets.exercises JSONB` column + hyrox/functional types for timer & cardio
+- `021` — `cardio_sessions.title`, `route_data JSONB`, `elevation_gain_m`, `max_speed_kmh` — GPS route storage
 
 ### RLS Policy Pattern
 Every table uses Row Level Security:
@@ -306,7 +323,7 @@ Auth middleware (`src/middleware/auth.ts`) validates Supabase Bearer token via `
 
 ---
 
-## Plugin Catalog (14 plugins)
+## Plugin Catalog (17 plugins)
 
 | Plugin | ID | AI Skills | AI Tools | Category |
 |--------|----|-----------|----------|----------|
@@ -324,6 +341,73 @@ Auth middleware (`src/middleware/auth.ts`) validates Supabase Bearer token via `
 | Journal & Mindset | `journal` | mood_analysis, mindset_coaching | journal_log_mood, journal_get_history, journal_get_trends | coaching |
 | Hydratation | `hydration` | hydration_tracking | hydration_log, hydration_get_today, hydration_set_goal | health |
 | Cardio & Running | `cardio` | cardio_analysis, running_coaching | cardio_log_session, cardio_get_history, cardio_get_stats | training |
+| Compléments Alimentaires | `supplements` | supplement_recommendation, supplement_comparison | supplements_search, supplements_compare_prices, supplements_recommend | nutrition |
+| Wearables & Santé | `wearables` | health_sync, activity_summary | wearables_get_steps, wearables_get_heart_rate, wearables_get_summary, wearables_sync_status | health |
+| Calculateur RPE | `rpe` | rpe_coaching | — | training |
+
+---
+
+## Custom Alert System
+
+- **Do not use** `Alert` from `react-native` in plugins — use `showAlert` from `@ziko/plugin-sdk`
+- Drop-in replacement: `showAlert(title, message, buttons?)` — same API as `Alert.alert`
+- Renders via `CustomAlert` component mounted in the root layout
+- Required in all plugin screens for consistent UX
+
+---
+
+## Cardio Plugin — GPS Tracking
+
+- **`expo-location`** installed + permissions in `app.json`
+- `CardioTracker.tsx` — live GPS session: Haversine distance, noise filter (< 5m accuracy discarded), rolling 60s pace
+- `CardioDetail.tsx` — post-session detail with `RouteVisualizer` (custom polyline via angled Views, no map lib), splits, PRs, notes edit, delete
+- `CardioDashboard.tsx` — Strava-like feed: `WeeklyChart`, `PersonalRecords`, `SessionCard`, date-grouped session list
+- `CardioSession` interface in `store.ts` includes: `title`, `route_data: RoutePoint[]`, `elevation_gain_m`, `max_speed_kmh`
+- `RoutePoint`: `{ lat, lng, timestamp, altitude?, accuracy? }`
+
+---
+
+## Timer Plugin — Hyrox & Exercises
+
+- Timer types: `tabata`, `hiit`, `emom`, `rest`, `custom`, `hyrox`, `functional`
+- `timer_presets` table has `exercises JSONB` column (migration 020)
+- `TimerExercise` interface: `{ id, name, sets, reps?, duration_seconds?, rest_seconds?, notes? }`
+- `TimerEditor` has exercise picker; `TimerDashboard` shows current exercise card during session
+- Session can be saved as a workout session ("Sauvegarder comme séance")
+- Cardio activity types also include `hyrox`, `functional` (migration 020)
+
+---
+
+## RPE Calculator Plugin
+
+- **Plugin ID**: `rpe` | **Category**: training | **Icon**: `calculator-outline`
+- `plugins/rpe/src/index.ts` — core formulas:
+  - `RPE10_PCT`: base % of 1RM per reps at RPE 10 (Tuchscherer/RTS table)
+  - `rpeToPercent(reps, rpe)` → % of 1RM
+  - `calc1RM(weight, reps, rpe)` → estimated 1RM
+  - `rpeToRIR(rpe)` → reps in reserve
+  - `TRAINING_ZONES`: 50%→100% intensity zones
+- `RPECalculatorScreen.tsx` — weight input ±1/2.5/5, reps 1–12 chips, RPE 5–10 (0.5 increments) color-coded, 1RM result, zones table
+- Shortcut in `workout/index.tsx` + inline RPE modal in `workout/session.tsx` (rest phase)
+
+---
+
+## Supplements Plugin
+
+- **Plugin ID**: `supplements` | **Category**: nutrition
+- DB tables (migration 018): `supplement_brands`, `supplement_categories`, `supplements`, `supplement_prices`
+- Price comparator across brands/sources
+- Weekly scraper cron: `POST /supplements/cron/scrape` (Vercel cron, Monday 3am)
+- Migration 019 removes dead/obsolete brands
+
+---
+
+## Wearables Plugin
+
+- **Plugin ID**: `wearables` | **Category**: health
+- DB tables (migration 014): `health_sync_log`, `wearable_daily_summary`
+- Platforms: `apple_health`, `health_connect` (Android)
+- Data types: `steps`, `heart_rate`, `sleep`, `calories`, `exercises`, `weight`
 
 ---
 
@@ -339,3 +423,7 @@ Auth middleware (`src/middleware/auth.ts`) validates Supabase Bearer token via `
 - `.env.production` removed from git tracking (security fix)
 - Removed `name_fr` from Supabase queries
 - All screens use `paddingBottom: 100` for tab bar clearance
+- Plugin manifest `icon` field must use Ionicons name (e.g. `'calculator-outline'`), never emoji — `manifest.icon` is passed directly to `<Ionicons name={...} />`
+- `Alert.alert` replaced by `showAlert` from `@ziko/plugin-sdk` everywhere in plugins — drops in as exact same API
+- CardioDashboard emoji/accented char encoding corruption — edit file via tools, not shell echo
+- Cardio GPS `expo-location` permissions declared in `app.json` (iOS `NSLocationWhenInUseUsageDescription` + Android `ACCESS_FINE_LOCATION`)
