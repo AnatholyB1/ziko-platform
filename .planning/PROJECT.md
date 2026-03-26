@@ -8,6 +8,21 @@ A Next.js marketing website for the Ziko fitness app, targeting French and Engli
 
 A potential user lands on the site and understands what Ziko does, feels compelled to download the app, and trusts it enough to create an account.
 
+## Current Milestone: v1.0 Landing Page
+
+**Goal:** Ship a Next.js marketing site that showcases the Ziko fitness app, drives downloads, and satisfies French legal requirements before launch.
+
+**Target features:**
+- Hero section with app screenshots + App Store / Play Store CTAs
+- Features showcase presenting all 17 plugins
+- Pricing section — free tier with "Download free" CTA
+- French + English i18n (FR default, `next-intl`)
+- RGPD / Politique de confidentialité page
+- Mentions légales page
+- CGU (Conditions Générales d'Utilisation) page
+- Self-service account deletion (server-side Supabase admin delete)
+- Deployed on Vercel, custom domain ready
+
 ## Requirements
 
 ### Validated
@@ -83,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after initialization*
+*Last updated: 2026-03-26 — Milestone v1.0 Landing Page started*
