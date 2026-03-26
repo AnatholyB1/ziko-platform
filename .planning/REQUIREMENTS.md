@@ -10,10 +10,10 @@
 - [x] **FOUND-01**: Project is bootstrapped as standalone Next.js 15 App Router repo with Tailwind v4 and TypeScript
 - [x] **FOUND-02**: FR/EN i18n routing works via next-intl v4 — French is default (clean URLs), English uses `/en/` prefix
 - [x] **FOUND-03**: Ziko design tokens (primary `#FF5C1A`, bg `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`) applied globally via Tailwind v4 `@theme` directive
-- [ ] **FOUND-04**: All pages are statically generated (`generateStaticParams` for both locales, `setRequestLocale` in every route segment)
+- [x] **FOUND-04**: All pages are statically generated (`generateStaticParams` for both locales, `setRequestLocale` in every route segment)
 - [x] **FOUND-05**: Fonts are self-hosted via `next/font` (no Google CDN, CNIL-compliant)
-- [ ] **FOUND-06**: Vercel project created with `SUPABASE_SERVICE_ROLE_KEY` scoped to server-only (no `NEXT_PUBLIC_` prefix)
-- [ ] **FOUND-07**: Footer visible on every page with links to all 3 legal pages (LCEN requirement)
+- [x] **FOUND-06**: Vercel project created with `SUPABASE_SERVICE_ROLE_KEY` scoped to server-only (no `NEXT_PUBLIC_` prefix)
+- [x] **FOUND-07**: Footer visible on every page with links to all 3 legal pages (LCEN requirement)
 
 ### Marketing
 
@@ -79,10 +79,10 @@ Populated by roadmapper. Each requirement maps to exactly one phase.
 | FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Complete |
-| FOUND-04 | Phase 1 | Pending |
+| FOUND-04 | Phase 1 | Complete |
 | FOUND-05 | Phase 1 | Complete |
-| FOUND-06 | Phase 1 | Pending |
-| FOUND-07 | Phase 1 | Pending |
+| FOUND-06 | Phase 1 | Complete |
+| FOUND-07 | Phase 1 | Complete |
 | MKTG-01 | Phase 3 | Pending |
 | MKTG-02 | Phase 3 | Pending |
 | MKTG-03 | Phase 3 | Pending |

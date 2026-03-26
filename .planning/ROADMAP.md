@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 Plans:
 - [x] 01-01-PLAN.md — Bootstrap Next.js 15 project with Tailwind v4 tokens and next-intl v4 i18n routing
-- [ ] 01-02-PLAN.md — Pages, Footer, Supabase admin client, and static build verification
+- [x] 01-02-PLAN.md — Pages, Footer, Supabase admin client, and static build verification
 **UI hint**: yes
 
 ### Phase 2: RGPD Compliance
