@@ -12,3 +12,6 @@ build/
 coverage/
 .next/
 out/
+.claude/
+.claude-flow/
+.mcp.json
