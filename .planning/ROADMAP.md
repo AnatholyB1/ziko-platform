@@ -49,7 +49,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 02-01-PLAN.md — Infrastructure: fix admin.ts, install Upstash, create rate limiter and deletion Server Action
-- [ ] 02-02-PLAN.md — Deletion page UI: DeleteAccountForm client component, page route, footer link
+- [x] 02-02-PLAN.md — Deletion page UI: DeleteAccountForm client component, page route, footer link
 - [x] 02-03-PLAN.md — Legal pages: Mentions légales, Politique de confidentialité, CGU with full French content
 **UI hint**: yes
 

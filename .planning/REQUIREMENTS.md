@@ -23,12 +23,12 @@
 
 ### RGPD & Legal
 
-- [ ] **RGPD-01**: User can enter their email to request account deletion and receive a success response (RGPD Art. 17)
-- [ ] **RGPD-02**: Account deletion is processed server-side via Supabase admin API — service role key never in client bundle
+- [x] **RGPD-01**: User can enter their email to request account deletion and receive a success response (RGPD Art. 17)
+- [x] **RGPD-02**: Account deletion is processed server-side via Supabase admin API — service role key never in client bundle
 - [ ] **RGPD-03**: Deletion action is rate-limited per IP (prevents account enumeration abuse)
-- [ ] **RGPD-04**: Mentions légales page is live with all legally-required fields (legal entity, SIRET, address, publication director, hosting provider details)
-- [ ] **RGPD-05**: Politique de confidentialité page documents all personal data processing (health data, GPS, AI coaching — with Anthropic named as a data processor)
-- [ ] **RGPD-06**: CGU page documents terms of use and AI health advice liability disclaimer
+- [x] **RGPD-04**: Mentions légales page is live with all legally-required fields (legal entity, SIRET, address, publication director, hosting provider details)
+- [x] **RGPD-05**: Politique de confidentialité page documents all personal data processing (health data, GPS, AI coaching — with Anthropic named as a data processor)
+- [x] **RGPD-06**: CGU page documents terms of use and AI health advice liability disclaimer
 
 ### SEO & Performance
 
@@ -86,12 +86,12 @@ Populated by roadmapper. Each requirement maps to exactly one phase.
 | MKTG-01 | Phase 3 | Pending |
 | MKTG-02 | Phase 3 | Pending |
 | MKTG-03 | Phase 3 | Pending |
-| RGPD-01 | Phase 2 | Pending |
-| RGPD-02 | Phase 2 | Pending |
+| RGPD-01 | Phase 2 | Complete |
+| RGPD-02 | Phase 2 | Complete |
 | RGPD-03 | Phase 2 | Pending |
-| RGPD-04 | Phase 2 | Pending |
-| RGPD-05 | Phase 2 | Pending |
-| RGPD-06 | Phase 2 | Pending |
+| RGPD-04 | Phase 2 | Complete |
+| RGPD-05 | Phase 2 | Complete |
+| RGPD-06 | Phase 2 | Complete |
 | SEO-01 | Phase 4 | Pending |
 | SEO-02 | Phase 4 | Pending |
 | SEO-03 | Phase 4 | Pending |
