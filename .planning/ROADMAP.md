@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. The `SUPABASE_SERVICE_ROLE_KEY` env var is scoped server-only in Vercel — no `NEXT_PUBLIC_` prefix, and the admin Supabase client file contains `import 'server-only'`
 **Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Bootstrap Next.js 15 project with Tailwind v4 tokens and next-intl v4 i18n routing
+- [x] 01-01-PLAN.md — Bootstrap Next.js 15 project with Tailwind v4 tokens and next-intl v4 i18n routing
 - [ ] 01-02-PLAN.md — Pages, Footer, Supabase admin client, and static build verification
 **UI hint**: yes
 
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Planning complete | - |
+| 1. Foundation | 1/2 | In Progress|  |
 | 2. RGPD Compliance | 0/TBD | Not started | - |
 | 3. Marketing Content | 0/TBD | Not started | - |
 | 4. SEO + Performance | 0/TBD | Not started | - |
