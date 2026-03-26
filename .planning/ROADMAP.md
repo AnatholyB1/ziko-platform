@@ -48,9 +48,9 @@ Plans:
   5. The CGU page is live and includes an AI health advice liability disclaimer
 **Plans**: 3 plans
 Plans:
-- [ ] 02-01-PLAN.md — Infrastructure: fix admin.ts, install Upstash, create rate limiter and deletion Server Action
+- [x] 02-01-PLAN.md — Infrastructure: fix admin.ts, install Upstash, create rate limiter and deletion Server Action
 - [ ] 02-02-PLAN.md — Deletion page UI: DeleteAccountForm client component, page route, footer link
-- [ ] 02-03-PLAN.md — Legal pages: Mentions légales, Politique de confidentialité, CGU with full French content
+- [x] 02-03-PLAN.md — Legal pages: Mentions légales, Politique de confidentialité, CGU with full French content
 **UI hint**: yes
 
 ### Phase 3: Marketing Content
@@ -93,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/2 | In Progress|  |
-| 2. RGPD Compliance | 0/3 | Not started | - |
+| 2. RGPD Compliance | 2/3 | In Progress|  |
 | 3. Marketing Content | 0/TBD | Not started | - |
 | 4. SEO + Performance | 0/TBD | Not started | - |
 | 5. Launch | 0/TBD | Not started | - |

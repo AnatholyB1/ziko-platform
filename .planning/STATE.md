@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 01-foundation-01-02-PLAN.md
-last_updated: "2026-03-26T17:29:57.429Z"
+status: executing
+stopped_at: Completed 02-rgpd-compliance-02-03-PLAN.md
+last_updated: "2026-03-26T18:13:48.638Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** A potential user lands on the site and understands what Ziko does, feels compelled to download the app, and trusts it enough to create an account.
-**Current focus:** Phase 01 — foundation
+**Current focus:** Phase 02 — rgpd-compliance
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 02 (rgpd-compliance) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-03-26
 
 Progress: [░░░░░░░░░░] 0%
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 3 | 2 tasks | 13 files |
 | Phase 01-foundation P02 | 15 | 3 tasks | 8 files |
+| Phase 02-rgpd-compliance P03 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: getTranslations (async) used instead of useTranslations in Server Components — avoids client boundary conflicts with next-intl navigation Link
 - [Phase 01-foundation]: NextIntlClientProvider added to locale layout — required for Link from createNavigation to access locale context during static generation
 - [Phase 01-foundation]: createAdminClient() factory exported instead of supabaseAdmin singleton — matches plan spec, avoids shared state
+- [Phase 02-rgpd-compliance]: Legal page content hardcoded as French JSX with HTML entities (not i18n keys) — LegalStub namespace removed
+- [Phase 02-rgpd-compliance]: Anthropic explicitly named as AI data processor in Politique de confidentialite per RGPD sous-traitant requirements
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T17:16:50.224Z
-Stopped at: Completed 01-foundation-01-02-PLAN.md
+Last session: 2026-03-26T18:13:48.634Z
+Stopped at: Completed 02-rgpd-compliance-02-03-PLAN.md
 Resume file: None
