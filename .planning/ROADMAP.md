@@ -46,7 +46,11 @@ Plans:
   3. The Mentions Légales page is live and contains all legally-required fields: legal entity name, SIRET, physical address, publication director name, and Vercel hosting details
   4. The Politique de Confidentialité page names Anthropic as a data processor and documents processing of health data, GPS data, and AI coaching interactions
   5. The CGU page is live and includes an AI health advice liability disclaimer
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Infrastructure: fix admin.ts, install Upstash, create rate limiter and deletion Server Action
+- [ ] 02-02-PLAN.md — Deletion page UI: DeleteAccountForm client component, page route, footer link
+- [ ] 02-03-PLAN.md — Legal pages: Mentions légales, Politique de confidentialité, CGU with full French content
 **UI hint**: yes
 
 ### Phase 3: Marketing Content
@@ -89,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/2 | In Progress|  |
-| 2. RGPD Compliance | 0/TBD | Not started | - |
+| 2. RGPD Compliance | 0/3 | Not started | - |
 | 3. Marketing Content | 0/TBD | Not started | - |
 | 4. SEO + Performance | 0/TBD | Not started | - |
 | 5. Launch | 0/TBD | Not started | - |
