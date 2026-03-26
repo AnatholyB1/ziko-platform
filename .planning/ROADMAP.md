@@ -61,7 +61,11 @@ Plans:
   1. The hero section displays a headline, an app screenshot in a device frame, and working App Store and Play Store CTA buttons styled in Ziko orange (#FF5C1A)
   2. The plugin showcase presents all 17 plugins grouped into 4-5 categories — each plugin shows an icon, its name, and a one-sentence description in both French and English
   3. The pricing section shows a free tier card with a "Download free" CTA
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 03-01-PLAN.md — Install react-icons and write all bilingual translation strings (Header, Home, Plugins, Pricing)
+- [ ] 03-02-PLAN.md — Sticky Header and Hero section components with layout integration
+- [ ] 03-03-PLAN.md — Plugin Showcase, Pricing section, and homepage assembly
 **UI hint**: yes
 
 ### Phase 4: SEO + Performance
@@ -94,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. RGPD Compliance | 2/3 | In Progress|  |
-| 3. Marketing Content | 0/TBD | Not started | - |
+| 3. Marketing Content | 0/3 | Not started | - |
 | 4. SEO + Performance | 0/TBD | Not started | - |
 | 5. Launch | 0/TBD | Not started | - |
 
