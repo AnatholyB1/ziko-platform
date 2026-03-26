@@ -27,7 +27,16 @@ A potential user lands on the site and understands what Ziko does, feels compell
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] FR/EN i18n routing with `next-intl` — FR clean URLs, EN `/en/` prefix (Validated in Phase 1: foundation)
+- [x] Ziko design tokens applied globally via Tailwind v4 `@theme` — matches brand identity (Validated in Phase 1: foundation)
+- [x] All pages statically generated — `generateStaticParams` + `setRequestLocale` pattern (Validated in Phase 1: foundation)
+- [x] Fonts self-hosted via `next/font` — CNIL-compliant, no Google CDN (Validated in Phase 1: foundation)
+- [x] Supabase admin client uses `SUPABASE_SERVICE_ROLE_KEY` with `server-only` guard (Validated in Phase 1: foundation)
+- [x] Footer visible on every page with links to all 3 legal pages (Validated in Phase 1: foundation)
+- [x] Self-service account deletion — IP rate-limited server action, anti-enumeration, high-friction UX (Validated in Phase 2: rgpd-compliance)
+- [x] Mentions légales — LCEN-compliant, BRICON Anatholy as publication director, Vercel hosting (Validated in Phase 2: rgpd-compliance)
+- [x] Politique de confidentialité — Anthropic named as AI data processor, health/GPS/AI data documented (Validated in Phase 2: rgpd-compliance)
+- [x] CGU — AI health liability disclaimer, French law applicable (Validated in Phase 2: rgpd-compliance)
 
 ### Active
 
@@ -35,11 +44,6 @@ A potential user lands on the site and understands what Ziko does, feels compell
 - [ ] Hero section with app screenshots and download CTA (App Store / Play Store links)
 - [ ] Features showcase presenting all major app capabilities (17 plugins)
 - [ ] Pricing section — free tier with "Download free" CTA (no paid tier yet)
-- [ ] French + English i18n (FR default)
-- [ ] RGPD compliance page (politique de confidentialité)
-- [ ] Mentions légales page
-- [ ] Conditions Générales d'Utilisation (CGU)
-- [ ] Self-service account deletion page — user enters email, confirms, Supabase API deletes account
 - [ ] Deployed on Vercel, custom domain ready
 
 **Coach Platform (Milestone 2 — future)**
@@ -98,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 — Milestone v1.0 Landing Page started*
+*Last updated: 2026-03-26 — Phase 2 complete: RGPD compliance delivered*
