@@ -1,0 +1,21 @@
+{
+  "name": "@ziko/plugin-rpe",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./screens/RPECalculatorScreen": "./src/screens/RPECalculatorScreen.tsx"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ziko/plugin-sdk": "*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  }
+}

@@ -23,6 +23,7 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   cardio:        () => import('@ziko/plugin-cardio/manifest') as any,
   wearables:     () => import('@ziko/plugin-wearables/manifest') as any,
   supplements:   () => import('@ziko/plugin-supplements/manifest') as any,
+  rpe:           () => import('@ziko/plugin-rpe/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */

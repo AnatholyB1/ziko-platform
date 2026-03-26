@@ -185,7 +185,7 @@ export default function WorkoutProgramsScreen() {
       {/* Quick start */}
       <TouchableOpacity
         onPress={() => router.push('/(app)/workout/session')}
-        style={{ marginHorizontal: 20, marginBottom: 20, backgroundColor: theme.primary, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+        style={{ marginHorizontal: 20, marginBottom: 12, backgroundColor: theme.primary, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}
       >
         <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#ffffff22', alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="flash" size={22} color="#fff" />
@@ -195,6 +195,21 @@ export default function WorkoutProgramsScreen() {
           <Text style={{ color: '#ffffff99', fontSize: 13 }}>{t('workout.quickStartDesc')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color="#ffffff88" />
+      </TouchableOpacity>
+
+      {/* RPE Calculator shortcut */}
+      <TouchableOpacity
+        onPress={() => router.push('/(app)/(plugins)/rpe/' as any)}
+        style={{ marginHorizontal: 20, marginBottom: 12, backgroundColor: theme.surface, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#9C27B044' }}
+      >
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#9C27B018', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 20 }}>🧮</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Calculateur RPE / 1RM</Text>
+          <Text style={{ color: theme.muted, fontSize: 12 }}>Estime ton max à partir de l'effort perçu</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={theme.muted} />
       </TouchableOpacity>
 
       {/* Supplements tip */}

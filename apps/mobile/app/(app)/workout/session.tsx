@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions, Vibration,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions, Vibration, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,6 +17,174 @@ import { playSound, playCountdownBeep, isSoundEnabled, setSoundEnabled } from '.
 
 let useHydrationStore: any = null;
 try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
+
+// RPE 1RM calculator (inline, no import needed from plugin)
+const RPE10_PCT: Record<number, number> = {
+  1: 100, 2: 97, 3: 94, 4: 91, 5: 89,
+  6: 86, 7: 83, 8: 81, 9: 78, 10: 76,
+  11: 74, 12: 71,
+};
+const RPE_VALUES_MODAL = [5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+const REPS_MODAL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+function rpeCalc1RM(weight: number, reps: number, rpe: number): number {
+  const base = RPE10_PCT[Math.min(12, Math.max(1, reps))] ?? 71;
+  const pct = Math.max(10, base - (10 - rpe) * 4) / 100;
+  return Math.round(weight / pct);
+}
+function rpeColor(rpe: number): string {
+  if (rpe <= 6) return '#4CAF50';
+  if (rpe <= 8) return '#FF9800';
+  return '#F44336';
+}
+
+function RPEModal({ visible, onClose, theme }: { visible: boolean; onClose: () => void; theme: any }) {
+  const [weightText, setWeightText] = useState('100');
+  const [reps, setReps] = useState(5);
+  const [rpe, setRpe] = useState(8);
+
+  const kg = parseFloat(weightText) || 0;
+  const oneRM = kg > 0 ? rpeCalc1RM(kg, reps, rpe) : 0;
+  const color = rpeColor(rpe);
+  const rir = Math.round((10 - rpe) * 2) / 2;
+
+  const adj = (d: number) => {
+    const next = Math.max(0, parseFloat(weightText || '0') + d);
+    setWeightText(String(parseFloat(next.toFixed(1))));
+  };
+
+  const zones = [
+    { label: '70%', pct: 0.7 }, { label: '75%', pct: 0.75 },
+    { label: '80%', pct: 0.8 }, { label: '85%', pct: 0.85 },
+    { label: '90%', pct: 0.9 }, { label: '95%', pct: 0.95 }, { label: '100%', pct: 1 },
+  ];
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        {/* Handle bar */}
+        <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: theme.border }} />
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <View>
+              <Text style={{ color: theme.text, fontWeight: '900', fontSize: 22 }}>🧮 Calculateur RPE</Text>
+              <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>1RM estimé · Zones d'entraînement</Text>
+            </View>
+            <TouchableOpacity
+              onPress={onClose}
+              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="close" size={18} color={theme.muted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Weight */}
+          <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>Charge (kg)</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <TextInput
+              value={weightText}
+              onChangeText={(v) => setWeightText(v.replace(',', '.'))}
+              keyboardType="decimal-pad"
+              style={{
+                backgroundColor: theme.surface, borderRadius: 12, borderWidth: 2,
+                borderColor: theme.primary, padding: 12, color: theme.text,
+                fontWeight: '800', fontSize: 26, width: 100, textAlign: 'center',
+              }}
+            />
+            <View style={{ flex: 1, gap: 6 }}>
+              <View style={{ flexDirection: 'row', gap: 4 }}>
+                {[-5, -2.5, -1].map((d) => (
+                  <TouchableOpacity key={d} onPress={() => adj(d)}
+                    style={{ flex: 1, backgroundColor: '#F4433615', borderRadius: 8, paddingVertical: 7, alignItems: 'center', borderWidth: 1, borderColor: '#F4433630' }}>
+                    <Text style={{ color: '#F44336', fontWeight: '700', fontSize: 12 }}>{d}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={{ flexDirection: 'row', gap: 4 }}>
+                {[1, 2.5, 5].map((d) => (
+                  <TouchableOpacity key={d} onPress={() => adj(d)}
+                    style={{ flex: 1, backgroundColor: '#4CAF5015', borderRadius: 8, paddingVertical: 7, alignItems: 'center', borderWidth: 1, borderColor: '#4CAF5030' }}>
+                    <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize: 12 }}>+{d}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Reps */}
+          <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>Répétitions</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {REPS_MODAL.map((r) => {
+                const sel = r === reps;
+                return (
+                  <TouchableOpacity key={r} onPress={() => setReps(r)}
+                    style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: sel ? theme.primary : theme.surface, borderWidth: 2, borderColor: sel ? theme.primary : theme.border, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: sel ? '#fff' : theme.text, fontWeight: '800', fontSize: 15 }}>{r}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* RPE */}
+          <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>RPE</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {RPE_VALUES_MODAL.map((r) => {
+                const sel = r === rpe;
+                const c = rpeColor(r);
+                return (
+                  <TouchableOpacity key={r} onPress={() => setRpe(r)}
+                    style={{ minWidth: 50, paddingHorizontal: 8, height: 50, borderRadius: 12, backgroundColor: sel ? c : theme.surface, borderWidth: 2, borderColor: sel ? c : theme.border, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: sel ? '#fff' : c, fontWeight: '800', fontSize: 14 }}>{r}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+          <Text style={{ color: color, fontSize: 12, fontWeight: '600', marginBottom: 20 }}>
+            {rir === 0 ? '0 rép en réserve — effort maximum' : `${rir} rép${rir > 1 ? 's' : ''} en réserve`}
+          </Text>
+
+          {/* Result */}
+          {oneRM > 0 ? (
+            <>
+              <View style={{ backgroundColor: color + '12', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 2, borderColor: color + '35', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View>
+                  <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>1RM ESTIMÉ</Text>
+                  <Text style={{ color: color, fontSize: 52, fontWeight: '900', lineHeight: 60 }}>{oneRM} <Text style={{ fontSize: 20, color: theme.muted }}>kg</Text></Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{reps} × {kg} kg</Text>
+                  <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>@ RPE {rpe}</Text>
+                </View>
+              </View>
+
+              {/* Quick zones */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                {zones.map(({ label, pct }) => (
+                  <View key={label} style={{ backgroundColor: theme.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.border }}>
+                    <Text style={{ color: theme.muted, fontSize: 10, fontWeight: '700' }}>{label}</Text>
+                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 14 }}>{(oneRM * pct).toFixed(1)} kg</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.border }}>
+              <Text style={{ color: theme.muted }}>Entre ta charge pour calculer le 1RM</Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -130,6 +298,7 @@ export default function WorkoutSessionScreen() {
   const [restTimerMax, setRestTimerMax] = useState(0);
   const restRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
+  const [showRPEModal, setShowRPEModal] = useState(false);
 
   // ── Editable values for current set ────────────────────
   const [editReps, setEditReps] = useState('');
@@ -1056,6 +1225,7 @@ export default function WorkoutSessionScreen() {
 
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+          <RPEModal visible={showRPEModal} onClose={() => setShowRPEModal(false)} theme={theme} />
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <MotiView
               from={{ scale: 0.8, opacity: 0 }}
@@ -1112,6 +1282,20 @@ export default function WorkoutSessionScreen() {
                   <Text style={{ color: theme.muted, fontWeight: '600', fontSize: 13 }}>+15s</Text>
                 </TouchableOpacity>
               </View>
+
+              {/* RPE Calculator shortcut */}
+              <TouchableOpacity
+                onPress={() => setShowRPEModal(true)}
+                style={{
+                  marginTop: 20, backgroundColor: '#9C27B015', borderRadius: 14,
+                  paddingVertical: 12, paddingHorizontal: 20,
+                  borderWidth: 1, borderColor: '#9C27B040',
+                  flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 18 }}>🧮</Text>
+                <Text style={{ color: '#9C27B0', fontWeight: '700', fontSize: 14 }}>Calculateur RPE / 1RM</Text>
+              </TouchableOpacity>
             </MotiView>
           </View>
 
