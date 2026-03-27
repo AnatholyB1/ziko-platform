@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 04-01-PLAN.md (OG Metadata + metadataBase)
-last_updated: "2026-03-27T16:19:08.611Z"
+stopped_at: Completed 04-03-PLAN.md (Hero next/image + Final Build Gate)
+last_updated: "2026-03-27T16:22:40.495Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 75
 ---
 
@@ -59,6 +59,7 @@ Progress: [███████░░░] 75%
 | Phase 03-marketing-content P03 | ~10 | 2 tasks | 3 files |
 | Phase 04-seo-performance P02 | 2 | 2 tasks | 2 files |
 | Phase 04-seo-performance P01 | 10 | 2 tasks | 10 files |
+| Phase 04-seo-performance P03 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 04-seo-performance]: metadataBase set via NEXT_PUBLIC_SITE_URL env var in root layout — no hardcoding of production domain
 - [Phase 04-seo-performance]: localePrefix 'always' confirmed — all canonical URLs use /fr/* and /en/* prefixes
 - [Phase 04-seo-performance]: supprimer-mon-compte gets robots noindex/nofollow (excluded from sitemap per D-07)
+- [Phase 04-seo-performance]: Hero phone frame inner fill replaced with next/image fill+priority — LCP image served via Next.js image optimization pipeline
+- [Phase 04-seo-performance]: Alt text for hero image sourced from Metadata.appScreenshotAlt i18n key (not hardcoded)
 
 ### Pending Todos
 
@@ -101,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T16:19:08.606Z
-Stopped at: Completed 04-01-PLAN.md (OG Metadata + metadataBase)
+Last session: 2026-03-27T16:22:36.357Z
+Stopped at: Completed 04-03-PLAN.md (Hero next/image + Final Build Gate)
 Resume file: None

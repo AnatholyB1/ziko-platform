@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Foundation** - Next.js scaffold, i18n routing, design tokens, static rendering architecture, and Vercel infra baseline
 - [ ] **Phase 2: RGPD Compliance** - Account deletion Server Action, all three French legal pages, and footer legal links
 - [ ] **Phase 3: Marketing Content** - Hero section, Plugin Showcase, and Pricing section with Ziko brand and bilingual copy
-- [ ] **Phase 4: SEO + Performance** - Metadata, sitemap, static rendering verification, and Core Web Vitals pass
+- [x] **Phase 4: SEO + Performance** - Metadata, sitemap, static rendering verification, and Core Web Vitals pass (completed 2026-03-27)
 - [ ] **Phase 5: Launch** - Custom domain live on Vercel, final pre-launch checklist verified, site publicly accessible
 
 ## Phase Details
@@ -81,7 +81,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — OG metadata, metadataBase, generateMetadata on all pages, translation strings, and OG image
 - [x] 04-02-PLAN.md — Sitemap and robots.txt auto-generation via Next.js file conventions
-- [ ] 04-03-PLAN.md — Hero next/image with placeholder PNG and final static build verification gate
+- [x] 04-03-PLAN.md — Hero next/image with placeholder PNG and final static build verification gate
 **UI hint**: no
 
 ### Phase 5: Launch
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. RGPD Compliance | 2/3 | In Progress|  |
 | 3. Marketing Content | 0/3 | Not started | - |
-| 4. SEO + Performance | 2/3 | In Progress|  |
+| 4. SEO + Performance | 3/3 | Complete   | 2026-03-27 |
 | 5. Launch | 0/TBD | Not started | - |
 
 ---
