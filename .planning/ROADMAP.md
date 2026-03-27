@@ -79,7 +79,7 @@ Plans:
   4. Lighthouse audit on the production URL shows Core Web Vitals passing — hero image loads with `priority`, and `sizes` prop is set correctly on all `next/image` usages
 **Plans**: 3 plans
 Plans:
-- [ ] 04-01-PLAN.md — OG metadata, metadataBase, generateMetadata on all pages, translation strings, and OG image
+- [x] 04-01-PLAN.md — OG metadata, metadataBase, generateMetadata on all pages, translation strings, and OG image
 - [x] 04-02-PLAN.md — Sitemap and robots.txt auto-generation via Next.js file conventions
 - [ ] 04-03-PLAN.md — Hero next/image with placeholder PNG and final static build verification gate
 **UI hint**: no
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 1/2 | In Progress|  |
 | 2. RGPD Compliance | 2/3 | In Progress|  |
 | 3. Marketing Content | 0/3 | Not started | - |
-| 4. SEO + Performance | 1/3 | In Progress|  |
+| 4. SEO + Performance | 2/3 | In Progress|  |
 | 5. Launch | 0/TBD | Not started | - |
 
 ---

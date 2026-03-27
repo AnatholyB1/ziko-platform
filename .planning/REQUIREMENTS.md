@@ -32,8 +32,8 @@
 
 ### SEO & Performance
 
-- [ ] **SEO-01**: `metadataBase` is set to production domain — OG images and canonical URLs use production URLs, not Vercel preview URLs
-- [ ] **SEO-02**: `next build` output shows all `[locale]/*` routes as `○` (static), not `ƒ` (dynamic)
+- [x] **SEO-01**: `metadataBase` is set to production domain — OG images and canonical URLs use production URLs, not Vercel preview URLs
+- [x] **SEO-02**: `next build` output shows all `[locale]/*` routes as `○` (static), not `ƒ` (dynamic)
 - [x] **SEO-03**: Sitemap and `robots.txt` are auto-generated and accessible at `/sitemap.xml` and `/robots.txt`
 - [ ] **SEO-04**: Hero image uses `next/image` with `priority` and correct `sizes` prop; Core Web Vitals pass Lighthouse audit on production URL
 
@@ -92,8 +92,8 @@ Populated by roadmapper. Each requirement maps to exactly one phase.
 | RGPD-04 | Phase 2 | Complete |
 | RGPD-05 | Phase 2 | Complete |
 | RGPD-06 | Phase 2 | Complete |
-| SEO-01 | Phase 4 | Pending |
-| SEO-02 | Phase 4 | Pending |
+| SEO-01 | Phase 4 | Complete |
+| SEO-02 | Phase 4 | Complete |
 | SEO-03 | Phase 4 | Complete |
 | SEO-04 | Phase 4 | Pending |
 

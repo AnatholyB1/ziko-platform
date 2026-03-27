@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 04-02-PLAN.md (sitemap.ts + robots.ts)
-last_updated: "2026-03-27T16:17:02.148Z"
+stopped_at: Completed 04-01-PLAN.md (OG Metadata + metadataBase)
+last_updated: "2026-03-27T16:19:08.611Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 75
 ---
 
@@ -58,6 +58,7 @@ Progress: [███████░░░] 75%
 | Phase 02-rgpd-compliance P02 | 25 | 3 tasks | 5 files |
 | Phase 03-marketing-content P03 | ~10 | 2 tasks | 3 files |
 | Phase 04-seo-performance P02 | 2 | 2 tasks | 2 files |
+| Phase 04-seo-performance P01 | 10 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 03-marketing-content]: page.tsx delegates getTranslations to each section component — page itself only calls setRequestLocale
 - [Phase 03-marketing-content]: Plugin icon data and category grouping defined inline in PluginShowcase.tsx (no separate data file)
 - [Phase 04-seo-performance]: localePrefix:always confirmed in routing.ts — sitemap and robots both use explicit /fr/ and /en/ locale prefixes in all URLs
+- [Phase 04-seo-performance]: metadataBase set via NEXT_PUBLIC_SITE_URL env var in root layout — no hardcoding of production domain
+- [Phase 04-seo-performance]: localePrefix 'always' confirmed — all canonical URLs use /fr/* and /en/* prefixes
+- [Phase 04-seo-performance]: supprimer-mon-compte gets robots noindex/nofollow (excluded from sitemap per D-07)
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T16:17:02.143Z
-Stopped at: Completed 04-02-PLAN.md (sitemap.ts + robots.ts)
+Last session: 2026-03-27T16:19:08.606Z
+Stopped at: Completed 04-01-PLAN.md (OG Metadata + metadataBase)
 Resume file: None
