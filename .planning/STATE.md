@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Completed 03-03-PLAN.md (PluginShowcase + Pricing + homepage)"
-last_updated: "2026-03-26T21:10:00.000Z"
-last_activity: 2026-03-26 -- Phase 03 P03 complete
+status: verifying
+stopped_at: Completed 04-02-PLAN.md (sitemap.ts + robots.ts)
+last_updated: "2026-03-27T16:17:02.148Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 6
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 9
   percent: 75
 ---
 
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 Phase: 03 (marketing-content) — EXECUTING
 Plan: 4 of 3 (P03 complete)
-Status: Executing Phase 03 — P01, P02, P03 done
-Last activity: 2026-03-26 -- Phase 03 P03 complete
+Status: Phase complete — ready for verification
+Last activity: 2026-03-27
 
 Progress: [███████░░░] 75%
 
@@ -57,6 +57,7 @@ Progress: [███████░░░] 75%
 | Phase 02-rgpd-compliance P03 | 2 | 2 tasks | 5 files |
 | Phase 02-rgpd-compliance P02 | 25 | 3 tasks | 5 files |
 | Phase 03-marketing-content P03 | ~10 | 2 tasks | 3 files |
+| Phase 04-seo-performance P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,7 @@ Recent decisions affecting current work:
 - [Phase 02-rgpd-compliance]: useActionState from react (not useFormState from react-dom) established as pattern for Server Action form wiring
 - [Phase 03-marketing-content]: page.tsx delegates getTranslations to each section component — page itself only calls setRequestLocale
 - [Phase 03-marketing-content]: Plugin icon data and category grouping defined inline in PluginShowcase.tsx (no separate data file)
+- [Phase 04-seo-performance]: localePrefix:always confirmed in routing.ts — sitemap and robots both use explicit /fr/ and /en/ locale prefixes in all URLs
 
 ### Pending Todos
 
@@ -95,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T21:10:00.000Z
-Stopped at: Completed 03-03-PLAN.md (PluginShowcase + Pricing + homepage)
-Resume file: .planning/phases/03-marketing-content/03-03-SUMMARY.md
+Last session: 2026-03-27T16:17:02.143Z
+Stopped at: Completed 04-02-PLAN.md (sitemap.ts + robots.ts)
+Resume file: None
