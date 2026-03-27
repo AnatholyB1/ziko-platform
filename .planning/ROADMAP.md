@@ -94,7 +94,7 @@ Plans:
   3. A decision on analytics has been made and acted on (Plausible installed cookieless, or analytics explicitly deferred)
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md — Hero screenshot swap + Plausible Analytics script installation
+- [x] 05-01-PLAN.md — Hero screenshot swap + Plausible Analytics script installation
 - [ ] 05-02-PLAN.md — Deploy, custom domain, live verification, and Google Search Console submission
 **UI hint**: no
 
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. RGPD Compliance | 2/3 | In Progress|  |
 | 3. Marketing Content | 0/3 | Not started | - |
 | 4. SEO + Performance | 3/3 | Complete   | 2026-03-27 |
-| 5. Launch | 0/2 | Not started | - |
+| 5. Launch | 1/2 | In Progress|  |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
