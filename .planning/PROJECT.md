@@ -38,13 +38,19 @@ A potential user lands on the site and understands what Ziko does, feels compell
 - [x] Politique de confidentialité — Anthropic named as AI data processor, health/GPS/AI data documented (Validated in Phase 2: rgpd-compliance)
 - [x] CGU — AI health liability disclaimer, French law applicable (Validated in Phase 2: rgpd-compliance)
 
+### Validated (continued)
+
+- [x] Hero section with real app screenshot and download CTAs — App Store / Play Store stubs visible (Validated in Phase 3: hero-features)
+- [x] Features showcase presenting all 17 plugins with icons and descriptions (Validated in Phase 3: hero-features)
+- [x] Pricing section — free tier with "Download free" CTA (Validated in Phase 3: hero-features)
+- [x] OG metadata with metadataBase + generateMetadata on all pages (Validated in Phase 4: seo-perf)
+- [x] Deployed on Vercel at https://ziko-app.com — custom domain, HTTPS, all routes static (Validated in Phase 5: launch)
+- [x] Plausible cookieless analytics active — no cookie banner required (Validated in Phase 5: launch)
+- [x] Google Search Console sitemap submitted — site discoverable by Google (Validated in Phase 5: launch)
+
 ### Active
 
-**Landing Page (Milestone 1)**
-- [ ] Hero section with app screenshots and download CTA (App Store / Play Store links)
-- [ ] Features showcase presenting all major app capabilities (17 plugins)
-- [ ] Pricing section — free tier with "Download free" CTA (no paid tier yet)
-- [ ] Deployed on Vercel, custom domain ready
+**Coach Platform (Milestone 2 — future)**
 
 **Coach Platform (Milestone 2 — future)**
 - [ ] Authenticated `/coach` section (ERP/CRM for coaches)
@@ -102,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 — Phase 2 complete: RGPD compliance delivered*
+*Last updated: 2026-03-27 — Phase 5 complete: v1.0 milestone shipped — site live at https://ziko-app.com*
