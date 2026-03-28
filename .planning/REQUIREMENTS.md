@@ -1,12 +1,13 @@
-# Requirements: Ziko Web
+# Requirements: Ziko Platform
 
-**Defined:** 2026-03-26
-**Core Value:** A potential user lands on the site and understands what Ziko does, feels compelled to download the app, and trusts it enough to create an account.
+**Defined:** 2026-03-26 (v1.0 web) · Updated: 2026-03-28 (v1.1 mobile)
+**Core Value (v1.1):** A fitness user has a single app that coaches them, tracks everything, and tells them what to cook based on what's in their kitchen.
 
-## v1 Requirements
+---
+
+## v1.0 Requirements — Ziko Web (all validated)
 
 ### Foundation
-
 - [x] **FOUND-01**: Project is bootstrapped as standalone Next.js 15 App Router repo with Tailwind v4 and TypeScript
 - [x] **FOUND-02**: FR/EN i18n routing works via next-intl v4 — French is default (clean URLs), English uses `/en/` prefix
 - [x] **FOUND-03**: Ziko design tokens (primary `#FF5C1A`, bg `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`) applied globally via Tailwind v4 `@theme` directive
@@ -16,92 +17,80 @@
 - [x] **FOUND-07**: Footer visible on every page with links to all 3 legal pages (LCEN requirement)
 
 ### Marketing
+- [x] **MKTG-01**: Hero section displays headline, app screenshot in device frame, and App Store + Play Store CTA buttons in Ziko orange
+- [x] **MKTG-02**: Features showcase presents all 17 plugins with icons and bilingual descriptions
+- [x] **MKTG-03**: Pricing section presents free tier with a single prominent "Download free" CTA
 
-- [ ] **MKTG-01**: Hero section displays headline, app screenshot in device frame, and App Store + Play Store CTA buttons in Ziko orange
-- [ ] **MKTG-02**: Plugin showcase groups all 17 plugins into 4–5 categories with icon, name, and 1-sentence description per plugin (in both FR and EN)
-- [ ] **MKTG-03**: Pricing section shows free tier card with "Download free" CTA
+### RGPD
+- [x] **RGPD-01**: Self-service account deletion — IP rate-limited server action, anti-enumeration, high-friction UX
+- [x] **RGPD-02**: Mentions légales — LCEN-compliant, BRICON Anatholy as publication director, Vercel hosting
+- [x] **RGPD-03**: Politique de confidentialité — Anthropic named as AI data processor, health/GPS/AI data documented
+- [x] **RGPD-04**: CGU — AI health liability disclaimer, French law applicable
 
-### RGPD & Legal
+### SEO & Launch
+- [x] **SEO-01**: OG metadata with metadataBase + generateMetadata on all pages
+- [x] **SEO-02**: Deployed on Vercel at https://ziko-app.com — custom domain, HTTPS, all routes static
+- [x] **SEO-03**: Plausible cookieless analytics active — no cookie banner required
+- [x] **SEO-04**: Google Search Console sitemap submitted — site discoverable by Google
 
-- [x] **RGPD-01**: User can enter their email to request account deletion and receive a success response (RGPD Art. 17)
-- [x] **RGPD-02**: Account deletion is processed server-side via Supabase admin API — service role key never in client bundle
-- [x] **RGPD-03**: Deletion action is rate-limited per IP (prevents account enumeration abuse)
-- [x] **RGPD-04**: Mentions légales page is live with all legally-required fields (legal entity, SIRET, address, publication director, hosting provider details)
-- [x] **RGPD-05**: Politique de confidentialité page documents all personal data processing (health data, GPS, AI coaching — with Anthropic named as a data processor)
-- [x] **RGPD-06**: CGU page documents terms of use and AI health advice liability disclaimer
+---
 
-### SEO & Performance
+## v1.1 Requirements — Smart Pantry Plugin (mobile app)
 
-- [x] **SEO-01**: `metadataBase` is set to production domain — OG images and canonical URLs use production URLs, not Vercel preview URLs
-- [x] **SEO-02**: `next build` output shows all `[locale]/*` routes as `○` (static), not `ƒ` (dynamic)
-- [x] **SEO-03**: Sitemap and `robots.txt` are auto-generated and accessible at `/sitemap.xml` and `/robots.txt`
-- [x] **SEO-04**: Hero image uses `next/image` with `priority` and correct `sizes` prop; Core Web Vitals pass Lighthouse audit on production URL
+### Smart Inventory (PANTRY)
 
-## v2 Requirements
+- [ ] **PANTRY-01**: User can add a pantry item with name, quantity, unit (g / ml / pieces), category, and optional expiration date
+- [ ] **PANTRY-02**: User can edit any field of an existing pantry item inline
+- [ ] **PANTRY-03**: User can delete a pantry item with a confirmation prompt
+- [ ] **PANTRY-04**: User can set a low-stock threshold per item (when qty ≤ threshold, item flags as low-stock)
+- [ ] **PANTRY-05**: User can scan a product barcode to auto-fill item name from Open Food Facts API (manual entry fallback always available)
+- [ ] **PANTRY-06**: User can view all pantry items grouped by category, with low-stock items visually flagged
 
-### Coach Platform
+### AI Recipe Suggestions (RECIPE)
 
-- **COACH-01**: Authenticated `/coach` section accessible via Supabase session
-- **COACH-02**: Coach dashboard with overview of assigned clients
-- **COACH-03**: Client management — view client profiles, workout history, AI coaching logs
-- **COACH-04**: Session tracking — log and review coaching sessions
+- [ ] **RECIPE-01**: User can request AI recipe suggestions based on available pantry items
+- [ ] **RECIPE-02**: User can request macro-gap-filling recipe suggestions based on remaining daily macros + pantry contents
+- [ ] **RECIPE-03**: User can view a suggested recipe's full details — ingredients with quantities, macro breakdown (calories / protein / carbs / fat), and cooking steps
+- [ ] **RECIPE-04**: User can adjust serving size of a suggested recipe and see recalculated macros before logging
 
-### Analytics
+### Calorie Tracker Sync (SYNC)
 
-- **ANLT-01**: Privacy-first analytics (Plausible recommended) with no cookie consent banner required
-- **ANLT-02**: Conversion tracking on App Store / Play Store CTA clicks
+- [ ] **SYNC-01**: User can confirm a cooked recipe to auto-log its macros to the nutrition plugin
+- [ ] **SYNC-02**: User can edit any macro value and the meal_type (breakfast / lunch / dinner / snack) before confirming sync
+- [ ] **SYNC-03**: Pantry item quantities are decremented for used ingredients when a recipe is confirmed as cooked
 
-### Social Proof
+### Smart Shopping List (SHOP)
 
-- **SOCL-01**: Testimonials section with real user reviews
-- **SOCL-02**: App Store / Play Store rating badges
+- [ ] **SHOP-01**: User can view a rule-based shopping list auto-generated from low/out-of-stock pantry items
+- [ ] **SHOP-02**: User can add missing recipe ingredients to the shopping list in one tap from the recipe detail screen
+- [ ] **SHOP-03**: User can check off shopping list items as purchased; checking off auto-restores pantry quantity to threshold
+- [ ] **SHOP-04**: User can export the shopping list via the native share sheet (plain text)
+
+---
+
+## Future Requirements (deferred from v1.1)
+
+- Saved recipe library — persist AI-suggested recipes for later (v1.2)
+- Recipe history — log of all cooked recipes with dates
+- Meal planning calendar — plan recipes per day of week
+- Cross-device shopping list sync (currently MMKV local only)
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Blog / content marketing | Static content for v1; high ongoing maintenance cost with low immediate ROI |
-| Dark mode | Ziko light sport theme only — no dark mode by design |
-| Individual plugin landing pages | High content work; SEO benefit is long-term, not needed for launch |
-| Interactive AI coaching demo | Significant engineering investment; marketing site, not product demo |
-| Cookie consent banner | Only needed if cookie-based analytics added; Plausible sidesteps this entirely |
-| Backend API changes (Hono) | Account deletion calls Supabase directly; Hono API untouched in Milestone 1 |
-| Native mobile integration | Marketing site only — no deep links or SDK integration |
-| Framer Motion animations | 40+ KB bundle cost on a 5-page marketing site; CSS transitions are sufficient |
-| `@supabase/ssr` package | Only needed for Milestone 2 coach CRM (cookie-based user sessions); overkill for marketing site |
+- AI-generated shopping list — user explicitly chose rule-based
+- Recipe database integration (MealDB, Edamam, etc.) — Claude handles suggestions
+- Per-ingredient nutritional analysis beyond what Open Food Facts returns
+- Dark mode — matches Ziko light sport theme only
+
+---
 
 ## Traceability
 
-Populated by roadmapper. Each requirement maps to exactly one phase.
+*Filled by roadmapper.*
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| FOUND-01 | Phase 1 | Complete |
-| FOUND-02 | Phase 1 | Complete |
-| FOUND-03 | Phase 1 | Complete |
-| FOUND-04 | Phase 1 | Complete |
-| FOUND-05 | Phase 1 | Complete |
-| FOUND-06 | Phase 1 | Complete |
-| FOUND-07 | Phase 1 | Complete |
-| MKTG-01 | Phase 3 | Pending |
-| MKTG-02 | Phase 3 | Pending |
-| MKTG-03 | Phase 3 | Pending |
-| RGPD-01 | Phase 2 | Complete |
-| RGPD-02 | Phase 2 | Complete |
-| RGPD-03 | Phase 2 | Complete |
-| RGPD-04 | Phase 2 | Complete |
-| RGPD-05 | Phase 2 | Complete |
-| RGPD-06 | Phase 2 | Complete |
-| SEO-01 | Phase 4 | Complete |
-| SEO-02 | Phase 4 | Complete |
-| SEO-03 | Phase 4 | Complete |
-| SEO-04 | Phase 4 | Complete |
-
-**Coverage:**
-- v1 requirements: 20 total
-- Mapped to phases: 20 (roadmap complete)
-- Unmapped: 0 ✓
-
----
-*Requirements defined: 2026-03-26*
-*Last updated: 2026-03-26 — traceability populated by roadmapper*
+| REQ-ID | Phase |
+|--------|-------|
+| PANTRY-01–06 | — |
+| RECIPE-01–04 | — |
+| SYNC-01–03 | — |
+| SHOP-01–04 | — |
