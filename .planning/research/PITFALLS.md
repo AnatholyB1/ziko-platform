@@ -1,407 +1,325 @@
-# Pitfalls Research
+# Domain Pitfalls: Smart Pantry Plugin
 
-**Domain:** Next.js 14 App Router marketing site — next-intl i18n, Supabase server actions, French legal (RGPD/CNIL), Vercel deployment
-**Researched:** 2026-03-26
-**Confidence:** HIGH (verified against official docs, Vercel blog, next-intl docs, CNIL guidance)
-
----
-
-## Critical Pitfalls
-
-### Pitfall 1: Service Role Key Leaking Into the Client Bundle
-
-**What goes wrong:**
-The Supabase admin client (initialized with `SUPABASE_SERVICE_ROLE_KEY`) ends up in the client JavaScript bundle. This gives anyone who visits the site full superuser access to the database — equivalent to leaking root credentials.
-
-**Why it happens:**
-A developer imports the admin client utility in a file that also contains a `'use client'` directive, or the utility file gets imported transitively through a component tree that eventually renders on the client. Without an explicit guard, Next.js will happily bundle the import.
-
-**How to avoid:**
-Add `import 'server-only'` at the top of any file that initializes the Supabase admin client. This causes a build-time error if the module is ever imported in a client context.
-
-```typescript
-// lib/supabase-admin.ts
-import 'server-only'
-import { createClient } from '@supabase/supabase-js'
-
-export const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-```
-
-Never prefix `SUPABASE_SERVICE_ROLE_KEY` with `NEXT_PUBLIC_`. Verify this is absent from the Vercel environment variable list under the "Client" scope.
-
-**Warning signs:**
-- Searching the built `.next/` directory for the service role key value reveals it in static files
-- The key appears in browser DevTools under Network > Response or Sources
-- Environment variable is accidentally named `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`
-
-**Phase to address:** Phase 1 (project setup, before any Supabase integration)
+**Domain:** Pantry inventory + AI recipes + calorie sync + shopping list added to an existing Expo SDK 54 / React Native fitness app with 17 plugins and a Supabase backend
+**Researched:** 2026-03-28
+**Confidence:** HIGH — based on direct codebase inspection of `plugins/nutrition/`, `backend/api/src/tools/`, `supabase/migrations/`, `apps/mobile/src/lib/PluginLoader.tsx`, and the existing plugin registration and RLS patterns
 
 ---
 
-### Pitfall 2: Server Action for Account Deletion Has No Authentication or Rate Limiting
+## Summary
 
-**What goes wrong:**
-The account deletion server action calls `supabaseAdmin.auth.deleteUser(userId)` but does not verify the requesting user's identity. An attacker who guesses or enumerates user IDs can delete anyone's account by calling the action directly (server actions are public HTTP endpoints).
+The pantry plugin is a tight integration of four sub-systems that each carry distinct failure modes. The most dangerous risks are not in any single sub-system but at the seams between them.
 
-**Why it happens:**
-Developers assume the action is only accessible from an authenticated page, so they skip the auth check inside the action itself. Server actions look like internal functions but are exposed as POST endpoints that can be called independently.
+The plugin writes to `nutrition_logs` (owned by the nutrition plugin) via an AI tool chain. This cross-plugin write is architecturally correct — `nutrition_log_meal` already exists and is callable by any registered tool — but it creates user-visible duplicate logging if the pantry UI and the AI agent both fire the write for the same recipe.
 
-**How to avoid:**
-Inside the deletion server action:
-1. Accept the user's email as the form input, never a raw user ID
-2. Verify the user's email exists in Supabase auth — do not trust the submitted email to derive a user ID directly
-3. Consider adding a second confirmation step (e.g., email the user a one-time token before deletion)
-4. Add rate limiting by IP address — use Vercel KV + `@upstash/ratelimit` or middleware-level rate limiting
+Pantry quantities live in a Zustand store. Any mutation (auto-decrement on cook, manual edit, shopping list restock) that is not immediately committed to Supabase creates a stale-state divergence the next time the app cold-starts.
 
-```typescript
-// app/actions/delete-account.ts
-'use server'
-import 'server-only'
+The AI recipe suggestion tool must call `nutrition_get_today` to read today's remaining macros. That tool is already registered in `registry.ts` and works correctly. The trap is that this consumes one of the orchestrator agent's five allowed tool-call steps, narrowing the budget for pantry-specific tool calls.
 
-export async function deleteAccount(formData: FormData) {
-  // Rate limit by IP before anything else
-  const ip = headers().get('x-forwarded-for') ?? 'anonymous'
-  const { success } = await rateLimiter.limit(ip)
-  if (!success) throw new Error('Too many requests')
+Shopping list state is inherently ephemeral if treated only as derived AI output. Without a `shopping_list_items` table or MMKV persistence, list state is lost on process termination and cannot be shared or exported.
 
-  const email = formData.get('email') as string
-  // Validate with Zod, look up user by email, then delete
-}
-```
-
-**Warning signs:**
-- Action accepts a `userId` directly from form data
-- No rate limiter imported in the action file
-- Zod or similar validation is absent from the action
-
-**Phase to address:** Phase 2 (account deletion feature implementation)
+Plugin registration has three hard-coded touch points in this codebase: `PLUGIN_LOADERS` in `PluginLoader.tsx`, the Supabase migration file, and `registry.ts` in the backend. Missing any one of them produces a silent, difficult-to-debug failure.
 
 ---
 
-### Pitfall 3: next-intl `useTranslations` Called in Async Server Components
-
-**What goes wrong:**
-React hooks cannot be called inside async functions. When a server component is async (needed to `await` data fetching), calling `useTranslations()` throws a runtime error: `"useTranslations is not callable within an async component"`.
-
-**Why it happens:**
-Developers use `useTranslations` universally without knowing that next-intl provides a separate async API for server components. The docs mention this, but it is easy to miss when starting from examples.
-
-**How to avoid:**
-Use `getTranslations` (async) from `'next-intl/server'` in async server components. Use `useTranslations` (hook) only in sync server components and client components.
-
-```typescript
-// Async server component — correct
-import { getTranslations } from 'next-intl/server'
-
-export default async function HeroSection() {
-  const t = await getTranslations('Hero')
-  const data = await fetchSomeData()
-  return <h1>{t('title')}</h1>
-}
-
-// Sync server component or client component — correct
-import { useTranslations } from 'next-intl'
-
-export function NavBar() {
-  const t = useTranslations('Nav')
-  return <nav>{t('home')}</nav>
-}
-```
-
-**Warning signs:**
-- Build or runtime error: "useTranslations is not callable within an async component"
-- Mixing `await` and `useTranslations` in the same component function
-
-**Phase to address:** Phase 1 (i18n setup, establish component patterns)
+## Pitfalls by Category
 
 ---
 
-### Pitfall 4: `setRequestLocale` Missing in Static Pages — Dynamic Rendering Forced
+### Category 1: Pantry Inventory — Mobile State and Persistence
 
-**What goes wrong:**
-Without calling `setRequestLocale(locale)` at the top of every `[locale]/layout.tsx` and `[locale]/page.tsx`, next-intl opts every page into dynamic rendering. The entire marketing site — which should be statically generated — becomes dynamically rendered on every request, causing slow TTFB and Vercel function invocations for every page load.
+#### Pitfall 1.1 — Zustand Store Not Re-hydrated on Cold Start
 
-**Why it happens:**
-The next-intl docs explain this requirement, but it is a non-obvious extra call. Developers set up routing and translations correctly but forget this step, and the site appears to work fine in development (dev mode is always dynamic).
+**What goes wrong:** The pantry Zustand store is populated on first mount but never re-fetched on subsequent cold starts unless an explicit `loadPantryItems(supabase)` call is wired into the screen's `useEffect`. Every existing plugin that holds server state requires this manual wiring (e.g. `useNutritionStore.loadTDEEProfile` in `NutritionDashboard.tsx`). Without it, the user opens the app and sees stale or empty inventory.
 
-**How to avoid:**
-Call `setRequestLocale(locale)` as the very first line in every layout and page that receives locale from params. Also add `generateStaticParams` to the root locale layout.
+**Why it happens:** Zustand has no automatic Supabase persistence. `react-native-mmkv` persists lightweight sync state but not async server state. There is no `@ziko/plugin-sdk` hook that auto-fetches plugin-specific tables.
 
-```typescript
-// app/[locale]/layout.tsx
-import { setRequestLocale } from 'next-intl/server'
-import { routing } from '@/i18n/routing'
+**Prevention:**
+- In `PantryDashboard.tsx`, wire `useEffect(() => { loadPantryItems(supabase); }, [user?.id])` unconditionally on mount — identical to the pattern in `NutritionDashboard.tsx`.
+- Guard the UI with an `isLoading` flag in the store so the first render never shows a stale zero-state as if the pantry is empty.
 
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }))
-}
-
-export default function LocaleLayout({ children, params: { locale } }) {
-  setRequestLocale(locale)
-  return <>{children}</>
-}
-```
-
-**Warning signs:**
-- Vercel function invocations spike for static marketing pages
-- `next build` output shows all `[locale]/*` routes as `ƒ` (dynamic) instead of `○` (static)
-- No `generateStaticParams` in the locale layout
-
-**Phase to address:** Phase 1 (i18n setup)
+**Phase:** Phase 1 (Smart Inventory foundation).
 
 ---
 
-### Pitfall 5: Missing `metadataBase` Causes Wrong og:image URLs in Production
+#### Pitfall 1.2 — Fractional Quantity Precision Drift
 
-**What goes wrong:**
-Social sharing (Twitter, Facebook, WhatsApp, Slack previews) shows a broken image or Vercel's auto-generated preview URL instead of the production domain image. OG cards fail to render app screenshots.
+**What goes wrong:** Pantry quantities span grams, milliliters, and piece counts. If the `quantity` column is stored as `INTEGER` (the simpler migration path used by some existing tables), then decrementing 250g from a 500g item passes through JavaScript floating-point arithmetic and may produce `249.9999...` before the insert. Over multiple cook-and-decrement cycles, cumulative rounding error becomes user-visible (e.g. "Chicken breast: 0.0003g remaining").
 
-**Why it happens:**
-When `metadataBase` is not set, Next.js uses `VERCEL_URL` (which looks like `project-name-xyz.vercel.app`) to resolve relative OG image paths. This URL changes per deployment and is not the production domain.
+**Why it happens:** The existing `nutrition_logs` migration uses `NUMERIC(6,1)` for gram values, but other tables (e.g. `habit_logs`) use `INTEGER` for counts. A developer writing the pantry migration by memory may default to `INTEGER`.
 
-**How to avoid:**
-Set `metadataBase` in the root layout using an environment variable for the production domain.
+**Prevention:**
+- Define `quantity NUMERIC(8,2)` in the `pantry_items` migration — not `INTEGER`. This matches kitchen measurement grain (e.g. 1.5 tbsp, 250.00 ml).
+- In all decrement operations, apply `Math.round(qty * 100) / 100` before writing to the store or Supabase. Never use raw floating-point subtraction.
 
-```typescript
-// app/[locale]/layout.tsx
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? `https://${process.env.VERCEL_URL}`
-  ),
-}
-```
-
-Set `NEXT_PUBLIC_SITE_URL=https://ziko.app` (or whatever the production domain is) in Vercel's production environment scope. Leave it unset in preview deployments so they use `VERCEL_URL` automatically.
-
-**Warning signs:**
-- Next.js build warning: "metadata.metadataBase is not set for resolving social open graph or twitter images"
-- Sharing a page link on Slack shows the preview Vercel URL image, not the production image
-- Running the Facebook Sharing Debugger shows wrong image URL
-
-**Phase to address:** Phase 2 (SEO and metadata setup)
+**Phase:** Phase 1 (Supabase migration column type decision).
 
 ---
 
-### Pitfall 6: RGPD Cookie Consent Banner Missing "Reject All" at the Same Level as "Accept All"
+#### Pitfall 1.3 — Optimistic UI Decrement Without Rollback on Supabase Failure
 
-**What goes wrong:**
-The CNIL (France's data protection authority) requires a "Reject All" button to appear at the same prominence as "Accept All" in the cookie consent banner. Sites that bury the reject option behind a "Manage preferences" click have been fined by the CNIL. A December 2024 enforcement update explicitly prohibits dark patterns that discourage rejection.
+**What goes wrong:** When the user confirms a cooked recipe, the pantry screen immediately decrements quantities in the Zustand store (optimistic update), but the Supabase write then fails silently. The store shows lower quantities than the database. On the next cold start, the Supabase fetch restores the pre-decrement values and the quantities jump back up, confusing the user.
 
-**Why it happens:**
-Many cookie consent widget libraries and templates default to a two-step flow (accept is one click, reject requires entering preferences). Developers ship what the library gives them by default.
+**Why it happens:** Optimistic updates ("update store, then persist") are appropriate for append operations (adding a log entry) but not for in-place mutations of existing quantity fields, where drift between local and remote state is not self-correcting.
 
-**How to avoid:**
-Use a consent library that exposes a first-level "Reject All" button alongside "Accept All". Verify in the banner's visual output that both buttons are at the same click depth. If using a custom implementation, both buttons must be present in the initial banner — not in a second modal.
+**Prevention:**
+- Await the Supabase write before updating the Zustand store for quantity mutations.
+- Pattern: `const { error } = await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', id).eq('user_id', userId); if (!error) store.decrementItem(id, qty);`
+- Show a brief loading indicator on the confirm-cooked button so the user understands a write is in progress.
 
-For a static marketing site with no analytics trackers yet, the safest CNIL-compliant approach is: no non-essential cookies → no cookie banner required. Only add a banner when third-party analytics (Google Analytics, etc.) are added.
-
-**Warning signs:**
-- Cookie banner only shows "Accept" and "Preferences" — reject requires two clicks
-- Any Google Analytics or Meta Pixel script loads before consent
-- `document.cookie` in the browser console shows analytics cookies before the user has accepted
-
-**Phase to address:** Phase 1 (if any analytics are added from the start); before launch for any third-party scripts
+**Phase:** Phase 1 (inventory decrement on cook, reinforced in Phase 3).
 
 ---
 
-### Pitfall 7: Mentions Légales Page Missing Mandatory Content
+#### Pitfall 1.4 — Expiration Date Timezone Mismatch
 
-**What goes wrong:**
-The mentions légales page is incomplete. French law (Loi pour la Confiance dans l'Économie Numérique, LCEN) requires specific information. Missing content exposes the site operator to a fine of up to €75,000 and 1 year imprisonment for individuals.
+**What goes wrong:** Expiration dates are entered by the user in local calendar time but `new Date().toISOString().split('T')[0]` returns the UTC date. A user in UTC+2 entering "expires tomorrow" at 11pm stores today's UTC date. The expired/low-stock alert fires a calendar day early.
 
-**Why it happens:**
-Developers copy a generic mentions légales template that covers some fields but miss others, or the entity details (SIREN, registered address, hosting provider details) are left as placeholders.
+**Why it happens:** The existing `nutrition_logs` table uses `DEFAULT CURRENT_DATE` (server UTC), which is acceptable for meal logging. That same pattern, copied without adjustment to expiration tracking, breaks when user intent is a local calendar date.
 
-**How to avoid:**
-The mentions légales page must include all of the following:
-- Publisher identity: full legal name, address, company form (SARL, SAS, auto-entrepreneur, etc.)
-- SIREN/SIRET number if a registered business
-- Contact email or phone
-- Name and address of the hosting provider (in this case: Vercel Inc., 340 Pine Street Suite 601, San Francisco, CA 94104, USA)
-- Publication director name
-- If collecting personal data: link to the politique de confidentialité and CNIL registration number if applicable
+**Prevention:**
+- Derive expiration dates from local calendar using `new Date().toLocaleDateString('en-CA')`, which returns `YYYY-MM-DD` in the device's local timezone.
+- For expiration comparison queries, compare `expiration_date` against the same local-date string, not a UTC timestamp.
 
-Additionally, the French language law (Loi Toubon) requires all written content directed at a French audience to be in French — including legal pages. The site can offer English, but French must be available and default.
-
-**Warning signs:**
-- Hosting provider details show "À compléter" or similar placeholder text
-- Company registration number (SIREN) is absent or generic
-- The page was generated from a template with unfilled brackets like `[NOM]` or `[SIRET]`
-- No publication director named
-
-**Phase to address:** Phase 2 (legal pages implementation), must be verified before launch
+**Phase:** Phase 1 (add-item form + migration default).
 
 ---
 
-### Pitfall 8: Middleware Matcher Misses Routes With Dots — next-intl Locale Detection Breaks
+### Category 2: AI Recipe Suggestions — Cross-Plugin Data Access
 
-**What goes wrong:**
-Routes containing a dot in the URL segment (e.g., `/sitemap.xml`, `/robots.txt`, static asset paths like `/_next/static/...`) do not pass through the next-intl middleware by default. If the matcher is too broad, it can cause errors on static file requests. If it is too narrow, legitimate pages with dots in slugs silently skip locale detection.
+#### Pitfall 2.1 — Tool-Call Step Budget Exhausted Before Response
 
-**Why it happens:**
-The default next-intl middleware matcher pattern `/((?!_next|[^?]*\\.(?:...))).*` is subtle and easy to get wrong. Developers copy partial examples or modify the matcher without understanding the dot-extension exclusion regex.
+**What goes wrong:** The recipe suggestion flow requires at minimum three tool calls: `pantry_get_items`, `nutrition_get_today` (to read remaining daily macros), and `pantry_suggest_recipes`. The orchestrator agent in `backend/api/src/routes/ai.ts` uses `stopWhen: stepCountIs(5)`. If a follow-up clarification or navigation tool call is also needed, the agent hits the limit and stops mid-response before confirming results to the user.
 
-**How to avoid:**
-Use the exact matcher from the next-intl documentation without modification, and test with `next.config.ts` path inspection to confirm static file requests are excluded.
+**Why it happens:** `stopWhen: stepCountIs(5)` is a global constraint shared by all tools. Recipe suggestions are inherently multi-step and consume more budget than simpler tools (habit logging, hydration logging) that were the baseline when 5 steps was chosen.
 
-```typescript
-// middleware.ts
-export const config = {
-  matcher: [
-    // Match all pathnames except for
-    // - … if they start with `/api`, `/_next` or `/_vercel`
-    // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api|_next|_vercel|.*\\..*).*)'
-  ]
-}
-```
+**Prevention:**
+- Pre-fetch today's macro summary and inject it into the AI system prompt for the pantry context block, following the same pattern as `fetchUserContext` in `backend/api/src/context/user.ts`. This eliminates the `nutrition_get_today` call from the live agent loop, freeing one step.
+- Alternatively, design `pantry_suggest_recipes` to accept optional `remaining_calories` and `remaining_protein_g` parameters, so the calling client (or a pre-call context fetch) can pass current macro state and skip the inter-tool call.
+- Do not increase `stopWhen` globally — that affects all agent turns, not just pantry.
 
-Never run next-intl middleware on `/api/*` routes — this will interfere with any future API routes and causes unnecessary overhead.
-
-**Warning signs:**
-- `/favicon.ico` returns a redirect to `/fr/favicon.ico`
-- `/_next/static/` assets are being processed through the middleware (visible in server logs)
-- Any route ending in a file extension returns a 404 or redirect loop
-
-**Phase to address:** Phase 1 (i18n setup)
+**Phase:** Phase 2 (pantry tool design in `backend/api/src/tools/pantry.ts`).
 
 ---
 
-## Technical Debt Patterns
+#### Pitfall 2.2 — AI Macro Estimates Logged With False Precision
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Hardcode French as default locale without proper routing | Faster initial setup | Broken English routes, rewrite needed when `/en/` is added | Never — set up `[locale]` routing from day one |
-| Use `any` for Supabase query return types | Skip writing types | Silent runtime errors when schema changes | Never — use generated Supabase types |
-| Skip `setRequestLocale` and accept dynamic rendering | No extra boilerplate | Every marketing page hits a serverless function on load | Only acceptable in dev/prototype; fix before production |
-| Put legal page content directly in JSX as hardcoded text | Simple to write | No i18n, can't update without code deploy | Acceptable for v1 if French-only initially |
-| Inline Supabase admin credentials in server action directly | One less file | Violates single responsibility, risky if file later moved | Never |
-| Use `console.log` for delete action debugging | Easy troubleshooting | Risk of logging user emails or IDs in Vercel log streams | Never in production — use structured, non-PII logging |
+**What goes wrong:** The AI generates a recipe with macro estimates (calories, protein_g, carbs_g, fat_g) for the `nutrition_log_meal` call. Claude's estimates for arbitrary home-cooked recipes carry ±20–30% error. The user confirms cooking, the macros are logged with false precision, and over time their nutrition tracking becomes unreliable — especially for users managing fat loss or muscle gain goals.
 
----
+**Why it happens:** The AI does not have access to a food composition database. It generates plausible-sounding macro values from training data, not from measured ingredient weights.
 
-## Integration Gotchas
+**Prevention:**
+- In the confirm-cooked screen, display macro values as editable number fields, not read-only display text. The user must be able to adjust before logging.
+- Set `food_name` to something like `"[Pantry] Chicken stir-fry (est.)"` in the `nutrition_log_meal` call, so the user can identify AI-originated entries in their Nutrition dashboard and knows to review them.
+- Add to `pantry` plugin's `aiSystemPromptAddition`: "When providing recipe macros, explicitly state these are estimates and encourage the user to adjust portions before confirming."
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| next-intl + App Router | Calling `useTranslations` in async server components | Use `getTranslations` from `'next-intl/server'` in async components |
-| next-intl + App Router | Forgetting `setRequestLocale` in every layout and page | Call `setRequestLocale(locale)` as the first statement in each route segment |
-| next-intl + App Router | Not wrapping root layout children with `NextIntlClientProvider` | Wrap in root layout so client components can access translations |
-| next-intl + Vercel | `createNextIntlPlugin()` omitted from `next.config.ts` | Always wrap the config export: `export default createNextIntlPlugin()(nextConfig)` |
-| Supabase admin + Server Actions | Admin client initialized outside `'use server'` file | Always create the admin client inside a file with `import 'server-only'` |
-| Supabase admin + Server Actions | Accepting user-submitted `userId` to delete | Look up user by email on the server side; never trust client-submitted IDs |
-| Vercel + env vars | `NEXT_PUBLIC_` variable added to Vercel dashboard after build | `NEXT_PUBLIC_` vars are baked in at build time — must redeploy after adding |
-| Vercel + env vars | Setting service role key in wrong environment scope | Ensure `SUPABASE_SERVICE_ROLE_KEY` has no `NEXT_PUBLIC_` prefix and is scoped to "Server" only |
-| Next.js Metadata + Vercel | Relative og:image paths without `metadataBase` set | Set `metadataBase` using `NEXT_PUBLIC_SITE_URL` env var pointing to production domain |
-| Next.js Image + marketing | Using `fill` layout without a constrained parent height | Always provide explicit `height`/`width` or a sized parent for `fill` to prevent CLS |
+**Phase:** Phase 3 (confirm-cooked UI in Phase 3; tool prompt in Phase 2).
 
 ---
 
-## Performance Traps
+#### Pitfall 2.3 — `pantry_suggest_recipes` Blurs "Have" vs. "Need" Ingredients
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Forced dynamic rendering due to missing `setRequestLocale` | High TTFB on all pages, Vercel functions invoked per page load | Add `setRequestLocale` + `generateStaticParams` to all `[locale]` routes | Immediately visible in Vercel function usage dashboard |
-| `next/image` with wrong or missing `sizes` prop | Desktop images downloaded on mobile (4-10x larger than needed), LCP regression | Always set `sizes` to match the CSS layout width (`"100vw"` for full-width, `"(max-width: 768px) 100vw, 50vw"` for responsive) | Noticeable at real mobile traffic volume |
-| App screenshots loaded as unoptimized PNGs without `priority` on hero | LCP of 4-6s because hero image is not preloaded | Add `priority` prop to the primary above-the-fold hero image | Every page load |
-| Unnecessary Client Components (`'use client'` on static content components) | Larger JS bundle, slower TTI for a mostly-static marketing site | Default to Server Components; only add `'use client'` when using state, effects, or browser APIs | As component count grows |
-| Defining Server Actions inside Client Component render functions | Action captures variables in closure and may serialize env vars into the bundle | Always define server actions in separate `'use server'` files | Immediately — build-time or security concern |
+**What goes wrong:** The AI is instructed to suggest recipes based on available pantry items, but it also returns recipes that require 1–2 additional ingredients the user does not have. Without an explicit output schema enforcing the distinction, the AI conflates "you have most of what you need" with "you can make this," and the user starts cooking only to discover a missing key ingredient.
 
----
+**Why it happens:** The AI treats the pantry as a suggestion set, not a hard constraint. Without a schema field that forces the AI to enumerate missing ingredients separately, it will blend them into the ingredient list or omit them silently.
 
-## Security Mistakes
+**Prevention:**
+- Define the `pantry_suggest_recipes` tool output schema to include `{ recipe_name, available_ingredients[], missing_ingredients[], estimated_macros }`. The AI must populate `missing_ingredients[]` explicitly — even an empty array is informative.
+- In the recipe suggestion UI, show a "missing ingredients" badge on each recipe card. This also feeds directly into the shopping list without an additional AI call.
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Service role key without `import 'server-only'` guard | Full database superuser access leaked to browser | Add `import 'server-only'` to admin client module |
-| Account deletion action with no auth confirmation | Attacker can delete any account by submitting emails | Require email lookup + optional OTP confirmation; never accept userId from form |
-| No rate limiting on account deletion endpoint | Attacker scrapes user base by submitting known emails, infers account existence | Add IP-based rate limiting (5 requests/min per IP) using Upstash Redis or Vercel KV |
-| No Zod validation in server action inputs | Malformed email bypasses database lookup, potential injection | Validate all inputs with Zod before any database call |
-| NEXT_PUBLIC prefix on server-only env vars | Secret key inlined into JS bundle during build | Audit all env vars — anything without `NEXT_PUBLIC_` stays server-only |
-| Analytics (GA4, Meta Pixel) loaded without CNIL-compliant consent | CNIL fine up to 4% of global revenue; recent €325M fine precedent (Google) | No tracking scripts without consent banner; or ship v1 with no analytics at all |
-| Google Fonts loaded from Google CDN without consent disclosure | Transmits user IP to Google servers — CNIL has fined this without consent | Self-host fonts using `next/font` (downloads and serves fonts from Vercel automatically) |
+**Phase:** Phase 2 (tool output schema); Phase 4 (shopping list integration).
 
 ---
 
-## UX Pitfalls
+#### Pitfall 2.4 — Pantry AI Tool Registered in Schema But Missing From `executors` Map
 
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Account deletion form shows only a success message without immediate feedback | User uncertain if deletion happened; may submit multiple times | Show clear loading state, confirm deletion in-line, explain data deletion timeline (RGPD: 30 days) |
-| Language switcher changes locale but does not preserve current page path | User is redirected to the home page on every language change | Use `useRouter().replace()` with the translated pathname, preserving the current route |
-| Legal pages (RGPD, CGU) render as one long unstructured block | Users cannot find the section they are looking for; bad for CNIL audits | Use clear numbered sections with anchor links; structure matches standard French legal templates |
-| App Store / Play Store links hardcoded without a UA sniff | Android users see an iOS App Store link and vice versa; broken UX on mobile | Show both buttons on desktop; auto-detect mobile UA to highlight the relevant store link |
-| Cookie consent banner appears but no mechanism to change consent later | CNIL requires withdrawal of consent to be as easy as giving it | Add a persistent "Manage cookies" link in the footer that re-opens the consent panel |
+**What goes wrong:** New pantry tools (`pantry_get_items`, `pantry_suggest_recipes`, `pantry_update_quantity`, `shopping_list_generate`) are implemented in `backend/api/src/tools/pantry.ts` and added to `allToolSchemas` in `registry.ts`. But one or more entries are omitted from the `executors` record. The AI schema advertises the tool to Claude, but `getToolExecutor(name)` returns `undefined`. The agent silently fails on that tool call with no visible error in the UI.
 
----
+**Why it happens:** `registry.ts` requires three coordinated changes per tool: an `import *` statement, an entry in `allToolSchemas`, and an entry in `executors`. Adding to the schema list (which is more readable) while forgetting `executors` (which is a flat key-value record) is an easy miss. There is no TypeScript exhaustiveness check on `executors`.
 
-## "Looks Done But Isn't" Checklist
+**Prevention:**
+- After adding any tool to `pantry.ts`, verify it appears in all three locations in `registry.ts`: import, `executors`, `allToolSchemas`.
+- Validate at the HTTP level before end-to-end testing: call `GET /ai/tools` and confirm every `pantry_*` name is listed; then call `POST /ai/tools/execute` with each tool directly to confirm execution succeeds.
 
-- [ ] **next-intl setup:** Translations load in dev — verify `setRequestLocale` is called in every route segment and all pages show as `○` (static) in `next build` output
-- [ ] **Service role security:** Admin client file exists — verify it starts with `import 'server-only'` and `SUPABASE_SERVICE_ROLE_KEY` does NOT appear in the built `.next/` artifacts
-- [ ] **Account deletion:** Form submits successfully — verify the action validates email with Zod, looks up the user by email server-side, and has a rate limiter in place
-- [ ] **OG metadata:** Metadata objects defined — verify og:image URLs in the built HTML use the production domain, not a Vercel preview URL
-- [ ] **Mentions légales:** Page exists — verify all mandatory LCEN fields are filled (publisher identity, SIREN, hosting provider = Vercel, publication director) with real data, not placeholders
-- [ ] **RGPD privacy page:** Exists and links from footer — verify it names all data processors (Supabase, Vercel, any analytics), specifies retention periods, and includes CNIL complaint link
-- [ ] **Cookie compliance:** Site appears to work — verify no non-essential cookies are set before consent by checking `document.cookie` on first load in a private window
-- [ ] **Google Fonts:** Fonts load correctly — verify they are served from `/_next/static/` (self-hosted via `next/font`), not from `fonts.googleapis.com`
-- [ ] **Env vars:** Build succeeds locally — verify all required env vars are also set in Vercel dashboard for the production environment, with correct scopes (server vs. client)
-- [ ] **Middleware matcher:** Routing works — verify `/favicon.ico` and `/_next/static/` requests are NOT redirected through the locale middleware
+**Phase:** Phase 2 (AI tool registration); must be verified before Phase 3 begins, since Phase 3 depends on `nutrition_log_meal` being callable from the pantry flow.
 
 ---
 
-## Recovery Strategies
+### Category 3: Calorie Tracker Sync — Duplicate Logging and Cross-Plugin State
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Service role key leaked in bundle | HIGH | Rotate the key in Supabase dashboard immediately, then add `import 'server-only'` guard and redeploy |
-| Dynamic rendering on all pages | LOW | Add `setRequestLocale` + `generateStaticParams` to all locale route segments; pages become static after next build |
-| Missing `metadataBase` | LOW | Add env var `NEXT_PUBLIC_SITE_URL` in Vercel, set `metadataBase` in root layout, redeploy |
-| Incomplete mentions légales | MEDIUM | Fill all required fields, republish — this must be done before public launch |
-| Cookie banner without Reject All | MEDIUM | Replace or configure the consent library to surface Reject All at first level; requires design change |
-| Account deletion action abuse | MEDIUM | Add Upstash Redis rate limiter to the action; requires adding Vercel KV integration |
-| Wrong locale matcher (missing routes) | MEDIUM | Update middleware matcher regex, test all route types, redeploy |
+#### Pitfall 3.1 — Double Log: AI Tool Write + Manual UI Write for Same Recipe
 
----
+**What goes wrong:** The user asks the AI coach "I made the chicken recipe, log it for me." The AI calls `nutrition_log_meal` successfully. The user then opens the Nutrition dashboard, does not see the entry (because `useNutritionStore.todayLogs` has not refreshed), and manually logs the same meal. The `nutrition_logs` table has no uniqueness constraint on `(user_id, date, food_name)`, so both inserts succeed. The user's daily total is now doubled.
 
-## Pitfall-to-Phase Mapping
+**Why it happens:** The AI-initiated log and the manual UI log are independent write paths with no deduplication guard. The Zustand store is not subscribed to real-time Supabase changes — it is fetched once on mount and does not update when a backend write occurs.
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Service role key exposure | Phase 1 (project setup) | Search built `.next/` for key value; confirm `import 'server-only'` present |
-| next-intl async component API mismatch | Phase 1 (i18n setup) | Build succeeds without async/hook errors; all components reviewed |
-| Missing `setRequestLocale` / forced dynamic | Phase 1 (i18n setup) | `next build` output shows `○` for all `[locale]` routes |
-| Middleware matcher dot-route bug | Phase 1 (i18n setup) | Favicon, robots.txt, sitemap load without locale redirect |
-| Missing `metadataBase` | Phase 2 (content + SEO) | OG image URLs in built HTML use production domain |
-| Account deletion security (auth + rate limit) | Phase 2 (account deletion feature) | Manual testing: submit unknown email, submit many times in one minute |
-| Mentions légales incomplete | Phase 2 (legal pages) | Manual checklist against LCEN requirements before launch |
-| Cookie consent (CNIL Reject All) | Phase 2 (legal pages / if analytics added) | Check first load in private window, confirm no tracking cookies pre-consent |
-| Google Fonts served from Google CDN | Phase 1 (project setup) | Network tab on first load shows fonts from `/_next/static/` not googleapis.com |
-| Env vars wrong scope on Vercel | Phase 1 (infra setup) | Verify Vercel dashboard env var scopes match production/preview/dev needs |
+**Prevention:**
+- After `nutrition_log_meal` is called in the pantry confirm-cooked flow, immediately call the `app_navigate` tool with `screen: "nutrition_dashboard"` in the same agent response. Navigating the user to the Nutrition dashboard triggers its mount `useEffect` re-fetch, which will show the pantry-logged entry, preventing a double manual log.
+- Do not add a uniqueness constraint on `nutrition_logs` — the existing plugin intentionally allows multiple entries of the same food name on the same day (e.g. chicken breast for lunch and dinner).
+
+**Phase:** Phase 3 (confirm-cooked flow design; `app_navigate` is already in `registry.ts` and costs one tool-call step).
 
 ---
 
-## Sources
+#### Pitfall 3.2 — Nutrition Plugin Zustand Store Not Refreshed After Pantry Backend Write
 
-- [Vercel — Common mistakes with the Next.js App Router](https://vercel.com/blog/common-mistakes-with-the-next-js-app-router-and-how-to-fix-them)
-- [next-intl — App Router getting started](https://next-intl.dev/docs/getting-started/app-router)
-- [next-intl — Server & Client Components](https://next-intl.dev/docs/environments/server-client-components)
-- [next-intl — Middleware routing](https://next-intl.dev/docs/routing/middleware)
-- [next-intl GitHub issue — useTranslations not callable in async component](https://github.com/amannn/next-intl/issues/733)
-- [Supabase Docs — Performing admin tasks with service_role](https://supabase.com/docs/guides/troubleshooting/performing-administration-tasks-on-the-server-side-with-the-servicerole-secret-BYM4Fa)
-- [Makerkit — Next.js Server Actions: 5 Vulnerabilities](https://makerkit.dev/blog/tutorials/secure-nextjs-server-actions)
-- [Next.js — Security in Server Components and Actions](https://nextjs.org/blog/security-nextjs-server-components-actions)
-- [Next.js — generateMetadata / metadataBase](https://nextjs.org/docs/app/api-reference/functions/generate-metadata)
-- [CNIL — Cookie consent requirements for France](https://www.consentmo.com/blog-posts/maximizing-compliance-with-gdpr-and-cnil-regulations-in-france)
-- [Najumi — Mentions légales, CGU required content 2025](https://najumi.fr/en/article/mentions-legales-cgu-confidentialite-site-web-2025/)
-- [Economie.gouv.fr — Mentions légales mandatory fields](https://www.economie.gouv.fr/entreprises/developper-son-entreprise/innover-et-numeriser-son-entreprise/mentions-sur-votre-site-internet-les-obligations-respecter)
-- [DEV.to — Pitfalls of NEXT_PUBLIC_ environment variables](https://dev.to/koyablue/the-pitfalls-of-nextpublic-environment-variables-96c)
-- [Pagepro — Common Next.js mistakes hurting Core Web Vitals](https://pagepro.co/blog/common-nextjs-mistakes-core-web-vitals/)
-- [next-intl — setRequestLocale / static rendering](https://next-intl.dev/docs/routing/setup)
+**What goes wrong:** When pantry triggers `nutrition_log_meal` via the backend AI tool, the entry is written to Supabase. The nutrition plugin's `useNutritionStore.todayLogs` array on the mobile client does not know about it. The Nutrition dashboard still shows the old macro totals until the user navigates away and back.
+
+**Why it happens:** The nutrition Zustand store is not backed by a real-time Supabase subscription. There is no cross-plugin event bus in `@ziko/plugin-sdk`. Plugin stores are intentionally isolated — `usePantryStore` cannot call `useNutritionStore.addLog()`.
+
+**Prevention:**
+- Do not attempt to update the nutrition store from pantry. Instead, use the `app_navigate` approach from Pitfall 3.1. The `NutritionDashboard` mount `useEffect` handles the re-fetch automatically.
+- If cross-plugin state refresh becomes a recurring need across the platform, file it as a future `@ziko/plugin-sdk` enhancement (event bus or query invalidation hook). Do not build a bespoke solution in Phase 3.
+
+**Phase:** Phase 3.
 
 ---
-*Pitfalls research for: Next.js 14 App Router marketing site — next-intl, Supabase server actions, RGPD/CNIL, Vercel*
-*Researched: 2026-03-26*
+
+#### Pitfall 3.3 — Nutrition Plugin Not Installed, Calorie Sync Silently Fails
+
+**What goes wrong:** The pantry plugin calls `nutrition_log_meal` through the AI agent. If the user has not installed the nutrition plugin, `nutrition_log_meal` is not in the agent's registered tool list (tools are loaded conditionally by `aiBridge.registerPlugin` in `PluginLoader.tsx`). The agent attempts the call, the tool is not found, and the recipe cooked event is not logged. The user sees no error — the AI simply continues without the log.
+
+**Why it happens:** `aiBridge.registerPlugin` registers each plugin's `aiTools` array. A plugin that depends on another plugin's tools has no mechanism to declare or enforce that dependency. There is no `requiredPlugins` field in `PluginManifest`.
+
+**Prevention:**
+- In the confirm-cooked screen, check whether the nutrition plugin is installed before showing the "Auto-log macros" option. A reliable heuristic: attempt to read `useNutritionStore.calorieGoal` — if it is the store default (2400) and `tdeeProfile` is null, the plugin is likely not configured. Show a prompt: "Install the Nutrition Tracker to auto-log macros from recipes."
+- Add `requiredPermissions: ['read_nutrition', 'write_nutrition']` to the pantry manifest and document the dependency in the plugin description shown in the plugin catalog.
+- On the backend, if `nutrition_log_meal` is not registered and the pantry tool sequence attempts it, the agent will skip the call. Design `pantry_suggest_recipes` to return `{ ..., calorie_sync_available: boolean }` based on whether `nutrition_log_meal` is in the active tool registry, so the client can gate the confirm-cooked UI appropriately.
+
+**Phase:** Phase 3 (defensive UX in confirm-cooked screen).
+
+---
+
+### Category 4: Shopping List — Stale Data and Persistence
+
+#### Pitfall 4.1 — Shopping List Lost on Process Termination
+
+**What goes wrong:** The AI generates a shopping list and it is displayed to the user. If the app is backgrounded and the React Native process is killed (common when switching apps at the grocery store), the list is gone. The user returns to the app to find an empty shopping list.
+
+**Why it happens:** If the list is held only in a Zustand store without Supabase or MMKV persistence, it does not survive process termination. Unlike the nutrition or sleep stores — which are re-fetchable from Supabase on mount — the shopping list is AI-generated output and cannot be trivially re-fetched without burning additional AI credits and producing a slightly different list.
+
+**Prevention:**
+- Persist the shopping list to MMKV (`react-native-mmkv`) on every item change. MMKV survives process termination and is synchronous. This is the minimum viable persistence for Phase 4.
+- If the list needs to sync across devices or be shareable, add a `shopping_list_items` Supabase table: `(id, user_id, item_name, quantity, unit, checked, source ['recipe'|'low_stock'], pantry_item_id, created_at)`. This is a larger scope addition; evaluate against Phase 4 timeline.
+- Do not rely on re-generating the list from the AI as the recovery path. Each generation produces different ordering and phrasing, which is confusing if the user has already mentally processed the previous list.
+
+**Phase:** Phase 4 (persistence decision made before writing any list UI).
+
+---
+
+#### Pitfall 4.2 — Global Low-Stock Threshold Fires for Wrong Items
+
+**What goes wrong:** A single `low_stock_threshold` config value (e.g. "alert when quantity is below 20% of original") is applied uniformly to all pantry items. This fires an alert for salt at 50g (plenty) while missing the fact that 50g of chicken breast is critically low. Alerts become noise and users disable them.
+
+**Why it happens:** The path of least resistance is a single plugin-settings threshold value. Per-item thresholds require a DB column and additional form UI.
+
+**Prevention:**
+- Add `low_stock_threshold NUMERIC(8,2)` as a nullable column in `pantry_items` in the Phase 1 migration. When null, fall back to the plugin-level global default. This allows the common case (most items use defaults) while supporting exceptions.
+- In the add/edit item form (Phase 1), expose an optional "Alert me when below [amount] [unit]" field. Pre-fill it with the global default for discoverability.
+- The column costs nothing to add in Phase 1 and makes the Phase 4 alert logic trivially correct.
+
+**Phase:** Phase 1 (migration column, nullable — zero UI cost); Phase 4 (alert logic uses the column).
+
+---
+
+#### Pitfall 4.3 — Shopping List Contains Items Already Restocked
+
+**What goes wrong:** The user generates a shopping list on Tuesday (oats are low). On Wednesday they buy oats and update the pantry quantity. On Thursday the AI generates a new list — oats still appear because the AI tool reads pantry state fresh at generation time and oats are no longer low-stock. However, if the shopping list is persisted (Pitfall 4.1 fix), the old list entry for oats is not automatically removed when the pantry quantity is updated.
+
+**Why it happens:** The persisted shopping list is a snapshot. There is no live linkage between `pantry_items.quantity` and a stored `shopping_list_items.checked` field.
+
+**Prevention:**
+- When generating a new shopping list, always clear or replace the previous list rather than appending to it. The list should be regenerated from current pantry state, not accumulated over time.
+- If using a `shopping_list_items` table, include a `pantry_item_id` foreign key (nullable) for low-stock-sourced items. When `pantry_items.quantity` for that ID rises above threshold, auto-mark the shopping list item as checked (via a Supabase function or app-level query on list screen mount).
+- For recipe-sourced items (no pantry link), leave `pantry_item_id` null and rely on manual checking.
+
+**Phase:** Phase 4.
+
+---
+
+### Category 5: Plugin Integration — Registration and Routing
+
+#### Pitfall 5.1 — Metro Bundler Requires Static Import String in `PluginLoader.tsx`
+
+**What goes wrong:** The developer adds `pantry` to `plugins_registry` and `user_plugins` in Supabase but forgets to add it to `PLUGIN_LOADERS` in `apps/mobile/src/lib/PluginLoader.tsx`. The plugin never loads — no manifest, no tab bar entry, no AI tools registered in `aiBridge`. There is no error message. The plugin is silently absent for all users.
+
+**Why it happens:** Metro bundler (Expo) cannot analyze dynamic `import(variable)` expressions at build time. `PLUGIN_LOADERS` uses string literals for every plugin path. This is documented with the comment "Metro bundler requires statically-analyzable imports" at the top of the file. Adding a Supabase row is necessary but not sufficient.
+
+**Prevention:**
+- Add the `pantry` entry to `PLUGIN_LOADERS` as part of the same task that creates the plugin package. Treat it as a compile-time requirement, not runtime configuration.
+- Entry to add: `pantry: () => import('@ziko/plugin-pantry/manifest') as any`
+- Verify after starting Expo dev server that the plugin tab appears for a test user who has `pantry` in `user_plugins`.
+
+**Phase:** Phase 1 (plugin scaffolding); cannot be deferred — the plugin is invisible without it.
+
+---
+
+#### Pitfall 5.2 — Missing Route Wrapper Files Cause Runtime 404
+
+**What goes wrong:** The pantry manifest declares routes (e.g. `/(plugins)/pantry/dashboard`, `/(plugins)/pantry/inventory`, `/(plugins)/pantry/shopping-list`). Without corresponding files at `apps/mobile/app/(app)/(plugins)/pantry/dashboard.tsx` (and so on), Expo Router throws a 404 at runtime when the tab bar link is tapped. There is no build-time error.
+
+**Why it happens:** Expo Router v4 uses file-system routing. The manifest declares the route path, but the actual file must exist. Every existing plugin has thin 8-line wrappers (e.g. `nutrition/dashboard.tsx`: import screen, pass supabase, render).
+
+**Prevention:**
+- Create one route wrapper file per manifest route entry as part of the same task that defines the manifest routes. The pattern is identical for every plugin.
+- Do not declare a route in the manifest until its screen component and wrapper file both exist. Partial registration (manifest with routes, but no files) is a broken state.
+
+**Phase:** Phase 1 (plugin scaffolding).
+
+---
+
+#### Pitfall 5.3 — Package Name Omits `plugin-` Prefix, Breaking PluginLoader Import
+
+**What goes wrong:** The pantry package is named `@ziko/pantry` instead of `@ziko/plugin-pantry` in `plugins/pantry/package.json`. `PluginLoader.tsx` imports `@ziko/plugin-pantry/manifest`, which resolves to nothing. TypeScript does not catch this because the import is `as any`. The app silently fails to load the plugin.
+
+**Why it happens:** All 17 existing plugins use the `@ziko/plugin-{id}` naming convention. When creating a new package, the `plugin-` prefix is easy to omit because the plugin ID itself (used in Supabase, route paths, and Zustand stores) is just `pantry`.
+
+**Prevention:**
+- Set `"name": "@ziko/plugin-pantry"` in `plugins/pantry/package.json` before writing any other code.
+- Verify the `exports` field includes `"./manifest": "./src/manifest.ts"` — this is the specific subpath that `PluginLoader.tsx` imports.
+- Cross-check `plugins/nutrition/package.json` as the reference template.
+
+**Phase:** Phase 1 (package scaffolding, first file created).
+
+---
+
+#### Pitfall 5.4 — RLS Policy Missing on `pantry_items` (and `shopping_list_items`)
+
+**What goes wrong:** The migration creates the table but omits `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` or the `CREATE POLICY` statement. The Supabase publishable key (used in `backend/api`) has no service-level access. Without RLS policies, the publishable key returns an empty result set or a permission error on all reads and writes. The pantry screen shows no items, with no useful error.
+
+**Why it happens:** The backend uses `SUPABASE_PUBLISHABLE_KEY` — not a service role key. This is consistent with every other table in the codebase; all rely on the same `auth.uid() = user_id` RLS pattern. Forgetting the three-line RLS block when writing a new migration is a common omission.
+
+**Prevention:**
+- Copy the RLS block from `supabase/migrations/003_nutrition_schema.sql` verbatim for both `pantry_items` and `shopping_list_items`. The block is identical for every user-owned table.
+- Immediately after applying the migration, run a SELECT from the authenticated mobile client and verify rows are returned.
+
+**Phase:** Phase 1 (migration); Phase 4 if `shopping_list_items` is added as a separate table.
+
+---
+
+#### Pitfall 5.5 — Migration Number Conflict With Existing Sequence
+
+**What goes wrong:** The last migration is `021_cardio_gps.sql`. The developer creates `022_pantry_schema.sql`. If a parallel branch has already used `022_*`, Supabase's lexicographic migration ordering runs the wrong file first, or the migration history conflicts. One migration silently overwrites or skips the other.
+
+**Why it happens:** Supabase CLI uses sequential numeric prefixes. In a collaborative or multi-branch workflow, two developers can independently claim the same number.
+
+**Prevention:**
+- Check the current highest migration number in `supabase/migrations/` immediately before creating a new file: `ls supabase/migrations/ | sort | tail -1`.
+- For this milestone (single developer, single branch), `022_pantry_schema.sql` is safe. Document the number as reserved in the PR description.
+
+**Phase:** Phase 1.
+
+---
+
+## Phase Assignments
+
+| Phase | Pitfalls Addressed | Key Actions |
+|-------|--------------------|-------------|
+| Phase 1: Smart Inventory | 1.1, 1.2, 1.3, 1.4, 4.2 (column), 5.1, 5.2, 5.3, 5.4, 5.5 | Full plugin scaffolding: package name, PluginLoader entry, route wrappers, migration with `NUMERIC(8,2)` quantities, nullable `low_stock_threshold` column, RLS policy, sequential migration number. Store persistence pattern (await-then-update) established as convention from the first store action. |
+| Phase 2: AI Recipe Tools | 2.1, 2.2 (prompt), 2.3, 2.4 | Tool design in `backend/api/src/tools/pantry.ts`: inject macro context into system prompt to save a step (2.1); output schema includes `missing_ingredients[]` (2.3); verify all tools appear in `executors` and `allToolSchemas` before any end-to-end test (2.4). |
+| Phase 3: Calorie Tracker Sync | 3.1, 3.2, 3.3, 2.2 (UI) | Confirm-cooked flow: editable macro fields displayed as estimates (2.2), `app_navigate` to nutrition dashboard called after log (3.1/3.2), defensive check for nutrition plugin installation state (3.3). |
+| Phase 4: Shopping List | 4.1, 4.2 (logic), 4.3 | Persistence decision made before writing list UI (4.1: MMKV minimum, Supabase table if cross-device is needed). Alert logic uses per-item threshold column added in Phase 1 (4.2). List replacement strategy on regeneration prevents stale items (4.3). |
+
+**Cross-phase dependencies to verify explicitly:**
+- End of Phase 2: call `POST /ai/tools/execute` for every `pantry_*` tool before Phase 3 begins. Phase 3 depends on `nutrition_log_meal` being reachable from the pantry agent flow.
+- End of Phase 3: test the confirm-cooked flow with a test account where pantry is installed but nutrition is disabled. Confirm graceful degradation rather than silent failure.
