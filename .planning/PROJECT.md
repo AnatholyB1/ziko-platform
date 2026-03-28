@@ -1,27 +1,22 @@
-# Ziko Web
+# Ziko Platform
 
 ## What This Is
 
-A Next.js marketing website for the Ziko fitness app, targeting French and English audiences. It showcases the app's features and plugins, provides all required French legal pages (RGPD compliance), and offers a self-service account deletion flow. The same codebase will grow to include a coach ERP/CRM dashboard under `/coach` in a future milestone.
+The Ziko fitness platform — a fully-extensible React Native / Expo mobile app with 17 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The `.planning` folder also tracks the Next.js marketing website (`ziko-app.com`) that launched as milestone v1.0.
 
 ## Core Value
 
-A potential user lands on the site and understands what Ziko does, feels compelled to download the app, and trusts it enough to create an account.
+A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
 
-## Current Milestone: v1.0 Landing Page
+## Current Milestone: v1.1 Smart Pantry Plugin
 
-**Goal:** Ship a Next.js marketing site that showcases the Ziko fitness app, drives downloads, and satisfies French legal requirements before launch.
+**Goal:** Add a `pantry` plugin to the Ziko mobile app that turns the phone into a kitchen brain — inventory tracking, AI recipe suggestions, automatic calorie logging, and a rule-based shopping list.
 
 **Target features:**
-- Hero section with app screenshots + App Store / Play Store CTAs
-- Features showcase presenting all 17 plugins
-- Pricing section — free tier with "Download free" CTA
-- French + English i18n (FR default, `next-intl`)
-- RGPD / Politique de confidentialité page
-- Mentions légales page
-- CGU (Conditions Générales d'Utilisation) page
-- Self-service account deletion (server-side Supabase admin delete)
-- Deployed on Vercel, custom domain ready
+- Smart inventory — track pantry items (name, qty, unit, expiration date, category), auto-decrement on cook
+- AI recipe suggestions — based on available pantry items + remaining daily macros + user cravings
+- Calorie tracker sync — confirm recipe cooked → macros auto-logged to nutrition plugin
+- Smart shopping list — rule-based: low/out-of-stock items + missing recipe ingredients, exportable checklist
 
 ## Requirements
 
@@ -48,11 +43,16 @@ A potential user lands on the site and understands what Ziko does, feels compell
 - [x] Plausible cookieless analytics active — no cookie banner required (Validated in Phase 5: launch)
 - [x] Google Search Console sitemap submitted — site discoverable by Google (Validated in Phase 5: launch)
 
-### Active
+### Active (v1.1 — Smart Pantry Plugin)
 
-**Coach Platform (Milestone 2 — future)**
+- [ ] Smart inventory — pantry items with qty, unit, expiration, category
+- [ ] AI recipe suggestions — from pantry contents + remaining daily macros
+- [ ] Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin
+- [ ] Smart shopping list — rule-based from low-stock items + recipe ingredients
 
-**Coach Platform (Milestone 2 — future)**
+### Deferred
+
+**Coach Platform (future web milestone)**
 - [ ] Authenticated `/coach` section (ERP/CRM for coaches)
 - [ ] Coach dashboard, client management, session tracking
 
@@ -108,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 — Phase 5 complete: v1.0 milestone shipped — site live at https://ziko-app.com*
+*Last updated: 2026-03-28 — Milestone v1.1 started: Smart Pantry Plugin (mobile app)*
