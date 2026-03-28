@@ -38,30 +38,40 @@ Declared values (multiples of 4):
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline badge padding |
 | sm | 8px | Row item internal spacing, chip gaps |
-| md | 16px | Default field padding, section internal spacing |
-| lg | 20px | ScrollView horizontal padding (matches all plugins) |
-| xl | 24px | Section heading margin-bottom |
+| md | 16px | Default field padding, section internal spacing, PantryItemRow padding |
+| xl | 24px | Section heading margin-bottom, ScrollView horizontal padding |
 | 2xl | 32px | Between major visual groups |
-| tab | 100px | `paddingBottom` on every ScrollView — tab bar clearance |
+| tab | 100px | `paddingBottom` on every ScrollView — CLAUDE.md mandate for tab bar clearance (project-wide convention) |
 
 Exceptions:
-- Touch targets for icon-only buttons: minimum 44px (padding: 6 on a 24px icon = 36px hit, use padding: 10 to reach 44px)
+- Touch targets for icon-only buttons: minimum 44px (padding: 10 on a 24px icon = 44px hit)
 - Camera modal overlay: full-screen, no padding on camera viewport
 - Expiry dot indicator: 8px diameter, 4px margin-right
+
+Notes on scale conformance:
+- `gap: 12` and `marginBottom: 12` values from previous draft replaced with `8` or `16` to stay within the standard set {4, 8, 16, 24, 32, 48, 64}.
+- `padding: 14` on PantryItemRow replaced with `padding: 16` (md token).
+- `lg` token (20px) removed; horizontal scroll padding uses `xl` (24px) throughout, consistent with standard scale.
+- `100px paddingBottom` — mandated by CLAUDE.md for tab bar clearance, project-wide convention.
 
 ---
 
 ## Typography
 
+Exactly 4 roles, exactly 2 weights.
+
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Display | 28px / weight 800 | 800 | 1.2 | Screen title (e.g. "Mon Garde-Manger") |
-| Heading | 22px / weight 800 | 800 | 1.2 | Section headers ("Réfrigérateur", "Congélateur", "Placards") |
-| Body | 16px / weight 400 | 400 | 1.5 | Form labels, item name on row |
-| Label | 14px / weight 500–600 | 500–600 | 1.4 | Item quantity + unit, category tag, button text |
-| Caption | 12–13px / weight 400 | 400 | 1.4 | Expiry date text, muted sub-labels, toast messages |
+| Display | 28px | 700 | 1.2 | Screen title ("Mon Garde-Manger") |
+| Heading | 22px | 700 | 1.2 | Section headers ("Réfrigérateur", "Congélateur", "Placards"), form screen titles |
+| Body | 16px | 400 | 1.5 | Form labels, item name on row |
+| Label | 14px | 400 or 700 | 1.4 | Item quantity + unit (400), category tag (400), button text (700), expiry date text (400), toast messages (400), muted sub-labels (400), low-stock badge text (700) |
 
-Source: Derived from codebase scan of HydrationDashboard.tsx and MeasurementsDashboard.tsx — consistent pattern across all plugins (22px/800 heading, 14px label, 12px caption).
+Weight palette: `400` (regular — body text, muted labels, secondary data) and `700` (bold — all headings, display title, CTAs, badge text).
+
+Caption-level text (12–13px) from the previous draft is folded into Label (14px). All expiry date copy and toast messages use Label at 14px/400.
+
+Source: Derived from codebase scan of HydrationDashboard.tsx and MeasurementsDashboard.tsx — consistent heading pattern across plugins. Weight constrained to 2 values per design contract rules.
 
 ---
 
@@ -73,7 +83,7 @@ Source: Derived from codebase scan of HydrationDashboard.tsx and MeasurementsDas
 | Secondary (30%) | `#FFFFFF` (`theme.surface`) | Item list cards, modal sheet background, section cards | CLAUDE.md |
 | Border | `#E2E0DA` (`theme.border`) | Card borders, TextInput borders, dividers | CLAUDE.md |
 | Text | `#1C1A17` (`theme.text`) | Primary text, item names | CLAUDE.md |
-| Muted | `#6B6963` (`theme.muted`) | Sub-labels, captions, placeholder text | CLAUDE.md |
+| Muted | `#6B6963` (`theme.muted`) | Sub-labels, placeholder text, secondary data | CLAUDE.md |
 | Accent (10%) | `#FF5C1A` (`theme.primary`) | Add/Save CTA button, barcode scan icon, active chip selection border | CLAUDE.md |
 | Expiry: expired/today | `#F44336` + `#F4433622` bg | Expiry dot + faint row tint for expired or today items | D-08, discretion |
 | Expiry: within 7 days | `#FF9800` + `#FF980022` bg | Expiry dot + faint row tint for near-expiry items | D-08, discretion |
@@ -91,26 +101,28 @@ Accent is NOT used for: navigation headers, section titles, regular text, border
 
 ### 1. PantryDashboard (main list screen)
 
-**Layout:** `SafeAreaView` > `ScrollView` (padding: 20, paddingBottom: 100)
+**Layout:** `SafeAreaView` > `ScrollView` (paddingHorizontal: 24, paddingBottom: 100)
+
+**Primary visual anchor:** Expiry-colored item rows — color-coded dots draw attention to items needing action. Red and orange dots are the first visual element the eye lands on, directing the user to items requiring immediate attention before items in safe state.
 
 **Elements:**
-- Screen title: "Mon Garde-Manger" (Display, 28px/800)
-- Subtitle: item count summary e.g. "12 articles · 3 à surveiller" (Caption, 13px/400, muted)
-- FAB-style add button: full-width primary button at top-right OR floating bottom-right (32px height, 14px border-radius) — executor may use a `+` icon button top-right in header; EITHER is acceptable, must use `theme.primary` background
-- Section headers: storage location label ("Réfrigérateur", "Congélateur", "Placards") — 18px/700, `theme.text`, `marginTop: 24, marginBottom: 12`
+- Screen title: "Mon Garde-Manger" (Display, 28px/700)
+- Subtitle: item count summary e.g. "12 articles · 3 à surveiller" (Label, 14px/400, muted)
+- FAB-style add button: full-width primary button at top-right OR floating bottom-right (32px height, 14px border-radius) — executor may use a `+` icon button top-right in header; EITHER is acceptable, must use `theme.primary` background; `accessibilityLabel="Ajouter un article"`
+- Section headers: storage location label ("Réfrigérateur", "Congélateur", "Placards") — Heading, 22px/700, `theme.text`, `marginTop: 24, marginBottom: 16`
 - Empty section: not rendered when a storage location has 0 items
 - PantryItemRow (see below)
 
 ### 2. PantryItemRow
 
-**Layout:** `View` with `flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14`, `borderRadius: 14`, `borderWidth: 1`
+**Layout:** `View` with `flexDirection: 'row', alignItems: 'center', gap: 16, padding: 16`, `borderRadius: 14`, `borderWidth: 1`
 
 **Elements (left to right):**
 - Expiry dot: 10px circle, color per expiry rules (see Color table), `marginRight: 4`
-- Item name: 15px/600, `theme.text`, `flex: 1`
-- Quantity + unit: 13px/400, `theme.muted` (e.g. "500 g")
-- Low-stock badge: small pill "Bas" with orange background `#FF980022`, orange text `#FF9800`, 11px/600, `borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2` — visible only when qty ≤ threshold
-- Category tag: small pill e.g. "Viande", muted background `theme.border`, muted text 11px/400
+- Item name: Body, 16px/700, `theme.text`, `flex: 1`
+- Quantity + unit: Label, 14px/400, `theme.muted` (e.g. "500 g")
+- Low-stock badge: small pill "Bas" with orange background `#FF980022`, orange text `#FF9800`, Label 14px/700, `borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2` — visible only when qty ≤ threshold
+- Category tag: small pill e.g. "Viande", muted background `theme.border`, muted text Label 14px/400
 - Chevron right icon: `Ionicons` `chevron-forward`, size 16, `theme.muted` — tap navigates to edit form
 
 **Row background:**
@@ -124,9 +136,9 @@ Accent is NOT used for: navigation headers, section titles, regular text, border
 
 **Navigation:** Pushed via `router.push` from dashboard. Title: "Ajouter un article" (add) or "Modifier l'article" (edit).
 
-**Layout:** `SafeAreaView` > `KeyboardAvoidingView` (behavior: 'padding') > `ScrollView` (padding: 20, paddingBottom: 100)
+**Layout:** `SafeAreaView` > `KeyboardAvoidingView` (behavior: 'padding') > `ScrollView` (paddingHorizontal: 24, paddingBottom: 100)
 
-**Form header:** Back arrow (`chevron-back`, 24px, `theme.muted`) + screen title (18px/700) + optional "Supprimer" text button (red, 14px/600) on the right (edit mode only)
+**Form header:** Back arrow (`chevron-back`, 24px, `theme.muted`) + screen title (Heading, 22px/700) + optional "Supprimer" text button (red, Label 14px/700) on the right (edit mode only)
 
 **Field order:**
 
@@ -139,10 +151,10 @@ Accent is NOT used for: navigation headers, section titles, regular text, border
 | 5 | Catégorie | Horizontal chip row (10 categories from D-01) | Same chip style as unit |
 | 6 | Emplacement | Segmented 3-button row (Réfrigérateur / Congélateur / Placard) | Full-width; active segment: `theme.primary` bg, white text; inactive: `theme.surface`, muted border |
 | 7 | Date d'expiration | `TouchableOpacity` that opens a date picker (DateTimePicker from @react-native-community/datetimepicker or text input fallback) | Optional field; shows "Aucune" when empty; tapping opens date modal |
-| 8 | Seuil stock bas | `TextInput` keyboardType="number-pad" | Optional; placeholder "1 (par défaut)" — default 1 per Claude's Discretion |
+| 8 | Seuil stock bas | `TextInput` keyboardType="number-pad" | Optional; placeholder "Seuil bas (défaut : 1)" — default 1 per Claude's Discretion |
 
 **Form CTA:**
-- "Enregistrer" (edit mode) or "Ajouter au garde-manger" (add mode): full-width, `theme.primary` bg, white text, 16px/700, `borderRadius: 14, paddingVertical: 16`
+- "Enregistrer" (edit mode) or "Ajouter au garde-manger" (add mode): full-width, `theme.primary` bg, white text, Body 16px/700, `borderRadius: 14, paddingVertical: 16`
 - Positioned at bottom of ScrollView, above `paddingBottom: 100`
 
 **Delete action (edit mode):** "Supprimer cet article" — destructive text button in form header right slot. Triggers `showAlert` confirmation (see Copywriting).
@@ -156,8 +168,8 @@ Accent is NOT used for: navigation headers, section titles, regular text, border
 **Elements:**
 - `CameraView` fills screen with `onBarcodeScanned` callback
 - Semi-transparent overlay with centered rectangular scan region (white border, 250×250px)
-- Label above scan region: "Placez le code-barres dans le cadre" — white text, 14px/400
-- Close button: top-right, white `✕` Ionicons `close`, size 28, padding: 12
+- Label above scan region: "Placez le code-barres dans le cadre" — white text, Label 14px/400
+- Close button: top-right, white `✕` Ionicons `close`, size 28, padding: 10; `accessibilityLabel="Fermer le scanner"`
 - Scanning indicator: `ActivityIndicator` white, shown while API lookup is in progress after scan
 - On success: modal closes, name field auto-fills
 - On not-found: modal closes, toast notification shown (see Copywriting)
@@ -168,8 +180,8 @@ Shown per-section only if ALL three storage locations are empty (full empty pant
 
 - Center-aligned within the scroll area
 - Ionicons `nutrition-outline` or `storefront-outline`, size 64, `theme.muted`, `marginBottom: 16`
-- Heading: "Votre garde-manger est vide" — 20px/700, `theme.text`
-- Body: "Ajoutez votre premier article pour commencer à suivre votre stock." — 14px/400, `theme.muted`, `textAlign: 'center'`, `paddingHorizontal: 32`
+- Heading: "Votre garde-manger est vide" — Heading 22px/700, `theme.text`
+- Body: "Ajoutez votre premier article pour commencer à suivre votre stock." — Body 16px/400, `theme.muted`, `textAlign: 'center'`, `paddingHorizontal: 32`
 - CTA button: "Ajouter un article" (primary style, below body text, marginTop: 24)
 
 ---
@@ -188,7 +200,7 @@ Shown per-section only if ALL three storage locations are empty (full empty pant
 | Empty state heading | "Votre garde-manger est vide" | FR |
 | Empty state body | "Ajoutez votre premier article pour commencer à suivre votre stock." | FR |
 | Low-stock badge | "Bas" | FR |
-| Expiry label — expired | "Expiré" (shown in caption below expiry dot on row) | FR |
+| Expiry label — expired | "Expiré" (shown as Label 14px/400 below expiry dot on row) | FR |
 | Expiry label — today | "Expire aujourd'hui" | FR |
 | Expiry label — within 7 days | "Expire dans {n} j" | FR |
 | Section header — fridge | "Réfrigérateur" | FR |
