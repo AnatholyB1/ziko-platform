@@ -128,6 +128,7 @@ export class AIBridge {
     onChunk: (text: string) => void,
     signal?: AbortSignal,
     onActions?: (actions: AIAction[]) => void,
+    authToken?: string,
   ): Promise<void> {
     const systemPrompt = this.buildSystemPrompt(
       userContext.profile,
@@ -136,7 +137,7 @@ export class AIBridge {
 
     const messages = history
       .filter((m) => m.role !== 'system')
-      .slice(-20) // last 20 messages for context window
+      .slice(-20)
       .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
     messages.push({ role: 'user', content: message });
@@ -147,57 +148,69 @@ export class AIBridge {
       user_context: userContext,
     };
 
-    const response = await fetch(`${this.agentUrl}/chat/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-        'X-Conversation-Id': conversationId,
-      },
-      body: JSON.stringify(payload),
-      signal,
-    });
+    return new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${this.agentUrl}/chat/stream`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${authToken ?? this.apiKey}`);
+      xhr.setRequestHeader('X-Conversation-Id', conversationId);
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`AI API error ${response.status}: ${error}`);
-    }
+      let processedLength = 0;
+      let buffer = '';
+      let done = false;
 
-    // SSE parsing
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No response body');
+      const processChunk = (text: string) => {
+        buffer += text;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
 
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
-          if (data === '[DONE]') return;
+          if (!data || data === '[DONE]') continue;
           try {
-            const chunk: AIStreamChunk = JSON.parse(data);
+            const chunk = JSON.parse(data) as AIStreamChunk;
             if (chunk.type === 'chunk' && chunk.content) {
               onChunk(chunk.content);
             } else if (chunk.type === 'actions' && chunk.actions && onActions) {
               onActions(chunk.actions);
             } else if (chunk.type === 'error') {
-              throw new Error(chunk.error ?? 'Stream error');
+              reject(new Error(chunk.error ?? 'Stream error'));
             }
           } catch {
-            // non-JSON SSE line, treat as raw text
-            if (data && data !== '[DONE]') onChunk(data);
+            // Ignore JSON parse errors for partial chunks
           }
         }
+      };
+
+      xhr.onprogress = () => {
+        if (done) return;
+        const newText = xhr.responseText.slice(processedLength);
+        processedLength = xhr.responseText.length;
+        if (newText) processChunk(newText);
+      };
+
+      xhr.onload = () => {
+        done = true;
+        // Process any remaining bytes
+        const remaining = xhr.responseText.slice(processedLength);
+        if (remaining) processChunk(remaining);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`AI API error ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.ontimeout = () => reject(new Error('Request timeout'));
+
+      if (signal) {
+        signal.addEventListener('abort', () => { xhr.abort(); reject(new Error('Aborted')); });
       }
-    }
+
+      xhr.send(JSON.stringify(payload));
+    });
   }
 
   // ── Non-streaming fallback ────────────────────────────

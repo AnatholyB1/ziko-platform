@@ -124,6 +124,9 @@ export const useAIStore = create<AIStore>()((set, get) => ({
 
     let fullResponse = '';
 
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authToken = sessionData.session?.access_token;
+
     try {
       await aiBridge.sendMessage(
         conversationId,
@@ -143,6 +146,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
         (actions) => {
           set({ pendingActions: actions });
         },
+        authToken,
       );
     } catch (err) {
       set({ isStreaming: false, streamingContent: '' });
@@ -150,6 +154,11 @@ export const useAIStore = create<AIStore>()((set, get) => ({
     }
 
     // Save assistant message to DB
+    if (!fullResponse) {
+      set({ isStreaming: false, streamingContent: '' });
+      return;
+    }
+
     const { data: savedMsg } = await supabase
       .from('ai_messages')
       .insert({

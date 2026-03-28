@@ -66,9 +66,73 @@ function executeAIActions(actions: AIAction[]) {
   }
 }
 
+// ── Inline Markdown Renderer ───────────────────────────────
+function MarkdownText({ text, color }: { text: string; color: string }) {
+  // Parse inline formatting: **bold**, *italic*, `code`
+  const parts: React.ReactNode[] = [];
+  const re = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(<Text key={key++} style={{ color }}>{text.slice(last, m.index)}</Text>);
+    if (m[2] != null) parts.push(<Text key={key++} style={{ color, fontWeight: '700' }}>{m[2]}</Text>);
+    else if (m[3] != null) parts.push(<Text key={key++} style={{ color, fontStyle: 'italic' }}>{m[3]}</Text>);
+    else if (m[4] != null) parts.push(<Text key={key++} style={{ color, fontFamily: 'monospace', backgroundColor: color + '18', borderRadius: 3 }}> {m[4]} </Text>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(<Text key={key++} style={{ color }}>{text.slice(last)}</Text>);
+  return <Text style={{ color, fontSize: 15, lineHeight: 22 }}>{parts}</Text>;
+}
+
+function renderMarkdown(content: string, textColor: string): React.ReactNode[] {
+  const lines = content.split('\n');
+  const nodes: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // Skip empty lines (spacing handled by gap)
+    if (line.trim() === '') { i++; continue; }
+    // Heading: ## or ###
+    if (/^#{1,3} /.test(line)) {
+      const level = (line.match(/^(#+)/) ?? [''])[0].length;
+      const txt = line.replace(/^#+\s*/, '');
+      const fs = level === 1 ? 18 : level === 2 ? 16 : 15;
+      nodes.push(<Text key={i} style={{ color: textColor, fontSize: fs, fontWeight: '700', lineHeight: fs + 8, marginTop: 4 }}>{txt}</Text>);
+      i++; continue;
+    }
+    // Bullet list: - or * or •
+    if (/^[-*•] /.test(line)) {
+      nodes.push(
+        <View key={i} style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-start' }}>
+          <Text style={{ color: textColor, fontSize: 15, lineHeight: 22, marginTop: 1 }}>•</Text>
+          <View style={{ flex: 1 }}><MarkdownText text={line.replace(/^[-*•] /, '')} color={textColor} /></View>
+        </View>
+      );
+      i++; continue;
+    }
+    // Numbered list: 1. 2. etc.
+    if (/^\d+\. /.test(line)) {
+      const num = (line.match(/^(\d+)\./) ?? ['', ''])[1];
+      nodes.push(
+        <View key={i} style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-start' }}>
+          <Text style={{ color: textColor, fontSize: 15, lineHeight: 22, marginTop: 1, minWidth: 18 }}>{num}.</Text>
+          <View style={{ flex: 1 }}><MarkdownText text={line.replace(/^\d+\.\s*/, '')} color={textColor} /></View>
+        </View>
+      );
+      i++; continue;
+    }
+    // Normal paragraph
+    nodes.push(<MarkdownText key={i} text={line} color={textColor} />);
+    i++;
+  }
+  return nodes;
+}
+
 function MessageBubble({ role, content }: { role: string; content: string }) {
   const isUser = role === 'user';
   const theme = useThemeStore((s) => s.theme);
+  const textColor = isUser ? '#fff' : theme.text;
   return (
     <View style={{ paddingVertical: 4, paddingHorizontal: 16, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
       <View
@@ -76,15 +140,18 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
           maxWidth: '85%',
           paddingHorizontal: 14,
           paddingVertical: 10,
-          borderRadius: isUser ? 18 : 18,
+          borderRadius: 18,
           borderBottomRightRadius: isUser ? 4 : 18,
           borderBottomLeftRadius: isUser ? 18 : 4,
           backgroundColor: isUser ? theme.primary : theme.surface,
           borderWidth: isUser ? 0 : 1,
           borderColor: theme.border,
+          gap: 4,
         }}
       >
-        <Text style={{ color: isUser ? '#fff' : theme.text, fontSize: 15, lineHeight: 22 }}>{content}</Text>
+        {isUser
+          ? <Text style={{ color: textColor, fontSize: 15, lineHeight: 22 }}>{content}</Text>
+          : renderMarkdown(content, textColor)}
       </View>
     </View>
   );

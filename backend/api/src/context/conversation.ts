@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from '../tools/db.js';
 
 export interface StoredMessage {
   role: 'user' | 'assistant' | 'system';
@@ -18,8 +9,9 @@ export interface StoredMessage {
 export async function getOrCreateConversation(
   userId: string,
   conversationId?: string,
+  userToken?: string,
 ): Promise<{ conversationId: string; history: StoredMessage[] }> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   if (conversationId) {
     // Load existing conversation messages
@@ -42,7 +34,7 @@ export async function getOrCreateConversation(
     .select('id')
     .single();
 
-  if (error || !data) throw new Error('Failed to create conversation');
+  if (error || !data) throw new Error(`Failed to create conversation: ${error?.message ?? error?.code ?? 'no data returned'}`);
   return { conversationId: data.id, history: [] };
 }
 
@@ -50,9 +42,10 @@ export async function getOrCreateConversation(
 export async function appendMessages(
   conversationId: string,
   messages: StoredMessage[],
+  userToken?: string,
 ): Promise<void> {
   if (messages.length === 0) return;
-  const db = admin();
+  const db = clientForUser(userToken);
 
   const rows = messages.map((m) => ({
     conversation_id: conversationId,
@@ -68,8 +61,9 @@ export async function appendMessages(
 export async function updateConversationTitle(
   conversationId: string,
   title: string,
+  userToken?: string,
 ): Promise<void> {
-  const db = admin();
+  const db = clientForUser(userToken);
   await db
     .from('ai_conversations')
     .update({ title: title.slice(0, 100), updated_at: new Date().toISOString() })

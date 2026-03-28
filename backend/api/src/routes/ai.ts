@@ -82,7 +82,7 @@ function buildSystemPrompt(userCtx: UserContext): string {
 
 // ─── Tools ─────────────────────────────────────────────────────────
 
-function buildSDKTools(userId: string) {
+function buildSDKTools(userId: string, userToken?: string) {
   return Object.fromEntries(
     allToolSchemas.map((s) => [
       s.name,
@@ -92,7 +92,14 @@ function buildSDKTools(userId: string) {
         execute: async (input) => {
           const executor = getToolExecutor(s.name);
           if (!executor) throw new Error(`No executor for ${s.name}`);
-          return executor(input as Record<string, unknown>, userId);
+          console.log(`[Tool] ${s.name} hasToken=${!!userToken}`);
+          try {
+            return await executor(input as Record<string, unknown>, userId, userToken);
+          } catch (execErr) {
+            const msg = execErr instanceof Error ? execErr.message : String(execErr);
+            console.error(`[Tool Error] ${s.name}: ${msg}`);
+            throw execErr;
+          }
         },
       }),
     ]),
@@ -124,17 +131,20 @@ router.post('/tools/execute', async (c) => {
 
 // Streaming endpoint with context injection + conversation persistence
 router.post('/chat/stream', async (c) => {
-  const { messages = [], conversation_id } = await c.req.json<{
+  const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;
   }>();
   const auth = c.get('auth');
   const userId = auth.userId;
+  const userToken = c.req.header('Authorization')?.slice(7);
+  // Accept conversation_id from body or X-Conversation-Id header
+  const conversation_id = bodyConversationId ?? c.req.header('X-Conversation-Id') ?? undefined;
 
   // Fetch user context + conversation history in parallel
   const [userCtx, convo] = await Promise.all([
-    fetchUserContext(userId),
-    getOrCreateConversation(userId, conversation_id),
+    fetchUserContext(userId, userToken),
+    getOrCreateConversation(userId, conversation_id, userToken),
   ]);
 
   const systemPrompt = buildSystemPrompt(userCtx);
@@ -151,14 +161,14 @@ router.post('/chat/stream', async (c) => {
 
   // Auto-title on first user message
   if (convo.history.length === 0 && lastUserMsg) {
-    updateConversationTitle(convo.conversationId, lastUserMsg.content);
+    updateConversationTitle(convo.conversationId, lastUserMsg.content, userToken);
   }
 
   const result = streamText({
     model: AGENT_MODEL,
     system: systemPrompt,
     messages: allMessages,
-    tools: buildSDKTools(userId),
+    tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
   });
 
@@ -176,9 +186,18 @@ router.post('/chat/stream', async (c) => {
       );
 
       for await (const part of result.fullStream) {
+        if (part.type === 'tool-error') {
+          const err = (part as any).error;
+          const msg = err instanceof Error ? err.message : JSON.stringify(err) ?? String(err);
+          console.error(`[Tool Error] ${(part as any).toolName}: ${msg}`);
+        }
         if (part.type === 'text-delta') {
-          chunks.push(part.text);
-          await s.write(`data: ${JSON.stringify({ type: 'chunk', content: part.text })}\n\n`);
+          const text = (part as any).textDelta ?? (part as any).text ?? '';
+          // Filter out XML tool-call artifacts Claude sometimes emits after a tool-error
+          if (text && !text.includes('<invoke') && !text.includes('</invoke>') && !text.includes('<parameter')) {
+            chunks.push(text);
+            await s.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
+          }
         } else if (part.type === 'tool-result' && part.toolName === 'app_navigate') {
           const action = ((part as any).output ?? (part as any).result)?._action;
           if (action) actions.push(action);
@@ -193,7 +212,9 @@ router.post('/chat/stream', async (c) => {
       await s.write('data: [DONE]\n\n');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Stream error';
+      console.error('[AI Stream Error]', err);
       await s.write(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`);
+      await s.write('data: [DONE]\n\n');
     }
 
     // Persist new messages (user + assistant) after stream finishes
@@ -201,22 +222,23 @@ router.post('/chat/stream', async (c) => {
     if (lastUserMsg) toSave.push({ role: 'user', content: lastUserMsg.content });
     const fullResponse = chunks.join('');
     if (fullResponse) toSave.push({ role: 'assistant', content: fullResponse });
-    appendMessages(convo.conversationId, toSave);
+    appendMessages(convo.conversationId, toSave, userToken);
   });
 });
 
 // Non-streaming endpoint with context injection + conversation persistence
 router.post('/chat', async (c) => {
-  const { messages = [], conversation_id } = await c.req.json<{
+  const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;
   }>();
   const auth = c.get('auth');
   const userId = auth.userId;
-
+  const userToken = c.req.header('Authorization')?.slice(7);
+  const conversation_id = bodyConversationId ?? c.req.header('X-Conversation-Id') ?? undefined;
   const [userCtx, convo] = await Promise.all([
-    fetchUserContext(userId),
-    getOrCreateConversation(userId, conversation_id),
+    fetchUserContext(userId, userToken),
+    getOrCreateConversation(userId, conversation_id, userToken),
   ]);
 
   const systemPrompt = buildSystemPrompt(userCtx);
@@ -229,14 +251,14 @@ router.post('/chat', async (c) => {
   const userMsgs2 = messages.filter((m) => m.role === 'user');
   const lastUserMsg = userMsgs2.length > 0 ? userMsgs2[userMsgs2.length - 1] : undefined;
   if (convo.history.length === 0 && lastUserMsg) {
-    updateConversationTitle(convo.conversationId, lastUserMsg.content);
+    updateConversationTitle(convo.conversationId, lastUserMsg.content, userToken);
   }
 
   const result = await generateText({
     model: AGENT_MODEL,
     system: systemPrompt,
     messages: allMessages,
-    tools: buildSDKTools(userId),
+    tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
   });
 
@@ -261,7 +283,7 @@ router.post('/chat', async (c) => {
   const toSave: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   if (lastUserMsg) toSave.push({ role: 'user', content: lastUserMsg.content });
   if (text) toSave.push({ role: 'assistant', content: text });
-  await appendMessages(convo.conversationId, toSave);
+  await appendMessages(convo.conversationId, toSave, userToken);
 
   return c.json({ content: text, conversation_id: convo.conversationId, actions });
 });

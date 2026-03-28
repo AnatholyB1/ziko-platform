@@ -1,22 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Tool: nutrition_get_today ──────────────────────────────
+// ── Tool: nutrition_get_today ────────────────────────────────
 export async function nutrition_get_today(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
   const date = (params.date as string | undefined) ?? today();
 
   const { data, error } = await db
@@ -46,6 +38,7 @@ export async function nutrition_get_today(
 export async function nutrition_log_meal(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { meal_type, food_name, calories, protein_g = 0, carbs_g = 0, fat_g = 0, serving_g } =
     params as any;
@@ -54,7 +47,7 @@ export async function nutrition_log_meal(
   if (calories == null) throw new Error('calories is required');
   if (!meal_type) throw new Error('meal_type is required (breakfast|lunch|dinner|snack)');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('nutrition_logs')
     .insert({
@@ -79,8 +72,9 @@ export async function nutrition_log_meal(
 export async function nutrition_get_summary(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
   const date = (params.date as string | undefined) ?? today();
 
   // Get logs + user profile for goals
@@ -128,11 +122,12 @@ export async function nutrition_get_summary(
 export async function nutrition_delete_entry(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { entry_id } = params as { entry_id: string };
   if (!entry_id) throw new Error('entry_id is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { error } = await db
     .from('nutrition_logs')
     .delete()

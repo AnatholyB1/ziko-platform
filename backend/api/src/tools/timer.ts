@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { clientForUser } from './db.js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-
-// ── Tool: timer_get_presets ────────────────────────────────
+// ── Tool: timer_get_presets ──────────────────────────────────────────
 export async function timer_get_presets(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   const { data, error } = await db
     .from('timer_presets')
@@ -41,6 +33,7 @@ export async function timer_get_presets(
 export async function timer_create_preset(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { name, type, work_seconds, rest_seconds = 0, rounds } = params as {
     name: string;
@@ -55,7 +48,7 @@ export async function timer_create_preset(
   if (!work_seconds) throw new Error('work_seconds is required');
   if (!rounds) throw new Error('rounds is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('timer_presets')
     .insert({

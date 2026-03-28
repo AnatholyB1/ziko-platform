@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { clientForUser } from './db.js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-
-// ── Tool: stretching_get_routines ──────────────────────────
+// ── Tool: stretching_get_routines ─────────────────────────────────
 export async function stretching_get_routines(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
   const { type, muscle_group } = params as { type?: string; muscle_group?: string };
 
   // Return recent stretching logs as "routines" — the app stores completed routines
@@ -51,6 +43,7 @@ export async function stretching_get_routines(
 export async function stretching_log_session(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { routine_id, duration_seconds } = params as {
     routine_id?: string;
@@ -58,7 +51,7 @@ export async function stretching_log_session(
   };
   if (!duration_seconds) throw new Error('duration_seconds is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('stretching_logs')
     .insert({
@@ -78,9 +71,10 @@ export async function stretching_log_session(
 export async function stretching_get_history(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 7;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 

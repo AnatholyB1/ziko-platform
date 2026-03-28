@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -15,8 +6,9 @@ const today = () => new Date().toISOString().split('T')[0];
 export async function habits_get_today(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
   const date = today();
 
   const [habitsRes, logsRes] = await Promise.all([
@@ -48,11 +40,12 @@ export async function habits_get_today(
 export async function habits_log(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { habit_id, value } = params as { habit_id: string; value: number };
   if (!habit_id) throw new Error('habit_id is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Verify habit belongs to user
   const { data: habit, error: habitErr } = await db
@@ -77,8 +70,9 @@ export async function habits_log(
 export async function habits_get_streaks(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   const [habitsRes, logsRes] = await Promise.all([
     db.from('habits').select('id, name, emoji').eq('user_id', userId).eq('is_active', true),
@@ -126,11 +120,12 @@ export async function habits_get_streaks(
 export async function habits_create(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { name, emoji = '✅', type = 'boolean', target = 1, unit } = params as any;
   if (!name) throw new Error('name is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('habits')
     .insert({ user_id: userId, name, emoji, type, target, unit: unit ?? null, source: 'manual' })

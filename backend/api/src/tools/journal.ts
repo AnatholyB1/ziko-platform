@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Tool: journal_log_mood ─────────────────────────────────
+// ── Tool: journal_log_mood ─────────────────────────────────────────
 export async function journal_log_mood(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { mood, energy = 3, stress = 2, context = 'general', notes } = params as {
     mood: number;
@@ -26,7 +18,7 @@ export async function journal_log_mood(
 
   if (!mood) throw new Error('mood is required (1-5)');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('journal_entries')
     .insert({
@@ -49,9 +41,10 @@ export async function journal_log_mood(
 export async function journal_get_history(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 7;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 
@@ -70,9 +63,10 @@ export async function journal_get_history(
 export async function journal_get_trends(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 30;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 

@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Tool: sleep_log ────────────────────────────────────────
+// ── Tool: sleep_log ──────────────────────────────────────────
 export async function sleep_log(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { date, bedtime, wake_time, quality, notes } = params as {
     date?: string;
@@ -35,7 +27,7 @@ export async function sleep_log(
   if (durationMin < 0) durationMin += 24 * 60; // overnight
   const durationHours = parseFloat((durationMin / 60).toFixed(2));
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('sleep_logs')
     .upsert(
@@ -61,9 +53,10 @@ export async function sleep_log(
 export async function sleep_get_history(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 7;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 
@@ -99,8 +92,9 @@ export async function sleep_get_history(
 export async function sleep_get_recovery_score(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Get last 7 days of sleep
   const since = new Date();

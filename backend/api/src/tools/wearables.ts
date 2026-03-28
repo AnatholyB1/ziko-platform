@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -15,11 +6,12 @@ const today = () => new Date().toISOString().split('T')[0];
 export async function wearables_get_steps(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const startDate = (params.start_date as string) ?? today();
   const endDate = (params.end_date as string) ?? today();
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('wearable_daily_summary')
     .select('date, steps')
@@ -46,11 +38,12 @@ export async function wearables_get_steps(
 export async function wearables_get_heart_rate(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const startDate = (params.start_date as string) ?? today();
   const endDate = (params.end_date as string) ?? today();
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('wearable_daily_summary')
     .select('date, heart_rate_avg, heart_rate_resting, heart_rate_min, heart_rate_max')
@@ -73,10 +66,11 @@ export async function wearables_get_heart_rate(
 export async function wearables_get_summary(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const date = (params.date as string) ?? today();
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('wearable_daily_summary')
     .select('*')
@@ -122,8 +116,9 @@ export async function wearables_get_summary(
 export async function wearables_sync_status(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Get latest sync per data type
   const { data, error } = await db

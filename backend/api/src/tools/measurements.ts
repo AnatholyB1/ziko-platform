@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Tool: measurements_log ─────────────────────────────────
+// ── Tool: measurements_log ─────────────────────────────────────
 export async function measurements_log(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, thigh_cm, hip_cm } = params as {
     weight_kg?: number;
@@ -31,7 +23,7 @@ export async function measurements_log(
     throw new Error('At least one measurement is required');
   }
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const entry: Record<string, unknown> = {
     user_id: userId,
     date: today(),
@@ -58,9 +50,10 @@ export async function measurements_log(
 export async function measurements_get_history(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 30;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 
@@ -79,9 +72,10 @@ export async function measurements_get_history(
 export async function measurements_get_progress(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const compareDays = (params.compare_days as number) ?? 30;
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Get latest measurement
   const { data: latest } = await db

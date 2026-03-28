@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from '../tools/db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -39,8 +30,8 @@ export interface UserContext {
   };
 }
 
-export async function fetchUserContext(userId: string): Promise<UserContext> {
-  const db = admin();
+export async function fetchUserContext(userId: string, userToken?: string): Promise<UserContext> {
+  const db = clientForUser(userToken);
   const date = today();
 
   const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes] =

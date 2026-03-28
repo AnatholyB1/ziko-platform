@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
+import { clientForUser } from './db.js';
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-
-// ── Tool: ai_programs_generate ─────────────────────────────
+// ── Tool: ai_programs_generate ────────────────────────────────
 export async function ai_programs_generate(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const {
     goal,
@@ -33,7 +25,7 @@ export async function ai_programs_generate(
   if (!goal) throw new Error('goal is required');
   if (!days_per_week) throw new Error('days_per_week is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Fetch user profile for context
   const { data: profile } = await db
@@ -70,16 +62,32 @@ Return ONLY valid JSON:
   ]
 }`;
 
-  const { text } = await generateText({
-    model: anthropic('claude-sonnet-4-20250514'),
-    messages: [{ role: 'user', content: prompt }],
-  });
+  let rawText = '';
+  try {
+    const { text } = await generateText({
+      model: anthropic('claude-sonnet-4-20250514'),
+      messages: [{ role: 'user', content: prompt }],
+      maxTokens: 4000,
+    });
+    rawText = text;
+  } catch (genErr) {
+    console.error('[ai_programs_generate] generateText failed:', genErr);
+    throw new Error(`Failed to generate program: ${genErr instanceof Error ? genErr.message : String(genErr)}`);
+  }
 
   let programData: any;
   try {
-    programData = JSON.parse(text);
+    // Strip markdown code fences if present: ```json ... ``` or ``` ... ```
+    const jsonStr = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    programData = JSON.parse(jsonStr);
   } catch {
-    programData = { raw: text };
+    // Last-resort: try to find JSON object in the text
+    const match = rawText.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { programData = JSON.parse(match[0]); } catch { programData = { raw: rawText }; }
+    } else {
+      programData = { raw: rawText };
+    }
   }
 
   const programName = programData.name ?? `${goal} ${split_type} ${days_per_week}d`;
@@ -108,8 +116,9 @@ Return ONLY valid JSON:
 export async function ai_programs_list(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   const { data, error } = await db
     .from('ai_generated_programs')
@@ -125,6 +134,7 @@ export async function ai_programs_list(
 export async function ai_programs_adjust(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { program_id, adjustment } = params as {
     program_id: string;
@@ -134,7 +144,7 @@ export async function ai_programs_adjust(
   if (!program_id) throw new Error('program_id is required');
   if (!adjustment) throw new Error('adjustment is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
 
   // Fetch current program
   const { data: program, error: fetchErr } = await db

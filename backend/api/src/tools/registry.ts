@@ -31,7 +31,7 @@ export interface AITool {
 // ── Tool executor type ─────────────────────────────────────
 export interface ToolExecutor {
   schema: AITool;
-  execute: (params: Record<string, unknown>, userId: string) => Promise<unknown>;
+  execute: (params: Record<string, unknown>, userId: string, userToken?: string) => Promise<unknown>;
 }
 
 // ── Habits tool schemas ────────────────────────────────────

@@ -1,20 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Tool: cardio_log_session ───────────────────────────────
+// ── Tool: cardio_log_session ───────────────────────────────────────
 export async function cardio_log_session(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const {
     activity_type,
@@ -41,7 +33,7 @@ export async function cardio_log_session(
     avgPaceSecPerKm = Math.round((duration_min * 60) / distance_km);
   }
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('cardio_sessions')
     .insert({
@@ -66,10 +58,11 @@ export async function cardio_log_session(
 export async function cardio_get_history(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 30;
   const activityType = params.activity_type as string | undefined;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 
@@ -94,9 +87,10 @@ export async function cardio_get_history(
 export async function cardio_get_stats(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const days = (params.days as number) ?? 30;
-  const db = admin();
+  const db = clientForUser(userToken);
   const since = new Date();
   since.setDate(since.getDate() - days);
 

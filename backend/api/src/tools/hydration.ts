@@ -1,13 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
+import { clientForUser } from './db.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -15,11 +6,12 @@ const today = () => new Date().toISOString().split('T')[0];
 export async function hydration_log(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { amount_ml } = params as { amount_ml: number };
   if (!amount_ml) throw new Error('amount_ml is required');
 
-  const db = admin();
+  const db = clientForUser(userToken);
   const { data, error } = await db
     .from('hydration_logs')
     .insert({
@@ -48,8 +40,9 @@ export async function hydration_log(
 export async function hydration_get_today(
   _params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
-  const db = admin();
+  const db = clientForUser(userToken);
 
   const [logsRes, profileRes] = await Promise.all([
     db
@@ -81,12 +74,13 @@ export async function hydration_get_today(
 export async function hydration_set_goal(
   params: Record<string, unknown>,
   userId: string,
+  userToken?: string,
 ): Promise<unknown> {
   const { goal_ml } = params as { goal_ml: number };
   if (!goal_ml) throw new Error('goal_ml is required');
 
   // Store goal in user_plugins settings for the hydration plugin
-  const db = admin();
+  const db = clientForUser(userToken);
   const { error } = await db
     .from('user_plugins')
     .update({ settings: { daily_goal_ml: goal_ml } })
