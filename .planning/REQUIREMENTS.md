@@ -86,11 +86,24 @@
 
 ## Traceability
 
-*Filled by roadmapper.*
+*Filled by roadmapper — 2026-03-28*
 
 | REQ-ID | Phase |
 |--------|-------|
-| PANTRY-01–06 | — |
-| RECIPE-01–04 | — |
-| SYNC-01–03 | — |
-| SHOP-01–04 | — |
+| PANTRY-01 | Phase 6 |
+| PANTRY-02 | Phase 6 |
+| PANTRY-03 | Phase 6 |
+| PANTRY-04 | Phase 6 |
+| PANTRY-05 | Phase 6 |
+| PANTRY-06 | Phase 6 |
+| RECIPE-01 | Phase 7 |
+| RECIPE-02 | Phase 7 |
+| RECIPE-03 | Phase 7 |
+| RECIPE-04 | Phase 7 |
+| SYNC-01 | Phase 8 |
+| SYNC-02 | Phase 8 |
+| SYNC-03 | Phase 8 |
+| SHOP-01 | Phase 9 |
+| SHOP-02 | Phase 9 |
+| SHOP-03 | Phase 9 |
+| SHOP-04 | Phase 9 |

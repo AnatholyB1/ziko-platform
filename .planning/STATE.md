@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: planning
-stopped_at: Defining requirements
+stopped_at: Roadmap created — Phase 6 ready to plan
 last_updated: "2026-03-28T00:00:00.000Z"
 last_activity: 2026-03-28
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,19 +18,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-26)
+See: .planning/PROJECT.md (updated 2026-03-28)
 
-**Core value:** A potential user lands on the site and understands what Ziko does, feels compelled to download the app, and trusts it enough to create an account.
-**Current focus:** Phase 05 — launch
+**Core value:** A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
+**Current focus:** Phase 6 — Smart Inventory (ready to plan)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-28 — Milestone v1.1 started
+Phase: 6 of 9 (Smart Inventory)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-03-28 — v1.1 roadmap created, Phase 6 ready to plan
 
-Progress: [███████░░░] 75%
+Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
 ## Performance Metrics
 
@@ -52,15 +52,6 @@ Progress: [███████░░░] 75%
 - Trend: —
 
 *Updated after each plan completion*
-| Phase 01-foundation P01 | 3 | 2 tasks | 13 files |
-| Phase 01-foundation P02 | 15 | 3 tasks | 8 files |
-| Phase 02-rgpd-compliance P03 | 2 | 2 tasks | 5 files |
-| Phase 02-rgpd-compliance P02 | 25 | 3 tasks | 5 files |
-| Phase 03-marketing-content P03 | ~10 | 2 tasks | 3 files |
-| Phase 04-seo-performance P02 | 2 | 2 tasks | 2 files |
-| Phase 04-seo-performance P01 | 10 | 2 tasks | 10 files |
-| Phase 04-seo-performance P03 | 5 | 2 tasks | 3 files |
-| Phase 05-launch P01 | 3 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -69,29 +60,11 @@ Progress: [███████░░░] 75%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Roadmap: 5-phase structure adopted from research SUMMARY.md — Foundation → RGPD → Marketing → SEO → Launch
-- Roadmap: Phase 5 carries no new v1 requirements; it is a launch-gate verification phase
-- [Phase 01-foundation]: Standalone repo at /c/ziko-web (not inside monorepo) per D-01
-- [Phase 01-foundation]: localePrefix as-needed: FR has clean URLs, EN uses /en/ prefix
-- [Phase 01-foundation]: Inter via next/font/google self-hosting for CNIL compliance (no Google Fonts CDN)
-- [Phase 01-foundation]: Supabase admin client scaffolded with server-only guard in Phase 1 to prevent Phase 2 accidental client bundling
-- [Phase 01-foundation]: getTranslations (async) used instead of useTranslations in Server Components — avoids client boundary conflicts with next-intl navigation Link
-- [Phase 01-foundation]: NextIntlClientProvider added to locale layout — required for Link from createNavigation to access locale context during static generation
-- [Phase 01-foundation]: createAdminClient() factory exported instead of supabaseAdmin singleton — matches plan spec, avoids shared state
-- [Phase 02-rgpd-compliance]: Legal page content hardcoded as French JSX with HTML entities (not i18n keys) — LegalStub namespace removed
-- [Phase 02-rgpd-compliance]: Anthropic explicitly named as AI data processor in Politique de confidentialite per RGPD sous-traitant requirements
-- [Phase 02-rgpd-compliance]: Red submit button (bg-red-600) used for deletion form to signal destructive action, departs from primary orange
-- [Phase 02-rgpd-compliance]: useActionState from react (not useFormState from react-dom) established as pattern for Server Action form wiring
-- [Phase 03-marketing-content]: page.tsx delegates getTranslations to each section component — page itself only calls setRequestLocale
-- [Phase 03-marketing-content]: Plugin icon data and category grouping defined inline in PluginShowcase.tsx (no separate data file)
-- [Phase 04-seo-performance]: localePrefix:always confirmed in routing.ts — sitemap and robots both use explicit /fr/ and /en/ locale prefixes in all URLs
-- [Phase 04-seo-performance]: metadataBase set via NEXT_PUBLIC_SITE_URL env var in root layout — no hardcoding of production domain
-- [Phase 04-seo-performance]: localePrefix 'always' confirmed — all canonical URLs use /fr/* and /en/* prefixes
-- [Phase 04-seo-performance]: supprimer-mon-compte gets robots noindex/nofollow (excluded from sitemap per D-07)
-- [Phase 04-seo-performance]: Hero phone frame inner fill replaced with next/image fill+priority — LCP image served via Next.js image optimization pipeline
-- [Phase 04-seo-performance]: Alt text for hero image sourced from Metadata.appScreenshotAlt i18n key (not hardcoded)
-- [Phase 05-launch]: Plausible script placed after {children} inside body with strategy=afterInteractive — cookieless, no consent banner needed
-- [Phase 05-launch]: screen.jpg committed to ziko-web git repo — required public asset, ensures it resolves in production deploys
+- Roadmap: 4-phase structure (Phases 6-9) derived from feature dependency tree — inventory gates recipes, recipes gate calorie sync, shopping list depends only on inventory
+- Roadmap: Phase 9 (Shopping List) depends only on Phase 6 data — can be parallelised with Phase 8 if bandwidth allows
+- Architecture: No `recipes` or `shopping_lists` tables — recipes generated on-demand by AI, shopping list computed from `pantry_items` — intentional for v1.1
+- Architecture: `pantry_log_recipe_cooked` imports `nutrition_log_meal` directly from `./nutrition.js` — no HTTP round-trip, nutrition plugin untouched
+- Architecture: Three mandatory registration touch points in Phase 6 — `PluginLoader.tsx`, `registry.ts`, and Supabase migration 022; missing any one produces silent failure
 
 ### Pending Todos
 
@@ -99,14 +72,14 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 2 blocker: Operator must provide SIRET, physical address, publication director name, and email before Mentions Légales can be finalized (external dependency)
-- Phase 2 blocker: Confirm DPA with Anthropic exists before finalizing Politique de Confidentialité
-- Phase 3 blocker: Real app screenshots from Expo mobile app must be captured before Hero mockup can be finalized
-- Phase 3 blocker: 17 plugin descriptions x 2 languages (34 strings) must be written before Plugin Showcase ships
-- Phase 4 dependency: Production custom domain must be known before metadataBase and OG URLs can be finalized
+- Phase 6: Three registration touch points (PluginLoader.tsx, registry.ts, 022 migration) must all be wired in the same plan — Metro bundler silently omits missing plugins
+- Phase 7: Inject macro summary into system prompt via `fetchUserContext` to protect 5-step tool-call budget — do not let `nutrition_get_today` consume an agent step
+- Phase 8: Gate "Auto-log macros" UI on nutrition plugin installation check — show graceful fallback if nutrition plugin is not installed
+- Phase 8: Call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds to prevent duplicate logging
+- Phase 8: Confirm exact `meal_type` enum values in `003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked` — code-read task, not a research gap
 
 ## Session Continuity
 
-Last session: 2026-03-27T19:01:09.018Z
-Stopped at: Completed 05-01-PLAN.md (Hero screenshot + Plausible Analytics)
+Last session: 2026-03-28T00:00:00.000Z
+Stopped at: Roadmap created for milestone v1.1 — all 4 phases defined, 17 requirements mapped
 Resume file: None
