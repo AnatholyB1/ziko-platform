@@ -59,6 +59,28 @@ const en: Record<string, string> = {
   'pantry.barcode_not_found': 'Enter the name manually.',
   'pantry.camera_required': 'Camera required',
   'pantry.camera_required_desc': 'Allow camera access in settings.',
+  // ── Pantry Recipes ──
+  'pantry.recipes_title': 'AI Recipes',
+  'pantry.recipes_suggest_btn': 'Suggest recipes',
+  'pantry.recipes_regenerate_btn': 'Regenerate',
+  'pantry.recipes_empty_title': 'Discover recipes',
+  'pantry.recipes_empty_body': 'Based on your pantry contents and nutritional goals',
+  'pantry.recipes_loading': 'Generating...',
+  'pantry.recipes_error': 'Unable to generate recipes',
+  'pantry.recipes_retry': 'Try again',
+  'pantry.recipes_preferences_placeholder': 'E.g.: vegetarian, quick, gluten-free...',
+  'pantry.recipes_ingredients_count': '{count} ingredients',
+  'pantry.recipes_prep_time': '{min} min',
+  'pantry.recipes_budget_remaining': 'Remaining budget',
+  'pantry.recipe_detail_servings': 'Servings',
+  'pantry.recipe_detail_ingredients': 'Ingredients',
+  'pantry.recipe_detail_steps': 'Steps',
+  'pantry.recipe_detail_macros': 'Nutritional values',
+  'pantry.recipe_detail_kcal': 'kcal',
+  'pantry.recipe_detail_protein': 'Protein',
+  'pantry.recipe_detail_carbs': 'Carbs',
+  'pantry.recipe_detail_fat': 'Fat',
+  'pantry.recipe_detail_prep_time': 'Preparation',
 };
 
 export default en;

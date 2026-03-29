@@ -59,6 +59,28 @@ const fr: Record<string, string> = {
   'pantry.barcode_not_found': 'Renseignez le nom manuellement.',
   'pantry.camera_required': 'Camera requise',
   'pantry.camera_required_desc': "Autorisez l'accès à la caméra dans les réglages.",
+  // ── Pantry Recipes ──
+  'pantry.recipes_title': 'Recettes IA',
+  'pantry.recipes_suggest_btn': 'Suggérer des recettes',
+  'pantry.recipes_regenerate_btn': 'Régénérer',
+  'pantry.recipes_empty_title': 'Découvrez des recettes',
+  'pantry.recipes_empty_body': 'Basées sur votre garde-manger et vos objectifs nutritionnels',
+  'pantry.recipes_loading': 'Génération en cours...',
+  'pantry.recipes_error': 'Impossible de générer des recettes',
+  'pantry.recipes_retry': 'Réessayer',
+  'pantry.recipes_preferences_placeholder': 'Ex: végétarien, rapide, sans gluten...',
+  'pantry.recipes_ingredients_count': '{count} ingrédients',
+  'pantry.recipes_prep_time': '{min} min',
+  'pantry.recipes_budget_remaining': 'Budget restant',
+  'pantry.recipe_detail_servings': 'Portions',
+  'pantry.recipe_detail_ingredients': 'Ingrédients',
+  'pantry.recipe_detail_steps': 'Étapes',
+  'pantry.recipe_detail_macros': 'Valeurs nutritionnelles',
+  'pantry.recipe_detail_kcal': 'kcal',
+  'pantry.recipe_detail_protein': 'Protéines',
+  'pantry.recipe_detail_carbs': 'Glucides',
+  'pantry.recipe_detail_fat': 'Lipides',
+  'pantry.recipe_detail_prep_time': 'Préparation',
 };
 
 export default fr;
