@@ -12,8 +12,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation, useThemeStore } from '@ziko/plugin-sdk';
-import { usePantryStore } from '../store.js';
-import type { Recipe, MacroBudget } from '../types/recipe.js';
+import { usePantryStore } from '../store';
+import type { Recipe, MacroBudget } from '../types/recipe';
 
 interface Props {
   supabase: SupabaseClient;

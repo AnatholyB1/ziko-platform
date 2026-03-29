@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation, useThemeStore } from '@ziko/plugin-sdk';
-import type { Recipe } from '../types/recipe.js';
+import type { Recipe } from '../types/recipe';
 
 interface Props {
   supabase: SupabaseClient; // passed by Expo Router wrapper, available for future use
