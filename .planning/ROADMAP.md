@@ -118,7 +118,7 @@ Four phases deliver this with a hard dependency gate between each. The plugin sc
 Plans:
 - [x] 06-01-PLAN.md — Supabase migration 022, plugin scaffold, PluginLoader + dependency wiring
 - [ ] 06-02-PLAN.md — PantryDashboard (grouped list, expiry, low-stock) + PantryItemForm (add/edit, barcode scanner)
-- [ ] 06-03-PLAN.md — Backend AI tools (pantry.ts executor + registry.ts wiring + navigation)
+- [x] 06-03-PLAN.md — Backend AI tools (pantry.ts executor + registry.ts wiring + navigation)
 - [ ] 06-04-PLAN.md — i18n translations, type-check, visual verification checkpoint
 **UI hint**: yes
 
@@ -169,7 +169,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Marketing Content | v1.0 | 0/3 | Not started | - |
 | 4. SEO + Performance | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 5. Launch | v1.0 | 1/2 | In progress | - |
-| 6. Smart Inventory | v1.1 | 1/4 | In Progress|  |
+| 6. Smart Inventory | v1.1 | 2/4 | In Progress|  |
 | 7. AI Recipe Suggestions | v1.1 | 0/? | Not started | - |
 | 8. Calorie Tracker Sync | v1.1 | 0/? | Not started | - |
 | 9. Smart Shopping List | v1.1 | 0/? | Not started | - |
