@@ -67,7 +67,7 @@ Return ONLY valid JSON:
     const { text } = await generateText({
       model: anthropic('claude-sonnet-4-20250514'),
       messages: [{ role: 'user', content: prompt }],
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
     });
     rawText = text;
   } catch (genErr) {

@@ -208,7 +208,7 @@ export default function CardioDetail({ supabase }: { supabase: any }) {
   const isPRDistance = session.distance_km != null &&
     sameTypeSessions.every((s) => (s.distance_km ?? 0) <= (session.distance_km ?? 0));
   const isPRPace = session.avg_pace_sec_per_km != null &&
-    sameTypeSessions.every((s) => !s.avg_pace_sec_per_km || s.avg_pace_sec_per_km >= session.avg_pace_sec_per_km);
+    sameTypeSessions.every((s) => !s.avg_pace_sec_per_km || s.avg_pace_sec_per_km >= session.avg_pace_sec_per_km!);
 
   const handleSaveNotes = async () => {
     setSaving(true);
