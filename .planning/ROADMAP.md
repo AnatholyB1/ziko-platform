@@ -113,7 +113,13 @@ Four phases deliver this with a hard dependency gate between each. The plugin sc
   3. User can set a low-stock threshold per item — items at or below threshold appear visually flagged in the list
   4. User can view all pantry items grouped by storage location (fridge / freezer / pantry) with expiry color indicators (red for expired or today, yellow within 7 days, green otherwise)
   5. AI can read and manage pantry items via `pantry_get_items` and `pantry_update_item` tools ("Add 500g chicken breast to my pantry" works in AI chat)
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Supabase migration 022, plugin scaffold, PluginLoader + dependency wiring
+- [ ] 06-02-PLAN.md — PantryDashboard (grouped list, expiry, low-stock) + PantryItemForm (add/edit, barcode scanner)
+- [ ] 06-03-PLAN.md — Backend AI tools (pantry.ts executor + registry.ts wiring + navigation)
+- [ ] 06-04-PLAN.md — i18n translations, type-check, visual verification checkpoint
 **UI hint**: yes
 
 #### Phase 7: AI Recipe Suggestions
@@ -163,7 +169,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Marketing Content | v1.0 | 0/3 | Not started | - |
 | 4. SEO + Performance | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 5. Launch | v1.0 | 1/2 | In progress | - |
-| 6. Smart Inventory | v1.1 | 0/? | Not started | - |
+| 6. Smart Inventory | v1.1 | 0/4 | Planning complete | - |
 | 7. AI Recipe Suggestions | v1.1 | 0/? | Not started | - |
 | 8. Calorie Tracker Sync | v1.1 | 0/? | Not started | - |
 | 9. Smart Shopping List | v1.1 | 0/? | Not started | - |
@@ -171,3 +177,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
 *Updated: 2026-03-28 — Milestone v1.1 Smart Pantry Plugin phases added (6-9)*
+*Updated: 2026-03-29 — Phase 6 planned: 4 plans in 3 waves*
