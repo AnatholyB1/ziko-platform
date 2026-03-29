@@ -95,6 +95,18 @@ Units: g, kg, ml, L, pieces, can, box, bag.
       icon: 'create-outline',
       showInTabBar: false,
     },
+    {
+      path: '/(plugins)/pantry/recipes',
+      title: 'Recettes IA',
+      icon: 'restaurant-outline',
+      showInTabBar: true,
+    },
+    {
+      path: '/(plugins)/pantry/recipe-detail',
+      title: 'Détail recette',
+      icon: 'book-outline',
+      showInTabBar: false,
+    },
   ],
 };
 
