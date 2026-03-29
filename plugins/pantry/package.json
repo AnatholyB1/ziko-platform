@@ -9,7 +9,9 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/PantryDashboard": "./src/screens/PantryDashboard.tsx",
-    "./screens/PantryItemForm": "./src/screens/PantryItemForm.tsx"
+    "./screens/PantryItemForm": "./src/screens/PantryItemForm.tsx",
+    "./screens/PantryRecipes": "./src/screens/PantryRecipes.tsx",
+    "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
