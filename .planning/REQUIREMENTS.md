@@ -40,10 +40,10 @@
 ### Smart Inventory (PANTRY)
 
 - [x] **PANTRY-01**: User can add a pantry item with name, quantity, unit (g / ml / pieces), category, and optional expiration date
-- [ ] **PANTRY-02**: User can edit any field of an existing pantry item inline
-- [ ] **PANTRY-03**: User can delete a pantry item with a confirmation prompt
+- [x] **PANTRY-02**: User can edit any field of an existing pantry item inline
+- [x] **PANTRY-03**: User can delete a pantry item with a confirmation prompt
 - [x] **PANTRY-04**: User can set a low-stock threshold per item (when qty ≤ threshold, item flags as low-stock)
-- [ ] **PANTRY-05**: User can scan a product barcode to auto-fill item name from Open Food Facts API (manual entry fallback always available)
+- [x] **PANTRY-05**: User can scan a product barcode to auto-fill item name from Open Food Facts API (manual entry fallback always available)
 - [x] **PANTRY-06**: User can view all pantry items grouped by category, with low-stock items visually flagged
 
 ### AI Recipe Suggestions (RECIPE)
