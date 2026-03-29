@@ -136,7 +136,7 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Backend: POST /pantry/recipes/suggest endpoint with generateObject + Zod schema
 - [x] 07-02-PLAN.md — Frontend: Recipe types, store extension, PantryRecipes screen, RecipeDetail screen
-- [ ] 07-03-PLAN.md — Wiring: manifest routes, Expo Router wrappers, i18n keys, type-check
+- [x] 07-03-PLAN.md — Wiring: manifest routes, Expo Router wrappers, i18n keys, type-check
 **UI hint**: yes
 
 #### Phase 8: Calorie Tracker Sync
