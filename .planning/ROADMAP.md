@@ -131,7 +131,12 @@ Plans:
   2. Suggested recipes respect the user's remaining daily macro budget — a user who has already hit their calorie target sees lighter recipe options
   3. User can view a full recipe detail with ingredients, quantities, estimated macros (calories / protein / carbs / fat), and cooking steps
   4. User can adjust the serving count before logging and see the macro values recalculate accordingly
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Backend: POST /pantry/recipes/suggest endpoint with generateObject + Zod schema
+- [ ] 07-02-PLAN.md — Frontend: Recipe types, store extension, PantryRecipes screen, RecipeDetail screen
+- [ ] 07-03-PLAN.md — Wiring: manifest routes, Expo Router wrappers, i18n keys, type-check
 **UI hint**: yes
 
 #### Phase 8: Calorie Tracker Sync
@@ -170,7 +175,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. SEO + Performance | v1.0 | 3/3 | Complete | 2026-03-27 |
 | 5. Launch | v1.0 | 1/2 | In progress | - |
 | 6. Smart Inventory | v1.1 | 4/4 | Complete   | 2026-03-29 |
-| 7. AI Recipe Suggestions | v1.1 | 0/? | Not started | - |
+| 7. AI Recipe Suggestions | v1.1 | 0/3 | Not started | - |
 | 8. Calorie Tracker Sync | v1.1 | 0/? | Not started | - |
 | 9. Smart Shopping List | v1.1 | 0/? | Not started | - |
 
@@ -178,3 +183,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
 *Updated: 2026-03-28 — Milestone v1.1 Smart Pantry Plugin phases added (6-9)*
 *Updated: 2026-03-29 — Phase 6 planned: 4 plans in 3 waves*
+*Updated: 2026-03-29 — Phase 7 planned: 3 plans in 3 waves*
