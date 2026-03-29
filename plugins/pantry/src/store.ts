@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { Recipe } from './types/recipe.js';
 
 export interface PantryItem {
   id: string;
@@ -23,6 +24,14 @@ interface PantryStore {
   updateItem: (id: string, updates: Partial<PantryItem>) => void;
   removeItem: (id: string) => void;
   getItemsByLocation: (location: PantryItem['storage_location']) => PantryItem[];
+
+  // Recipe suggestion state (D-16)
+  recipes: Recipe[];
+  recipesLoading: boolean;
+  recipesError: string | null;
+  setRecipes: (recipes: Recipe[]) => void;
+  setRecipesLoading: (loading: boolean) => void;
+  setRecipesError: (error: string | null) => void;
 }
 
 export const usePantryStore = create<PantryStore>((set, get) => ({
@@ -48,4 +57,11 @@ export const usePantryStore = create<PantryStore>((set, get) => ({
 
   getItemsByLocation: (location) =>
     get().items.filter((item) => item.storage_location === location),
+
+  recipes: [],
+  recipesLoading: false,
+  recipesError: null,
+  setRecipes: (recipes) => set({ recipes }),
+  setRecipesLoading: (recipesLoading) => set({ recipesLoading }),
+  setRecipesError: (recipesError) => set({ recipesError }),
 }));
