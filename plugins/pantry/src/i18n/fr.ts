@@ -68,6 +68,7 @@ const fr: Record<string, string> = {
   'pantry.recipes_loading': 'Génération en cours...',
   'pantry.recipes_error': 'Impossible de générer des recettes',
   'pantry.recipes_retry': 'Réessayer',
+  'pantry.recipes_retry_btn': 'Réessayer',
   'pantry.recipes_preferences_placeholder': 'Ex: végétarien, rapide, sans gluten...',
   'pantry.recipes_ingredients_count': '{count} ingrédients',
   'pantry.recipes_prep_time': '{min} min',
@@ -81,6 +82,7 @@ const fr: Record<string, string> = {
   'pantry.recipe_detail_carbs': 'Glucides',
   'pantry.recipe_detail_fat': 'Lipides',
   'pantry.recipe_detail_prep_time': 'Préparation',
+  'pantry.recipe_detail_back': 'Retour',
 };
 
 export default fr;

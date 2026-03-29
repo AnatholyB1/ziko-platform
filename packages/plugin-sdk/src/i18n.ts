@@ -736,6 +736,7 @@ const fr: TranslationDict = {
   'pantry.recipes_loading': 'Génération en cours...',
   'pantry.recipes_error': 'Impossible de générer des recettes',
   'pantry.recipes_retry': 'Réessayer',
+  'pantry.recipes_retry_btn': 'Réessayer',
   'pantry.recipes_preferences_placeholder': 'Ex: végétarien, rapide, sans gluten...',
   'pantry.recipes_ingredients_count': '{count} ingrédients',
   'pantry.recipes_prep_time': '{min} min',
@@ -749,6 +750,7 @@ const fr: TranslationDict = {
   'pantry.recipe_detail_carbs': 'Glucides',
   'pantry.recipe_detail_fat': 'Lipides',
   'pantry.recipe_detail_prep_time': 'Préparation',
+  'pantry.recipe_detail_back': 'Retour',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1481,6 +1483,7 @@ const en: TranslationDict = {
   'pantry.recipes_loading': 'Generating...',
   'pantry.recipes_error': 'Unable to generate recipes',
   'pantry.recipes_retry': 'Try again',
+  'pantry.recipes_retry_btn': 'Try again',
   'pantry.recipes_preferences_placeholder': 'E.g.: vegetarian, quick, gluten-free...',
   'pantry.recipes_ingredients_count': '{count} ingredients',
   'pantry.recipes_prep_time': '{min} min',
@@ -1494,6 +1497,7 @@ const en: TranslationDict = {
   'pantry.recipe_detail_carbs': 'Carbs',
   'pantry.recipe_detail_fat': 'Fat',
   'pantry.recipe_detail_prep_time': 'Preparation',
+  'pantry.recipe_detail_back': 'Back',
 };
 
 // ── All translations ─────────────────────────────────────

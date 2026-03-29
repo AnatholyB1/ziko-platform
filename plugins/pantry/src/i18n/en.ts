@@ -68,6 +68,7 @@ const en: Record<string, string> = {
   'pantry.recipes_loading': 'Generating...',
   'pantry.recipes_error': 'Unable to generate recipes',
   'pantry.recipes_retry': 'Try again',
+  'pantry.recipes_retry_btn': 'Try again',
   'pantry.recipes_preferences_placeholder': 'E.g.: vegetarian, quick, gluten-free...',
   'pantry.recipes_ingredients_count': '{count} ingredients',
   'pantry.recipes_prep_time': '{min} min',
@@ -81,6 +82,7 @@ const en: Record<string, string> = {
   'pantry.recipe_detail_carbs': 'Carbs',
   'pantry.recipe_detail_fat': 'Fat',
   'pantry.recipe_detail_prep_time': 'Preparation',
+  'pantry.recipe_detail_back': 'Back',
 };
 
 export default en;
