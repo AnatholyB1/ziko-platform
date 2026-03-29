@@ -48,10 +48,10 @@
 
 ### AI Recipe Suggestions (RECIPE)
 
-- [ ] **RECIPE-01**: User can request AI recipe suggestions based on available pantry items
-- [ ] **RECIPE-02**: User can request macro-gap-filling recipe suggestions based on remaining daily macros + pantry contents
-- [ ] **RECIPE-03**: User can view a suggested recipe's full details — ingredients with quantities, macro breakdown (calories / protein / carbs / fat), and cooking steps
-- [ ] **RECIPE-04**: User can adjust serving size of a suggested recipe and see recalculated macros before logging
+- [x] **RECIPE-01**: User can request AI recipe suggestions based on available pantry items
+- [x] **RECIPE-02**: User can request macro-gap-filling recipe suggestions based on remaining daily macros + pantry contents
+- [x] **RECIPE-03**: User can view a suggested recipe's full details — ingredients with quantities, macro breakdown (calories / protein / carbs / fat), and cooking steps
+- [x] **RECIPE-04**: User can adjust serving size of a suggested recipe and see recalculated macros before logging
 
 ### Calorie Tracker Sync (SYNC)
 
