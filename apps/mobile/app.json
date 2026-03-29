@@ -17,6 +17,7 @@
       "bundleIdentifier": "com.ziko.mobile",
       "supportsTablet": false,
       "infoPlist": {
+        "NSCameraUsageDescription": "Ziko utilise la camera pour scanner les codes-barres de vos aliments.",
         "NSHealthShareUsageDescription": "Ziko reads your health data (steps, heart rate, sleep, workouts) to sync with your fitness profile.",
         "NSHealthUpdateUsageDescription": "Ziko writes workout data back to Apple Health.",
         "NSLocationWhenInUseUsageDescription": "Ziko utilise votre position GPS pour enregistrer vos parcours de course et de vélo.",
@@ -83,14 +84,24 @@
         {
           "requestPermissions": {
             "read": [
-              "Steps", "HeartRate", "SleepSession", "Distance",
-              "TotalCaloriesBurned", "ActiveCaloriesBurned",
-              "ExerciseSession", "Weight", "BodyFat"
+              "Steps",
+              "HeartRate",
+              "SleepSession",
+              "Distance",
+              "TotalCaloriesBurned",
+              "ActiveCaloriesBurned",
+              "ExerciseSession",
+              "Weight",
+              "BodyFat"
             ],
-            "write": ["ExerciseSession", "Steps"]
+            "write": [
+              "ExerciseSession",
+              "Steps"
+            ]
           }
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
