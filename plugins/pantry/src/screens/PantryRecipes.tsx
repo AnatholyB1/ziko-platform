@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation, useThemeStore } from '@ziko/plugin-sdk';
@@ -122,6 +123,32 @@ function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () => void }
   );
 }
 
+// ── PantryTabBar ─────────────────────────────────────────
+function PantryTabBar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const theme = useThemeStore((s) => s.theme);
+  const { t } = useTranslation();
+  const tabs = [
+    { path: '/(app)/(plugins)/pantry/dashboard', segment: 'dashboard', label: 'pantry.tab_dashboard', icon: 'storefront-outline' },
+    { path: '/(app)/(plugins)/pantry/recipes', segment: 'recipes', label: 'pantry.tab_recipes', icon: 'restaurant-outline' },
+  ] as const;
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: theme.surface, borderTopWidth: 1, borderTopColor: theme.border, paddingBottom: insets.bottom, paddingTop: 8, height: 56 + insets.bottom }}>
+      {tabs.map((tab) => {
+        const isActive = pathname.includes(tab.segment);
+        return (
+          <TouchableOpacity key={tab.path} onPress={() => router.replace(tab.path as any)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+            <Ionicons name={tab.icon as any} size={22} color={isActive ? theme.primary : theme.muted} />
+            <Text style={{ fontSize: 11, fontWeight: isActive ? '600' : '400', color: isActive ? theme.primary : theme.muted }}>{t(tab.label)}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 // ── Main screen ──────────────────────────────────────────
 export default function PantryRecipes({ supabase }: Props) {
   const router = useRouter();
@@ -193,7 +220,7 @@ export default function PantryRecipes({ supabase }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 16 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Screen title */}
@@ -327,6 +354,7 @@ export default function PantryRecipes({ supabase }: Props) {
           </View>
         )}
       </ScrollView>
+      <PantryTabBar />
     </View>
   );
 }

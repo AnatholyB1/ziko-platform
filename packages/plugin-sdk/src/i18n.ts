@@ -751,6 +751,8 @@ const fr: TranslationDict = {
   'pantry.recipe_detail_fat': 'Lipides',
   'pantry.recipe_detail_prep_time': 'Préparation',
   'pantry.recipe_detail_back': 'Retour',
+  'pantry.tab_dashboard': 'Garde-Manger',
+  'pantry.tab_recipes': 'Recettes IA',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1498,6 +1500,8 @@ const en: TranslationDict = {
   'pantry.recipe_detail_fat': 'Fat',
   'pantry.recipe_detail_prep_time': 'Preparation',
   'pantry.recipe_detail_back': 'Back',
+  'pantry.tab_dashboard': 'Pantry',
+  'pantry.tab_recipes': 'AI Recipes',
 };
 
 // ── All translations ─────────────────────────────────────

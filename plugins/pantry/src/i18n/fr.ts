@@ -83,6 +83,8 @@ const fr: Record<string, string> = {
   'pantry.recipe_detail_fat': 'Lipides',
   'pantry.recipe_detail_prep_time': 'Préparation',
   'pantry.recipe_detail_back': 'Retour',
+  'pantry.tab_dashboard': 'Garde-Manger',
+  'pantry.tab_recipes': 'Recettes IA',
 };
 
 export default fr;

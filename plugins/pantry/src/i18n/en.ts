@@ -83,6 +83,8 @@ const en: Record<string, string> = {
   'pantry.recipe_detail_fat': 'Fat',
   'pantry.recipe_detail_prep_time': 'Preparation',
   'pantry.recipe_detail_back': 'Back',
+  'pantry.tab_dashboard': 'Pantry',
+  'pantry.tab_recipes': 'AI Recipes',
 };
 
 export default en;
