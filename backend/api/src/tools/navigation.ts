@@ -45,6 +45,9 @@ export const NAVIGABLE_SCREENS: Record<string, { label: string; params?: string[
   community_dashboard: { label: 'Communauté' },
   community_friends: { label: 'Amis' },
   community_challenges: { label: 'Défis' },
+  // Pantry
+  pantry_dashboard: { label: 'Garde-Manger' },
+  pantry_add: { label: 'Ajouter article' },
   // Core
   workout_home: { label: 'Entraînement' },
   profile: { label: 'Profil' },

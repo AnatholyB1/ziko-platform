@@ -9,6 +9,7 @@ import * as JournalTools from './journal.js';
 import * as HydrationTools from './hydration.js';
 import * as CardioTools from './cardio.js';
 import * as WearablesTools from './wearables.js';
+import * as PantryTools from './pantry.js';
 import * as NavigationTools from './navigation.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
@@ -164,6 +165,8 @@ const executors: Record<string, ToolExecutor['execute']> = {
   wearables_get_heart_rate: WearablesTools.wearables_get_heart_rate,
   wearables_get_summary: WearablesTools.wearables_get_summary,
   wearables_sync_status: WearablesTools.wearables_sync_status,
+  pantry_get_items: PantryTools.pantry_get_items,
+  pantry_update_item: PantryTools.pantry_update_item,
   app_navigate: NavigationTools.app_navigate,
 };
 
@@ -482,10 +485,40 @@ const wearablesToolSchemas: AITool[] = [
   },
 ];
 
+const pantryToolSchemas: AITool[] = [
+  {
+    name: 'pantry_get_items',
+    description: "Get the user's pantry items. Optionally filter by storage location (fridge, freezer, pantry).",
+    parameters: {
+      type: 'object',
+      properties: {
+        storage_location: {
+          type: 'string',
+          enum: ['fridge', 'freezer', 'pantry'],
+          description: 'Filter by storage location (optional)',
+        },
+      },
+    },
+  },
+  {
+    name: 'pantry_update_item',
+    description: "Add a new pantry item or update an existing one. If item_id is provided, updates that item. If only name is provided, searches by name and updates or creates if not found. Use when user says they bought, added, or consumed something from their pantry.",
+    parameters: {
+      type: 'object',
+      properties: {
+        item_id: { type: 'string', description: 'UUID of the pantry item to update (optional — provide name instead for fuzzy match)' },
+        name: { type: 'string', description: 'Item name — used to look up item if item_id is not provided, or to create a new item' },
+        quantity: { type: 'number', description: 'New quantity value' },
+        unit: { type: 'string', description: 'Unit (g, kg, ml, L, pieces, can, box, bag)' },
+      },
+    },
+  },
+];
+
 const navigationToolSchemas: AITool[] = [
   {
     name: 'app_navigate',
-    description: `Navigate the user to a screen in the app. Call this AFTER creating/logging data to take the user to the relevant screen. Available screens: timer_dashboard (params: autoStartPresetId), timer_editor (params: presetId), timer_manager, cardio_dashboard, cardio_log (params: prefill_activity, prefill_duration, prefill_calories, prefill_notes), habits_dashboard, habits_log, nutrition_dashboard, nutrition_log, sleep_dashboard, sleep_log, stretching_dashboard, measurements_dashboard, measurements_log, journal_dashboard, journal_entry, hydration_dashboard, wearables_dashboard, ai_programs_dashboard, ai_programs_generate, stats_dashboard, gamification_dashboard, gamification_shop, community_dashboard, community_friends, community_challenges, workout_home, profile.`,
+    description: `Navigate the user to a screen in the app. Call this AFTER creating/logging data to take the user to the relevant screen. Available screens: timer_dashboard (params: autoStartPresetId), timer_editor (params: presetId), timer_manager, cardio_dashboard, cardio_log (params: prefill_activity, prefill_duration, prefill_calories, prefill_notes), habits_dashboard, habits_log, nutrition_dashboard, nutrition_log, sleep_dashboard, sleep_log, stretching_dashboard, measurements_dashboard, measurements_log, journal_dashboard, journal_entry, hydration_dashboard, wearables_dashboard, ai_programs_dashboard, ai_programs_generate, stats_dashboard, gamification_dashboard, gamification_shop, community_dashboard, community_friends, community_challenges, workout_home, profile, pantry_dashboard, pantry_add.`,
     parameters: {
       type: 'object',
       properties: {
@@ -509,6 +542,7 @@ export const allToolSchemas: AITool[] = [
   ...hydrationToolSchemas,
   ...cardioToolSchemas,
   ...wearablesToolSchemas,
+  ...pantryToolSchemas,
   ...navigationToolSchemas,
 ];
 
