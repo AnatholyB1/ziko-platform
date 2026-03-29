@@ -1,21 +1,17 @@
 ---
 phase: 07-ai-recipe-suggestions
-verified: 2026-03-29T14:00:00Z
-status: gaps_found
-score: 13/15 must-haves verified
-gaps:
-  - truth: "All pantry.recipes_* and pantry.recipe_detail_* i18n keys resolve in both French and English"
-    status: failed
-    reason: "Two i18n keys are used in screen components but missing from packages/plugin-sdk/src/i18n.ts and both reference copies"
-    artifacts:
-      - path: "plugins/pantry/src/screens/PantryRecipes.tsx"
-        issue: "Line 302 uses t('pantry.recipes_retry_btn') — only 'pantry.recipes_retry' exists in i18n.ts"
-      - path: "plugins/pantry/src/screens/RecipeDetail.tsx"
-        issue: "Line 60 uses t('pantry.recipe_detail_back') — key not defined anywhere in i18n.ts"
-    missing:
-      - "Add 'pantry.recipes_retry_btn' key to FR and EN dicts in packages/plugin-sdk/src/i18n.ts (FR: 'Réessayer', EN: 'Try again')"
-      - "Add 'pantry.recipe_detail_back' key to FR and EN dicts in packages/plugin-sdk/src/i18n.ts (FR: 'Retour', EN: 'Back')"
-      - "Mirror both keys to reference copies plugins/pantry/src/i18n/fr.ts and en.ts"
+verified: 2026-03-29T14:30:00Z
+status: human_needed
+score: 15/15 must-haves verified
+re_verification:
+  previous_status: gaps_found
+  previous_score: 13/15
+  gaps_closed:
+    - "pantry.recipes_retry_btn added to packages/plugin-sdk/src/i18n.ts (FR: Réessayer, EN: Try again)"
+    - "pantry.recipe_detail_back added to packages/plugin-sdk/src/i18n.ts (FR: Retour, EN: Back)"
+    - "Both keys mirrored to plugins/pantry/src/i18n/fr.ts and plugins/pantry/src/i18n/en.ts"
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Tap 'Suggérer des recettes' with a valid session and verify 3 recipe cards appear"
     expected: "Three recipe cards appear with name, description, prep time, ingredient count, calories"
@@ -30,10 +26,10 @@ human_verification:
 
 # Phase 7: AI Recipe Suggestions — Verification Report
 
-**Phase Goal:** Implement AI-powered recipe suggestions feature for the pantry plugin — backend endpoint generating macro-aware French recipes from pantry contents, two frontend screens (PantryRecipes + RecipeDetail), serving adjustment, and full i18n wiring.
+**Phase Goal:** Users can ask the AI what to cook and receive macro-aware recipe suggestions based on their current pantry contents and remaining daily calorie/protein budget.
 **Verified:** 2026-03-29
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** human_needed (all automated checks pass)
+**Re-verification:** Yes — after gap closure (plan 07-04)
 
 ---
 
@@ -53,13 +49,13 @@ human_verification:
 | 8 | PantryRecipes shows 3 recipe cards after successful API call, each with name, description, prep time, ingredient count, calories | VERIFIED | `RecipeCard` component lines 78-122: all 5 data points rendered |
 | 9 | Tapping a recipe card navigates to RecipeDetail, passing the full recipe as a JSON-encoded route param | VERIFIED | `navigateToDetail` at lines 185-190: `router.push` with `pathname: '/(plugins)/pantry/recipe-detail'` and `params: { recipe: JSON.stringify(recipe) }` |
 | 10 | RecipeDetail shows full ingredient list with quantities, macro breakdown, and cooking steps | VERIFIED | RecipeDetail.tsx: ingredients section lines 204-241, macros 148-202, steps 243-291 |
-| 11 | RecipeDetail serving stepper (1–8) recalculates displayed macros client-side | VERIFIED | `ratio = servings / recipe.base_servings`; `adjustedMacros` recomputes on every render (lines 29-35); stepper range enforced at 1/8 (lines 25-26) |
+| 11 | RecipeDetail serving stepper (1-8) recalculates displayed macros client-side | VERIFIED | `ratio = servings / recipe.base_servings`; `adjustedMacros` recomputes on every render (lines 29-35); stepper range enforced at 1/8 (lines 25-26) |
 | 12 | Loading state shows animated skeleton cards; error state shows message with retry button | VERIFIED | `SkeletonCard` with `Animated.loop` (lines 23-56); error branch lines 285-305 |
 | 13 | The pantry plugin has a 'Recettes IA' tab visible in the plugin tab bar (showInTabBar: true) | VERIFIED | `manifest.ts` line 99-103: `path: '/(plugins)/pantry/recipes'`, `showInTabBar: true`, `icon: 'restaurant-outline'` |
 | 14 | Expo Router can navigate to /(plugins)/pantry/recipes and /(plugins)/pantry/recipe-detail | VERIFIED | Both wrapper files exist at `apps/mobile/app/(app)/(plugins)/pantry/recipes.tsx` and `recipe-detail.tsx`; package.json exports map includes both entries |
-| 15 | All pantry.recipes_* and pantry.recipe_detail_* i18n keys resolve in both French and English | FAILED | Two keys used by screens are absent from i18n.ts: `pantry.recipes_retry_btn` and `pantry.recipe_detail_back` — at runtime these render as raw key strings |
+| 15 | All pantry.recipes_* and pantry.recipe_detail_* i18n keys resolve in both French and English | VERIFIED | All 21 keys present in FR dict (lines 731-753) and EN dict (lines 1478-1500) of `packages/plugin-sdk/src/i18n.ts`; both reference copies also complete |
 
-**Score: 13/15 truths verified**
+**Score: 15/15 truths verified**
 
 ---
 
@@ -78,9 +74,9 @@ human_verification:
 | `plugins/pantry/src/manifest.ts` | Two new routes: recipes + recipe-detail | VERIFIED | 5 routes total; recipes (showInTabBar: true, restaurant-outline), recipe-detail (showInTabBar: false, book-outline) |
 | `apps/mobile/app/(app)/(plugins)/pantry/recipes.tsx` | Expo Router wrapper for PantryRecipes | VERIFIED | Imports `PantryRecipes` from `@ziko/plugin-pantry/screens/PantryRecipes`, passes supabase |
 | `apps/mobile/app/(app)/(plugins)/pantry/recipe-detail.tsx` | Expo Router wrapper for RecipeDetail | VERIFIED | Imports `RecipeDetail` from `@ziko/plugin-pantry/screens/RecipeDetail`, passes supabase |
-| `packages/plugin-sdk/src/i18n.ts` | All pantry.recipes_* and pantry.recipe_detail_* keys in fr and en | PARTIAL | 19/21 defined keys present in both dicts; missing `pantry.recipes_retry_btn` and `pantry.recipe_detail_back` |
-| `plugins/pantry/src/i18n/fr.ts` | Reference copy of recipe FR keys | PARTIAL | Same 19/21 keys present; `pantry.recipes_retry_btn` and `pantry.recipe_detail_back` absent |
-| `plugins/pantry/src/i18n/en.ts` | Reference copy of recipe EN keys | PARTIAL | Same 19/21 keys present; `pantry.recipes_retry_btn` and `pantry.recipe_detail_back` absent |
+| `packages/plugin-sdk/src/i18n.ts` | All pantry.recipes_* and pantry.recipe_detail_* keys in fr and en | VERIFIED | All 21 keys present in both FR (lines 731-753) and EN (lines 1478-1500) dicts — gap closed by commit c6ea72c |
+| `plugins/pantry/src/i18n/fr.ts` | Reference copy of recipe FR keys | VERIFIED | All 21 keys present including newly added `pantry.recipes_retry_btn` (line 71) and `pantry.recipe_detail_back` (line 85) |
+| `plugins/pantry/src/i18n/en.ts` | Reference copy of recipe EN keys | VERIFIED | All 21 keys present including newly added `pantry.recipes_retry_btn` (line 71) and `pantry.recipe_detail_back` (line 85) |
 
 ---
 
@@ -118,11 +114,15 @@ human_verification:
 |----------|---------|--------|--------|
 | `pantryRecipesRouter` exports from pantry-recipes.ts | `grep "export { router as pantryRecipesRouter }" pantry-recipes.ts` | Found at line 122 | PASS |
 | Route mounted in app.ts | `grep "app.route.*pantry" app.ts` | `app.route('/pantry', pantryRecipesRouter)` at line 48 | PASS |
-| zod resolves in backend | `node -e "require('zod')"` | exits 0, "zod ok" | PASS |
+| zod resolves in backend | `node -e "require('zod')"` | exits 0 | PASS |
 | pantry package.json has 7 exports | node -e inspect exports | 7 exports confirmed | PASS |
 | Full monorepo type-check | `npm run type-check` | 20 successful, 0 errors | PASS |
-| i18n key `pantry.recipes_retry_btn` present | `grep "recipes_retry_btn" i18n.ts` | Not found | FAIL |
-| i18n key `pantry.recipe_detail_back` present | `grep "recipe_detail_back" i18n.ts` | Not found | FAIL |
+| i18n key `pantry.recipes_retry_btn` present in central dict (FR) | grep in i18n.ts | Found at line 739: `'Réessayer'` | PASS |
+| i18n key `pantry.recipes_retry_btn` present in central dict (EN) | grep in i18n.ts | Found at line 1486: `'Try again'` | PASS |
+| i18n key `pantry.recipe_detail_back` present in central dict (FR) | grep in i18n.ts | Found at line 753: `'Retour'` | PASS |
+| i18n key `pantry.recipe_detail_back` present in central dict (EN) | grep in i18n.ts | Found at line 1500: `'Back'` | PASS |
+| Both keys present in fr.ts reference copy | grep in fr.ts | Lines 71, 85 confirmed | PASS |
+| Both keys present in en.ts reference copy | grep in en.ts | Lines 71, 85 confirmed | PASS |
 
 ---
 
@@ -133,7 +133,7 @@ human_verification:
 | RECIPE-01 | 07-01, 07-02, 07-03 | User can request AI recipe suggestions based on available pantry items | SATISFIED | Backend fetches `pantry_items` and passes to Claude; PantryRecipes screen calls endpoint and displays cards |
 | RECIPE-02 | 07-01, 07-02, 07-03 | User can request macro-gap-filling recipe suggestions based on remaining daily macros + pantry | SATISFIED | `remaining_macros` computed from `nutrition_logs` vs DAILY_TARGETS; injected into Claude prompt; returned and displayed as macro budget banner |
 | RECIPE-03 | 07-02, 07-03 | User can view a suggested recipe's full details — ingredients, macro breakdown, cooking steps | SATISFIED | RecipeDetail.tsx renders all fields: ingredients with scaled quantities, 4-chip macro card, numbered steps |
-| RECIPE-04 | 07-02, 07-03 | User can adjust serving size and see recalculated macros before logging | SATISFIED | Serving stepper 1–8 in RecipeDetail; `ratio = servings / base_servings`; all macro values and ingredient quantities recomputed inline on every state change |
+| RECIPE-04 | 07-02, 07-03 | User can adjust serving size and see recalculated macros before logging | SATISFIED | Serving stepper 1-8 in RecipeDetail; `ratio = servings / base_servings`; all macro values and ingredient quantities recomputed inline on every state change |
 
 All 4 requirement IDs from REQUIREMENTS.md Phase 7 mapping are accounted for. No orphaned requirements.
 
@@ -141,12 +141,7 @@ All 4 requirement IDs from REQUIREMENTS.md Phase 7 mapping are accounted for. No
 
 ## Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
-|------|------|---------|----------|--------|
-| `plugins/pantry/src/screens/PantryRecipes.tsx` | 302 | `t('pantry.recipes_retry_btn')` — key missing from i18n | Warning | Retry button displays raw key string `pantry.recipes_retry_btn` instead of translated text |
-| `plugins/pantry/src/screens/RecipeDetail.tsx` | 60 | `t('pantry.recipe_detail_back')` — key missing from i18n | Warning | Back button label displays raw key string `pantry.recipe_detail_back` instead of "Retour"/"Back" |
-
-No structural stubs, placeholder components, or empty API returns. Both screens are substantively implemented with real data flows.
+No anti-patterns found. The two previously flagged raw i18n key warnings are resolved. No structural stubs, placeholder components, or empty API returns. Both screens are substantively implemented with real data flows.
 
 ---
 
@@ -154,14 +149,14 @@ No structural stubs, placeholder components, or empty API returns. Both screens 
 
 ### 1. AI Recipe Generation Live Test
 
-**Test:** With a valid authenticated session and at least 3–5 items in the pantry, tap "Suggérer des recettes" on the Recettes IA tab.
-**Expected:** Loading skeleton appears for 3–8 seconds, then 3 recipe cards render with distinct names, prep times, descriptions, and calories. The macro budget banner shows 4 non-zero values.
+**Test:** With a valid authenticated session and at least 3-5 items in the pantry, tap "Suggérer des recettes" on the Recettes IA tab.
+**Expected:** Loading skeleton appears for 3-8 seconds, then 3 recipe cards render with distinct names, prep times, descriptions, and calories. The macro budget banner shows 4 non-zero values.
 **Why human:** Requires a live Anthropic API call (`claude-sonnet-4-20250514`) with real credentials — cannot be simulated from static code inspection.
 
 ### 2. Serving Stepper Macro Recalculation
 
 **Test:** Navigate to any recipe detail screen. Note the displayed calorie value at `base_servings`. Tap the increment (+) button to increase servings by 1, then again to 4 servings total.
-**Expected:** Calorie and macro values update immediately on each tap. At 2× `base_servings`, all values should be approximately doubled. At 1 serving on a 2-serving base recipe, values should be halved.
+**Expected:** Calorie and macro values update immediately on each tap. At 2x `base_servings`, all values should be approximately doubled. At 1 serving on a 2-serving base recipe, values should be halved.
 **Why human:** Arithmetic is correct in code (`servings / base_servings * macro`) but visual correctness and UX smoothness of the stepper require runtime confirmation.
 
 ### 3. 'Recettes IA' Tab Visibility in Pantry Plugin
@@ -174,11 +169,9 @@ No structural stubs, placeholder components, or empty API returns. Both screens 
 
 ## Gaps Summary
 
-The phase is structurally complete and functionally correct: the backend endpoint is fully implemented with real Supabase queries and AI generation, both frontend screens are substantive (332 and 295 lines respectively) with proper data flows, all Expo Router wiring is in place, and the monorepo type-checks clean.
+No gaps remain. The single gap identified in initial verification — two missing i18n keys (`pantry.recipes_retry_btn` and `pantry.recipe_detail_back`) — was fully resolved by commit `c6ea72c` (plan 07-04). The commit added exactly 8 lines across exactly 3 files: the central `packages/plugin-sdk/src/i18n.ts` (both FR and EN dicts) and the two reference copies `plugins/pantry/src/i18n/fr.ts` and `plugins/pantry/src/i18n/en.ts`. The values match the specification: `pantry.recipes_retry_btn` maps to FR "Réessayer" / EN "Try again", and `pantry.recipe_detail_back` maps to FR "Retour" / EN "Back".
 
-One gap blocks full i18n correctness: two translation keys used in screen components (`pantry.recipes_retry_btn` in `PantryRecipes.tsx` line 302, and `pantry.recipe_detail_back` in `RecipeDetail.tsx` line 60) are absent from the central i18n dictionary and both reference copies. The `useTranslation` hook falls back to rendering the raw key name as text, so at runtime both strings display as identifiers rather than translated labels. This is a minor but visible UX defect — the retry button on the error state and the back button on the detail screen will show raw i18n key strings.
-
-The fix is two key additions: `pantry.recipes_retry_btn` (mapped to existing `pantry.recipes_retry` value: FR "Réessayer", EN "Try again") and a new `pantry.recipe_detail_back` (FR "Retour", EN "Back") to `packages/plugin-sdk/src/i18n.ts` (both FR and EN dicts) and the reference copies `plugins/pantry/src/i18n/fr.ts` and `en.ts`.
+The phase is structurally complete, functionally correct, and i18n-complete. All 15 observable truths are verified, all 14 artifacts are substantive and wired, all 8 key links are confirmed, all 4 requirements are satisfied, and no anti-patterns remain. Three items require human verification as they depend on live API calls or a running Expo device.
 
 ---
 

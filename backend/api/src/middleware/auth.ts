@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import type { Context, Next } from 'hono';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
+const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
 
-const adminClient = createClient(supabaseUrl, supabaseKey, {
+const adminClient = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
