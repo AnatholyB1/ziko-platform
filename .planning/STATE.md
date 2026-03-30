@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: executing
-stopped_at: Completed 08-01-PLAN.md (RecipeConfirm screen — nutrition log insert + pantry decrement)
-last_updated: "2026-03-30T16:34:59.791Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-30T16:39:50.549Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 08 (calorie-tracker-sync) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-30
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | Phase 07-ai-recipe-suggestions P07-03 | 8 | 4 tasks | 9 files |
 | Phase 07 P04 | 2m | 1 tasks | 3 files |
 | Phase 08-calorie-tracker-sync P08-01 | 1m 18s | 1 tasks | 1 files |
+| Phase 08-calorie-tracker-sync P02 | 8 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 08]: useEffect nutrition plugin gate uses .maybeSingle() not .single() — .single() throws PGRST116 when user_plugins row absent
 - [Phase 08]: router.replace('/(app)/(plugins)/nutrition/dashboard') — full path required for cross-plugin navigation; confirm screen must not be in back-stack
 - [Phase 08-calorie-tracker-sync]: calories uses parseInt(str, 10) — nutrition_logs.calories is INTEGER, not NUMERIC; pantry decrement is per-ingredient try/catch — non-blocking; router.replace ensures confirm screen not in back-stack
+- [Phase 08-calorie-tracker-sync]: Use .maybeSingle() not .single() for nutrition plugin gate — .single() throws PGRST116 when row absent, logging errors for users without nutrition plugin
+- [Phase 08-calorie-tracker-sync]: CTA hidden not disabled when nutritionInstalled is null/false — prevents flash, clean UX
+- [Phase 08-calorie-tracker-sync]: Added missing ./screens/RecipeConfirm export to plugins/pantry/package.json (Rule 3 auto-fix from Plan 02)
 
 ### Pending Todos
 
@@ -110,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T16:34:59.787Z
-Stopped at: Completed 08-01-PLAN.md (RecipeConfirm screen — nutrition log insert + pantry decrement)
+Last session: 2026-03-30T16:39:50.545Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
