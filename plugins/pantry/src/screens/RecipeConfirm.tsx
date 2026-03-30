@@ -82,19 +82,24 @@ export default function RecipeConfirm({ supabase }: Props) {
       if (error) throw error;
 
       // 2. Pantry decrement — best-effort, per-ingredient try/catch
-      const pantryItems = usePantryStore.getState().items;
+      // Always fetch from DB (store may be empty if Garde-Manger was never visited)
+      const { data: freshItems } = await supabase
+        .from('pantry_items')
+        .select('id, name, quantity')
+        .eq('user_id', user.id);
+      const pantryItems = freshItems ?? usePantryStore.getState().items;
       for (const ingredient of recipe.ingredients) {
         const match = pantryItems.find(
-          (item) => item.name.toLowerCase() === ingredient.name.toLowerCase(),
+          (item: { name: string }) => item.name.toLowerCase() === ingredient.name.toLowerCase(),
         );
         if (!match) continue;
         const scaledQty = ingredient.quantity * ratio;
-        const newQty = Math.max(0, match.quantity - scaledQty);
+        const newQty = Math.max(0, (match as { quantity: number }).quantity - scaledQty);
         try {
-          await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', match.id);
-          usePantryStore.getState().updateItem(match.id, { quantity: newQty });
+          await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', (match as { id: string }).id);
+          usePantryStore.getState().updateItem((match as { id: string }).id, { quantity: newQty });
         } catch (err) {
-          console.error('[RecipeConfirm] pantry decrement failed for', match.name, err);
+          console.error('[RecipeConfirm] pantry decrement failed for', (match as { name: string }).name, err);
         }
       }
 
