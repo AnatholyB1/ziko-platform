@@ -147,7 +147,12 @@ Plans:
   1. User can tap "I cooked this" on a recipe and see a confirm screen with editable macro fields and a meal-type selector pre-filled from the time of day
   2. Confirming the cook creates a visible entry in the Nutrition dashboard — the user is navigated to the Nutrition screen automatically to confirm no duplicate logging
   3. Pantry item quantities are decremented by the amounts used in the recipe after confirming
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — RecipeConfirm screen: nutrition log insert, pantry decrement, router.replace navigation
+- [ ] 08-02-PLAN.md — RecipeDetail CTA + nutrition plugin gate, confirm.tsx wrapper, manifest route
+- [ ] 08-03-PLAN.md — i18n keys (pantry.confirm_* namespace), full type-check, human verification
 **UI hint**: yes
 
 #### Phase 9: Smart Shopping List
@@ -176,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Launch | v1.0 | 1/2 | In progress | - |
 | 6. Smart Inventory | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 7. AI Recipe Suggestions | v1.1 | 4/4 | Complete   | 2026-03-29 |
-| 8. Calorie Tracker Sync | v1.1 | 0/? | Not started | - |
+| 8. Calorie Tracker Sync | v1.1 | 0/3 | Planning complete | - |
 | 9. Smart Shopping List | v1.1 | 0/? | Not started | - |
 
 ---
@@ -184,3 +189,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 *Updated: 2026-03-28 — Milestone v1.1 Smart Pantry Plugin phases added (6-9)*
 *Updated: 2026-03-29 — Phase 6 planned: 4 plans in 3 waves*
 *Updated: 2026-03-29 — Phase 7 planned: 3 plans in 3 waves*
+*Updated: 2026-03-29 — Phase 8 planned: 3 plans in 3 waves*

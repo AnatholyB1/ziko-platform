@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-03-29T10:16:00.343Z"
+stopped_at: Planned 08-03-PLAN.md
+last_updated: "2026-03-29T10:30:00.000Z"
 last_activity: 2026-03-29
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 8
+  total_plans: 11
   completed_plans: 8
   percent: 0
 ---
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
-**Current focus:** Phase 07 — ai-recipe-suggestions
+**Current focus:** Phase 08 — calorie-tracker-sync
 
 ## Current Position
 
-Phase: 07 (ai-recipe-suggestions) — EXECUTING
-Plan: 2 of 4
+Phase: 08 (calorie-tracker-sync) — PLANNED, ready to execute
+Plan: 0 of 3
 Status: Ready to execute
 Last activity: 2026-03-29
 
@@ -88,6 +88,11 @@ Recent decisions affecting current work:
 - [Phase 07-03]: declarations.d.ts module declaration for datetimepicker placed in apps/mobile/src/types/ — avoids tsconfig restructuring
 - [Phase 07]: pantry.recipes_retry_btn mirrors pantry.recipes_retry value for semantic distinction between error state label and button label
 - [Phase 07]: pantry.recipe_detail_back uses standard navigation labels (Retour/Back) consistent with existing back-navigation patterns
+- [Phase 08]: RecipeConfirm is a navigated screen (not modal) receiving recipe+servings as JSON route params — same pattern as RecipeDetail
+- [Phase 08]: calories column is INTEGER — use parseInt(caloriesStr, 10); protein_g/carbs_g/fat_g are NUMERIC(6,1) — use parseFloat
+- [Phase 08]: Pantry decrement uses per-ingredient try/catch — nutrition insert failure does NOT block navigation, each ingredient failure is independent
+- [Phase 08]: useEffect nutrition plugin gate uses .maybeSingle() not .single() — .single() throws PGRST116 when user_plugins row absent
+- [Phase 08]: router.replace('/(app)/(plugins)/nutrition/dashboard') — full path required for cross-plugin navigation; confirm screen must not be in back-stack
 
 ### Pending Todos
 
@@ -97,12 +102,12 @@ None yet.
 
 - Phase 6: Three registration touch points (PluginLoader.tsx, registry.ts, 022 migration) must all be wired in the same plan — Metro bundler silently omits missing plugins
 - Phase 7: Inject macro summary into system prompt via `fetchUserContext` to protect 5-step tool-call budget — do not let `nutrition_get_today` consume an agent step
-- Phase 8: Gate "Auto-log macros" UI on nutrition plugin installation check — show graceful fallback if nutrition plugin is not installed
-- Phase 8: Call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds to prevent duplicate logging
-- Phase 8: Confirm exact `meal_type` enum values in `003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked` — code-read task, not a research gap
+- Phase 8: Gate "Auto-log macros" UI on nutrition plugin installation check — show graceful fallback if nutrition plugin is not installed (RESOLVED in plan 08-02 via nutritionInstalled state)
+- Phase 8: Call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds to prevent duplicate logging (RESOLVED in plan 08-01 via router.replace)
+- Phase 8: Confirm exact `meal_type` enum values in `003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked` (RESOLVED — exactly: breakfast | lunch | dinner | snack)
 
 ## Session Continuity
 
-Last session: 2026-03-29T10:16:00.338Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-03-29T10:30:00.000Z
+Stopped at: Planned 08-03-PLAN.md (Phase 8 planning complete — 3 plans, 3 waves)
 Resume file: None
