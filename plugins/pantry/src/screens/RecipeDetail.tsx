@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,25 @@ export default function RecipeDetail({ supabase }: Props) {
 
   // ── Serving state ────────────────────────────────────
   const [servings, setServings] = useState(recipe.base_servings);
+
+  // ── Nutrition plugin gate ─────────────────────────────
+  const [nutritionInstalled, setNutritionInstalled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setNutritionInstalled(false); return; }
+      supabase
+        .from('user_plugins')
+        .select('is_enabled')
+        .eq('user_id', user.id)
+        .eq('plugin_id', 'nutrition')
+        .eq('is_enabled', true)
+        .maybeSingle()
+        .then(({ data }) => {
+          setNutritionInstalled(!!data);
+        });
+    });
+  }, []);
 
   const decrement = () => setServings((s) => Math.max(1, s - 1));
   const increment = () => setServings((s) => Math.min(8, s + 1));
@@ -144,6 +163,32 @@ export default function RecipeDetail({ supabase }: Props) {
             />
           </TouchableOpacity>
         </View>
+
+        {/* I cooked this CTA — only shown when nutrition plugin is installed */}
+        {nutritionInstalled === true && (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: '/(plugins)/pantry/confirm' as any,
+                params: {
+                  recipe: JSON.stringify(recipe),
+                  servings: String(servings),
+                },
+              })
+            }
+            style={{
+              backgroundColor: theme.primary,
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: 'center',
+              marginTop: 12,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>
+              {t('pantry.cooked_this_cta')}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Macro summary card */}
         <View
