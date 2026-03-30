@@ -2,6 +2,7 @@ export interface RecipeIngredient {
   name: string;
   quantity: number;
   unit: string;
+  pantry_item_id?: string;
 }
 
 export interface RecipeMacros {

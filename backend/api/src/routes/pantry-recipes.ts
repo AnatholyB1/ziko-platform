@@ -9,6 +9,7 @@ const RecipeIngredientSchema = z.object({
   name: z.string().describe('Ingredient name in French'),
   quantity: z.number().describe('Amount needed'),
   unit: z.string().describe('Unit of measurement (g, kg, ml, L, pieces, etc.)'),
+  pantry_item_id: z.string().optional().describe('ID of the matching pantry item from the list (only set when this ingredient comes from the pantry)'),
 });
 
 const RecipeMacrosSchema = z.object({
@@ -53,7 +54,7 @@ router.post('/recipes/suggest', async (c) => {
   const [pantryRes, nutritionRes] = await Promise.all([
     db
       .from('pantry_items')
-      .select('name, quantity, unit, food_category, storage_location')
+      .select('id, name, quantity, unit, food_category, storage_location')
       .eq('user_id', userId)
       .order('name'),
     db
@@ -80,7 +81,7 @@ router.post('/recipes/suggest', async (c) => {
   const pantryItems = pantryRes.data ?? [];
   const pantryListStr =
     pantryItems.length > 0
-      ? pantryItems.map((item: any) => `${item.name}: ${item.quantity} ${item.unit} (${item.food_category})`).join('\n')
+      ? pantryItems.map((item: any) => `[ID:${item.id}] ${item.name}: ${item.quantity} ${item.unit} (${item.food_category})`).join('\n')
       : 'Le garde-manger est vide.';
 
   const prompt = `Génère EXACTEMENT 3 recettes en utilisant principalement les ingrédients suivants du garde-manger :
@@ -98,7 +99,8 @@ ${body.preferences ? `Préférences de l'utilisateur : ${body.preferences}\n\n` 
 - Adapte les recettes au budget nutritionnel restant (recettes légères si budget faible)
 - Noms de recettes, descriptions et étapes en FRANÇAIS
 - Quantités réalistes et temps de préparation honnêtes
-- Génère exactement 3 recettes différentes`;
+- Génère exactement 3 recettes différentes
+- IMPORTANT : pour chaque ingrédient qui vient du garde-manger, set pantry_item_id avec l'ID entre crochets [ID:...] de la liste ci-dessus`;
 
   try {
     const { object } = await generateObject({

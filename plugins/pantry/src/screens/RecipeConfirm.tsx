@@ -97,18 +97,18 @@ export default function RecipeConfirm({ supabase }: Props) {
         .eq('user_id', user.id);
       console.log('[RecipeConfirm] pantry fetch:', JSON.stringify({ count: freshItems?.length, fetchErr }));
       console.log('[RecipeConfirm] recipe ingredients:', JSON.stringify(recipe.ingredients.map(i => ({ name: i.name, qty: i.quantity, unit: i.unit }))));
+      console.log('[RecipeConfirm] pantry names:', JSON.stringify((freshItems ?? []).map((i: any) => i.name)));
       const pantryItems = freshItems ?? usePantryStore.getState().items;
       for (const ingredient of recipe.ingredients) {
         const ingName = ingredient.name.toLowerCase();
-        const match = pantryItems.find((item: { name: string }) => {
+        const match = pantryItems.find((item: { id: string; name: string }) => {
+          // Primary: match by pantry_item_id set by the AI
+          if (ingredient.pantry_item_id && item.id === ingredient.pantry_item_id) return true;
+          // Fallback: substring name match
           const itemName = item.name.toLowerCase();
-          return (
-            itemName === ingName ||
-            ingName.includes(itemName) ||
-            itemName.includes(ingName)
-          );
+          return itemName === ingName || ingName.includes(itemName) || itemName.includes(ingName);
         });
-        console.log(`[RecipeConfirm] ingredient "${ingName}" → match: ${match ? (match as any).name : 'NONE'}`);
+        console.log(`[RecipeConfirm] ingredient "${ingName}" (id:${ingredient.pantry_item_id ?? 'none'}) → match: ${match ? (match as any).name : 'NONE'}`);
         if (!match) continue;
         const pantryItem = match as { id: string; name: string; quantity: number; unit: string };
         const rawIngQty = ingredient.quantity * ratio;
