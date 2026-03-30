@@ -152,7 +152,7 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — RecipeConfirm screen: nutrition log insert, pantry decrement, router.replace navigation
 - [x] 08-02-PLAN.md — RecipeDetail CTA + nutrition plugin gate, confirm.tsx wrapper, manifest route
-- [ ] 08-03-PLAN.md — i18n keys (pantry.confirm_* namespace), full type-check, human verification
+- [x] 08-03-PLAN.md — i18n keys (pantry.confirm_* namespace), full type-check, human verification
 **UI hint**: yes
 
 #### Phase 9: Smart Shopping List
@@ -181,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Launch | v1.0 | 1/2 | In progress | - |
 | 6. Smart Inventory | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 7. AI Recipe Suggestions | v1.1 | 4/4 | Complete   | 2026-03-29 |
-| 8. Calorie Tracker Sync | v1.1 | 2/3 | In Progress|  |
+| 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 9. Smart Shopping List | v1.1 | 0/? | Not started | - |
 
 ---
