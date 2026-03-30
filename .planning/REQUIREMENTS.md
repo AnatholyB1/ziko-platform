@@ -55,9 +55,9 @@
 
 ### Calorie Tracker Sync (SYNC)
 
-- [ ] **SYNC-01**: User can confirm a cooked recipe to auto-log its macros to the nutrition plugin
-- [ ] **SYNC-02**: User can edit any macro value and the meal_type (breakfast / lunch / dinner / snack) before confirming sync
-- [ ] **SYNC-03**: Pantry item quantities are decremented for used ingredients when a recipe is confirmed as cooked
+- [x] **SYNC-01**: User can confirm a cooked recipe to auto-log its macros to the nutrition plugin
+- [x] **SYNC-02**: User can edit any macro value and the meal_type (breakfast / lunch / dinner / snack) before confirming sync
+- [x] **SYNC-03**: Pantry item quantities are decremented for used ingredients when a recipe is confirmed as cooked
 
 ### Smart Shopping List (SHOP)
 
