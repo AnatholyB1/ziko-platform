@@ -13,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Recipe } from '../types/recipe.js';
-import { usePantryStore } from '../store.js';
+import type { Recipe } from '../types/recipe';
+import { usePantryStore } from '../store';
 
 // ── Helpers ──────────────────────────────────────────────
 
