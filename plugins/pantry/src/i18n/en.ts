@@ -85,6 +85,23 @@ const en: Record<string, string> = {
   'pantry.recipe_detail_back': 'Back',
   'pantry.tab_dashboard': 'Pantry',
   'pantry.tab_recipes': 'AI Recipes',
+  // ── Pantry Confirm ──
+  'pantry.cooked_this_cta': 'I cooked this',
+  'pantry.confirm_title': 'Confirm recipe',
+  'pantry.confirm_subtitle': 'Review and adjust nutritional values',
+  'pantry.confirm_meal_type': 'Meal type',
+  'pantry.confirm_meal_breakfast': 'Breakfast',
+  'pantry.confirm_meal_lunch': 'Lunch',
+  'pantry.confirm_meal_dinner': 'Dinner',
+  'pantry.confirm_meal_snack': 'Snack',
+  'pantry.confirm_macros_title': 'Nutritional values',
+  'pantry.confirm_field_calories': 'Calories (kcal)',
+  'pantry.confirm_field_protein': 'Protein (g)',
+  'pantry.confirm_field_carbs': 'Carbs (g)',
+  'pantry.confirm_field_fat': 'Fat (g)',
+  'pantry.confirm_cta': 'Confirm & log meal',
+  'pantry.confirm_error_title': 'Error',
+  'pantry.confirm_error': 'Unable to save. Check your connection.',
 };
 
 export default en;

@@ -85,6 +85,23 @@ const fr: Record<string, string> = {
   'pantry.recipe_detail_back': 'Retour',
   'pantry.tab_dashboard': 'Garde-Manger',
   'pantry.tab_recipes': 'Recettes IA',
+  // ── Pantry Confirm ──
+  'pantry.cooked_this_cta': 'J\'ai cuisiné ça',
+  'pantry.confirm_title': 'Confirmer la recette',
+  'pantry.confirm_subtitle': 'Vérifiez et ajustez les valeurs nutritionnelles',
+  'pantry.confirm_meal_type': 'Type de repas',
+  'pantry.confirm_meal_breakfast': 'Matin',
+  'pantry.confirm_meal_lunch': 'Déjeuner',
+  'pantry.confirm_meal_dinner': 'Dîner',
+  'pantry.confirm_meal_snack': 'Collation',
+  'pantry.confirm_macros_title': 'Valeurs nutritionnelles',
+  'pantry.confirm_field_calories': 'Calories (kcal)',
+  'pantry.confirm_field_protein': 'Protéines (g)',
+  'pantry.confirm_field_carbs': 'Glucides (g)',
+  'pantry.confirm_field_fat': 'Lipides (g)',
+  'pantry.confirm_cta': 'Confirmer et logger',
+  'pantry.confirm_error_title': 'Erreur',
+  'pantry.confirm_error': 'Impossible d\'enregistrer. Vérifiez votre connexion.',
 };
 
 export default fr;
