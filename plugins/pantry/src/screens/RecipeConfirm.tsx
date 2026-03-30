@@ -91,10 +91,12 @@ export default function RecipeConfirm({ supabase }: Props) {
 
       // 2. Pantry decrement — best-effort, per-ingredient try/catch
       // Always fetch from DB (store may be empty if Garde-Manger was never visited)
-      const { data: freshItems } = await supabase
+      const { data: freshItems, error: fetchErr } = await supabase
         .from('pantry_items')
-        .select('id, name, quantity')
+        .select('id, name, quantity, unit')
         .eq('user_id', user.id);
+      console.log('[RecipeConfirm] pantry fetch:', JSON.stringify({ count: freshItems?.length, fetchErr }));
+      console.log('[RecipeConfirm] recipe ingredients:', JSON.stringify(recipe.ingredients.map(i => ({ name: i.name, qty: i.quantity, unit: i.unit }))));
       const pantryItems = freshItems ?? usePantryStore.getState().items;
       for (const ingredient of recipe.ingredients) {
         const ingName = ingredient.name.toLowerCase();
@@ -106,26 +108,24 @@ export default function RecipeConfirm({ supabase }: Props) {
             itemName.includes(ingName)
           );
         });
+        console.log(`[RecipeConfirm] ingredient "${ingName}" → match: ${match ? (match as any).name : 'NONE'}`);
         if (!match) continue;
-        const pantryItem = match as { id: string; name: string; quantity: number; unit?: string };
-        // Normalize ingredient quantity to pantry item's unit before subtracting
+        const pantryItem = match as { id: string; name: string; quantity: number; unit: string };
         const rawIngQty = ingredient.quantity * ratio;
         const ingBase = toBaseUnit(rawIngQty, ingredient.unit);
-        const pantryBase = pantryItem.unit ? toBaseUnit(pantryItem.quantity, pantryItem.unit) : { qty: pantryItem.quantity, unit: '' };
-        let deductQty: number;
-        if (ingBase.unit === pantryBase.unit) {
-          // Same unit family — subtract directly
-          deductQty = ingBase.qty;
-        } else {
-          // Units differ (e.g. pieces vs g) — subtract as-is, best-effort
-          deductQty = rawIngQty;
-        }
-        const newQty = Math.max(0, pantryItem.quantity - deductQty);
-        try {
-          await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', pantryItem.id);
-          usePantryStore.getState().updateItem(pantryItem.id, { quantity: newQty });
-        } catch (err) {
-          console.error('[RecipeConfirm] pantry decrement failed for', pantryItem.name, err);
+        const pantryBase = toBaseUnit(pantryItem.quantity, pantryItem.unit);
+        const deductQty = ingBase.unit === pantryBase.unit ? ingBase.qty : rawIngQty;
+        const newQty = Math.max(0, pantryBase.qty - deductQty);
+        // Convert newQty back to pantry item's original unit if needed
+        const finalQty = pantryItem.unit.toLowerCase() === 'kg' ? newQty / 1000 : pantryItem.unit.toLowerCase() === 'l' ? newQty / 1000 : newQty;
+        console.log(`[RecipeConfirm] decrement "${pantryItem.name}": ${pantryItem.quantity}${pantryItem.unit} - ${rawIngQty}${ingredient.unit} → finalQty=${finalQty}`);
+        const { error: updateErr } = await supabase
+          .from('pantry_items')
+          .update({ quantity: finalQty })
+          .eq('id', pantryItem.id);
+        console.log(`[RecipeConfirm] update result for "${pantryItem.name}":`, updateErr ?? 'OK');
+        if (!updateErr) {
+          usePantryStore.getState().updateItem(pantryItem.id, { quantity: finalQty });
         }
       }
 
