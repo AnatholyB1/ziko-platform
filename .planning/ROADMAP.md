@@ -150,7 +150,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — RecipeConfirm screen: nutrition log insert, pantry decrement, router.replace navigation
+- [x] 08-01-PLAN.md — RecipeConfirm screen: nutrition log insert, pantry decrement, router.replace navigation
 - [ ] 08-02-PLAN.md — RecipeDetail CTA + nutrition plugin gate, confirm.tsx wrapper, manifest route
 - [ ] 08-03-PLAN.md — i18n keys (pantry.confirm_* namespace), full type-check, human verification
 **UI hint**: yes

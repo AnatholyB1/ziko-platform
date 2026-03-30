@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: executing
-stopped_at: Planned 08-03-PLAN.md
-last_updated: "2026-03-29T10:30:00.000Z"
-last_activity: 2026-03-29
+stopped_at: Completed 08-01-PLAN.md (RecipeConfirm screen — nutrition log insert + pantry decrement)
+last_updated: "2026-03-30T16:34:59.791Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 08 (calorie-tracker-sync) — PLANNED, ready to execute
-Plan: 0 of 3
+Phase: 08 (calorie-tracker-sync) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-03-29
+Last activity: 2026-03-30
 
 Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | Phase 07-ai-recipe-suggestions P07-02 | 3 | 4 tasks | 4 files |
 | Phase 07-ai-recipe-suggestions P07-03 | 8 | 4 tasks | 9 files |
 | Phase 07 P04 | 2m | 1 tasks | 3 files |
+| Phase 08-calorie-tracker-sync P08-01 | 1m 18s | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ Recent decisions affecting current work:
 - [Phase 08]: Pantry decrement uses per-ingredient try/catch — nutrition insert failure does NOT block navigation, each ingredient failure is independent
 - [Phase 08]: useEffect nutrition plugin gate uses .maybeSingle() not .single() — .single() throws PGRST116 when user_plugins row absent
 - [Phase 08]: router.replace('/(app)/(plugins)/nutrition/dashboard') — full path required for cross-plugin navigation; confirm screen must not be in back-stack
+- [Phase 08-calorie-tracker-sync]: calories uses parseInt(str, 10) — nutrition_logs.calories is INTEGER, not NUMERIC; pantry decrement is per-ingredient try/catch — non-blocking; router.replace ensures confirm screen not in back-stack
 
 ### Pending Todos
 
@@ -108,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T10:30:00.000Z
-Stopped at: Planned 08-03-PLAN.md (Phase 8 planning complete — 3 plans, 3 waves)
+Last session: 2026-03-30T16:34:59.787Z
+Stopped at: Completed 08-01-PLAN.md (RecipeConfirm screen — nutrition log insert + pantry decrement)
 Resume file: None
