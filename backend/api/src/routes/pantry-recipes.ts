@@ -36,6 +36,24 @@ const ResponseSchema = z.object({
 
 const DAILY_TARGETS = { calories: 2000, protein_g: 150, carbs_g: 250, fat_g: 65 };
 
+function normalizeStr(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+}
+
+function wordOverlapMatch(pantryName: string, ingredientName: string): boolean {
+  const wordsP = normalizeStr(pantryName).split(/\s+/).filter((w) => w.length > 2);
+  const wordsI = normalizeStr(ingredientName).split(/\s+/).filter((w) => w.length > 2);
+  // At least one significant word must appear in both
+  return wordsI.some((w) => wordsP.includes(w));
+}
+
 const router = new Hono();
 router.use('*', authMiddleware);
 
@@ -111,6 +129,15 @@ ${body.preferences ? `Préférences de l'utilisateur : ${body.preferences}\n\n` 
         'Tu es un chef cuisinier français expert en nutrition. Tu génères des recettes structurées, réalistes et savoureuses basées sur les ingrédients disponibles. Respecte toujours le format JSON demandé.',
       prompt,
     });
+    // Inject pantry_item_id server-side — AI instructions alone are unreliable
+    for (const recipe of object.recipes) {
+      for (const ingredient of recipe.ingredients) {
+        if (!ingredient.pantry_item_id) {
+          const match = pantryItems.find((item: any) => wordOverlapMatch(item.name, ingredient.name));
+          if (match) ingredient.pantry_item_id = match.id;
+        }
+      }
+    }
     return c.json({ recipes: object.recipes, remaining_macros });
   } catch (err) {
     if (err instanceof NoObjectGeneratedError) {
