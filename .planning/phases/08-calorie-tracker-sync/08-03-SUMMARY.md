@@ -53,7 +53,7 @@ completed: 2026-03-30
 - **Duration:** ~5 min
 - **Started:** 2026-03-30T16:40:00Z
 - **Completed:** 2026-03-30T16:42:33Z
-- **Tasks:** 2 automated (+ 1 human-verify checkpoint pending)
+- **Tasks:** 3 (2 automated + 1 human-verify checkpoint — APPROVED)
 - **Files modified:** 3
 
 ## Accomplishments
@@ -61,11 +61,13 @@ completed: 2026-03-30
 - Added 16 i18n keys to the runtime source (`packages/plugin-sdk/src/i18n.ts`) in both French and English sections
 - Updated both reference copy files (`plugins/pantry/src/i18n/fr.ts` and `en.ts`) to match
 - Full TypeScript type-check (`npx tsc --noEmit -p apps/mobile/tsconfig.json`) exits 0 with no changes required
+- Human verified end-to-end flow: RecipeDetail "J'ai cuisiné ça" CTA → RecipeConfirm → Nutrition dashboard — approved by user ("approuvé")
 
 ## Task Commits
 
 1. **Task 1: Add pantry.confirm_* i18n keys** - `3e29dac` (feat)
 2. **Task 2: Full type-check** - `8ce7bc3` (chore — passes clean, no changes needed)
+3. **Task 3: Human verify checkpoint** - APPROVED (no code commit required)
 
 ## Files Created/Modified
 
@@ -95,10 +97,17 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-- All Phase 8 automated tasks complete
-- Human verification checkpoint pending: user must run `npx expo start` and test the full RecipeDetail → RecipeConfirm → Nutrition dashboard flow
-- Phase 9 (Shopping List) can begin after human verification approves Phase 8
+- Phase 8 fully complete — all 3 plans executed and human-verified
+- The full "I cooked this" flow works end-to-end: RecipeDetail CTA → RecipeConfirm (editable macros, meal-type selector) → Nutrition dashboard with new log entry + pantry quantities decremented
+- Phase 9 (Shopping List) is unblocked — depends only on Phase 06 pantry data infrastructure which has been stable since Phase 06
 
 ---
 *Phase: 08-calorie-tracker-sync*
 *Completed: 2026-03-30*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/08-calorie-tracker-sync/08-03-SUMMARY.md`
+- FOUND: commit `3e29dac` (Task 1 — i18n keys)
+- FOUND: commit `8ce7bc3` (Task 2 — type-check)
+- FOUND: commit `0104f08` (Plan metadata)
