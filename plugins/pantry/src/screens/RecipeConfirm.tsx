@@ -18,6 +18,14 @@ import { usePantryStore } from '../store';
 
 // ── Helpers ──────────────────────────────────────────────
 
+/** Convert ingredient quantity to the same base unit as the pantry item before subtracting. */
+function toBaseUnit(qty: number, unit: string): { qty: number; unit: string } {
+  const u = unit.toLowerCase();
+  if (u === 'kg') return { qty: qty * 1000, unit: 'g' };
+  if (u === 'l') return { qty: qty * 1000, unit: 'ml' };
+  return { qty, unit: u };
+}
+
 function getMealTypeForHour(h: number): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
   if (h >= 6 && h <= 10) return 'breakfast';
   if (h >= 11 && h <= 14) return 'lunch';
@@ -89,17 +97,35 @@ export default function RecipeConfirm({ supabase }: Props) {
         .eq('user_id', user.id);
       const pantryItems = freshItems ?? usePantryStore.getState().items;
       for (const ingredient of recipe.ingredients) {
-        const match = pantryItems.find(
-          (item: { name: string }) => item.name.toLowerCase() === ingredient.name.toLowerCase(),
-        );
+        const ingName = ingredient.name.toLowerCase();
+        const match = pantryItems.find((item: { name: string }) => {
+          const itemName = item.name.toLowerCase();
+          return (
+            itemName === ingName ||
+            ingName.includes(itemName) ||
+            itemName.includes(ingName)
+          );
+        });
         if (!match) continue;
-        const scaledQty = ingredient.quantity * ratio;
-        const newQty = Math.max(0, (match as { quantity: number }).quantity - scaledQty);
+        const pantryItem = match as { id: string; name: string; quantity: number; unit?: string };
+        // Normalize ingredient quantity to pantry item's unit before subtracting
+        const rawIngQty = ingredient.quantity * ratio;
+        const ingBase = toBaseUnit(rawIngQty, ingredient.unit);
+        const pantryBase = pantryItem.unit ? toBaseUnit(pantryItem.quantity, pantryItem.unit) : { qty: pantryItem.quantity, unit: '' };
+        let deductQty: number;
+        if (ingBase.unit === pantryBase.unit) {
+          // Same unit family — subtract directly
+          deductQty = ingBase.qty;
+        } else {
+          // Units differ (e.g. pieces vs g) — subtract as-is, best-effort
+          deductQty = rawIngQty;
+        }
+        const newQty = Math.max(0, pantryItem.quantity - deductQty);
         try {
-          await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', (match as { id: string }).id);
-          usePantryStore.getState().updateItem((match as { id: string }).id, { quantity: newQty });
+          await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', pantryItem.id);
+          usePantryStore.getState().updateItem(pantryItem.id, { quantity: newQty });
         } catch (err) {
-          console.error('[RecipeConfirm] pantry decrement failed for', (match as { name: string }).name, err);
+          console.error('[RecipeConfirm] pantry decrement failed for', pantryItem.name, err);
         }
       }
 
