@@ -11,7 +11,8 @@
     "./screens/PantryDashboard": "./src/screens/PantryDashboard.tsx",
     "./screens/PantryItemForm": "./src/screens/PantryItemForm.tsx",
     "./screens/PantryRecipes": "./src/screens/PantryRecipes.tsx",
-    "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx"
+    "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx",
+    "./screens/RecipeConfirm": "./src/screens/RecipeConfirm.tsx"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",

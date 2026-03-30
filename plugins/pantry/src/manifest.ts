@@ -107,6 +107,12 @@ Units: g, kg, ml, L, pieces, can, box, bag.
       icon: 'book-outline',
       showInTabBar: false,
     },
+    {
+      path: '/(plugins)/pantry/confirm',
+      title: 'Confirmer la recette',
+      icon: 'checkmark-circle-outline',
+      showInTabBar: false,
+    },
   ],
 };
 
