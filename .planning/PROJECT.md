@@ -46,9 +46,9 @@ A fitness user has a single app that coaches them, tracks everything, and now te
 ### Active (v1.1 — Smart Pantry Plugin)
 
 - [x] Smart inventory — pantry items with qty, unit, expiration, category (Validated in Phase 6: smart-inventory)
-- [ ] AI recipe suggestions — from pantry contents + remaining daily macros
-- [ ] Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin
-- [ ] Smart shopping list — rule-based from low-stock items + recipe ingredients
+- [x] AI recipe suggestions — from pantry contents + remaining daily macros (Validated in Phase 7: ai-recipe-suggestions)
+- [x] Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin (Validated in Phase 8: calorie-tracker-sync)
+- [x] Smart shopping list — rule-based from low-stock items + recipe ingredients (Validated in Phase 9: smart-shopping-list)
 
 ### Deferred
 
@@ -108,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 — Phase 6 complete: Smart Pantry Plugin inventory tracking shipped*
+*Last updated: 2026-04-01 — Phase 9 complete: Smart Pantry Plugin v1.1 milestone fully shipped (all 4 phases: inventory, AI recipes, calorie sync, shopping list)*
