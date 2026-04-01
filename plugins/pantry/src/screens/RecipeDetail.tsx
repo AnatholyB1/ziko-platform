@@ -3,8 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { useTranslation, useThemeStore } from '@ziko/plugin-sdk';
+import { useTranslation, useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import type { Recipe } from '../types/recipe';
+import { usePantryStore } from '../store';
 
 interface Props {
   supabase: SupabaseClient; // passed by Expo Router wrapper, available for future use
@@ -18,6 +19,9 @@ export default function RecipeDetail({ supabase }: Props) {
   // ── Route param parsing ──────────────────────────────
   const { recipe: recipeStr } = useLocalSearchParams<{ recipe: string }>();
   const recipe: Recipe = JSON.parse(recipeStr as string);
+
+  // ── Store state ──────────────────────────────────────
+  const { items: pantryItems, shoppingItems, addShoppingItem } = usePantryStore();
 
   // ── Serving state ────────────────────────────────────
   const [servings, setServings] = useState(recipe.base_servings);
@@ -52,6 +56,61 @@ export default function RecipeDetail({ supabase }: Props) {
     carbs_g: Math.round(recipe.macros.carbs_g * ratio),
     fat_g: Math.round(recipe.macros.fat_g * ratio),
   };
+
+  // ── Add to shopping list ──────────────────────────────
+  async function handleAddToList() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch current shopping list (in case store is stale)
+      const { data: existingList } = await supabase
+        .from('shopping_list_items')
+        .select('name')
+        .eq('user_id', user.id);
+
+      const existingNames = new Set(
+        (existingList ?? []).map((r: { name: string }) => r.name.toLowerCase())
+      );
+
+      // Filter recipe ingredients: only those not in pantry (by name, case-insensitive)
+      const pantryNames = new Set(pantryItems.map((p) => p.name.toLowerCase()));
+      const missing = recipe.ingredients.filter(
+        (ing) => !pantryNames.has(ing.name.toLowerCase())
+      );
+
+      // Deduplicate against existing shopping list
+      const toInsert = missing.filter(
+        (ing) => !existingNames.has(ing.name.toLowerCase())
+      );
+
+      if (toInsert.length === 0) return; // all already in list or all in pantry — silent
+
+      const rows = toInsert.map((ing) => ({
+        user_id: user.id,
+        name: ing.name,
+        quantity: ing.quantity ?? null,
+        unit: ing.unit ?? null,
+        pantry_item_id: null,
+        source: 'recipe' as const,
+        recipe_name: recipe.name,
+      }));
+
+      const { data: inserted, error } = await supabase
+        .from('shopping_list_items')
+        .insert(rows)
+        .select();
+
+      if (error) throw error;
+
+      // Update store
+      if (inserted) {
+        inserted.forEach((item: any) => addShoppingItem(item));
+      }
+    } catch {
+      showAlert(t('pantry.error_save_title'), t('pantry.shop_error_add'));
+    }
+  }
 
   // ── Helpers ──────────────────────────────────────────
   const scaleQuantity = (qty: number) =>
@@ -189,6 +248,28 @@ export default function RecipeDetail({ supabase }: Props) {
             </Text>
           </TouchableOpacity>
         )}
+
+        {/* Ajouter à la liste CTA — always visible (D-06) */}
+        <TouchableOpacity
+          onPress={handleAddToList}
+          activeOpacity={0.7}
+          style={{
+            borderWidth: 1.5,
+            borderColor: theme.primary,
+            borderRadius: 14,
+            paddingVertical: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
+          <Ionicons name="cart-outline" size={18} color={theme.primary} />
+          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.primary }}>
+            {t('pantry.shop_add_to_list')}
+          </Text>
+        </TouchableOpacity>
 
         {/* Macro summary card */}
         <View
