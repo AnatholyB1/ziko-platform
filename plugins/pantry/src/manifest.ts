@@ -113,6 +113,12 @@ Units: g, kg, ml, L, pieces, can, box, bag.
       icon: 'checkmark-circle-outline',
       showInTabBar: false,
     },
+    {
+      path: '/(plugins)/pantry/shopping',
+      title: 'Liste de courses',
+      icon: 'cart-outline',
+      showInTabBar: true,
+    },
   ],
 };
 
