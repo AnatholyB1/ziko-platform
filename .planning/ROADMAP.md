@@ -168,7 +168,7 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md — Supabase migration 023, ShoppingListItem type, store slice
-- [ ] 09-02-PLAN.md — ShoppingList screen (two sections, check-off, export) + RecipeDetail "Ajouter à la liste" CTA
+- [x] 09-02-PLAN.md — ShoppingList screen (two sections, check-off, export) + RecipeDetail "Ajouter à la liste" CTA
 - [ ] 09-03-PLAN.md — Expo Router wrapper, manifest route, i18n keys (FR + EN), type-check, human verification
 **UI hint**: yes
 
@@ -187,7 +187,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Smart Inventory | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 7. AI Recipe Suggestions | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 9. Smart Shopping List | v1.1 | 1/3 | In Progress|  |
+| 9. Smart Shopping List | v1.1 | 2/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*

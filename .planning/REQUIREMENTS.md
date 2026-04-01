@@ -61,10 +61,10 @@
 
 ### Smart Shopping List (SHOP)
 
-- [ ] **SHOP-01**: User can view a rule-based shopping list auto-generated from low/out-of-stock pantry items
-- [ ] **SHOP-02**: User can add missing recipe ingredients to the shopping list in one tap from the recipe detail screen
-- [ ] **SHOP-03**: User can check off shopping list items as purchased; checking off auto-restores pantry quantity to threshold
-- [ ] **SHOP-04**: User can export the shopping list via the native share sheet (plain text)
+- [x] **SHOP-01**: User can view a rule-based shopping list auto-generated from low/out-of-stock pantry items
+- [x] **SHOP-02**: User can add missing recipe ingredients to the shopping list in one tap from the recipe detail screen
+- [x] **SHOP-03**: User can check off shopping list items as purchased; checking off auto-restores pantry quantity to threshold
+- [x] **SHOP-04**: User can export the shopping list via the native share sheet (plain text)
 
 ---
 
