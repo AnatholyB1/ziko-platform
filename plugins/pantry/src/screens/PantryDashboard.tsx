@@ -33,7 +33,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 function PantryItemRow({ item, theme, t }: { item: PantryItem; theme: any; t: (key: string, opts?: any) => string }) {
   const status = getExpiryStatus(item.expiration_date);
   const colors = EXPIRY_COLORS[status];
-  const isLowStock = item.quantity <= (item.low_stock_threshold ?? 1);
+  const isOutOfStock = item.quantity === 0;
+  const isLowStock = !isOutOfStock && item.low_stock_threshold !== null && item.quantity <= item.low_stock_threshold;
   const expiryLabel = getExpiryLabel(item.expiration_date, t);
   const rowBg = colors.bg === 'transparent' ? theme.surface : colors.bg;
 
@@ -83,17 +84,17 @@ function PantryItemRow({ item, theme, t }: { item: PantryItem; theme: any; t: (k
         {item.quantity} {item.unit}
       </Text>
 
-      {/* Low-stock badge */}
+      {/* Stock status badge */}
+      {isOutOfStock && (
+        <View style={{ backgroundColor: '#FF000018', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#CC0000' }}>
+            {t('pantry.out_of_stock_badge')}
+          </Text>
+        </View>
+      )}
       {isLowStock && (
-        <View
-          style={{
-            backgroundColor: '#FF980022',
-            borderRadius: 6,
-            paddingHorizontal: 8,
-            paddingVertical: 2,
-          }}
-        >
-          <Text style={{ fontSize: 14, fontWeight: '700', color: '#FF9800' }}>
+        <View style={{ backgroundColor: '#FF980022', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#FF9800' }}>
             {t('pantry.low_stock_badge')}
           </Text>
         </View>
@@ -160,8 +161,8 @@ export default function PantryDashboard({ supabase }: { supabase: any }) {
   const totalCount = items.length;
   const warningCount = items.filter((item) => {
     const status = getExpiryStatus(item.expiration_date);
-    const isLowStock = item.quantity <= (item.low_stock_threshold ?? 1);
-    return status === 'expired' || status === 'today' || status === 'soon' || isLowStock;
+    const needsAttention = item.quantity === 0 || (item.low_stock_threshold !== null && item.quantity <= item.low_stock_threshold);
+    return status === 'expired' || status === 'today' || status === 'soon' || needsAttention;
   }).length;
 
   const fridgeItems = getItemsByLocation('fridge');

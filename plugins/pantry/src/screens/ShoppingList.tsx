@@ -112,7 +112,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
 
       const toInsert = pantryRows.filter(
         (item: any) =>
-          item.quantity <= (item.low_stock_threshold ?? 1) &&
+          (item.quantity === 0 || (item.low_stock_threshold !== null && item.quantity <= item.low_stock_threshold)) &&
           !existingPantryIds.has(item.id)
       );
 
