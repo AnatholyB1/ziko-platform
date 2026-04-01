@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Recipe } from './types/recipe.js';
+import type { ShoppingListItem } from './types/shopping.js';
 
 export interface PantryItem {
   id: string;
@@ -32,6 +33,14 @@ interface PantryStore {
   setRecipes: (recipes: Recipe[]) => void;
   setRecipesLoading: (loading: boolean) => void;
   setRecipesError: (error: string | null) => void;
+
+  // Shopping list state (Phase 9)
+  shoppingItems: ShoppingListItem[];
+  shoppingLoading: boolean;
+  setShoppingItems: (items: ShoppingListItem[]) => void;
+  setShoppingLoading: (loading: boolean) => void;
+  addShoppingItem: (item: ShoppingListItem) => void;
+  removeShoppingItem: (id: string) => void;
 }
 
 export const usePantryStore = create<PantryStore>((set, get) => ({
@@ -64,4 +73,13 @@ export const usePantryStore = create<PantryStore>((set, get) => ({
   setRecipes: (recipes) => set({ recipes }),
   setRecipesLoading: (recipesLoading) => set({ recipesLoading }),
   setRecipesError: (recipesError) => set({ recipesError }),
+
+  // Shopping list (Phase 9)
+  shoppingItems: [],
+  shoppingLoading: false,
+  setShoppingItems: (shoppingItems) => set({ shoppingItems }),
+  setShoppingLoading: (shoppingLoading) => set({ shoppingLoading }),
+  addShoppingItem: (item) => set((s) => ({ shoppingItems: [item, ...s.shoppingItems] })),
+  removeShoppingItem: (id) =>
+    set((s) => ({ shoppingItems: s.shoppingItems.filter((i) => i.id !== id) })),
 }));
