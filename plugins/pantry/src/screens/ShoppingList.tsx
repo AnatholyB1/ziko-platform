@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
-import { usePantryStore } from '../store';
+import { usePantryStore, type PantryItem } from '../store';
 import type { ShoppingListItem } from '../types/shopping';
 import PantryTabBar from '../components/PantryTabBar';
 
@@ -78,78 +78,45 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
+  // Low-stock items come directly from pantry_items — no DB insert needed
+  const [lowStockPantry, setLowStockPantry] = useState<PantryItem[]>([]);
 
   const load = useCallback(async () => {
     setShoppingLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Fetch current shopping list items
-      const { data: existingItems } = await supabase
-        .from('shopping_list_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-
-      const currentList: ShoppingListItem[] = existingItems ?? [];
-      setShoppingItems(currentList);
-
-      // 2. Fetch pantry items and auto-populate low-stock entries
+      // 1. Fetch pantry items and compute low-stock directly (no insert)
       const { data: pantryData } = await supabase
         .from('pantry_items')
         .select('*')
         .eq('user_id', user.id);
 
-      const pantryRows = pantryData ?? [];
-      const existingPantryIds = new Set(
-        currentList
-          .filter((i) => i.pantry_item_id != null)
-          .map((i) => i.pantry_item_id)
+      const pantryRows: PantryItem[] = pantryData ?? [];
+      setLowStockPantry(
+        pantryRows.filter(
+          (item) =>
+            item.quantity === 0 ||
+            (item.low_stock_threshold !== null && item.quantity <= item.low_stock_threshold)
+        )
       );
 
-      const toInsert = pantryRows.filter(
-        (item: any) =>
-          (item.quantity === 0 || (item.low_stock_threshold !== null && item.quantity <= item.low_stock_threshold)) &&
-          !existingPantryIds.has(item.id)
-      );
+      // 2. Fetch only recipe-sourced shopping list items
+      const { data: recipeItems } = await supabase
+        .from('shopping_list_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('source', 'recipe')
+        .order('created_at', { ascending: true });
 
-      if (toInsert.length > 0) {
-        const newRows = toInsert.map((item: any) => ({
-          user_id: user.id,
-          name: item.name,
-          quantity: item.low_stock_threshold ?? 1,
-          unit: item.unit,
-          pantry_item_id: item.id,
-          source: 'low_stock' as const,
-          recipe_name: null,
-        }));
-
-        const { data: inserted } = await supabase
-          .from('shopping_list_items')
-          .insert(newRows)
-          .select();
-
-        if (inserted) {
-          // Reload full list after insertions
-          const { data: refreshed } = await supabase
-            .from('shopping_list_items')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: true });
-          setShoppingItems(refreshed ?? []);
-        }
-      }
+      setShoppingItems(recipeItems ?? []);
     } finally {
       setShoppingLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -157,30 +124,26 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
     setRefreshing(false);
   };
 
-  // ── Check-off handler ─────────────────────────────────
-  async function handleCheckOff(item: ShoppingListItem) {
-    // 1. Optimistic remove
+  // ── Check-off: pantry low-stock item ──────────────────
+  async function handleCheckOffPantry(item: PantryItem) {
+    setLowStockPantry((prev) => prev.filter((i) => i.id !== item.id));
+    try {
+      // Mark as restocked: set quantity above threshold so it disappears
+      const newQty = (item.low_stock_threshold ?? 0) + 1;
+      await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', item.id);
+      updateItem(item.id, { quantity: newQty });
+    } catch {
+      setLowStockPantry((prev) => [item, ...prev]);
+      showAlert(t('pantry.error_save_title'), t('pantry.shop_error_checkoff'));
+    }
+  }
+
+  // ── Check-off: recipe shopping item ──────────────────
+  async function handleCheckOffRecipe(item: ShoppingListItem) {
     removeShoppingItem(item.id);
     try {
-      // 2. Delete from shopping_list_items
       await supabase.from('shopping_list_items').delete().eq('id', item.id);
-      // 3. Restore pantry quantity if pantry_item_id is set
-      if (item.pantry_item_id) {
-        const { data: pantryRow } = await supabase
-          .from('pantry_items')
-          .select('low_stock_threshold')
-          .eq('id', item.pantry_item_id)
-          .single();
-        const restoreQty = pantryRow?.low_stock_threshold ?? 1;
-        await supabase
-          .from('pantry_items')
-          .update({ quantity: restoreQty })
-          .eq('id', item.pantry_item_id);
-        // Update pantry store in memory
-        updateItem(item.pantry_item_id, { quantity: restoreQty });
-      }
     } catch {
-      // Re-add item on error
       addShoppingItem(item);
       showAlert(t('pantry.error_save_title'), t('pantry.shop_error_checkoff'));
     }
@@ -188,21 +151,24 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
 
   // ── Export handler ────────────────────────────────────
   async function handleExport() {
-    const sorted = [...shoppingItems].sort((a, b) => a.name.localeCompare(b.name));
-    const lines = sorted.map((item) => {
-      if (item.quantity != null && item.unit) {
-        return `- ${item.name} \u00d7 ${item.quantity} ${item.unit}`;
-      }
-      return `- ${item.name}`;
-    });
-    const message = `Liste de courses Ziko\n\n${lines.join('\n')}`;
-    await Share.share({ message });
+    const allItems = [
+      ...lowStockPantry.map((p) => ({ name: p.name, quantity: p.quantity, unit: p.unit as string })),
+      ...shoppingItems.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit })),
+    ];
+    const lines = allItems
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((item) =>
+        item.quantity != null && item.unit
+          ? `- ${item.name} \u00d7 ${item.quantity} ${item.unit}`
+          : `- ${item.name}`
+      );
+    await Share.share({ message: `Liste de courses Ziko\n\n${lines.join('\n')}` });
   }
 
   // ── Derived data ──────────────────────────────────────
-  const lowStockItems = shoppingItems.filter((i) => i.source === 'low_stock');
-  const missingItems = shoppingItems.filter((i) => i.source === 'recipe');
-  const totalCount = shoppingItems.length;
+  const lowStockItems = lowStockPantry;
+  const missingItems = shoppingItems; // recipe items only
+  const totalCount = lowStockItems.length + missingItems.length;
 
   // ── Loading state ─────────────────────────────────────
   if (shoppingLoading && shoppingItems.length === 0) {
@@ -293,10 +259,10 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
             {lowStockItems.map((item) => (
               <ShoppingListItemRow
                 key={item.id}
-                item={item}
+                item={{ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit, source: 'low_stock', recipe_name: null, pantry_item_id: item.id, user_id: item.user_id, created_at: item.created_at }}
                 theme={theme}
                 t={t}
-                onPress={() => handleCheckOff(item)}
+                onPress={() => handleCheckOffPantry(item)}
               />
             ))}
           </View>
@@ -322,7 +288,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
                 item={item}
                 theme={theme}
                 t={t}
-                onPress={() => handleCheckOff(item)}
+                onPress={() => handleCheckOffRecipe(item)}
               />
             ))}
           </View>
