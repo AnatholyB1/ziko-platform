@@ -52,6 +52,15 @@ A fitness user has a single app that coaches them, tracks everything, and now te
 - [x] Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin (Validated in Phase 8: calorie-tracker-sync)
 - [x] Smart shopping list — rule-based from low-stock items + recipe ingredients (Validated in Phase 9: smart-shopping-list)
 
+### Active (v1.2 — Barcode Enrichment + Tech Debt)
+
+- [x] Data foundation: `food_products` shared-catalogue table, `nutrition_logs` extended with nullable FK + score columns, `offApi.ts` cache utility (Validated in Phase 10: data-foundation-tech-debt)
+- [x] SHOP-03 fix: recipe/low-stock check-off prompts quantity Modal before pantry update (Validated in Phase 10: data-foundation-tech-debt)
+- [x] `pantry_log_recipe_cooked` registered as AI tool; RecipeConfirm.tsx migrated to /ai/tools/execute (Validated in Phase 10: data-foundation-tech-debt)
+- [x] Nyquist VALIDATION.md written for phases 07 and 09 (Validated in Phase 10: data-foundation-tech-debt)
+- [ ] Barcode scan in nutrition plugin — product card with Nutri-Score, Eco-Score, macros (Phase 11)
+- [ ] Nutri-Score + Eco-Score badges in journal entries and daily average on dashboard (Phase 11)
+
 ### Deferred
 
 **Coach Platform (future web milestone)**
@@ -110,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 — Phase 9 complete: Smart Pantry Plugin v1.1 milestone fully shipped (all 4 phases: inventory, AI recipes, calorie sync, shopping list)*
+*Last updated: 2026-04-02 — Phase 10 complete: v1.2 data foundation shipped — food_products table, OFF cache utility, quantity Modal, pantry_log_recipe_cooked AI tool. Phase 11 (barcode UI + score display) is the final v1.2 phase.*
