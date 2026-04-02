@@ -108,7 +108,7 @@
 ## Traceability
 
 *v1.0 and v1.1 filled by roadmapper — 2026-03-28*
-*v1.2 filled by roadmapper — pending*
+*v1.2 filled by roadmapper — 2026-04-02*
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
@@ -129,13 +129,13 @@
 | SHOP-02 | Phase 9 | Validated |
 | SHOP-03 | Phase 9 | Validated |
 | SHOP-04 | Phase 9 | Validated |
-| SCAN-01 | TBD | Pending |
-| SCAN-02 | TBD | Pending |
-| SCAN-03 | TBD | Pending |
-| SCORE-01 | TBD | Pending |
-| SCORE-02 | TBD | Pending |
-| SCORE-03 | TBD | Pending |
-| DEBT-01 | TBD | Pending |
-| DEBT-02 | TBD | Pending |
-| DEBT-03 | TBD | Pending |
-| DEBT-04 | TBD | Pending |
+| SCAN-01 | Phase 10 | Pending |
+| SCAN-02 | Phase 11 | Pending |
+| SCAN-03 | Phase 10 | Pending |
+| SCORE-01 | Phase 11 | Pending |
+| SCORE-02 | Phase 11 | Pending |
+| SCORE-03 | Phase 11 | Pending |
+| DEBT-01 | Phase 10 | Pending |
+| DEBT-02 | Phase 10 | Pending |
+| DEBT-03 | Phase 10 | Pending |
+| DEBT-04 | Phase 10 | Pending |

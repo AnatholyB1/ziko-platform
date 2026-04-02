@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Barcode Enrichment + Tech Debt
-status: defining
-stopped_at: Milestone v1.2 started — defining requirements
+status: roadmapped
+stopped_at: Milestone v1.2 roadmap created — Phase 10 and Phase 11 defined
 last_updated: "2026-04-02T00:00:00Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 0
+  total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,19 +18,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-28)
+See: .planning/PROJECT.md (updated 2026-04-01)
 
-**Core value:** A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
-**Current focus:** Phase 09 — smart-shopping-list
+**Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
+**Current focus:** Phase 10 — Data Foundation + Tech Debt (v1.2 start)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-02 — Milestone v1.2 started
+Phase: 10 — Data Foundation + Tech Debt
+Plan: Not started
+Status: Roadmapped — ready for planning
+Last activity: 2026-04-02 — Milestone v1.2 roadmap created (Phases 10-11)
 
-Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
+Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 
 ## Performance Metrics
 
@@ -108,6 +108,13 @@ Recent decisions affecting current work:
 - [Phase 09-smart-shopping-list]: shopping_list_items uses source enum ('low_stock' | 'recipe') matching context D-07; pantry_item_id nullable FK with ON DELETE SET NULL for recipe ingredients without pantry match
 - [Phase 09-smart-shopping-list]: PantryTabBar extracted to shared component in components/ — both PantryDashboard and ShoppingList import from ../components/PantryTabBar
 - [Phase 09-smart-shopping-list]: ShoppingList auto-populates low-stock pantry items on every mount — dedup by pantry_item_id presence in existing list
+- [v1.2 Roadmap]: food_products is a shared catalogue (no user_id) — RLS must use auth.role() = 'authenticated', NOT the standard auth.uid() = user_id pattern; copying any existing migration will silently block all reads
+- [v1.2 Roadmap]: nutrition_logs FK (food_product_id) must be nullable — barcode scan is optional; manual log entries must continue to work unchanged
+- [v1.2 Roadmap]: offApi.ts must use world.openfoodfacts.org (production) — pantry barcode.ts uses .net (staging); these two utilities are intentionally independent and must not be merged
+- [v1.2 Roadmap]: ecoscore_grade returns 'a-plus' and 'not-applicable' — ScoreBadge must handle both before render (map 'a-plus' to green "A+", hide badge for 'not-applicable' and unknown values)
+- [v1.2 Roadmap]: serving_size is free text in OFF API — extract grams via regex /([\d.]+)\s*g/i, default to 100 on failure; never let NaN reach macro calculation or log insert
+- [v1.2 Roadmap]: pantry_log_recipe_cooked AI tool requires three coordinated edits in registry.ts (import + executors record + allToolSchemas array); remove direct Supabase call from RecipeConfirm.tsx in the same task — never have both active simultaneously
+- [v1.2 Roadmap]: DEBT-04 (Nyquist VALIDATION.md) is documentation-only — read each phase plan and cross-check against live app state before writing; no code changes
 
 ### Pending Todos
 
@@ -115,14 +122,14 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 6: Three registration touch points (PluginLoader.tsx, registry.ts, 022 migration) must all be wired in the same plan — Metro bundler silently omits missing plugins
-- Phase 7: Inject macro summary into system prompt via `fetchUserContext` to protect 5-step tool-call budget — do not let `nutrition_get_today` consume an agent step
-- Phase 8: Gate "Auto-log macros" UI on nutrition plugin installation check — show graceful fallback if nutrition plugin is not installed (RESOLVED in plan 08-02 via nutritionInstalled state)
-- Phase 8: Call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds to prevent duplicate logging (RESOLVED in plan 08-01 via router.replace)
-- Phase 8: Confirm exact `meal_type` enum values in `003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked` (RESOLVED — exactly: breakfast | lunch | dinner | snack)
+- Phase 10: food_products RLS diverges from all 23 prior migrations — must use auth.role() = 'authenticated' (DOCUMENTED above)
+- Phase 10: pantry_log_recipe_cooked requires three coordinated registry.ts touch points — missing any one produces silent failure (import + executors + allToolSchemas)
+- Phase 10: DEBT-01 and DEBT-02 (SHOP-03 fix) require reading current ShoppingList check-off implementation before writing the quantity prompt — do not invent new schema
+- Phase 11: NutritionDashboard score widget must be null-guarded — hidden when scoredMeals.length === 0, not zero-state rendered
+- Phase 11: LogMealScreen barcode tab must be tested against a physical device with a real EAN-13 barcode before wiring ProductCard — validate image_front_small_url vs image_front_url field coverage from a live OFF response
 
 ## Session Continuity
 
-Last session: 2026-04-01T10:58:24.405Z
-Stopped at: Completed 09-smart-shopping-list 09-02-PLAN.md — ShoppingList screen + RecipeDetail CTA complete
+Last session: 2026-04-02T00:00:00Z
+Stopped at: Milestone v1.2 roadmap created — Phases 10-11 defined, files written
 Resume file: None

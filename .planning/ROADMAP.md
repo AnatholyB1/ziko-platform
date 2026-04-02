@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 Landing Page** - Phases 1-5 (shipped 2026-03-28)
 - 🚧 **v1.1 Smart Pantry Plugin** - Phases 6-9 (in progress)
+- 🔜 **v1.2 Barcode Enrichment + Tech Debt** - Phases 10-11 (planned)
 
 ## Phases
 
@@ -172,10 +173,45 @@ Plans:
 - [ ] 09-03-PLAN.md — Expo Router wrapper, manifest route, i18n keys (FR + EN), type-check, human verification
 **UI hint**: yes
 
+---
+
+### 🔜 v1.2 Barcode Enrichment + Tech Debt
+
+**Milestone Goal:** Enrich the nutrition plugin with Open Food Facts barcode scanning — users can scan any food product and see its Nutri-Score, Eco-Score, macros, and photo before logging. Close v1.1 tech debt: SHOP-03 quantity prompt, AI tool registry migration for `pantry_log_recipe_cooked`, and Nyquist VALIDATION.md audit for phases 06–09.
+
+Two phases deliver this milestone. Phase 10 lays the data foundation and closes tech debt (no UI dependencies). Phase 11 builds all UI surfaces on top of the stable foundation.
+
+#### Phase 10: Data Foundation + Tech Debt
+**Goal**: The database schema supports product-enriched nutrition logs, the Open Food Facts utility is wired with correct production URL and Supabase cache, and all v1.1 tech debt items are closed — so Phase 11 can build UI without schema or registry surprises
+**Depends on**: Phase 9
+**Requirements**: SCAN-01, SCAN-03, DEBT-01, DEBT-02, DEBT-03, DEBT-04
+**Success Criteria** (what must be TRUE):
+  1. A nutrition log entry can be inserted with a nullable `food_product_id` FK, `nutriscore_grade`, and `ecoscore_grade` columns — the migration is applied and the schema is stable
+  2. Calling `getOrFetchProduct(barcode)` returns a structured product object from the `food_products` Supabase cache on second call, without hitting the Open Food Facts API again
+  3. Checking off a recipe ingredient from the shopping list prompts "how much did you buy?" and inserts or restocks the ingredient in the pantry — no silent auto-restore
+  4. Checking off a low-stock pantry item from the shopping list prompts for quantity instead of auto-restoring to threshold+1
+  5. The AI can execute `pantry_log_recipe_cooked` as a registered tool in `registry.ts` — no direct Supabase call exists in `RecipeConfirm.tsx`
+**Plans**: TBD
+**UI hint**: no
+
+#### Phase 11: Barcode UI + Score Display
+**Goal**: Users can scan a food product barcode in the nutrition plugin, review the product card with Nutri-Score and Eco-Score before logging, and see score badges on past journal entries and a daily average score on the dashboard
+**Depends on**: Phase 10
+**Requirements**: SCAN-02, SCORE-01, SCORE-02, SCORE-03
+**Success Criteria** (what must be TRUE):
+  1. User can tap a "Barcode" tab in the log meal screen, scan an EAN-13 barcode, and see a product card with photo, name, brand, macros per 100g, Nutri-Score badge, and Eco-Score badge before logging
+  2. User sees a "product not found" message with a fallback to manual entry when a scanned barcode is not in Open Food Facts
+  3. After logging a barcode-scanned meal, the nutrition journal entry shows a Nutri-Score badge alongside the meal name and calories
+  4. The nutrition dashboard shows a daily average Nutri-Score summary widget — the widget is hidden on days with no barcode-scanned meals
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -187,7 +223,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Smart Inventory | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 7. AI Recipe Suggestions | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
-| 9. Smart Shopping List | v1.1 | 2/3 | In Progress|  |
+| 9. Smart Shopping List | v1.1 | 2/3 | In Progress | - |
+| 10. Data Foundation + Tech Debt | v1.2 | 0/? | Not started | - |
+| 11. Barcode UI + Score Display | v1.2 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
@@ -196,3 +234,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 *Updated: 2026-03-29 — Phase 7 planned: 3 plans in 3 waves*
 *Updated: 2026-03-29 — Phase 8 planned: 3 plans in 3 waves*
 *Updated: 2026-04-01 — Phase 9 planned: 3 plans in 3 waves*
+*Updated: 2026-04-02 — Milestone v1.2 Barcode Enrichment + Tech Debt phases added (10-11)*
