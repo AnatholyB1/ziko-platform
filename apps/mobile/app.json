@@ -37,6 +37,7 @@
       "package": "com.ziko.mobile",
       "minSdkVersion": 26,
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_SLEEP",
