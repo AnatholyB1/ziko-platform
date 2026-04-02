@@ -1,578 +1,557 @@
-# Architecture: Smart Pantry Plugin Integration
+# Architecture Research
 
-**Project:** Ziko Platform v1.1 — Smart Pantry Plugin
-**Researched:** 2026-03-28
+**Domain:** Open Food Facts barcode enrichment — Ziko nutrition plugin v1.2
+**Researched:** 2026-04-02
 **Confidence:** HIGH — all integration points verified directly from source files
 
 ---
 
-## Summary
+## Standard Architecture
 
-The pantry plugin integrates as the 18th plugin in the existing Turborepo monorepo
-without requiring any structural changes to the host app. It follows the established
-pattern: a package under `plugins/pantry/`, thin route wrappers under
-`apps/mobile/app/(app)/(plugins)/pantry/`, one Supabase migration, and backend AI tools
-registered in `backend/api/src/tools/registry.ts`.
+### System Overview
 
-The key cross-plugin relationship is with the nutrition plugin. Calorie sync reuses the
-existing `nutrition_log_meal` function (already exported from
-`backend/api/src/tools/nutrition.ts`, registered in the registry as `nutrition_log_meal`).
-Recipe suggestions reuse `nutrition_get_summary` to read remaining macros. Neither the
-nutrition plugin's code nor its database schema requires modification.
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                      Mobile (Expo SDK 54)                          │
+├─────────────────────┬──────────────────────┬───────────────────────┤
+│  NutritionDashboard │  LogMealScreen       │  [NEW] ProductCard    │
+│  + score badges on  │  + "Barcode" 4th tab │  photo, name, brand   │
+│    log entries      │  + BarcodeScanner    │  Nutri-Score badge    │
+│  + daily avg score  │    modal (reused     │  Eco-Score badge      │
+│    summary card     │    from pantry)      │  macros/serving adjuster│
+└─────────────────────┴────────┬─────────────┴───────────────────────┘
+                                │  direct fetch() — no CORS in RN native
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│           Open Food Facts API (world.openfoodfacts.org)            │
+│  GET /api/v2/product/{barcode}                                     │
+│    ?fields=product_name,product_name_fr,brands,                    │
+│            nutriscore_grade,ecoscore_grade,                        │
+│            nutriments,image_front_url,serving_size                 │
+│                                                                    │
+│  Rate limit: 100 req/min per IP (per-user mobile = no contention)  │
+│  Auth: none required for reads                                     │
+│  Required header: User-Agent: ZikoFitnessApp/1.2 (email)          │
+└───────────────────────────────┬────────────────────────────────────┘
+                                │  upsert on cache miss
+                                ▼
+┌────────────────────────────────────────────────────────────────────┐
+│                  Supabase (PostgreSQL + RLS)                       │
+├───────────────────────────────┬────────────────────────────────────┤
+│  [NEW] food_products          │  [MODIFIED] nutrition_logs         │
+│  barcode (UNIQUE index)       │  + food_product_id FK (nullable)   │
+│  product_name, brands         │  + nutriscore_grade TEXT (denorm.) │
+│  nutriscore_grade             │  + ecoscore_grade  TEXT (denorm.)  │
+│  ecoscore_grade               │                                    │
+│  calories/protein/carbs/fat   │  Denormalised so loadLogs() needs  │
+│    per 100g                   │  zero JOIN changes. Scores survive │
+│  nutriments JSONB (full blob) │  food_products cleanup.            │
+│  image_url, serving_size      │                                    │
+│  created_at, updated_at       │                                    │
+└───────────────────────────────┴────────────────────────────────────┘
 
-The 4 sub-features have a hard dependency chain: inventory must exist before recipe
-suggestions can read pantry contents; recipe suggestions must exist before calorie sync
-can be triggered from a recipe result; the shopping list can be built in parallel with
-calorie sync since it only depends on the `pantry_items` table.
-
----
-
-## Database Schema
-
-### Migration: `022_pantry_schema.sql`
-
-Next in sequence after `021_cardio_gps.sql`. Follows the exact RLS pattern from
-`003_nutrition_schema.sql`.
-
-```sql
--- ============================================================
--- ZIKO PANTRY PLUGIN — Database Schema
--- Run after 021_cardio_gps.sql
--- ============================================================
-
--- ── Pantry items ────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.pantry_items (
-  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id         UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name            TEXT NOT NULL,
-  quantity        NUMERIC(8, 2) NOT NULL DEFAULT 0,
-  unit            TEXT NOT NULL DEFAULT 'pcs'
-                    CHECK (unit IN ('g', 'kg', 'ml', 'l', 'pcs', 'tbsp', 'tsp', 'cup')),
-  category        TEXT NOT NULL DEFAULT 'other'
-                    CHECK (category IN (
-                      'produce', 'dairy', 'meat', 'fish', 'grains',
-                      'canned', 'frozen', 'condiments', 'spices', 'other'
-                    )),
-  expiration_date DATE,
-  min_quantity    NUMERIC(8, 2) NOT NULL DEFAULT 0,
-  location        TEXT NOT NULL DEFAULT 'pantry'
-                    CHECK (location IN ('pantry', 'fridge', 'freezer')),
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_pantry_items_user_id
-  ON public.pantry_items(user_id);
-
-CREATE INDEX IF NOT EXISTS idx_pantry_items_expiration
-  ON public.pantry_items(user_id, expiration_date)
-  WHERE expiration_date IS NOT NULL;
-
-ALTER TABLE public.pantry_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "pantry_items_own" ON public.pantry_items
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+┌────────────────────────────────────────────────────────────────────┐
+│                    Hono v4 Backend API                             │
+│  NOT involved in barcode lookup (no proxy — see rationale below)   │
+│  Unchanged for this milestone.                                     │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-**Schema design decisions:**
+### Component Responsibilities
 
-- `quantity` and `min_quantity` use `NUMERIC(8,2)` matching `nutrition_logs.protein_g`
-  precision convention in this codebase.
-- `expiration_date` is nullable — many staples (salt, spices) have no expiry.
-- `min_quantity` drives the rule-based shopping list: `WHERE quantity <= min_quantity`.
-  Default 0 means the item never triggers a shopping list entry unless the user sets it.
-- `location` (pantry/fridge/freezer) covers "drawer/cabinet/fridge" grouping from the
-  seed without a separate table or join.
-- No `recipes` or `shopping_lists` tables. Recipes are generated by the AI on demand and
-  returned as structured JSON in the tool response — not persisted. The shopping list is
-  computed on demand from `pantry_items`. This avoids premature persistence complexity.
+| Component | Responsibility | Status |
+|-----------|----------------|--------|
+| `plugins/pantry/src/screens/BarcodeScanner.tsx` | Camera modal, scan guard, delegates result | Exists — reuse as-is with minor callback extension |
+| `plugins/pantry/src/utils/barcode.ts` | `lookupBarcode()` — returns product name only | Exists — pantry keeps using it; nutrition supersedes with full fetch |
+| `plugins/nutrition/src/utils/offApi.ts` | Full OFF product fetch (all scored fields), Supabase cache upsert | NEW |
+| `plugins/nutrition/src/components/ProductCard.tsx` | Photo, name, brand, Nutri-Score badge, Eco-Score badge, macros per 100g, serving weight adjuster, "Log" CTA | NEW |
+| `plugins/nutrition/src/components/ScoreBadge.tsx` | Letter grade badge (A–E) with grade-to-color mapping | NEW |
+| `plugins/nutrition/src/screens/LogMealScreen.tsx` | Add 4th "Barcode" tab; import BarcodeScanner; show ProductCard on result; extend `saveLog()` with score columns | MODIFY |
+| `plugins/nutrition/src/screens/NutritionDashboard.tsx` | Render `<ScoreBadge>` on each log entry; add daily avg score card | MODIFY |
+| `plugins/nutrition/src/store.ts` | Extend `NutritionEntry` type with `food_product_id?`, `nutriscore_grade?`, `ecoscore_grade?` | MODIFY |
+| `supabase/migrations/024_food_products.sql` | `food_products` table + unique barcode index + RLS policies | NEW |
+| `supabase/migrations/025_nutrition_logs_scores.sql` | `food_product_id` FK + `nutriscore_grade` + `ecoscore_grade` cols on `nutrition_logs` | NEW |
 
----
+## Recommended Project Structure
 
-## AI Tool Signatures
+```
+plugins/nutrition/src/
+├── screens/
+│   ├── NutritionDashboard.tsx    # MODIFY — score badges on entries + avg score card
+│   ├── LogMealScreen.tsx         # MODIFY — barcode tab + ProductCard integration
+│   └── TDEECalculatorScreen.tsx  # unchanged
+├── components/                   # NEW subfolder
+│   ├── ProductCard.tsx           # display: photo, scores, macros, serving adjuster
+│   └── ScoreBadge.tsx            # reusable letter badge with grade-to-color mapping
+├── utils/
+│   └── offApi.ts                 # NEW — OFF fetch + Supabase upsert cache
+├── store.ts                      # MODIFY — NutritionEntry type extension
+├── manifest.ts                   # unchanged
+└── index.ts                      # unchanged
 
-All 5 new tools follow the `AITool` interface in `registry.ts` and the executor
-signature `(params: Record<string, unknown>, userId: string) => Promise<unknown>`.
+supabase/migrations/
+├── 024_food_products.sql         # NEW table (follows 023_shopping_list.sql)
+└── 025_nutrition_logs_scores.sql # ADD 3 columns to nutrition_logs
 
-### Tool 1: `pantry_get_items`
-
-Purpose: Read the user's pantry for the AI agent. Used internally by
-`pantry_suggest_recipes` and directly by the AI when the user asks about their pantry.
-
-```typescript
-schema: {
-  name: 'pantry_get_items',
-  description: "Get the user's pantry inventory. Returns all items with quantity, unit, category, location, and days until expiration. Use this before suggesting recipes.",
-  parameters: {
-    type: 'object',
-    properties: {
-      category: {
-        type: 'string',
-        description: 'Filter by category (produce, dairy, meat, fish, grains, canned, frozen, condiments, spices, other) — optional',
-      },
-      low_stock_only: {
-        type: 'boolean',
-        description: 'If true, return only items at or below min_quantity',
-      },
-    },
-  },
-}
+plugins/pantry/src/screens/
+└── BarcodeScanner.tsx            # unchanged except optional callback signature
 ```
 
-Response shape:
+### Structure Rationale
+
+- **`components/` subfolder in nutrition plugin:** `ProductCard` and `ScoreBadge` are display-only, stateless, and may be used from both `LogMealScreen` (scan result) and potentially `NutritionDashboard` (log entry inline badges). Separating them avoids bloating the screen files and mirrors how other plugins (timer, supplements) organise sub-components.
+- **`utils/offApi.ts` in nutrition plugin (not in pantry):** The pantry `barcode.ts` only needed a product name — OFF enrichment is a nutrition-plugin concern. Keeping it in nutrition avoids coupling the pantry plugin to Nutri-Score logic it does not use.
+- **Two migrations instead of one:** `food_products` is a new table (migration 024) and the `nutrition_logs` extensions are additive columns (migration 025). Separating them makes rollback safer, matches the established pattern (021/022/023 are all separate schemas), and prevents a single failed migration from blocking both changes.
+
+## Architectural Patterns
+
+### Pattern 1: Direct OFF API Call from Mobile (no backend proxy)
+
+**What:** The mobile app calls `https://world.openfoodfacts.org/api/v2/product/{barcode}` directly using `fetch()`. Supabase acts as a persistent local cache via upsert on `food_products`.
+
+**When to use:** This is the correct choice for Ziko. React Native has no CORS enforcement — direct calls work natively on iOS and Android without any configuration. OFF read operations require no authentication, only a descriptive `User-Agent` header.
+
+**Why not a backend proxy:**
+- The Hono backend would add 150–300ms round-trip latency with zero security benefit for a public read-only API.
+- OFF rate limit is 100 req/min per IP. Routing through the backend concentrates all users onto the server's IP, turning per-user limits into a shared pool — worse at scale.
+- Ziko's existing `plugins/pantry/src/utils/barcode.ts` already calls OFF directly from the mobile app and has worked throughout v1.1 production. The pattern is proven.
+- A backend proxy would only be warranted for OFF write operations (contributing product data back to OFF), not for reads.
+
+**Trade-offs:**
+- Pro: lower latency, simpler code, no new backend route
+- Pro: OFF rate limit is per-client-IP so no user-to-user contention
+- Pro: consistent with existing pantry barcode pattern
+- Con: OFF API URL is in the mobile bundle — acceptable, it is a public API with no secrets
+- Con: No server-side response normalisation — field mapping must be done in `offApi.ts` on mobile
+
+**Example (`plugins/nutrition/src/utils/offApi.ts` core):**
 ```typescript
-{
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    unit: string;
-    category: string;
-    location: string;
-    expiration_date: string | null;
-    days_until_expiry: number | null;  // Math.ceil((expiry - now) / 86400000)
-    is_low_stock: boolean;             // quantity <= min_quantity
-  }>;
-  total_items: number;
-  low_stock_count: number;
-  expiring_soon_count: number;         // expiry within 3 days
-}
-```
+const OFF_FIELDS = [
+  'product_name', 'product_name_fr', 'brands',
+  'nutriscore_grade', 'ecoscore_grade',
+  'nutriments', 'image_front_url', 'serving_size',
+].join(',');
 
-### Tool 2: `pantry_update_item`
+const OFF_URL = (barcode: string) =>
+  `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=${OFF_FIELDS}`;
 
-Purpose: Create, update quantity, or delete a pantry item. Single write tool avoids
-tool proliferation.
+const USER_AGENT = 'ZikoFitnessApp/1.2 (contact@ziko-app.com)';
 
-```typescript
-schema: {
-  name: 'pantry_update_item',
-  description: "Add a new pantry item, update quantity, or delete an item. Use action='decrement' after a recipe is cooked to reduce used ingredients.",
-  parameters: {
-    type: 'object',
-    properties: {
-      action: {
-        type: 'string',
-        enum: ['create', 'update', 'decrement', 'delete'],
-        description: 'Operation to perform',
-      },
-      item_id: {
-        type: 'string',
-        description: 'UUID of the item — required for update, decrement, delete',
-      },
-      name: { type: 'string', description: 'Item name — required for create' },
-      quantity: {
-        type: 'number',
-        description: 'New absolute quantity (for update) or amount to subtract (for decrement)',
-      },
-      unit: { type: 'string', description: 'Unit: g, kg, ml, l, pcs, tbsp, tsp, cup' },
-      category: {
-        type: 'string',
-        description: 'Category: produce, dairy, meat, fish, grains, canned, frozen, condiments, spices, other',
-      },
-      location: {
-        type: 'string',
-        description: 'Storage location: pantry, fridge, freezer',
-      },
-      expiration_date: { type: 'string', description: 'Expiration date YYYY-MM-DD' },
-      min_quantity: {
-        type: 'number',
-        description: 'Minimum quantity threshold for shopping list alerts',
-      },
-    },
-    required: ['action'],
-  },
-}
-```
-
-### Tool 3: `pantry_suggest_recipes`
-
-Purpose: Data-gathering tool. Collects pantry contents and remaining daily macros so
-the AI agent can generate recipe suggestions in its next language model step. The tool
-does NOT call Claude — it returns a context object.
-
-```typescript
-schema: {
-  name: 'pantry_suggest_recipes',
-  description: "Gather pantry contents and today's remaining macros so you can suggest recipes. Call this when the user asks what to cook, wants recipe ideas, or asks what they can make. After this tool returns, generate 3 recipe suggestions using the pantry items and remaining macro budget.",
-  parameters: {
-    type: 'object',
-    properties: {
-      craving: {
-        type: 'string',
-        description: "User's craving or preference, e.g. 'something quick', 'high protein', 'Italian'",
-      },
-      max_cook_time_min: {
-        type: 'integer',
-        description: 'Maximum cooking time in minutes',
-      },
-    },
-  },
-}
-```
-
-Response shape (feeds the AI agent's next language model step):
-```typescript
-{
-  pantry: {
-    items: PantryItem[];
-    expiring_soon: PantryItem[];  // items expiring within 3 days, prioritize in recipes
-  };
-  nutrition_remaining: {
-    calories: number;
-    protein_g: number;
-    // from nutrition_get_summary().remaining
-  };
-  nutrition_actual: {
-    calories: number;
-    protein_g: number;
-    carbs_g: number;
-    fat_g: number;
-  };
-  user_preferences: {
-    craving: string | null;
-    max_cook_time_min: number | null;
+export async function fetchOFFProduct(barcode: string): Promise<OFFProduct | null> {
+  const res = await fetch(OFF_URL(barcode), {
+    headers: { 'User-Agent': USER_AGENT },
+  });
+  const json = await res.json();
+  if (json.status !== 1 || !json.product) return null;
+  const p = json.product;
+  const nm = p.nutriments ?? {};
+  return {
+    barcode,
+    product_name: p.product_name_fr ?? p.product_name ?? '',
+    brands: p.brands ?? null,
+    nutriscore_grade: p.nutriscore_grade?.toLowerCase() ?? null,
+    ecoscore_grade: p.ecoscore_grade?.toLowerCase() ?? null,
+    calories_100g: nm['energy-kcal_100g'] ?? nm.energy_100g ?? 0,
+    protein_100g: nm.proteins_100g ?? 0,
+    carbs_100g: nm.carbohydrates_100g ?? 0,
+    fat_100g: nm.fat_100g ?? 0,
+    nutriments: nm,
+    image_url: p.image_front_url ?? null,
+    serving_size: p.serving_size ?? null,
   };
 }
 ```
 
-Implementation: calls `nutrition_get_summary(userId)` imported from `./nutrition.js`
-(direct function call, no HTTP). The AI agent generates recipes inline after this tool
-returns — recipes are never stored in the database.
+### Pattern 2: Supabase Upsert Cache for food_products
 
-### Tool 4: `pantry_log_recipe_cooked`
+**What:** After a successful OFF lookup, `upsert` the result into `food_products` keyed on barcode. On subsequent scans of the same barcode, check `food_products` first — skip the OFF call if a row exists.
 
-Purpose: Combined calorie sync + pantry decrement. When the user confirms they cooked
-a recipe, this single tool (a) logs macros to `nutrition_logs` and (b) decrements
-used ingredients from `pantry_items`.
+**When to use:** Always. Avoids redundant OFF calls for repeat scans of the same product, survives OFF downtime gracefully for cached products, and enables AI tools or future features to query the product catalogue without any external dependency.
 
+**Trade-offs:**
+- Pro: Faster repeat scans (cache hit is a local Supabase call)
+- Pro: Offline resilience for previously scanned products
+- Pro: `food_products` becomes a local product catalogue usable by AI tools
+- Con: Stale data risk if OFF updates a product's Nutri-Score — acceptable since scores change rarely; `updated_at` column allows future staleness logic
+
+**Cache check + upsert flow:**
 ```typescript
-schema: {
-  name: 'pantry_log_recipe_cooked',
-  description: "Log that the user cooked a recipe: auto-logs the recipe macros to nutrition and decrements used ingredients from pantry. Call this when the user confirms they cooked or ate a recipe. Infer meal_type from current time if not specified.",
-  parameters: {
-    type: 'object',
-    properties: {
-      recipe_name: { type: 'string', description: 'Name of the recipe cooked' },
-      meal_type: {
-        type: 'string',
-        enum: ['breakfast', 'lunch', 'dinner', 'snack'],
-        description: 'Meal type — infer from current time if the user did not specify',
-      },
-      calories: { type: 'integer', description: 'Total calories of the recipe (kcal)' },
-      protein_g: { type: 'number', description: 'Protein in grams' },
-      carbs_g: { type: 'number', description: 'Carbs in grams' },
-      fat_g: { type: 'number', description: 'Fat in grams' },
-      servings: {
-        type: 'number',
-        description: 'Number of servings cooked — macros are per-recipe, not per-serving (default 1)',
-      },
-      ingredients_used: {
-        type: 'string',
-        description: 'JSON array of {item_id, amount_used} for pantry decrement — optional, omit if pantry IDs are unknown',
-      },
-    },
-    required: ['recipe_name', 'meal_type', 'calories'],
-  },
+export async function getOrFetchProduct(barcode: string, supabase: any): Promise<OFFProduct | null> {
+  // 1. Cache check
+  const { data: cached } = await supabase
+    .from('food_products')
+    .select('*')
+    .eq('barcode', barcode)
+    .maybeSingle();
+
+  if (cached) return cached as OFFProduct;
+
+  // 2. OFF fetch
+  const product = await fetchOFFProduct(barcode);
+  if (!product) return null;
+
+  // 3. Cache to Supabase
+  const { data } = await supabase
+    .from('food_products')
+    .upsert({ ...product, updated_at: new Date().toISOString() }, { onConflict: 'barcode' })
+    .select()
+    .single();
+
+  return data as OFFProduct;
 }
 ```
 
-Implementation: imports `nutrition_log_meal` from `./nutrition.js` and calls it
-directly (no HTTP round-trip). Then parses `ingredients_used` and issues
-`UPDATE pantry_items SET quantity = quantity - amount_used, updated_at = NOW()
-WHERE id = $item_id AND user_id = $userId AND quantity > 0`.
+### Pattern 3: Denormalised Score Columns on nutrition_logs
 
-### Tool 5: `pantry_get_shopping_list`
+**What:** Copy `nutriscore_grade` and `ecoscore_grade` from the `food_products` result into `nutrition_logs` at insert time. Keep `food_product_id` as a nullable FK for full product data when needed.
 
-Purpose: Return items at or below `min_quantity` as a computed shopping list. Optionally
-augments with recipe ingredient names the user has planned.
+**When to use:** Always. `NutritionDashboard.loadLogs()` reads logs on every screen focus via `useFocusEffect`. Adding a JOIN to `food_products` on this hot path would add query complexity and create a dependency where `food_products` rows cannot safely be cleaned up without nulling historical scores.
 
+**Trade-offs:**
+- Pro: `loadLogs()` in `NutritionDashboard.tsx` needs zero query changes — `SELECT *` already returns new columns
+- Pro: Log entries are fully self-contained — score preserved even if `food_products` is purged
+- Pro: Consistent with how macros are stored (already denormalised from source to log at insert time)
+- Con: Score stored twice — accepted; this is fitness tracking, not an audit ledger. Scores change rarely.
+
+**Extended `saveLog()` call in `LogMealScreen.tsx`:**
 ```typescript
-schema: {
-  name: 'pantry_get_shopping_list',
-  description: "Get the current shopping list: items at or below their minimum quantity threshold. Optionally include missing ingredients from a planned recipe.",
-  parameters: {
-    type: 'object',
-    properties: {
-      include_recipe_ingredients: {
-        type: 'string',
-        description: 'JSON array of ingredient names to also include (e.g. from a planned recipe the user wants to cook)',
-      },
-    },
-  },
-}
+// After user confirms serving size on ProductCard:
+saveLog({
+  food_name: product.product_name,
+  calories: Math.round(product.calories_100g * servingG / 100),
+  protein_g: +(product.protein_100g * servingG / 100).toFixed(1),
+  carbs_g: +(product.carbs_100g * servingG / 100).toFixed(1),
+  fat_g: +(product.fat_100g * servingG / 100).toFixed(1),
+  serving_g: servingG,
+  food_product_id: product.id,          // FK to food_products
+  nutriscore_grade: product.nutriscore_grade,  // denormalised
+  ecoscore_grade: product.ecoscore_grade,      // denormalised
+});
 ```
-
-Response shape:
-```typescript
-{
-  shopping_list: Array<{
-    name: string;
-    current_qty: number;
-    min_qty: number;
-    unit: string;
-    category: string;
-    reason: 'low_stock' | 'recipe_needed';
-  }>;
-  total_items: number;
-}
-```
-
----
 
 ## Data Flow
 
-### Recipe Suggestion Flow
+### Barcode Scan — Happy Path
 
 ```
-User: "What can I cook for dinner?"
-         |
-         v
-AI Agent calls: pantry_suggest_recipes({ craving: "dinner" })
-         |
-         |-- DB query: SELECT * FROM pantry_items WHERE user_id = $1
-         |
-         +-- Calls: nutrition_get_summary({}, userId) [imported from ./nutrition.js]
-                    |-- DB query: nutrition_logs + user_profiles
-         |
-         v
-Tool returns: { pantry: {...}, nutrition_remaining: {...}, user_preferences: {...} }
-         |
-         v
-AI Agent language model step: generates 3 recipe suggestions as structured JSON
-(no storage — recipes live only in the message thread)
-         |
-         v
-User: "I'll make the chicken stir-fry"
-         |
-         v
-AI Agent calls: pantry_log_recipe_cooked({
-  recipe_name: "Chicken Stir-Fry",
-  meal_type: "dinner",        <- AI infers from time of day
-  calories: 520,
-  protein_g: 45,
-  carbs_g: 38,
-  fat_g: 12,
-  ingredients_used: '[{"item_id":"<uuid>","amount_used":200},{"item_id":"<uuid>","amount_used":100}]'
-})
-         |
-         |-- Calls: nutrition_log_meal({...}, userId) [imported from ./nutrition.js]
-         |          |-- INSERT INTO nutrition_logs
-         |
-         +-- For each ingredient: UPDATE pantry_items
-                 SET quantity = quantity - amount_used,
-                     updated_at = NOW()
-                 WHERE id = $item_id AND user_id = $userId
-         |
-         v
-AI Agent calls: app_navigate({ screen: "nutrition_dashboard" })
-[existing navigation tool — no change needed]
+User taps "Barcode" tab in LogMealScreen
+    |
+    v
+BarcodeScanner modal opens
+(reused from pantry — expo-camera + camera permission already handled)
+    |
+    v
+Camera reads EAN-13 / EAN-8 / UPC barcode → onBarcodeScanned fires
+    |
+    v
+getOrFetchProduct(barcode, supabase)
+    |------ food_products cache HIT -------> return cached row immediately
+    |
+    v (cache MISS)
+fetchOFFProduct(barcode)   →  OFF API call
+    |
+    |-- status !== 1 / network error ------> onNotFound() → fallback to custom tab
+    |
+    v (success)
+upsert into food_products
+    |
+    v
+ProductCard displayed:
+  - product photo (image_url)
+  - product name + brand
+  - Nutri-Score badge (A–E letter with colour)
+  - Eco-Score badge (A–E letter with colour)
+  - macros per 100g
+  - serving weight input (default: serving_size from OFF or 100g)
+  - "Log this meal" button
+    |
+    v
+User adjusts serving weight, taps "Log"
+    |
+    v
+saveLog() inserts into nutrition_logs:
+  - scaled macros (×serving/100)
+  - food_product_id (FK)
+  - nutriscore_grade, ecoscore_grade (denormalised)
+    |
+    v
+router.back() → NutritionDashboard
+    |
+    v
+useFocusEffect triggers loadLogs() → Supabase returns rows with score columns
+    |
+    v
+Score badges visible on entry + daily avg score in summary card
 ```
 
-### Shopping List Flow
+### Product Not Found / Offline
 
 ```
-User: "What do I need to buy?"
-         |
-         v
-AI Agent calls: pantry_get_shopping_list({})
-         |
-         v
-DB query: SELECT * FROM pantry_items
-          WHERE user_id = $1
-            AND quantity <= min_quantity
-            AND min_quantity > 0
-         |
-         v
-Returns computed checklist
-         |
-         v
-PantryShoppingList screen: check-off UI + React Native Share
-(no backend call for share — client-side only)
+getOrFetchProduct returns null
+    |
+    v
+Brief toast / inline message "Produit non trouvé"
+    |
+    v
+LogMealScreen switches to "custom" tab, pre-fills food_name if
+partial OFF response had a product_name (partial data case)
+    |
+    v
+saveLog() with no food_product_id, null scores — standard manual entry
 ```
 
-### Nutrition Integration Contract
-
-`pantry_log_recipe_cooked` imports and calls `nutrition_log_meal` as a function, not
-via HTTP. This is the same pattern used within other tools (e.g., `nutrition.ts`
-reuses the `admin()` factory inline). The `NutritionEntry` shape produced by
-`pantry_log_recipe_cooked` maps to the exact fields required by `nutrition_log_meal`:
+### Score Display in Dashboard
 
 ```
-recipe_name  -> food_name
-meal_type    -> meal_type
-calories     -> calories
-protein_g    -> protein_g  (defaults to 0 if omitted)
-carbs_g      -> carbs_g    (defaults to 0 if omitted)
-fat_g        -> fat_g      (defaults to 0 if omitted)
-(no serving_g — recipe-level macros, not per-gram)
+NutritionDashboard.loadLogs()
+  SELECT * FROM nutrition_logs WHERE user_id = ? AND date = ?
+  (returns nutriscore_grade, ecoscore_grade on each row — no JOIN needed)
+    |
+    v
+Each log entry card: <ScoreBadge grade={log.nutriscore_grade} />
+                     <ScoreBadge grade={log.ecoscore_grade} type="eco" />
+    |
+    v
+Summary card: daily average Nutri-Score
+  - Filter todayLogs where nutriscore_grade IS NOT NULL
+  - Map grade to numeric: a=5, b=4, c=3, d=2, e=1
+  - Display modal grade (most frequent) or numeric average
 ```
 
-The nutrition plugin's Zustand store (`useNutritionStore.addLog`) is not called from
-the backend. The nutrition dashboard will pick up the new entry on its next Supabase
-query refresh (TanStack Query or direct fetch). No changes needed in
-`plugins/nutrition/src/store.ts`.
+### State Management
 
----
+```
+useNutritionStore (Zustand v5)
+  NutritionEntry type extended:
+    + food_product_id?: string
+    + nutriscore_grade?: string
+    + ecoscore_grade?: string
+    |
+    v
+  addLog(entry) — optimistic update in todayLogs
+  setTodayLogs(logs) — replaces state on Supabase refresh
+  (no new actions needed — existing interface is sufficient)
+```
 
-## Component Map
+## Database Schema
 
-### New Components (create from scratch)
+### Migration 024 — `food_products` table
 
-| Component | Path | Notes |
-|-----------|------|-------|
-| Supabase migration | `supabase/migrations/022_pantry_schema.sql` | `pantry_items` table + RLS |
-| Plugin package config | `plugins/pantry/package.json` | `"name": "@ziko/plugin-pantry"` |
-| Plugin manifest | `plugins/pantry/src/manifest.ts` | Default export, `id: 'pantry'`, icon `'fast-food-outline'` |
-| Plugin index | `plugins/pantry/src/index.ts` | Re-exports for tree shaking |
-| Plugin store | `plugins/pantry/src/store.ts` | Zustand: `pantryItems`, `shoppingList`, `loadItems`, `upsertItem`, `removeItem` |
-| Screen: Dashboard | `plugins/pantry/src/screens/PantryDashboard.tsx` | Item list grouped by location, expiry badges |
-| Screen: Item Editor | `plugins/pantry/src/screens/PantryItemEditor.tsx` | Add/edit form: name, qty +/- controls, unit picker, category, expiry date |
-| Screen: Recipes | `plugins/pantry/src/screens/PantryRecipes.tsx` | Opens AI chat pre-seeded with pantry context; renders recipe cards from AI response |
-| Screen: Shopping List | `plugins/pantry/src/screens/PantryShoppingList.tsx` | Checklist UI, check-off state, React Native Share export |
-| Route wrapper: dashboard | `apps/mobile/app/(app)/(plugins)/pantry/dashboard.tsx` | `<PantryDashboard supabase={supabase} />` |
-| Route wrapper: editor | `apps/mobile/app/(app)/(plugins)/pantry/editor.tsx` | `<PantryItemEditor supabase={supabase} />` |
-| Route wrapper: recipes | `apps/mobile/app/(app)/(plugins)/pantry/recipes.tsx` | `<PantryRecipes supabase={supabase} />` |
-| Route wrapper: shopping | `apps/mobile/app/(app)/(plugins)/pantry/shopping.tsx` | `<PantryShoppingList supabase={supabase} />` |
-| AI tools implementation | `backend/api/src/tools/pantry.ts` | 5 tool functions |
+Next in sequence after `023_shopping_list.sql`.
 
-### Modified Components (minimal, surgical edits)
+```sql
+CREATE TABLE IF NOT EXISTS public.food_products (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  barcode          TEXT NOT NULL,
+  product_name     TEXT NOT NULL,
+  brands           TEXT,
+  nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
+  ecoscore_grade   TEXT,                     -- a-plus, a, b, c, d, e (OFF format)
+  calories_100g    NUMERIC(7,2) NOT NULL DEFAULT 0,
+  protein_100g     NUMERIC(6,2) NOT NULL DEFAULT 0,
+  carbs_100g       NUMERIC(6,2) NOT NULL DEFAULT 0,
+  fat_100g         NUMERIC(6,2) NOT NULL DEFAULT 0,
+  nutriments       JSONB,                    -- full OFF nutriments blob for future use
+  image_url        TEXT,
+  serving_size     TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-| Component | Path | Change |
-|-----------|------|--------|
-| PluginLoader | `apps/mobile/src/lib/PluginLoader.tsx` | Add 1 entry: `pantry: () => import('@ziko/plugin-pantry/manifest') as any` |
-| Tool registry — imports | `backend/api/src/tools/registry.ts` | Add `import * as PantryTools from './pantry.js'` |
-| Tool registry — schemas | `backend/api/src/tools/registry.ts` | Add `pantryToolSchemas` array (5 schemas), spread into `allToolSchemas` |
-| Tool registry — executors | `backend/api/src/tools/registry.ts` | Add 5 entries to `executors` map |
-| Navigation tool description | `backend/api/src/tools/registry.ts` | Append `pantry_dashboard`, `pantry_editor`, `pantry_recipes`, `pantry_shopping` to the `app_navigate` screen list in its description string |
-| Workspace config | Root `package.json` (workspaces) | Add `"plugins/pantry"` to workspaces array (same pattern as other plugins) |
+CREATE UNIQUE INDEX IF NOT EXISTS idx_food_products_barcode
+  ON public.food_products(barcode);
+
+-- Public catalogue: any authenticated user can read and insert
+ALTER TABLE public.food_products ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "food_products_select" ON public.food_products
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "food_products_insert" ON public.food_products
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "food_products_update" ON public.food_products
+  FOR UPDATE USING (auth.role() = 'authenticated');
+```
+
+**Schema decisions:**
+- `nutriments JSONB` stores the full OFF `nutriments` blob. The 4 core macro columns are extracted for query convenience (dashboard score aggregation, AI tool queries) without needing to parse JSON on every read.
+- No `user_id` on `food_products` — this is a shared product catalogue, not user-scoped. Any authenticated user can populate and read it.
+- `ecoscore_grade` is TEXT without a restrictive CHECK because OFF uses values like `'a-plus'` that would not fit an `('a','b','c','d','e')` constraint.
+
+### Migration 025 — Extend `nutrition_logs`
+
+```sql
+ALTER TABLE public.nutrition_logs
+  ADD COLUMN IF NOT EXISTS food_product_id UUID
+    REFERENCES public.food_products(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS nutriscore_grade TEXT
+    CHECK (nutriscore_grade IN ('a','b','c','d','e')),
+  ADD COLUMN IF NOT EXISTS ecoscore_grade TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_nutrition_logs_nutriscore
+  ON public.nutrition_logs(user_id, nutriscore_grade)
+  WHERE nutriscore_grade IS NOT NULL;
+```
+
+**Column decisions:**
+- `food_product_id` is nullable — existing rows and manual entries have no product reference.
+- `ON DELETE SET NULL` — deleting a `food_products` row nulls the FK on log entries but preserves the denormalised score columns, so historical score data is not lost.
+- `nutriscore_grade` inherits the same CHECK as `food_products` for consistency.
+- Index on `(user_id, nutriscore_grade)` supports future queries like "show me all B+ or better meals this week" and the daily score aggregation query.
+
+## Scaling Considerations
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 0–10k users | Direct OFF calls, Supabase cache — no changes needed |
+| 10k–100k users | `food_products` grows; add GIN index on `product_name` for full-text search beyond barcode; `updated_at` staleness check for OFF re-fetch |
+| 100k+ users | Consider OFF daily CSV delta-sync via backend cron to pre-populate `food_products`; OFF reads still direct from mobile |
+
+### Scaling Priorities
+
+1. **First bottleneck:** `food_products` name search (ilike scan) once catalogue exceeds ~50k rows. Fix: `CREATE INDEX idx_food_products_name ON food_products USING GIN (product_name gin_trgm_ops)`.
+2. **Second bottleneck:** Stale score data for frequently updated products. Fix: check `updated_at < NOW() - INTERVAL '30 days'` and re-fetch from OFF if stale.
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Routing OFF calls through the Hono backend
+
+**What people do:** Add a `GET /nutrition/barcode/:code` route to the Hono API that proxies to OFF and returns a normalised response.
+
+**Why it's wrong:** Adds a gratuitous network hop (~150–300ms extra), concentrates all users onto the server's IP for rate limiting, introduces a new backend route to maintain, and provides no security benefit since OFF is a public read API with no secrets. Ziko's pantry plugin already calls OFF directly from the mobile app without issues.
+
+**Do this instead:** Call OFF directly from the mobile app with `fetch()`. Set a descriptive `User-Agent`. Cache results in Supabase.
+
+### Anti-Pattern 2: JOIN food_products on every NutritionDashboard load
+
+**What people do:** Keep score grades only in `food_products`, then JOIN when loading nutrition logs.
+
+**Why it's wrong:** `NutritionDashboard.loadLogs()` fires on every `useFocusEffect` (returning from LogMealScreen, date change). Adding a JOIN to a foreign table increases query complexity, requires changing the established `SELECT *` query, and creates a hard dependency — deleting a `food_products` row would silently null out historical score data in the journal.
+
+**Do this instead:** Denormalise `nutriscore_grade` and `ecoscore_grade` into `nutrition_logs` at insert time. Keep `food_product_id` FK for full product data on demand (ProductCard, AI tool queries).
+
+### Anti-Pattern 3: Duplicating BarcodeScanner in the nutrition plugin
+
+**What people do:** Copy `plugins/pantry/src/screens/BarcodeScanner.tsx` into `plugins/nutrition/` to avoid a cross-plugin import.
+
+**Why it's wrong:** Duplicates camera permission handling, scan guard (`scannedRef`), and the modal layout. Two files to update when `expo-camera` API changes (it already changed once — EAN type names were renamed in SDK 53→54).
+
+**Do this instead:** Import `BarcodeScanner` directly from `plugins/pantry/src/screens/BarcodeScanner.tsx`. Extend the `onScan` callback to `onScan(name: string, barcode: string)` — a one-line interface change in the pantry component. The nutrition plugin uses `barcode` for `getOrFetchProduct()`; the pantry plugin ignores the new second argument or uses it to pre-fill the item name.
+
+### Anti-Pattern 4: Storing all OFF macro fields as individual columns
+
+**What people do:** Add `fiber_100g`, `saturated_fat_100g`, `sugars_100g`, `salt_100g`, `sodium_100g`... as dedicated columns on `food_products`.
+
+**Why it's wrong:** OFF `nutriments` contains 30+ fields. Expanding to individual columns creates migration sprawl and forces a new migration each time a new nutrient is tracked.
+
+**Do this instead:** Store the full `nutriments` blob as JSONB. Extract only the 4 core macros (calories, protein, carbs, fat) as typed columns for the hot path (macro logging and AI queries). Parse JSONB only when a detailed product view requires additional nutrients.
+
+## Integration Points
+
+### External Services
+
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Open Food Facts API | Direct `fetch()` from mobile, no auth | `User-Agent: ZikoFitnessApp/1.2 (contact@ziko-app.com)` required. Use `world.openfoodfacts.org` for production (`.net` is staging). Rate limit: 100 req/min per IP — per-user mobile calls never approach this. |
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| `nutrition` plugin → pantry `BarcodeScanner` | Direct cross-plugin import | Established precedent in this codebase. Extend `onScan(name, barcode)` callback signature — one-line change in pantry component, backward-compatible (pantry callers can ignore second arg). |
+| `nutrition` plugin → Supabase `food_products` | `getOrFetchProduct()` in `offApi.ts` | No RLS user filter — shared catalogue. Uses same `supabase` instance passed via props. |
+| `nutrition` plugin → Supabase `nutrition_logs` | Extended `saveLog()` in `LogMealScreen.tsx` | Adds `food_product_id`, `nutriscore_grade`, `ecoscore_grade` to existing insert. No store interface changes required beyond type widening. |
+| `NutritionDashboard` → score display | Reads from `todayLogs` in `useNutritionStore` | New columns returned by `SELECT *` — zero query changes. Score rendered via `<ScoreBadge>` component. |
+
+## New vs Modified — Component Inventory
+
+### New (create from scratch)
+
+| File | Purpose |
+|------|---------|
+| `supabase/migrations/024_food_products.sql` | Shared product catalogue table |
+| `supabase/migrations/025_nutrition_logs_scores.sql` | FK + score columns on nutrition_logs |
+| `plugins/nutrition/src/utils/offApi.ts` | OFF fetch + Supabase cache logic |
+| `plugins/nutrition/src/components/ProductCard.tsx` | Full product display with serving adjuster |
+| `plugins/nutrition/src/components/ScoreBadge.tsx` | Reusable letter badge A–E with grade colours |
+
+### Modified (surgical edits only)
+
+| File | Change |
+|------|--------|
+| `plugins/pantry/src/screens/BarcodeScanner.tsx` | `onScan(name: string, barcode: string)` — add second arg, pass raw `data` alongside resolved name |
+| `plugins/nutrition/src/screens/LogMealScreen.tsx` | Add "Barcode" tab; import `BarcodeScanner` + `getOrFetchProduct` + `ProductCard`; extend `saveLog()` payload |
+| `plugins/nutrition/src/screens/NutritionDashboard.tsx` | Import `ScoreBadge`; render on log entry cards; add daily score summary |
+| `plugins/nutrition/src/store.ts` | Widen `NutritionEntry` type: `+ food_product_id?: string; nutriscore_grade?: string; ecoscore_grade?: string` |
 
 ### Not Modified
 
-- `plugins/nutrition/` — no changes. Calorie sync reuses exported functions.
-- `supabase/migrations/003_nutrition_schema.sql` — no changes.
-- `backend/api/src/routes/ai.ts` — no changes. New tools auto-expose via `allToolSchemas`.
-- `apps/mobile/app/(app)/(plugins)/nutrition/` — no changes.
-- All other plugins — no changes.
-- `packages/plugin-sdk/` — no new types needed. `PluginManifest` already supports
-  `aiTools`, `aiSkills`, `routes`, `requiredPermissions`.
+- `backend/api/` — no changes. Barcode lookup is mobile-only.
+- `plugins/pantry/src/utils/barcode.ts` — pantry keeps using its existing lookup; nutrition uses `offApi.ts`.
+- All other plugins — unchanged.
+- `packages/plugin-sdk/` — no new types needed.
+- `apps/mobile/src/lib/PluginLoader.tsx` — pantry is already registered.
+
+## Build Order
+
+Dependencies flow strictly top-to-bottom. Each phase is a prerequisite for the next.
+
+### Phase 1 — Database Migrations
+
+Must go first. All other phases depend on the schema existing in Supabase.
+
+1. `supabase/migrations/024_food_products.sql` — `food_products` table + RLS
+2. `supabase/migrations/025_nutrition_logs_scores.sql` — extend `nutrition_logs`
+
+Validation gate: both migrations apply cleanly. `nutrition_logs` SELECT returns `food_product_id`, `nutriscore_grade`, `ecoscore_grade` (null on existing rows).
+
+### Phase 2 — OFF API Utility + Data Layer
+
+Build and test independently before adding any UI.
+
+1. `plugins/nutrition/src/utils/offApi.ts` — `fetchOFFProduct()` + `getOrFetchProduct()` with Supabase cache
+2. `plugins/nutrition/src/store.ts` — widen `NutritionEntry` type
+
+Validation gate: scanning a known EAN-13 (e.g. Nutella `3017624010701`) returns a populated `OFFProduct` object with `nutriscore_grade: 'e'`. Cache hit on second scan skips OFF call.
+
+### Phase 3 — Display Components
+
+Pure display components, no network calls. Build with static mock data, testable in isolation.
+
+1. `plugins/nutrition/src/components/ScoreBadge.tsx` — grade-to-colour mapping (a=green, b=light-green, c=yellow, d=orange, e=red)
+2. `plugins/nutrition/src/components/ProductCard.tsx` — photo, scores, macros per 100g, serving weight input, "Log" CTA
+
+Validation gate: `ProductCard` renders correctly with a static `OFFProduct` mock. `ScoreBadge` shows correct colours for all 5 grades. Both components handle null/undefined grade gracefully (no badge rendered).
+
+### Phase 4 — LogMealScreen Barcode Tab
+
+Wires Phase 2 and Phase 3 together into the user flow.
+
+1. `plugins/pantry/src/screens/BarcodeScanner.tsx` — extend `onScan` to `onScan(name, barcode)`
+2. `plugins/nutrition/src/screens/LogMealScreen.tsx` — add "Barcode" tab; integrate `BarcodeScanner` modal; call `getOrFetchProduct()`; show `ProductCard`; extend `saveLog()`
+
+Validation gate: Full scan-to-log flow works end to end. `nutrition_logs` row has `food_product_id` and `nutriscore_grade` populated. Not-found case falls back to custom tab without crash.
+
+### Phase 5 — NutritionDashboard Score Display
+
+Depends on Phase 4 having logged entries with scores. Can begin implementation in parallel with Phase 4 once types are established (Phase 2 complete).
+
+1. `plugins/nutrition/src/screens/NutritionDashboard.tsx` — render `<ScoreBadge>` on each log entry; add daily average Nutri-Score card in the summary section
+
+Validation gate: Log entries from barcode scan show score badges. Manual entries (null scores) show no badge. Daily score card appears when at least one scanned entry exists for the day.
+
+## Sources
+
+- Open Food Facts API v2 documentation: https://openfoodfacts.github.io/openfoodfacts-server/api/
+- OFF API tutorial (fields, endpoint format, User-Agent guidance): https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/
+- React Native networking — no CORS enforcement in native builds: https://reactnative.dev/docs/network
+- Existing `plugins/pantry/src/utils/barcode.ts` — confirms direct OFF call works in production (EAN field subset)
+- Existing `plugins/pantry/src/screens/BarcodeScanner.tsx` — `expo-camera` integration pattern, scan guard
+- Existing `supabase/migrations/003_nutrition_schema.sql` — `nutrition_logs` baseline schema
+- Existing `plugins/nutrition/src/screens/LogMealScreen.tsx` — current `saveLog()` and tab pattern
+- Existing `plugins/nutrition/src/store.ts` — `NutritionEntry` interface baseline
 
 ---
-
-## Suggested Build Order
-
-Dependencies flow top-to-bottom. Each phase is a prerequisite for the next.
-
-### Phase 1 — Database + Plugin Scaffold
-
-Build first. Everything else depends on the table and package resolving.
-
-1. `supabase/migrations/022_pantry_schema.sql` — create `pantry_items` table
-2. `plugins/pantry/package.json` — register workspace package `@ziko/plugin-pantry`
-3. `plugins/pantry/src/manifest.ts` — minimal manifest (id, icon, routes with placeholder paths)
-4. `apps/mobile/src/lib/PluginLoader.tsx` — add `pantry` to `PLUGIN_LOADERS`
-5. Root `package.json` workspaces — add `plugins/pantry`
-
-**Validation gate:** `npm run type-check` passes. Plugin appears in the Ziko plugin
-registry when installed. Supabase migration applies cleanly.
-
-### Phase 2 — Smart Inventory (CRUD + read tools)
-
-Builds the data layer. Recipe suggestions cannot work without pantry data.
-
-1. `plugins/pantry/src/store.ts` — Zustand store with `loadItems`, `upsertItem`, `removeItem`
-2. `plugins/pantry/src/screens/PantryDashboard.tsx` — list grouped by location, expiry color badges (red < 3 days, yellow < 7 days)
-3. `plugins/pantry/src/screens/PantryItemEditor.tsx` — add/edit form with quantity +/- stepper, unit picker, category chips, expiry date input
-4. Route wrappers: `dashboard.tsx`, `editor.tsx`
-5. `backend/api/src/tools/pantry.ts` — implement `pantry_get_items` and `pantry_update_item`
-6. `registry.ts` — register `pantry_get_items`, `pantry_update_item`
-
-**Validation gate:** User can add, edit, and delete pantry items through the UI and via
-AI chat ("Add 500g chicken breast to my pantry").
-
-### Phase 3 — AI Recipe Suggestions
-
-Depends on Phase 2 pantry data and existing `nutrition_get_summary` (already deployed).
-
-1. `backend/api/src/tools/pantry.ts` — implement `pantry_suggest_recipes` (imports `nutrition_get_summary` from `./nutrition.js`)
-2. `registry.ts` — register `pantry_suggest_recipes`
-3. `plugins/pantry/src/screens/PantryRecipes.tsx` — screen pre-seeded with "What can I cook?" prompt; renders AI response as structured recipe cards (name, ingredients, macros, steps, estimated cook time)
-4. Route wrapper: `recipes.tsx`
-
-**Validation gate:** AI responds to "What can I cook for dinner?" with 3 recipe
-suggestions that (a) use available pantry items, (b) respect remaining calorie/protein
-budget from today's nutrition logs, and (c) prioritize items expiring soon.
-
-### Phase 4 — Calorie Tracker Sync
-
-Depends on Phase 3 (the recipe confirmation flow requires a recipe to exist).
-
-1. `backend/api/src/tools/pantry.ts` — implement `pantry_log_recipe_cooked` (imports `nutrition_log_meal` from `./nutrition.js`)
-2. `registry.ts` — register `pantry_log_recipe_cooked`
-3. `PantryRecipes.tsx` — add "I cooked this" confirm button that sends a structured
-   confirmation message to the AI (includes recipe name + macro values + ingredient
-   item IDs), triggering `pantry_log_recipe_cooked`
-
-**Validation gate:** Confirming a cooked recipe creates a `nutrition_logs` entry visible
-in the Nutrition dashboard. Pantry quantities decrement by the correct amounts.
-
-### Phase 5 — Smart Shopping List
-
-Depends only on Phase 2 (the `pantry_items` table). Can be parallelised with Phase 4 if
-bandwidth allows.
-
-1. `backend/api/src/tools/pantry.ts` — implement `pantry_get_shopping_list`
-2. `registry.ts` — register `pantry_get_shopping_list`
-3. `plugins/pantry/src/screens/PantryShoppingList.tsx` — computed checklist, tap-to-check UX, React Native Share for export as plain text
-4. Route wrapper: `shopping.tsx`
-
-**Validation gate:** Items with `quantity <= min_quantity` appear in the list. User can
-export the list via the native share sheet.
-
----
-
-## RLS Pattern
-
-The `admin()` factory in `backend/api/src/tools/pantry.ts` must follow the exact
-pattern from `nutrition.ts` lines 6-10:
-
-```typescript
-function admin() {
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-}
-```
-
-The backend uses `SUPABASE_PUBLISHABLE_KEY` (not a service role key), so RLS is always
-enforced at the Supabase level. All write operations must additionally filter by
-`user_id = userId` as an explicit WHERE clause (double-check pattern, matching
-`nutrition_delete_entry` line 140: `.eq('user_id', userId) // RLS double-check`).
-
----
-
-## Open Questions
-
-1. **Recipe persistence.** Recipes are not stored today. If the user wants to save a
-   recipe for re-use, a `saved_recipes` table would be needed. Deferred — out of scope
-   for v1.1.
-
-2. **Barcode scanning.** The seed mentions tracking by location but not barcodes. Barcode
-   scanning via `expo-barcode-scanner` or `expo-camera` would improve add-item UX but is
-   not in scope for this milestone.
-
-3. **Unit mismatch in decrement.** `ingredients_used` is a JSON string produced by the
-   AI. If the recipe says "200g chicken" and the pantry item is stored in `pcs`, the AI
-   must judge the conversion. No programmatic unit conversion table is planned — this is
-   an AI judgment call. Edge cases may need prompt engineering in the system prompt
-   addition for the pantry manifest.
-
-4. **Offline.** No offline write queue is designed. MMKV can cache pantry state for
-   offline reads. Writes require connectivity. Acceptable for v1.1.
-
-5. **`app_navigate` pantry screens.** The navigation tool description string in
-   `registry.ts` is a plain-text list (line 488). Adding `pantry_dashboard`,
-   `pantry_editor`, `pantry_recipes`, `pantry_shopping` requires editing that string.
-   The underlying `NavigationTools.app_navigate` function uses Expo Router's `router.push`
-   — verify that the route resolver in the navigation tool implementation maps these new
-   screen identifiers to the correct Expo Router paths.
+*Architecture research for: Open Food Facts barcode enrichment — Ziko nutrition plugin v1.2*
+*Researched: 2026-04-02*

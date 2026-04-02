@@ -1,189 +1,230 @@
-# Technology Stack — Pantry Plugin (v1.1)
+# Technology Stack — Barcode Enrichment (v1.2)
 
-**Project:** Ziko Platform — `pantry` plugin (mobile app milestone)
-**Researched:** 2026-03-28
-**Scope:** NEW dependencies only. All existing stack (Expo SDK 54, React Native 0.81, NativeWind v4, Zustand v5, TanStack Query v5, MMKV v3, Supabase, Vercel AI SDK v6, Ionicons, `date-fns`) is validated and NOT re-researched here.
+**Project:** Ziko Platform — barcode enrichment milestone (nutrition plugin)
+**Researched:** 2026-04-02
+**Scope:** NEW stack additions only. Everything in the existing app (Expo SDK 54, React Native 0.81,
+NativeWind v4, Zustand v5, TanStack Query v5, MMKV v3, Supabase, Vercel AI SDK v6, Ionicons,
+`date-fns`, `expo-camera ~17.0.10`, `expo-image ~3.0.11`) is validated and NOT re-researched here.
 
 ---
 
-## Summary
+## Executive Summary
 
-Three technical questions drive the dependency decisions for this plugin:
+The barcode enrichment milestone introduces **zero new npm packages**. Every capability it requires
+is either already installed in `apps/mobile/package.json` or is purely server-side configuration and
+SQL migration work.
 
-1. **Barcode scanning** — `expo-barcode-scanner` was fully removed in Expo SDK 52. The correct path for SDK 54 is `expo-camera` (`CameraView` + `barcodeScannerSettings`). It supports EAN-13, EAN-8, Code128, and UPC-A — the formats on food product packaging. `expo-camera` is NOT currently in `apps/mobile/package.json` and must be added.
+Three technical questions drive this conclusion:
 
-2. **Expiration date picker** — `@react-native-community/datetimepicker` is the Expo-blessed native date picker (v9.1.0, March 2026 — actively maintained). It uses native UIDatePicker on iOS and DatePickerDialog on Android, `mode="date"` gives date-only input with no time, and is installed via `npx expo install`.
+1. **Barcode scanning in the nutrition plugin** — `expo-camera` (`CameraView` + `onBarcodeScanned`)
+   is already installed at `~17.0.10`. The pantry plugin already uses it in `BarcodeScanner.tsx`.
+   The nutrition plugin needs a new barcode-scanner tab in `LogMealScreen.tsx` that reuses the same
+   component pattern — no new package.
 
-3. **Product data from barcode** — Open Food Facts API provides free barcode lookup (EAN → product name + macros per 100g), no API key, 100 req/min, 4M+ products. Consumed via native `fetch` — zero new library.
+2. **Open Food Facts enrichment fields** — the existing `barcode.ts` utility in the pantry plugin
+   calls `https://world.openfoodfacts.net/api/v2/product/{barcode}?fields=product_name,product_name_fr`.
+   Enrichment requires extending that `fields=` query string to also request
+   `nutriscore_grade,ecoscore_grade,nutriments,image_front_url,brands`. Plain `fetch` — no new library.
 
-Everything else (AI recipe suggestions, calorie tracker sync, shopping list logic) uses existing Vercel AI SDK v6 tools registered in the backend registry, and existing Supabase client. No additional libraries needed.
+3. **Nutri-Score and Eco-Score badge display** — both scores are single letters (A–E) with official
+   colour conventions (green A → red E for Nutri-Score; dark-green A → black E for Eco-Score).
+   These are rendered as inline `View` + `Text` components styled with NativeWind or inline style
+   objects. `expo-image` (already installed at `~3.0.11`) handles product photo loading with
+   built-in caching, placeholder support, and graceful fallback — no additional image library needed.
+
+---
+
+## Confirmed Existing Dependencies (no version change required)
+
+| Package | Current version | Role in this milestone |
+|---------|-----------------|------------------------|
+| `expo-camera` | `~17.0.10` | Barcode scanner in LogMealScreen — reuse pantry's `BarcodeScanner.tsx` pattern |
+| `expo-image` | `~3.0.11` | Load product photo from `image_front_url` with built-in cache + placeholder |
+| `@supabase/supabase-js` | `^2.47.0` | Insert to new `food_products` table; FK join in `nutrition_logs` |
+| `date-fns` | `^4.1.0` | Date formatting — already used throughout nutrition plugin |
+| `zustand` | `^5.0.0` | Nutrition store extended with Nutri-Score/Eco-Score fields |
+| `@tanstack/react-query` | `^5.62.0` | Query cache for `food_products` catalogue lookups |
 
 ---
 
 ## New Dependencies
 
-### Must Add
-
-| Package | Version pin | Purpose | Why |
-|---------|-------------|---------|-----|
-| `expo-camera` | `~17.0.7` (SDK 54) | Live camera viewfinder for barcode scanning | The only supported barcode scanning path in SDK 54. `expo-barcode-scanner` was removed in SDK 52. Supports EAN-13, EAN-8, Code128, UPC-A — the symbologies on food products. |
-| `@react-native-community/datetimepicker` | via `npx expo install` | Native date picker for expiration date field | Expo-blessed, uses native OS date picker components on both platforms, `mode="date"` for date-only input, v9.1.0 released March 2026 — actively maintained. |
-
-### No New Library (use fetch directly)
-
-| Capability | Approach |
-|-----------|---------|
-| Open Food Facts product lookup | Plain `fetch('https://world.openfoodfacts.net/api/v2/product/{barcode}')` with `User-Agent: ZikoApp/1.1 (contact@ziko-app.com)` header. Returns `product.product_name`, `product.quantity` (e.g. "500g"), and `product.nutriments` (energy_kcal_100g, proteins_100g, carbohydrates_100g, fat_100g). No SDK. No API key. |
-
-### Conditionally Add (evaluate at screen implementation)
-
-| Package | Version | Purpose | When to add |
-|---------|---------|---------|-------------|
-| `react-native-modal-datetime-picker` | `^18.0.0` | Modal wrapper around the community datetimepicker | Add if the native inline picker on Android (renders inline by default) creates a layout problem in the add-item form. Wraps the community picker in a familiar dismiss-on-confirm modal. Last release August 2024 — maintenance-mode but stable for date-only use. Requires `@react-native-community/datetimepicker` as peer dep. |
-
----
-
-## Installation
-
-```bash
-# From apps/mobile/ — Expo CLI resolves compatible version for SDK 54 automatically
-npx expo install expo-camera
-npx expo install @react-native-community/datetimepicker
-
-# Optional — only if modal wrapper is needed at implementation time
-npx expo install react-native-modal-datetime-picker @react-native-community/datetimepicker
-```
-
-`app.json` plugin entry required for camera permissions — add to the `plugins` array alongside the existing `expo-location` entry:
-
-```json
-["expo-camera", { "cameraPermission": "Allow Ziko to scan food barcodes to add items to your pantry." }]
-```
+**None.** This milestone requires no new npm packages.
 
 ---
 
 ## What NOT to Add
 
-| Rejected Option | Why |
-|----------------|-----|
-| `react-native-vision-camera` | Production-grade but adds significant native build complexity (Babel plugin for frame processors, manual pods/gradle config, JSI). Overkill for food barcode scanning — `expo-camera` covers all required symbologies. |
-| `expo-barcode-scanner` | Removed from SDK 52+. Cannot be installed on SDK 54. |
-| `scanbot-sdk` / `dynamsoft-barcode-reader` | Paid, per-scan pricing, enterprise-grade. No justification for a v1.1 pantry plugin. |
-| `react-native-camera` | Legacy, deprecated in favour of VisionCamera. Not Expo-managed-workflow compatible. |
-| `react-native-date-picker` (henninghall) | Requires manual native config (pods/gradle), less Expo-friendly than the community picker. No meaningful UX advantage for a simple expiration date input. |
-| Scanning barcodes from gallery photos | `expo-image-picker` does not parse barcodes. The only path was `expo-barcode-scanner.scanFromURLAsync` — which is removed in SDK 52+. Not worth implementing in v1.1. |
-| `openfoodfacts-js` or any OFF SDK | No official JS SDK worth using. The v2 REST API is a single GET endpoint — plain `fetch` is 5 lines. Adding a library for this is noise. |
-| Full calendar / date picker calendar UI | Expiration dates need month + year precision only. The native date picker is sufficient; a calendar view is overkill. |
-| Any state management library additions | Pantry state follows the existing plugin pattern: Zustand store in `plugins/pantry/src/store.ts`. Nothing new needed. |
+| Rejected option | Why |
+|-----------------|-----|
+| `react-native-vision-camera` | Overkill — `expo-camera` covers EAN-13, EAN-8, UPC-A, Code128. No frame-processor pipeline needed for food barcode scanning. |
+| `openfoodfacts-js` or any OFF SDK | No official JS SDK worth using. The v2 REST API is a single GET with query params. Adding a library for a 10-line `fetch` call is noise. |
+| `react-native-fast-image` | Replaced by `expo-image` in the Expo managed workflow. `expo-image` provides LRU caching, BlurHash placeholder, and `recyclingKey` for list scroll — already installed. |
+| Any badge/score component library | Nutri-Score and Eco-Score badges are 5 colour values mapped to a letter — a 15-line inline component. No library justification. |
+| `axios` or `react-query` fetcher | Native `fetch` is sufficient. `@tanstack/react-query` is already installed for server-state caching. |
 
 ---
 
-## Integration Notes
+## Open Food Facts API — Enrichment Query
 
-### expo-camera — what's new in the mobile app
+**Endpoint (v2 — stable):**
+```
+GET https://world.openfoodfacts.net/api/v2/product/{barcode}
+    ?fields=product_name,product_name_fr,brands,
+            nutriscore_grade,ecoscore_grade,
+            nutriments,image_front_url
+User-Agent: ZikoApp/1.2 (contact@ziko-app.com)
+```
 
-`expo-camera` is NOT currently installed (`apps/mobile/package.json` confirmed). Adding it introduces:
-- A new native module — requires an EAS build (or `npx expo prebuild`) before testing on device. Expo Go supports `expo-camera` natively so development iteration works without a full build.
-- Camera permission on Android auto-added by the plugin. `NSCameraUsageDescription` on iOS set via the `app.json` plugin config.
-- No conflict with `expo-image-picker` (already installed) — both coexist, both use the camera hardware independently.
+**Rate limits:** 100 req/min for product lookup — no concern for a single-user mobile app.
 
-Barcode scanning API pattern for the pantry scanner screen:
+**Key response fields (confidence: HIGH — confirmed from official API docs and community usage):**
+
+| Field | Type | Example | Notes |
+|-------|------|---------|-------|
+| `product.product_name` | string | `"Nutella"` | Falls back to this if `_fr` absent |
+| `product.product_name_fr` | string | `"Nutella"` | French name |
+| `product.brands` | string | `"Ferrero"` | May be comma-separated |
+| `product.nutriscore_grade` | string | `"e"` | Single letter a–e, lowercase. `undefined` if not computed. |
+| `product.ecoscore_grade` | string | `"c"` | Single letter a–e, lowercase. `undefined` if not computed. |
+| `product.nutriments.energy-kcal_100g` | number | `539` | Key uses hyphen — access as `nutriments['energy-kcal_100g']` |
+| `product.nutriments.proteins_100g` | number | `6.3` | — |
+| `product.nutriments.carbohydrates_100g` | number | `57.5` | — |
+| `product.nutriments.fat_100g` | number | `30.9` | — |
+| `product.image_front_url` | string | `"https://images.openfoodfacts.org/..."` | May be absent — handle gracefully |
+| `status` | number | `1` | `1` = found, `0` = not found |
+
+**API v3 status:** In active development as of early 2026, subject to frequent changes. Use v2 — it is the current stable version per official OFF docs.
+
+**Extended `barcode.ts` utility — what changes:**
+
+The existing `plugins/pantry/src/utils/barcode.ts` only requests `product_name,product_name_fr`.
+For the nutrition plugin enrichment, a new utility (or extended version) must request all enrichment
+fields and return a structured `OFFProduct` object:
+
+```ts
+export interface OFFProduct {
+  name: string;
+  brands?: string;
+  nutriscore_grade?: 'a' | 'b' | 'c' | 'd' | 'e';
+  ecoscore_grade?: 'a' | 'b' | 'c' | 'd' | 'e';
+  calories_100g?: number;
+  protein_100g?: number;
+  carbs_100g?: number;
+  fat_100g?: number;
+  image_front_url?: string;
+}
+```
+
+The pantry `barcode.ts` does not change — it is a simpler call site that only needs the name.
+
+---
+
+## Nutri-Score and Eco-Score Display
+
+Both scores are rendered as inline badge components using NativeWind or inline style objects.
+No library. The colour conventions are standardised and should be followed exactly:
+
+**Nutri-Score colour map:**
+| Grade | Background | Text |
+|-------|-----------|------|
+| a | `#038141` | `#FFFFFF` |
+| b | `#85BB2F` | `#FFFFFF` |
+| c | `#FECB02` | `#1C1A17` |
+| d | `#EE8100` | `#FFFFFF` |
+| e | `#E63312` | `#FFFFFF` |
+
+**Eco-Score colour map:**
+| Grade | Background | Text |
+|-------|-----------|------|
+| a | `#1A7A39` | `#FFFFFF` |
+| b | `#52A544` | `#FFFFFF` |
+| c | `#D1C51A` | `#1C1A17` |
+| d | `#E87618` | `#FFFFFF` |
+| e | `#2B2B2B` | `#FFFFFF` |
+
+A grade badge is a small `View` (width 28, height 28, borderRadius 6) with centred uppercase letter.
+Display `null` state as a muted grey `?` badge when grade is not computed.
+
+---
+
+## Product Photo Display
+
+`expo-image` (already installed) handles remote product photo loading:
 
 ```tsx
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Image } from 'expo-image';
 
-const [permission, requestPermission] = useCameraPermissions();
-
-<CameraView
-  barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'code128', 'upc_a'] }}
-  onBarcodeScanned={(result) => {
-    // result.data = barcode string, e.g. "3017620422003"
-    // result.type = "ean13" on Android, "org.gs1.EAN-13" on iOS — normalize before use
-    const barcode = result.data;
-    lookupProduct(barcode);
-  }}
+<Image
+  source={{ uri: product.image_front_url }}
+  style={{ width: 72, height: 72, borderRadius: 8 }}
+  contentFit="cover"
+  placeholder={blurhash}          // optional — grey placeholder
+  transition={200}
 />
 ```
 
-**Critical iOS quirk:** On iOS, `result.type` for EAN-13 returns `"org.gs1.EAN-13"` instead of `"ean13"`. Normalize at the call site:
+`expo-image` provides built-in LRU disk + memory cache — product photos scanned once are served
+from cache on subsequent views. No additional image caching library needed.
 
-```ts
-const isEAN13 = (type: string) => type === 'ean13' || type.includes('EAN-13');
-```
+---
 
-This was reported as a bug in SDK 51 and was not confirmed fixed in SDK 54 — treat the normalization as required, not optional.
+## Database Changes Required
 
-### @react-native-community/datetimepicker — expiration date input
+Two migrations are needed (no new libraries — pure SQL):
 
-- `mode="date"` — date-only, no time component.
-- iOS: renders inline spinner (`display="compact"` recommended for a form field; fits within an add-item row without full-screen takeover).
-- Android: opens a native DatePickerDialog (one-shot modal, imperative). `display="default"` on Android.
-- Set `minimumDate={new Date()}` to prevent selecting dates in the past as expiration.
-- `date-fns` is already installed (`^4.1.0`) — use `format(date, 'yyyy-MM-dd')` for Supabase storage and `format(date, 'dd/MM/yyyy')` for display.
-
-### Open Food Facts — barcode lookup flow
-
-```
-Scan barcode → fetch OFF API → pre-fill item name + macros → user confirms/edits → save to pantry_items
-```
-
-Endpoint: `GET https://world.openfoodfacts.net/api/v2/product/{barcode}`
-
-Relevant response fields:
-- `product.product_name` — item name (pre-fill the name field)
-- `product.quantity` — e.g. "500 g" (parse for default quantity)
-- `product.nutriments.energy-kcal_100g` — kcal per 100g
-- `product.nutriments.proteins_100g`
-- `product.nutriments.carbohydrates_100g`
-- `product.nutriments.fat_100g`
-
-Fallback: not all products have complete nutrition data. The UI must handle `undefined` nutriments gracefully and allow the user to fill them in manually. If `product.status === 0` the barcode is unknown — show "Product not found, enter details manually."
-
-Rate limit: 100 req/min for product lookups — no concern for a single-user mobile app.
-
-### Supabase — new migration required
-
-New `pantry_items` table following the RLS pattern from `003_nutrition_schema.sql`:
+### Migration 024 — `food_products` catalogue
 
 ```sql
-CREATE TABLE public.pantry_items (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  name text NOT NULL,
-  quantity decimal NOT NULL DEFAULT 1,
-  unit text NOT NULL DEFAULT 'units', -- 'g', 'ml', 'units', 'kg', 'L'
-  category text,                       -- 'fridge', 'pantry', 'freezer', 'spices'
-  expiration_date date,
-  barcode text,
-  -- per-100g macros (nullable — may not be known)
-  per_100g_calories decimal,
-  per_100g_protein decimal,
-  per_100g_carbs decimal,
-  per_100g_fat decimal,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+CREATE TABLE public.food_products (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  barcode          TEXT NOT NULL UNIQUE,
+  name             TEXT NOT NULL,
+  brands           TEXT,
+  nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
+  ecoscore_grade   TEXT CHECK (ecoscore_grade IN ('a','b','c','d','e')),
+  calories_100g    NUMERIC(7, 2),
+  protein_100g     NUMERIC(7, 2),
+  carbs_100g       NUMERIC(7, 2),
+  fat_100g         NUMERIC(7, 2),
+  image_url        TEXT,
+  fetched_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE public.pantry_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "pantry_items_own" ON public.pantry_items
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+CREATE INDEX food_products_barcode_idx ON public.food_products(barcode);
 ```
 
-Number this migration `022_pantry_schema.sql`.
+This table has no `user_id` — it is a shared product catalogue (no RLS needed, read-only from
+the app after initial population). Products are inserted on first scan and reused on subsequent
+scans to avoid redundant OFF API calls.
 
-### Backend AI tools — no new library, registration only
+### Migration 025 — enrich `nutrition_logs`
 
-Four new tools registered in `backend/api/src/tools/registry.ts` following the existing pattern from `tools/nutrition.ts` and `tools/habits.ts`:
+```sql
+ALTER TABLE public.nutrition_logs
+  ADD COLUMN food_product_id UUID REFERENCES public.food_products(id) ON DELETE SET NULL,
+  ADD COLUMN nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
+  ADD COLUMN ecoscore_grade   TEXT CHECK (ecoscore_grade IN ('a','b','c','d','e'));
+```
 
-| Tool ID | What it does |
-|---------|-------------|
-| `pantry_get_items` | Reads `pantry_items` for the authenticated user (optionally filtered by low-stock or expiring soon) |
-| `pantry_suggest_recipes` | Claude generates 3 recipes from pantry items + remaining daily macros (calls `nutrition_get_today` internally) |
-| `pantry_log_recipe_cooked` | Decrements pantry item quantities consumed + calls `nutrition_log_entry` for each macro set |
-| `pantry_get_shopping_list` | Returns items below threshold quantity + ingredients missing for a given recipe |
+The FK is nullable — manually entered logs have no associated `food_products` row. Scores are
+denormalised onto `nutrition_logs` so they are available without a join in the daily summary query.
 
-All tools are server-side only. No new mobile library needed for the AI features.
+---
+
+## Integration with Existing `expo-camera` Setup
+
+The pantry plugin's `BarcodeScanner.tsx` uses `CameraView` with the correct scan guard pattern
+(ref-based dedup to prevent duplicate scans). The nutrition plugin's new barcode tab should
+reuse this component or extract it to a shared location in `packages/ui/` to avoid duplication.
+
+**Reuse recommendation:** Extract `BarcodeScanner.tsx` to `packages/ui/src/BarcodeScanner.tsx`,
+parameterise the `onBarcodeScanned` callback, and import from `@ziko/ui` in both plugins.
+
+**iOS EAN-13 type normalization** (carry-forward from v1.1 research, still applies):
+`result.type` returns `"org.gs1.EAN-13"` on iOS, not `"ean13"`. Normalize at the call site.
+The existing pantry implementation handles only `result.data` (the barcode string itself) which
+avoids this issue entirely — the nutrition plugin should follow the same pattern.
 
 ---
 
@@ -191,23 +232,22 @@ All tools are server-side only. No new mobile library needed for the AI features
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| `expo-camera` for barcode scanning | HIGH | Official Expo docs confirm EAN-13/EAN-8/Code128 support; SDK 54 ships ~17.x; barcode-scanner removed in SDK 52 confirmed by multiple sources |
-| `@react-native-community/datetimepicker` | HIGH | Expo-blessed, v9.1.0 March 2026, actively maintained |
-| Open Food Facts API (no library) | HIGH | Official docs, free, no auth, rate limits confirmed |
-| iOS EAN-13 type normalization | MEDIUM | Bug reported in SDK 51, not confirmed fixed in SDK 54 — treat normalization as required |
-| `react-native-modal-datetime-picker` | MEDIUM | v18.0.0 August 2024, maintenance-mode but functionally stable for date-only picker |
+| `expo-camera` barcode scanning | HIGH | Already working in production in pantry plugin at `~17.0.10` |
+| `expo-image` for product photos | HIGH | Already installed; official Expo docs confirm LRU caching and graceful fallback |
+| OFF API v2 field names (`nutriscore_grade`, `ecoscore_grade`) | HIGH | Confirmed via official OFF docs, multiple independent sources, and Hugging Face dataset schema |
+| OFF API `image_front_url` field | MEDIUM | Field name consistent across sources; not shown in the official tutorial examples but confirmed in community usage |
+| OFF API v2 stability | HIGH | Official docs explicitly state v2 is the current stable version; v3 is "in active development and subject to frequent changes" |
+| Nutri-Score colour values | MEDIUM | Colours sourced from OFF web implementation; not normatively published as a specification |
+| Zero new npm packages | HIGH | All required capabilities confirmed present in `apps/mobile/package.json` |
 
 ---
 
 ## Sources
 
-- [Camera — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/camera/) — barcode types, `CameraView`, `barcodeScannerSettings`, permissions
-- [expo/fyi: barcode-scanner-to-expo-camera migration guide](https://github.com/expo/fyi/blob/main/barcode-scanner-to-expo-camera.md)
-- [expo/expo issue #27015: BarCodeScanner deprecated](https://github.com/expo/expo/issues/27015) — removal confirmed SDK 52
-- [expo/expo issue #28741: EAN-13 data undefined on iOS in SDK 51](https://github.com/expo/expo/issues/28741) — type normalization caveat
-- [@react-native-community/datetimepicker — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/date-time-picker/)
-- [datetimepicker releases — v9.1.0 (March 2026)](https://github.com/react-native-datetimepicker/datetimepicker/releases)
-- [react-native-modal-datetime-picker releases — v18.0.0 (August 2024)](https://github.com/mmazzarolo/react-native-modal-datetime-picker/releases)
-- [Open Food Facts API — Introduction](https://openfoodfacts.github.io/openfoodfacts-server/api/)
-- [Open Food Facts API — Tutorial with endpoint and rate limits](https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/)
-- [Building a Professional Barcode & QR Scanner with Expo Camera (January 2026)](https://anytechie.medium.com/building-a-professional-barcode-qr-scanner-with-expo-camera-57e014382000)
+- [Open Food Facts API — Introduction (official)](https://openfoodfacts.github.io/openfoodfacts-server/api/) — v2 stable, v3 in development, rate limits (100 req/min product lookup)
+- [Open Food Facts API — Tutorial](https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/) — `nutrition_grades` field, barcode lookup URL format, `?fields=` parameter usage
+- [Camera — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/camera/) — `CameraView`, `barcodeScannerSettings`, supported barcode types, SDK 54 version `~17.0.7`
+- [Image — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/image/) — LRU caching, `contentFit`, `placeholder`, `transition`, `recyclingKey`
+- [Open Food Facts product database — Hugging Face](https://huggingface.co/datasets/openfoodfacts/product-database) — confirms `nutriscore_grade`, `ecoscore_grade` field names in dataset schema
+- [Building a Professional Barcode & QR Scanner with Expo Camera (January 2026)](https://anytechie.medium.com/building-a-professional-barcode-qr-scanner-with-expo-camera-57e014382000) — confirms `CameraView` + `onBarcodeScanned` pattern in SDK 54
+- [Scanbot: React Native barcode scanner libraries comparison](https://scanbot.io/blog/react-native-vision-camera-vs-expo-camera/) — confirms `expo-camera` covers EAN-13/EAN-8/UPC-A; VisionCamera overhead not justified for food scanning

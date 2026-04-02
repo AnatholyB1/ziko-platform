@@ -1,198 +1,149 @@
-# Research Summary — Ziko Smart Pantry Plugin (v1.1)
+# Project Research Summary
 
-**Project:** Ziko Platform — `pantry` plugin
-**Domain:** Pantry inventory + AI recipe suggestion + macro tracker integration + shopping list
-**Researched:** 2026-03-28
-**Confidence:** HIGH (stack + architecture verified against live codebase; features MEDIUM-HIGH cross-validated across pantry app competitors)
+**Project:** Ziko Platform — v1.2 Barcode Enrichment + Tech Debt
+**Domain:** Open Food Facts barcode enrichment in a React Native nutrition plugin; v1.1 tech debt closure
+**Researched:** 2026-04-02
+**Confidence:** HIGH
 
----
+## Executive Summary
 
-## Overview
+Milestone v1.2 adds barcode-driven food logging to the nutrition plugin by integrating the Open Food Facts v2 API. The feature chain is: camera scan → OFF API lookup → product card (Nutri-Score, Eco-Score, photo, macros) → serving adjustment → log. Research confirms this is a well-understood pattern with strong ecosystem precedent (Yuka, Cronometer) and that Ziko's existing code already supplies every primitive required. Zero new npm packages are needed — `expo-camera` (`~17.0.10`) and `expo-image` (`~3.0.11`) are installed, the pantry plugin's `BarcodeScanner.tsx` is reusable with a one-line callback extension, and `fetch()` covers the OFF API call directly from the mobile client.
 
-Research across four areas confirms the Smart Pantry plugin is a well-scoped addition to the Ziko Platform that integrates cleanly into the existing architecture without structural changes to the host app or any existing plugin. The plugin's core value proposition — "What can I cook right now that fits my remaining macros?" — is uniquely achievable on Ziko because the Claude Sonnet agent already has live access to the user's nutrition state via `nutrition_get_today`. No standalone pantry app can replicate this without a full nutrition backend, making macro-aware recipe suggestions the unambiguous differentiator and the reason to build this plugin over a simpler ingredient tracker.
+The recommended implementation splits into two Supabase migrations (024 `food_products` shared catalogue, 025 `nutrition_logs` FK + denormalised score columns), followed by a utility layer (`offApi.ts`), stateless display components (`ScoreBadge`, `ProductCard`), and surgical edits to `LogMealScreen` and `NutritionDashboard`. The Hono backend is not involved — direct mobile-to-OFF calls are already proven by the pantry plugin, avoid the shared-IP rate-limit problem of a proxy, and add no latency. The v1.1 tech debt (SHOP-03, `pantry_log_recipe_cooked` AI tool, Nyquist VALIDATION.md files for phases 06–09) is bundled into Phase 10 alongside the data layer work.
 
-The stack research confirms two new dependencies are strictly required (`expo-camera` for barcode scanning, `@react-native-community/datetimepicker` for expiration date input), the Open Food Facts API requires no SDK or API key, and all AI features use the existing Vercel AI SDK v6 tool registration pattern. The architecture research — conducted with direct codebase inspection — defines a clean 4-phase build order with hard dependency gates between each phase, a single new Supabase table (`022_pantry_schema.sql`), and five new AI tools. No existing plugin or shared package requires modification beyond surgical additions to `PluginLoader.tsx`, `registry.ts`, and the root workspace config.
-
-The highest-risk area is the seam between the pantry and nutrition plugins: cross-plugin writes to `nutrition_logs` can produce duplicate entries, the agent's 5-step tool-call budget is tight for multi-tool recipe suggestion flows, and the nutrition Zustand store will not auto-refresh after a backend-originated write. All three risks have clear, low-complexity mitigations documented in the pitfalls research and summarized below.
+The three highest-risk areas are: (1) `food_products` RLS must use `auth.role() = 'authenticated'` instead of the project-standard `auth.uid() = user_id` — copying any existing migration will silently block all reads; (2) `ecoscore_grade` returns `'a-plus'` and `'not-applicable'` which fall outside the A–E colour map — the `ScoreBadge` component must handle these gracefully before render; (3) `serving_size` is a free-text string — `offApi.ts` must default to 100g on parse failure rather than propagating NaN into macro calculations.
 
 ---
 
-## Stack Additions
+## Key Findings
 
-New dependencies only. Everything else (Expo SDK 54, React Native 0.81, NativeWind v4, Zustand v5, TanStack Query v5, MMKV v3, Supabase, Vercel AI SDK v6, Ionicons, `date-fns`) is already in the project and validated.
+### Recommended Stack
 
-- **`expo-camera ~17.0.7`** — barcode scanning via `CameraView` + `barcodeScannerSettings`. The only supported path in SDK 54 (`expo-barcode-scanner` was removed in SDK 52). Install via `npx expo install expo-camera`. Requires an `app.json` plugin entry with `cameraPermission` string. Expo Go supports it natively so dev iteration works without a full EAS build.
-- **`@react-native-community/datetimepicker`** (via `npx expo install`) — native date picker for expiration date input. Expo-blessed, v9.1.0 released March 2026, actively maintained. Use `mode="date"`, `minimumDate={new Date()}`, `display="compact"` on iOS.
-- **`react-native-modal-datetime-picker ^18.0.0`** (conditional only) — modal wrapper if the Android inline picker causes layout problems. Evaluate at implementation time; do not add pre-emptively.
-- **Open Food Facts API** — barcode-to-product lookup via plain `fetch`, no library, no API key. Single GET endpoint, 100 req/min, 4M+ products. Handle missing `nutriments` gracefully; not all products have complete macro data.
+The milestone requires no new npm dependencies. All capabilities are already present in `apps/mobile/package.json`. The OFF API is a single GET with a `?fields=` query string — no SDK is warranted. `expo-image` provides LRU caching and BlurHash placeholders for product photos. Nutri-Score and Eco-Score badge components are 15-line inline `View`+`Text` constructs using NativeWind or inline style objects.
 
----
+The one critical URL distinction: the existing `plugins/pantry/src/utils/barcode.ts` calls `world.openfoodfacts.net` (OFF staging). The new `plugins/nutrition/src/utils/offApi.ts` must use `world.openfoodfacts.org` (production). These two utilities remain independent — the pantry utility is not modified.
 
-## Feature Table Stakes
+**Core technologies in use:**
+- `expo-camera ~17.0.10`: barcode scanning via `CameraView` + `onBarcodeScanned` — reuse pantry's `BarcodeScanner.tsx` with one callback argument added
+- `expo-image ~3.0.11`: product photo display with built-in LRU disk/memory cache and graceful null handling
+- `fetch()` (built-in): OFF API v2 direct call from mobile — no CORS enforcement in React Native native builds
+- `@supabase/supabase-js ^2.47.0`: `food_products` upsert cache + extended `nutrition_logs` insert
+- `zustand ^5.0.0`: widen `NutritionEntry` type with `food_product_id?`, `nutriscore_grade?`, `ecoscore_grade?`
 
-Must be present in v1.1 for the plugin to feel complete. Missing any of these makes it feel broken or pointless.
+**Rejected options (do not revisit):**
+- `react-native-vision-camera` — overkill; no frame-processor pipeline needed for EAN-13 food scanning
+- Backend proxy for OFF calls — adds latency, concentrates rate-limit onto server IP, no security benefit
+- Any OFF SDK or badge library — both are 10–15 line utilities that do not justify a dependency
 
-| Feature | Notes |
-|---------|-------|
-| Add pantry item (name, qty, unit, category, location) | Manual entry; barcode scanning deferred to v1.2 per FEATURES.md |
-| Edit and delete pantry items | Swipe-to-edit / swipe-to-delete — standard gesture pattern |
-| View list grouped by location (Fridge / Freezer / Pantry) | Section headers or tabs |
-| Expiration date field with green / yellow / red indicator | Red = expired or today, yellow = within 7 days, green = safe |
-| "Expiring soon" items surfaced prominently | Pinned section or sort-to-top within each group |
-| "What can I cook?" AI recipe suggestions | Core value; calls `pantry_suggest_recipes` which pulls `nutrition_get_today` for macro context |
-| Each recipe shows macro breakdown (cal / P / C / F) before confirm | Users are macro trackers — non-negotiable |
-| "I cooked this" → auto-logs macros to nutrition | Closes the pantry → recipe → nutrition loop |
-| Pantry quantities decrement after cooking | Without this pantry becomes stale data within a week |
-| Shopping list: low/out-of-stock items | Rule-based query, not AI-generated |
-| Shopping list: check off items as purchased | Persists via MMKV until manually cleared |
+### Expected Features
 
----
+**Must have (table stakes):**
+- Camera barcode scanner modal (reuse pantry `BarcodeScanner.tsx`, landscape scan frame for linear barcodes)
+- OFF API lookup returning calories, protein, carbs, fat per 100g
+- Product card shown before logging (photo, name, brand, macros, serving adjuster)
+- Serving size adjustment with live-updating macro calculation (default 100g on parse failure)
+- Fallback state for products not found in OFF (estimated ~30% gap in non-EU products)
+- Log to `nutrition_logs` with nullable `food_product_id` FK
+- Nutri-Score badge on product card (A–E letter with standardised colour)
+- Persistent `food_products` shared catalogue (Supabase upsert on first scan; skip OFF call on cache hit)
 
-## Differentiators
+**Should have (differentiators):**
+- Eco-Score badge on product card alongside Nutri-Score (gracefully hidden if `'not-applicable'`)
+- Product photo confirming correct product was scanned (`expo-image`, placeholder if absent)
+- Nutri-Score badge on each `NutritionDashboard` journal entry row (from denormalised column)
+- Daily average Nutri-Score summary widget on dashboard header (hidden if no scanned meals that day)
+- AI coaching hook: `avg_nutriscore` added to `nutrition_get_today` user context payload (post-launch)
 
-Features that set this plugin apart from standalone pantry apps. Not required at launch but drive retention and word-of-mouth.
+**Defer to v2+:**
+- NOVA ultra-processing classification (user demand unvalidated)
+- Allergen / ingredient list display (partial OFF data creates medical liability risk)
+- Offline-first pre-downloaded product database segment
+- Manual contribution of corrections back to OFF
 
-| Feature | Why It Matters |
-|---------|----------------|
-| **Macro-aware recipe filtering** | AI suggests recipes that fit the user's *remaining* daily macro budget — zero extra infrastructure since `nutrition_get_today` already exists. No standalone pantry app has this. |
-| **Expiry-first recipe suggestions** | "Your chicken expires tomorrow — here's what to make." Turns food waste prevention into daily engagement. Low cost: sort pantry items by soonest expiry in the prompt context. |
-| **Craving input before recipe request** | Free text or 3-4 chips (High protein / Light / Quick / Comfort food). No backend complexity — a prompt parameter addition only. |
-| **AI pre-fills meal_type from time of day** | Breakfast before 10am, lunch 10am–3pm, dinner 3pm–9pm, snack otherwise. Saves a tap in the confirm flow. Same pattern used by Cronometer and Fitia. |
-| **Add missing recipe ingredients to shopping list in one tap** | Diff between recipe ingredients and current pantry state surfaced at confirm time; one-tap add. |
-| **Export shopping list via native Share API** | 2 lines of React Native code. Users go to the grocery store on their phone — they need the list there. |
-| **Per-serving portion adjustment on confirm** | Macros scale before logging; pantry deductions scale accordingly. |
+### Architecture Approach
 
----
+The architecture is strictly mobile-first: the mobile app calls OFF directly, upserts into a Supabase `food_products` shared catalogue, then logs to `nutrition_logs` with denormalised score columns. The Hono backend is untouched. The build order follows a strict dependency graph: migrations → utility + type widening → display components → LogMealScreen barcode tab → NutritionDashboard score display. Tech debt tasks are bundled with the migrations phase.
 
-## Architecture Highlights
+**Major components:**
+1. `supabase/migrations/024_food_products.sql` — shared product catalogue, no `user_id`, RLS uses `auth.role() = 'authenticated'`
+2. `supabase/migrations/025_nutrition_logs_scores.sql` — adds nullable FK `food_product_id` + denormalised `nutriscore_grade`, `ecoscore_grade` columns
+3. `plugins/nutrition/src/utils/offApi.ts` (NEW) — `fetchOFFProduct()` + `getOrFetchProduct()` cache lookup; uses `.org` production URL; returns structured `OFFProduct | null`
+4. `plugins/nutrition/src/components/ScoreBadge.tsx` (NEW) — stateless letter badge A–E with grade-to-colour map; returns `null` for `'a-plus'` (display as "A+" in `'a'` colour), `'not-applicable'`, and any unknown value
+5. `plugins/nutrition/src/components/ProductCard.tsx` (NEW) — photo, Nutri-Score + Eco-Score badges, macros per 100g, serving weight input (default 100g), Log CTA
+6. `plugins/pantry/src/screens/BarcodeScanner.tsx` (MINOR EDIT) — extend `onScan(name)` to `onScan(name, barcode)` — one argument added, backward-compatible
+7. `plugins/nutrition/src/screens/LogMealScreen.tsx` (MODIFY) — add 4th "Barcode" tab; integrate `BarcodeScanner`, `getOrFetchProduct`, `ProductCard`; extend `saveLog()` with score fields
+8. `plugins/nutrition/src/screens/NutritionDashboard.tsx` (MODIFY) — `<ScoreBadge>` on each log entry row; daily average Nutri-Score summary widget (null-guarded)
+9. `plugins/nutrition/src/store.ts` (MODIFY) — widen `NutritionEntry` type
 
-The pantry plugin is the 18th plugin in the monorepo and follows the established pattern exactly: a package under `plugins/pantry/`, thin route wrappers under `apps/mobile/app/(app)/(plugins)/pantry/`, one Supabase migration (`022_pantry_schema.sql`), and five AI tools in `backend/api/src/tools/pantry.ts` registered in `registry.ts`.
+**Not modified:** `backend/api/`, `plugins/pantry/src/utils/barcode.ts`, `packages/plugin-sdk/`, `apps/mobile/src/lib/PluginLoader.tsx`, all other plugins.
 
-**Build order is strictly sequential through 4 phases.** Database + scaffold must exist before inventory CRUD, which must exist before recipe suggestions, which must exist before calorie sync. Shopping list depends only on Phase 1 data and can be parallelised with Phase 3.
+### Critical Pitfalls
 
-**Key integration points and schema decisions:**
+1. **`food_products` RLS cannot copy the standard `auth.uid() = user_id` pattern** — this table has no `user_id`. Use `auth.role() = 'authenticated'` for SELECT/INSERT/UPDATE. Applying the standard pattern silently returns 0 rows to the publishable-key client and the product card never loads.
 
-- **Single new Supabase table** — `pantry_items` with `NUMERIC(8,2)` quantities (critical: not `INTEGER`), nullable `expiration_date`, nullable per-item `low_stock_threshold` column (add in Phase 1 migration at zero UI cost; used in Phase 4 alert logic), `location` enum (`pantry`/`fridge`/`freezer`), and standard `auth.uid() = user_id` RLS policy. Migration number: `022_pantry_schema.sql`.
-- **No `recipes` or `shopping_lists` tables** — recipes are generated on demand and returned as structured JSON in the AI message thread, never persisted. Shopping list is computed from `pantry_items.quantity <= low_stock_threshold` on demand. This is intentional and correct for v1.1.
-- **`pantry_suggest_recipes` is a data-gathering tool, not an AI call** — it collects pantry contents and remaining macros (via direct function import from `./nutrition.ts`, no HTTP round-trip) and returns a context object for the agent's next language model step.
-- **`pantry_log_recipe_cooked` is the combined write tool** — imports and calls `nutrition_log_meal` from `./nutrition.ts` directly, then issues `pantry_items` quantity decrements. Nutrition plugin code and schema are untouched.
-- **Three mandatory touch points for plugin registration** — `PluginLoader.tsx` (Metro static import), `registry.ts` (tool schemas + executors), and `supabase/migrations/`. Missing any one produces a silent failure with no error message.
+2. **`ecoscore_grade` returns `'a-plus'` and `'not-applicable'`** — these fall outside the A–E colour map. Map `'a-plus'` to `'a'` colour and display "A+"; return `null` (hide badge entirely) for `'not-applicable'` and any unrecognised value. No `CHECK` constraint on `ecoscore_grade` column — store the raw OFF value.
 
-**5 new AI tools:**
+3. **`serving_size` is free text, not a number** — OFF returns strings like `"1 biscuit (30g)"` or `"250 ml"`. Extract grams via regex `/([\d.]+)\s*g/i`, default to 100 on failure. Never let NaN reach the macro calculation or the log insert.
 
-| Tool | Purpose |
-|------|---------|
-| `pantry_get_items` | Read inventory with optional `low_stock_only` filter |
-| `pantry_update_item` | Unified create / update / decrement / delete |
-| `pantry_suggest_recipes` | Data-gathering: collects pantry + remaining macros for Claude's next language model step |
-| `pantry_log_recipe_cooked` | Combined nutrition log + pantry quantity decrement on cook confirm |
-| `pantry_get_shopping_list` | Rule-based low-stock query; optional recipe ingredient augmentation |
+4. **Use `.org` not `.net` for production OFF calls** — `world.openfoodfacts.net` is the staging server. The pantry `barcode.ts` uses `.net`; the new `offApi.ts` must explicitly use `world.openfoodfacts.org` with a code comment explaining the intentional divergence.
 
-**Modified files (surgical, minimal):**
-
-| File | Change |
-|------|--------|
-| `apps/mobile/src/lib/PluginLoader.tsx` | Add 1 entry: `pantry: () => import('@ziko/plugin-pantry/manifest') as any` |
-| `backend/api/src/tools/registry.ts` | Import `pantry.ts`; add 5 tool schemas to `allToolSchemas`; add 5 entries to `executors`; append 4 screen names to `app_navigate` description |
-| Root `package.json` workspaces | Add `"plugins/pantry"` |
-
----
-
-## Watch Out For
-
-Top pitfalls with one-line prevention strategy each.
-
-1. **Tool-call step budget exhausted before recipe response completes** — inject pantry macro context into the system prompt via `fetchUserContext` (following the existing `context/user.ts` pattern) so `nutrition_get_today` is not a live agent step; the 5-step budget is preserved for pantry-specific tool calls.
-
-2. **Duplicate nutrition log: AI tool write + user re-logs manually** — always call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds; this triggers the Nutrition screen's mount re-fetch so the user sees the entry has already been logged.
-
-3. **Optimistic Zustand decrement without rollback on Supabase failure** — await the Supabase write before updating the store for any quantity mutation; show a brief loading indicator on the confirm button so the user knows a write is in progress.
-
-4. **AI macro estimates logged with false precision** — display macro values as editable fields (not read-only text) in the confirm-cooked screen; prefix `food_name` with `"[Pantry] ... (est.)"` so AI-originated nutrition entries are identifiable in the Nutrition dashboard.
-
-5. **Plugin invisible due to missing `PluginLoader.tsx` entry** — add `pantry: () => import('@ziko/plugin-pantry/manifest') as any` to `PLUGIN_LOADERS` in the same task that creates the package; Metro bundler requires static import strings and silently omits the plugin if this entry is missing.
+5. **`pantry_log_recipe_cooked` AI tool requires three coordinated edits in `registry.ts`** — import, `executors` record entry, `allToolSchemas` array. Missing any one produces a silent failure (agent advertises the tool but execution returns `undefined`). Remove the direct Supabase call from `RecipeConfirm.tsx` in the same task — never have both active simultaneously.
 
 ---
 
 ## Implications for Roadmap
 
-Four phases with a hard dependency gate between each. Phase sequence matches both the feature dependency tree (FEATURES.md) and the build order defined by codebase architecture (ARCHITECTURE.md).
+Research points to two phases for this milestone: one combining the data foundation with tech debt payoff, and one covering all UI work that depends on that foundation.
 
-### Phase 1 — Database + Plugin Scaffold + Smart Inventory
+### Phase 10: Data Foundation + Tech Debt
 
-**Rationale:** Everything downstream depends on `pantry_items` data existing. All foundational decisions (column types, RLS, package name, route wrappers) are made here and are expensive to change later. Three registration touch points must all be wired before any screen or AI tool can function.
+**Rationale:** Migrations 024 and 025 are hard prerequisites for every UI component in Phase 11. Tech debt items (SHOP-03, `pantry_log_recipe_cooked`, VALIDATION.md files) have no UI dependencies and are cleanest to ship alongside schema work rather than as a separate phase. Bundling avoids a three-phase milestone for two distinct surfaces.
 
-**Delivers:** User can add, edit, delete, and view pantry items grouped by location with expiry color indicators. AI can also manage pantry via `pantry_get_items` and `pantry_update_item`.
+**Delivers:**
+- `food_products` shared catalogue table with correct RLS (`auth.role() = 'authenticated'`, no `user_id`)
+- `nutrition_logs` extended with nullable `food_product_id` FK + denormalised `nutriscore_grade` + `ecoscore_grade` columns
+- `offApi.ts` utility: `fetchOFFProduct()` + `getOrFetchProduct()` with Supabase cache, `.org` production URL, `image_front_small_url ?? image_front_url ?? null` fallback chain
+- `NutritionEntry` type widened in `store.ts`
+- SHOP-03 fix: `handleCheckOffRecipe()` debounced on first tap + pantry upsert with `onConflict: 'user_id,name'`
+- `pantry_log_recipe_cooked` registered as AI tool in `registry.ts` (all 3 touch points verified), direct Supabase call removed from `RecipeConfirm.tsx`
+- VALIDATION.md files written for phases 06–09
 
-**Addresses:** All table stakes except recipe suggestion, calorie sync, and shopping list.
+**Addresses pitfalls:** 1.1 (`.org` URL), 1.3 (not-found handling), 2.1 (food_products RLS), 2.2 (nullable FK), 2.3 (cached_at column), 4.1 (SHOP-03 dedupe), 5.1 (AI tool 3-point registry check)
 
-**Must avoid:** Integer column type for quantity (use `NUMERIC(8,2)`), missing RLS policy, wrong package name (`@ziko/pantry` instead of `@ziko/plugin-pantry`), missing `PluginLoader.tsx` entry, route wrappers not created at same time as manifest route declarations, expiry date using UTC date string instead of local calendar date.
+**Avoids:** Schema work being blocked by UI scope creep; RecipeConfirm double-logging if AI tool and direct Supabase call coexist
 
-**Research flag:** No deeper research needed — established patterns from nutrition/sleep/measurements plugins.
+### Phase 11: Barcode UI + Score Display
 
----
+**Rationale:** All UI work depends on the schema and utility established in Phase 10. Building display components before the data layer risks implementing against assumptions that migrations later invalidate. `NutritionDashboard` score display must come last within this phase — it requires logged entries with `nutriscore_grade` populated, which only exist after `LogMealScreen` barcode logging works end-to-end.
 
-### Phase 2 — AI Recipe Suggestion Tools + Recipe UI
+**Delivers:**
+- `ScoreBadge.tsx` — stateless A–E badge with correct colour map and graceful handling of `'a-plus'` (→ "A+" in green), `'not-applicable'` (→ hidden), and `null` (→ hidden)
+- `ProductCard.tsx` — photo, Nutri-Score + Eco-Score badges, macros per 100g, serving adjuster (100g default on parse failure), Log CTA, "Enter manually" fallback link
+- `BarcodeScanner.tsx` in pantry — one-line `onScan(name, barcode)` signature extension
+- `LogMealScreen.tsx` — 4th "Barcode" tab wired end-to-end: scan → `getOrFetchProduct()` → `ProductCard` → `saveLog()` with scores; not-found state falls back to custom entry tab
+- `NutritionDashboard.tsx` — `<ScoreBadge>` on each log entry row (null-guarded); daily average Nutri-Score summary widget (hidden when `scoredMeals.length === 0`)
 
-**Rationale:** Recipe suggestion is the feature that makes users understand why they are maintaining an inventory. Without it the plugin is a grocery tracker with no payoff. Must come before calorie sync since calorie sync depends on a recipe existing in conversation context.
-
-**Delivers:** AI responds to "What can I cook?" with 3 macro-aware recipe suggestions showing available ingredients, missing ingredients (explicit `missing_ingredients[]` field in tool output), estimated macros, and cook time. Expiring-soon items are prioritized in suggestion context. Craving chips available in `PantryRecipes.tsx`.
-
-**Addresses:** Core differentiator (macro-aware filtering), expiry-first suggestions, craving input.
-
-**Must avoid:** Tool in `allToolSchemas` but missing from `executors` record (validate with `POST /ai/tools/execute` before Phase 3); `pantry_suggest_recipes` output schema must include explicit `missing_ingredients[]`; inject macro summary into system prompt to protect 5-step tool budget.
-
-**Research flag:** No deeper research needed — tool registration pattern is established from `habits.ts` and `nutrition.ts`. Prompt engineering is straightforward.
-
----
-
-### Phase 3 — Calorie Tracker Sync (Confirm-Cooked Flow)
-
-**Rationale:** Closes the pantry → recipe → nutrition loop. Without this the plugin has no write-back to the nutrition tracker and the core value proposition is incomplete.
-
-**Delivers:** User confirms a cooked recipe with editable macro fields, serving count selector, and meal type chips. `pantry_log_recipe_cooked` writes to `nutrition_logs` and decrements pantry quantities. `app_navigate` to Nutrition dashboard follows automatically to prevent duplicate logging.
-
-**Addresses:** "I cooked this → auto-log macros" table stake; pantry quantity auto-decrement table stake; per-serving portion adjustment differentiator; AI meal_type pre-fill differentiator.
-
-**Must avoid:** Double nutrition logging (use `app_navigate` after log); nutrition Zustand store staleness (navigation re-fetch handles this — do not build a bespoke event bus); silent failure when nutrition plugin is not installed (gate "Auto-log macros" UI on nutrition plugin installation check).
-
-**Validation required before starting:** Confirm exact `meal_type` enum values in `supabase/migrations/003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked`.
-
-**Research flag:** No deeper research needed — `nutrition_log_meal` is an existing function; import and call pattern is established.
-
----
-
-### Phase 4 — Smart Shopping List
-
-**Rationale:** Low complexity, high practical value. Depends only on `pantry_items` (Phase 1). Can be parallelised with Phase 3 if bandwidth allows.
-
-**Delivers:** Two-section computed checklist — "Need to restock" (rule-based from `quantity <= low_stock_threshold`) and "For your recipes" (missing ingredients added during Phase 3 confirm flow). Items are checkable, persist via MMKV across process termination, and exportable via native Share API.
-
-**Addresses:** Shopping list table stakes; export via Share API differentiator.
-
-**Must avoid:** Shopping list lost on process kill (persist via MMKV on every item change — minimum; evaluate Supabase `shopping_list_items` table if cross-device sync is needed); stale items from prior generation (replace list on regeneration, do not accumulate); low-stock alert logic uses per-item `low_stock_threshold` column added in Phase 1 migration.
-
-**Research flag:** No deeper research needed — rule-based query + MMKV persistence are standard patterns.
-
----
+**Addresses pitfalls:** 1.2 (image field fallback chain), 1.4 (`ecoscore_grade` edge cases), 3.1 (serving size 100g default), 3.2 (dashboard null guard)
 
 ### Phase Ordering Rationale
 
-- Phase 1 is mandatory first because three independent systems (mobile plugin registration, database, backend tools) must all be wired before any feature can be tested end-to-end.
-- Phase 2 before Phase 3 because calorie sync is triggered from a recipe confirmation; recipes must exist in conversation context first.
-- Phase 4 is parallelisable with Phase 3 because it depends only on Phase 1 data, but benefits from the `missing_ingredients[]` output defined in Phase 2 to populate the "For your recipes" shopping list section.
-- Each phase ends with a validation gate that must pass before the next phase begins.
+- Migrations first is non-negotiable: `ProductCard.tsx` and the extended `saveLog()` both reference columns that must exist in Supabase before any end-to-end test can pass.
+- Tech debt bundled into Phase 10: SHOP-03 and `pantry_log_recipe_cooked` touch `RecipeConfirm.tsx` and `registry.ts` — files that are stable before Phase 11 begins. Doing them later risks merge conflicts with Phase 11 pantry scanner work.
+- `ScoreBadge` and `ProductCard` are pure display components that can be built and tested with static mock data in parallel with `LogMealScreen` integration, once the types from Phase 10 (`NutritionEntry` widening) are in place.
+- `NutritionDashboard` score display comes last in Phase 11 — requires real logged entries with `nutriscore_grade` populated, which only exist after the barcode log flow is functional.
 
 ### Research Flags
 
-No phases require a dedicated `research-phase` pass during planning. All patterns are established within the existing codebase:
+Phases with well-documented, established patterns (no additional research needed):
 
-- **Phase 1:** Plugin scaffold is identical to 17 existing plugins. Migration follows `003_nutrition_schema.sql` exactly. No novel decisions.
-- **Phase 2:** AI tool registration follows `habits.ts` and `nutrition.ts` patterns exactly.
-- **Phase 3:** `nutrition_log_meal` is an existing exported function; integration is a direct import.
-- **Phase 4:** Rule-based Supabase query + MMKV write are well-established patterns in this codebase.
+- **Phase 10 migrations:** Supabase migration pattern is established across 23 prior migrations. The `food_products` RLS divergence from `user_id` pattern is fully documented in ARCHITECTURE.md and PITFALLS.md — no ambiguity remains.
+- **Phase 10 tech debt:** All three debt items are surgical scope. No external API research required.
+- **Phase 11 display components:** `ScoreBadge` and `ProductCard` are stateless UI. Grade colours and badge layout are fully specified in STACK.md and FEATURES.md.
+- **Phase 11 dashboard:** `NutritionDashboard` modification is additive — `SELECT *` already returns new columns; no query changes needed.
 
-Single item requiring validation before Phase 3 (not a research gap, a code-read task): confirm exact `meal_type` enum values in `003_nutrition_schema.sql`.
+One item to validate during Phase 11 execution (not a research gap — a code-read task):
+
+- **Phase 11 `LogMealScreen` barcode tab:** Test against a physical device with a real EAN-13 barcode (e.g. Nutella `3017624010701`) to confirm the full scan-to-cache flow before wiring the product card. Validate `image_front_small_url` vs `image_front_url` coverage with a live OFF response during first implementation.
 
 ---
 
@@ -200,48 +151,46 @@ Single item requiring validation before Phase 3 (not a research gap, a code-read
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | `expo-camera` EAN support confirmed in official Expo SDK 54 docs; `expo-barcode-scanner` removal confirmed in multiple sources; datetimepicker v9.1.0 March 2026 release confirmed; OFF API endpoint and rate limits confirmed from official docs |
-| Features | MEDIUM-HIGH | Table stakes and UX patterns cross-validated across CozZo, NoWaste, Cronometer (HIGH confidence official sources). Competitor feature comparisons sourced partially from industry blogs (MEDIUM/LOW confidence) but core patterns are consistent |
-| Architecture | HIGH | All integration points verified by direct codebase inspection of `nutrition.ts`, `registry.ts`, `PluginLoader.tsx`, existing migrations, and `routes/ai.ts` |
-| Pitfalls | HIGH | All top pitfalls derived from direct codebase inspection of existing patterns and known failure modes in the registered plugin ecosystem |
+| Stack | HIGH | Zero new packages — all capabilities confirmed present in package.json. OFF API v2 stable per official docs. `expo-camera` barcode scanning working in production in pantry plugin. |
+| Features | HIGH | Core feature set verified via live OFF API call against Nutella barcode. Competitor analysis (Yuka, MFP, Cronometer) cross-validates table stakes. Eco-Score edge cases (`'a-plus'`, `'not-applicable'`) confirmed from live response. |
+| Architecture | HIGH | All integration points verified from actual source files (`barcode.ts`, `BarcodeScanner.tsx`, `003_nutrition_schema.sql`, existing `saveLog()` pattern). Direct-to-OFF call confirmed working in production. |
+| Pitfalls | HIGH | Synthesized from cross-referencing all three research files and live API behaviour. Every pitfall has a concrete prevention strategy. |
 
-**Overall confidence: HIGH**
+**Overall confidence:** HIGH
 
----
+### Gaps to Address
 
-## Open Questions
-
-Unresolved at research time. Requirements and roadmap planning should address these explicitly.
-
-- **Recipe persistence scope** — Recipes are not stored in v1.1. If "save a recipe for re-use" is wanted, a `saved_recipes` table is needed. Requirements should confirm whether this is in v1.1 scope or definitively deferred.
-- **Barcode scanning scope** — STACK.md researched `expo-camera` as a first-class dependency (ready to use). FEATURES.md marks barcode scanning as a v1.2+ anti-feature. These are consistent but requirements should confirm: is barcode scanning in v1.1 or definitively deferred to v1.2?
-- **Unit mismatch on pantry decrement** — If a recipe calls for "200g chicken" but the pantry item is stored in `pcs`, the AI must estimate the conversion. No programmatic unit conversion table is planned — this is an AI judgment call. The pantry manifest's `aiSystemPromptAddition` should include guidance on unit handling; prompt engineering details should be defined during Phase 2 planning.
-- **Offline write behavior** — No offline write queue is planned. MMKV caches reads; writes require connectivity. Confirm this is acceptable before Phase 1 ships.
-- **`app_navigate` route mapping** — The navigation tool's description string in `registry.ts` maps human-readable identifiers to Expo Router paths. Verify the route resolver handles `pantry_dashboard`, `pantry_editor`, `pantry_recipes`, `pantry_shopping` before Phase 3 (which calls `app_navigate` after logging).
+- **`image_front_small_url` vs `image_front_url` field coverage:** MEDIUM confidence. Prevention strategy is an explicit fallback chain (`image_front_small_url ?? image_front_url ?? image_url ?? null`). Validate against 2–3 real products during Phase 11 implementation.
+- **Nutri-Score 2024 algorithm cache staleness:** The `cached_at` column and 90-day re-fetch logic (pitfall 2.3) are specified in PITFALLS.md. This can be deferred post-launch if it adds Phase 10 complexity — document the deferral decision in the Phase 10 VALIDATION.md.
+- **`pantry_log_recipe_cooked` parameter schema:** Must match what `RecipeConfirm.tsx` currently passes to Supabase. Read the existing direct-call code before writing the tool interface — do not invent a new schema.
+- **VALIDATION.md content for phases 06–09:** These are Nyquist audit files. Content must reflect what was actually shipped and validated. Requires reading each phase plan and cross-checking against the live app state before writing.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Expo Camera docs — barcode types, CameraView, permissions](https://docs.expo.dev/versions/latest/sdk/camera/)
-- [expo/fyi — barcode-scanner-to-expo-camera migration guide](https://github.com/expo/fyi/blob/main/barcode-scanner-to-expo-camera.md)
-- [@react-native-community/datetimepicker Expo docs — v9.1.0](https://docs.expo.dev/versions/latest/sdk/date-time-picker/)
-- [Open Food Facts API official docs — endpoint, rate limits, response fields](https://openfoodfacts.github.io/openfoodfacts-server/api/)
-- Codebase direct inspection: `backend/api/src/tools/nutrition.ts`, `backend/api/src/tools/registry.ts`, `apps/mobile/src/lib/PluginLoader.tsx`, `supabase/migrations/003_nutrition_schema.sql`, `supabase/migrations/021_cardio_gps.sql`
-- [Cronometer official docs — confirm-to-log UX pattern, custom recipe flow](https://support.cronometer.com/hc/en-us/articles/360019870111)
+- Open Food Facts API v2 official documentation — https://openfoodfacts.github.io/openfoodfacts-server/api/ — v2 stable, v3 in active development, rate limits (100 req/min)
+- OFF API tutorial — https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/ — field names, endpoint format, User-Agent guidance
+- OFF live API response for barcode 3017624010701 (Nutella) — https://world.openfoodfacts.org/api/v2/product/3017624010701.json — confirmed `nutriscore_grade`, `ecoscore_grade`, `nutriments` field names and edge-case values
+- Expo Camera documentation (SDK 54) — https://docs.expo.dev/versions/latest/sdk/camera/ — `CameraView`, `onBarcodeScanned`, supported barcode types
+- Expo Image documentation — https://docs.expo.dev/versions/latest/sdk/image/ — LRU caching, `contentFit`, `placeholder`, `recyclingKey`
+- Nutri-Score Wikipedia — https://en.wikipedia.org/wiki/Nutri-Score — grade colours, 2024 algorithm revision affecting ~40% of products
+- Eco-Score Wikipedia — https://en.wikipedia.org/wiki/Eco-score — grade colours, `not-applicable` handling, data coverage (~1M products)
+- OFF Eco-Score launch blog — https://blog.openfoodfacts.org/en/news/launch-of-the-eco-score-the-environmental-impact-of-food-products — confirms `'a-plus'` grade
+- Existing `plugins/pantry/src/utils/barcode.ts` — confirms direct OFF call works in production; identifies `.net` staging URL divergence
+- Existing `supabase/migrations/003_nutrition_schema.sql` — `nutrition_logs` baseline schema; confirms additive column strategy is safe
 
 ### Secondary (MEDIUM confidence)
-- CozZo, Panzy pantry apps — grouping and expiry UX patterns
-- Fitia macro-aware meal planning — pantry + macro context integration patterns
-- expo/expo GitHub issue #28741 — iOS EAN-13 `result.type` normalization caveat
+- OFF product database on Hugging Face — https://huggingface.co/datasets/openfoodfacts/product-database — confirms `nutriscore_grade`, `ecoscore_grade` field names in dataset schema
+- Expo Camera + barcode scanner tutorial (January 2026) — https://anytechie.medium.com/building-a-professional-barcode-qr-scanner-with-expo-camera-57e014382000 — confirms `CameraView` + `onBarcodeScanned` pattern for SDK 54
+- Scanbot React Native barcode scanner comparison — https://scanbot.io/blog/react-native-vision-camera-vs-expo-camera/ — confirms `expo-camera` covers EAN-13/EAN-8/UPC-A; VisionCamera not justified
+- Yuka case study (Scandit) — https://www.scandit.com/resources/case-studies/yuka/ — 2.7 billion product scans in 2024; validates market demand
 
-### Tertiary (LOW confidence)
-- NoWaste App Store listing — expiry urgency UX patterns
-- Nutrola competitor blog — recipe app feature landscape 2026
-- Perpetio agency blog — AI cooking app architecture patterns
+### Tertiary (LOW confidence — validate during execution)
+- Nutri-Score colour hex values sourced from OFF web implementation — not normatively published as a specification; validate final values against official OFF brand assets before shipping
 
 ---
 
-*Research completed: 2026-03-28*
+*Research completed: 2026-04-02*
 *Ready for roadmap: yes*
