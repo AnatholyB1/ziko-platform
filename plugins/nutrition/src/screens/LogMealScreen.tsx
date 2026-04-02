@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image
 } from 'react-native';
@@ -6,8 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNutritionStore } from '../store';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
+import ScoreBadge from '../components/ScoreBadge';
+import { getOrFetchProduct, FoodProduct } from '../utils/offApi';
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
@@ -40,7 +43,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   const { addLog, selectedDate } = useNutritionStore();
   const theme = useThemeStore((s) => s.theme);
   const { t, tMeal, locale } = useTranslation();
-  const [tab, setTab] = useState<'search' | 'custom' | 'scan'>('search');
+  const [tab, setTab] = useState<'search' | 'scan' | 'barcode' | 'custom'>('search');
   const [mealType, setMealType] = useState<MealType>('breakfast');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
@@ -62,6 +65,15 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   }> | null>(null);
   const [scanDescription, setScanDescription] = useState('');
 
+  // Barcode tab state
+  const [permission, requestPermission] = useCameraPermissions();
+  const scannedRef = useRef(false);
+  const [barcodeProduct, setBarcodeProduct] = useState<FoodProduct | null>(null);
+  const [barcodeNotFound, setBarcodeNotFound] = useState(false);
+  const [barcodeScannedCode, setBarcodeScannedCode] = useState('');
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [servingGrams, setServingGrams] = useState(100);
+
   useEffect(() => {
     if (!query.trim()) { setResults([]); return; }
     const tb = setTimeout(async () => {
@@ -74,6 +86,13 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     }, 400);
     return () => clearTimeout(tb);
   }, [query]);
+
+  // Request camera permission when barcode tab is focused
+  useEffect(() => {
+    if (tab === 'barcode' && !permission?.granted) {
+      requestPermission();
+    }
+  }, [tab, permission]);
 
   const saveLog = async (entry: Omit<any, 'id' | 'created_at'>) => {
     setSaving(true);
@@ -198,6 +217,69 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     setTab('custom');
   };
 
+  const handleBarcodeScanned = async ({ data }: { data: string }) => {
+    if (scannedRef.current) return;
+    scannedRef.current = true;
+    setBarcodeScannedCode(data);
+    setBarcodeLoading(true);
+    setBarcodeProduct(null);
+    setBarcodeNotFound(false);
+    try {
+      const product = await getOrFetchProduct(data, supabase);
+      if (product) {
+        setBarcodeProduct(product);
+        setServingGrams(product.serving_size_g ?? 100);
+      } else {
+        setBarcodeNotFound(true);
+      }
+    } catch (e: any) {
+      showAlert(t('general.error'), e.message || 'Network error');
+      setBarcodeNotFound(true);
+    }
+    setBarcodeLoading(false);
+  };
+
+  const handleScanAgain = () => {
+    scannedRef.current = false;
+    setBarcodeProduct(null);
+    setBarcodeNotFound(false);
+    setBarcodeScannedCode('');
+    setBarcodeLoading(false);
+    setServingGrams(100);
+  };
+
+  const logBarcodeProduct = () => {
+    if (!barcodeProduct) return;
+    const ratio = servingGrams / 100;
+    saveLog({
+      food_name: barcodeProduct.name,
+      calories: Math.round(barcodeProduct.energy_kcal * ratio),
+      protein_g: +(barcodeProduct.proteins_g * ratio).toFixed(1),
+      carbs_g: +(barcodeProduct.carbs_g * ratio).toFixed(1),
+      fat_g: +(barcodeProduct.fat_g * ratio).toFixed(1),
+      serving_g: servingGrams,
+      food_product_id: barcodeProduct.id,
+      nutriscore_grade: barcodeProduct.nutriscore_grade,
+      ecoscore_grade: barcodeProduct.ecoscore_grade,
+    });
+  };
+
+  const editBarcodeProduct = () => {
+    if (!barcodeProduct) {
+      setTab('custom');
+      return;
+    }
+    const ratio = servingGrams / 100;
+    editScanResult({
+      food_name: barcodeProduct.name,
+      calories: Math.round(barcodeProduct.energy_kcal * ratio),
+      protein_g: +(barcodeProduct.proteins_g * ratio).toFixed(1),
+      carbs_g: +(barcodeProduct.carbs_g * ratio).toFixed(1),
+      fat_g: +(barcodeProduct.fat_g * ratio).toFixed(1),
+      serving_g: servingGrams,
+    });
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -221,12 +303,13 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
 
         {/* Tab toggle */}
         <View style={{ flexDirection: 'row', marginHorizontal: 20, backgroundColor: theme.surface, borderRadius: 12, padding: 4, marginBottom: 16 }}>
-          {(['search', 'scan', 'custom'] as const).map((tb) => (
+          {(['search', 'scan', 'barcode', 'custom'] as const).map((tb) => (
             <TouchableOpacity key={tb} onPress={() => setTab(tb)}
               style={{ flex: 1, paddingVertical: 8, borderRadius: 9, backgroundColor: tab === tb ? theme.primary : 'transparent', alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
               {tb === 'scan' && <Ionicons name="camera" size={14} color={tab === tb ? '#fff' : theme.muted} />}
-              <Text style={{ color: tab === tb ? '#fff' : theme.muted, fontWeight: '600', fontSize: 14 }}>
-                {tb === 'custom' ? t('nutrition.custom') : tb === 'scan' ? t('nutrition.scan') : t('nutrition.search')}
+              {tb === 'barcode' && <Ionicons name="barcode-outline" size={14} color={tab === tb ? '#fff' : theme.muted} />}
+              <Text style={{ color: tab === tb ? '#fff' : theme.muted, fontWeight: '600', fontSize: 12 }}>
+                {tb === 'custom' ? t('nutrition.custom') : tb === 'scan' ? t('nutrition.scan') : tb === 'barcode' ? t('nutrition.barcode') : t('nutrition.search')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -368,6 +451,197 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
               </View>
             )}
           </ScrollView>
+        ) : tab === 'barcode' ? (
+          // Barcode tab
+          permission && !permission.granted ? (
+            // Permission denied state
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+              <Ionicons name="camera-off-outline" size={48} color={theme.muted} />
+              <Text style={{ fontSize: 14, color: theme.muted, textAlign: 'center', marginTop: 12, paddingHorizontal: 32 }}>
+                {t('nutrition.cameraPermDenied')}
+              </Text>
+            </View>
+          ) : barcodeLoading ? (
+            // Loading state
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          ) : barcodeProduct ? (
+            // Product found state
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 20 }}>
+              <View style={{ backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: theme.border }}>
+                {/* Product photo */}
+                {barcodeProduct.image_url ? (
+                  <Image
+                    source={{ uri: barcodeProduct.image_url }}
+                    style={{ width: '100%', height: 180, borderRadius: 10 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{ width: '100%', height: 180, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="nutrition-outline" size={64} color={theme.muted} />
+                  </View>
+                )}
+
+                {/* Name and brand */}
+                <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginTop: 12 }}>
+                  {barcodeProduct.name}
+                </Text>
+                {barcodeProduct.brand ? (
+                  <Text style={{ fontSize: 12, color: theme.muted }}>{barcodeProduct.brand}</Text>
+                ) : null}
+
+                {/* Score badges */}
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                  <ScoreBadge grade={barcodeProduct.nutriscore_grade} type="nutriscore" size="lg" />
+                  <ScoreBadge grade={barcodeProduct.ecoscore_grade} type="ecoscore" size="lg" />
+                </View>
+
+                {/* Macros per 100g */}
+                <Text style={{ fontSize: 12, color: theme.muted, marginTop: 16, marginBottom: 8 }}>
+                  {t('nutrition.per100g')}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {[
+                    { val: barcodeProduct.energy_kcal, unit: 'kcal' },
+                    { val: barcodeProduct.proteins_g, unit: 'g P' },
+                    { val: barcodeProduct.carbs_g, unit: 'g C' },
+                    { val: barcodeProduct.fat_g, unit: 'g F' },
+                  ].map((m, i) => (
+                    <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>{m.val}</Text>
+                      <Text style={{ fontSize: 11, color: theme.muted }}>{m.unit}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Serving size adjuster */}
+                <Text style={{ fontSize: 12, color: theme.muted, marginTop: 16, marginBottom: 8 }}>
+                  {t('nutrition.servingSize')}
+                </Text>
+                {/* Quick-select chips */}
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {[50, 100, 150, 200].map((val) => (
+                    <TouchableOpacity
+                      key={val}
+                      onPress={() => setServingGrams(val)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: servingGrams === val ? theme.primary : theme.border,
+                        backgroundColor: servingGrams === val ? theme.primary + '18' : theme.surface,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: servingGrams === val ? theme.primary : theme.text }}>
+                        {val}g
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {/* Stepper row */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => setServingGrams((prev) => Math.max(1, prev - 5))}
+                    style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>-</Text>
+                  </TouchableOpacity>
+                  <TextInput
+                    value={String(servingGrams)}
+                    onChangeText={(text) => {
+                      const parsed = parseInt(text, 10);
+                      if (isNaN(parsed)) {
+                        setServingGrams(100);
+                      } else {
+                        setServingGrams(Math.max(1, Math.min(1000, parsed)));
+                      }
+                    }}
+                    keyboardType="numeric"
+                    style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: theme.text, backgroundColor: theme.surface, borderRadius: 10, borderWidth: 1, borderColor: theme.border, paddingVertical: 8 }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setServingGrams((prev) => Math.min(1000, prev + 5))}
+                    style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Scaled macros row */}
+                {(() => {
+                  const ratio = servingGrams / 100;
+                  const scaledCal = Math.round(barcodeProduct.energy_kcal * ratio);
+                  const scaledProtein = +(barcodeProduct.proteins_g * ratio).toFixed(1);
+                  const scaledCarbs = +(barcodeProduct.carbs_g * ratio).toFixed(1);
+                  const scaledFat = +(barcodeProduct.fat_g * ratio).toFixed(1);
+                  return (
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text, textAlign: 'center', marginTop: 12 }}>
+                      {scaledCal} kcal · {scaledProtein}g P · {scaledCarbs}g C · {scaledFat}g F
+                    </Text>
+                  );
+                })()}
+
+                {/* Log this meal button */}
+                <TouchableOpacity
+                  onPress={logBarcodeProduct}
+                  style={{ backgroundColor: theme.primary, borderRadius: 12, padding: 16, marginTop: 12, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('nutrition.logThisMeal')}</Text>
+                </TouchableOpacity>
+
+                {/* Enter manually button */}
+                <TouchableOpacity
+                  onPress={editBarcodeProduct}
+                  style={{ backgroundColor: 'transparent', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: theme.border, marginTop: 8, alignItems: 'center' }}
+                >
+                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{t('nutrition.enterManually')}</Text>
+                </TouchableOpacity>
+
+                {/* Scan again link */}
+                <TouchableOpacity onPress={handleScanAgain} style={{ paddingTop: 8, alignItems: 'center' }}>
+                  <Text style={{ color: theme.muted, fontSize: 14 }}>{t('nutrition.scanAgain')}</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          ) : barcodeNotFound ? (
+            // Not found state
+            <View style={{ flex: 1, paddingTop: 60, alignItems: 'center', paddingHorizontal: 32 }}>
+              <Ionicons name="barcode-outline" size={48} color={theme.muted} />
+              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginTop: 16, textAlign: 'center' }}>
+                {t('nutrition.barcodeNotFound')}
+              </Text>
+              <Text style={{ fontSize: 12, color: theme.muted, marginTop: 8, textAlign: 'center' }}>
+                {t('nutrition.barcodeNotFoundHint').replace('{barcode}', barcodeScannedCode)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setTab('custom')}
+                style={{ backgroundColor: theme.primary, borderRadius: 12, padding: 16, marginTop: 24, alignItems: 'center', width: '100%' }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('nutrition.enterManually')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleScanAgain} style={{ paddingTop: 12, alignItems: 'center' }}>
+                <Text style={{ color: theme.muted, fontSize: 14 }}>{t('nutrition.scanAgain')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // Default: camera live
+            <View style={{ flex: 1 }}>
+              <CameraView
+                style={{ flex: 1 }}
+                facing="back"
+                onBarcodeScanned={handleBarcodeScanned}
+                barcodeScannerSettings={{ barcodeTypes: ['ean13'] }}
+              />
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)' }}>
+                <View style={{ width: 260, height: 120, borderRadius: 10, borderWidth: 2, borderColor: '#fff', backgroundColor: 'transparent' }} />
+                <Text style={{ color: '#fff', fontSize: 14, marginTop: 12, textAlign: 'center' }}>
+                  {t('nutrition.barcodeAlign')}
+                </Text>
+              </View>
+            </View>
+          )
         ) : (
           <View style={{ flex: 1, paddingHorizontal: 20 }}>
             {[

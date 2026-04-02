@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: executing
-stopped_at: Completed 11-barcode-ui-score-display 11-03-PLAN.md — Phase 11 fully done
-last_updated: "2026-04-02T12:29:19.957Z"
+stopped_at: Completed 11-barcode-ui-score-display plans 11-02 and 11-03 — Phase 11 fully done
+last_updated: "2026-04-02T12:32:19.599Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 14
+  completed_phases: 3
+  total_plans: 11
   completed_plans: 14
   percent: 0
 ---
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 | Phase 10-data-foundation-tech-debt P10-02 | 5m | 2 tasks | 2 files |
 | Phase 10-data-foundation-tech-debt P10-03 | 5m | 3 tasks | 5 files |
 | Phase 11-barcode-ui-score-display P01 | 1m 43s | 2 tasks | 4 files |
+| Phase 11-barcode-ui-score-display P11-02 | 15min | 1 tasks | 1 files |
 | Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
 
 ## Accumulated Context
@@ -127,6 +128,10 @@ Recent decisions affecting current work:
 - [Phase 10-data-foundation-tech-debt]: food_products uses auth.role() = 'authenticated' RLS — shared catalogue has no user_id column
 - [Phase 11-barcode-ui-score-display]: ScoreBadge uses module-level GRADE_COLORS/GRADE_LABELS constants — semantic colors, no theme dependency; returns null for null or unrecognized grades
 - [Phase 11-barcode-ui-score-display]: NutritionEntry grade fields optional (string | null) — matches Supabase select('*') where columns absent in older rows
+- [Phase 11-02]: Tab font size reduced from 14 to 12 for 4-tab LogMealScreen layout to prevent overflow
+- [Phase 11-02]: Barcode tab camera is inline in tab content area (not modal) — consistent with AI scan tab pattern (D-08)
+- [Phase 11-02]: IIFE used for scaled macros row computation — avoids extra state variables for derived values
+- [Phase 11-02]: scannedRef uses useRef (not useState) for scan guard in LogMealScreen barcode tab — prevents re-render race before async lookup resolves
 - [Phase 11-03]: Widget positioned after macros row and before TDEE Calculator link per UI-SPEC
 - [Phase 11-03]: gradeToNum maps a-plus as 1 (same as a) — avgNutriscore output is always a single letter a-e, never a-plus
 
@@ -144,6 +149,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T12:29:19.952Z
-Stopped at: Completed 11-barcode-ui-score-display 11-03-PLAN.md — Phase 11 fully done
+Last session: 2026-04-02T12:32:19.594Z
+Stopped at: Completed 11-barcode-ui-score-display plans 11-02 and 11-03 — Phase 11 fully done
 Resume file: None

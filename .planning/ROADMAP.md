@@ -212,7 +212,7 @@ Plans:
 
 Plans:
 - [x] 11-01-PLAN.md — ScoreBadge component, NutritionEntry type extension, i18n keys (FR+EN), Android CAMERA permission
-- [ ] 11-02-PLAN.md — LogMealScreen 4th Barcode tab: CameraView scanner, product card, serving adjuster, saveLog extension
+- [x] 11-02-PLAN.md — LogMealScreen 4th Barcode tab: CameraView scanner, product card, serving adjuster, saveLog extension
 - [x] 11-03-PLAN.md — NutritionDashboard: journal entry score badges + daily average Nutri-Score widget
 **UI hint**: yes
 
