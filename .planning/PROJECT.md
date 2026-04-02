@@ -8,15 +8,17 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
 
-## Current Milestone: v1.1 Smart Pantry Plugin
+## Current Milestone: v1.2 Barcode Enrichment + Tech Debt
 
-**Goal:** Add a `pantry` plugin to the Ziko mobile app that turns the phone into a kitchen brain — inventory tracking, AI recipe suggestions, automatic calorie logging, and a rule-based shopping list.
+**Goal:** Enrich barcode scanning with Open Food Facts (Nutri-Score, Eco-Score, macros, photo) in the nutrition plugin, and close v1.1 tech debt.
 
 **Target features:**
-- Smart inventory — track pantry items (name, qty, unit, expiration date, category), auto-decrement on cook
-- AI recipe suggestions — based on available pantry items + remaining daily macros + user cravings
-- Calorie tracker sync — confirm recipe cooked → macros auto-logged to nutrition plugin
-- Smart shopping list — rule-based: low/out-of-stock items + missing recipe ingredients, exportable checklist
+- Barcode scan in nutrition plugin — Open Food Facts API, product card on scan
+- food_products table — persistent catalogue: barcode, name, macros, Nutri-Score, Eco-Score, photo_url; nutrition_logs references via FK
+- Nutri-Score + Eco-Score visible in nutrition journal entries and dashboard (daily average score)
+- SHOP-03 fix: recipe ingredient check-off → pantry insert + restock quantity prompt
+- pantry_log_recipe_cooked as a proper AI tool (replaces direct Supabase call in RecipeConfirm.tsx)
+- Nyquist VALIDATION.md for phases 06, 07, 08, 09
 
 ## Requirements
 

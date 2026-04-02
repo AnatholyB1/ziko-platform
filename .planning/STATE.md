@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Smart Pantry Plugin
-status: executing
-stopped_at: Completed 09-smart-shopping-list 09-02-PLAN.md — ShoppingList screen + RecipeDetail CTA complete
-last_updated: "2026-04-01T21:52:00.087Z"
-last_activity: 2026-04-01
+milestone: v1.2
+milestone_name: Barcode Enrichment + Tech Debt
+status: defining
+stopped_at: Milestone v1.2 started — defining requirements
+last_updated: "2026-04-02T00:00:00Z"
+last_activity: 2026-04-02
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 09
-Plan: Not started
-Status: Executing Phase 09
-Last activity: 2026-04-01
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-02 — Milestone v1.2 started
 
 Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
