@@ -196,7 +196,7 @@ Two phases deliver this milestone. Phase 10 lays the data foundation and closes 
 Plans:
 - [ ] 10-01-PLAN.md — Supabase migration 024 (food_products table + nutrition_logs extension) + offApi.ts caching utility
 - [x] 10-02-PLAN.md — ShoppingList quantity Modal for check-off (DEBT-01 + DEBT-02) + i18n keys
-- [ ] 10-03-PLAN.md — pantry_log_recipe_cooked AI tool + RecipeConfirm migration (DEBT-03) + VALIDATION.md for phases 07, 09 (DEBT-04)
+- [x] 10-03-PLAN.md — pantry_log_recipe_cooked AI tool + RecipeConfirm migration (DEBT-03) + VALIDATION.md for phases 07, 09 (DEBT-04)
 **UI hint**: no
 
 #### Phase 11: Barcode UI + Score Display
@@ -212,7 +212,7 @@ Plans:
 
 Plans:
 - [ ] 10-01-PLAN.md — Supabase migration 024 (food_products table + nutrition_logs extension) + offApi.ts caching utility
-- [ ] 10-02-PLAN.md — ShoppingList quantity Modal for check-off (DEBT-01 + DEBT-02) + i18n keys
+- [x] 10-02-PLAN.md — ShoppingList quantity Modal for check-off (DEBT-01 + DEBT-02) + i18n keys
 - [ ] 10-03-PLAN.md — pantry_log_recipe_cooked AI tool + RecipeConfirm migration (DEBT-03) + VALIDATION.md for phases 07, 09 (DEBT-04)
 **UI hint**: yes
 
@@ -234,7 +234,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. AI Recipe Suggestions | v1.1 | 4/4 | Complete   | 2026-03-29 |
 | 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 9. Smart Shopping List | v1.1 | 2/3 | In Progress | - |
-| 10. Data Foundation + Tech Debt | v1.2 | 1/3 | In Progress|  |
+| 10. Data Foundation + Tech Debt | v1.2 | 2/3 | In Progress|  |
 | 11. Barcode UI + Score Display | v1.2 | 0/? | Not started | - |
 
 ---
