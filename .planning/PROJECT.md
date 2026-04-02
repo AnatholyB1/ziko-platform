@@ -8,17 +8,16 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
 
-## Current Milestone: v1.2 Barcode Enrichment + Tech Debt
+## Current Milestone: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02
 
-**Goal:** Enrich barcode scanning with Open Food Facts (Nutri-Score, Eco-Score, macros, photo) in the nutrition plugin, and close v1.1 tech debt.
-
-**Target features:**
-- Barcode scan in nutrition plugin — Open Food Facts API, product card on scan
-- food_products table — persistent catalogue: barcode, name, macros, Nutri-Score, Eco-Score, photo_url; nutrition_logs references via FK
-- Nutri-Score + Eco-Score visible in nutrition journal entries and dashboard (daily average score)
-- SHOP-03 fix: recipe ingredient check-off → pantry insert + restock quantity prompt
-- pantry_log_recipe_cooked as a proper AI tool (replaces direct Supabase call in RecipeConfirm.tsx)
-- Nyquist VALIDATION.md for phases 06, 07, 08, 09
+**What shipped:**
+- Barcode scan tab in nutrition log screen — Open Food Facts product card with photo, name, brand, macros per 100g, Nutri-Score + Eco-Score badges, serving size adjuster
+- `food_products` shared catalogue table (migration 024) + `offApi.ts` caching utility
+- Nutri-Score + Eco-Score badges on journal entries (barcode-logged meals only)
+- Daily average Nutri-Score widget on nutrition dashboard (hidden when no scanned meals)
+- SHOP-03 fix: quantity prompt Modal before any shopping list check-off (recipe or low-stock)
+- `pantry_log_recipe_cooked` registered as proper AI tool; RecipeConfirm.tsx migrated to `/ai/tools/execute`
+- Nyquist VALIDATION.md written for phases 07 and 09
 
 ## Requirements
 
@@ -45,21 +44,25 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - [x] Plausible cookieless analytics active — no cookie banner required (Validated in Phase 5: launch)
 - [x] Google Search Console sitemap submitted — site discoverable by Google (Validated in Phase 5: launch)
 
-### Active (v1.1 — Smart Pantry Plugin)
+### Validated (v1.1 — Smart Pantry Plugin)
 
-- [x] Smart inventory — pantry items with qty, unit, expiration, category (Validated in Phase 6: smart-inventory)
-- [x] AI recipe suggestions — from pantry contents + remaining daily macros (Validated in Phase 7: ai-recipe-suggestions)
-- [x] Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin (Validated in Phase 8: calorie-tracker-sync)
-- [x] Smart shopping list — rule-based from low-stock items + recipe ingredients (Validated in Phase 9: smart-shopping-list)
+- ✓ Smart inventory — pantry items with qty, unit, expiration, category — v1.1
+- ✓ AI recipe suggestions — from pantry contents + remaining daily macros — v1.1
+- ✓ Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin — v1.1
+- ✓ Smart shopping list — rule-based from low-stock items + recipe ingredients — v1.1
 
-### Active (v1.2 — Barcode Enrichment + Tech Debt)
+### Validated (v1.2 — Barcode Enrichment + Tech Debt)
 
-- [x] Data foundation: `food_products` shared-catalogue table, `nutrition_logs` extended with nullable FK + score columns, `offApi.ts` cache utility (Validated in Phase 10: data-foundation-tech-debt)
-- [x] SHOP-03 fix: recipe/low-stock check-off prompts quantity Modal before pantry update (Validated in Phase 10: data-foundation-tech-debt)
-- [x] `pantry_log_recipe_cooked` registered as AI tool; RecipeConfirm.tsx migrated to /ai/tools/execute (Validated in Phase 10: data-foundation-tech-debt)
-- [x] Nyquist VALIDATION.md written for phases 07 and 09 (Validated in Phase 10: data-foundation-tech-debt)
-- [ ] Barcode scan in nutrition plugin — product card with Nutri-Score, Eco-Score, macros (Phase 11)
-- [ ] Nutri-Score + Eco-Score badges in journal entries and daily average on dashboard (Phase 11)
+- ✓ `food_products` shared-catalogue table + `offApi.ts` cache utility — v1.2
+- ✓ Barcode scan tab in nutrition plugin — product card with Nutri-Score, Eco-Score, macros, photo — v1.2
+- ✓ Nutri-Score + Eco-Score badges on journal entries; daily average widget on dashboard — v1.2
+- ✓ SHOP-03 fix: quantity prompt Modal before shopping list check-off — v1.2
+- ✓ `pantry_log_recipe_cooked` AI tool registered; RecipeConfirm.tsx migrated — v1.2
+- ✓ Nyquist VALIDATION.md written for phases 07 and 09 — v1.2
+
+### Active (next milestone)
+
+*(To be defined — run `/gsd:new-milestone` to start)*
 
 ### Deferred
 
@@ -77,11 +80,12 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 ## Context
 
-- **Existing app**: Ziko is a fully-built React Native / Expo fitness app with 17 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The landing page presents this product.
-- **Design system**: Ziko uses a light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. The landing page should match this identity.
-- **Backend**: Supabase (PostgreSQL + Auth). Account deletion requires calling `supabase.auth.admin.deleteUser()` from a secure server action — needs `SUPABASE_SERVICE_ROLE_KEY` (never expose in client).
-- **Legal jurisdiction**: French law — RGPD (GDPR equivalent enforcement in France), mentions légales mandatory for commercial sites, CGU required.
-- **Existing infrastructure**: API lives at `https://ziko-api-lilac.vercel.app`, already on Vercel — easy to add another Vercel project.
+- **Shipped milestones**: v1.0 (landing page at ziko-app.com), v1.1 (Smart Pantry Plugin — 18th plugin), v1.2 (Barcode Enrichment — Nutri-Score/Eco-Score in nutrition plugin)
+- **Mobile app state**: 18 plugins (17 original + pantry), 24 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
+- **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, AI orchestrator with 6 pantry tools + nutrition tools, `food_products` shared catalogue table
+- **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
+- **Legal jurisdiction**: French law — RGPD, mentions légales mandatory, CGU required.
+- **Existing infrastructure**: API + web marketing site on Vercel, Supabase for DB + Auth.
 
 ## Constraints
 
@@ -119,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 — Phase 10 complete: v1.2 data foundation shipped — food_products table, OFF cache utility, quantity Modal, pantry_log_recipe_cooked AI tool. Phase 11 (barcode UI + score display) is the final v1.2 phase.*
+*Last updated: 2026-04-02 after v1.1 + v1.2 milestones*
