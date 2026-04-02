@@ -1,218 +1,424 @@
-# Domain Pitfalls: Barcode Enrichment + Tech Debt (v1.2)
+# Pitfalls Research: Security + Cloud Infrastructure (v1.3)
 
-**Domain:** Open Food Facts barcode enrichment added to existing nutrition plugin; v1.1 tech debt (SHOP-03 fix, pantry AI tool, Nyquist VALIDATION.md files)
+**Domain:** Serverless rate limiting (Hono v4 on Vercel) + Supabase Storage (React Native / Expo)
 **Researched:** 2026-04-02
-**Confidence:** HIGH — synthesized from Stack/Features/Architecture research outputs + open questions flagged by all three researchers
+**Milestone context:** Adding rate limiting and Supabase Storage buckets to an existing Hono v4 API already deployed on Vercel serverless. Mobile client is Expo SDK 54 with the Supabase JS client.
 
 ---
 
 ## Summary
 
-The v1.2 feature (barcode enrichment) has three distinct failure surfaces:
-1. **OFF API reliability** — missing data, wrong field names, staging vs production URL
-2. **Data layer** — food_products RLS is unlike every other table (no user_id), nutrition_logs FK must be nullable, score staleness over time
-3. **UI layer** — serving size free-text parsing, ecoscore_grade value format, absent scores must not break the UI
+The v1.3 feature surface has two distinct failure clusters:
 
-The tech debt items have their own smaller risk surface: the SHOP-03 fix can create duplicate pantry inserts if not deduped, and building `pantry_log_recipe_cooked` as a real AI tool requires three coordinated touch points in `registry.ts`.
+1. **Rate limiting in serverless** — In-memory stores are silently useless on Vercel (no shared state between function instances). IP-based limiting collapses under Vercel's proxy layer. Both failures pass local testing and provide zero protection in production.
+2. **Supabase Storage integration** — RLS policy patterns differ fundamentally from all 24 existing migrations. File uploads from React Native have three distinct corruption failure modes (0-byte, wrong MIME type, garbled binary). Vercel's 4.5 MB body limit silently blocks large photos if uploads route through the API.
 
----
-
-## Pitfalls by Category
+A third cluster applies only to the PDF export use case: Chromium-based PDF generation on Vercel serverless is unreliable due to cold-start timeouts exceeding the function execution budget.
 
 ---
 
-### Category 1: Open Food Facts API — Data Reliability
+## Critical Pitfalls
 
-#### Pitfall 1.1 — `.net` vs `.org` Domain (Staging vs Production)
+### CRIT-01: In-Memory Rate Limiting Is Silently Useless on Vercel
 
-**What goes wrong:** The existing `plugins/pantry/src/utils/barcode.ts` calls `https://world.openfoodfacts.net/api/v2/product/...` — the `.net` domain is the OFF staging environment. The nutrition plugin's new `offApi.ts` utility must use `https://world.openfoodfacts.org/api/v2/product/...` (production). Using `.net` in production returns incomplete or test data.
+**What goes wrong:** `hono-rate-limiter` ships with a `MemoryStore` default. On a local dev server (single process), it works correctly. On Vercel serverless, each cold-start creates a fresh function instance with a blank in-memory `Map`. Warm instances do not share memory. A user sending 100 requests/minute can hit 10 separate warm instances and bypass a "10 req/min" limit — each instance counts only the fraction it received.
 
-**Why it happens:** The pantry barcode utility was written against staging for development and never updated. Copying it as a template carries the staging URL forward.
+**Why it happens:** Vercel functions are stateless by design. There is no shared memory between concurrent invocations. The MemoryStore counter resets on every cold start and is never synchronized.
+
+**Consequences:** The rate limiter appears to work in `npm run backend` (local), passes any pre-deploy test, and silently provides zero protection in production. The `hono-rate-limiter` README frames MemoryStore as "works out of the box" — the serverless caveat is in a secondary section.
+
+**Prevention:** Use an external atomic store. Recommended: `@upstash/ratelimit` with Upstash Redis. It is HTTP-based (no persistent TCP connection), designed specifically for serverless, and the free tier (10,000 commands/day) is sufficient for a fitness app at early stage.
+
+Minimal pattern for Hono:
+
+```typescript
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(20, "1 m"),
+  analytics: true,
+});
+
+app.use("/ai/*", async (c, next) => {
+  const identifier = c.get("auth")?.userId
+    ?? c.req.header("x-real-ip")
+    ?? "anon";
+  const { success, limit, remaining, reset } = await ratelimit.limit(identifier);
+  c.header("X-RateLimit-Limit", String(limit));
+  c.header("X-RateLimit-Remaining", String(remaining));
+  c.header("X-RateLimit-Reset", String(reset));
+  if (!success) return c.json({ error: "Too Many Requests" }, 429);
+  return next();
+});
+```
+
+Required env vars in `backend/api/.env` AND Vercel dashboard:
+```
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+```
+
+**Detection:** Rate limiting works locally but repeated hammering of the deployed endpoint never returns 429.
+
+**Phase warning:** Any plan that adds rate limiting must start with external store provisioning. The middleware is the easy part; the store is the gating dependency.
+
+---
+
+### CRIT-02: IP-Based Rate Limiting Breaks When Vercel Acts as Proxy
+
+**What goes wrong:** Using raw request IP or naively reading `x-forwarded-for` for per-IP rate limiting can cause every user in a deployment to share a single rate limit bucket — specifically Vercel's own egress IPs.
+
+**Why it happens:** On non-Enterprise Vercel plans, `x-forwarded-for` is overwritten by Vercel. Multiple real users appear as the same handful of Vercel egress IPs. A practical consequence is that the rate limiter rate-limits the entire user base simultaneously after a few power users trigger the threshold.
+
+**Consequences:** A single active user triggers the per-IP bucket and rate-limits everyone sharing that Vercel egress IP. Or the limit is never triggered because the IP is constant and recognized as Vercel infrastructure.
 
 **Prevention:**
-- In `plugins/nutrition/src/utils/offApi.ts`, hardcode `.org` explicitly: `const OFF_BASE = 'https://world.openfoodfacts.org/api/v2/product';`
-- Add a code comment: `// NOTE: pantry/barcode.ts uses .net (staging) — this file intentionally uses .org (production)`
-- Do not "fix" the pantry utility as part of this milestone — that's a separate change with its own testing surface.
+1. For authenticated endpoints (AI chat, barcode scan), use `userId` from the Supabase JWT as the rate limit key. The auth middleware already sets `c.set('auth', { userId })`.
+2. For unauthenticated endpoints, read `c.req.header('x-real-ip')` first — this header is set by Vercel to the actual client IP and is more reliable than `x-forwarded-for`.
+3. Never use `x-forwarded-for` as the sole source — it can be spoofed before reaching Vercel and is overwritten at the Vercel layer.
 
-**Phase:** Phase 10 (data layer / OFF API utility).
+```typescript
+// Key selection order for rate limiting
+const key = c.get("auth")?.userId           // authenticated: per user (preferred)
+  ?? c.req.header("x-real-ip")              // unauthenticated: real client IP
+  ?? c.req.header("x-forwarded-for")?.split(",")[0]
+  ?? "unknown";
+```
 
 ---
 
-#### Pitfall 1.2 — `image_front_url` Field Name Is MEDIUM Confidence
+### CRIT-03: Supabase Storage RLS Cannot Use the Standard `auth.uid() = user_id` Pattern
 
-**What goes wrong:** The OFF API tutorial does not explicitly document `image_front_url` as the canonical field name. Community usage is consistent, but the field could vary by product category. Using the wrong field name returns `undefined` and the product photo is always blank.
+**What goes wrong:** All 24 existing migrations use `auth.uid() = user_id` for RLS. Storage objects in user-owned buckets (profile photos, meal scan photos) do NOT have a `user_id` column. Copying any existing RLS migration block onto `storage.objects` produces a policy that matches nothing — every INSERT and SELECT is silently denied.
 
-**Why it happens:** OFF has inconsistent documentation. Some products expose `image_url`, others `image_front_url`, others `image_front_small_url`. The `image_front_small_url` field has higher coverage than `image_front_url` for food products.
+**Why it happens:** `storage.objects` is a special system table. Ownership must be expressed via path prefix using the `storage.foldername(name)` helper function, or via the `owner_id` system column set automatically at upload time. This is a known trap — the same `auth.uid() = user_id` assumption already burned the project on `food_products` (migration 024 required `auth.role() = 'authenticated'`). Storage is a different divergence but the same category of error.
+
+**Consequences:** All uploads and downloads return 403. The Supabase JS client returns a storage error object rather than throwing, so the mobile app can swallow the error silently if the calling code does not check `if (error) throw error`.
+
+**Prevention:** Use path-prefix scoping. All user-owned files must be stored under `{userId}/{filename}`:
+
+```sql
+-- Users may upload only to their own folder
+CREATE POLICY "users_upload_own"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'profile-photos'
+  AND (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')
+);
+
+-- Users may read only their own files
+CREATE POLICY "users_read_own"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'profile-photos'
+  AND (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')
+);
+```
+
+Mobile upload path must match: always upload to `{userId}/avatar.jpg`, never to a flat `avatar.jpg` path.
+
+For shared/catalogue buckets with no per-user ownership (e.g. a public exercise illustrations bucket):
+```sql
+CREATE POLICY "authenticated_read"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'exercise-media');
+```
+
+**Detection:** `supabase.storage.from('bucket').upload(...)` returns `{ error: { message: 'new row violates row-level security policy' } }`. Always assert `if (storageError) throw storageError` after every Storage call.
+
+---
+
+### CRIT-04: Vercel 4.5 MB Body Limit Silently Blocks Photo Uploads Through the API
+
+**What goes wrong:** If the mobile app uploads a photo by POSTing to the Hono API (which then proxies it to Supabase Storage), any file over 4.5 MB triggers `413 FUNCTION_PAYLOAD_TOO_LARGE` at the Vercel infrastructure layer before the Hono handler runs.
+
+**Why it happens:** Vercel serverless functions enforce a hard 4.5 MB request body limit on all plans. Profile photos from iPhone 14+ and modern Android cameras routinely exceed this. The Hono handler never receives the request — there is no server-side log entry.
+
+**Consequences:** Users with newer phones silently fail to upload profile photos. The mobile app receives a 413 with no JSON body; if the Supabase client wrapper does not handle non-JSON error responses, the app may crash or display a generic error with no actionable message.
+
+**Prevention:** Never route binary file uploads through the Hono API. Use a signed URL flow:
+
+1. Mobile calls `POST /storage/upload-token` on Hono (tiny JSON request — just auth + bucket + filename).
+2. Hono calls `supabase.storage.from(bucket).createSignedUploadUrl(path)` and returns the `{ signedUrl, token, path }` to the mobile client.
+3. Mobile uploads directly to Supabase Storage via `uploadToSignedUrl` — Vercel is not in the path.
+
+```typescript
+// Hono: token endpoint (tiny, always under 4.5 MB limit)
+app.post("/storage/upload-token", authMiddleware, async (c) => {
+  const { bucket, filename } = await c.req.json();
+  const userId = c.get("auth").userId;
+  const path = `${userId}/${filename}`;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .createSignedUploadUrl(path, { expiresIn: 300 });
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json(data);
+});
+```
+
+```typescript
+// Mobile: direct upload to Storage (bypasses Vercel)
+const { data: tokenData } = await apiClient.post("/storage/upload-token", {
+  bucket: "profile-photos",
+  filename: "avatar.jpg",
+});
+const { error } = await supabase.storage
+  .from("profile-photos")
+  .uploadToSignedUrl(tokenData.path, tokenData.token, arrayBuffer, {
+    contentType: "image/jpeg",
+  });
+```
+
+---
+
+## Integration Pitfalls
+
+### INT-01: React Native Upload Produces 0-Byte Files or Wrong MIME Type
+
+**What goes wrong:** Three distinct failure modes observed in production React Native / Supabase Storage integrations:
+- Uploading a `File` object → 0-byte file on iOS
+- Uploading a raw base64 string (not decoded) → garbled binary stored as UTF-8 text
+- Global `Content-Type: application/json` header on the Supabase client → file stored as `application/json` regardless of the `contentType` option passed to `.upload()`
+
+**Why it happens:**
+- React Native does not implement the browser `File` API for binary reading on iOS.
+- Supabase Storage's `.upload()` requires a `Blob`, `ArrayBuffer`, or `ReadableStream` — not a base64 string.
+- If the Supabase client was initialized with `headers: { 'Content-Type': 'application/json' }` (a common pattern copied from REST setup guides), it overrides the per-upload content type.
 
 **Prevention:**
-- Use `image_front_small_url` as primary, fall back to `image_front_url`, then `image_url`. Store whichever is non-null.
-- Validate against a real product on first implementation: `GET .../product/3017624010701.json` (Nutella — high data quality).
-- `photo_url` in `food_products` is nullable — always handle `null` gracefully (show a placeholder icon, not a broken image).
 
-**Phase:** Phase 10 (data layer).
+```typescript
+import { decode } from 'base64-arraybuffer';
+import * as ImagePicker from 'expo-image-picker';
+
+const result = await ImagePicker.launchImageLibraryAsync({
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  allowsEditing: true,
+  base64: true,
+  quality: 0.8,
+});
+
+if (!result.canceled && result.assets[0]?.base64) {
+  const arrayBuffer = decode(result.assets[0].base64);
+  const { error } = await supabase.storage
+    .from('profile-photos')
+    .upload(`${userId}/avatar.jpg`, arrayBuffer, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    });
+  if (error) throw error;
+}
+```
+
+Do NOT initialize the Supabase client with a global `Content-Type` header. The storage upload uses multipart internally; a global JSON content-type header corrupts every binary upload silently.
 
 ---
 
-#### Pitfall 1.3 — Product Not Found (OFF Coverage Gap)
+### INT-02: Public Bucket Exposes All User Files Without Authentication
 
-**What goes wrong:** OFF has ~3.5M products, strong EU coverage, but gaps in store brands, fresh produce, and some Asian/US products. When a barcode returns HTTP 404 or `product.status === 0`, the scan appears to do nothing and the user has no fallback.
+**What goes wrong:** Setting a bucket to `public: true` in the Supabase dashboard or via `createBucket` means anyone with the file URL — including unauthenticated users and scrapers — can read any file in the bucket. RLS policies are bypassed for GET requests on public buckets.
 
-**Why it happens:** The app assumes every scan returns a product. No "not found" state is designed.
+**Why it happens:** Public buckets are designed for genuinely public assets (marketing images, CDN-served illustrations). Teams use them for convenience (no signed URL generation) without realizing the RLS bypass.
+
+**Consequences:** Profile photos and meal scan photos (personal health data) become publicly readable if the URL is guessed or leaked. This violates RGPD — personal health data must not be publicly accessible.
+
+**Prevention:** Keep profile photos and meal scan photos in private buckets. Serve them via signed URLs with appropriate expiry:
+
+```typescript
+// For profile photo display (cache locally, long expiry)
+const { data } = await supabase.storage
+  .from('profile-photos')
+  .createSignedUrl(`${userId}/avatar.jpg`, 60 * 60 * 24 * 7); // 7 days
+
+// For transient meal scan photos (short-lived)
+const { data } = await supabase.storage
+  .from('meal-scans')
+  .createSignedUrl(`${userId}/${scanId}.jpg`, 3600); // 1 hour
+```
+
+Only use a public bucket for non-personal, truly public assets such as a shared exercise illustration library.
+
+---
+
+### INT-03: Signed Upload URLs Expire in 60 Seconds — Mobile UX Trap
+
+**What goes wrong:** The default `expiresIn` for `createSignedUploadUrl` is 60 seconds. If the upload token is generated when the user opens the photo picker, and they spend 90 seconds cropping and previewing, the token is expired when `uploadToSignedUrl` is called. The error response is a 400 with a non-obvious message that is easy to misidentify as a network or auth error.
+
+**Why it happens:** Signed upload URLs are intentionally time-limited. 60 seconds is appropriate for automated server-to-server flows but is too short for interactive mobile UX with photo editing.
 
 **Prevention:**
-- Handle three states explicitly in `offApi.ts`: `{ status: 'found', product }`, `{ status: 'not_found' }`, `{ status: 'error', message }`.
-- On `not_found`: show inline message "Product not in Open Food Facts — enter details manually" and open the manual entry form pre-filled with nothing (same form used for non-scanned meals).
-- Never throw or crash on a missing product — OFF coverage gaps are expected.
+1. Generate the signed URL at the moment the user confirms upload (after preview), not when the picker opens.
+2. Always set an explicit `expiresIn` of at least 300 seconds (5 minutes) for interactive flows.
+3. On the mobile side, detect upload errors and retry by fetching a fresh token — never re-use an expired token.
 
-**Phase:** Phase 10 (data layer + product card UI).
+```typescript
+// In Hono: generate with explicit 5-minute expiry
+const { data } = await supabase.storage
+  .from(bucket)
+  .createSignedUploadUrl(path, { expiresIn: 300 });
+```
 
 ---
 
-#### Pitfall 1.4 — `ecoscore_grade` Returns `'a-plus'` and `'not-applicable'`
+### INT-04: Supabase Storage Has No Native Lifecycle Policies
 
-**What goes wrong:** The `ScoreBadge` component renders grades A–E using a color map keyed by single letter. But `ecoscore_grade` from OFF can return `'a-plus'` (a valid "better than A" grade for some products) and `'not-applicable'` (water, salt, etc.). Neither maps to the A/B/C/D/E palette and the badge renders blank or crashes with a style lookup failure.
+**What goes wrong:** The milestone requirement includes "lifecycle policies — auto-cleanup of old assets." Teams assume this mirrors AWS S3 TTL rules (declarative, set-and-forget). Supabase Storage does not expose S3 lifecycle APIs. There is no built-in object expiration mechanism.
 
-**Why it happens:** The OFF Eco-Score specification includes `a-plus` as a distinct grade above A. This is not mentioned in most tutorial examples.
+**Why it happens:** Supabase Storage is S3-compatible at the protocol level but its hosted service does not surface the S3 lifecycle configuration API. This is an open feature request in the Supabase community as of 2025 with no delivery timeline.
+
+**Consequences:** Meal scan photos and PDF exports accumulate indefinitely. Storage costs grow unbounded. The lifecycle cleanup requirement cannot be satisfied with a declarative policy — it requires code.
+
+**Prevention:** Implement cleanup via a Vercel cron (already used for supplement scraping in the project). Pattern using `user_metadata.expires_at`:
+
+At upload time, tag the file with an expiry:
+```typescript
+await supabase.storage.from('meal-scans').upload(path, arrayBuffer, {
+  contentType: 'image/jpeg',
+  metadata: { expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() },
+});
+```
+
+In the cron job:
+```typescript
+// Query storage.objects for expired files
+const { data: expired } = await supabase
+  .from('objects') // storage.objects exposed via schema
+  .select('name, bucket_id')
+  .eq('bucket_id', 'meal-scans')
+  .lt('user_metadata->>expires_at', new Date().toISOString());
+
+if (expired?.length) {
+  await supabase.storage.from('meal-scans')
+    .remove(expired.map(f => f.name));
+}
+```
+
+Alternatively list files per user and delete those older than the retention window. The cron pattern already exists in the project (`POST /supplements/cron/scrape`) — reuse it.
+
+---
+
+### INT-05: CORS Middleware Must Be the First Registered Middleware in Hono
+
+**What goes wrong:** Placing `app.use(cors(...))` after `app.use('/ai/*', authMiddleware)` causes OPTIONS preflight requests to reach the auth middleware first and return 401. The CORS headers are never set on the 401 response. The Expo app's `fetch` layer sees a CORS error instead of an auth error.
+
+**Why it happens:** Hono executes middleware in registration order. OPTIONS is a real HTTP method — if auth middleware runs first and rejects it, the browser/RN HTTP layer cannot distinguish a CORS failure from a network failure.
+
+**Consequences:** Debugging is expensive. The backend logs show 401. The mobile app logs show a network or CORS error. Teams spend significant time diagnosing auth when the real issue is middleware order.
 
 **Prevention:**
-- Map `'a-plus'` to the same color as `'a'` (dark green `#1E8348`) and display as "A+" text.
-- Map `'not-applicable'` and any unknown value to `null` — hide the Eco-Score badge entirely, don't render a broken chip.
-- Do NOT add a `CHECK` constraint on `ecoscore_grade` column — the free-form field needs to store whatever OFF returns.
-- Pattern: `const ecoColor = ECOSCORE_COLORS[grade?.toLowerCase()] ?? null; if (!ecoColor) return null;`
 
-**Phase:** Phase 11 (ScoreBadge component).
+```typescript
+// CORRECT: cors registered before everything else
+app.use('*', cors({
+  origin: [
+    'https://ziko-api-lilac.vercel.app',
+    'http://localhost:3000',
+    'exp://localhost:8081',
+  ],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  maxAge: 86400,
+}));
 
----
+// Auth middleware registered after CORS
+app.use('/ai/*', authMiddleware);
+app.use('/storage/*', authMiddleware);
+```
 
-### Category 2: Data Layer — Database and RLS Design
-
-#### Pitfall 2.1 — `food_products` RLS Cannot Use `auth.uid() = user_id` Pattern
-
-**What goes wrong:** Every other table in the project uses `auth.uid() = user_id` for RLS. `food_products` is a shared global catalogue with no `user_id`. Applying the standard pattern blocks all reads — the publishable key returns 0 rows for every SELECT. The product card never loads.
-
-**Why it happens:** Copy-pasting the RLS block from any other migration without adapting it to the shared-catalogue pattern.
-
-**Prevention:**
-- RLS policy for `food_products` must allow ANY authenticated user to SELECT, but only authenticated users to INSERT/UPDATE:
-  ```sql
-  ALTER TABLE public.food_products ENABLE ROW LEVEL SECURITY;
-  CREATE POLICY "food_products_read" ON public.food_products
-    FOR SELECT USING (auth.role() = 'authenticated');
-  CREATE POLICY "food_products_insert" ON public.food_products
-    FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-  CREATE POLICY "food_products_update" ON public.food_products
-    FOR UPDATE USING (auth.role() = 'authenticated');
-  ```
-- Verify with a SELECT after migration: the mobile client using the publishable key must return rows.
-
-**Phase:** Phase 10 (migration 024).
+`allowHeaders` must list every custom header the Expo app sends. Missing `Authorization` from this list is the most common cause of preflight rejection. When using Vercel AI SDK on the client, also ensure `Content-Type` is listed.
 
 ---
 
-#### Pitfall 2.2 — `nutrition_logs.food_product_id` FK Must Be Nullable
+### INT-06: PDF Generation on Vercel Serverless Timeouts on the Free Plan
 
-**What goes wrong:** The column is defined as `NOT NULL` (accidentally, or to match the FK convention from other tables). Every existing nutrition log entry has no barcode product — the migration or ALTER TABLE fails, or all existing rows fail the constraint check.
+**What goes wrong:** Using Puppeteer or Playwright to generate a PDF (for the "exports/PDF" bucket) exceeds Vercel's 10-second function timeout on the free plan. Cold-starting Chromium alone takes 10–20 seconds. Even on Pro (60-second timeout), cold starts on low-traffic endpoints remain unpredictable.
 
-**Why it happens:** FK columns on join tables are often written as NOT NULL by convention. Here the FK is enrichment-only; most logs will never have a product.
+**Why it happens:** Headless Chromium is 50–100 MB unzipped. On a cold-start, the function must initialize the binary, launch the browser, and render the page within the execution window. Free-plan functions have a hard 10-second limit.
 
-**Prevention:**
-- Define: `food_product_id UUID REFERENCES public.food_products(id) ON DELETE SET NULL`
-- No `NOT NULL` constraint. Existing rows have `food_product_id = NULL` and that is correct.
-- All display logic must treat `NULL` food_product_id as "manually entered meal — no scores to show."
+**Consequences:** PDF export endpoint returns 504 Gateway Timeout for the majority of requests. The failure is non-deterministic — warm instances may succeed, cold ones fail — making it hard to reproduce in testing.
 
-**Phase:** Phase 10 (migration 025).
+**Prevention:** Two viable approaches, in order of preference:
 
----
+1. **Avoid Chromium entirely.** Use `@react-pdf/renderer` (renders React component trees to PDF without a browser, runs in Node.js). Suitable for structured exports: workout history, nutrition summary, body measurements report. Fast, deterministic, no cold start penalty.
 
-#### Pitfall 2.3 — Nutri-Score Grade Staleness (2024 Algorithm Revision)
+2. **If HTML-to-PDF is required.** Use `@sparticuz/chromium-min` (a stripped ~15 MB Chromium build designed for serverless) with `puppeteer-core`. Set Vercel function `maxDuration: 60` and target the `iad1` region (lowest cold start latency). This is still fragile — prefer option 1.
 
-**What goes wrong:** The Nutri-Score algorithm was revised in 2024, affecting ~40% of products. A product scanned before the revision has a cached grade that no longer matches its current OFF value. The user sees a C where the product is now a B.
-
-**Why it happens:** `food_products` caches the OFF response at scan time. Without a `cached_at` timestamp and refresh logic, the catalogue never updates.
-
-**Prevention:**
-- Add `cached_at TIMESTAMPTZ DEFAULT now()` to `food_products`.
-- On a scan hit (barcode already in `food_products`), check `cached_at < now() - interval '90 days'`. If stale, re-fetch from OFF and update the row before returning to the UI.
-- This is a background concern — implement as a silent re-fetch, not a blocking operation. Show cached data immediately, update if stale.
-
-**Phase:** Phase 10 (data layer — add column; refresh logic can be Phase 11 or deferred).
+Never use the `puppeteer` package (which downloads its own full Chromium) on Vercel — it will exceed the 250 MB function bundle size limit.
 
 ---
 
-### Category 3: UI Layer — Product Card and Score Display
+### INT-07: `hono-rate-limiter` README Is Misleading About Serverless Environments
 
-#### Pitfall 3.1 — Serving Size Is a Free-Text String
+**What goes wrong:** Teams read the Getting Started section of `hono-rate-limiter`, implement `MemoryStore`, and deploy. The README documents the serverless caveat in a separate "Stores" section that is easy to skip.
 
-**What goes wrong:** OFF `serving_size` is a free-text field: `"1 biscuit (30g)"`, `"250 ml"`, `"1 tranche (35g)"`. The ProductCard serving adjuster tries to parse a gram value from this string. Parsing fails for `"1 biscuit"`, the serving size shows 0g or NaN, and macro calculation divides by zero.
+**Exact README warning (Stores section):** "MemoryStore does not synchronize state across instances. Deployments requiring more consistently enforced rate limits should use an external store."
 
-**Why it happens:** OFF provides human-readable labels, not structured numeric data. There is no `serving_size_g` integer field.
-
-**Prevention:**
-- Default to 100g serving if `serving_size` parsing fails — OFF macros are per 100g, so 100g is always a valid and meaningful default.
-- Parse using regex: extract the first parenthesized number: `/([\d.]+)\s*g/i`. If no match, use 100.
-- Display: if serving_size is non-null, show it as a hint label below the stepper. If null, show "per 100g".
-- Never crash or show NaN — the 100g fallback must be the failure mode.
-
-**Phase:** Phase 11 (ProductCard component).
+**Prevention:** Before writing any rate limiting code, read the Stores section. The implementation decision (which store) must precede the middleware code. See CRIT-01 for the correct store setup.
 
 ---
 
-#### Pitfall 3.2 — Dashboard Score Average Divides by Zero on Days With No Scanned Meals
+## Prevention Strategies
 
-**What goes wrong:** The nutrition dashboard computes a daily Nutri-Score average. On days where all meals were manually entered (no barcodes), `nutriscore_grade` is null on all `nutrition_logs` rows. Averaging over an empty set returns NaN or crashes.
+### Strategy A: External Store Before Any Middleware Code
 
-**Why it happens:** The average score widget assumes at least one scanned meal per day.
+Provision Upstash Redis and confirm `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in the Vercel environment dashboard before writing any middleware. The store is the gating dependency — without it, all rate limiting code provides false security.
 
-**Prevention:**
-- Filter `nutrition_logs` rows where `nutriscore_grade IS NOT NULL` before computing the average.
-- If no scanned meals exist for the day, hide the average score widget entirely (not show 0 or N/A).
-- Pattern: `const scoredMeals = todayLogs.filter(l => l.nutriscore_grade); if (scoredMeals.length === 0) return null;`
+### Strategy B: userId as Primary Rate Limit Key
 
-**Phase:** Phase 11 (NutritionDashboard score widget).
+Use `userId` from the Supabase JWT for all authenticated endpoints (AI chat, barcode scan). Fall back to `x-real-ip` for unauthenticated endpoints. Never use `x-forwarded-for` as the primary key. Never use IP as the key for authenticated routes — a VPN user gets a new IP on every reconnect.
 
----
+### Strategy C: Signed URL Upload Pattern — Never Proxy Binaries Through Hono
 
-### Category 4: Tech Debt — SHOP-03 Fix
+The Hono API must never receive binary file bodies. All upload flows follow: mobile requests a signed URL from Hono (tiny JSON exchange) → mobile uploads directly to Supabase Storage. This sidesteps the Vercel 4.5 MB body limit and reduces function invocation count and cost.
 
-#### Pitfall 4.1 — Recipe Check-Off Creates Duplicate Pantry Inserts
+### Strategy D: Storage RLS Uses Path Prefix, Not user_id Column
 
-**What goes wrong:** `handleCheckOffRecipe()` is triggered on every tap of the check-off button. If the user taps twice (network latency, optimistic UI), the "how much did you buy?" prompt fires twice and two pantry rows are created for the same ingredient.
+Every Storage RLS policy for user-owned buckets uses `(storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')`. File paths are structured as `{userId}/{filename}` in all client upload code. The RLS policy and the upload path convention must be consistent — if the client uploads to a flat path, the policy denies it.
 
-**Why it happens:** No in-flight guard on the check-off action.
+### Strategy E: ArrayBuffer for All React Native File Uploads
 
-**Prevention:**
-- Disable the check-off button immediately on first tap (set a local loading state) before showing the prompt.
-- On pantry insert: use `upsert` with `onConflict: 'user_id,name'` if a unique constraint exists on `(user_id, name)`, OR check for existing pantry item by name before inserting.
-- The DB upsert is the safest idempotency guarantee: `supabase.from('pantry_items').upsert({ user_id, name, quantity: bought_qty }, { onConflict: 'user_id,name' })`
-
-**Phase:** Phase 10 (SHOP-03 fix task).
+All image uploads from React Native use `decode(base64)` from `base64-arraybuffer` before calling `.upload()`. Never pass `File`, `Blob` from a URI string, or raw base64 strings. Always pass `contentType` explicitly. Never set a global `Content-Type: application/json` header on the Supabase client instance.
 
 ---
 
-### Category 5: Tech Debt — `pantry_log_recipe_cooked` as AI Tool
+## Phase-Specific Warnings
 
-#### Pitfall 5.1 — Tool in Schema But Missing From `executors` (Silent Failure)
-
-**What goes wrong:** The `pantry_log_recipe_cooked` tool is added to `allToolSchemas` in `registry.ts` but its handler is omitted from the `executors` record. The AI advertises the tool to Claude, but `getToolExecutor('pantry_log_recipe_cooked')` returns `undefined`. The agent silently fails with no visible error.
-
-**Why it happens:** `registry.ts` requires three coordinated changes: import, `executors` entry, `allToolSchemas` entry. Adding to schema (more readable, at top of file) while forgetting `executors` (flat key-value record, further down) is the most common omission.
-
-**Prevention:**
-- After adding `pantry_log_recipe_cooked` to `pantry.ts`, verify all three locations in `registry.ts`: import line, `executors` record, `allToolSchemas` array.
-- Validate via `POST /ai/tools/execute` with `{ tool: 'pantry_log_recipe_cooked', params: {...} }` before any end-to-end testing.
-- The `RecipeConfirm.tsx` direct Supabase call must be REMOVED when the AI tool is added — otherwise both code paths can fire for the same recipe confirmation, resulting in a duplicate nutrition log.
-
-**Phase:** Phase 10 (tech debt task).
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|----------------|------------|
+| Rate limiting middleware setup | CRIT-01: MemoryStore silently useless | Provision Upstash Redis before writing any middleware code |
+| Per-IP limiting on unauthenticated routes | CRIT-02: Vercel IP address collapse | Use `x-real-ip`; use `userId` for authenticated routes |
+| Supabase Storage bucket creation + RLS | CRIT-03: Copy-paste from user_id migrations | Write RLS from scratch using `storage.foldername(name)[1]` pattern; never copy existing migration |
+| File upload flow design | CRIT-04: Vercel 4.5 MB body limit | Implement signed URL flow; never proxy binary bodies through Hono |
+| Mobile image upload implementation | INT-01: 0-byte or corrupted files | Use `base64-arraybuffer` decode; explicit `contentType`; no global JSON header |
+| Profile photo bucket | INT-02: Public bucket exposes personal data | Private bucket only; serve via signed URLs with appropriate expiry |
+| Photo upload UX (pick → preview → confirm) | INT-03: Signed URL 60-second expiry | Generate signed URL at confirm step, not at picker open; set 5-minute expiry |
+| Lifecycle cleanup for exports and meal scans | INT-04: No native lifecycle in Supabase Storage | Vercel cron + `.remove()` loop; tag files with `expires_at` in user_metadata at upload time |
+| CORS configuration | INT-05: Auth middleware before CORS causes preflight 401 | `app.use('*', cors(...))` must be the first middleware registered |
+| PDF export endpoint | INT-06: Chromium cold-start timeout | Use `@react-pdf/renderer` for structured data exports; avoid Puppeteer entirely |
 
 ---
 
-## Phase Assignments
+## Sources
 
-| Phase | Pitfalls Addressed | Key Actions |
-|-------|--------------------|-------------|
-| Phase 10 (data + debt) | 1.1, 1.3, 2.1, 2.2, 2.3, 4.1, 5.1 | OFF `.org` URL, product-not-found states, food_products RLS (authenticated read), nullable FK on nutrition_logs, cached_at column, SHOP-03 dedupe upsert, pantry AI tool 3-point registry check |
-| Phase 11 (UI layer) | 1.2, 1.4, 3.1, 3.2 | image_front_small_url fallback chain, ecoscore 'a-plus'/'not-applicable' handling, serving size 100g fallback, dashboard score widget null guard |
-
-**Cross-phase dependency:**
-- Migration 024 (food_products) and 025 (nutrition_logs columns) must land before any UI work — the ProductCard and score badge components depend on the schema being in place.
-- Remove direct Supabase call from RecipeConfirm.tsx in the SAME task that adds `pantry_log_recipe_cooked` to registry.ts — never have both active simultaneously.
+- [hono-rate-limiter (rhinobase/hono-rate-limiter)](https://github.com/rhinobase/hono-rate-limiter) — MemoryStore serverless warning; MEDIUM confidence (community package)
+- [Rate Limiting Hono Apps: An Introduction (Fiberplane)](https://fiberplane.com/blog/rate-limiting-intro/) — distributed state failure analysis; MEDIUM confidence
+- [Upstash Serverless Rate Limiting](https://upstash.com/blog/upstash-ratelimit) — sliding window, serverless-first design; HIGH confidence (official)
+- [Vercel Functions Limitations — 4.5 MB body limit](https://vercel.com/docs/functions/limitations) — HIGH confidence (official docs)
+- [How to bypass Vercel 4.5 MB body limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions) — signed URL pattern; HIGH confidence (official KB)
+- [Vercel Request Headers — x-real-ip](https://vercel.com/docs/headers/request-headers) — IP header behavior; HIGH confidence (official docs)
+- [Add Rate Limiting with Vercel KV](https://vercel.com/guides/rate-limiting-edge-middleware-vercel-kv) — HIGH confidence (official guide)
+- [Supabase Storage Access Control — RLS + foldername helper](https://supabase.com/docs/guides/storage/security/access-control) — HIGH confidence (official docs)
+- [Supabase Storage Ownership — owner_id column](https://supabase.com/docs/guides/storage/security/ownership) — HIGH confidence (official docs)
+- [Supabase Storage Hierarchical RLS Challenges](https://supabase.com/docs/guides/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d) — HIGH confidence (official troubleshooting)
+- [React Native file upload with Supabase Storage (Supabase Blog)](https://supabase.com/blog/react-native-storage) — ArrayBuffer + base64-arraybuffer pattern; HIGH confidence (official)
+- [Upload of ArrayBuffer ends up corrupted (supabase/supabase #7252)](https://github.com/supabase/supabase/issues/7252) — content-type corruption; MEDIUM confidence (community issue)
+- [Uploaded files as 0 bytes in React Native Expo (discussion #2336)](https://github.com/orgs/supabase/discussions/2336) — File object on iOS; MEDIUM confidence (community)
+- [Supabase Storage saves as application/json despite contentType (discussion #34982)](https://github.com/orgs/supabase/discussions/34982) — global header override; MEDIUM confidence (community)
+- [Hono CORS Content-Type issue (#4184)](https://github.com/honojs/hono/issues/4184) — CORS middleware ordering; MEDIUM confidence (maintainer response)
+- [Expiring objects in Supabase Storage — no native lifecycle (discussion #20171)](https://github.com/orgs/supabase/discussions/20171) — lifecycle gap confirmed; MEDIUM confidence (community + maintainer)
+- [HTML to PDF benchmark 2026: Playwright vs Puppeteer (pdf4.dev)](https://pdf4.dev/blog/html-to-pdf-benchmark-2026) — Chromium cold start timing; MEDIUM confidence (third-party benchmark)

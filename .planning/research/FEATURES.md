@@ -1,297 +1,219 @@
-# Feature Landscape — Barcode Enrichment (v1.2)
+# Feature Landscape — Security + Cloud Infrastructure (v1.3)
 
-**Domain:** Barcode scan → Open Food Facts enrichment in a fitness nutrition tracking mobile app
+**Domain:** API security hardening + Supabase Storage for a Hono v4 / Expo React Native fitness platform
 **Researched:** 2026-04-02
-**Confidence:** HIGH (Open Food Facts API verified via live call; Nutri-Score/Eco-Score color systems verified against Wikipedia and official OFF documentation; UX patterns cross-validated against Yuka, MyFitnessPal, Cronometer, Open Food Facts app)
+**Confidence:** HIGH (Hono middleware verified via official docs + hono-rate-limiter GitHub; Supabase Storage verified via official Supabase docs; Vercel WAF verified via Vercel blog; patterns validated across multiple sources)
 
 ---
 
 ## Summary
 
-The v1.2 barcode enrichment feature adds a fourth food-entry path to the existing `LogMealScreen` (which already has search, AI photo scan, and manual custom entry). The feature chain is: camera scan → Open Food Facts lookup → product card with Nutri-Score/Eco-Score/photo/macros → serve-size adjustment → log to `nutrition_logs` with a `food_product_id` FK. A `food_products` catalogue table is introduced as a persistent local cache so repeated scans of the same barcode skip the API call.
+Milestone v1.3 adds four distinct capability areas on top of the existing Hono v4 backend and Supabase stack:
 
-The core user jobs are:
-1. "Log this packaged food without typing anything" — the scan replaces manual macro entry entirely.
-2. "Know whether this product is healthy before I eat it" — Nutri-Score shows the nutritional quality; Eco-Score shows the environmental impact.
-3. "See quality signals on my daily log and dashboard" — journal entries and dashboard show badges, not just raw numbers.
+1. **Rate limiting** — per-user + per-IP request throttling on AI chat, barcode scan, and auth endpoints
+2. **Supabase Storage** — structured buckets for profile photos, scan meal photos, and PDF exports
+3. **Lifecycle policies** — automated cleanup of old assets to control storage costs
+4. **API security hardening** — tighten CORS, add input validation, add secure headers, prevent abuse
 
-This feature has high precedent in the ecosystem. Yuka recorded 2.7 billion product scans in 2024. Open Food Facts covers ~3.5 million products with Nutri-Score and ~1 million with Eco-Score. The UX flow is a well-established 3-screen pattern: camera → product card → log confirmation.
+The existing infrastructure already has partial CORS (`cors()` in `app.ts`), JWT auth middleware (`authMiddleware` in `middleware/auth.ts`), and structured error handling. Rate limiting and validation are currently absent. Supabase Storage is not yet configured. This means v1.3 is purely additive — no existing behavior needs to be torn out.
 
----
-
-## Open Food Facts API — Confirmed Fields
-
-These field names are verified via live API call against barcode `3017624010701` (Nutella).
-
-**Request pattern:**
-```
-GET https://world.openfoodfacts.org/api/v2/product/{barcode}?fields=product_name,brands,quantity,serving_size,nutriscore_grade,ecoscore_grade,nutriments,image_front_url,image_front_small_url,nutrition_grades
-```
-
-**Response top-level fields:**
-| Field | Type | Notes |
-|-------|------|-------|
-| `status` | integer | `1` = found, `0` = not found |
-| `product_name` | string | May be absent for poorly-documented products |
-| `brands` | string | Comma-separated if multiple |
-| `product_quantity` | number | Numeric quantity (400) |
-| `product_quantity_unit` | string | "g", "ml", etc. |
-| `nutriscore_grade` | string | "a" / "b" / "c" / "d" / "e" — lowercase |
-| `ecoscore_grade` | string | "a" / "b" / "c" / "d" / "e" or "not-applicable" |
-| `nutrition_grades` | string | Alias for nutriscore_grade (same value) |
-| `image_front_url` | string | Full-resolution JPEG URL |
-| `image_front_small_url` | string | Thumbnail JPEG URL (~200px) |
-
-**Nutriments sub-object (`product.nutriments`):**
-| Field | Unit | Notes |
-|-------|------|-------|
-| `energy-kcal_100g` | kcal | Primary calorie field — prefer over `energy_100g` (kJ) |
-| `proteins_100g` | g | Note: plural "proteins" not "protein" |
-| `carbohydrates_100g` | g | Total carbs |
-| `fat_100g` | g | Total fat |
-| `saturated-fat_100g` | g | Available in most EU products |
-| `sugars_100g` | g | |
-| `salt_100g` | g | |
-| `fiber_100g` | g | Often absent |
-
-**Serving-size context:** `nutrition_data_per` field tells whether nutriments are per 100g or per serving. Almost always "100g" for EU products.
-
-**Confidence:** HIGH — verified against live OFF API response.
-
----
-
-## Nutri-Score Color System (Confirmed)
-
-Nutri-Score is a European front-of-pack label (used heavily in France, where Ziko is positioned). The scoring algorithm subtracts positive points (fiber, protein, fruits/vegetables) from negative points (energy, sugars, saturated fat, salt). The 2024 revised algorithm tightened ratings for ~40% of products.
-
-| Grade | Color | Hex | Meaning |
-|-------|-------|-----|---------|
-| A | Dark green | `#1E8348` | Excellent nutritional quality |
-| B | Light green | `#70AD47` | Good nutritional quality |
-| C | Yellow | `#FFC000` | Moderate nutritional quality |
-| D | Orange | `#E36C09` | Poor nutritional quality |
-| E | Red | `#C00000` | Very poor nutritional quality |
-
-**Confidence:** HIGH — confirmed via [Nutri-Score Wikipedia](https://en.wikipedia.org/wiki/Nutri-Score) and [Open Food Facts Nutri-Score page](https://world.openfoodfacts.org/nutriscore).
-
----
-
-## Eco-Score Color System (Confirmed)
-
-The Eco-Score (rebranded as "Green-Score" in late 2024 on some packaging, but OFF API still returns `ecoscore_grade`) measures environmental impact on a 0–100 scale, bucketed into A–E.
-
-| Grade | Color | Score Range | Meaning |
-|-------|-------|-------------|---------|
-| A | Dark green | 80–100 | Very low environmental impact |
-| B | Light green | 60–79 | Low environmental impact |
-| C | Yellow | 40–59 | Moderate environmental impact |
-| D | Orange | 20–39 | High environmental impact |
-| E | Red | 0–19 | Very high environmental impact |
-
-Use the same hex values as Nutri-Score for consistency.
-
-Data coverage is lower than Nutri-Score: ~1M products have Eco-Score vs ~3.5M with Nutri-Score. The API returns `"not-applicable"` for some product categories (e.g. water, salt). UI must handle absent Eco-Score gracefully.
-
-**Confidence:** HIGH — confirmed via [Eco-Score Open Food Facts blog](https://blog.openfoodfacts.org/en/news/launch-of-the-eco-score-the-environmental-impact-of-food-products) and [Eco-Score Wikipedia](https://en.wikipedia.org/wiki/Eco-score).
+The key dependency chain: **rate limiting requires `authMiddleware` to already have run** so the user ID from JWT is available in `c.get('auth').userId` for per-user keying. The existing middleware architecture already supports this — `authMiddleware` runs first on all `/ai/*` and protected routes.
 
 ---
 
 ## Table Stakes
 
-Features users expect when a nutrition app adds barcode scanning. Missing any of these = the feature feels half-built.
+Features users (and security auditors) expect any production API to have. Missing these = the API is not production-ready.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Camera barcode scanner modal | Standard entry point — any app with "scan barcode" needs a camera view with a scan frame. Already exists in pantry plugin; reuse `BarcodeScanner.tsx` pattern | Low | Reuse existing `expo-camera` CameraView + `onBarcodeScanned` guard; EAN-13, EAN-8, UPC-A/E, Code128 |
-| Product lookup by barcode → macros | Core output — calories, protein, carbs, fat per 100g is the primary data the user needs. Without this, scanning is useless | Low | `GET /api/v2/product/{barcode}?fields=...` with `?fields` filter; read from `food_products` cache first |
-| Product card before logging | User must see what was found before committing — they may have scanned the wrong item or wrong size | Low-Medium | Card shows: product photo, name, brand, Nutri-Score badge, macros per 100g, serving adjustment |
-| Serving size adjustment | All OFF nutriments are per 100g. The user ate 30g of crackers, not 100g. Must adjust before logging | Low | Numeric input (default 100g) + calculated macros update live as user types |
-| Fallback for missing product | ~30% of barcodes return no result or no macros in OFF. User must not hit a dead end | Low | "Product not found" state → offer "add manually" (pre-fills custom entry tab with product name if partial match) |
-| Log to `nutrition_logs` with food_product FK | Once user confirms, the entry must appear in their nutrition journal exactly like any other log entry | Low | `nutrition_logs` row with new `food_product_id` FK column pointing to `food_products.id` |
-| Nutri-Score badge visible on product card | Yuka, Cronometer, MyFitnessPal, and the OFF app all show Nutri-Score on the product card. Users who scan know what it is | Low | Letter badge with grade color; show "N/A" if absent. 5 colors defined in spec above |
-| Persistent `food_products` catalogue | Users will scan the same yogurt or protein bar repeatedly. Caching avoids repeated API calls and works offline for previously-seen products | Medium | Supabase `food_products` table: `barcode`, `name`, `brand`, `macros`, `nutriscore_grade`, `ecoscore_grade`, `photo_url`, `serving_g`. Upsert on first scan. |
+| Feature | Why Expected | Complexity | Depends On |
+|---------|--------------|------------|------------|
+| Per-user rate limiting on `/ai/chat/stream` and `/ai/chat` | AI chat endpoints call Claude Sonnet — each request costs money. Without per-user limits, a single compromised account drains the Anthropic budget. Standard in every AI-serving API | Medium | Existing `authMiddleware` (user ID from JWT). Upstash Redis for distributed state across Vercel serverless instances |
+| Per-IP rate limiting on unauthenticated endpoints (`/health`, public routes) | Shields against scraping and enumeration before auth happens. Standard web API practice | Low | No dependency — IP from `c.req.header('x-forwarded-for')` |
+| Standard rate limit response headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `Retry-After`) | Mobile clients need to back off gracefully. RFC 6585 / IETF draft standard. `hono-rate-limiter` emits these automatically | Low | Rate limiting middleware in place |
+| 429 Too Many Requests response with `{ error, retryAfter }` body | Clients must distinguish 429 from 401/500. Mobile app must show "wait X seconds" not a generic error | Low | Rate limiting middleware |
+| Supabase Storage bucket for profile photos | Users changing their avatar is a baseline feature expectation. Storing a data URL in a DB column doesn't scale — binary blobs in Postgres degrade query performance | Low-Medium | Supabase Storage configured, RLS policies on `storage.objects` |
+| RLS policies on storage buckets | Supabase Storage docs: "by default Storage does not allow any uploads to buckets without RLS policies." Without RLS, any authenticated user can read any other user's files | Low | Supabase Storage bucket creation |
+| Strict CORS origin list (no wildcard `*`) | The existing `app.ts` CORS config allows any `*.vercel.app` subdomain — too permissive for production. An attacker can spin up a malicious Vercel preview and make credentialed requests | Low | Existing Hono `cors()` middleware — tighten `origin` allowlist |
+| Input validation on all POST bodies (Zod schema) | The AI chat routes, bug report route, and supplement routes accept free-form JSON. Without Zod validation, malformed input reaches tool execution. `@hono/zod-validator` is the standard Hono approach | Medium | `@hono/zod-validator` package. All POST route handlers need schema wrappers |
+| Reject oversized file uploads (max file size per bucket) | Without a file size limit, a user can upload a 500MB video as a "profile photo." Supabase Storage bucket settings accept `fileSizeLimit` at bucket creation | Low | Supabase Storage bucket configuration |
 
 ---
 
 ## Differentiators
 
-Features that set Ziko's barcode enrichment apart from standard nutrition tracker implementations.
+Features beyond minimum viable security — worth building for Ziko's specific context but not universally expected at this scale.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Eco-Score badge alongside Nutri-Score | Most nutrition apps (MyFitnessPal, Cronometer) show only nutritional score. Eco-Score is a sustainability signal that resonates with Ziko's European/French audience. Yuka added it in 2021 and it became a retention driver | Low | Second badge on product card; same letter/color system; gracefully absent if `ecoscore_grade` is "not-applicable" |
-| Product photo on product card | Confirms the user scanned the right product — crucial when two nearly-identical products have different nutrition profiles. MyFitnessPal does NOT show product photos; Yuka does. The OFF API returns `image_front_small_url` | Low | `<Image source={{ uri: image_front_small_url }} />` in product card. Show placeholder icon if absent. |
-| Nutri-Score + Eco-Score visible on journal entry rows | Other apps show scores only at scan time. Showing badges on every past journal entry creates a persistent health signal that changes how users reflect on their day | Medium | Add `nutriscore_grade` column to `nutrition_logs` (populated on insert from `food_products`); render small badge in NutritionDashboard entry rows |
-| Daily average Nutri-Score on dashboard | Aggregate daily quality signal — "today's average quality: B". No major nutrition app computes this. Gives users a score to optimize beyond just macros | Medium | Compute from today's `nutrition_logs` entries that have a `nutriscore_grade`; render as a summary badge on NutritionDashboard |
-| Score-aware AI coaching hook | Claude Sonnet agent can comment on Nutri-Score patterns: "You've been logging a lot of D-grade products this week." Requires no new AI tooling — `nutrition_get_today` can include avg score in context | Low (prompt only) | Add avg_nutriscore to the user context payload in `context/user.ts`; AI uses it opportunistically |
+| Tiered rate limits per endpoint (AI chat stricter than others) | AI chat is expensive (Claude Sonnet); barcode scan is cheap (Supabase read). Applying the same limit to both wastes capacity and frustrates users. Apply `20 req/min` on AI chat, `60 req/min` on barcode/nutrition endpoints | Medium | `hono-rate-limiter` supports multiple middleware instances with different configs stacked on different route groups |
+| Scan meal photo bucket with auto-compression pipeline | Users who photograph meals via the AI photo scan feature generate large JPEG images (3-8 MB from modern phones). Storing originals in Supabase wastes storage. Resizing to 800px max dimension before storage reduces costs 80%+ while preserving usability | High | Requires image processing (sharp or Expo ImageManipulator client-side resize before upload). Higher complexity than profile photos |
+| PDF export bucket with lifecycle TTL (7-day expiry) | If a future feature exports workout programs or nutrition reports as PDFs, these are ephemeral — users download once. Auto-deleting after 7 days prevents unbounded storage growth | Medium | pg_cron + Supabase Storage delete API (SQL-only delete doesn't remove the bucket object — must call Storage API). No native Supabase lifecycle policy exists as of 2025 |
+| Secure headers middleware (CSP, HSTS, X-Frame-Options) | Hono ships `secureHeaders()` middleware out of the box. Applying it costs nothing and hardens the API against content injection. Particularly relevant if the API ever serves HTML (error pages) | Low | Hono built-in `secureHeaders` from `hono/secure-headers` |
+| Rate limit exceeded alerting via Supabase Edge Function or pg_notify | When a user or IP hits limits repeatedly, logging to a `rate_limit_events` table enables abuse pattern detection without a paid observability tool | Medium | Supabase pg_cron + custom table. Alternative: Upstash `analytics` flag on their ratelimit SDK |
+| Signed URLs for private scan photos | Scan meal photos are personally identifiable (photo of food on your plate). Making the bucket public leaks these URLs. Signed URLs with short TTL (1 hour) serve them securely to the authenticated user only | Medium | Supabase `createSignedUrl()` instead of `getPublicUrl()`. Requires update to any photo-display components |
 
 ---
 
-## Anti-Features (Do Not Build in v1.2)
+## Anti-Features / Out of Scope
+
+Features that would be over-engineered for v1.3's scale, or that solve problems Ziko does not yet have.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| Manual nutrition database contribution (submit corrections) | OFF contributions require moderator review, conflict resolution, photo upload flows — a product in itself. Introduces moderation complexity and user frustration when corrections aren't published | Link to OFF product page for users who want to contribute: `https://world.openfoodfacts.org/product/{barcode}` |
-| Allergen / ingredient list display | OFF returns `allergens_tags` and `ingredients_text`, but parsing and rendering them reliably is error-prone (language, formatting, partial data). Creates medical liability if incorrect | Focus on macros + scores only. Ingredients display is a v2 scope expansion |
-| NOVA classification (ultra-processing score) | NOVA 1–4 classification is returned by OFF but poorly understood by most users. Adding a third score system alongside Nutri-Score and Eco-Score creates information overload on the product card | Nutri-Score is sufficient for nutritional quality signal. NOVA is v2+ if user research validates demand |
-| Barcode scanning during recipe preparation | Scanning ingredients while cooking is a completely different UX context (kitchen mode, hands-free, voice feedback) that conflicts with the log-after-eating flow | Single-context: scan to log consumed food only |
-| Per-product "health verdict" text (Yuka-style) | Yuka generates opinion text ("This product is poor for health because..."). Generating medical-adjacent verdicts creates liability and requires NLP quality that OFF scores don't guarantee | Let the user interpret the score. The badge color is already a clear signal. |
-| Barcode history / scan log as a separate screen | A "recently scanned" history screen adds a data model, screen, navigation path, and clear/delete logic for marginal UX value | The food product catalogue serves as implicit scan history. The nutrition journal IS the scan history. |
+| Custom CAPTCHA on login / AI chat | Ziko uses Supabase Auth for login — CAPTCHA is Supabase's responsibility. Adding a custom CAPTCHA on the Hono API duplicates auth-layer concerns and degrades mobile UX (CAPTCHA in a React Native app is painful) | Rely on Supabase Auth's built-in abuse protection |
+| IP blocklisting / geo-blocking | Requires managing a blocklist that goes stale fast. At Ziko's current scale, the cost/benefit is negative — you spend engineering time maintaining blocks that sophisticated actors bypass in seconds with VPNs | Rate limiting is sufficient. Geo-blocking is a Vercel WAF concern, not application code |
+| Per-subscription-tier rate limits (free vs paid) | Ziko is a free app with no paid tier. Tiering rate limits requires a billing system that doesn't exist. Building rate-tier logic now is speculative engineering | Apply a single generous limit. Revisit when a premium tier exists |
+| DDoS protection at the application layer | Application-layer DDoS mitigation (challenge pages, bot detection, traffic fingerprinting) belongs at the CDN/WAF layer. Vercel WAF handles this. Implementing it in Hono middleware is wasteful and ineffective | Configure Vercel WAF rules if DDoS becomes a real threat |
+| Full-body encryption for file uploads | Supabase Storage uses TLS in transit and AES at rest. Adding a second encryption layer (client-side encrypt before upload) for profile photos adds key management complexity with no benefit for a fitness app | TLS + Supabase at-rest encryption is sufficient |
+| Image CDN with edge transformations | CDN image transforms (resize on-the-fly at edge) are a Cloudflare Images / imgix feature. Supabase Storage does support basic image transforms via the `transform` parameter, but setting up a full edge CDN pipeline is disproportionate for profile avatars and scan photos at Ziko's scale | Resize client-side before upload (Expo ImageManipulator). Supabase Storage's built-in transform param covers simple use cases |
+| Video upload support | The fitness app has workout programs and timers but no user-generated video content. Video upload pipelines (transcoding, multiple resolutions, CDN delivery) are a fundamentally different complexity level | Not a v1.3 or planned feature. Mark as deferred unless a feature roadmap item requires it |
+| Audit log for every API call | Full API audit logs (who called what, when, with what params) require a write-heavy append-only table or a logging service. At Ziko's scale, `console.error` in the Hono error handler + Vercel's built-in function logs are sufficient | Vercel function logs + Supabase auth logs provide enough forensics for incident response at this scale |
 
 ---
 
-## UX Flow: Scan to Log (Concrete Steps)
+## Category Notes
 
-This is the canonical user flow. Every phase implementation must match this contract.
+### Rate Limiting: Dependency on Existing JWT Middleware
 
-### Step 1: Entry Point
-User is on the `LogMealScreen`, on the "Search" tab (or any tab). A "Scan barcode" button (Ionicons `barcode-outline`) is visible in the tab bar or as a secondary CTA. Taps it.
+The existing `authMiddleware` in `backend/api/src/middleware/auth.ts` validates the Supabase Bearer token and sets `c.set('auth', { userId, email })`. Rate limiting middleware on protected routes **must run after `authMiddleware`** to access `c.get('auth').userId` as the rate limit key. The current route structure applies `authMiddleware` at the router level (`router.use('*', authMiddleware)`), so per-route rate limit middleware stacked after it will have access to user identity.
 
-### Step 2: Camera Modal
-Full-screen camera view (reuse existing `BarcodeScanner.tsx` pattern from pantry plugin):
-- Black background
-- White scan frame (250x150px, landscape-oriented for barcodes — not square like the pantry scanner)
-- "Align barcode in frame" instruction text
-- Spinner overlay when lookup is in-flight
-- Close (X) button top-right
+For unprotected endpoints (e.g., `/health`, `/plugins`), rate limiting must be keyed by IP only, extracted from `x-forwarded-for` (Vercel sets this header). The `keyGenerator` function in `hono-rate-limiter` handles both cases.
 
-### Step 3: Product Found — Product Card
-A bottom sheet slides up (not full-screen nav push — this is a confirmation, not a workflow):
-- Product photo left (80x80, rounded corners), placeholder "image-outline" icon if absent
-- Product name (bold, 16px), brand (muted, 12px), quantity string (e.g. "400g")
-- Nutri-Score badge: colored letter pill (A/B/C/D/E) + label "Nutri-Score"
-- Eco-Score badge: same design, shown only if not "not-applicable"
-- Macros per 100g: energy (kcal), protein, carbs, fat — same chip layout as existing scan results
-- Serving input (numeric, default 100g) + live-updating calculated macros below it
-- Meal type selector (chips: Breakfast / Lunch / Dinner / Snack — pre-filled from time of day)
-- Primary CTA: "Log [X] kcal" button (orange, full-width) — disabled while serving input is empty/zero
-- Secondary: "Edit manually" link → populates custom entry tab with this product's data pre-filled
+**Recommended limits based on endpoint cost:**
+- `/ai/chat/stream`, `/ai/chat` — 20 requests / 60 seconds per user (AI cost control)
+- `/ai/tools/execute` — 30 requests / 60 seconds per user
+- `/supplements/cron/scrape` — 1 request / day, IP-locked to Vercel cron IP
+- All other authenticated routes — 60 requests / 60 seconds per user (generous, prevents runaway loops)
+- Unauthenticated routes — 30 requests / 60 seconds per IP
 
-### Step 4: Not Found
-- Scan frame animates red briefly
-- Toast or inline message: "Product not found in Open Food Facts"
-- Two options: "Try again" (re-opens scanner) and "Enter manually" (closes scanner, focuses custom entry tab with barcode pre-filled in notes field)
+**Storage backend:** Upstash Redis is the correct choice for Vercel serverless — it uses HTTP (not TCP), so it works across multiple serverless instances. The `@hono-rate-limiter/redis` package wraps `@upstash/redis` natively.
 
-### Step 5: Log Confirmed
-- Bottom sheet dismisses
-- Camera modal closes
-- Entry appears in nutrition journal
-- Toast: "Added to [meal type]"
+### Supabase Storage: Three-Bucket Architecture
 
-**Total taps for happy path: 3** (open scanner, scan barcode auto-triggers, tap Log). More than 3 taps = conversion risk per nutrition logging UX research.
+Three distinct buckets based on access pattern and sensitivity:
+
+| Bucket | Access | File Size Limit | Typical File | Lifecycle |
+|--------|--------|-----------------|--------------|-----------|
+| `profile-photos` | Private (signed URL or public) | 5 MB | JPEG avatar, 640x640px | Keep until user deletes |
+| `scan-photos` | Private (signed URL only) | 10 MB | JPEG meal photo from camera | Auto-delete after 90 days (pg_cron) |
+| `exports` | Private (signed URL only) | 20 MB | PDF workout/nutrition report | Auto-delete after 7 days (pg_cron) |
+
+Profile photos can reasonably be public (the user chose to upload a profile picture). Scan meal photos are personally identifiable and should be private with signed URLs. Exports are ephemeral and should be private.
+
+**RLS pattern for each bucket:**
+- Upload: `auth.uid()::text = (storage.foldername(name))[1]` — users can only upload to their own path (e.g., `profile-photos/{userId}/avatar.jpg`)
+- Read: same check, or public read for `profile-photos` if decided public
+- Delete: same user check
+
+### Input Validation: Which Routes Need It
+
+Not all routes carry equal risk. Priority order for applying `@hono/zod-validator`:
+
+1. `POST /ai/chat` and `POST /ai/chat/stream` — accepts `{ messages, conversation_id? }`. Unvalidated `messages` array reaches the Claude Sonnet API. **Critical.**
+2. `POST /ai/tools/execute` — accepts free-form tool name + args. **Critical.**
+3. `POST /bugs` — accepts `{ title, description, severity, category, device_info }`. User-submitted, lower risk but should be validated.
+4. `POST /supplements/cron/scrape` — internal, but still validate caller identity.
+5. `PATCH` routes on pantry, nutrition — moderate priority.
+
+Validation should reject malformed input with `400` and a structured error. Do NOT leak Zod error internals in production responses — sanitize to `{ error: "Invalid request", details: [...field names only] }`.
+
+### Lifecycle Policies: Supabase Has No Native TTL
+
+As of early 2026, Supabase Storage does not expose a native object expiry / lifecycle policy in the dashboard or API. The confirmed workaround is:
+
+1. Store `expires_at` in `storage.objects.user_metadata` at upload time
+2. Schedule a pg_cron job (e.g., `'0 3 * * *'` — 3am UTC daily) that calls a Supabase Edge Function
+3. The Edge Function queries `storage.objects` for expired entries and calls `supabase.storage.from(bucket).remove([paths])`
+4. **Must use Storage API for deletion** — SQL DELETE on `storage.objects` orphans the file in the bucket
+
+Alternative: write a Vercel cron endpoint (`/cleanup/cron`) that the Vercel scheduler calls, which runs the same Storage API cleanup. This avoids Edge Function complexity if the team prefers TypeScript in a single codebase.
+
+### Monitoring: Minimal Viable Approach
+
+Vercel provides function logs out of the box. Supabase provides Auth logs and DB query logs. For v1.3, a custom monitoring setup is overkill. The minimal approach:
+
+- Log rate limit exceeded events to a `rate_limit_events` Supabase table (user_id, endpoint, timestamp, ip) — enables after-the-fact abuse investigation
+- Set Vercel spend alerts (50%/75%/100% thresholds) to catch AI cost runaway
+- Vercel WAF can be configured to rate limit at the infrastructure level as a complementary layer
+
+A third-party observability platform (Datadog, Sentry, etc.) is a differentiator for v2, not v1.3.
 
 ---
 
 ## Feature Dependencies
 
 ```
-food_products table (Supabase migration)
-    └── REQUIRED BY: barcode lookup cache, nutrition_logs FK
-          └── barcode.ts utility (extended from pantry plugin)
-                ├── fetches OFF API with full field set
-                └── upserts into food_products on success
-                      └── ProductCard component
-                            ├── reads food_products row
-                            ├── renders Nutri-Score badge
-                            ├── renders Eco-Score badge
-                            └── serving adjustment → log confirm
-                                  └── nutrition_logs INSERT
-                                        ├── food_product_id FK (new column)
-                                        └── nutriscore_grade column (new column, denormalized for dashboard query perf)
+JWT authMiddleware (EXISTS)
+    └── REQUIRED BY: per-user rate limiting (user ID as key)
+          └── hono-rate-limiter + Upstash Redis
+                └── applied per-route group in ai.ts, bugs.ts, etc.
 
-NutritionDashboard
-    └── ENHANCED BY: nutriscore_grade on nutrition_logs entries
-          └── daily average Nutri-Score summary badge
-                └── (optional v1.2) nutrition context in user.ts payload
+Supabase Storage buckets (NEW)
+    └── REQUIRED BY: profile photo upload
+    └── REQUIRED BY: scan meal photo storage
+    └── REQUIRED BY: PDF export download
+          └── RLS policies on storage.objects
+                └── signed URL generation (scan-photos, exports)
+                      └── pg_cron lifecycle cleanup
+                            └── Supabase Edge Function OR Vercel cron endpoint
+
+@hono/zod-validator (NEW)
+    └── applied to POST /ai/chat, /ai/chat/stream, /ai/tools/execute (PRIORITY)
+    └── applied to POST /bugs, PATCH routes (SECONDARY)
+
+hono/secure-headers (BUILT-IN, zero cost)
+    └── applied globally in app.ts alongside existing cors()
 ```
-
-### Dependency Notes
-
-- **`food_products` table requires migration before any UI**: The table must exist before the barcode lookup utility can cache results. Migration is Phase 1 of v1.2.
-- **`nutrition_logs.food_product_id` is nullable**: Manual entries, AI photo scan entries, and custom entries have no product FK. The FK is only set for barcode-sourced entries.
-- **`nutrition_logs.nutriscore_grade` is denormalized intentionally**: Joining `nutrition_logs → food_products` on every dashboard load to render badges would require schema changes to the existing query. A nullable `nutriscore_grade` column on `nutrition_logs` (populated on insert, null for manual entries) makes the dashboard query trivial.
-- **`BarcodeScanner.tsx` in pantry plugin is reusable**: The camera modal component from `plugins/pantry/src/screens/BarcodeScanner.tsx` handles camera permission, scan guard (`scannedRef`), and the full-screen layout. Nutrition plugin needs only to extend the lookup utility (`barcode.ts`), not rebuild the camera UI.
-- **Eco-Score enhances Nutri-Score display**: Eco-Score badge is rendered alongside Nutri-Score on the product card. It has no independent data flow — both come from the same `food_products` row. If absent it simply doesn't render.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1.2 must-haves)
+### Must-have for v1.3
 
-- [ ] `food_products` Supabase table with migration — barcode, name, brand, macros per 100g, nutriscore_grade, ecoscore_grade, photo_url, serving_g
-- [ ] Extended `barcode.ts` utility — fetches full OFF field set, upserts into `food_products`
-- [ ] `BarcodeScanner` component in nutrition plugin (reuse pantry pattern, adjust scan frame to landscape for barcodes)
-- [ ] `ProductCard` bottom sheet — photo, Nutri-Score badge, Eco-Score badge, serving adjuster, log CTA
-- [ ] `nutrition_logs` migration — add `food_product_id` (nullable FK) and `nutriscore_grade` (nullable text) columns
-- [ ] "Not found" state with fallback to custom entry
-- [ ] Nutri-Score badge on `NutritionDashboard` journal entry rows (small badge, only when grade present)
-- [ ] Daily average Nutri-Score summary badge on `NutritionDashboard` header card
+- [ ] `hono-rate-limiter` + Upstash Redis — per-user limit on AI chat endpoints, per-IP on public endpoints
+- [ ] Standard rate limit headers (`X-RateLimit-*`) on all rate-limited responses
+- [ ] Supabase Storage: `profile-photos` bucket with RLS (user can upload/read own files)
+- [ ] Supabase Storage: `scan-photos` bucket with RLS (private, signed URLs only)
+- [ ] Tighten CORS origin allowlist — remove `*.vercel.app` wildcard, enumerate explicit allowed origins
+- [ ] Zod validation on `/ai/chat`, `/ai/chat/stream`, `/ai/tools/execute` POST bodies
+- [ ] `secureHeaders()` middleware applied globally in `app.ts`
 
-### Add After Validation (v1.2+)
+### Add After Validation (v1.3+)
 
-- [ ] `nutrition_get_today` context updated to include `avg_nutriscore` for AI coaching awareness
-- [ ] Eco-Score badge on journal entry rows (secondary to Nutri-Score, lower priority)
-- [ ] "Scan again" quick action from the daily summary badge (tap badge → opens scanner)
+- [ ] `exports` bucket + Vercel cron cleanup endpoint for 7-day TTL
+- [ ] `scan-photos` lifecycle cleanup (90-day pg_cron)
+- [ ] `rate_limit_events` table for abuse monitoring
+- [ ] Zod validation on remaining POST/PATCH routes (bugs, pantry, nutrition)
+- [ ] Client-side image resize (Expo ImageManipulator) before profile photo upload
 
 ### Future Consideration (v2+)
 
-- [ ] NOVA classification (ultra-processing group 1–4) — validate user demand first
-- [ ] Allergen / ingredient list display — requires reliable OFF data coverage
-- [ ] Link to OFF product page for user contributions
-- [ ] Offline-first barcode scan (pre-downloaded product database segment by user's most-scanned categories)
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| food_products table + migration | HIGH (foundational) | LOW | P1 |
-| Extended barcode.ts utility | HIGH (foundational) | LOW | P1 |
-| BarcodeScanner in nutrition plugin | HIGH | LOW (reuse existing) | P1 |
-| ProductCard with Nutri-Score | HIGH | MEDIUM | P1 |
-| nutrition_logs columns migration | HIGH (foundational) | LOW | P1 |
-| Eco-Score badge on ProductCard | MEDIUM | LOW | P1 |
-| Product photo on ProductCard | MEDIUM | LOW | P1 |
-| Nutri-Score badge on journal entries | MEDIUM | LOW | P1 |
-| Daily average Nutri-Score on dashboard | MEDIUM | LOW-MEDIUM | P1 |
-| AI coaching hook via avg_nutriscore | LOW | LOW | P2 |
-| Eco-Score badge on journal entries | LOW | LOW | P2 |
-| NOVA classification display | LOW | MEDIUM | P3 |
-| Allergen list display | LOW | HIGH | P3 |
-
----
-
-## Competitor Feature Analysis
-
-| Feature | MyFitnessPal | Yuka | Cronometer | Ziko v1.2 |
-|---------|--------------|------|------------|-----------|
-| Barcode scan | Yes | Yes | Yes | Yes |
-| Nutri-Score badge | No | Yes | No | Yes |
-| Eco-Score badge | No | Yes (2021+) | No | Yes |
-| Product photo | No | Yes | No | Yes |
-| Serving adjustment | Yes | No (100g fixed) | Yes | Yes |
-| Log to nutrition journal | Yes | No (standalone) | Yes | Yes |
-| Score on journal entries | No | N/A | No | Yes (differentiator) |
-| Daily avg score on dashboard | No | No | No | Yes (differentiator) |
-| AI coaching from scores | No | No | No | Yes (v1.2 hook) |
+- [ ] Vercel WAF rules for infrastructure-level rate limiting
+- [ ] Signed URL refresh flow for long-lived scan photo display
+- [ ] Tiered rate limits when a paid subscription tier is introduced
+- [ ] Third-party observability (Sentry errors + Datadog metrics)
 
 ---
 
 ## Sources
 
-- [Open Food Facts API v2 — Live response for barcode 3017624010701](https://world.openfoodfacts.org/api/v2/product/3017624010701.json) — HIGH confidence, live verified
-- [Open Food Facts API Tutorial](https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/) — HIGH confidence, official documentation
-- [Nutri-Score — Wikipedia](https://en.wikipedia.org/wiki/Nutri-Score) — HIGH confidence, extensively sourced
-- [Open Food Facts — Nutri-Score page](https://world.openfoodfacts.org/nutriscore) — HIGH confidence, official
-- [Open Food Facts — Eco-Score launch blog post](https://blog.openfoodfacts.org/en/news/launch-of-the-eco-score-the-environmental-impact-of-food-products) — HIGH confidence, official
-- [Eco-Score — Wikipedia](https://en.wikipedia.org/wiki/Eco-score) — HIGH confidence, extensively sourced
-- [Scandit / Yuka case study — 2.7 billion scans in 2024](https://www.scandit.com/resources/case-studies/yuka/) — MEDIUM confidence, vendor case study
-- [Macro Tracking Apps Explained: Barcode Scanners & Food Data — Apidots](https://apidots.com/blog/macro-tracking-app-barcode-scanners-food-database/) — MEDIUM confidence, industry blog
-- [Nutri-Score: Understanding Europe's Controversial Nutrition Labeling (2025)](https://www.castle-group.eu/blog/our-blog-1/nutri-score-understanding-europe-s-controversial-nutrition-labeling-system-in-2025-10) — MEDIUM confidence, industry analysis
-- [Mobile apps as a sustainable shopping guide — PubMed (2021)](https://pubmed.ncbi.nlm.nih.gov/34358589/) — HIGH confidence, peer-reviewed study on Eco-Score effectiveness
+- [Hono Rate Limiter (rhinobase/hono-rate-limiter)](https://github.com/rhinobase/hono-rate-limiter) — HIGH confidence, official GitHub
+- [hono-rate-limiter Redis adapter (@hono-rate-limiter/redis)](https://www.npmjs.com/package/@hono-rate-limiter/redis) — HIGH confidence, official npm
+- [Hono CORS Middleware — Official Docs](https://hono.dev/docs/middleware/builtin/cors) — HIGH confidence, official
+- [Hono Secure Headers Middleware — Official Docs](https://hono.dev/docs/middleware/builtin/secure-headers) — HIGH confidence, official
+- [Hono Validation — Official Docs](https://hono.dev/docs/guides/validation) — HIGH confidence, official
+- [@hono/zod-validator — npm](https://www.npmjs.com/package/@hono/zod-validator) — HIGH confidence, official Hono middleware package
+- [Supabase Storage Buckets — Official Docs](https://supabase.com/docs/guides/storage/buckets/fundamentals) — HIGH confidence, official
+- [Supabase Storage Access Control — Official Docs](https://supabase.com/docs/guides/storage/security/access-control) — HIGH confidence, official
+- [Supabase Storage Delete Objects — Official Docs](https://supabase.com/docs/guides/storage/management/delete-objects) — HIGH confidence, official
+- [Supabase Expiring Objects Discussion — GitHub](https://github.com/orgs/supabase/discussions/20171) — MEDIUM confidence, community discussion confirming no native lifecycle policy
+- [Upstash Ratelimit SDK — Official Docs](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) — HIGH confidence, official
+- [Vercel WAF Rate Limiting — Official Blog](https://vercel.com/blog/vercel-waf-upgrade-brings-persistent-actions-rate-limiting-and-api-control) — HIGH confidence, official
+- [Rate Limiting Hono Apps — DEV Community / Fiberplane](https://dev.to/fiberplane/an-introduction-to-rate-limiting-3j0) — MEDIUM confidence, community article
+- [Mobile App Security Best Practices 2025](https://isitdev.com/mobile-app-security-best-practices-2025-3/) — MEDIUM confidence, industry article
+- [React Native Supabase Storage — Official Supabase Blog](https://supabase.com/blog/react-native-storage) — HIGH confidence, official
 
 ---
-*Feature research for: Ziko Barcode Enrichment (v1.2 milestone)*
+*Feature research for: Ziko Security + Cloud Infrastructure (v1.3 milestone)*
 *Researched: 2026-04-02*

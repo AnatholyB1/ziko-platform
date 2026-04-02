@@ -1,55 +1,339 @@
-# Technology Stack — Barcode Enrichment (v1.2)
+# Stack Research — Security + Cloud Infrastructure (v1.3)
 
-**Project:** Ziko Platform — barcode enrichment milestone (nutrition plugin)
+**Project:** Ziko Platform — v1.3 Security + Cloud Infrastructure milestone
 **Researched:** 2026-04-02
-**Scope:** NEW stack additions only. Everything in the existing app (Expo SDK 54, React Native 0.81,
-NativeWind v4, Zustand v5, TanStack Query v5, MMKV v3, Supabase, Vercel AI SDK v6, Ionicons,
-`date-fns`, `expo-camera ~17.0.10`, `expo-image ~3.0.11`) is validated and NOT re-researched here.
+**Scope:** NEW stack additions only. Validated existing: Hono v4 (`^4.7.0`), `@supabase/supabase-js` (`^2.50.0`),
+`zod` (`^4.3.6`), Vercel deployment, `hono/cors` (already wired in `app.ts`). None of these are re-researched.
 
 ---
 
-## Executive Summary
+## Context: What the Existing API Looks Like
 
-The barcode enrichment milestone introduces **zero new npm packages**. Every capability it requires
-is either already installed in `apps/mobile/package.json` or is purely server-side configuration and
-SQL migration work.
+`backend/api/src/app.ts` currently registers:
 
-Three technical questions drive this conclusion:
+1. `hono/logger` — global
+2. `hono/cors` — global, origin-whitelist callback, already permits `*.vercel.app` broadly
+3. Auth middleware — JWT validation via Supabase, per-route
+4. Six route groups: `/ai`, `/plugins`, `/webhooks`, `/bugs`, `/supplements`, `/pantry`
 
-1. **Barcode scanning in the nutrition plugin** — `expo-camera` (`CameraView` + `onBarcodeScanned`)
-   is already installed at `~17.0.10`. The pantry plugin already uses it in `BarcodeScanner.tsx`.
-   The nutrition plugin needs a new barcode-scanner tab in `LogMealScreen.tsx` that reuses the same
-   component pattern — no new package.
-
-2. **Open Food Facts enrichment fields** — the existing `barcode.ts` utility in the pantry plugin
-   calls `https://world.openfoodfacts.net/api/v2/product/{barcode}?fields=product_name,product_name_fr`.
-   Enrichment requires extending that `fields=` query string to also request
-   `nutriscore_grade,ecoscore_grade,nutriments,image_front_url,brands`. Plain `fetch` — no new library.
-
-3. **Nutri-Score and Eco-Score badge display** — both scores are single letters (A–E) with official
-   colour conventions (green A → red E for Nutri-Score; dark-green A → black E for Eco-Score).
-   These are rendered as inline `View` + `Text` components styled with NativeWind or inline style
-   objects. `expo-image` (already installed at `~3.0.11`) handles product photo loading with
-   built-in caching, placeholder support, and graceful fallback — no additional image library needed.
-
----
-
-## Confirmed Existing Dependencies (no version change required)
-
-| Package | Current version | Role in this milestone |
-|---------|-----------------|------------------------|
-| `expo-camera` | `~17.0.10` | Barcode scanner in LogMealScreen — reuse pantry's `BarcodeScanner.tsx` pattern |
-| `expo-image` | `~3.0.11` | Load product photo from `image_front_url` with built-in cache + placeholder |
-| `@supabase/supabase-js` | `^2.47.0` | Insert to new `food_products` table; FK join in `nutrition_logs` |
-| `date-fns` | `^4.1.0` | Date formatting — already used throughout nutrition plugin |
-| `zustand` | `^5.0.0` | Nutrition store extended with Nutri-Score/Eco-Score fields |
-| `@tanstack/react-query` | `^5.62.0` | Query cache for `food_products` catalogue lookups |
+The middleware chain is the insertion point for rate limiting and hardened CORS. Middleware order
+in Hono is strictly positional — rate limiting must come BEFORE auth to block abuse before
+incurring Supabase auth cost.
 
 ---
 
 ## New Dependencies
 
-**None.** This milestone requires no new npm packages.
+### 1. Rate Limiting — Upstash Redis + hono-rate-limiter
+
+**The core constraint:** Vercel is a serverless/edge platform. Each function invocation is
+stateless — there is no persistent in-process memory between requests. In-memory rate limiters
+(e.g., `rate-limiter-flexible` with `MemoryStore`, or `express-rate-limit` defaults) accumulate
+state per-instance and reset on every cold start. On Vercel with potentially hundreds of concurrent
+instances, in-memory counters are siloed: User A's 10 requests could hit 10 different instances,
+each seeing count=1, and the limit is never triggered. This makes in-memory rate limiting
+**functionally useless** in serverless.
+
+**Required:** An external, HTTP-based, atomic counter store that all Vercel instances share.
+Upstash Redis is the canonical solution — it speaks REST (no TCP connection pooling, which is also
+incompatible with serverless), is deployed globally, and integrates as a first-class Vercel
+add-on.
+
+**Recommended approach:** `hono-rate-limiter` + `@hono-rate-limiter/redis` adapter using Upstash
+Redis as the store.
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `hono-rate-limiter` | `0.5.3` | Core Hono rate-limiting middleware (express-rate-limit inspired API) |
+| `@hono-rate-limiter/redis` | `0.1.4` | RedisStore adapter that plugs into hono-rate-limiter |
+| `@upstash/redis` | `1.37.0` | HTTP-based Upstash Redis client (REST, no persistent connections) |
+
+**Why this combination over `@upstash/ratelimit` alone:**
+`@upstash/ratelimit` (`2.0.8`) is the lower-level Upstash primitive. It provides sliding window,
+fixed window, and token bucket algorithms directly. It can be used standalone in Hono middleware,
+but requires writing the middleware wrapper manually. `hono-rate-limiter` provides the ergonomic
+Hono middleware API (standard headers, `keyGenerator`, per-route config) and the RedisStore
+adapter wires Upstash underneath. For this project, `hono-rate-limiter` + the Redis adapter is
+the better DX — it is the same pattern used for the AI chat endpoint and produces standard
+`RateLimit-*` response headers automatically.
+
+**Install:**
+```bash
+npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis
+```
+(Run from `backend/api/`)
+
+**Usage pattern (per-route, after global CORS, before auth):**
+```ts
+import { rateLimiter } from 'hono-rate-limiter';
+import { RedisStore } from '@hono-rate-limiter/redis';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// Per-IP fallback, per-user when auth is present
+const keyGenerator = (c: Context): string => {
+  const userId = c.get('auth')?.userId;
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  return userId ? `user:${userId}` : `ip:${ip}`;
+};
+
+// AI chat — expensive endpoint, tighter limit
+export const aiRateLimiter = rateLimiter({
+  windowMs: 60 * 1000,      // 1-minute window
+  limit: 20,                // 20 req/min per user/IP
+  keyGenerator,
+  store: new RedisStore({ client: redis }),
+});
+
+// Barcode scan — moderate limit
+export const barcodeRateLimiter = rateLimiter({
+  windowMs: 60 * 1000,
+  limit: 60,
+  keyGenerator,
+  store: new RedisStore({ client: redis }),
+});
+```
+
+**Response headers emitted automatically:**
+- `RateLimit-Limit` — the configured limit
+- `RateLimit-Remaining` — requests left in window
+- `RateLimit-Reset` — Unix timestamp of window reset
+
+**New environment variables required:**
+```
+UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token
+```
+Both are injected automatically by the Vercel Upstash integration (Dashboard → Storage → Upstash
+Redis → Connect to project).
+
+**Confidence:** HIGH — `@upstash/redis` and `@upstash/ratelimit` are the documented Vercel
+solution for serverless rate limiting. `hono-rate-limiter` is the Hono-native wrapper. Version
+numbers confirmed via `npm view` directly.
+
+---
+
+### 2. Input Validation — `@hono/zod-validator`
+
+The project already has `zod ^4.3.6` in `backend/api/package.json`. The missing piece is the
+Hono-specific middleware wrapper that validates incoming requests against Zod schemas.
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `@hono/zod-validator` | `0.7.6` | Validates request body/query/headers against Zod schemas in Hono routes |
+
+**Peer dependency compatibility confirmed:**
+`@hono/zod-validator` 0.7.6 declares `peerDependencies: { hono: ">=3.9.0", zod: "^3.25.0 || ^4.0.0" }`.
+The project's `zod ^4.3.6` is within that range — install resolves cleanly without version
+conflicts.
+
+**Install:**
+```bash
+npm install @hono/zod-validator
+```
+(Run from `backend/api/`)
+
+**Usage pattern:**
+```ts
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const chatSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().min(1).max(32_000),
+  })).min(1).max(50),
+  conversation_id: z.string().uuid().optional(),
+});
+
+aiRouter.post('/chat', zValidator('json', chatSchema), authMiddleware, async (c) => {
+  const body = c.req.valid('json'); // typed, validated
+  // ...
+});
+```
+
+Validation failures return HTTP 400 with a ZodError body by default. Custom error handler:
+```ts
+zValidator('json', chatSchema, (result, c) => {
+  if (!result.success) {
+    return c.json({ error: 'Validation failed', issues: result.error.issues }, 400);
+  }
+})
+```
+
+**Why not valibot or yup:** `zod` is already a project dependency. Adding a second validation
+library for the same purpose is pure noise.
+
+**Confidence:** HIGH — official Hono middleware, peer deps verified via `npm view`.
+
+---
+
+### 3. Supabase Storage — No New Package
+
+**Finding:** `@supabase/supabase-js ^2.50.0` already includes the Storage client. No new package
+is required. The Storage API is part of the existing Supabase JS client.
+
+**Key JS client methods available (supabase-js v2.x):**
+
+```ts
+// Create a private bucket (run once, or in migration)
+await supabase.storage.createBucket('profile-photos', {
+  public: false,
+  fileSizeLimit: 5 * 1024 * 1024,   // 5 MB
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+});
+
+// Upload a file from the backend (service role client)
+const { data, error } = await supabase.storage
+  .from('profile-photos')
+  .upload(`${userId}/avatar.jpg`, fileBuffer, {
+    contentType: 'image/jpeg',
+    upsert: true,
+    cacheControl: '3600',
+  });
+
+// Generate a signed URL for client to download privately
+const { data: urlData } = await supabase.storage
+  .from('profile-photos')
+  .createSignedUrl(`${userId}/avatar.jpg`, 60 * 60); // 1-hour TTL
+
+// Generate a signed UPLOAD URL (mobile client uploads directly to Storage)
+const { data: uploadData } = await supabase.storage
+  .from('meal-photos')
+  .createSignedUploadUrl(`${userId}/${Date.now()}.jpg`);
+// Returns: { signedUrl, token, path }
+// Client uses uploadToSignedUrl() — no backend bandwidth consumed
+
+// List files in a user's folder
+const { data: files } = await supabase.storage
+  .from('profile-photos')
+  .list(userId, { limit: 10 });
+
+// Delete a file
+await supabase.storage
+  .from('profile-photos')
+  .remove([`${userId}/old-avatar.jpg`]);
+```
+
+**Signed upload URL pattern** is preferred for mobile photo uploads (profile photos, meal scan
+photos): the Hono backend generates a short-lived signed URL, the mobile client uploads directly
+to Supabase Storage, and the backend never buffers the binary payload. This avoids Vercel's
+function memory limits and 4.5 MB request body limit.
+
+**Confidence:** HIGH — official Supabase docs confirmed. `@supabase/supabase-js` already in
+`package.json`.
+
+---
+
+### 4. CORS Hardening — No New Package
+
+**Finding:** `hono/cors` is already imported and wired in `app.ts`. No new package. The current
+configuration is permissive (`*.vercel.app` wildcard). Hardening is a configuration change.
+
+**Current issue in `app.ts`:**
+```ts
+/^https?:\/\/.*\.vercel\.app$/,  // too broad — allows ANY *.vercel.app
+```
+
+**Hardened pattern:**
+```ts
+cors({
+  origin: (origin) => {
+    const allowed = new Set([
+      'https://ziko-api-lilac.vercel.app',   // production API
+      'https://ziko-app.com',                 // marketing site
+      process.env.APP_ORIGIN ?? '',           // override via env
+    ]);
+    // Expo dev tools / local development
+    if (!origin || /^exp:\/\//.test(origin) || /^https?:\/\/localhost/.test(origin)) {
+      return origin ?? '*';
+    }
+    return allowed.has(origin) ? origin : null;
+  },
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+  credentials: true,
+})
+```
+
+This is a code change to `app.ts`, not a new dependency. Add `APP_ORIGIN` env var for
+staging/preview environments.
+
+**Confidence:** HIGH — `hono/cors` built-in docs confirmed full API.
+
+---
+
+## Integration Notes
+
+### Middleware Order in Hono (critical — positional)
+
+```
+Request →
+  1. hono/logger          (already in place)
+  2. hono/cors            (already in place — hardened config)
+  3. rateLimiter()        (NEW — must be before auth to block before Supabase cost)
+  4. authMiddleware       (already in place — per-route)
+  5. zValidator()         (NEW — per-route, after auth or before depending on endpoint)
+  6. Route handler
+```
+
+Rate limiting BEFORE auth is deliberate: a brute-force attack should be blocked at the rate
+limiter without ever reaching the Supabase auth call (which costs both latency and database load).
+
+Rate limiting should be applied per-route, not globally, with different limits per endpoint type:
+- `/ai/chat` and `/ai/chat/stream` — tightest limits (LLM calls are expensive)
+- `/pantry/barcode/*` — moderate limits (external OFF API calls)
+- `/ai/tools/execute` — same as `/ai/chat`
+- `/health`, `/plugins` — no rate limiting (low-cost, read-only)
+
+### Supabase Storage Buckets to Create
+
+Three buckets are needed, all private:
+
+| Bucket | Max file size | Allowed types | Notes |
+|--------|--------------|---------------|-------|
+| `profile-photos` | 5 MB | `image/jpeg, image/png, image/webp` | One file per user, upsert |
+| `meal-photos` | 10 MB | `image/jpeg, image/png, image/webp` | One per meal scan log |
+| `exports` | 25 MB | `application/pdf` | User data exports (future) |
+
+Buckets are created via Supabase Dashboard SQL migration or via the JS client in a one-time
+setup script. RLS policies on `storage.objects` restrict each user to their own path prefix
+(`auth.uid()::text = (storage.foldername(name))[1]`).
+
+### Lifecycle Policy (Object Cleanup)
+
+**Finding:** Supabase Storage does NOT have native S3-style lifecycle policies (auto-expiry rules)
+as of 2026-04-02. The `expires_at` metadata field exists on uploads but Supabase does not
+automatically delete expired objects — it is only a marker.
+
+**Recommended workaround:** pg_cron job (Supabase provides pg_cron as a built-in extension):
+
+```sql
+-- Run daily at 3am UTC — delete meal-photos older than 90 days
+SELECT cron.schedule(
+  'cleanup-meal-photos',
+  '0 3 * * *',
+  $$
+    SELECT storage.fdelete('meal-photos', name)
+    FROM storage.objects
+    WHERE bucket_id = 'meal-photos'
+      AND created_at < NOW() - INTERVAL '90 days';
+  $$
+);
+```
+
+This is a Supabase migration (SQL), not a new npm package or Vercel cron.
+
+**Confidence:** MEDIUM — pg_cron availability confirmed (Supabase built-in), but the exact
+`storage.fdelete` function signature should be verified against the current Supabase version
+before shipping. The pattern is community-validated; official Supabase docs don't show this exact
+function signature. Alternative: call `supabase.storage.from(bucket).remove([paths])` from a
+Supabase Edge Function triggered by pg_cron.
 
 ---
 
@@ -57,174 +341,25 @@ Three technical questions drive this conclusion:
 
 | Rejected option | Why |
 |-----------------|-----|
-| `react-native-vision-camera` | Overkill — `expo-camera` covers EAN-13, EAN-8, UPC-A, Code128. No frame-processor pipeline needed for food barcode scanning. |
-| `openfoodfacts-js` or any OFF SDK | No official JS SDK worth using. The v2 REST API is a single GET with query params. Adding a library for a 10-line `fetch` call is noise. |
-| `react-native-fast-image` | Replaced by `expo-image` in the Expo managed workflow. `expo-image` provides LRU caching, BlurHash placeholder, and `recyclingKey` for list scroll — already installed. |
-| Any badge/score component library | Nutri-Score and Eco-Score badges are 5 colour values mapped to a letter — a 15-line inline component. No library justification. |
-| `axios` or `react-query` fetcher | Native `fetch` is sufficient. `@tanstack/react-query` is already installed for server-state caching. |
+| `rate-limiter-flexible` or `express-rate-limit` | In-memory stores — non-functional on Vercel serverless where each instance has isolated memory. Never use for multi-instance deployments. |
+| `@upstash/ratelimit` standalone | Requires writing a custom Hono middleware wrapper. `hono-rate-limiter` + the Redis adapter provides the same Upstash backend with a complete Hono-native API. Only use `@upstash/ratelimit` directly if fine-grained algorithm control (token bucket, sliding window) is needed — not required here. |
+| `helmet` (Node.js security headers) | Hono is not Express. `helmet` targets Node.js `http.IncomingMessage` and does not work with Hono's `Context`. Hono has a built-in `secureHeaders()` middleware (`hono/secure-headers`) that sets the same headers (X-Content-Type-Options, X-Frame-Options, etc.) natively. If security headers are in scope, use `hono/secure-headers`, not helmet. |
+| `joi` or `yup` for validation | `zod` is already a project dependency at `^4.3.6`. A second validation library for the same purpose adds bundle weight and cognitive overhead with zero benefit. |
+| `multer` or `formidable` for file uploads | Not compatible with Hono's Vercel adapter. More importantly, the signed upload URL pattern (Hono generates URL → mobile uploads directly to Supabase) means the backend never receives file payloads. No multipart parser needed. |
+| `ioredis` or `redis` npm package | These use TCP connections, which are incompatible with Vercel's serverless environment (connections are closed between invocations, causing connection pool exhaustion). Upstash Redis communicates over HTTP/REST — it is the only Redis client appropriate for Vercel serverless. |
+| A separate KV store (Vercel KV, Redis Cloud) | Upstash Redis is the documented first-class Vercel integration for rate limiting and is already recommended by Vercel's own templates. Introducing a second KV provider adds operational complexity for no gain. |
+| `@supabase/storage-js` standalone | The storage client is already bundled inside `@supabase/supabase-js`. Installing it separately would be a duplicate. |
 
 ---
 
-## Open Food Facts API — Enrichment Query
+## Summary of New npm Installs
 
-**Endpoint (v2 — stable):**
-```
-GET https://world.openfoodfacts.net/api/v2/product/{barcode}
-    ?fields=product_name,product_name_fr,brands,
-            nutriscore_grade,ecoscore_grade,
-            nutriments,image_front_url
-User-Agent: ZikoApp/1.2 (contact@ziko-app.com)
+```bash
+# From backend/api/
+npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis @hono/zod-validator
 ```
 
-**Rate limits:** 100 req/min for product lookup — no concern for a single-user mobile app.
-
-**Key response fields (confidence: HIGH — confirmed from official API docs and community usage):**
-
-| Field | Type | Example | Notes |
-|-------|------|---------|-------|
-| `product.product_name` | string | `"Nutella"` | Falls back to this if `_fr` absent |
-| `product.product_name_fr` | string | `"Nutella"` | French name |
-| `product.brands` | string | `"Ferrero"` | May be comma-separated |
-| `product.nutriscore_grade` | string | `"e"` | Single letter a–e, lowercase. `undefined` if not computed. |
-| `product.ecoscore_grade` | string | `"c"` | Single letter a–e, lowercase. `undefined` if not computed. |
-| `product.nutriments.energy-kcal_100g` | number | `539` | Key uses hyphen — access as `nutriments['energy-kcal_100g']` |
-| `product.nutriments.proteins_100g` | number | `6.3` | — |
-| `product.nutriments.carbohydrates_100g` | number | `57.5` | — |
-| `product.nutriments.fat_100g` | number | `30.9` | — |
-| `product.image_front_url` | string | `"https://images.openfoodfacts.org/..."` | May be absent — handle gracefully |
-| `status` | number | `1` | `1` = found, `0` = not found |
-
-**API v3 status:** In active development as of early 2026, subject to frequent changes. Use v2 — it is the current stable version per official OFF docs.
-
-**Extended `barcode.ts` utility — what changes:**
-
-The existing `plugins/pantry/src/utils/barcode.ts` only requests `product_name,product_name_fr`.
-For the nutrition plugin enrichment, a new utility (or extended version) must request all enrichment
-fields and return a structured `OFFProduct` object:
-
-```ts
-export interface OFFProduct {
-  name: string;
-  brands?: string;
-  nutriscore_grade?: 'a' | 'b' | 'c' | 'd' | 'e';
-  ecoscore_grade?: 'a' | 'b' | 'c' | 'd' | 'e';
-  calories_100g?: number;
-  protein_100g?: number;
-  carbs_100g?: number;
-  fat_100g?: number;
-  image_front_url?: string;
-}
-```
-
-The pantry `barcode.ts` does not change — it is a simpler call site that only needs the name.
-
----
-
-## Nutri-Score and Eco-Score Display
-
-Both scores are rendered as inline badge components using NativeWind or inline style objects.
-No library. The colour conventions are standardised and should be followed exactly:
-
-**Nutri-Score colour map:**
-| Grade | Background | Text |
-|-------|-----------|------|
-| a | `#038141` | `#FFFFFF` |
-| b | `#85BB2F` | `#FFFFFF` |
-| c | `#FECB02` | `#1C1A17` |
-| d | `#EE8100` | `#FFFFFF` |
-| e | `#E63312` | `#FFFFFF` |
-
-**Eco-Score colour map:**
-| Grade | Background | Text |
-|-------|-----------|------|
-| a | `#1A7A39` | `#FFFFFF` |
-| b | `#52A544` | `#FFFFFF` |
-| c | `#D1C51A` | `#1C1A17` |
-| d | `#E87618` | `#FFFFFF` |
-| e | `#2B2B2B` | `#FFFFFF` |
-
-A grade badge is a small `View` (width 28, height 28, borderRadius 6) with centred uppercase letter.
-Display `null` state as a muted grey `?` badge when grade is not computed.
-
----
-
-## Product Photo Display
-
-`expo-image` (already installed) handles remote product photo loading:
-
-```tsx
-import { Image } from 'expo-image';
-
-<Image
-  source={{ uri: product.image_front_url }}
-  style={{ width: 72, height: 72, borderRadius: 8 }}
-  contentFit="cover"
-  placeholder={blurhash}          // optional — grey placeholder
-  transition={200}
-/>
-```
-
-`expo-image` provides built-in LRU disk + memory cache — product photos scanned once are served
-from cache on subsequent views. No additional image caching library needed.
-
----
-
-## Database Changes Required
-
-Two migrations are needed (no new libraries — pure SQL):
-
-### Migration 024 — `food_products` catalogue
-
-```sql
-CREATE TABLE public.food_products (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  barcode          TEXT NOT NULL UNIQUE,
-  name             TEXT NOT NULL,
-  brands           TEXT,
-  nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
-  ecoscore_grade   TEXT CHECK (ecoscore_grade IN ('a','b','c','d','e')),
-  calories_100g    NUMERIC(7, 2),
-  protein_100g     NUMERIC(7, 2),
-  carbs_100g       NUMERIC(7, 2),
-  fat_100g         NUMERIC(7, 2),
-  image_url        TEXT,
-  fetched_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX food_products_barcode_idx ON public.food_products(barcode);
-```
-
-This table has no `user_id` — it is a shared product catalogue (no RLS needed, read-only from
-the app after initial population). Products are inserted on first scan and reused on subsequent
-scans to avoid redundant OFF API calls.
-
-### Migration 025 — enrich `nutrition_logs`
-
-```sql
-ALTER TABLE public.nutrition_logs
-  ADD COLUMN food_product_id UUID REFERENCES public.food_products(id) ON DELETE SET NULL,
-  ADD COLUMN nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
-  ADD COLUMN ecoscore_grade   TEXT CHECK (ecoscore_grade IN ('a','b','c','d','e'));
-```
-
-The FK is nullable — manually entered logs have no associated `food_products` row. Scores are
-denormalised onto `nutrition_logs` so they are available without a join in the daily summary query.
-
----
-
-## Integration with Existing `expo-camera` Setup
-
-The pantry plugin's `BarcodeScanner.tsx` uses `CameraView` with the correct scan guard pattern
-(ref-based dedup to prevent duplicate scans). The nutrition plugin's new barcode tab should
-reuse this component or extract it to a shared location in `packages/ui/` to avoid duplication.
-
-**Reuse recommendation:** Extract `BarcodeScanner.tsx` to `packages/ui/src/BarcodeScanner.tsx`,
-parameterise the `onBarcodeScanned` callback, and import from `@ziko/ui` in both plugins.
-
-**iOS EAN-13 type normalization** (carry-forward from v1.1 research, still applies):
-`result.type` returns `"org.gs1.EAN-13"` on iOS, not `"ean13"`. Normalize at the call site.
-The existing pantry implementation handles only `result.data` (the barcode string itself) which
-avoids this issue entirely — the nutrition plugin should follow the same pattern.
+That is 4 new packages. No mobile app changes (`apps/mobile/`) are required for this milestone.
 
 ---
 
@@ -232,22 +367,27 @@ avoids this issue entirely — the nutrition plugin should follow the same patte
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| `expo-camera` barcode scanning | HIGH | Already working in production in pantry plugin at `~17.0.10` |
-| `expo-image` for product photos | HIGH | Already installed; official Expo docs confirm LRU caching and graceful fallback |
-| OFF API v2 field names (`nutriscore_grade`, `ecoscore_grade`) | HIGH | Confirmed via official OFF docs, multiple independent sources, and Hugging Face dataset schema |
-| OFF API `image_front_url` field | MEDIUM | Field name consistent across sources; not shown in the official tutorial examples but confirmed in community usage |
-| OFF API v2 stability | HIGH | Official docs explicitly state v2 is the current stable version; v3 is "in active development and subject to frequent changes" |
-| Nutri-Score colour values | MEDIUM | Colours sourced from OFF web implementation; not normatively published as a specification |
-| Zero new npm packages | HIGH | All required capabilities confirmed present in `apps/mobile/package.json` |
+| Rate limiting (Upstash + hono-rate-limiter) | HIGH | Versions confirmed via `npm view`. Upstash HTTP REST confirmed for serverless. Vercel first-class integration documented. |
+| Input validation (`@hono/zod-validator`) | HIGH | Peer deps verified: `zod ^3.25.0 \|\| ^4.0.0` — compatible with project's `zod ^4.3.6`. |
+| Supabase Storage API | HIGH | `@supabase/supabase-js` already installed. Storage client methods confirmed via official docs. |
+| CORS hardening | HIGH | `hono/cors` already in place — configuration change only, no new package. |
+| Lifecycle cleanup (pg_cron) | MEDIUM | pg_cron confirmed as Supabase built-in, but `storage.fdelete` function signature needs validation against live Supabase version before shipping. |
 
 ---
 
 ## Sources
 
-- [Open Food Facts API — Introduction (official)](https://openfoodfacts.github.io/openfoodfacts-server/api/) — v2 stable, v3 in development, rate limits (100 req/min product lookup)
-- [Open Food Facts API — Tutorial](https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/) — `nutrition_grades` field, barcode lookup URL format, `?fields=` parameter usage
-- [Camera — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/camera/) — `CameraView`, `barcodeScannerSettings`, supported barcode types, SDK 54 version `~17.0.7`
-- [Image — Expo Documentation](https://docs.expo.dev/versions/latest/sdk/image/) — LRU caching, `contentFit`, `placeholder`, `transition`, `recyclingKey`
-- [Open Food Facts product database — Hugging Face](https://huggingface.co/datasets/openfoodfacts/product-database) — confirms `nutriscore_grade`, `ecoscore_grade` field names in dataset schema
-- [Building a Professional Barcode & QR Scanner with Expo Camera (January 2026)](https://anytechie.medium.com/building-a-professional-barcode-qr-scanner-with-expo-camera-57e014382000) — confirms `CameraView` + `onBarcodeScanned` pattern in SDK 54
-- [Scanbot: React Native barcode scanner libraries comparison](https://scanbot.io/blog/react-native-vision-camera-vs-expo-camera/) — confirms `expo-camera` covers EAN-13/EAN-8/UPC-A; VisionCamera overhead not justified for food scanning
+- [GitHub: rhinobase/hono-rate-limiter](https://github.com/rhinobase/hono-rate-limiter) — v0.5.3, configuration API, RedisStore integration
+- [npm: @hono-rate-limiter/redis](https://www.npmjs.com/package/@hono-rate-limiter/redis) — v0.1.4, Upstash RedisStore pattern
+- [npm: @upstash/redis](https://www.npmjs.com/package/@upstash/redis) — v1.37.0, HTTP REST Redis client for serverless
+- [npm: @upstash/ratelimit](https://www.npmjs.com/package/@upstash/ratelimit) — v2.0.8, algorithms reference
+- [Upstash Documentation: Ratelimit Overview](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) — serverless HTTP approach, no TCP connections
+- [Vercel Template: Ratelimit with Upstash Redis](https://vercel.com/templates/next.js/ratelimit-with-upstash-redis) — confirms Vercel first-class integration
+- [npm: @hono/zod-validator](https://www.npmjs.com/package/@hono/zod-validator) — v0.7.6, peerDeps `zod ^3.25.0 || ^4.0.0`
+- [GitHub Issue #1148: Upgrade to zod v4](https://github.com/honojs/middleware/issues/1148) — confirms zod v4 support merged in PR #1173 (May 27 2025)
+- [Hono Docs: CORS Middleware](https://hono.dev/docs/middleware/builtin/cors) — full configuration API
+- [Supabase Docs: Storage Quickstart](https://supabase.com/docs/guides/storage/quickstart) — bucket creation, upload
+- [Supabase Docs: Create Signed Upload URL](https://supabase.com/docs/reference/javascript/storage-from-createsigneduploadurl) — mobile direct upload pattern
+- [Supabase Docs: Standard Uploads](https://supabase.com/docs/guides/storage/uploads/standard-uploads) — upload options, contentType, upsert
+- [GitHub Discussion: Expiring objects in Storage](https://github.com/orgs/supabase/discussions/20171) — confirms no native lifecycle policies, manual cleanup required
+- [Supabase Docs: pg_cron](https://supabase.com/docs/guides/database/extensions/pg_cron) — scheduled cleanup approach

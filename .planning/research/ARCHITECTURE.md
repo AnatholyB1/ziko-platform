@@ -1,557 +1,602 @@
 # Architecture Research
 
-**Domain:** Open Food Facts barcode enrichment — Ziko nutrition plugin v1.2
+**Domain:** Security + Cloud Infrastructure — Ziko Platform v1.3
 **Researched:** 2026-04-02
-**Confidence:** HIGH — all integration points verified directly from source files
+**Confidence:** HIGH — all integration points verified from source files + official documentation
 
 ---
 
-## Standard Architecture
+## Existing Structure
 
-### System Overview
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                      Mobile (Expo SDK 54)                          │
-├─────────────────────┬──────────────────────┬───────────────────────┤
-│  NutritionDashboard │  LogMealScreen       │  [NEW] ProductCard    │
-│  + score badges on  │  + "Barcode" 4th tab │  photo, name, brand   │
-│    log entries      │  + BarcodeScanner    │  Nutri-Score badge    │
-│  + daily avg score  │    modal (reused     │  Eco-Score badge      │
-│    summary card     │    from pantry)      │  macros/serving adjuster│
-└─────────────────────┴────────┬─────────────┴───────────────────────┘
-                                │  direct fetch() — no CORS in RN native
-                                ▼
-┌────────────────────────────────────────────────────────────────────┐
-│           Open Food Facts API (world.openfoodfacts.org)            │
-│  GET /api/v2/product/{barcode}                                     │
-│    ?fields=product_name,product_name_fr,brands,                    │
-│            nutriscore_grade,ecoscore_grade,                        │
-│            nutriments,image_front_url,serving_size                 │
-│                                                                    │
-│  Rate limit: 100 req/min per IP (per-user mobile = no contention)  │
-│  Auth: none required for reads                                     │
-│  Required header: User-Agent: ZikoFitnessApp/1.2 (email)          │
-└───────────────────────────────┬────────────────────────────────────┘
-                                │  upsert on cache miss
-                                ▼
-┌────────────────────────────────────────────────────────────────────┐
-│                  Supabase (PostgreSQL + RLS)                       │
-├───────────────────────────────┬────────────────────────────────────┤
-│  [NEW] food_products          │  [MODIFIED] nutrition_logs         │
-│  barcode (UNIQUE index)       │  + food_product_id FK (nullable)   │
-│  product_name, brands         │  + nutriscore_grade TEXT (denorm.) │
-│  nutriscore_grade             │  + ecoscore_grade  TEXT (denorm.)  │
-│  ecoscore_grade               │                                    │
-│  calories/protein/carbs/fat   │  Denormalised so loadLogs() needs  │
-│    per 100g                   │  zero JOIN changes. Scores survive │
-│  nutriments JSONB (full blob) │  food_products cleanup.            │
-│  image_url, serving_size      │                                    │
-│  created_at, updated_at       │                                    │
-└───────────────────────────────┴────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────────────────┐
-│                    Hono v4 Backend API                             │
-│  NOT involved in barcode lookup (no proxy — see rationale below)   │
-│  Unchanged for this milestone.                                     │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Status |
-|-----------|----------------|--------|
-| `plugins/pantry/src/screens/BarcodeScanner.tsx` | Camera modal, scan guard, delegates result | Exists — reuse as-is with minor callback extension |
-| `plugins/pantry/src/utils/barcode.ts` | `lookupBarcode()` — returns product name only | Exists — pantry keeps using it; nutrition supersedes with full fetch |
-| `plugins/nutrition/src/utils/offApi.ts` | Full OFF product fetch (all scored fields), Supabase cache upsert | NEW |
-| `plugins/nutrition/src/components/ProductCard.tsx` | Photo, name, brand, Nutri-Score badge, Eco-Score badge, macros per 100g, serving weight adjuster, "Log" CTA | NEW |
-| `plugins/nutrition/src/components/ScoreBadge.tsx` | Letter grade badge (A–E) with grade-to-color mapping | NEW |
-| `plugins/nutrition/src/screens/LogMealScreen.tsx` | Add 4th "Barcode" tab; import BarcodeScanner; show ProductCard on result; extend `saveLog()` with score columns | MODIFY |
-| `plugins/nutrition/src/screens/NutritionDashboard.tsx` | Render `<ScoreBadge>` on each log entry; add daily avg score card | MODIFY |
-| `plugins/nutrition/src/store.ts` | Extend `NutritionEntry` type with `food_product_id?`, `nutriscore_grade?`, `ecoscore_grade?` | MODIFY |
-| `supabase/migrations/024_food_products.sql` | `food_products` table + unique barcode index + RLS policies | NEW |
-| `supabase/migrations/025_nutrition_logs_scores.sql` | `food_product_id` FK + `nutriscore_grade` + `ecoscore_grade` cols on `nutrition_logs` | NEW |
-
-## Recommended Project Structure
+### Current Middleware Chain (app.ts)
 
 ```
-plugins/nutrition/src/
-├── screens/
-│   ├── NutritionDashboard.tsx    # MODIFY — score badges on entries + avg score card
-│   ├── LogMealScreen.tsx         # MODIFY — barcode tab + ProductCard integration
-│   └── TDEECalculatorScreen.tsx  # unchanged
-├── components/                   # NEW subfolder
-│   ├── ProductCard.tsx           # display: photo, scores, macros, serving adjuster
-│   └── ScoreBadge.tsx            # reusable letter badge with grade-to-color mapping
-├── utils/
-│   └── offApi.ts                 # NEW — OFF fetch + Supabase upsert cache
-├── store.ts                      # MODIFY — NutritionEntry type extension
-├── manifest.ts                   # unchanged
-└── index.ts                      # unchanged
-
-supabase/migrations/
-├── 024_food_products.sql         # NEW table (follows 023_shopping_list.sql)
-└── 025_nutrition_logs_scores.sql # ADD 3 columns to nutrition_logs
-
-plugins/pantry/src/screens/
-└── BarcodeScanner.tsx            # unchanged except optional callback signature
+Request
+  |
+  v
+logger()                          ← global, line 15
+  |
+  v
+cors()                            ← global, wildcard origin check, line 16-37
+  |
+  v
+router.use('*', authMiddleware)   ← per-router, declared inside each route file
+  |
+  v
+Route handler
 ```
 
-### Structure Rationale
+**Declared in `backend/api/src/app.ts`:**
 
-- **`components/` subfolder in nutrition plugin:** `ProductCard` and `ScoreBadge` are display-only, stateless, and may be used from both `LogMealScreen` (scan result) and potentially `NutritionDashboard` (log entry inline badges). Separating them avoids bloating the screen files and mirrors how other plugins (timer, supplements) organise sub-components.
-- **`utils/offApi.ts` in nutrition plugin (not in pantry):** The pantry `barcode.ts` only needed a product name — OFF enrichment is a nutrition-plugin concern. Keeping it in nutrition avoids coupling the pantry plugin to Nutri-Score logic it does not use.
-- **Two migrations instead of one:** `food_products` is a new table (migration 024) and the `nutrition_logs` extensions are additive columns (migration 025). Separating them makes rollback safer, matches the established pattern (021/022/023 are all separate schemas), and prevents a single failed migration from blocking both changes.
-
-## Architectural Patterns
-
-### Pattern 1: Direct OFF API Call from Mobile (no backend proxy)
-
-**What:** The mobile app calls `https://world.openfoodfacts.org/api/v2/product/{barcode}` directly using `fetch()`. Supabase acts as a persistent local cache via upsert on `food_products`.
-
-**When to use:** This is the correct choice for Ziko. React Native has no CORS enforcement — direct calls work natively on iOS and Android without any configuration. OFF read operations require no authentication, only a descriptive `User-Agent` header.
-
-**Why not a backend proxy:**
-- The Hono backend would add 150–300ms round-trip latency with zero security benefit for a public read-only API.
-- OFF rate limit is 100 req/min per IP. Routing through the backend concentrates all users onto the server's IP, turning per-user limits into a shared pool — worse at scale.
-- Ziko's existing `plugins/pantry/src/utils/barcode.ts` already calls OFF directly from the mobile app and has worked throughout v1.1 production. The pattern is proven.
-- A backend proxy would only be warranted for OFF write operations (contributing product data back to OFF), not for reads.
-
-**Trade-offs:**
-- Pro: lower latency, simpler code, no new backend route
-- Pro: OFF rate limit is per-client-IP so no user-to-user contention
-- Pro: consistent with existing pantry barcode pattern
-- Con: OFF API URL is in the mobile bundle — acceptable, it is a public API with no secrets
-- Con: No server-side response normalisation — field mapping must be done in `offApi.ts` on mobile
-
-**Example (`plugins/nutrition/src/utils/offApi.ts` core):**
 ```typescript
-const OFF_FIELDS = [
-  'product_name', 'product_name_fr', 'brands',
-  'nutriscore_grade', 'ecoscore_grade',
-  'nutriments', 'image_front_url', 'serving_size',
-].join(',');
+app.use('*', logger());
+app.use('*', cors({ ... }));          // origin array: exp://, localhost, *.vercel.app, APP_ORIGIN
 
-const OFF_URL = (barcode: string) =>
-  `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=${OFF_FIELDS}`;
-
-const USER_AGENT = 'ZikoFitnessApp/1.2 (contact@ziko-app.com)';
-
-export async function fetchOFFProduct(barcode: string): Promise<OFFProduct | null> {
-  const res = await fetch(OFF_URL(barcode), {
-    headers: { 'User-Agent': USER_AGENT },
-  });
-  const json = await res.json();
-  if (json.status !== 1 || !json.product) return null;
-  const p = json.product;
-  const nm = p.nutriments ?? {};
-  return {
-    barcode,
-    product_name: p.product_name_fr ?? p.product_name ?? '',
-    brands: p.brands ?? null,
-    nutriscore_grade: p.nutriscore_grade?.toLowerCase() ?? null,
-    ecoscore_grade: p.ecoscore_grade?.toLowerCase() ?? null,
-    calories_100g: nm['energy-kcal_100g'] ?? nm.energy_100g ?? 0,
-    protein_100g: nm.proteins_100g ?? 0,
-    carbs_100g: nm.carbohydrates_100g ?? 0,
-    fat_100g: nm.fat_100g ?? 0,
-    nutriments: nm,
-    image_url: p.image_front_url ?? null,
-    serving_size: p.serving_size ?? null,
-  };
-}
+app.get('/health', ...)               // unprotected
+app.route('/ai', aiRouter);           // aiRouter adds authMiddleware at its own use('*')
+app.route('/plugins', pluginsRouter);
+app.route('/webhooks', webhooksRouter);
+app.route('/bugs', bugsRouter);
+app.route('/supplements', supplementsRouter);
+app.route('/pantry', pantryRecipesRouter);
 ```
 
-### Pattern 2: Supabase Upsert Cache for food_products
+**Auth middleware (`src/middleware/auth.ts`):**
+- Validates Supabase Bearer JWT via `adminClient.auth.getUser(token)`
+- Sets `c.set('auth', { userId, email })` in `ContextVariableMap`
+- Returns 401 on missing/invalid token
 
-**What:** After a successful OFF lookup, `upsert` the result into `food_products` keyed on barcode. On subsequent scans of the same barcode, check `food_products` first — skip the OFF call if a row exists.
+**Existing CORS config:**
+- Allows: `exp://`, `http?://localhost*`, `https://*.vercel.app`, `process.env.APP_ORIGIN`
+- Methods: GET, POST, PATCH, DELETE, OPTIONS
+- Headers: Content-Type, Authorization
+- `maxAge: 86400`
 
-**When to use:** Always. Avoids redundant OFF calls for repeat scans of the same product, survives OFF downtime gracefully for cached products, and enables AI tools or future features to query the product catalogue without any external dependency.
+**Vercel deployment (vercel.json):**
+- All requests rewrite to `/api/app`
+- Weekly cron: `POST /supplements/cron/scrape` (Monday 03:00)
+- Exports: `GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS` handlers from `app.ts`
 
-**Trade-offs:**
-- Pro: Faster repeat scans (cache hit is a local Supabase call)
-- Pro: Offline resilience for previously scanned products
-- Pro: `food_products` becomes a local product catalogue usable by AI tools
-- Con: Stale data risk if OFF updates a product's Nutri-Score — acceptable since scores change rarely; `updated_at` column allows future staleness logic
+**Current dependencies (package.json):**
+- `hono: ^4.7.0` — no rate limiter yet
+- `@supabase/supabase-js: ^2.50.0` — client exists, Storage not yet used
+- `zod: ^4.3.6` — available for validation but not applied at middleware level
 
-**Cache check + upsert flow:**
-```typescript
-export async function getOrFetchProduct(barcode: string, supabase: any): Promise<OFFProduct | null> {
-  // 1. Cache check
-  const { data: cached } = await supabase
-    .from('food_products')
-    .select('*')
-    .eq('barcode', barcode)
-    .maybeSingle();
-
-  if (cached) return cached as OFFProduct;
-
-  // 2. OFF fetch
-  const product = await fetchOFFProduct(barcode);
-  if (!product) return null;
-
-  // 3. Cache to Supabase
-  const { data } = await supabase
-    .from('food_products')
-    .upsert({ ...product, updated_at: new Date().toISOString() }, { onConflict: 'barcode' })
-    .select()
-    .single();
-
-  return data as OFFProduct;
-}
-```
-
-### Pattern 3: Denormalised Score Columns on nutrition_logs
-
-**What:** Copy `nutriscore_grade` and `ecoscore_grade` from the `food_products` result into `nutrition_logs` at insert time. Keep `food_product_id` as a nullable FK for full product data when needed.
-
-**When to use:** Always. `NutritionDashboard.loadLogs()` reads logs on every screen focus via `useFocusEffect`. Adding a JOIN to `food_products` on this hot path would add query complexity and create a dependency where `food_products` rows cannot safely be cleaned up without nulling historical scores.
-
-**Trade-offs:**
-- Pro: `loadLogs()` in `NutritionDashboard.tsx` needs zero query changes — `SELECT *` already returns new columns
-- Pro: Log entries are fully self-contained — score preserved even if `food_products` is purged
-- Pro: Consistent with how macros are stored (already denormalised from source to log at insert time)
-- Con: Score stored twice — accepted; this is fitness tracking, not an audit ledger. Scores change rarely.
-
-**Extended `saveLog()` call in `LogMealScreen.tsx`:**
-```typescript
-// After user confirms serving size on ProductCard:
-saveLog({
-  food_name: product.product_name,
-  calories: Math.round(product.calories_100g * servingG / 100),
-  protein_g: +(product.protein_100g * servingG / 100).toFixed(1),
-  carbs_g: +(product.carbs_100g * servingG / 100).toFixed(1),
-  fat_g: +(product.fat_100g * servingG / 100).toFixed(1),
-  serving_g: servingG,
-  food_product_id: product.id,          // FK to food_products
-  nutriscore_grade: product.nutriscore_grade,  // denormalised
-  ecoscore_grade: product.ecoscore_grade,      // denormalised
-});
-```
-
-## Data Flow
-
-### Barcode Scan — Happy Path
-
-```
-User taps "Barcode" tab in LogMealScreen
-    |
-    v
-BarcodeScanner modal opens
-(reused from pantry — expo-camera + camera permission already handled)
-    |
-    v
-Camera reads EAN-13 / EAN-8 / UPC barcode → onBarcodeScanned fires
-    |
-    v
-getOrFetchProduct(barcode, supabase)
-    |------ food_products cache HIT -------> return cached row immediately
-    |
-    v (cache MISS)
-fetchOFFProduct(barcode)   →  OFF API call
-    |
-    |-- status !== 1 / network error ------> onNotFound() → fallback to custom tab
-    |
-    v (success)
-upsert into food_products
-    |
-    v
-ProductCard displayed:
-  - product photo (image_url)
-  - product name + brand
-  - Nutri-Score badge (A–E letter with colour)
-  - Eco-Score badge (A–E letter with colour)
-  - macros per 100g
-  - serving weight input (default: serving_size from OFF or 100g)
-  - "Log this meal" button
-    |
-    v
-User adjusts serving weight, taps "Log"
-    |
-    v
-saveLog() inserts into nutrition_logs:
-  - scaled macros (×serving/100)
-  - food_product_id (FK)
-  - nutriscore_grade, ecoscore_grade (denormalised)
-    |
-    v
-router.back() → NutritionDashboard
-    |
-    v
-useFocusEffect triggers loadLogs() → Supabase returns rows with score columns
-    |
-    v
-Score badges visible on entry + daily avg score in summary card
-```
-
-### Product Not Found / Offline
-
-```
-getOrFetchProduct returns null
-    |
-    v
-Brief toast / inline message "Produit non trouvé"
-    |
-    v
-LogMealScreen switches to "custom" tab, pre-fills food_name if
-partial OFF response had a product_name (partial data case)
-    |
-    v
-saveLog() with no food_product_id, null scores — standard manual entry
-```
-
-### Score Display in Dashboard
-
-```
-NutritionDashboard.loadLogs()
-  SELECT * FROM nutrition_logs WHERE user_id = ? AND date = ?
-  (returns nutriscore_grade, ecoscore_grade on each row — no JOIN needed)
-    |
-    v
-Each log entry card: <ScoreBadge grade={log.nutriscore_grade} />
-                     <ScoreBadge grade={log.ecoscore_grade} type="eco" />
-    |
-    v
-Summary card: daily average Nutri-Score
-  - Filter todayLogs where nutriscore_grade IS NOT NULL
-  - Map grade to numeric: a=5, b=4, c=3, d=2, e=1
-  - Display modal grade (most frequent) or numeric average
-```
-
-### State Management
-
-```
-useNutritionStore (Zustand v5)
-  NutritionEntry type extended:
-    + food_product_id?: string
-    + nutriscore_grade?: string
-    + ecoscore_grade?: string
-    |
-    v
-  addLog(entry) — optimistic update in todayLogs
-  setTodayLogs(logs) — replaces state on Supabase refresh
-  (no new actions needed — existing interface is sufficient)
-```
-
-## Database Schema
-
-### Migration 024 — `food_products` table
-
-Next in sequence after `023_shopping_list.sql`.
-
-```sql
-CREATE TABLE IF NOT EXISTS public.food_products (
-  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  barcode          TEXT NOT NULL,
-  product_name     TEXT NOT NULL,
-  brands           TEXT,
-  nutriscore_grade TEXT CHECK (nutriscore_grade IN ('a','b','c','d','e')),
-  ecoscore_grade   TEXT,                     -- a-plus, a, b, c, d, e (OFF format)
-  calories_100g    NUMERIC(7,2) NOT NULL DEFAULT 0,
-  protein_100g     NUMERIC(6,2) NOT NULL DEFAULT 0,
-  carbs_100g       NUMERIC(6,2) NOT NULL DEFAULT 0,
-  fat_100g         NUMERIC(6,2) NOT NULL DEFAULT 0,
-  nutriments       JSONB,                    -- full OFF nutriments blob for future use
-  image_url        TEXT,
-  serving_size     TEXT,
-  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS idx_food_products_barcode
-  ON public.food_products(barcode);
-
--- Public catalogue: any authenticated user can read and insert
-ALTER TABLE public.food_products ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "food_products_select" ON public.food_products
-  FOR SELECT USING (auth.role() = 'authenticated');
-
-CREATE POLICY "food_products_insert" ON public.food_products
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "food_products_update" ON public.food_products
-  FOR UPDATE USING (auth.role() = 'authenticated');
-```
-
-**Schema decisions:**
-- `nutriments JSONB` stores the full OFF `nutriments` blob. The 4 core macro columns are extracted for query convenience (dashboard score aggregation, AI tool queries) without needing to parse JSON on every read.
-- No `user_id` on `food_products` — this is a shared product catalogue, not user-scoped. Any authenticated user can populate and read it.
-- `ecoscore_grade` is TEXT without a restrictive CHECK because OFF uses values like `'a-plus'` that would not fit an `('a','b','c','d','e')` constraint.
-
-### Migration 025 — Extend `nutrition_logs`
-
-```sql
-ALTER TABLE public.nutrition_logs
-  ADD COLUMN IF NOT EXISTS food_product_id UUID
-    REFERENCES public.food_products(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS nutriscore_grade TEXT
-    CHECK (nutriscore_grade IN ('a','b','c','d','e')),
-  ADD COLUMN IF NOT EXISTS ecoscore_grade TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_nutrition_logs_nutriscore
-  ON public.nutrition_logs(user_id, nutriscore_grade)
-  WHERE nutriscore_grade IS NOT NULL;
-```
-
-**Column decisions:**
-- `food_product_id` is nullable — existing rows and manual entries have no product reference.
-- `ON DELETE SET NULL` — deleting a `food_products` row nulls the FK on log entries but preserves the denormalised score columns, so historical score data is not lost.
-- `nutriscore_grade` inherits the same CHECK as `food_products` for consistency.
-- Index on `(user_id, nutriscore_grade)` supports future queries like "show me all B+ or better meals this week" and the daily score aggregation query.
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0–10k users | Direct OFF calls, Supabase cache — no changes needed |
-| 10k–100k users | `food_products` grows; add GIN index on `product_name` for full-text search beyond barcode; `updated_at` staleness check for OFF re-fetch |
-| 100k+ users | Consider OFF daily CSV delta-sync via backend cron to pre-populate `food_products`; OFF reads still direct from mobile |
-
-### Scaling Priorities
-
-1. **First bottleneck:** `food_products` name search (ilike scan) once catalogue exceeds ~50k rows. Fix: `CREATE INDEX idx_food_products_name ON food_products USING GIN (product_name gin_trgm_ops)`.
-2. **Second bottleneck:** Stale score data for frequently updated products. Fix: check `updated_at < NOW() - INTERVAL '30 days'` and re-fetch from OFF if stale.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Routing OFF calls through the Hono backend
-
-**What people do:** Add a `GET /nutrition/barcode/:code` route to the Hono API that proxies to OFF and returns a normalised response.
-
-**Why it's wrong:** Adds a gratuitous network hop (~150–300ms extra), concentrates all users onto the server's IP for rate limiting, introduces a new backend route to maintain, and provides no security benefit since OFF is a public read API with no secrets. Ziko's pantry plugin already calls OFF directly from the mobile app without issues.
-
-**Do this instead:** Call OFF directly from the mobile app with `fetch()`. Set a descriptive `User-Agent`. Cache results in Supabase.
-
-### Anti-Pattern 2: JOIN food_products on every NutritionDashboard load
-
-**What people do:** Keep score grades only in `food_products`, then JOIN when loading nutrition logs.
-
-**Why it's wrong:** `NutritionDashboard.loadLogs()` fires on every `useFocusEffect` (returning from LogMealScreen, date change). Adding a JOIN to a foreign table increases query complexity, requires changing the established `SELECT *` query, and creates a hard dependency — deleting a `food_products` row would silently null out historical score data in the journal.
-
-**Do this instead:** Denormalise `nutriscore_grade` and `ecoscore_grade` into `nutrition_logs` at insert time. Keep `food_product_id` FK for full product data on demand (ProductCard, AI tool queries).
-
-### Anti-Pattern 3: Duplicating BarcodeScanner in the nutrition plugin
-
-**What people do:** Copy `plugins/pantry/src/screens/BarcodeScanner.tsx` into `plugins/nutrition/` to avoid a cross-plugin import.
-
-**Why it's wrong:** Duplicates camera permission handling, scan guard (`scannedRef`), and the modal layout. Two files to update when `expo-camera` API changes (it already changed once — EAN type names were renamed in SDK 53→54).
-
-**Do this instead:** Import `BarcodeScanner` directly from `plugins/pantry/src/screens/BarcodeScanner.tsx`. Extend the `onScan` callback to `onScan(name: string, barcode: string)` — a one-line interface change in the pantry component. The nutrition plugin uses `barcode` for `getOrFetchProduct()`; the pantry plugin ignores the new second argument or uses it to pre-fill the item name.
-
-### Anti-Pattern 4: Storing all OFF macro fields as individual columns
-
-**What people do:** Add `fiber_100g`, `saturated_fat_100g`, `sugars_100g`, `salt_100g`, `sodium_100g`... as dedicated columns on `food_products`.
-
-**Why it's wrong:** OFF `nutriments` contains 30+ fields. Expanding to individual columns creates migration sprawl and forces a new migration each time a new nutrient is tracked.
-
-**Do this instead:** Store the full `nutriments` blob as JSONB. Extract only the 4 core macros (calories, protein, carbs, fat) as typed columns for the hot path (macro logging and AI queries). Parse JSONB only when a detailed product view requires additional nutrients.
+---
 
 ## Integration Points
 
-### External Services
+### 1. Rate Limiting Injection Point
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Open Food Facts API | Direct `fetch()` from mobile, no auth | `User-Agent: ZikoFitnessApp/1.2 (contact@ziko-app.com)` required. Use `world.openfoodfacts.org` for production (`.net` is staging). Rate limit: 100 req/min per IP — per-user mobile calls never approach this. |
+**The serverless constraint is decisive.** Vercel serverless functions have no persistent memory between invocations — in-memory state (`MemoryStore` from `hono-rate-limiter` default) resets on every cold start. This means a pure in-memory rate limiter provides false protection on Vercel: counts do not accumulate across concurrent function instances.
 
-### Internal Boundaries
+**Required:** An external Redis store that persists hit counts across invocations.
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `nutrition` plugin → pantry `BarcodeScanner` | Direct cross-plugin import | Established precedent in this codebase. Extend `onScan(name, barcode)` callback signature — one-line change in pantry component, backward-compatible (pantry callers can ignore second arg). |
-| `nutrition` plugin → Supabase `food_products` | `getOrFetchProduct()` in `offApi.ts` | No RLS user filter — shared catalogue. Uses same `supabase` instance passed via props. |
-| `nutrition` plugin → Supabase `nutrition_logs` | Extended `saveLog()` in `LogMealScreen.tsx` | Adds `food_product_id`, `nutriscore_grade`, `ecoscore_grade` to existing insert. No store interface changes required beyond type widening. |
-| `NutritionDashboard` → score display | Reads from `todayLogs` in `useNutritionStore` | New columns returned by `SELECT *` — zero query changes. Score rendered via `<ScoreBadge>` component. |
+**Recommended store:** Upstash Redis via `@hono-rate-limiter/redis` + `@upstash/redis`. Reasons:
+- HTTP-based (not TCP socket) — works in Vercel serverless without connection pool issues
+- `@upstash/ratelimit` uses an ephemeral local cache per warm invocation to reduce Redis round-trips
+- Vercel-native integration: one button provisions a KV store and injects `KV_REST_API_URL` + `KV_REST_API_TOKEN`
+- `@hono-rate-limiter/redis` is the official Redis adapter for `hono-rate-limiter`
 
-## New vs Modified — Component Inventory
+**Where to inject in the middleware chain:**
 
-### New (create from scratch)
+```
+Request
+  |
+  v
+logger()                          ← unchanged
+  |
+  v
+cors()                            ← unchanged (but tighten origin list — see Modified Components)
+  |
+  v
+[NEW] ipRateLimiter               ← global, applied BEFORE auth, protects against unauthenticated hammering
+  |
+  v
+authMiddleware                    ← per-router (unchanged — stays inside route files)
+  |
+  v
+[NEW] userRateLimiter             ← per-router, applied AFTER auth (has access to c.get('auth').userId)
+  |
+  v
+[NEW] validationMiddleware        ← per-route, applied per endpoint
+  |
+  v
+Route handler
+```
 
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/024_food_products.sql` | Shared product catalogue table |
-| `supabase/migrations/025_nutrition_logs_scores.sql` | FK + score columns on nutrition_logs |
-| `plugins/nutrition/src/utils/offApi.ts` | OFF fetch + Supabase cache logic |
-| `plugins/nutrition/src/components/ProductCard.tsx` | Full product display with serving adjuster |
-| `plugins/nutrition/src/components/ScoreBadge.tsx` | Reusable letter badge A–E with grade colours |
+**Two-tier rate limiting design:**
 
-### Modified (surgical edits only)
+| Tier | Key | Limit | Applied at | Reason |
+|------|-----|-------|-----------|--------|
+| IP tier | `X-Forwarded-For` / `CF-Connecting-IP` | 200 req/15min | Global (before auth) | Blocks unauthenticated floods, no userId available yet |
+| User tier | `c.get('auth').userId` + route path | Per-route (see below) | Per-router (after auth) | Fair per-user limits, harder to circumvent by rotating IPs |
 
-| File | Change |
-|------|--------|
-| `plugins/pantry/src/screens/BarcodeScanner.tsx` | `onScan(name: string, barcode: string)` — add second arg, pass raw `data` alongside resolved name |
-| `plugins/nutrition/src/screens/LogMealScreen.tsx` | Add "Barcode" tab; import `BarcodeScanner` + `getOrFetchProduct` + `ProductCard`; extend `saveLog()` payload |
-| `plugins/nutrition/src/screens/NutritionDashboard.tsx` | Import `ScoreBadge`; render on log entry cards; add daily score summary |
-| `plugins/nutrition/src/store.ts` | Widen `NutritionEntry` type: `+ food_product_id?: string; nutriscore_grade?: string; ecoscore_grade?: string` |
+**Per-route user limits (recommended):**
 
-### Not Modified
+| Route | Limit | Window | Rationale |
+|-------|-------|--------|-----------|
+| `POST /ai/chat/stream` | 20 req | 60 min | AI calls are expensive; prevent runaway Anthropic billing |
+| `POST /ai/chat` | 20 req | 60 min | Same pool as stream endpoint |
+| `POST /ai/tools/execute` | 30 req | 60 min | Tool calls cheaper but still Anthropic API-backed |
+| `POST /storage/upload` | 50 req | 60 min | Storage uploads — prevent storage abuse |
+| `POST /bugs` | 10 req | 60 min | Bug reports — prevent spam |
+| All other authenticated routes | 300 req | 15 min | General protection |
 
-- `backend/api/` — no changes. Barcode lookup is mobile-only.
-- `plugins/pantry/src/utils/barcode.ts` — pantry keeps using its existing lookup; nutrition uses `offApi.ts`.
-- All other plugins — unchanged.
-- `packages/plugin-sdk/` — no new types needed.
-- `apps/mobile/src/lib/PluginLoader.tsx` — pantry is already registered.
+**keyGenerator pattern for user-tier limiter:**
+
+```typescript
+keyGenerator: (c) => {
+  const auth = c.get('auth');
+  const userId = auth?.userId ?? c.req.header('X-Forwarded-For') ?? 'anonymous';
+  const path = c.req.routePath;
+  return `${userId}:${path}`;
+}
+```
+
+This combines userId with the route path — so hitting `/ai/chat/stream` does not consume the `/storage/upload` quota. Falls back to IP if auth context is somehow absent (defensive).
+
+**Standard headers to return:**
+- `standardHeaders: "draft-7"` — returns `RateLimit: limit=20, remaining=18, reset=1714500000`
+- On 429: include `Retry-After` header (automatically added by `hono-rate-limiter`)
+
+### 2. Supabase Storage Integration Point
+
+**Current state:** The `authMiddleware` uses `SUPABASE_SERVICE_KEY ?? SUPABASE_PUBLISHABLE_KEY`. The publishable key is the one available in production (no service key hardcoded — correct). Storage operations require deciding between:
+
+- **Service key upload (backend-side):** Backend receives binary from mobile, authenticates user, uploads to Supabase Storage on behalf of user. File is stored under `{userId}/{filename}`. Public URL returned to client and stored in DB column.
+- **Presigned URL flow (client-initiated):** Backend generates a signed upload URL, client uploads directly to Supabase Storage. Backend never sees the binary.
+
+**Recommendation: backend-proxied upload via service key** for v1.3. Reasons:
+- Simpler mobile-side code: one `multipart/form-data` POST to the Hono API
+- Consistent auth model: the Hono authMiddleware already validates the user — no separate Supabase Storage JWT flow needed on mobile
+- Backend can enforce file size, MIME type, and path naming before storage touches the binary
+- IMPORTANT: The service key is already available (`SUPABASE_SERVICE_KEY` env var). The `adminClient` in `auth.ts` uses it. The storage upload client should use the same service key to bypass Storage RLS.
+- Storage RLS policy is still defined (INSERT by user path folder), but the service key bypasses it — this is safe because the backend has already verified the user identity before setting the storage path.
+
+**Where the storage client lives:** A new `src/lib/storageClient.ts` utility, separate from the auth client, using the service key explicitly. This avoids importing `adminClient` from auth.ts into routes (leaking concerns).
+
+**Storage buckets to create:**
+
+| Bucket | Visibility | Max file size | Allowed MIME types | Path pattern |
+|--------|------------|--------------|-------------------|-------------|
+| `profile-photos` | Public | 5 MB | `image/jpeg`, `image/png`, `image/webp` | `{userId}/avatar.{ext}` |
+| `meal-photos` | Private | 10 MB | `image/jpeg`, `image/png`, `image/webp` | `{userId}/{date}/{uuid}.{ext}` |
+| `exports` | Private | 25 MB | `application/pdf`, `text/csv` | `{userId}/{filename}` |
+
+**Public vs private rationale:**
+- `profile-photos` public: avatars are viewed by other users (community plugin, leaderboards). Public bucket means no signed URL needed to display an avatar.
+- `meal-photos` private: food photos are personal health data. Signed URLs required for display.
+- `exports` private: user's full data export — never public.
+
+**File upload data flow:**
+
+```
+Mobile app (multipart/form-data POST)
+  |
+  v
+POST /storage/upload
+  ├── authMiddleware validates JWT → sets c.get('auth').userId
+  ├── userRateLimiter checks upload quota
+  ├── validationMiddleware: file size, MIME type
+  ├── storageClient.upload(bucket, `{userId}/{filename}`, fileBytes, { contentType })
+  |
+  v
+Supabase Storage returns { path, fullPath }
+  |
+  v
+storageClient.getPublicUrl(bucket, path) → { data: { publicUrl } }
+  |
+  v
+Handler inserts publicUrl into DB column (user_profiles.avatar_url, etc.)
+  |
+  v
+Response: { url: publicUrl, path }
+```
+
+**Lifecycle policy — no native Supabase TTL support (CONFIRMED LOW confidence):**
+Supabase Storage has no built-in object expiration TTL as of 2026-04. The community workaround is a scheduled Supabase Edge Function or Vercel cron that queries `storage.objects` where `created_at < NOW() - INTERVAL 'N days'` and calls `storage.from(bucket).remove(paths)`. For v1.3, use the existing Vercel cron mechanism (add a `POST /storage/cron/cleanup` endpoint) with a weekly schedule — consistent with the supplement scraper cron already in `vercel.json`.
+
+### 3. Input Validation Injection Point
+
+**Current state:** The `bugs.ts` route does manual field checks (`if (!title || !description)`). No Zod schema validation at middleware level. Hono has no built-in validation for request bodies.
+
+`zod` is already in `dependencies` — no new package needed.
+
+**Recommended approach:** Per-route validation using Hono's built-in `validator` middleware with `zod`:
+
+```typescript
+import { validator } from 'hono/validator';
+import { z } from 'zod';
+
+router.post('/upload',
+  validator('form', (value, c) => {
+    // multipart form validation
+  }),
+  async (c) => { ... }
+);
+```
+
+**Where validation fits in the chain:** After auth, before the handler. The `validator` middleware is applied per-route, not globally — this is the Hono convention. No new middleware file needed; schemas are co-located with their routes.
+
+### 4. CORS Tightening
+
+Current `cors()` config allows `*.vercel.app` which is overly broad (any Vercel-hosted site can call the API). For v1.3, add `process.env.MOBILE_ORIGIN` (the production Expo app deep link origin) and remove the wildcard `*.vercel.app` or replace it with specific origins.
+
+This is a modification to `app.ts` only — no new file.
+
+---
+
+## New Components
+
+### `backend/api/src/middleware/rateLimiter.ts` (NEW)
+
+Exports two ready-to-use middleware factories:
+
+```
+export const ipRateLimiter   → rateLimiter({ windowMs: 15min, limit: 200, keyGenerator: IP })
+export const userRateLimiter → rateLimiter({ windowMs: 60min, limit: 20,  keyGenerator: userId:path })
+export const aiRateLimiter   → rateLimiter({ windowMs: 60min, limit: 20,  keyGenerator: userId:path })
+```
+
+Uses `RedisStore` from `@hono-rate-limiter/redis` with `@upstash/redis` client initialized from env vars (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`). Both env vars injected via Vercel KV integration.
+
+Single file owns all rate limiter configuration so limits can be tuned in one place.
+
+**Type consideration:** The `ContextVariableMap` augmentation in `auth.ts` already declares `auth: AuthContext`. The `rateLimiter.ts` file will import this type via Hono's module augmentation — no extra declaration needed.
+
+### `backend/api/src/lib/storageClient.ts` (NEW)
+
+Thin wrapper around `@supabase/supabase-js` Storage, initialized with the service key to bypass Storage RLS. Exports:
+
+```typescript
+export function uploadFile(bucket: string, path: string, file: File | ArrayBuffer, options: { contentType: string; upsert?: boolean }): Promise<{ url: string; path: string }>
+export function deleteFile(bucket: string, paths: string[]): Promise<void>
+export function getSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string>
+export function getPublicUrl(bucket: string, path: string): string
+```
+
+Keeps `createClient` calls out of route files. Single place for storage configuration.
+
+**Why separate from `auth.ts` adminClient:** The `adminClient` in `auth.ts` is created with `autoRefreshToken: false, persistSession: false` for JWT validation. Storage operations have different semantics (file bodies, streaming). Keeping them separate avoids accidental misuse.
+
+### `backend/api/src/routes/storage.ts` (NEW)
+
+Hono router for file upload endpoints. Mounted at `/storage` in `app.ts`.
+
+Routes:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/storage/upload/avatar` | Upload profile photo → `profile-photos` bucket |
+| `POST` | `/storage/upload/meal-photo` | Upload meal scan photo → `meal-photos` bucket |
+| `DELETE` | `/storage/delete` | Delete a file by path + bucket |
+| `POST` | `/storage/cron/cleanup` | Vercel cron: delete files older than policy window |
+
+All routes except `/cron/cleanup` are protected by `authMiddleware` + `userRateLimiter`. The cron endpoint is protected by a `CRON_SECRET` header check (Vercel cron convention).
+
+Middleware chain inside this router:
+
+```
+router.use('*', authMiddleware)
+router.use('*', userRateLimiter)    ← upload-specific quota
+router.post('/upload/avatar',
+  bodyLimit({ maxSize: 5 * 1024 * 1024 }),
+  validator('form', avatarSchema),
+  handler
+)
+```
+
+### `supabase/migrations/026_storage_buckets.sql` (NEW)
+
+Creates the three buckets and their RLS policies. Example pattern:
+
+```sql
+-- Create buckets via Supabase Storage API (not SQL migration directly)
+-- RLS on storage.objects table:
+CREATE POLICY "profile_photos_own_insert"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'profile-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+CREATE POLICY "profile_photos_public_select"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'profile-photos');  -- public bucket: no auth restriction on reads
+```
+
+Note: Buckets themselves (public/private flag, allowed MIME types, max file size) are configured via the Supabase Dashboard or `supabase/config.toml`, not SQL migrations. The SQL migration only sets the RLS policies on `storage.objects`. This is an important distinction — mark this in the phase plan.
+
+---
+
+## Modified Components
+
+### `backend/api/src/app.ts` (MODIFY)
+
+Changes:
+1. Import `ipRateLimiter` from `./middleware/rateLimiter.js`
+2. Import `storageRouter` from `./routes/storage.js`
+3. Apply `ipRateLimiter` AFTER `cors()`, BEFORE any route (line ~38)
+4. Mount `/storage` router
+5. Tighten CORS origin list: remove wildcard `*.vercel.app`, add specific allowed origins via env var `ALLOWED_ORIGINS`
+6. Export `PUT` handler from Vercel exports (for Storage presigned URL uploads if needed later)
+
+```typescript
+// After cors(), before routes:
+app.use('*', ipRateLimiter);
+
+// New route mount:
+app.route('/storage', storageRouter);
+```
+
+### `backend/api/src/routes/ai.ts` (MODIFY)
+
+Changes:
+1. Import `aiRateLimiter` from `../middleware/rateLimiter.js`
+2. Apply after `authMiddleware` at the router level
+
+```typescript
+const router = new Hono();
+router.use('*', authMiddleware);
+router.use('*', aiRateLimiter);   // ← ADD: per-user, per-path AI quota
+```
+
+No handler changes needed.
+
+### `backend/api/src/routes/bugs.ts` (MODIFY)
+
+Changes:
+1. Import `userRateLimiter` from `../middleware/rateLimiter.js` (or a specific `bugsRateLimiter` variant with tighter limits: 10/hour)
+2. Apply after `authMiddleware`
+3. Replace manual `if (!title || !description)` check with a Zod `validator` schema (improves consistency and error message format)
+
+### `backend/api/vercel.json` (MODIFY)
+
+Add the storage cleanup cron:
+
+```json
+{
+  "crons": [
+    { "path": "/supplements/cron/scrape", "schedule": "0 3 * * 1" },
+    { "path": "/storage/cron/cleanup",    "schedule": "0 4 * * 0" }
+  ]
+}
+```
+
+Sunday 04:00 UTC for storage cleanup — offset from supplement scraper to avoid simultaneous cron cold starts.
+
+### `backend/api/package.json` (MODIFY)
+
+Add new dependencies:
+
+```json
+{
+  "dependencies": {
+    "hono-rate-limiter": "^0.5.0",
+    "@hono-rate-limiter/redis": "^0.5.0",
+    "@upstash/redis": "^1.31.0"
+  }
+}
+```
+
+`@upstash/redis` replaces the need for `ioredis` or `@redis/client` — it uses HTTP so it works in Vercel serverless without TCP connection pool management.
+
+---
 
 ## Build Order
 
-Dependencies flow strictly top-to-bottom. Each phase is a prerequisite for the next.
+Dependencies flow strictly from foundation to features. Each step is a prerequisite for the next.
 
-### Phase 1 — Database Migrations
+### Step 1 — Redis Infrastructure (no code, no deploy)
 
-Must go first. All other phases depend on the schema existing in Supabase.
+Provision Upstash Redis via Vercel integration (dashboard: Storage → Create KV). This injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` into Vercel environment. Set the same two vars locally in `backend/api/.env` for development testing.
 
-1. `supabase/migrations/024_food_products.sql` — `food_products` table + RLS
-2. `supabase/migrations/025_nutrition_logs_scores.sql` — extend `nutrition_logs`
+**Validation gate:** `curl -H "Authorization: Bearer $KV_REST_API_TOKEN" $KV_REST_API_URL/ping` returns `+PONG`.
 
-Validation gate: both migrations apply cleanly. `nutrition_logs` SELECT returns `food_product_id`, `nutriscore_grade`, `ecoscore_grade` (null on existing rows).
+### Step 2 — Install Packages
 
-### Phase 2 — OFF API Utility + Data Layer
+```bash
+cd backend/api
+npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis
+```
 
-Build and test independently before adding any UI.
+**Validation gate:** `npm run type-check` passes.
 
-1. `plugins/nutrition/src/utils/offApi.ts` — `fetchOFFProduct()` + `getOrFetchProduct()` with Supabase cache
-2. `plugins/nutrition/src/store.ts` — widen `NutritionEntry` type
+### Step 3 — Rate Limiter Middleware (`src/middleware/rateLimiter.ts`)
 
-Validation gate: scanning a known EAN-13 (e.g. Nutella `3017624010701`) returns a populated `OFFProduct` object with `nutriscore_grade: 'e'`. Cache hit on second scan skips OFF call.
+Build `rateLimiter.ts` with `ipRateLimiter`, `userRateLimiter`, `aiRateLimiter` exports. Test in isolation by writing a minimal test script that creates a `Hono` app with the middleware and sends 5 rapid requests — verify 429 on the 4th/5th.
 
-### Phase 3 — Display Components
+**Validation gate:** 429 response returned with `RateLimit-Remaining: 0` and `Retry-After` header after limit exceeded.
 
-Pure display components, no network calls. Build with static mock data, testable in isolation.
+### Step 4 — Apply Rate Limiters to Existing Routes
 
-1. `plugins/nutrition/src/components/ScoreBadge.tsx` — grade-to-colour mapping (a=green, b=light-green, c=yellow, d=orange, e=red)
-2. `plugins/nutrition/src/components/ProductCard.tsx` — photo, scores, macros per 100g, serving weight input, "Log" CTA
+4a. Modify `app.ts`: add `ipRateLimiter` globally
+4b. Modify `routes/ai.ts`: add `aiRateLimiter` at router level
+4c. Modify `routes/bugs.ts`: add `userRateLimiter`
 
-Validation gate: `ProductCard` renders correctly with a static `OFFProduct` mock. `ScoreBadge` shows correct colours for all 5 grades. Both components handle null/undefined grade gracefully (no badge rendered).
+**Validation gate:** `POST /ai/chat` with 21 rapid requests from same user returns 429 on request 21. `/health` (unprotected) never returns 429 regardless of request count.
 
-### Phase 4 — LogMealScreen Barcode Tab
+### Step 5 — Supabase Storage Buckets
 
-Wires Phase 2 and Phase 3 together into the user flow.
+Create buckets via Supabase Dashboard:
+1. `profile-photos` (public, max 5 MB, allowed: image/*)
+2. `meal-photos` (private, max 10 MB, allowed: image/*)
+3. `exports` (private, max 25 MB, allowed: application/pdf, text/csv)
 
-1. `plugins/pantry/src/screens/BarcodeScanner.tsx` — extend `onScan` to `onScan(name, barcode)`
-2. `plugins/nutrition/src/screens/LogMealScreen.tsx` — add "Barcode" tab; integrate `BarcodeScanner` modal; call `getOrFetchProduct()`; show `ProductCard`; extend `saveLog()`
+Then write `supabase/migrations/026_storage_rls.sql` with RLS policies on `storage.objects` for each bucket.
 
-Validation gate: Full scan-to-log flow works end to end. `nutrition_logs` row has `food_product_id` and `nutriscore_grade` populated. Not-found case falls back to custom tab without crash.
+**Validation gate:** Attempting upload to `meal-photos` without auth returns 403. Authenticated upload to `{userId}/test.jpg` succeeds.
 
-### Phase 5 — NutritionDashboard Score Display
+### Step 6 — Storage Client Utility (`src/lib/storageClient.ts`)
 
-Depends on Phase 4 having logged entries with scores. Can begin implementation in parallel with Phase 4 once types are established (Phase 2 complete).
+Build `storageClient.ts` as a standalone module. Test the `uploadFile` and `getPublicUrl` functions directly with a test script before wiring into routes.
 
-1. `plugins/nutrition/src/screens/NutritionDashboard.tsx` — render `<ScoreBadge>` on each log entry; add daily average Nutri-Score card in the summary section
+**Validation gate:** `uploadFile('profile-photos', 'test-user/avatar.jpg', buffer, { contentType: 'image/jpeg' })` returns a non-null `url`.
 
-Validation gate: Log entries from barcode scan show score badges. Manual entries (null scores) show no badge. Daily score card appears when at least one scanned entry exists for the day.
+### Step 7 — Storage Routes (`src/routes/storage.ts` + mount in `app.ts`)
+
+Build `storage.ts` router with avatar upload, meal photo upload, delete, and cron cleanup. Wire into `app.ts`. Add Vercel cron entry in `vercel.json`.
+
+**Validation gate:** `POST /storage/upload/avatar` with a valid JPEG returns `{ url, path }`. `POST /storage/upload/avatar` with an invalid MIME type returns 415. `POST /storage/cron/cleanup` without `CRON_SECRET` header returns 401.
+
+### Step 8 — CORS Tightening
+
+Replace wildcard `*.vercel.app` in `app.ts` cors config with an explicit list via `ALLOWED_ORIGINS` env var. Update env vars on Vercel.
+
+**Validation gate:** Request from an unlisted origin receives CORS 403. Request from the Expo app origin (`exp://`) receives correct CORS headers.
+
+### Step 9 — Deploy and Smoke Test
+
+```bash
+cd backend/api && vercel --prod --yes
+```
+
+Smoke test:
+1. `GET /health` → 200
+2. `POST /ai/chat` (authenticated) → responds normally
+3. `POST /ai/chat` 21 times rapid → 429 on #21
+4. `POST /storage/upload/avatar` (authenticated) → `{ url }` in response
+5. Check Upstash dashboard: keys created with correct TTL
+
+---
+
+## Architectural Decisions
+
+### Decision 1: Upstash over Vercel KV directly
+
+Vercel KV is Upstash under the hood. Using `@upstash/redis` directly (rather than `@vercel/kv`) gives:
+- Portability: not locked to Vercel-managed Redis if self-hosting later
+- Direct access to `ephemeralCache` option in `@upstash/ratelimit` (warm-invocation caching reduces Redis calls)
+- Same env vars either way (`KV_REST_API_URL` / `KV_REST_API_TOKEN`)
+
+### Decision 2: Two-tier rate limiting (IP + user) rather than user-only
+
+IP-tier runs BEFORE auth. This is essential for preventing authentication endpoint floods (someone hammering `POST /ai/chat` with invalid tokens never reaches `adminClient.auth.getUser()` — reduces Supabase Auth API costs). User-tier runs AFTER auth — uses the verified `userId` as the key, which is far more reliable than IP (NAT, VPN, shared WiFi all share one IP).
+
+### Decision 3: Backend-proxied storage upload (not presigned URLs)
+
+Presigned URLs would require the mobile app to:
+1. Call `POST /storage/generate-url` → get signed URL
+2. Call Supabase Storage directly with the signed URL
+
+Two-step flow from mobile, additional error surface. Backend-proxied upload keeps mobile code simpler: one POST with `multipart/form-data`. The overhead (backend touches the binary) is acceptable for the file sizes involved (5–10 MB photos). Presigned URLs would be the right call at >100 MB or for bulk uploads — not the use case here.
+
+### Decision 4: No native Supabase Storage lifecycle policy (workaround via cron)
+
+Supabase Storage has no built-in object TTL/expiration as of 2026-04. The `storage.objects` table is queryable via the service key, so a weekly cron (`POST /storage/cron/cleanup`) that calls `storage.from(bucket).remove(oldPaths)` is sufficient for v1.3. Flag for re-evaluation if Supabase ships native lifecycle policies.
+
+### Decision 5: Zod validation co-located with routes (not a global middleware)
+
+A global body-validation middleware would need to know every route's schema. In Hono, `validator('json', schema)` or `validator('form', schema)` is applied per-route — the schema lives next to the handler, easy to read and maintain. This matches how the rest of the codebase is structured (manual checks inline, no framework-level validation today).
+
+---
+
+## Data Flow Changes
+
+### Rate Limiting Data Flow
+
+```
+Request arrives at Vercel function
+  |
+  v
+ipRateLimiter: key = X-Forwarded-For header
+  → GET upstash:ratelimit:{ip}:{window}
+  → increment + expire
+  → if count > 200: return 429 with Retry-After
+  |
+  v
+authMiddleware: validates JWT → sets userId in context
+  |
+  v
+userRateLimiter: key = {userId}:{routePath}
+  → GET upstash:ratelimit:{userId}:{route}:{window}
+  → increment + expire
+  → if count > limit: return 429 with RateLimit, Retry-After headers
+  |
+  v
+Route handler executes normally
+```
+
+### File Upload Data Flow (new)
+
+```
+Mobile: POST /storage/upload/avatar
+  Content-Type: multipart/form-data
+  Body: file (JPEG/PNG, ≤5 MB)
+  |
+  v
+authMiddleware → userId in context
+  |
+  v
+userRateLimiter → upload quota check
+  |
+  v
+bodyLimit({ maxSize: 5MB }) → 413 if exceeded
+  |
+  v
+validator('form', schema) → 400 if MIME type invalid
+  |
+  v
+storageClient.uploadFile(
+  'profile-photos',
+  `{userId}/avatar.{ext}`,
+  await file.arrayBuffer(),
+  { contentType: file.type, upsert: true }
+)
+  |
+  v
+supabase Storage → stores file, returns path
+  |
+  v
+storageClient.getPublicUrl('profile-photos', path)
+  → https://{project}.supabase.co/storage/v1/object/public/profile-photos/{userId}/avatar.jpg
+  |
+  v
+UPDATE user_profiles SET avatar_url = publicUrl WHERE id = userId
+  |
+  v
+Response: { url: publicUrl, path }
+  |
+  v
+Mobile: stores url in user profile state,
+        displays avatar from publicUrl directly (CDN-cached)
+```
+
+---
+
+## Serverless Constraints Summary
+
+| Constraint | Impact | Mitigation |
+|------------|--------|------------|
+| No persistent memory between invocations | `MemoryStore` for rate limiting is useless | Upstash Redis (HTTP, not TCP) — state survives across invocations |
+| 10s default function timeout on Vercel Hobby | Large file uploads may timeout | Set `maxDuration: 30` in `vercel.json` functions config for the storage route |
+| 50 MB request body limit on Vercel | Photo uploads under 10 MB safe | `bodyLimit` middleware acts as secondary guard before Vercel's limit |
+| Cold start latency | Redis call on first request adds ~50ms | `ephemeralCache` option in Upstash reduces Redis hits on warm invocations |
+| No background threads | Cron cleanup must be a triggered endpoint | Vercel cron (`vercel.json`) calls `POST /storage/cron/cleanup` on schedule |
+
+---
 
 ## Sources
 
-- Open Food Facts API v2 documentation: https://openfoodfacts.github.io/openfoodfacts-server/api/
-- OFF API tutorial (fields, endpoint format, User-Agent guidance): https://openfoodfacts.github.io/openfoodfacts-server/api/tutorial-off-api/
-- React Native networking — no CORS enforcement in native builds: https://reactnative.dev/docs/network
-- Existing `plugins/pantry/src/utils/barcode.ts` — confirms direct OFF call works in production (EAN field subset)
-- Existing `plugins/pantry/src/screens/BarcodeScanner.tsx` — `expo-camera` integration pattern, scan guard
-- Existing `supabase/migrations/003_nutrition_schema.sql` — `nutrition_logs` baseline schema
-- Existing `plugins/nutrition/src/screens/LogMealScreen.tsx` — current `saveLog()` and tab pattern
-- Existing `plugins/nutrition/src/store.ts` — `NutritionEntry` interface baseline
+- `backend/api/src/app.ts` — existing middleware chain, CORS config, route mounts
+- `backend/api/src/middleware/auth.ts` — `ContextVariableMap` augmentation, adminClient pattern
+- `backend/api/src/routes/ai.ts` — existing `router.use('*', authMiddleware)` pattern
+- `backend/api/src/routes/bugs.ts` — existing manual validation pattern
+- `backend/api/vercel.json` — cron configuration, rewrite pattern
+- `backend/api/package.json` — current dependencies (hono 4.7, supabase-js 2.50, zod 4.3)
+- `hono-rate-limiter` GitHub + Fiberplane article: https://fiberplane.com/blog/rate-limiting-intro/
+- `@hono-rate-limiter/redis` npm: https://www.npmjs.com/package/@hono-rate-limiter/redis
+- `@upstash/ratelimit` serverless features: https://upstash.com/blog/upstash-ratelimit
+- Upstash on Vercel guide: https://upstash.com/blog/edge-rate-limiting
+- Hono file upload docs: https://hono.dev/examples/file-upload
+- Supabase Storage standard uploads: https://supabase.com/docs/guides/storage/uploads/standard-uploads
+- Supabase Storage access control / RLS: https://supabase.com/docs/guides/storage/security/access-control
+- Supabase Storage buckets fundamentals: https://supabase.com/docs/guides/storage/buckets/fundamentals
+- Supabase `getPublicUrl` API: https://supabase.com/docs/reference/javascript/storage-from-getpublicurl
+- Supabase Storage delete objects: https://supabase.com/docs/guides/storage/management/delete-objects
+- Supabase lifecycle policy (no native TTL): https://github.com/orgs/supabase/discussions/20171
 
 ---
-*Architecture research for: Open Food Facts barcode enrichment — Ziko nutrition plugin v1.2*
+*Architecture research for: Security + Cloud Infrastructure — Ziko Platform v1.3*
 *Researched: 2026-04-02*
