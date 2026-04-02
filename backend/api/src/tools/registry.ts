@@ -167,6 +167,7 @@ const executors: Record<string, ToolExecutor['execute']> = {
   wearables_sync_status: WearablesTools.wearables_sync_status,
   pantry_get_items: PantryTools.pantry_get_items,
   pantry_update_item: PantryTools.pantry_update_item,
+  pantry_log_recipe_cooked: PantryTools.pantry_log_recipe_cooked,
   app_navigate: NavigationTools.app_navigate,
 };
 
@@ -511,6 +512,20 @@ const pantryToolSchemas: AITool[] = [
         quantity: { type: 'number', description: 'New quantity value' },
         unit: { type: 'string', description: 'Unit (g, kg, ml, L, pieces, can, box, bag)' },
       },
+    },
+  },
+  {
+    name: 'pantry_log_recipe_cooked',
+    description: 'Confirm a cooked recipe: logs macros to nutrition and decrements pantry quantities for used ingredients. Recipe param is a JSON-encoded Recipe object.',
+    parameters: {
+      type: 'object',
+      properties: {
+        recipe: { type: 'string', description: 'JSON-encoded Recipe object with name, base_servings, macros, ingredients, steps' },
+        servings: { type: 'integer', description: 'Number of servings cooked' },
+        meal_type: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack'], description: 'Meal type for nutrition log' },
+        macros_override: { type: 'string', description: 'Optional JSON with override values: {calories, protein_g, carbs_g, fat_g}' },
+      },
+      required: ['recipe', 'servings', 'meal_type'],
     },
   },
 ];
