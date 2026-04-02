@@ -80,8 +80,8 @@
 
 ### Tech Debt (DEBT)
 
-- [ ] **DEBT-01**: Checking off a recipe ingredient from the shopping list prompts "how much did you buy?" and inserts or restocks the ingredient in the pantry
-- [ ] **DEBT-02**: Checking off a low-stock pantry item from the shopping list prompts for quantity instead of auto-restoring to threshold+1
+- [x] **DEBT-01**: Checking off a recipe ingredient from the shopping list prompts "how much did you buy?" and inserts or restocks the ingredient in the pantry
+- [x] **DEBT-02**: Checking off a low-stock pantry item from the shopping list prompts for quantity instead of auto-restoring to threshold+1
 - [ ] **DEBT-03**: Recipe cooked confirmation uses `pantry_log_recipe_cooked` AI tool registered in `registry.ts`; direct Supabase call removed from `RecipeConfirm.tsx`
 - [ ] **DEBT-04**: VALIDATION.md files for phases 06, 07, 08, and 09 accurately reflect post-execution state (Nyquist compliant)
 
@@ -135,7 +135,7 @@
 | SCORE-01 | Phase 11 | Pending |
 | SCORE-02 | Phase 11 | Pending |
 | SCORE-03 | Phase 11 | Pending |
-| DEBT-01 | Phase 10 | Pending |
-| DEBT-02 | Phase 10 | Pending |
+| DEBT-01 | Phase 10 | Complete |
+| DEBT-02 | Phase 10 | Complete |
 | DEBT-03 | Phase 10 | Pending |
 | DEBT-04 | Phase 10 | Pending |

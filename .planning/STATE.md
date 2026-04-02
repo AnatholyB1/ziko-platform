@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Barcode Enrichment + Tech Debt
-status: roadmapped
-stopped_at: Milestone v1.2 roadmap created — Phase 10 and Phase 11 defined
-last_updated: "2026-04-02T00:00:00Z"
+milestone: v1.1
+milestone_name: Smart Pantry Plugin
+status: executing
+stopped_at: Completed 10-data-foundation-tech-debt 10-02-PLAN.md
+last_updated: "2026-04-02T11:34:58.751Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 2
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 14
+  completed_plans: 14
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Phase 10 — Data Foundation + Tech Debt (v1.2 start)
+**Current focus:** Phase 10 — data-foundation-tech-debt
 
 ## Current Position
 
-Phase: 10 — Data Foundation + Tech Debt
-Plan: Not started
-Status: Roadmapped — ready for planning
-Last activity: 2026-04-02 — Milestone v1.2 roadmap created (Phases 10-11)
+Phase: 10 (data-foundation-tech-debt) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 | Phase 08-calorie-tracker-sync P03 | 5 | 3 tasks | 3 files |
 | Phase 09-smart-shopping-list P09-01 | 2 | 2 tasks | 3 files |
 | Phase 09-smart-shopping-list P09-02 | 3 | 2 tasks | 5 files |
+| Phase 10-data-foundation-tech-debt P10-02 | 5m | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,8 @@ Recent decisions affecting current work:
 - [v1.2 Roadmap]: serving_size is free text in OFF API — extract grams via regex /([\d.]+)\s*g/i, default to 100 on failure; never let NaN reach macro calculation or log insert
 - [v1.2 Roadmap]: pantry_log_recipe_cooked AI tool requires three coordinated edits in registry.ts (import + executors record + allToolSchemas array); remove direct Supabase call from RecipeConfirm.tsx in the same task — never have both active simultaneously
 - [v1.2 Roadmap]: DEBT-04 (Nyquist VALIDATION.md) is documentation-only — read each phase plan and cross-check against live app state before writing; no code changes
+- [Phase 10-data-foundation-tech-debt]: D-05: low-stock shopping list item sets quantity = purchased amount directly (not threshold+1)
+- [Phase 10-data-foundation-tech-debt]: D-03/D-04: recipe ingredient check-off adds to existing pantry qty if matched, inserts new item if unmatched
 
 ### Pending Todos
 
@@ -130,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T00:00:00Z
-Stopped at: Milestone v1.2 roadmap created — Phases 10-11 defined, files written
+Last session: 2026-04-02T11:34:58.747Z
+Stopped at: Completed 10-data-foundation-tech-debt 10-02-PLAN.md
 Resume file: None
