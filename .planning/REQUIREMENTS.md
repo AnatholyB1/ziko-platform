@@ -69,14 +69,14 @@
 ### Barcode Scan Data Layer (SCAN)
 
 - [ ] **SCAN-01**: User can scan a product barcode in the nutrition plugin to retrieve food data from Open Food Facts (name, macros per 100g, Nutri-Score, Eco-Score, photo)
-- [ ] **SCAN-02**: User sees a "product not found" message and can fall back to manual entry when a barcode is not in Open Food Facts
+- [x] **SCAN-02**: User sees a "product not found" message and can fall back to manual entry when a barcode is not in Open Food Facts
 - [ ] **SCAN-03**: Scanned product data (Nutri-Score, Eco-Score) is preserved on the nutrition log entry for later display
 
 ### Score Display (SCORE)
 
-- [ ] **SCORE-01**: User sees a product card with photo, Nutri-Score badge, Eco-Score badge, macros per 100g, and a serving size adjuster before confirming a scanned meal log
-- [ ] **SCORE-02**: User sees Nutri-Score and Eco-Score badges on nutrition journal entries logged via barcode scan
-- [ ] **SCORE-03**: User sees their average Nutri-Score for the day on the nutrition dashboard (widget hidden when no barcode-scanned meals exist that day)
+- [x] **SCORE-01**: User sees a product card with photo, Nutri-Score badge, Eco-Score badge, macros per 100g, and a serving size adjuster before confirming a scanned meal log
+- [x] **SCORE-02**: User sees Nutri-Score and Eco-Score badges on nutrition journal entries logged via barcode scan
+- [x] **SCORE-03**: User sees their average Nutri-Score for the day on the nutrition dashboard (widget hidden when no barcode-scanned meals exist that day)
 
 ### Tech Debt (DEBT)
 
@@ -130,11 +130,11 @@
 | SHOP-03 | Phase 9 | Validated |
 | SHOP-04 | Phase 9 | Validated |
 | SCAN-01 | Phase 10 | Pending |
-| SCAN-02 | Phase 11 | Pending |
+| SCAN-02 | Phase 11 | Complete |
 | SCAN-03 | Phase 10 | Pending |
-| SCORE-01 | Phase 11 | Pending |
-| SCORE-02 | Phase 11 | Pending |
-| SCORE-03 | Phase 11 | Pending |
+| SCORE-01 | Phase 11 | Complete |
+| SCORE-02 | Phase 11 | Complete |
+| SCORE-03 | Phase 11 | Complete |
 | DEBT-01 | Phase 10 | Complete |
 | DEBT-02 | Phase 10 | Complete |
 | DEBT-03 | Phase 10 | Complete |

@@ -211,7 +211,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — ScoreBadge component, NutritionEntry type extension, i18n keys (FR+EN), Android CAMERA permission
+- [x] 11-01-PLAN.md — ScoreBadge component, NutritionEntry type extension, i18n keys (FR+EN), Android CAMERA permission
 - [ ] 11-02-PLAN.md — LogMealScreen 4th Barcode tab: CameraView scanner, product card, serving adjuster, saveLog extension
 - [ ] 11-03-PLAN.md — NutritionDashboard: journal entry score badges + daily average Nutri-Score widget
 **UI hint**: yes
@@ -235,7 +235,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 9. Smart Shopping List | v1.1 | 2/3 | In Progress | - |
 | 10. Data Foundation + Tech Debt | v1.2 | 2/3 | Complete    | 2026-04-02 |
-| 11. Barcode UI + Score Display | v1.2 | 0/3 | Not started | - |
+| 11. Barcode UI + Score Display | v1.2 | 1/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
