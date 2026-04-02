@@ -37,15 +37,14 @@ Declared values (multiples of 4 only):
 | xs | 4px | Icon gaps, badge internal padding (small size) |
 | sm | 8px | Badge internal padding (medium size), chip gap |
 | md | 16px | Default element spacing, screen horizontal padding |
-| lg | 20px | Screen padding (matches existing screen padding: 20) |
-| xl | 24px | Section spacing |
-| 2xl | 32px | Major layout gaps |
-| 3xl | 48px | N/A for this phase |
+| lg | 24px | Section spacing |
+| xl | 32px | Major layout gaps |
+| 2xl | 48px | N/A for this phase |
 
 Exceptions:
 - Tab bar clearance: `paddingBottom: 100` (existing convention — all screens)
 - Touch targets: minimum 44px height for all interactive elements
-- Product card section padding: `padding: 14, borderRadius: 14` (matches NutritionDashboard surface card style from CONTEXT.md)
+- Product card section padding: `padding: 16, borderRadius: 14` (matches NutritionDashboard surface card style from CONTEXT.md — borderRadius kept at 14 per existing codebase pattern)
 - Macro card borderRadius: `14` (matches existing NutritionDashboard pattern)
 - Header borderRadius: `20` (matches existing calorie summary card in NutritionDashboard)
 
@@ -53,17 +52,20 @@ Exceptions:
 
 ## Typography
 
+Exactly 4 sizes, exactly 2 weights declared.
+
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Body | 14px | 400 (regular) | 1.5 | Muted labels, badge sub-labels, scan instruction text |
-| Label | 13px / 11px / 12px | 600 (semibold) | 1.4 | Badge text per size variant (lg/sm/md); entry row food name |
-| Heading | 22px | 800 | 1.2 | Screen header ("Log Meal") — existing |
-| Display | 16px | 700 | 1.3 | Product name on card; macro values |
+| Label | 12px | 700 (bold) | 1.4 | Badge text (all ScoreBadge size variants); chip text; entry row food name |
+| Body | 14px | 400 (regular) | 1.5 | Muted labels, scan instruction text, sub-labels |
+| Display | 16px | 700 (bold) | 1.3 | Product name on card; macro values; stepper TextInput grams |
+| Heading | 22px | 700 (bold) | 1.2 | Screen header ("Log Meal") — existing |
 
 Typography size map for `ScoreBadge` component (source: CONTEXT.md D-15):
-- `size='lg'` (product card): `fontSize: 13, height: 28, paddingHorizontal: 10`
+- All size variants use `fontSize: 12` (Label role). Size differentiation is achieved via height and padding only — NOT different font sizes.
+- `size='lg'` (product card): `fontSize: 12, height: 28, paddingHorizontal: 8`
 - `size='md'` (dashboard widget): `fontSize: 12, height: 24, paddingHorizontal: 8`
-- `size='sm'` (journal entry rows): `fontSize: 11, height: 20, paddingHorizontal: 6`
+- `size='sm'` (journal entry rows): `fontSize: 12, height: 20, paddingHorizontal: 4`
 
 ---
 
@@ -120,10 +122,10 @@ Behavior:
 - Prefix label: "NS" for nutriscore, "ES" for ecoscore.
 - Visual structure: `[NS A]` — pill with white text, colored background, borderRadius = height / 2.
 
-Size values (from D-15):
-- `sm`: height 20, paddingHorizontal 6, fontSize 11
+Size values (all share `fontSize: 12` — size differentiation via height and padding only):
+- `sm`: height 20, paddingHorizontal 4, fontSize 12
 - `md`: height 24, paddingHorizontal 8, fontSize 12
-- `lg`: height 28, paddingHorizontal 10, fontSize 13
+- `lg`: height 28, paddingHorizontal 8, fontSize 12
 
 ### Modified: `LogMealScreen` — 4th tab addition
 
@@ -138,7 +140,7 @@ Tab pill style (matches existing pattern from codebase):
 - Inactive: `backgroundColor: 'transparent', borderColor: theme.border`
 - Text active: `color: '#fff'`
 - Text inactive: `color: theme.muted`
-- `fontSize: 12, fontWeight: '600', paddingVertical: 10, borderRadius: 10`
+- `fontSize: 12, fontWeight: '700', paddingVertical: 8, borderRadius: 10`
 
 ### Modified: `LogMealScreen` — Barcode tab content flow
 
@@ -157,22 +159,22 @@ Tab pill style (matches existing pattern from codebase):
 
 **State 3 — Product card (product found):**
 - Camera hidden; product card scrolls up inline (source: CONTEXT.md D-08)
-- Card: `backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border`
+- Card: `backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: theme.border`
 - Layout top-to-bottom (source: CONTEXT.md D-09):
   1. Product photo: `width: '100%', height: 180, borderRadius: 10, resizeMode: 'cover'`; fallback: `Ionicons name="nutrition-outline" size={64} color={theme.muted}` centered
-  2. Name (`fontSize: 16, fontWeight: '700', color: theme.text`) + Brand (`fontSize: 13, color: theme.muted`) — stacked
+  2. Name (`fontSize: 16, fontWeight: '700', color: theme.text`) + Brand (`fontSize: 12, color: theme.muted`) — stacked
   3. Score badges row: `[ScoreBadge grade={nutriscore} type='nutriscore' size='lg'] [ScoreBadge grade={ecoscore} type='ecoscore' size='lg']` — `flexDirection: 'row', gap: 8, marginTop: 8`
   4. Macros grid per 100g — reuse existing 3-cell layout pattern from NutritionDashboard (`flex: 1` columns for protein/carbs/fat + energy kcal label above)
   5. Serving size adjuster (see below)
-  6. Scaled macros row — `fontSize: 14, fontWeight: '600', color: theme.text`; updates in real time
+  6. Scaled macros row — `fontSize: 14, fontWeight: '700', color: theme.text`; updates in real time
   7. "Log this meal" button (primary) — full-width, `backgroundColor: theme.primary, borderRadius: 12, padding: 16, marginTop: 12`
-  8. "Enter manually" button (secondary) — full-width, `backgroundColor: 'transparent', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: theme.border, marginTop: 8`
-  9. "Scan again" button (tertiary text) — `color: theme.muted, fontSize: 13, textAlign: 'center', paddingTop: 8`
+  8. "Enter manually" button (secondary) — full-width, `backgroundColor: 'transparent', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: theme.border, marginTop: 8`
+  9. "Scan again" button (tertiary text) — `color: theme.muted, fontSize: 14, textAlign: 'center', paddingTop: 8`
 
 **State 4 — Product not found:**
 - Camera hidden; inline message in tab area (source: CONTEXT.md D-13):
   - Icon: `Ionicons name="barcode-outline" size={48} color={theme.muted}` centered
-  - Heading: i18n key `nutrition.barcodeNotFound` — `fontSize: 16, fontWeight: '600', color: theme.text`
+  - Heading: i18n key `nutrition.barcodeNotFound` — `fontSize: 16, fontWeight: '700', color: theme.text`
   - Sub-label: scanned barcode string — `fontSize: 12, color: theme.muted`
   - "Enter manually" button — primary style (only CTA here since no product data)
   - "Scan again" button — secondary/text link style
@@ -187,13 +189,13 @@ Tab pill style (matches existing pattern from codebase):
 
 Layout (top to bottom):
 1. Quick-select chips row: `[50g] [100g] [150g] [200g]`
-   - Each chip: `paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1`
+   - Each chip: `paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, borderWidth: 1`
    - Selected: `borderColor: theme.primary, backgroundColor: theme.primary + '18'`
    - Unselected: `borderColor: theme.border, backgroundColor: theme.surface`
-   - `fontSize: 13, fontWeight: '600'`
+   - `fontSize: 12, fontWeight: '700'`
 2. Stepper row: `[-5]` | `TextInput (grams)` | `[+5]`
    - Stepper buttons: `width: 40, height: 40, borderRadius: 10, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border`
-   - TextInput: `flex: 1, textAlign: 'center', fontSize: 20, fontWeight: '700', color: theme.text`
+   - TextInput: `flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: theme.text`
    - `keyboardType: 'numeric'`
 3. Clamp: minimum 1g, maximum 1000g — silent clamp, no error shown (source: CONTEXT.md D-12)
 4. Pre-filled with `product.serving_size_g` (default 100 if null)
@@ -216,7 +218,7 @@ Position: after macros row, before TDEE Calculator link.
 Visibility: hidden (not rendered) when `scoredMeals.length === 0` — `scoredMeals` = `todayLogs.filter(l => ['a','b','c','d','e','a-plus'].includes(l.nutriscore_grade))`.
 
 Widget card structure:
-- `backgroundColor: theme.surface, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: theme.border`
+- `backgroundColor: theme.surface, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: theme.border`
 - Left: `ScoreBadge` at `size='md'` showing computed average grade
 - Right of badge: label `nutrition.avgNutriscore` (i18n) + sub-label count string `nutrition.avgNutriscoreCount` (e.g., "sur 3 repas scannés")
 - Average computation: map grades to numeric (a-plus=1, a=1, b=2, c=3, d=4, e=5), mean, round, map back to letter (1=A, 2=B, 3=C, 4=D, 5=E)
@@ -335,6 +337,9 @@ No third-party component registries. All UI built from NativeWind inline styles 
 | 'a-plus' display as "A+" with dark green | CONTEXT.md specifics section |
 | Design tokens (colors, fonts, spacing) | CLAUDE.md |
 | Inline styles (no StyleSheet), Ionicons, showAlert | CLAUDE.md |
-| surface card style (borderRadius: 14, padding: 14) | CONTEXT.md discretion |
+| surface card style (borderRadius: 14, padding: 16) | CONTEXT.md discretion + checker fix |
 | paddingBottom: 100 for tab bar | CLAUDE.md known bugs/conventions |
 | expo-camera v17 CameraView API | CONTEXT.md specifics section |
+| Typography collapsed to 4 sizes, 2 weights | checker revision 2026-04-02 |
+| Spacing scale lg token changed from 20px to 24px | checker revision 2026-04-02 |
+| Non-multiple-of-4 padding values corrected | checker revision 2026-04-02 |
