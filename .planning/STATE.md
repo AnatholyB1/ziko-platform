@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: verifying
-stopped_at: Completed 08-calorie-tracker-sync 08-03-PLAN.md — Phase 8 fully done, human-verified
-last_updated: "2026-03-30T17:44:18.977Z"
+stopped_at: Completed 10-data-foundation-tech-debt 10-01-PLAN.md
+last_updated: "2026-04-02T11:35:08.339Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 4
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | Phase 08-calorie-tracker-sync P02 | 8 | 2 tasks | 4 files |
 | Phase 08 P03 | 5 | 2 tasks | 3 files |
 | Phase 08-calorie-tracker-sync P03 | 5 | 3 tasks | 3 files |
+| Phase 10-data-foundation-tech-debt P01 | 10 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,8 @@ Recent decisions affecting current work:
 - [Phase 08-calorie-tracker-sync]: Added missing ./screens/RecipeConfirm export to plugins/pantry/package.json (Rule 3 auto-fix from Plan 02)
 - [Phase 08]: pantry.confirm_back and pantry.confirm_success intentionally omitted — screens use standard nav and showAlert without t() calls
 - [Phase 08]: pantry.confirm_back and pantry.confirm_success intentionally omitted — screens use standard nav and showAlert respectively, with no t() call for these strings
+- [Phase 10-data-foundation-tech-debt]: food_products uses auth.role() = 'authenticated' RLS — shared catalogue has no user_id column
+- [Phase 10-data-foundation-tech-debt]: offApi.ts uses world.openfoodfacts.org production URL (not .net staging) — intentionally separate from pantry barcode.ts
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T17:40:35.535Z
-Stopped at: Completed 08-calorie-tracker-sync 08-03-PLAN.md — Phase 8 fully done, human-verified
+Last session: 2026-04-02T11:35:08.335Z
+Stopped at: Completed 10-data-foundation-tech-debt 10-01-PLAN.md
 Resume file: None
