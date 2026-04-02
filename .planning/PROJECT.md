@@ -6,7 +6,7 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 ## Core Value
 
-A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
+A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
 
 ## Current Milestone: v1.2 Barcode Enrichment + Tech Debt
 
