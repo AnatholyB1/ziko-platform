@@ -10,6 +10,9 @@ interface NutritionEntry {
   carbs_g: number;
   fat_g: number;
   serving_g?: number;
+  food_product_id?: string | null;
+  nutriscore_grade?: string | null;
+  ecoscore_grade?: string | null;
 }
 
 interface NutritionState {
