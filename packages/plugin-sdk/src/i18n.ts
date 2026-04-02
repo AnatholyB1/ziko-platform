@@ -769,6 +769,9 @@ const fr: TranslationDict = {
   'pantry.shop_error_checkoff': 'Impossible de mettre à jour. Réessayez.',
   'pantry.shop_error_add': "Impossible d'ajouter à la liste. Réessayez.",
   'pantry.shop_from_recipe': 'Depuis : {name}',
+  'pantry.shop_qty_title': 'Combien avez-vous achet\u00e9 ?',
+  'pantry.shop_qty_cancel': 'Annuler',
+  'pantry.shop_qty_confirm': 'Confirmer',
   // ── Pantry Confirm ──
   'pantry.cooked_this_cta': 'J\'ai cuisiné ça',
   'pantry.confirm_title': 'Confirmer la recette',
@@ -1551,6 +1554,9 @@ const en: TranslationDict = {
   'pantry.shop_error_checkoff': 'Could not update. Please try again.',
   'pantry.shop_error_add': 'Could not add to list. Please try again.',
   'pantry.shop_from_recipe': 'From: {name}',
+  'pantry.shop_qty_title': 'How much did you buy?',
+  'pantry.shop_qty_cancel': 'Cancel',
+  'pantry.shop_qty_confirm': 'Confirm',
   // ── Pantry Confirm ──
   'pantry.cooked_this_cta': 'I cooked this',
   'pantry.confirm_title': 'Confirm recipe',
