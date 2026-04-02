@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useNutritionStore } from '../store';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { format, parseISO } from 'date-fns';
+import ScoreBadge from '../components/ScoreBadge';
 
 // Cross-plugin: hydration
 let useHydrationStore: any = null;
@@ -76,6 +77,28 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
     }),
     { kcal: 0, protein: 0, carbs: 0, fat: 0 },
   );
+
+  const VALID_GRADES = ['a', 'b', 'c', 'd', 'e', 'a-plus'];
+  const scoredMeals = todayLogs.filter(
+    (l) => l.nutriscore_grade && VALID_GRADES.includes(l.nutriscore_grade)
+  );
+
+  const gradeToNum: Record<string, number> = {
+    'a-plus': 1, a: 1, b: 2, c: 3, d: 4, e: 5,
+  };
+  const numToGrade: Record<number, string> = {
+    1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e',
+  };
+  const avgNutriscore = scoredMeals.length > 0
+    ? numToGrade[
+        Math.round(
+          scoredMeals.reduce(
+            (sum, l) => sum + (gradeToNum[l.nutriscore_grade!] ?? 3),
+            0
+          ) / scoredMeals.length
+        )
+      ] ?? 'c'
+    : null;
 
   const mealGroups = MEAL_TYPES.reduce((acc, type) => ({
     ...acc,
@@ -154,6 +177,31 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
             </View>
           ))}
         </View>
+
+        {/* Daily average Nutri-Score widget */}
+        {scoredMeals.length > 0 && avgNutriscore && (
+          <View style={{
+            backgroundColor: theme.surface,
+            borderRadius: 14,
+            padding: 16,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: theme.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 12,
+          }}>
+            <ScoreBadge grade={avgNutriscore} type="nutriscore" size="md" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
+                {t('nutrition.avgNutriscore')}
+              </Text>
+              <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>
+                {t('nutrition.avgNutriscoreCount').replace('{count}', String(scoredMeals.length))}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* TDEE Calculator link */}
         <TouchableOpacity
@@ -254,6 +302,12 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
                       P: {log.protein_g}g · C: {log.carbs_g}g · F: {log.fat_g}g
                     </Text>
                   </View>
+                  {(log.nutriscore_grade || log.ecoscore_grade) && (
+                    <View style={{ flexDirection: 'row', gap: 4, marginHorizontal: 6 }}>
+                      <ScoreBadge grade={log.nutriscore_grade ?? null} type="nutriscore" size="sm" />
+                      <ScoreBadge grade={log.ecoscore_grade ?? null} type="ecoscore" size="sm" />
+                    </View>
+                  )}
                   <Text style={{ color: theme.primary, fontWeight: '600' }}>{Math.round(log.calories)} kcal</Text>
                 </TouchableOpacity>
               ))
