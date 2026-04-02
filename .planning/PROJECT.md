@@ -8,7 +8,20 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
 
-## Current Milestone: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02
+## Current Milestone: v1.3 Security + Cloud Infrastructure
+
+**Goal:** Sécuriser le backend contre les abus et gérer les assets media via Supabase Storage avec lifecycle policies.
+
+**Target features:**
+- Rate limiting sur les endpoints Hono (AI chat, barcode scan, auth) — per-user + per-IP, headers standards
+- Supabase Storage — buckets pour profil photos, photos de scan repas, et exports/PDF
+- Lifecycle policies — nettoyage auto des assets anciens via Supabase Storage policies
+- Sécurisation API — CORS strict, validation inputs, protection contre les abus
+- Monitoring de base — alertes sur limites dépassées
+
+---
+
+## Previous: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02
 
 **What shipped:**
 - Barcode scan tab in nutrition log screen — Open Food Facts product card with photo, name, brand, macros per 100g, Nutri-Score + Eco-Score badges, serving size adjuster
@@ -60,9 +73,13 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - ✓ `pantry_log_recipe_cooked` AI tool registered; RecipeConfirm.tsx migrated — v1.2
 - ✓ Nyquist VALIDATION.md written for phases 07 and 09 — v1.2
 
-### Active (next milestone)
+### Active (v1.3 — Security + Cloud Infrastructure)
 
-*(To be defined — run `/gsd:new-milestone` to start)*
+- [ ] Rate limiting per-user + per-IP sur les endpoints Hono sensibles (AI chat, barcode scan, auth)
+- [ ] Supabase Storage buckets pour profil photos, scan photos, exports/PDF
+- [ ] Lifecycle policies Supabase Storage (nettoyage assets anciens)
+- [ ] Sécurisation API — CORS strict, validation inputs, protection abus
+- [ ] Monitoring de base — alertes sur limites dépassées
 
 ### Deferred
 
@@ -123,4 +140,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-02 after v1.1 + v1.2 milestones*
+*Last updated: 2026-04-02 — milestone v1.3 started*
