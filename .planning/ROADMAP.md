@@ -46,7 +46,7 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
 
 ### 🚧 v1.3 Security + Cloud Infrastructure (In Progress)
 
-**Milestone Goal:** Sécuriser le backend Hono contre les abus avec du rate limiting distribué via Upstash Redis, durcir l'API (CORS, headers, validation Zod), et gérer les assets media via Supabase Storage avec upload direct depuis le mobile et lifecycle policies.
+**Milestone Goal:** Securiser le backend Hono contre les abus avec du rate limiting distribue via Upstash Redis, durcir l'API (CORS, headers, validation Zod), et gerer les assets media via Supabase Storage avec upload direct depuis le mobile et lifecycle policies.
 
 #### Phase 12: Infra + Rate Limiting
 **Goal**: The API is protected against unauthenticated floods and per-user quota abuse — all rate-limited routes return 429 with Retry-After headers, backed by a persistent distributed Redis store that survives Vercel cold starts
@@ -58,7 +58,10 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
   3. An authenticated user sending 21 consecutive POST requests to `/ai/chat` or `/ai/chat/stream` within 60 minutes receives HTTP 429 with `Retry-After` on the 21st request
   4. An authenticated user sending 31 consecutive POST requests to `/ai/tools/execute` within 60 minutes receives HTTP 429 on the 31st request
   5. An authenticated user sending requests beyond quota to the barcode scan endpoint receives HTTP 429; brute-force attempts on auth endpoints from a single IP are blocked after the per-IP threshold
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
+- [ ] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
 
 #### Phase 13: API Security Hardening
 **Goal**: The API enforces strict CORS, emits security headers on every response, and validates all inputs reaching Claude Sonnet — so malformed or malicious payloads are rejected before touching any AI or database layer
@@ -109,7 +112,10 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
   3. An authenticated user sending 21 consecutive POST requests to `/ai/chat` or `/ai/chat/stream` within 60 minutes receives HTTP 429 with `Retry-After` on the 21st request
   4. An authenticated user sending 31 consecutive POST requests to `/ai/tools/execute` within 60 minutes receives HTTP 429 on the 31st request
   5. An authenticated user sending requests beyond quota to the barcode scan endpoint receives HTTP 429; brute-force attempts on auth endpoints from a single IP are blocked after the per-IP threshold
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
+- [ ] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
 
 ### Phase 13: API Security Hardening
 **Goal**: The API enforces strict CORS, emits security headers on every response, and validates all inputs reaching Claude Sonnet — so malformed or malicious payloads are rejected before touching any AI or database layer
@@ -151,7 +157,7 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -166,11 +172,12 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Smart Shopping List | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 10. Data Foundation + Tech Debt | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
-| 12. Infra + Rate Limiting | v1.3 | 0/? | Not started | — |
-| 13. API Security Hardening | v1.3 | 0/? | Not started | — |
-| 14. Supabase Storage | v1.3 | 0/? | Not started | — |
-| 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | — |
+| 12. Infra + Rate Limiting | v1.3 | 0/2 | Not started | -- |
+| 13. API Security Hardening | v1.3 | 0/? | Not started | -- |
+| 14. Supabase Storage | v1.3 | 0/? | Not started | -- |
+| 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
 
 ---
-*Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
-*Updated: 2026-04-02 — v1.2 shipped; v1.3 Security + Cloud Infrastructure phases 12–15 added*
+*Roadmap created: 2026-03-26 -- Milestone v1.0 Landing Page*
+*Updated: 2026-04-02 -- v1.2 shipped; v1.3 Security + Cloud Infrastructure phases 12-15 added*
+*Updated: 2026-04-02 -- Phase 12 planned: 2 plans in 2 waves*
