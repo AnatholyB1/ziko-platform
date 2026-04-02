@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 | Phase 08-calorie-tracker-sync P03 | 5 | 3 tasks | 3 files |
 | Phase 09-smart-shopping-list P09-01 | 2 | 2 tasks | 3 files |
 | Phase 09-smart-shopping-list P09-02 | 3 | 2 tasks | 5 files |
+| Phase 10-data-foundation-tech-debt P10-01 | 10 | 2 tasks | 2 files |
 | Phase 10-data-foundation-tech-debt P10-02 | 5m | 2 tasks | 2 files |
 | Phase 10-data-foundation-tech-debt P10-03 | 5m | 3 tasks | 5 files |
 
@@ -121,6 +122,7 @@ Recent decisions affecting current work:
 - [Phase 10-data-foundation-tech-debt]: D-03/D-04: recipe ingredient check-off adds to existing pantry qty if matched, inserts new item if unmatched
 - [Phase 10-data-foundation-tech-debt]: pantry_log_recipe_cooked imports nutrition_log_meal directly — no HTTP round-trip (D-06)
 - [Phase 10-data-foundation-tech-debt]: RecipeConfirm.tsx uses tool_name + parameters fields (not tool + params) — verified from ai.ts routes inspection
+- [Phase 10-data-foundation-tech-debt]: food_products uses auth.role() = 'authenticated' RLS — shared catalogue has no user_id column
 
 ### Pending Todos
 
