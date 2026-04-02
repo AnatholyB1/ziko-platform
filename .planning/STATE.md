@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: planning
-stopped_at: Defining requirements
+status: ready
+stopped_at: Roadmap created — ready for Phase 12
 last_updated: "2026-04-02T00:00:00.000Z"
 last_activity: 2026-04-02
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Planning next milestone — run `/gsd:new-milestone` to continue
+**Current focus:** v1.3 Security + Cloud Infrastructure — start with `/gsd:plan-phase 12`
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 12 — Infra + Rate Limiting (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-02 — Milestone v1.3 started
+Status: Roadmap approved — ready to plan Phase 12
+Last activity: 2026-04-02 — v1.3 roadmap created (Phases 12–15)
 
-Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
+Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 0 (v1.3)
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -134,6 +134,17 @@ Recent decisions affecting current work:
 - [Phase 11-02]: scannedRef uses useRef (not useState) for scan guard in LogMealScreen barcode tab — prevents re-render race before async lookup resolves
 - [Phase 11-03]: Widget positioned after macros row and before TDEE Calculator link per UI-SPEC
 - [Phase 11-03]: gradeToNum maps a-plus as 1 (same as a) — avgNutriscore output is always a single letter a-e, never a-plus
+- [v1.3 Roadmap]: Rate limiting requires Upstash Redis (HTTP-based) — in-memory MemoryStore is silently useless on Vercel serverless (isolated per cold start); INFRA-01 must be provisioned before any middleware code is written
+- [v1.3 Roadmap]: Middleware order is fixed — logger → cors → ipRateLimiter → [route mount] → authMiddleware → userRateLimiter → zValidator → handler; CORS must be first (preflight OPTIONS must never hit auth middleware)
+- [v1.3 Roadmap]: Rate limiting key selection — userId (authenticated) > x-real-ip (Vercel-set) > x-forwarded-for (last resort); never use x-forwarded-for as primary (Vercel overwrites with egress proxy IPs, collapsing all users into one bucket)
+- [v1.3 Roadmap]: Storage uploads use signed URL pattern (NOT backend proxy) — Vercel hard limit is 4.5 MB applied before handler runs; signed URL: POST /storage/upload-url (tiny JSON) → mobile uploads directly to Supabase Storage
+- [v1.3 Roadmap]: Storage RLS uses path-prefix pattern — (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub'); NEVER copy from existing migrations (auth.uid() = user_id does not work on storage.objects which has no user_id column)
+- [v1.3 Roadmap]: All three storage buckets are private — profile-photos (5 MB, images), scan-photos (10 MB, images, 90-day retention), exports (25 MB, PDF/CSV, 7-day retention)
+- [v1.3 Roadmap]: React Native upload uses decode(base64) from base64-arraybuffer → ArrayBuffer with explicit contentType; no File objects, no raw base64, no global Content-Type: application/json on Supabase client
+- [v1.3 Roadmap]: Signed URL expiry set to 300 seconds (not default 60) — generate at confirm step, not when photo picker opens; retry on expiry by fetching fresh token
+- [v1.3 Roadmap]: Lifecycle cleanup via Vercel cron (POST /storage/cron/cleanup) — uses supabase.storage.from(bucket).remove([paths]) not raw SQL DELETE (which orphans objects); reuses cron pattern from supplement scraper
+- [v1.3 Roadmap]: INFRA-02 (lifecycle cron) depends on storage buckets existing — Phase 15 must come after Phase 14
+- [v1.3 Roadmap]: SEC-01/02/03 (CORS, headers, Zod validation) are independent of rate limiting and storage — placed in Phase 13 between rate limiting and storage
 
 ### Pending Todos
 
@@ -141,14 +152,16 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 10: food_products RLS diverges from all 23 prior migrations — must use auth.role() = 'authenticated' (DOCUMENTED above)
-- Phase 10: pantry_log_recipe_cooked requires three coordinated registry.ts touch points — missing any one produces silent failure (import + executors + allToolSchemas)
-- Phase 10: DEBT-01 and DEBT-02 (SHOP-03 fix) require reading current ShoppingList check-off implementation before writing the quantity prompt — do not invent new schema
-- Phase 11: NutritionDashboard score widget must be null-guarded — hidden when scoredMeals.length === 0, not zero-state rendered
-- Phase 11: LogMealScreen barcode tab must be tested against a physical device with a real EAN-13 barcode before wiring ProductCard — validate image_front_small_url vs image_front_url field coverage from a live OFF response
+- Phase 12: INFRA-01 Upstash provisioning is a manual step (Vercel dashboard) — must be done before any rate limiting code is written; MemoryStore default silently passes all local tests but provides zero protection on Vercel
+- Phase 12: x-forwarded-for collapses all users to Vercel egress IPs — always use x-real-ip for unauthenticated IP key; userId for all authenticated routes
+- Phase 13: CORS wildcard *.vercel.app is a live security flaw — active until Phase 13 ships; do not delay Phase 13 after Phase 12
+- Phase 14: Storage RLS pattern diverges from all 24 existing migrations — write from scratch, never copy from any existing migration file
+- Phase 14: SUPABASE_SERVICE_KEY availability in Vercel env must be confirmed before Phase 14 execution — storageClient.ts needs it to bypass Storage RLS for backend operations
+- Phase 14: React Native upload produces 0-byte files with File object on iOS — always use base64-arraybuffer decode pattern
+- Phase 15: Vercel cron endpoint must be authenticated via CRON_SECRET header — same pattern as existing supplement scraper cron
 
 ## Session Continuity
 
-Last session: 2026-04-02T12:32:19.594Z
-Stopped at: Completed 11-barcode-ui-score-display plans 11-02 and 11-03 — Phase 11 fully done
+Last session: 2026-04-02T00:00:00.000Z
+Stopped at: v1.3 roadmap created — Phases 12–15 defined, ready to plan Phase 12
 Resume file: None
