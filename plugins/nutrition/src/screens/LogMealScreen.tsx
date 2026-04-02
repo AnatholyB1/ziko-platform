@@ -456,7 +456,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
           permission && !permission.granted ? (
             // Permission denied state
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-              <Ionicons name="camera-off-outline" size={48} color={theme.muted} />
+              <Ionicons name="camera-outline" size={48} color={theme.muted} />
               <Text style={{ fontSize: 14, color: theme.muted, textAlign: 'center', marginTop: 12, paddingHorizontal: 32 }}>
                 {t('nutrition.cameraPermDenied')}
               </Text>
