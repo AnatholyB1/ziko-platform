@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: executing
-stopped_at: Completed 12-infra-rate-limiting-01-PLAN.md
-last_updated: "2026-04-02T22:16:54.704Z"
+status: verifying
+stopped_at: Completed 12-infra-rate-limiting-02-PLAN.md
+last_updated: "2026-04-02T22:19:58.533Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 
 Phase: 12 (infra-rate-limiting) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
@@ -73,6 +73,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 11-barcode-ui-score-display P11-02 | 15min | 1 tasks | 1 files |
 | Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
 | Phase 12-infra-rate-limiting P01 | 18 | 2 tasks | 4 files |
+| Phase 12-infra-rate-limiting P02 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -149,6 +150,8 @@ Recent decisions affecting current work:
 - [Phase 12-infra-rate-limiting]: Used @upstash/redis HTTP client (not ioredis) for Vercel serverless compatibility
 - [Phase 12-infra-rate-limiting]: slidingWindow algorithm chosen over fixedWindow to avoid boundary spike traffic
 - [Phase 12-infra-rate-limiting]: createUserRateLimiter factory returns independent limiter per route (no stacking)
+- [Phase 12-infra-rate-limiting]: ipRateLimiter placed after cors so preflight OPTIONS bypass IP quota; health check exempt via EXEMPT_PATHS set in rateLimiter.ts
+- [Phase 12-infra-rate-limiting]: aiChatLimiter shared between /chat and /chat/stream — same Redis prefix enforces 20/60min across both endpoints per D-02
 
 ### Pending Todos
 
@@ -166,6 +169,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:16:54.694Z
-Stopped at: Completed 12-infra-rate-limiting-01-PLAN.md
+Last session: 2026-04-02T22:19:58.523Z
+Stopped at: Completed 12-infra-rate-limiting-02-PLAN.md
 Resume file: None

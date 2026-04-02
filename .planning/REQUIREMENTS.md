@@ -11,7 +11,7 @@
 - [x] **RATE-02**: API retourne 429 + Retry-After sur POST /ai/chat et /ai/chat/stream quand un utilisateur authentifié dépasse son quota de requêtes par userId
 - [x] **RATE-03**: API retourne 429 + Retry-After sur POST /ai/tools/execute quand un utilisateur dépasse son quota par userId
 - [x] **RATE-04**: API retourne 429 + Retry-After sur l'endpoint barcode/scan quand un utilisateur dépasse son quota par userId
-- [ ] **RATE-05**: API retourne 429 + Retry-After sur les endpoints auth par IP (brute-force protection)
+- [x] **RATE-05**: API retourne 429 + Retry-After sur les endpoints auth par IP (brute-force protection)
 
 ### Supabase Storage
 
@@ -77,7 +77,7 @@
 | RATE-02 | Phase 12 | Complete |
 | RATE-03 | Phase 12 | Complete |
 | RATE-04 | Phase 12 | Complete |
-| RATE-05 | Phase 12 | Pending |
+| RATE-05 | Phase 12 | Complete |
 | SEC-01 | Phase 13 | Pending |
 | SEC-02 | Phase 13 | Pending |
 | SEC-03 | Phase 13 | Pending |
