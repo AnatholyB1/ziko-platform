@@ -211,9 +211,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Supabase migration 024 (food_products table + nutrition_logs extension) + offApi.ts caching utility
-- [x] 10-02-PLAN.md — ShoppingList quantity Modal for check-off (DEBT-01 + DEBT-02) + i18n keys
-- [ ] 10-03-PLAN.md — pantry_log_recipe_cooked AI tool + RecipeConfirm migration (DEBT-03) + VALIDATION.md for phases 07, 09 (DEBT-04)
+- [ ] 11-01-PLAN.md — ScoreBadge component, NutritionEntry type extension, i18n keys (FR+EN), Android CAMERA permission
+- [ ] 11-02-PLAN.md — LogMealScreen 4th Barcode tab: CameraView scanner, product card, serving adjuster, saveLog extension
+- [ ] 11-03-PLAN.md — NutritionDashboard: journal entry score badges + daily average Nutri-Score widget
 **UI hint**: yes
 
 ---
@@ -235,7 +235,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Calorie Tracker Sync | v1.1 | 3/3 | Complete   | 2026-03-30 |
 | 9. Smart Shopping List | v1.1 | 2/3 | In Progress | - |
 | 10. Data Foundation + Tech Debt | v1.2 | 2/3 | Complete    | 2026-04-02 |
-| 11. Barcode UI + Score Display | v1.2 | 0/? | Not started | - |
+| 11. Barcode UI + Score Display | v1.2 | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
@@ -246,3 +246,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 *Updated: 2026-04-01 — Phase 9 planned: 3 plans in 3 waves*
 *Updated: 2026-04-02 — Milestone v1.2 Barcode Enrichment + Tech Debt phases added (10-11)*
 *Updated: 2026-04-02 — Phase 10 planned: 3 plans in 1 wave*
+*Updated: 2026-04-02 — Phase 11 planned: 3 plans in 2 waves*
