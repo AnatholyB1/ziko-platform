@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: ready
-stopped_at: Roadmap created — ready for Phase 12
-last_updated: "2026-04-02T00:00:00.000Z"
+status: executing
+stopped_at: Completed 12-infra-rate-limiting-01-PLAN.md
+last_updated: "2026-04-02T22:16:54.704Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** v1.3 Security + Cloud Infrastructure — start with `/gsd:plan-phase 12`
+**Current focus:** Phase 12 — infra-rate-limiting
 
 ## Current Position
 
-Phase: 12 — Infra + Rate Limiting (not started)
-Plan: —
-Status: Roadmap approved — ready to plan Phase 12
-Last activity: 2026-04-02 — v1.3 roadmap created (Phases 12–15)
+Phase: 12 (infra-rate-limiting) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-02
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 11-barcode-ui-score-display P01 | 1m 43s | 2 tasks | 4 files |
 | Phase 11-barcode-ui-score-display P11-02 | 15min | 1 tasks | 1 files |
 | Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
+| Phase 12-infra-rate-limiting P01 | 18 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,9 @@ Recent decisions affecting current work:
 - [v1.3 Roadmap]: Lifecycle cleanup via Vercel cron (POST /storage/cron/cleanup) — uses supabase.storage.from(bucket).remove([paths]) not raw SQL DELETE (which orphans objects); reuses cron pattern from supplement scraper
 - [v1.3 Roadmap]: INFRA-02 (lifecycle cron) depends on storage buckets existing — Phase 15 must come after Phase 14
 - [v1.3 Roadmap]: SEC-01/02/03 (CORS, headers, Zod validation) are independent of rate limiting and storage — placed in Phase 13 between rate limiting and storage
+- [Phase 12-infra-rate-limiting]: Used @upstash/redis HTTP client (not ioredis) for Vercel serverless compatibility
+- [Phase 12-infra-rate-limiting]: slidingWindow algorithm chosen over fixedWindow to avoid boundary spike traffic
+- [Phase 12-infra-rate-limiting]: createUserRateLimiter factory returns independent limiter per route (no stacking)
 
 ### Pending Todos
 
@@ -162,6 +166,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T00:00:00.000Z
-Stopped at: v1.3 roadmap created — Phases 12–15 defined, ready to plan Phase 12
+Last session: 2026-04-02T22:16:54.694Z
+Stopped at: Completed 12-infra-rate-limiting-01-PLAN.md
 Resume file: None

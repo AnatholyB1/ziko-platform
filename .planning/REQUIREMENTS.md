@@ -7,10 +7,10 @@
 
 ### Rate Limiting
 
-- [ ] **RATE-01**: API retourne 429 + Retry-After quand un IP dépasse le seuil global avant authentification (protection unauthenticated flood via Upstash Redis)
-- [ ] **RATE-02**: API retourne 429 + Retry-After sur POST /ai/chat et /ai/chat/stream quand un utilisateur authentifié dépasse son quota de requêtes par userId
-- [ ] **RATE-03**: API retourne 429 + Retry-After sur POST /ai/tools/execute quand un utilisateur dépasse son quota par userId
-- [ ] **RATE-04**: API retourne 429 + Retry-After sur l'endpoint barcode/scan quand un utilisateur dépasse son quota par userId
+- [x] **RATE-01**: API retourne 429 + Retry-After quand un IP dépasse le seuil global avant authentification (protection unauthenticated flood via Upstash Redis)
+- [x] **RATE-02**: API retourne 429 + Retry-After sur POST /ai/chat et /ai/chat/stream quand un utilisateur authentifié dépasse son quota de requêtes par userId
+- [x] **RATE-03**: API retourne 429 + Retry-After sur POST /ai/tools/execute quand un utilisateur dépasse son quota par userId
+- [x] **RATE-04**: API retourne 429 + Retry-After sur l'endpoint barcode/scan quand un utilisateur dépasse son quota par userId
 - [ ] **RATE-05**: API retourne 429 + Retry-After sur les endpoints auth par IP (brute-force protection)
 
 ### Supabase Storage
@@ -28,7 +28,7 @@
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Upstash Redis provisionné et connecté à l'environnement Vercel (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN dans les env vars)
+- [x] **INFRA-01**: Upstash Redis provisionné et connecté à l'environnement Vercel (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN dans les env vars)
 - [ ] **INFRA-02**: Vercel cron POST /storage/cron/cleanup actif — supprime les objets `scan-photos` > 90 jours et `exports` > 7 jours via Supabase Storage JS client
 
 ## Future Requirements (v1.4+)
@@ -72,11 +72,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 12 | Pending |
-| RATE-01 | Phase 12 | Pending |
-| RATE-02 | Phase 12 | Pending |
-| RATE-03 | Phase 12 | Pending |
-| RATE-04 | Phase 12 | Pending |
+| INFRA-01 | Phase 12 | Complete |
+| RATE-01 | Phase 12 | Complete |
+| RATE-02 | Phase 12 | Complete |
+| RATE-03 | Phase 12 | Complete |
+| RATE-04 | Phase 12 | Complete |
 | RATE-05 | Phase 12 | Pending |
 | SEC-01 | Phase 13 | Pending |
 | SEC-02 | Phase 13 | Pending |

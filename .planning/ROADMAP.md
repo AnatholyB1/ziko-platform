@@ -60,7 +60,7 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
   5. An authenticated user sending requests beyond quota to the barcode scan endpoint receives HTTP 429; brute-force attempts on auth endpoints from a single IP are blocked after the per-IP threshold
 **Plans**: 2 plans
 Plans:
-- [ ] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
+- [x] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
 - [ ] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
 
 #### Phase 13: API Security Hardening
@@ -172,7 +172,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Smart Shopping List | v1.1 | 3/3 | Complete | 2026-04-01 |
 | 10. Data Foundation + Tech Debt | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
-| 12. Infra + Rate Limiting | v1.3 | 0/2 | Not started | -- |
+| 12. Infra + Rate Limiting | v1.3 | 1/2 | In Progress|  |
 | 13. API Security Hardening | v1.3 | 0/? | Not started | -- |
 | 14. Supabase Storage | v1.3 | 0/? | Not started | -- |
 | 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
