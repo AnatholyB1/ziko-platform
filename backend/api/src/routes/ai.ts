@@ -3,6 +3,7 @@ import { stream } from 'hono/streaming';
 import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { authMiddleware } from '../middleware/auth.js';
+import { createUserRateLimiter } from '../middleware/rateLimiter.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
 import { fetchUserContext, type UserContext } from '../context/user.js';
 import {
@@ -13,6 +14,12 @@ import {
 
 const router = new Hono();
 router.use('*', authMiddleware);
+
+// Per-user rate limiters (per D-02, D-03, D-04, D-06)
+// These run AFTER authMiddleware (D-13) so c.get('auth').userId is available
+const aiChatLimiter = createUserRateLimiter(20, '60 m', 'ai-chat');       // D-02: 20/60min
+const aiToolsLimiter = createUserRateLimiter(30, '60 m', 'ai-tools');     // D-03: 30/60min
+const barcodeScanLimiter = createUserRateLimiter(20, '60 m', 'barcode');  // D-04: 20/60min
 
 const AGENT_MODEL = anthropic('claude-sonnet-4-20250514');
 
@@ -110,7 +117,7 @@ function buildSDKTools(userId: string, userToken?: string) {
 
 router.get('/tools', (c) => c.json({ tools: allToolSchemas }));
 
-router.post('/tools/execute', async (c) => {
+router.post('/tools/execute', aiToolsLimiter, async (c) => {
   const auth = c.get('auth');
   const { tool_name, parameters = {} } = await c.req.json<{
     tool_name: string;
@@ -130,7 +137,7 @@ router.post('/tools/execute', async (c) => {
 });
 
 // Streaming endpoint with context injection + conversation persistence
-router.post('/chat/stream', async (c) => {
+router.post('/chat/stream', aiChatLimiter, async (c) => {
   const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;
@@ -227,7 +234,7 @@ router.post('/chat/stream', async (c) => {
 });
 
 // Non-streaming endpoint with context injection + conversation persistence
-router.post('/chat', async (c) => {
+router.post('/chat', aiChatLimiter, async (c) => {
   const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;
@@ -290,7 +297,7 @@ router.post('/chat', async (c) => {
 
 // ─── Vision: Food Nutrition Analysis ──────────────────────────────
 
-router.post('/vision/nutrition', async (c) => {
+router.post('/vision/nutrition', barcodeScanLimiter, async (c) => {
   const { image, meal_context } = await c.req.json<{
     image: string; // base64 encoded image
     meal_context?: string;

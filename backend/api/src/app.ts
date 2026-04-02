@@ -8,6 +8,7 @@ import { webhooksRouter } from './routes/webhooks.js';
 import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
+import { ipRateLimiter } from './middleware/rateLimiter.js';
 
 const app = new Hono();
 
@@ -35,6 +36,7 @@ app.use(
     maxAge: 86400,
   }),
 );
+app.use('*', ipRateLimiter); // D-01: 200 req/60s per IP
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
