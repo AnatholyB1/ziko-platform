@@ -14,17 +14,8 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Recipe } from '../types/recipe';
-import { usePantryStore } from '../store';
 
 // ── Helpers ──────────────────────────────────────────────
-
-/** Convert ingredient quantity to the same base unit as the pantry item before subtracting. */
-function toBaseUnit(qty: number, unit: string): { qty: number; unit: string } {
-  const u = unit.toLowerCase();
-  if (u === 'kg') return { qty: qty * 1000, unit: 'g' };
-  if (u === 'l') return { qty: qty * 1000, unit: 'ml' };
-  return { qty, unit: u };
-}
 
 function getMealTypeForHour(h: number): 'breakfast' | 'lunch' | 'dinner' | 'snack' {
   if (h >= 6 && h <= 10) return 'breakfast';
@@ -71,64 +62,41 @@ export default function RecipeConfirm({ supabase }: Props) {
   const handleConfirm = async () => {
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // 1. Insert nutrition log
-      const { error } = await supabase.from('nutrition_logs').insert({
-        user_id: user.id,
-        date: new Date().toISOString().split('T')[0],
-        meal_type: mealType,
-        food_name: recipe.name,
-        calories: parseInt(calories, 10),
-        protein_g: parseFloat(protein),
-        carbs_g: parseFloat(carbs),
-        fat_g: parseFloat(fat),
-      });
-      if (error) throw error;
-
-      // 2. Pantry decrement — best-effort, per-ingredient try/catch
-      // Always fetch from DB (store may be empty if Garde-Manger was never visited)
-      const { data: freshItems, error: fetchErr } = await supabase
-        .from('pantry_items')
-        .select('id, name, quantity, unit')
-        .eq('user_id', user.id);
-      const pantryItems = freshItems ?? usePantryStore.getState().items;
-      for (const ingredient of recipe.ingredients) {
-        const ingName = ingredient.name.toLowerCase();
-        const match = pantryItems.find((item: { id: string; name: string }) => {
-          // Primary: match by pantry_item_id injected server-side
-          if (ingredient.pantry_item_id && item.id === ingredient.pantry_item_id) return true;
-          // Fallback: substring name match
-          const itemName = item.name.toLowerCase();
-          return itemName === ingName || ingName.includes(itemName) || itemName.includes(ingName);
-        });
-        if (!match) continue;
-        const pantryItem = match as { id: string; name: string; quantity: number; unit: string };
-        const rawIngQty = ingredient.quantity * ratio;
-        const ingBase = toBaseUnit(rawIngQty, ingredient.unit);
-        const pantryBase = toBaseUnit(pantryItem.quantity, pantryItem.unit);
-        const deductQty = ingBase.unit === pantryBase.unit ? ingBase.qty : rawIngQty;
-        const newQty = Math.max(0, pantryBase.qty - deductQty);
-        // Convert newQty back to pantry item's original unit if needed
-        const finalQty = pantryItem.unit.toLowerCase() === 'kg' ? newQty / 1000 : pantryItem.unit.toLowerCase() === 'l' ? newQty / 1000 : newQty;
-        console.log(`[RecipeConfirm] decrement "${pantryItem.name}": ${pantryItem.quantity}${pantryItem.unit} - ${rawIngQty}${ingredient.unit} → finalQty=${finalQty}`);
-        const { error: updateErr } = await supabase
-          .from('pantry_items')
-          .update({ quantity: finalQty })
-          .eq('id', pantryItem.id);
-        console.log(`[RecipeConfirm] update result for "${pantryItem.name}":`, updateErr ?? 'OK');
-        if (!updateErr) {
-          usePantryStore.getState().updateItem(pantryItem.id, { quantity: finalQty });
-        }
+      // Get auth session for Bearer token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        showAlert(t('pantry.confirm_error_title'), t('pantry.confirm_error'));
+        return;
       }
 
-      // 3. Navigate to Nutrition dashboard
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/ai/tools/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          tool_name: 'pantry_log_recipe_cooked',
+          parameters: {
+            recipe: JSON.stringify(recipe),
+            servings,
+            meal_type: mealType,
+            macros_override: JSON.stringify({
+              calories: parseInt(calories, 10),
+              protein_g: parseFloat(protein),
+              carbs_g: parseFloat(carbs),
+              fat_g: parseFloat(fat),
+            }),
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error('Tool execution failed');
+
+      // Navigate to Nutrition dashboard on success
       router.replace('/(app)/(plugins)/nutrition/dashboard' as any);
     } catch {
-      // Show alert on nutrition insert failure — do NOT navigate
       showAlert(t('pantry.confirm_error_title'), t('pantry.confirm_error'));
     } finally {
       setSaving(false);
