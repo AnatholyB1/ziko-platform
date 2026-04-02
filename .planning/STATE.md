@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Smart Pantry Plugin
 status: executing
-stopped_at: Completed 11-barcode-ui-score-display 11-01-PLAN.md
-last_updated: "2026-04-02T12:25:53.151Z"
+stopped_at: Completed 11-barcode-ui-score-display 11-03-PLAN.md — Phase 11 fully done
+last_updated: "2026-04-02T12:29:19.957Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-01)
 ## Current Position
 
 Phase: 11 (barcode-ui-score-display) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-02
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2 milestone)
 | Phase 10-data-foundation-tech-debt P10-02 | 5m | 2 tasks | 2 files |
 | Phase 10-data-foundation-tech-debt P10-03 | 5m | 3 tasks | 5 files |
 | Phase 11-barcode-ui-score-display P01 | 1m 43s | 2 tasks | 4 files |
+| Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 10-data-foundation-tech-debt]: food_products uses auth.role() = 'authenticated' RLS — shared catalogue has no user_id column
 - [Phase 11-barcode-ui-score-display]: ScoreBadge uses module-level GRADE_COLORS/GRADE_LABELS constants — semantic colors, no theme dependency; returns null for null or unrecognized grades
 - [Phase 11-barcode-ui-score-display]: NutritionEntry grade fields optional (string | null) — matches Supabase select('*') where columns absent in older rows
+- [Phase 11-03]: Widget positioned after macros row and before TDEE Calculator link per UI-SPEC
+- [Phase 11-03]: gradeToNum maps a-plus as 1 (same as a) — avgNutriscore output is always a single letter a-e, never a-plus
 
 ### Pending Todos
 
@@ -141,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T12:25:53.147Z
-Stopped at: Completed 11-barcode-ui-score-display 11-01-PLAN.md
+Last session: 2026-04-02T12:29:19.952Z
+Stopped at: Completed 11-barcode-ui-score-display 11-03-PLAN.md — Phase 11 fully done
 Resume file: None
