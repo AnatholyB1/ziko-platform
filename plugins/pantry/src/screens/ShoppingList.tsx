@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Share,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,6 +83,12 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
   // Low-stock items come directly from pantry_items — no DB insert needed
   const [lowStockPantry, setLowStockPantry] = useState<PantryItem[]>([]);
 
+  // ── Modal state ───────────────────────────────────────
+  const [pendingPantry, setPendingPantry] = useState<PantryItem | null>(null);
+  const [pendingRecipe, setPendingRecipe] = useState<ShoppingListItem | null>(null);
+  const [qtyInput, setQtyInput] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
   const load = useCallback(async () => {
     setShoppingLoading(true);
     try {
@@ -124,29 +132,94 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
     setRefreshing(false);
   };
 
-  // ── Check-off: pantry low-stock item ──────────────────
-  async function handleCheckOffPantry(item: PantryItem) {
+  // ── Check-off: pantry low-stock item (tap → opens modal) ──
+  function handleCheckOffPantryTap(item: PantryItem) {
+    setPendingPantry(item);
+    setPendingRecipe(null);
+    setQtyInput('');
+    setModalVisible(true);
+  }
+
+  // ── Confirm: low-stock pantry item (D-05: set quantity to purchased amount directly) ──
+  async function confirmCheckOffPantry() {
+    const purchased = parseFloat(qtyInput);
+    if (!pendingPantry || isNaN(purchased) || purchased <= 0) return;
+    const item = pendingPantry;
+    setModalVisible(false);
+    setPendingPantry(null);
+    setQtyInput('');
     setLowStockPantry((prev) => prev.filter((i) => i.id !== item.id));
     try {
-      // Mark as restocked: set quantity above threshold so it disappears
-      const newQty = (item.low_stock_threshold ?? 0) + 1;
-      await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', item.id);
-      updateItem(item.id, { quantity: newQty });
+      await supabase.from('pantry_items').update({ quantity: purchased }).eq('id', item.id);
+      updateItem(item.id, { quantity: purchased });
     } catch {
       setLowStockPantry((prev) => [item, ...prev]);
       showAlert(t('pantry.error_save_title'), t('pantry.shop_error_checkoff'));
     }
   }
 
-  // ── Check-off: recipe shopping item ──────────────────
-  async function handleCheckOffRecipe(item: ShoppingListItem) {
+  // ── Check-off: recipe shopping item (tap → opens modal) ──
+  function handleCheckOffRecipeTap(item: ShoppingListItem) {
+    setPendingRecipe(item);
+    setPendingPantry(null);
+    setQtyInput('');
+    setModalVisible(true);
+  }
+
+  // ── Confirm: recipe ingredient (D-03: add to existing; D-04: insert new) ──
+  async function confirmCheckOffRecipe() {
+    const purchased = parseFloat(qtyInput);
+    if (!pendingRecipe || isNaN(purchased) || purchased <= 0) return;
+    const item = pendingRecipe;
+    setModalVisible(false);
+    setPendingRecipe(null);
+    setQtyInput('');
     removeShoppingItem(item.id);
     try {
+      if (item.pantry_item_id) {
+        // D-03: match exists — add purchased to existing quantity
+        const { data: existing } = await supabase
+          .from('pantry_items')
+          .select('quantity')
+          .eq('id', item.pantry_item_id)
+          .single();
+        const newQty = (existing?.quantity ?? 0) + purchased;
+        await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', item.pantry_item_id);
+        updateItem(item.pantry_item_id, { quantity: newQty });
+      } else {
+        // D-04: no match — insert new pantry item with purchased quantity
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('pantry_items').insert({
+            user_id: user.id,
+            name: item.name,
+            quantity: purchased,
+            unit: item.unit ?? 'g',
+            storage_location: 'pantry',
+            food_category: 'other',
+            low_stock_threshold: 1,
+          });
+        }
+      }
       await supabase.from('shopping_list_items').delete().eq('id', item.id);
     } catch {
       addShoppingItem(item);
       showAlert(t('pantry.error_save_title'), t('pantry.shop_error_checkoff'));
     }
+  }
+
+  // ── Modal cancel — item stays in list (D-02) ─────────
+  function handleModalCancel() {
+    setModalVisible(false);
+    setPendingPantry(null);
+    setPendingRecipe(null);
+    setQtyInput('');
+  }
+
+  // ── Unified confirm dispatcher ────────────────────────
+  function handleModalConfirm() {
+    if (pendingPantry) confirmCheckOffPantry();
+    else if (pendingRecipe) confirmCheckOffRecipe();
   }
 
   // ── Export handler ────────────────────────────────────
@@ -262,7 +335,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
                 item={{ id: item.id, name: item.name, quantity: item.quantity, unit: item.unit, source: 'low_stock', recipe_name: null, pantry_item_id: item.id, user_id: item.user_id, created_at: item.created_at }}
                 theme={theme}
                 t={t}
-                onPress={() => handleCheckOffPantry(item)}
+                onPress={() => handleCheckOffPantryTap(item)}
               />
             ))}
           </View>
@@ -288,13 +361,64 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
                 item={item}
                 theme={theme}
                 t={t}
-                onPress={() => handleCheckOffRecipe(item)}
+                onPress={() => handleCheckOffRecipeTap(item)}
               />
             ))}
           </View>
         )}
       </ScrollView>
       <PantryTabBar />
+
+      {/* Quantity Modal — opened by both check-off handlers */}
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={handleModalCancel}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 24, width: '100%', maxWidth: 340 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 8 }}>
+              {t('pantry.shop_qty_title')}
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.muted, marginBottom: 16 }}>
+              {pendingPantry?.name ?? pendingRecipe?.name ?? ''}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+              <TextInput
+                value={qtyInput}
+                onChangeText={setQtyInput}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={theme.muted}
+                autoFocus
+                style={{
+                  flex: 1,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  borderRadius: 10,
+                  padding: 14,
+                  fontSize: 18,
+                  color: theme.text,
+                  backgroundColor: theme.background,
+                }}
+              />
+              <Text style={{ fontSize: 16, color: theme.muted, minWidth: 30 }}>
+                {pendingPantry?.unit ?? pendingRecipe?.unit ?? 'g'}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={handleModalCancel}
+                style={{ flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: theme.border }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: theme.muted }}>{t('pantry.shop_qty_cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleModalConfirm}
+                style={{ flex: 1, paddingVertical: 14, alignItems: 'center', borderRadius: 10, backgroundColor: theme.primary }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>{t('pantry.shop_qty_confirm')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
