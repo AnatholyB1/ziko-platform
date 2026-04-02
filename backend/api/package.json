@@ -12,6 +12,8 @@
     "@ai-sdk/anthropic": "^3.0.58",
     "@hono/node-server": "^1.19.11",
     "@supabase/supabase-js": "^2.50.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "ai": "^6.0.116",
     "hono": "^4.7.0",
     "zod": "^4.3.6"
