@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNutritionStore } from '../store';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
@@ -144,21 +145,27 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
         showAlert(t('nutrition.permRequired'), t('nutrition.permCamera'));
         return;
       }
-      result = await ImagePicker.launchCameraAsync({ base64: false, quality: 0.7, maxWidth: 1568, maxHeight: 1568 });
+      result = await ImagePicker.launchCameraAsync({ base64: false, quality: 0.7 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         showAlert(t('nutrition.permRequired'), t('nutrition.permGallery'));
         return;
       }
-      result = await ImagePicker.launchImageLibraryAsync({ base64: false, quality: 0.7, maxWidth: 1568, maxHeight: 1568 });
+      result = await ImagePicker.launchImageLibraryAsync({ base64: false, quality: 0.7 });
     }
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
-    setScanImage(asset.uri);
+    // Resize to max 1568px — Anthropic rejects images > 8000px per dimension
+    const resized = await ImageManipulator.manipulateAsync(
+      asset.uri,
+      [{ resize: { width: Math.min(asset.width ?? 1568, 1568) } }],
+      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    setScanImage(resized.uri);
     setScanResults(null);
     setScanDescription('');
-    analyzeImage(asset.uri);
+    analyzeImage(resized.uri);
   };
 
   const analyzeImage = async (uri: string) => {
