@@ -182,7 +182,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 12. Infra + Rate Limiting | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 13. API Security Hardening | v1.3 | 1/1 | Complete   | 2026-04-03 |
-| 14. Supabase Storage | v1.3 | 3/3 | Complete   | 2026-04-03 |
+| 14. Supabase Storage | v1.3 | 3/3 | Complete    | 2026-04-03 |
 | 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
 
 ---
