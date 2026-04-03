@@ -72,8 +72,9 @@ Plans:
   2. Every API response includes security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Strict-Transport-Security` — verifiable via `curl -I`
   3. A POST to `/ai/chat` with a malformed `messages` array (missing `role`, wrong type, extra unknown fields) returns HTTP 400 with a structured validation error — the request never reaches the Claude Sonnet API call
   4. A valid payload to `/ai/chat`, `/ai/chat/stream`, and `/ai/tools/execute` passes validation and reaches the handler without modification
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+Plans:
+- [ ] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
 
 #### Phase 14: Supabase Storage
 **Goal**: Users can upload and retrieve profile photos and meal scan photos directly from the mobile app without routing binary data through the Hono API — uploads use signed URLs to bypass Vercel's 4.5 MB body limit, and all buckets are private with correct path-prefix RLS policies
@@ -115,7 +116,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
-- [ ] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
+- [x] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
 
 ### Phase 13: API Security Hardening
 **Goal**: The API enforces strict CORS, emits security headers on every response, and validates all inputs reaching Claude Sonnet — so malformed or malicious payloads are rejected before touching any AI or database layer
@@ -126,8 +127,9 @@ Plans:
   2. Every API response includes security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Strict-Transport-Security` — verifiable via `curl -I`
   3. A POST to `/ai/chat` with a malformed `messages` array (missing `role`, wrong type, extra unknown fields) returns HTTP 400 with a structured validation error — the request never reaches the Claude Sonnet API call
   4. A valid payload to `/ai/chat`, `/ai/chat/stream`, and `/ai/tools/execute` passes validation and reaches the handler without modification
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+Plans:
+- [ ] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
 
 ### Phase 14: Supabase Storage
 **Goal**: Users can upload and retrieve profile photos and meal scan photos directly from the mobile app without routing binary data through the Hono API — uploads use signed URLs to bypass Vercel's 4.5 MB body limit, and all buckets are private with correct path-prefix RLS policies
@@ -173,7 +175,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 10. Data Foundation + Tech Debt | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 12. Infra + Rate Limiting | v1.3 | 2/2 | Complete   | 2026-04-02 |
-| 13. API Security Hardening | v1.3 | 0/? | Not started | -- |
+| 13. API Security Hardening | v1.3 | 0/1 | Planned | -- |
 | 14. Supabase Storage | v1.3 | 0/? | Not started | -- |
 | 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
 
@@ -181,3 +183,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 *Roadmap created: 2026-03-26 -- Milestone v1.0 Landing Page*
 *Updated: 2026-04-02 -- v1.2 shipped; v1.3 Security + Cloud Infrastructure phases 12-15 added*
 *Updated: 2026-04-02 -- Phase 12 planned: 2 plans in 2 waves*
+*Updated: 2026-04-03 -- Phase 13 planned: 1 plan in 1 wave*
