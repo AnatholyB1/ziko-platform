@@ -73,12 +73,15 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - ✓ `pantry_log_recipe_cooked` AI tool registered; RecipeConfirm.tsx migrated — v1.2
 - ✓ Nyquist VALIDATION.md written for phases 07 and 09 — v1.2
 
+### Validated (v1.3 — Security + Cloud Infrastructure)
+
+- ✓ Rate limiting per-user + per-IP on sensitive Hono endpoints (AI chat, barcode scan, auth) — Phase 12
+- ✓ API security hardening — strict CORS, Zod input validation, secureHeaders — Phase 13
+- ✓ Supabase Storage buckets: profile-photos (private+public read), scan-photos (private), exports (private) + signed URL upload flow, mobile uploads bypass Vercel body limit — Phase 14 (2026-04-03)
+
 ### Active (v1.3 — Security + Cloud Infrastructure)
 
-- [ ] Rate limiting per-user + per-IP sur les endpoints Hono sensibles (AI chat, barcode scan, auth)
-- [ ] Supabase Storage buckets pour profil photos, scan photos, exports/PDF
-- [ ] Lifecycle policies Supabase Storage (nettoyage assets anciens)
-- [ ] Sécurisation API — CORS strict, validation inputs, protection abus
+- [ ] Lifecycle policies Supabase Storage (nettoyage assets anciens) — Phase 15
 - [ ] Monitoring de base — alertes sur limites dépassées
 
 ### Deferred
