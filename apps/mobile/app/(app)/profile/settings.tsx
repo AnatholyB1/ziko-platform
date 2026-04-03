@@ -9,7 +9,6 @@ import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useTranslation, useI18nStore, type FitnessGoal, showAlert } from '@ziko/plugin-sdk';
 import { showBugReport } from '../../../src/components/BugReportModal';
-import { decode } from 'base64-arraybuffer';
 
 const GOALS: { id: FitnessGoal; labelKey: string }[] = [
   { id: 'muscle_gain', labelKey: 'profile.goalMuscle' },
@@ -41,9 +40,9 @@ export default function SettingsScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
-      base64: true,
+      base64: false,   // per D-19: base64 not needed
     });
-    if (result.canceled || !result.assets[0].base64) return;
+    if (result.canceled || !result.assets?.[0]) return;
 
     setIsUploadingAvatar(true);
     try {
@@ -52,17 +51,36 @@ export default function SettingsScreen() {
       const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
       const filePath = `${user.id}/avatar.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, decode(asset.base64!), {
-          contentType: mimeType,
-          upsert: true,
-        });
-      if (uploadError) throw uploadError;
+      // Step 1: get signed upload URL from backend (per D-18)
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error(t('nutrition.notAuth'));
 
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const urlRes = await fetch(
+        `${apiUrl}/storage/upload-url?bucket=profile-photos&path=${filePath}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      const { upload_url } = await urlRes.json();
+
+      // Step 2: fetch blob from local URI (per D-20)
+      const blobRes = await fetch(asset.uri);
+      const blob = await blobRes.blob();
+
+      // Step 3: PUT blob directly to Supabase Storage (per D-20)
+      const putRes = await fetch(upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': mimeType },
+        body: blob,
+      });
+      if (!putRes.ok) throw new Error('Upload failed');
+
+      // Step 4: get public URL from profile-photos bucket (per D-18)
+      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(filePath);
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
+      // Step 5: persist to user_profiles (per D-18)
       await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
       setAvatarUrl(publicUrl);
       await refreshProfile();
