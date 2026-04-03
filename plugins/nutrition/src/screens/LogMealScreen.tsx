@@ -144,38 +144,71 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
         showAlert(t('nutrition.permRequired'), t('nutrition.permCamera'));
         return;
       }
-      result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
+      result = await ImagePicker.launchCameraAsync({ base64: false, quality: 0.7 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         showAlert(t('nutrition.permRequired'), t('nutrition.permGallery'));
         return;
       }
-      result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
+      result = await ImagePicker.launchImageLibraryAsync({ base64: false, quality: 0.7 });
     }
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     setScanImage(asset.uri);
     setScanResults(null);
     setScanDescription('');
-    analyzeImage(asset.base64!);
+    analyzeImage(asset.uri);
   };
 
-  const analyzeImage = async (base64: string) => {
+  const analyzeImage = async (uri: string) => {
     setAnalyzing(true);
     try {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) { showAlert(t('general.error'), t('nutrition.notAuth')); setAnalyzing(false); return; }
+      const userId = session?.user?.id;
+      if (!token || !userId) {
+        showAlert(t('general.error'), t('nutrition.notAuth'));
+        setAnalyzing(false);
+        return;
+      }
 
+      // Step 1: get signed upload URL for scan-photos bucket (per D-22)
+      const scanPath = `${userId}/scan-${Date.now()}.jpg`;
+      const urlRes = await fetch(
+        `${apiUrl}/storage/upload-url?bucket=scan-photos&path=${scanPath}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!urlRes.ok) {
+        showAlert(t('general.error'), 'Failed to get upload URL');
+        setAnalyzing(false);
+        return;
+      }
+      const { upload_url } = await urlRes.json();
+
+      // Step 2: fetch blob from local URI and PUT to Supabase Storage (per D-22)
+      const blobRes = await fetch(uri);
+      const blob = await blobRes.blob();
+      const putRes = await fetch(upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob,
+      });
+      if (!putRes.ok) {
+        showAlert(t('general.error'), 'Photo upload failed');
+        setAnalyzing(false);
+        return;
+      }
+
+      // Step 3: POST storage_path to vision/nutrition (per D-22, no base64)
       const res = await fetch(`${apiUrl}/ai/vision/nutrition`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ image: base64, meal_context: mealType }),
+        body: JSON.stringify({ storage_path: scanPath, meal_context: mealType }),
       });
 
       if (!res.ok) {

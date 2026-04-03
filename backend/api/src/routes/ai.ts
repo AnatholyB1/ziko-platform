@@ -4,6 +4,7 @@ import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
+import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
 import { createUserRateLimiter } from '../middleware/rateLimiter.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
@@ -15,6 +16,13 @@ import {
 } from '../context/conversation.js';
 
 const router = new Hono();
+
+// Supabase client for storage signed download URLs
+const supabaseUrl = process.env.SUPABASE_URL!;
+const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
+const supabase = createClient(supabaseUrl, serviceKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
 // ─── Zod schemas for input validation (SEC-03) ───────────────────
 
@@ -307,25 +315,15 @@ router.post('/chat', aiChatLimiter, zValidator('json', chatSchema), async (c) =>
 // ─── Vision: Food Nutrition Analysis ──────────────────────────────
 
 router.post('/vision/nutrition', barcodeScanLimiter, async (c) => {
-  const { image, meal_context } = await c.req.json<{
-    image: string; // base64 encoded image
+  const { image, storage_path, meal_context } = await c.req.json<{
+    image?: string;        // base64 — backward compat (D-23)
+    storage_path?: string; // new signed URL path (D-23)
     meal_context?: string;
   }>();
 
-  if (!image) return c.json({ error: 'image (base64) is required' }, 400);
-
-  // Validate base64 size (max ~10MB raw)
-  if (image.length > 14_000_000) {
-    return c.json({ error: 'Image too large (max 10MB)' }, 413);
-  }
-
-  // Detect media type from base64 header or default to jpeg
-  let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
-  let base64Data = image;
-  const dataUrlMatch = image.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
-  if (dataUrlMatch) {
-    mediaType = dataUrlMatch[1] as typeof mediaType;
-    base64Data = image.slice(dataUrlMatch[0].length);
+  // Require at least one image source (D-23)
+  if (!image && !storage_path) {
+    return c.json({ error: 'image or storage_path is required' }, 400);
   }
 
   const prompt = `Analyze this food image and estimate the nutritional content.
@@ -356,21 +354,48 @@ Rules:
 - Numbers should be rounded to 1 decimal place`;
 
   try {
+    // Build image content part for Claude
+    let imageContent: { type: 'image'; image: string | URL; mediaType?: string };
+
+    if (storage_path) {
+      // New flow: generate signed download URL (D-24)
+      const { data: readData, error: readError } = await supabase.storage
+        .from('scan-photos')
+        .createSignedUrl(storage_path, 300); // 300s TTL
+
+      if (readError || !readData?.signedUrl) {
+        console.error('[Vision] createSignedUrl error:', readError);
+        return c.json({ error: 'Failed to retrieve image for analysis' }, 500);
+      }
+
+      // Pass URL to Claude — Vercel AI SDK v6 accepts URL objects (D-25)
+      imageContent = { type: 'image', image: new URL(readData.signedUrl) };
+    } else {
+      // Legacy base64 flow — unchanged (D-23 backward compat)
+      // Validate base64 size (max ~10MB raw)
+      if (image!.length > 14_000_000) {
+        return c.json({ error: 'Image too large (max 10MB)' }, 413);
+      }
+
+      let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
+      let base64Data = image!;
+      const dataUrlMatch = image!.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
+      if (dataUrlMatch) {
+        mediaType = dataUrlMatch[1] as typeof mediaType;
+        base64Data = image!.slice(dataUrlMatch[0].length);
+      }
+
+      imageContent = { type: 'image', image: base64Data, mediaType };
+    }
+
     const { text } = await generateText({
       model: AGENT_MODEL,
       messages: [
         {
           role: 'user',
           content: [
-            {
-              type: 'image',
-              image: base64Data,
-              mediaType,
-            },
-            {
-              type: 'text',
-              text: prompt,
-            },
+            imageContent,
+            { type: 'text', text: prompt },
           ],
         },
       ],
