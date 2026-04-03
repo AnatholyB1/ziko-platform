@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: verifying
-stopped_at: Completed 13-api-security-hardening 13-01-PLAN.md — Phase 13 fully done
-last_updated: "2026-04-03T10:16:28.128Z"
+status: executing
+stopped_at: Completed 14-supabase-storage 14-01-PLAN.md — Storage buckets migration created
+last_updated: "2026-04-03T10:35:54.588Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Phase 13 — api-security-hardening
+**Current focus:** Phase 14 — supabase-storage
 
 ## Current Position
 
-Phase: 13 (api-security-hardening) — EXECUTING
-Plan: 1 of 1
-Status: Phase complete — ready for verification
+Phase: 14 (supabase-storage) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-03
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
@@ -75,6 +75,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 12-infra-rate-limiting P01 | 18 | 2 tasks | 4 files |
 | Phase 12-infra-rate-limiting P02 | 8 | 2 tasks | 2 files |
 | Phase 13-api-security-hardening P01 | 8 | 2 tasks | 3 files |
+| Phase 14-supabase-storage P14-01 | 1min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -156,6 +157,9 @@ Recent decisions affecting current work:
 - [Phase 13-api-security-hardening]: z.record(z.string(), z.unknown()) required for Zod v4 compat — 2-arg API
 - [Phase 13-api-security-hardening]: *.vercel.app wildcard removed — APP_ORIGIN must be set explicitly for preview deploys
 - [Phase 13-api-security-hardening]: secureHeaders() placed after CORS, before ipRateLimiter; zValidator inline per route
+- [Phase 14-supabase-storage]: Storage RLS uses path-prefix pattern (storage.foldername(name))[1] = auth.uid()::text — never copy auth.uid() = user_id from table migrations (storage.objects has no user_id column)
+- [Phase 14-supabase-storage]: profile-photos public=false in bucket row but SELECT TO public in policy — bucket flag is for Supabase dashboard UI only, RLS policy controls actual access
+- [Phase 14-supabase-storage]: exports bucket has no INSERT policy from mobile — server-side writes only in Phase 15; avatars bucket (017) left untouched for backward compat
 
 ### Pending Todos
 
@@ -173,6 +177,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T10:16:28.124Z
-Stopped at: Completed 13-api-security-hardening 13-01-PLAN.md — Phase 13 fully done
+Last session: 2026-04-03T10:35:54.578Z
+Stopped at: Completed 14-supabase-storage 14-01-PLAN.md — Storage buckets migration created
 Resume file: None
