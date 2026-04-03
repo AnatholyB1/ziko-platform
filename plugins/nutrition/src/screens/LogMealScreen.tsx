@@ -144,14 +144,14 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
         showAlert(t('nutrition.permRequired'), t('nutrition.permCamera'));
         return;
       }
-      result = await ImagePicker.launchCameraAsync({ base64: false, quality: 0.7 });
+      result = await ImagePicker.launchCameraAsync({ base64: false, quality: 0.7, maxWidth: 1568, maxHeight: 1568 });
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         showAlert(t('nutrition.permRequired'), t('nutrition.permGallery'));
         return;
       }
-      result = await ImagePicker.launchImageLibraryAsync({ base64: false, quality: 0.7 });
+      result = await ImagePicker.launchImageLibraryAsync({ base64: false, quality: 0.7, maxWidth: 1568, maxHeight: 1568 });
     }
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
