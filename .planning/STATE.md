@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: executing
-stopped_at: Completed 14-supabase-storage 14-02-PLAN.md — Storage upload URL endpoint created
-last_updated: "2026-04-03T10:41:58.444Z"
+status: verifying
+stopped_at: Completed 14-supabase-storage 14-03-PLAN.md — Mobile signed URL upload migration complete
+last_updated: "2026-04-03T10:47:48.536Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 
 Phase: 14 (supabase-storage) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-03
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
@@ -77,6 +77,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 13-api-security-hardening P01 | 8 | 2 tasks | 3 files |
 | Phase 14-supabase-storage P14-01 | 1min | 1 tasks | 1 files |
 | Phase 14-supabase-storage P14-02 | 4min | 2 tasks | 2 files |
+| Phase 14-supabase-storage P14-03 | 6 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -162,6 +163,8 @@ Recent decisions affecting current work:
 - [Phase 14-supabase-storage]: profile-photos public=false in bucket row but SELECT TO public in policy — bucket flag is for Supabase dashboard UI only, RLS policy controls actual access
 - [Phase 14-supabase-storage]: exports bucket has no INSERT policy from mobile — server-side writes only in Phase 15; avatars bucket (017) left untouched for backward compat
 - [Phase 14-supabase-storage]: createSignedUploadUrl in @supabase/storage-js does not support expiresIn option — TTL is fixed server-side; call made without options argument
+- [Phase 14-supabase-storage]: D-25: new URL(readData.signedUrl) passed to Claude — Vercel AI SDK v6 accepts URL objects directly for vision; no mediaType needed when passing URL (only required for base64)
+- [Phase 14-supabase-storage]: D-23: POST /vision/nutrition dual-mode — storage_path (new signed URL) OR image/base64 (backward compat); 400 returned when neither provided
 
 ### Pending Todos
 
@@ -179,6 +182,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T10:41:58.434Z
-Stopped at: Completed 14-supabase-storage 14-02-PLAN.md — Storage upload URL endpoint created
+Last session: 2026-04-03T10:47:48.524Z
+Stopped at: Completed 14-supabase-storage 14-03-PLAN.md — Mobile signed URL upload migration complete
 Resume file: None
