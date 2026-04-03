@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { secureHeaders } from 'hono/secure-headers';
 import { handle } from 'hono/vercel';
+import { z } from 'zod';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
@@ -18,13 +20,14 @@ app.use(
   '*',
   cors({
     origin: (origin) => {
-      // Allow Expo dev tools, production app, and localhost
-      const allowed = [
+      // Allow Expo dev tools, production app, and localhost (D-01, D-02, D-03)
+      const allowed: (string | RegExp)[] = [
         /^exp:\/\//,
         /^https?:\/\/localhost/,
-        /^https?:\/\/.*\.vercel\.app$/,
-        process.env.APP_ORIGIN ?? '',
       ];
+      if (process.env.APP_ORIGIN) {
+        allowed.push(process.env.APP_ORIGIN);
+      }
       return allowed.some((p) =>
         typeof p === 'string' ? p === origin : p.test(origin),
       )
@@ -36,6 +39,7 @@ app.use(
     maxAge: 86400,
   }),
 );
+app.use('*', secureHeaders()); // SEC-02: X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS
 app.use('*', ipRateLimiter); // D-01: 200 req/60s per IP
 
 // Health check
@@ -54,6 +58,15 @@ app.notFound((c) => c.json({ error: 'Not found' }, 404));
 
 // Error handler
 app.onError((err, c) => {
+  if (err instanceof z.ZodError) {
+    if (process.env.NODE_ENV === 'production') {
+      return c.json({ error: 'Invalid request body' }, 400);
+    }
+    return c.json({
+      error: 'Validation failed',
+      details: err.issues.map((i) => ({ path: i.path, message: i.message })),
+    }, 400);
+  }
   console.error('[API Error]', err);
   return c.json({ error: 'Internal server error' }, 500);
 });
