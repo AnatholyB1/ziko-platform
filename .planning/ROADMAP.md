@@ -89,7 +89,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
-- [ ] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
+- [x] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
 - [ ] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
 
 #### Phase 15: Lifecycle & Cleanup
@@ -146,7 +146,7 @@ Plans:
   5. `GET /storage/upload-url?bucket=&path=` returns a signed upload URL valid for 60 seconds — a subsequent PUT to that URL produces a real file visible in the Supabase Storage dashboard
 **Plans**: 3 plans
 Plans:
-- [ ] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
+- [x] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
 - [ ] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
 - [ ] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
 
@@ -182,7 +182,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 12. Infra + Rate Limiting | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 13. API Security Hardening | v1.3 | 1/1 | Complete   | 2026-04-03 |
-| 14. Supabase Storage | v1.3 | 1/3 | In Progress|  |
+| 14. Supabase Storage | v1.3 | 2/3 | In Progress|  |
 | 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
 
 ---

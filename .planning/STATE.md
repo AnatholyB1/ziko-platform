@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
 status: executing
-stopped_at: Completed 14-supabase-storage 14-01-PLAN.md — Storage buckets migration created
-last_updated: "2026-04-03T10:35:54.588Z"
+stopped_at: Completed 14-supabase-storage 14-02-PLAN.md — Storage upload URL endpoint created
+last_updated: "2026-04-03T10:41:58.444Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 ## Current Position
 
 Phase: 14 (supabase-storage) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-03
 
@@ -76,6 +76,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 12-infra-rate-limiting P02 | 8 | 2 tasks | 2 files |
 | Phase 13-api-security-hardening P01 | 8 | 2 tasks | 3 files |
 | Phase 14-supabase-storage P14-01 | 1min | 1 tasks | 1 files |
+| Phase 14-supabase-storage P14-02 | 4min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -160,6 +161,7 @@ Recent decisions affecting current work:
 - [Phase 14-supabase-storage]: Storage RLS uses path-prefix pattern (storage.foldername(name))[1] = auth.uid()::text — never copy auth.uid() = user_id from table migrations (storage.objects has no user_id column)
 - [Phase 14-supabase-storage]: profile-photos public=false in bucket row but SELECT TO public in policy — bucket flag is for Supabase dashboard UI only, RLS policy controls actual access
 - [Phase 14-supabase-storage]: exports bucket has no INSERT policy from mobile — server-side writes only in Phase 15; avatars bucket (017) left untouched for backward compat
+- [Phase 14-supabase-storage]: createSignedUploadUrl in @supabase/storage-js does not support expiresIn option — TTL is fixed server-side; call made without options argument
 
 ### Pending Todos
 
@@ -177,6 +179,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T10:35:54.578Z
-Stopped at: Completed 14-supabase-storage 14-01-PLAN.md — Storage buckets migration created
+Last session: 2026-04-03T10:41:58.434Z
+Stopped at: Completed 14-supabase-storage 14-02-PLAN.md — Storage upload URL endpoint created
 Resume file: None
