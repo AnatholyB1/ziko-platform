@@ -74,7 +74,7 @@ Plans:
   4. A valid payload to `/ai/chat`, `/ai/chat/stream`, and `/ai/tools/execute` passes validation and reaches the handler without modification
 **Plans**: 1 plan
 Plans:
-- [ ] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
+- [x] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
 
 #### Phase 14: Supabase Storage
 **Goal**: Users can upload and retrieve profile photos and meal scan photos directly from the mobile app without routing binary data through the Hono API — uploads use signed URLs to bypass Vercel's 4.5 MB body limit, and all buckets are private with correct path-prefix RLS policies
@@ -175,7 +175,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 10. Data Foundation + Tech Debt | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 11. Barcode UI + Score Display | v1.2 | 3/3 | Complete | 2026-04-02 |
 | 12. Infra + Rate Limiting | v1.3 | 2/2 | Complete   | 2026-04-02 |
-| 13. API Security Hardening | v1.3 | 0/1 | Planned | -- |
+| 13. API Security Hardening | v1.3 | 1/1 | Complete   | 2026-04-03 |
 | 14. Supabase Storage | v1.3 | 0/? | Not started | -- |
 | 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
 

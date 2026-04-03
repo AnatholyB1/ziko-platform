@@ -22,9 +22,9 @@
 
 ### API Security
 
-- [ ] **SEC-01**: CORS restreint aux origines explicites — supprime le wildcard `*.vercel.app` (faille de sécurité active)
-- [ ] **SEC-02**: `secureHeaders()` Hono appliqué globalement — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, etc.
-- [ ] **SEC-03**: Input validation via `zValidator` enforced sur /ai/chat, /ai/chat/stream, et /ai/tools/execute — schémas Zod avant que les inputs atteignent Claude Sonnet
+- [x] **SEC-01**: CORS restreint aux origines explicites — supprime le wildcard `*.vercel.app` (faille de sécurité active)
+- [x] **SEC-02**: `secureHeaders()` Hono appliqué globalement — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, etc.
+- [x] **SEC-03**: Input validation via `zValidator` enforced sur /ai/chat, /ai/chat/stream, et /ai/tools/execute — schémas Zod avant que les inputs atteignent Claude Sonnet
 
 ### Infrastructure
 
@@ -78,9 +78,9 @@
 | RATE-03 | Phase 12 | Complete |
 | RATE-04 | Phase 12 | Complete |
 | RATE-05 | Phase 12 | Complete |
-| SEC-01 | Phase 13 | Pending |
-| SEC-02 | Phase 13 | Pending |
-| SEC-03 | Phase 13 | Pending |
+| SEC-01 | Phase 13 | Complete |
+| SEC-02 | Phase 13 | Complete |
+| SEC-03 | Phase 13 | Complete |
 | STORE-01 | Phase 14 | Pending |
 | STORE-02 | Phase 14 | Pending |
 | STORE-03 | Phase 14 | Pending |

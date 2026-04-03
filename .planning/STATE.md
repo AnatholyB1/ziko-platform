@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
 status: verifying
-stopped_at: Completed 12-infra-rate-limiting-02-PLAN.md
-last_updated: "2026-04-02T22:19:58.533Z"
-last_activity: 2026-04-02
+stopped_at: Completed 13-api-security-hardening 13-01-PLAN.md — Phase 13 fully done
+last_updated: "2026-04-03T10:16:28.128Z"
+last_activity: 2026-04-03
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Phase 12 — infra-rate-limiting
+**Current focus:** Phase 13 — api-security-hardening
 
 ## Current Position
 
-Phase: 12 (infra-rate-limiting) — EXECUTING
-Plan: 2 of 2
+Phase: 13 (api-security-hardening) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-04-02
+Last activity: 2026-04-03
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 
@@ -74,6 +74,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
 | Phase 12-infra-rate-limiting P01 | 18 | 2 tasks | 4 files |
 | Phase 12-infra-rate-limiting P02 | 8 | 2 tasks | 2 files |
+| Phase 13-api-security-hardening P01 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,9 @@ Recent decisions affecting current work:
 - [Phase 12-infra-rate-limiting]: createUserRateLimiter factory returns independent limiter per route (no stacking)
 - [Phase 12-infra-rate-limiting]: ipRateLimiter placed after cors so preflight OPTIONS bypass IP quota; health check exempt via EXEMPT_PATHS set in rateLimiter.ts
 - [Phase 12-infra-rate-limiting]: aiChatLimiter shared between /chat and /chat/stream — same Redis prefix enforces 20/60min across both endpoints per D-02
+- [Phase 13-api-security-hardening]: z.record(z.string(), z.unknown()) required for Zod v4 compat — 2-arg API
+- [Phase 13-api-security-hardening]: *.vercel.app wildcard removed — APP_ORIGIN must be set explicitly for preview deploys
+- [Phase 13-api-security-hardening]: secureHeaders() placed after CORS, before ipRateLimiter; zValidator inline per route
 
 ### Pending Todos
 
@@ -169,6 +173,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:19:58.523Z
-Stopped at: Completed 12-infra-rate-limiting-02-PLAN.md
+Last session: 2026-04-03T10:16:28.124Z
+Stopped at: Completed 13-api-security-hardening 13-01-PLAN.md — Phase 13 fully done
 Resume file: None
