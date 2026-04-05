@@ -8,17 +8,16 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
 
-## Current State: v1.3 Shipped
+## Current Milestone: v1.4 Système de Crédits IA & Monétisation
 
-All milestones through v1.3 are complete. No active milestone.
+**Goal:** Implémenter un système de crédits IA gamifié qui contrôle les coûts API (€0.75/mois max par utilisateur) tout en récompensant l'engagement utilisateur.
 
-**What shipped in v1.3 (2026-04-05):**
-- Distributed rate limiting via Upstash Redis — IP flood + per-user quotas on all sensitive endpoints
-- API hardening — strict CORS (no wildcard), security headers, Zod input validation on AI routes
-- Supabase Storage — 3 buckets (profile-photos, scan-photos, exports) with signed URL uploads
-- Lifecycle cron — daily cleanup of stale storage assets (scan-photos 90d, exports 7d)
-
-**Next milestone:** Not yet defined. Run `/gsd:new-milestone` to start.
+**Target features:**
+- Double solde — coins shop (existant, gain illimité) + crédits IA (nouveau, gain plafonné par activité)
+- Quotas IA — base gratuite + bonus gagnables par activité (scan photo 1+2/jour, chat 1+2/jour, programme 1+1/mois)
+- Gain de crédits IA par activités : log workout, habitudes, repas, mesures, stretching, course/cardio
+- Vision Haiku — scan photo migré vers claude-haiku (€0.003/scan au lieu de €0.01)
+- Architecture prête pour tier premium futur
 
 ---
 
