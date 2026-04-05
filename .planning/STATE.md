@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Security + Cloud Infrastructure
-status: executing
+status: completed
 stopped_at: Completed 16-security-middleware-regression 16-01-PLAN.md — All v1.3 security middleware restored
 last_updated: "2026-04-05T09:17:37.662Z"
 last_activity: 2026-04-05
 progress:
-  total_phases: 6
+  total_phases: 5
   completed_phases: 5
   total_plans: 8
   completed_plans: 8
-  percent: 0
+  percent: 100
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Phase 15 — lifecycle-cleanup
+**Current focus:** v1.3 complete — no active milestone
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
-Status: Executing Phase 15
+Phase: 16 (final)
+Plan: All complete
+Status: Milestone v1.3 shipped
 Last activity: 2026-04-05
 
 Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)

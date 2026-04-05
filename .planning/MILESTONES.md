@@ -1,5 +1,19 @@
 # Milestones
 
+## v1.3 Security + Cloud Infrastructure (Shipped: 2026-04-05)
+
+**Phases completed:** 5 phases, 8 plans (Phases 12-16)
+
+**Key accomplishments:**
+
+1. **Distributed Rate Limiting** — Upstash Redis HTTP client (serverless-safe) with sliding window algorithm; global IP flood protection (200 req/60s) + per-user quotas on AI chat (20/60min), tools (30/60min), barcode scan (20/60min); 429 responses with Retry-After header
+2. **API Security Hardening** — CORS locked to explicit origins (no `*.vercel.app` wildcard), `secureHeaders()` on every response, Zod `.strict()` input validation via `@hono/zod-validator` on all AI POST routes, ZodError 400 handler
+3. **Supabase Storage** — Three private buckets (profile-photos, scan-photos, exports) with path-prefix RLS; signed URL upload flow bypassing Vercel's 4.5 MB limit; AI vision endpoint accepts `storage_path` for signed URLs to Claude
+4. **Lifecycle Cleanup** — Vercel cron (daily 4am UTC) purges scan-photos >90d and exports >7d via Supabase Storage JS client; CRON_SECRET auth; fault-tolerant with Promise.allSettled
+5. **Regression Fix** — Phase 15 commit accidentally reverted Phase 12+13 middleware; detected by milestone audit; Phase 16 restored all four items in a targeted edit
+
+---
+
 ## v1.2 Barcode Enrichment + Tech Debt (Shipped: 2026-04-02)
 
 **Phases completed:** 2 phases, 6 plans (Phases 10–11)

@@ -2,26 +2,28 @@
 
 ## What This Is
 
-The Ziko fitness platform — a fully-extensible React Native / Expo mobile app with 17 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The `.planning` folder also tracks the Next.js marketing website (`ziko-app.com`) that launched as milestone v1.0.
+The Ziko fitness platform — a fully-extensible React Native / Expo mobile app with 18 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The `.planning` folder also tracks the Next.js marketing website (`ziko-app.com`) that launched as milestone v1.0.
 
 ## Core Value
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
 
-## Current Milestone: v1.3 Security + Cloud Infrastructure
+## Current State: v1.3 Shipped
 
-**Goal:** Sécuriser le backend contre les abus et gérer les assets media via Supabase Storage avec lifecycle policies.
+All milestones through v1.3 are complete. No active milestone.
 
-**Target features:**
-- Rate limiting sur les endpoints Hono (AI chat, barcode scan, auth) — per-user + per-IP, headers standards
-- Supabase Storage — buckets pour profil photos, photos de scan repas, et exports/PDF
-- Lifecycle policies — nettoyage auto des assets anciens via Supabase Storage policies
-- Sécurisation API — CORS strict, validation inputs, protection contre les abus
-- Monitoring de base — alertes sur limites dépassées
+**What shipped in v1.3 (2026-04-05):**
+- Distributed rate limiting via Upstash Redis — IP flood + per-user quotas on all sensitive endpoints
+- API hardening — strict CORS (no wildcard), security headers, Zod input validation on AI routes
+- Supabase Storage — 3 buckets (profile-photos, scan-photos, exports) with signed URL uploads
+- Lifecycle cron — daily cleanup of stale storage assets (scan-photos 90d, exports 7d)
+
+**Next milestone:** Not yet defined. Run `/gsd:new-milestone` to start.
 
 ---
 
-## Previous: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02
+<details>
+<summary>Previous: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02</summary>
 
 **What shipped:**
 - Barcode scan tab in nutrition log screen — Open Food Facts product card with photo, name, brand, macros per 100g, Nutri-Score + Eco-Score badges, serving size adjuster
@@ -32,57 +34,43 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - `pantry_log_recipe_cooked` registered as proper AI tool; RecipeConfirm.tsx migrated to `/ai/tools/execute`
 - Nyquist VALIDATION.md written for phases 07 and 09
 
+</details>
+
 ## Requirements
 
-### Validated
+### Validated (v1.0 — Landing Page)
 
-- [x] FR/EN i18n routing with `next-intl` — FR clean URLs, EN `/en/` prefix (Validated in Phase 1: foundation)
-- [x] Ziko design tokens applied globally via Tailwind v4 `@theme` — matches brand identity (Validated in Phase 1: foundation)
-- [x] All pages statically generated — `generateStaticParams` + `setRequestLocale` pattern (Validated in Phase 1: foundation)
-- [x] Fonts self-hosted via `next/font` — CNIL-compliant, no Google CDN (Validated in Phase 1: foundation)
-- [x] Supabase admin client uses `SUPABASE_SERVICE_ROLE_KEY` with `server-only` guard (Validated in Phase 1: foundation)
-- [x] Footer visible on every page with links to all 3 legal pages (Validated in Phase 1: foundation)
-- [x] Self-service account deletion — IP rate-limited server action, anti-enumeration, high-friction UX (Validated in Phase 2: rgpd-compliance)
-- [x] Mentions légales — LCEN-compliant, BRICON Anatholy as publication director, Vercel hosting (Validated in Phase 2: rgpd-compliance)
-- [x] Politique de confidentialité — Anthropic named as AI data processor, health/GPS/AI data documented (Validated in Phase 2: rgpd-compliance)
-- [x] CGU — AI health liability disclaimer, French law applicable (Validated in Phase 2: rgpd-compliance)
-
-### Validated (continued)
-
-- [x] Hero section with real app screenshot and download CTAs — App Store / Play Store stubs visible (Validated in Phase 3: hero-features)
-- [x] Features showcase presenting all 17 plugins with icons and descriptions (Validated in Phase 3: hero-features)
-- [x] Pricing section — free tier with "Download free" CTA (Validated in Phase 3: hero-features)
-- [x] OG metadata with metadataBase + generateMetadata on all pages (Validated in Phase 4: seo-perf)
-- [x] Deployed on Vercel at https://ziko-app.com — custom domain, HTTPS, all routes static (Validated in Phase 5: launch)
-- [x] Plausible cookieless analytics active — no cookie banner required (Validated in Phase 5: launch)
-- [x] Google Search Console sitemap submitted — site discoverable by Google (Validated in Phase 5: launch)
+- [x] FR/EN i18n routing with `next-intl` — FR clean URLs, EN `/en/` prefix
+- [x] Ziko design tokens applied globally via Tailwind v4 `@theme`
+- [x] All pages statically generated — `generateStaticParams` + `setRequestLocale`
+- [x] Fonts self-hosted via `next/font` — CNIL-compliant
+- [x] Supabase admin client uses `SUPABASE_SERVICE_ROLE_KEY` with `server-only` guard
+- [x] Footer visible on every page with legal links
+- [x] Self-service account deletion — IP rate-limited, anti-enumeration
+- [x] Mentions legales, Politique de confidentialite, CGU — all RGPD/LCEN compliant
+- [x] Hero section + Features showcase + Pricing section
+- [x] OG metadata, Plausible analytics, Google Search Console
 
 ### Validated (v1.1 — Smart Pantry Plugin)
 
-- ✓ Smart inventory — pantry items with qty, unit, expiration, category — v1.1
-- ✓ AI recipe suggestions — from pantry contents + remaining daily macros — v1.1
-- ✓ Calorie tracker sync — confirm cooked → auto-log macros to nutrition plugin — v1.1
-- ✓ Smart shopping list — rule-based from low-stock items + recipe ingredients — v1.1
+- [x] Smart inventory — pantry items with qty, unit, expiration, category
+- [x] AI recipe suggestions — from pantry contents + remaining daily macros
+- [x] Calorie tracker sync — confirm cooked -> auto-log macros to nutrition plugin
+- [x] Smart shopping list — rule-based from low-stock items + recipe ingredients
 
 ### Validated (v1.2 — Barcode Enrichment + Tech Debt)
 
-- ✓ `food_products` shared-catalogue table + `offApi.ts` cache utility — v1.2
-- ✓ Barcode scan tab in nutrition plugin — product card with Nutri-Score, Eco-Score, macros, photo — v1.2
-- ✓ Nutri-Score + Eco-Score badges on journal entries; daily average widget on dashboard — v1.2
-- ✓ SHOP-03 fix: quantity prompt Modal before shopping list check-off — v1.2
-- ✓ `pantry_log_recipe_cooked` AI tool registered; RecipeConfirm.tsx migrated — v1.2
-- ✓ Nyquist VALIDATION.md written for phases 07 and 09 — v1.2
+- [x] `food_products` shared-catalogue table + `offApi.ts` cache utility
+- [x] Barcode scan tab — product card with Nutri-Score, Eco-Score, macros, photo
+- [x] Nutri-Score + Eco-Score badges on journal entries; daily average widget
+- [x] SHOP-03 fix: quantity prompt Modal; `pantry_log_recipe_cooked` AI tool registered
 
 ### Validated (v1.3 — Security + Cloud Infrastructure)
 
-- ✓ Rate limiting per-user + per-IP on sensitive Hono endpoints (AI chat, barcode scan, auth) — Phase 12
-- ✓ API security hardening — strict CORS, Zod input validation, secureHeaders — Phase 13
-- ✓ Supabase Storage buckets: profile-photos (private+public read), scan-photos (private), exports (private) + signed URL upload flow, mobile uploads bypass Vercel body limit — Phase 14 (2026-04-03)
-
-### Active (v1.3 — Security + Cloud Infrastructure)
-
-- [ ] Lifecycle policies Supabase Storage (nettoyage assets anciens) — Phase 15
-- [ ] Monitoring de base — alertes sur limites dépassées
+- [x] Rate limiting per-user + per-IP on sensitive Hono endpoints (AI chat, barcode scan, tools)
+- [x] API security hardening — strict CORS, Zod input validation, secureHeaders
+- [x] Supabase Storage — 3 private buckets, signed URL upload flow, mobile bypass of Vercel body limit
+- [x] Lifecycle cron — daily cleanup of scan-photos (90d) and exports (7d)
 
 ### Deferred
 
@@ -92,55 +80,41 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 ### Out of Scope
 
-- Native mobile integration into the landing page — marketing site only
-- Backend changes to the existing Hono API — account deletion calls Supabase directly
-- Dark mode — matches Ziko light sport theme only
-- Blog / content management system — static content for v1
-- Coach ERP/CRM — deferred to Milestone 2
+- Dark mode — light sport theme only
+- Blog / content management system — static content only
+- Coach ERP/CRM — deferred to future milestone
+- AWS S3 direct — Supabase Storage (backed by S3) suffices
+- In-memory rate limiting — useless on Vercel serverless
 
 ## Context
 
-- **Shipped milestones**: v1.0 (landing page at ziko-app.com), v1.1 (Smart Pantry Plugin — 18th plugin), v1.2 (Barcode Enrichment — Nutri-Score/Eco-Score in nutrition plugin)
-- **Mobile app state**: 18 plugins (17 original + pantry), 24 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
-- **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, AI orchestrator with 6 pantry tools + nutrition tools, `food_products` shared catalogue table
+- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure)
+- **Mobile app state**: 18 plugins, 25 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
+- **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
-- **Legal jurisdiction**: French law — RGPD, mentions légales mandatory, CGU required.
-- **Existing infrastructure**: API + web marketing site on Vercel, Supabase for DB + Auth.
+- **Legal jurisdiction**: French law — RGPD, mentions legales mandatory, CGU required.
+- **Infrastructure**: API + web on Vercel, Supabase (DB + Auth + Storage), Upstash Redis
 
 ## Constraints
 
-- **Tech Stack**: Next.js 14+ (App Router), Vercel deployment — non-negotiable, chosen for coach dashboard extensibility
-- **i18n**: French + English from day one — routing via `next-intl` or similar
-- **Legal**: All RGPD/French legal pages mandatory before launch — not optional
-- **Security**: Account deletion must use server-side Supabase admin client — service role key never in client bundle
-- **Design**: Must match Ziko brand (orange #FF5C1A, light sport aesthetic) — no separate design system
+- **Tech Stack**: Next.js 14+ (App Router), Vercel deployment — non-negotiable
+- **i18n**: French + English — routing via `next-intl`
+- **Legal**: All RGPD/French legal pages mandatory
+- **Security**: Account deletion uses server-side Supabase admin client; service role key never in client bundle
+- **Design**: Must match Ziko brand (orange #FF5C1A, light sport aesthetic)
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| New repo (not monorepo) | Cleaner separation, independent deploy, different audience from mobile | — Pending |
-| Same Next.js app for coach CRM | Avoid managing two deploys; /coach grows naturally from the marketing site | — Pending |
-| Self-service deletion (not email) | RGPD requires accessible deletion; form is better UX than asking users to email | — Pending |
-| `next-intl` for i18n | Industry standard for Next.js App Router i18n | — Pending |
-| Vercel deployment | Already using Vercel for API; same team, same billing, easy CI | — Pending |
+| Upstash Redis (HTTP) over ioredis | Vercel serverless has no persistent connections; HTTP REST works on cold starts | v1.3 |
+| Signed URL upload pattern | Vercel hard limit 4.5 MB; mobile uploads directly to Supabase Storage | v1.3 |
+| Path-prefix RLS for storage | `storage.objects` has no `user_id` column; `(storage.foldername(name))[1]` pattern | v1.3 |
+| Sliding window over fixed window | Prevents boundary spike traffic in rate limiting | v1.3 |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd:transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd:complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
-
 ---
-*Last updated: 2026-04-02 — milestone v1.3 started*
+*Last updated: 2026-04-05 — v1.3 shipped, milestone completed*

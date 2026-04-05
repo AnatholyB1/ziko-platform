@@ -5,7 +5,7 @@
 - ✅ **v1.0 Landing Page** — Phases 1–5 (shipped 2026-03-28)
 - ✅ **v1.1 Smart Pantry Plugin** — Phases 6–9 (shipped 2026-04-02)
 - ✅ **v1.2 Barcode Enrichment + Tech Debt** — Phases 10–11 (shipped 2026-04-02)
-- 🚧 **v1.3 Security + Cloud Infrastructure** — Phases 12–16 (in progress)
+- ✅ **v1.3 Security + Cloud Infrastructure** — Phases 12–16 (shipped 2026-04-05)
 
 ## Phases
 
@@ -44,153 +44,18 @@ Two phases enriched the nutrition plugin with Open Food Facts barcode scanning �
 
 </details>
 
-### 🚧 v1.3 Security + Cloud Infrastructure (In Progress)
+<details>
+<summary>✅ v1.3 Security + Cloud Infrastructure (Phases 12–16) — SHIPPED 2026-04-05</summary>
 
-**Milestone Goal:** Securiser le backend Hono contre les abus avec du rate limiting distribue via Upstash Redis, durcir l'API (CORS, headers, validation Zod), et gerer les assets media via Supabase Storage avec upload direct depuis le mobile et lifecycle policies. Phase 16 cloture les gaps de l'audit (regression middleware dans app.ts).
+Five phases secured the Hono backend and added cloud storage infrastructure. Phase 12 provisioned Upstash Redis and added distributed rate limiting (IP + per-user). Phase 13 hardened the API with strict CORS, security headers, and Zod input validation. Phase 14 added Supabase Storage buckets with signed URL uploads. Phase 15 added lifecycle cron cleanup. Phase 16 fixed a middleware regression introduced by Phase 15. Full details in [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).
 
-#### Phase 12: Infra + Rate Limiting
-**Goal**: The API is protected against unauthenticated floods and per-user quota abuse — all rate-limited routes return 429 with Retry-After headers, backed by a persistent distributed Redis store that survives Vercel cold starts
-**Depends on**: Phase 11
-**Requirements**: INFRA-01, RATE-01, RATE-02, RATE-03, RATE-04, RATE-05
-**Success Criteria** (what must be TRUE):
-  1. Upstash Redis is provisioned and connected — a ping from the backend returns a valid response and `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are present in both local `.env` and Vercel environment
-  2. An unauthenticated client sending 201 rapid requests to any endpoint receives HTTP 429 with a `Retry-After` header on the 201st request — `GET /health` never returns 429 regardless of request count
-  3. An authenticated user sending 21 consecutive POST requests to `/ai/chat` or `/ai/chat/stream` within 60 minutes receives HTTP 429 with `Retry-After` on the 21st request
-  4. An authenticated user sending 31 consecutive POST requests to `/ai/tools/execute` within 60 minutes receives HTTP 429 on the 31st request
-  5. An authenticated user sending requests beyond quota to the barcode scan endpoint receives HTTP 429; brute-force attempts on auth endpoints from a single IP are blocked after the per-IP threshold
-**Plans**: 2 plans
-Plans:
-- [x] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
-- [x] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
+- [x] Phase 12: Infra + Rate Limiting (2/2 plans) — completed 2026-04-02
+- [x] Phase 13: API Security Hardening (1/1 plans) — completed 2026-04-03
+- [x] Phase 14: Supabase Storage (3/3 plans) — completed 2026-04-03
+- [x] Phase 15: Lifecycle & Cleanup (1/1 plans) — completed 2026-04-05
+- [x] Phase 16: Security Middleware Regression Fix (1/1 plans) — completed 2026-04-05
 
-#### Phase 13: API Security Hardening
-**Goal**: The API enforces strict CORS, emits security headers on every response, and validates all inputs reaching Claude Sonnet — so malformed or malicious payloads are rejected before touching any AI or database layer
-**Depends on**: Phase 12
-**Requirements**: SEC-01, SEC-02, SEC-03
-**Success Criteria** (what must be TRUE):
-  1. A request from an unlisted origin (e.g. `https://evil.example.com`) receives a CORS rejection — the wildcard `*.vercel.app` origin is no longer accepted
-  2. Every API response includes security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Strict-Transport-Security` — verifiable via `curl -I`
-  3. A POST to `/ai/chat` with a malformed `messages` array (missing `role`, wrong type, extra unknown fields) returns HTTP 400 with a structured validation error — the request never reaches the Claude Sonnet API call
-  4. A valid payload to `/ai/chat`, `/ai/chat/stream`, and `/ai/tools/execute` passes validation and reaches the handler without modification
-**Plans**: 1 plan
-Plans:
-- [x] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
-
-#### Phase 14: Supabase Storage
-**Goal**: Users can upload and retrieve profile photos and meal scan photos directly from the mobile app without routing binary data through the Hono API — uploads use signed URLs to bypass Vercel's 4.5 MB body limit, and all buckets are private with correct path-prefix RLS policies
-**Depends on**: Phase 13
-**Requirements**: STORE-01, STORE-02, STORE-03, STORE-04
-**Success Criteria** (what must be TRUE):
-  1. A user can update their profile photo from the mobile app — the photo is stored in the `profile-photos` bucket under their userId path and the public URL is persisted in `user_profiles`
-  2. The mobile app can upload a meal scan photo by first calling `GET /storage/upload-url` to obtain a signed URL, then uploading directly to Supabase Storage — the Hono API never receives binary data
-  3. An unauthenticated upload attempt to any storage bucket returns HTTP 403 — no bucket is publicly writable
-  4. The `exports` bucket exists and is accessible via signed URL — the infrastructure is in place for future PDF exports even though no export UI exists yet
-  5. `GET /storage/upload-url?bucket=&path=` returns a signed upload URL valid for 60 seconds — a subsequent PUT to that URL produces a real file visible in the Supabase Storage dashboard
-**Plans**: 3 plans
-Plans:
-- [x] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
-- [x] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
-- [x] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
-
-#### Phase 15: Lifecycle & Cleanup
-**Goal**: Ephemeral storage assets are automatically purged on schedule — scan photos older than 90 days and exports older than 7 days are removed via the Vercel cron endpoint, keeping storage costs bounded without manual intervention
-**Depends on**: Phase 14
-**Requirements**: INFRA-02
-**Success Criteria** (what must be TRUE):
-  1. `POST /storage/cron/cleanup` is registered as a Vercel cron job in `vercel.json` and runs on schedule — the endpoint is authenticated via `CRON_SECRET` header (401 without it)
-  2. Calling the cleanup endpoint removes `scan-photos` objects with metadata `expires_at` older than 90 days — objects within the retention window are not affected
-  3. Calling the cleanup endpoint removes `exports` objects older than 7 days — the removal uses `supabase.storage.from(bucket).remove([paths])` (not raw SQL DELETE) so no orphaned storage objects remain
-**Plans**: 1 plan
-Plans:
-- [ ] 15-01-PLAN.md — Cron cleanup endpoint + vercel.json entry for scan-photos (90d) and exports (7d)
-
-#### Phase 16: Security Middleware Regression Fix
-**Goal**: Restore the global middleware that was accidentally dropped from `backend/api/src/app.ts` by the Phase 15 commit — re-adding `ipRateLimiter` (RATE-01), strict CORS without `*.vercel.app` wildcard (SEC-01), `secureHeaders()` (SEC-02), and the `ZodError` handler in `onError` (SEC-03) — so that all v1.3 security requirements are active in production
-**Depends on**: Phase 15
-**Requirements**: RATE-01, SEC-01, SEC-02, SEC-03
-**Gap Closure**: Closes gaps from v1.3 milestone audit — root cause: commit `7100859` (Phase 15) wrote a full replacement of `app.ts` that reverted all Phase 12+13 middleware additions
-**Success Criteria** (what must be TRUE):
-  1. `app.ts` contains `app.use('*', ipRateLimiter)` after the CORS block — unauthenticated IP flooding is limited to 200 req/60s on all routes
-  2. `app.ts` CORS allowlist has no `*.vercel.app` regex and no `?? ''` empty-string fallback — only `exp://`, `localhost`, and an explicit `APP_ORIGIN` are accepted
-  3. `app.ts` contains `app.use('*', secureHeaders())` — every response includes X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Strict-Transport-Security headers
-  4. `app.onError` contains a `z.ZodError` branch that returns HTTP 400 — a ZodError thrown inside a handler body never falls through to the generic 500 handler
-**Plans**: 1 plan
-Plans:
-- [ ] 16-01-PLAN.md — Restore ipRateLimiter, secureHeaders, strict CORS, and ZodError handler in app.ts
-
----
-
-## Phase Details
-
-### Phase 12: Infra + Rate Limiting
-**Goal**: The API is protected against unauthenticated floods and per-user quota abuse — all rate-limited routes return 429 with Retry-After headers, backed by a persistent distributed Redis store that survives Vercel cold starts
-**Depends on**: Phase 11
-**Requirements**: INFRA-01, RATE-01, RATE-02, RATE-03, RATE-04, RATE-05
-**Success Criteria** (what must be TRUE):
-  1. Upstash Redis is provisioned and connected — a ping from the backend returns a valid response and `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are present in both local `.env` and Vercel environment
-  2. An unauthenticated client sending 201 rapid requests to any endpoint receives HTTP 429 with a `Retry-After` header on the 201st request — `GET /health` never returns 429 regardless of request count
-  3. An authenticated user sending 21 consecutive POST requests to `/ai/chat` or `/ai/chat/stream` within 60 minutes receives HTTP 429 with `Retry-After` on the 21st request
-  4. An authenticated user sending 31 consecutive POST requests to `/ai/tools/execute` within 60 minutes receives HTTP 429 on the 31st request
-  5. An authenticated user sending requests beyond quota to the barcode scan endpoint receives HTTP 429; brute-force attempts on auth endpoints from a single IP are blocked after the per-IP threshold
-**Plans**: 2 plans
-Plans:
-- [x] 12-01-PLAN.md — Redis client + rate limiter middleware (packages, redis.ts, rateLimiter.ts)
-- [x] 12-02-PLAN.md — Wire limiters into app.ts and routes/ai.ts
-
-### Phase 13: API Security Hardening
-**Goal**: The API enforces strict CORS, emits security headers on every response, and validates all inputs reaching Claude Sonnet — so malformed or malicious payloads are rejected before touching any AI or database layer
-**Depends on**: Phase 12
-**Requirements**: SEC-01, SEC-02, SEC-03
-**Success Criteria** (what must be TRUE):
-  1. A request from an unlisted origin (e.g. `https://evil.example.com`) receives a CORS rejection — the wildcard `*.vercel.app` origin is no longer accepted
-  2. Every API response includes security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Strict-Transport-Security` — verifiable via `curl -I`
-  3. A POST to `/ai/chat` with a malformed `messages` array (missing `role`, wrong type, extra unknown fields) returns HTTP 400 with a structured validation error — the request never reaches the Claude Sonnet API call
-  4. A valid payload to `/ai/chat`, `/ai/chat/stream`, and `/ai/tools/execute` passes validation and reaches the handler without modification
-**Plans**: 1 plan
-Plans:
-- [x] 13-01-PLAN.md — CORS lockdown, secureHeaders, Zod validation on AI routes
-
-### Phase 14: Supabase Storage
-**Goal**: Users can upload and retrieve profile photos and meal scan photos directly from the mobile app without routing binary data through the Hono API — uploads use signed URLs to bypass Vercel's 4.5 MB body limit, and all buckets are private with correct path-prefix RLS policies
-**Depends on**: Phase 13
-**Requirements**: STORE-01, STORE-02, STORE-03, STORE-04
-**Success Criteria** (what must be TRUE):
-  1. A user can update their profile photo from the mobile app — the photo is stored in the `profile-photos` bucket under their userId path and the public URL is persisted in `user_profiles`
-  2. The mobile app can upload a meal scan photo by first calling `GET /storage/upload-url` to obtain a signed URL, then uploading directly to Supabase Storage — the Hono API never receives binary data
-  3. An unauthenticated upload attempt to any storage bucket returns HTTP 403 — no bucket is publicly writable
-  4. The `exports` bucket exists and is accessible via signed URL — the infrastructure is in place for future PDF exports even though no export UI exists yet
-  5. `GET /storage/upload-url?bucket=&path=` returns a signed upload URL valid for 60 seconds — a subsequent PUT to that URL produces a real file visible in the Supabase Storage dashboard
-**Plans**: 3 plans
-Plans:
-- [x] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
-- [x] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
-- [x] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
-
-### Phase 15: Lifecycle & Cleanup
-**Goal**: Ephemeral storage assets are automatically purged on schedule — scan photos older than 90 days and exports older than 7 days are removed via the Vercel cron endpoint, keeping storage costs bounded without manual intervention
-**Depends on**: Phase 14
-**Requirements**: INFRA-02
-**Success Criteria** (what must be TRUE):
-  1. `POST /storage/cron/cleanup` is registered as a Vercel cron job in `vercel.json` and runs on schedule — the endpoint is authenticated via `CRON_SECRET` header (401 without it)
-  2. Calling the cleanup endpoint removes `scan-photos` objects with metadata `expires_at` older than 90 days — objects within the retention window are not affected
-  3. Calling the cleanup endpoint removes `exports` objects older than 7 days — the removal uses `supabase.storage.from(bucket).remove([paths])` (not raw SQL DELETE) so no orphaned storage objects remain
-**Plans**: 1 plan
-Plans:
-- [ ] 15-01-PLAN.md — Cron cleanup endpoint + vercel.json entry for scan-photos (90d) and exports (7d)
-
-### Phase 16: Security Middleware Regression Fix
-**Goal**: Restore the global middleware that was accidentally dropped from `backend/api/src/app.ts` by the Phase 15 commit — re-adding `ipRateLimiter` (RATE-01), strict CORS without `*.vercel.app` wildcard (SEC-01), `secureHeaders()` (SEC-02), and the `ZodError` handler in `onError` (SEC-03) — so that all v1.3 security requirements are active in production
-**Depends on**: Phase 15
-**Requirements**: RATE-01, SEC-01, SEC-02, SEC-03
-**Gap Closure**: Closes gaps from v1.3 milestone audit — root cause: commit `7100859` (Phase 15) wrote a full replacement of `app.ts` that reverted all Phase 12+13 middleware additions
-**Success Criteria** (what must be TRUE):
-  1. `app.ts` contains `app.use('*', ipRateLimiter)` after the CORS block — unauthenticated IP flooding is limited to 200 req/60s on all routes
-  2. `app.ts` CORS allowlist has no `*.vercel.app` regex and no `?? ''` empty-string fallback — only `exp://`, `localhost`, and an explicit `APP_ORIGIN` are accepted
-  3. `app.ts` contains `app.use('*', secureHeaders())` — every response includes X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Strict-Transport-Security headers
-  4. `app.onError` contains a `z.ZodError` branch that returns HTTP 400 — a ZodError thrown inside a handler body never falls through to the generic 500 handler
-**Plans**: 1 plan
-Plans:
-- [ ] 16-01-PLAN.md — Restore ipRateLimiter, secureHeaders, strict CORS, and ZodError handler in app.ts
+</details>
 
 ---
 
@@ -216,13 +81,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 13. API Security Hardening | v1.3 | 1/1 | Complete | 2026-04-03 |
 | 14. Supabase Storage | v1.3 | 3/3 | Complete | 2026-04-03 |
 | 15. Lifecycle & Cleanup | v1.3 | 1/1 | Complete | 2026-04-05 |
-| 16. Security Middleware Regression Fix | v1.3 | 0/1 | Not started | - |
+| 16. Security Middleware Regression Fix | v1.3 | 1/1 | Complete | 2026-04-05 |
 
 ---
 *Roadmap created: 2026-03-26 -- Milestone v1.0 Landing Page*
-*Updated: 2026-04-02 -- v1.2 shipped; v1.3 Security + Cloud Infrastructure phases 12-15 added*
-*Updated: 2026-04-02 -- Phase 12 planned: 2 plans in 2 waves*
-*Updated: 2026-04-03 -- Phase 13 planned: 1 plan in 1 wave*
-*Updated: 2026-04-03 -- Phase 14 planned: 3 plans in 3 waves*
-*Updated: 2026-04-05 -- Phase 15 planned: 1 plan in 1 wave*
-*Updated: 2026-04-05 -- Phase 16 added: gap closure for v1.3 audit (security middleware regression in app.ts)*
+*Updated: 2026-04-05 -- v1.3 shipped: Security + Cloud Infrastructure (Phases 12-16)*
