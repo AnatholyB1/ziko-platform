@@ -1,602 +1,504 @@
 # Architecture Research
 
-**Domain:** Security + Cloud Infrastructure — Ziko Platform v1.3
-**Researched:** 2026-04-02
-**Confidence:** HIGH — all integration points verified from source files + official documentation
+**Domain:** AI Credit System & Gamification Integration — Ziko Platform v1.4
+**Researched:** 2026-04-05
+**Confidence:** HIGH — all integration points verified from source files in this repo
 
 ---
 
-## Existing Structure
+## System Overview
 
-### Current Middleware Chain (app.ts)
+The v1.4 credit system integrates at five distinct layers of the existing architecture. No existing components are removed. Three new backend components are added, two existing components are modified, and one new migration extends the database schema.
 
 ```
-Request
-  |
-  v
-logger()                          ← global, line 15
-  |
-  v
-cors()                            ← global, wildcard origin check, line 16-37
-  |
-  v
-router.use('*', authMiddleware)   ← per-router, declared inside each route file
-  |
-  v
-Route handler
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Mobile App (React Native)                      │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────────┐   │
+│  │  AI Chat UI      │  │  Plugin Screens  │  │ Gamification UI   │   │
+│  │ (credit display) │  │ (activity hooks) │  │ (dual balance)    │   │
+│  └────────┬─────────┘  └────────┬─────────┘  └────────┬──────────┘   │
+│           │                     │                     │              │
+│  ┌────────▼─────────────────────▼─────────────────────▼──────────┐   │
+│  │                    Supabase (RLS enforced)                      │   │
+│  │  user_gamification (coins) + user_ai_credits (new)             │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+│           │ (direct Supabase JS calls for reads, API for writes)       │
+└───────────┼──────────────────────────────────────────────────────────┘
+            │
+            ▼ HTTPS (Bearer token)
+┌──────────────────────────────────────────────────────────────────────┐
+│                     Hono v4 Backend (Vercel)                          │
+│                                                                       │
+│  logger → cors → secureHeaders → ipRateLimiter → [routes]            │
+│                                                                       │
+│  /ai/* routes only:                                                   │
+│    authMiddleware → userRateLimiter → creditCheckMiddleware(NEW)      │
+│      → zValidator → handler → creditDeductMiddleware(NEW)             │
+│                                                                       │
+│  Plugin tool executors (habits_log, cardio_log_session, etc.):        │
+│    [unchanged, but credit earn is triggered as side-effect]           │
+│                                                                       │
+│  ┌────────────────────────────────────────────────────────────┐       │
+│  │  NEW: src/middleware/credits.ts                             │       │
+│  │    creditCheckMiddleware — reads user_ai_credits, blocks    │       │
+│  │    creditDeductMiddleware — deducts after successful call   │       │
+│  └────────────────────────────────────────────────────────────┘       │
+│                                                                       │
+│  ┌────────────────────────────────────────────────────────────┐       │
+│  │  NEW: src/lib/creditService.ts                             │       │
+│  │    getBalance, deductCredits, earnCredits, getDailyCap     │       │
+│  └────────────────────────────────────────────────────────────┘       │
+│                                                                       │
+│  ┌────────────────────────────────────────────────────────────┐       │
+│  │  NEW: src/routes/credits.ts                                │       │
+│  │    GET /credits/balance — current balance + quota info      │       │
+│  │    GET /credits/history — credit transaction log            │       │
+│  └────────────────────────────────────────────────────────────┘       │
+│                                                                       │
+│  MODIFIED: src/routes/ai.ts                                           │
+│    /vision/nutrition — switch AGENT_MODEL → claude-haiku-3-5          │
+│    All AI routes — wrap with creditCheckMiddleware + deduct after      │
+│                                                                       │
+│  MODIFIED: src/tools/habits.ts, cardio.ts, nutrition.ts, etc.        │
+│    habits_log, cardio_log_session, measurements_log, etc.             │
+│    → fire-and-forget creditEarn() after successful write              │
+└──────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                    Supabase PostgreSQL                                 │
+│                                                                       │
+│  EXISTING tables (unchanged):                                         │
+│    user_gamification  — xp, level, coins (shop coins)                 │
+│    coin_transactions  — shop coin audit trail                         │
+│    xp_transactions    — xp audit trail                                │
+│                                                                       │
+│  NEW table: user_ai_credits (migration 026)                           │
+│    user_id, ai_credits (int), daily_credits_earned (int),             │
+│    daily_reset_date (date), updated_at                                │
+│                                                                       │
+│  NEW table: ai_credit_transactions (migration 026)                    │
+│    id, user_id, amount (±int), type, source, created_at               │
+│    type: 'earn' | 'deduct'                                            │
+│    source: 'activity_habit' | 'activity_cardio' | 'activity_nutrition'│
+│           | 'activity_measurement' | 'activity_stretching'            │
+│           | 'ai_chat' | 'ai_vision' | 'ai_program' | 'initial_grant'  │
+└──────────────────────────────────────────────────────────────────────┘
+            │
+            ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                    Upstash Redis (existing)                            │
+│  Existing: rl:ip:*, rl:ai-chat:*, rl:ai-tools:*, rl:barcode:*        │
+│  No Redis changes needed — credit deduction is Supabase-native        │
+│  (Redis rate limiters remain; credits are a separate spending layer)  │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Declared in `backend/api/src/app.ts`:**
+---
+
+## Component Responsibilities
+
+| Component | Status | Responsibility |
+|-----------|--------|----------------|
+| `src/middleware/credits.ts` | NEW | Reads current AI credit balance before request; blocks with 402 if zero; deducts after successful response |
+| `src/lib/creditService.ts` | NEW | All credit math: deduct, earn, daily cap enforcement, balance read — single source of truth |
+| `src/routes/credits.ts` | NEW | HTTP API for mobile to read balance, history, quota status |
+| `src/routes/ai.ts` | MODIFIED | Inserts creditCheckMiddleware on all AI routes; switches `/vision/nutrition` model to claude-haiku-3-5 |
+| `src/tools/habits.ts` | MODIFIED | Calls `creditService.earnCredits()` after `habits_log` succeeds |
+| `src/tools/cardio.ts` | MODIFIED | Calls `creditService.earnCredits()` after `cardio_log_session` succeeds |
+| `src/tools/nutrition.ts` | MODIFIED | Calls `creditService.earnCredits()` after `nutrition_log_meal` succeeds |
+| `src/tools/measurements.ts` | MODIFIED | Calls `creditService.earnCredits()` after `measurements_log` succeeds |
+| `src/tools/stretching.ts` | MODIFIED | Calls `creditService.earnCredits()` after `stretching_log_session` succeeds |
+| `supabase/migrations/026_ai_credits.sql` | NEW | `user_ai_credits` + `ai_credit_transactions` tables with RLS |
+| Mobile `gamificationStore` or new `creditStore` | NEW | Reads `/credits/balance`; surfaces dual balance in AI chat header and gamification dashboard |
+
+---
+
+## Recommended Project Structure (new files only)
+
+```
+backend/api/src/
+├── middleware/
+│   ├── auth.ts                    (existing — unchanged)
+│   ├── rateLimiter.ts             (existing — unchanged)
+│   └── credits.ts                 (NEW — creditCheckMiddleware factory)
+├── lib/
+│   ├── redis.ts                   (existing — unchanged)
+│   └── creditService.ts           (NEW — balance, deduct, earn, cap logic)
+├── routes/
+│   ├── ai.ts                      (MODIFIED — haiku switch + credit middleware)
+│   └── credits.ts                 (NEW — balance and history endpoints)
+supabase/migrations/
+└── 026_ai_credits.sql             (NEW — credit tables + RLS)
+apps/mobile/src/stores/
+└── creditStore.ts                 (NEW — Zustand store for credit balance)
+plugins/gamification/src/screens/
+└── GamificationDashboard.tsx      (MODIFIED — dual balance card)
+```
+
+---
+
+## Architectural Patterns
+
+### Pattern 1: Middleware as Guard + Deduction Sandwich
+
+The credit check and deduction are implemented as two separate middlewares wrapping the route handler. This is the same pattern as `authMiddleware` + `userRateLimiter` already in use.
+
+**What:** `creditCheckMiddleware` runs before the handler and reads the current balance. If zero, returns 402. After the handler succeeds, `creditDeductMiddleware` writes the deduction. The cost per endpoint is encoded as a constant in `credits.ts`.
+
+**When to use:** Any AI endpoint that consumes a token budget.
+
+**Trade-offs:** A Vercel cold start between check and deduction could allow a race condition if the same user fires two parallel requests. This is acceptable at current scale — a Redis atomic check-and-decrement (`DECRBY` with floor) would eliminate it but adds complexity. The Upstash sliding window already throttles parallel bursts.
+
+**Example:**
 
 ```typescript
-app.use('*', logger());
-app.use('*', cors({ ... }));          // origin array: exp://, localhost, *.vercel.app, APP_ORIGIN
+// src/middleware/credits.ts
+export function withCredits(cost: number) {
+  return [creditCheck(cost), creditDeduct(cost)];
+}
 
-app.get('/health', ...)               // unprotected
-app.route('/ai', aiRouter);           // aiRouter adds authMiddleware at its own use('*')
-app.route('/plugins', pluginsRouter);
-app.route('/webhooks', webhooksRouter);
-app.route('/bugs', bugsRouter);
-app.route('/supplements', supplementsRouter);
-app.route('/pantry', pantryRecipesRouter);
+// Usage in ai.ts
+router.post('/chat/stream',
+  aiChatLimiter,
+  ...withCredits(CREDIT_COSTS.chat),
+  zValidator('json', chatSchema),
+  chatStreamHandler,
+);
 ```
 
-**Auth middleware (`src/middleware/auth.ts`):**
-- Validates Supabase Bearer JWT via `adminClient.auth.getUser(token)`
-- Sets `c.set('auth', { userId, email })` in `ContextVariableMap`
-- Returns 401 on missing/invalid token
+The `creditDeduct` middleware calls `next()` first, then deducts only if the response status is < 400. This ensures a failed AI call does not consume credits.
 
-**Existing CORS config:**
-- Allows: `exp://`, `http?://localhost*`, `https://*.vercel.app`, `process.env.APP_ORIGIN`
-- Methods: GET, POST, PATCH, DELETE, OPTIONS
-- Headers: Content-Type, Authorization
-- `maxAge: 86400`
+### Pattern 2: Fire-and-Forget Earn in Tool Executors
 
-**Vercel deployment (vercel.json):**
-- All requests rewrite to `/api/app`
-- Weekly cron: `POST /supplements/cron/scrape` (Monday 03:00)
-- Exports: `GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS` handlers from `app.ts`
+Activity-based credit earning happens as a side-effect inside the tool executor functions. It is deliberately non-blocking — a credit earn failure must never fail the activity log itself.
 
-**Current dependencies (package.json):**
-- `hono: ^4.7.0` — no rate limiter yet
-- `@supabase/supabase-js: ^2.50.0` — client exists, Storage not yet used
-- `zod: ^4.3.6` — available for validation but not applied at middleware level
+**What:** After a successful Supabase write, the tool calls `creditService.earnCredits(userId, source)` without `await`. This pattern is already used for `updateConversationTitle` in `ai.ts` (line 192).
+
+**When to use:** All write-path activity tools: `habits_log`, `nutrition_log_meal`, `measurements_log`, `stretching_log_session`, `cardio_log_session`.
+
+**Trade-offs:** Credit earn is best-effort. If the Supabase write in `earnCredits` fails silently, the user loses a credit they earned. Log the error. This is acceptable because the daily cap means a missed earn is never catastrophic.
+
+**Example:**
+
+```typescript
+// In habits.ts, after the upsert succeeds
+creditService.earnCredits(userId, 'activity_habit').catch((err) =>
+  console.error('[Credits] earn failed:', err)
+);
+return { success: true, habit_name: habit.name };
+```
+
+### Pattern 3: Daily Cap Enforcement at Write Time
+
+The `user_ai_credits` table stores `daily_credits_earned` and `daily_reset_date`. On each earn call, `creditService` checks if `daily_reset_date` is today; if not, it resets the counter before adding. If `daily_credits_earned >= DAILY_EARN_CAP`, the earn is a no-op.
+
+**What:** Single-row upsert with conditional logic encapsulated in `creditService.earnCredits`. No cron job needed for cap reset — the reset is lazy (happens on first earn each day).
+
+**When to use:** This pattern avoids a daily reset cron and works correctly on Vercel serverless. It is the same approach used for habit streak resets in the existing codebase.
+
+**Trade-offs:** If a user never earns credits on a given day, the row is never updated. This is fine — the reset check runs when they next earn, not at midnight.
+
+---
+
+## Data Flow
+
+### AI Chat Request (Credit Check + Deduct)
+
+```
+Mobile client
+    |
+    | POST /ai/chat/stream  { messages, conversation_id }
+    |   Authorization: Bearer <JWT>
+    ▼
+[ipRateLimiter] — pass (200/60s window)
+    ▼
+[authMiddleware] — sets c.get('auth').userId
+    ▼
+[aiChatLimiter] — pass (20/60min per user)
+    ▼
+[creditCheck(cost=1)] — reads user_ai_credits WHERE user_id=$1
+    |   balance == 0 → 402 { error: 'Insufficient AI credits', balance: 0 }
+    |   balance > 0 → continue
+    ▼
+[zValidator] — validates body schema
+    ▼
+[chatStreamHandler] — fetchUserContext, streamText, persist messages
+    ▼
+[creditDeduct(cost=1)] — runs after handler, only if status < 400
+    |   UPDATE user_ai_credits SET ai_credits = ai_credits - cost
+    |   INSERT INTO ai_credit_transactions (amount=-1, type='deduct', source='ai_chat')
+    ▼
+SSE stream to client
+```
+
+### Activity Log → Credit Earn
+
+```
+Mobile client (or AI tool call)
+    |
+    | habits_log / cardio_log_session / nutrition_log_meal / etc.
+    ▼
+[Tool executor]
+    |   Supabase upsert → success
+    |
+    +-- return result to caller (sync)
+    |
+    +-- creditService.earnCredits(userId, source)  [fire-and-forget]
+            |
+            ▼
+            SELECT daily_credits_earned, daily_reset_date
+            FROM user_ai_credits WHERE user_id = $1
+            |
+            | reset_date < today → reset counter first
+            | earned >= DAILY_CAP → no-op, return
+            | else:
+            ▼
+            UPDATE user_ai_credits
+              SET ai_credits = ai_credits + earn_amount,
+                  daily_credits_earned = daily_credits_earned + earn_amount,
+                  daily_reset_date = today
+            INSERT INTO ai_credit_transactions
+              (amount=+earn_amount, type='earn', source=$source)
+```
+
+### Mobile Balance Display
+
+```
+Mobile app boot / screen focus
+    ▼
+GET /credits/balance  (authd)
+    ▼
+creditService.getBalance(userId)
+    → { ai_credits: int, daily_earned: int, daily_cap: int, reset_date: date }
+    ▼
+creditStore.setBalance(...)   [Zustand]
+    ▼
+AI chat header renders: "12 credits"
+Gamification dashboard: dual card — coins | credits
+```
+
+---
+
+## Database Schema (Migration 026)
+
+```sql
+-- user_ai_credits: one row per user
+CREATE TABLE public.user_ai_credits (
+  user_id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  ai_credits           INTEGER NOT NULL DEFAULT 5,   -- starting grant
+  daily_credits_earned INTEGER NOT NULL DEFAULT 0,
+  daily_reset_date     DATE NOT NULL DEFAULT CURRENT_DATE,
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.user_ai_credits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ai_credits_own" ON public.user_ai_credits
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- ai_credit_transactions: audit trail
+CREATE TABLE public.ai_credit_transactions (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  amount      INTEGER NOT NULL,  -- positive=earn, negative=deduct
+  type        TEXT NOT NULL CHECK (type IN ('earn', 'deduct')),
+  source      TEXT NOT NULL CHECK (source IN (
+    'activity_habit', 'activity_cardio', 'activity_nutrition',
+    'activity_measurement', 'activity_stretching',
+    'ai_chat', 'ai_vision', 'ai_program', 'initial_grant'
+  )),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_ai_credit_tx_user ON public.ai_credit_transactions(user_id, created_at DESC);
+
+ALTER TABLE public.ai_credit_transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ai_credit_tx_own" ON public.ai_credit_transactions
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+```
+
+The `DEFAULT 5` initial grant on `user_ai_credits` handles new users automatically — no trigger needed. Existing users get no row until their first earn or check; `creditService.getBalance` must handle the missing-row case by upserting a row with defaults.
 
 ---
 
 ## Integration Points
 
-### 1. Rate Limiting Injection Point
+### What Is New vs Modified
 
-**The serverless constraint is decisive.** Vercel serverless functions have no persistent memory between invocations — in-memory state (`MemoryStore` from `hono-rate-limiter` default) resets on every cold start. This means a pure in-memory rate limiter provides false protection on Vercel: counts do not accumulate across concurrent function instances.
+| Component | Type | Change Description |
+|-----------|------|--------------------|
+| `middleware/credits.ts` | NEW | creditCheck + creditDeduct factory functions |
+| `lib/creditService.ts` | NEW | getBalance, earnCredits, deductCredits, CREDIT_COSTS, DAILY_EARN_CAP, EARN_AMOUNTS |
+| `routes/credits.ts` | NEW | GET /credits/balance, GET /credits/history |
+| `supabase/migrations/026_ai_credits.sql` | NEW | user_ai_credits + ai_credit_transactions + RLS |
+| `apps/mobile/src/stores/creditStore.ts` | NEW | Zustand store; fetches /credits/balance on mount |
+| `routes/ai.ts` | MODIFIED | Add `...withCredits(cost)` to /chat, /chat/stream, /tools/execute, /vision/nutrition; switch vision model to claude-haiku |
+| `tools/habits.ts` | MODIFIED | Fire-and-forget earnCredits after habits_log upsert |
+| `tools/nutrition.ts` | MODIFIED | Fire-and-forget earnCredits after nutrition_log_meal upsert |
+| `tools/measurements.ts` | MODIFIED | Fire-and-forget earnCredits after measurements_log upsert |
+| `tools/stretching.ts` | MODIFIED | Fire-and-forget earnCredits after stretching_log_session upsert |
+| `tools/cardio.ts` | MODIFIED | Fire-and-forget earnCredits after cardio_log_session upsert |
+| `app.ts` | MODIFIED | Mount credits router: `app.route('/credits', creditsRouter)` |
+| `plugins/gamification/src/screens/GamificationDashboard.tsx` | MODIFIED | Add AI credits card alongside coins card |
 
-**Required:** An external Redis store that persists hit counts across invocations.
-
-**Recommended store:** Upstash Redis via `@hono-rate-limiter/redis` + `@upstash/redis`. Reasons:
-- HTTP-based (not TCP socket) — works in Vercel serverless without connection pool issues
-- `@upstash/ratelimit` uses an ephemeral local cache per warm invocation to reduce Redis round-trips
-- Vercel-native integration: one button provisions a KV store and injects `KV_REST_API_URL` + `KV_REST_API_TOKEN`
-- `@hono-rate-limiter/redis` is the official Redis adapter for `hono-rate-limiter`
-
-**Where to inject in the middleware chain:**
+### Middleware Chain Position (ai routes after change)
 
 ```
-Request
-  |
-  v
-logger()                          ← unchanged
-  |
-  v
-cors()                            ← unchanged (but tighten origin list — see Modified Components)
-  |
-  v
-[NEW] ipRateLimiter               ← global, applied BEFORE auth, protects against unauthenticated hammering
-  |
-  v
-authMiddleware                    ← per-router (unchanged — stays inside route files)
-  |
-  v
-[NEW] userRateLimiter             ← per-router, applied AFTER auth (has access to c.get('auth').userId)
-  |
-  v
-[NEW] validationMiddleware        ← per-route, applied per endpoint
-  |
-  v
-Route handler
+logger → cors → secureHeaders → ipRateLimiter
+  → [route mounted at /ai]
+    → authMiddleware            (sets userId)
+    → aiChatLimiter             (sliding window per user)
+    → creditCheck(cost)         (NEW — reads user_ai_credits)
+    → zValidator(schema)
+    → handler
+    → creditDeduct(cost)        (NEW — writes after handler returns)
 ```
 
-**Two-tier rate limiting design:**
+The `creditCheck` must sit between `aiChatLimiter` and `zValidator`. Placing it after the rate limiter means a user who has hit their rate limit never reaches the credit check (avoids spurious Supabase reads). Placing it before `zValidator` means invalid bodies are rejected before credit check — this is wrong. The correct order is: rate limiter → credit check → schema validation → handler → deduct.
 
-| Tier | Key | Limit | Applied at | Reason |
-|------|-----|-------|-----------|--------|
-| IP tier | `X-Forwarded-For` / `CF-Connecting-IP` | 200 req/15min | Global (before auth) | Blocks unauthenticated floods, no userId available yet |
-| User tier | `c.get('auth').userId` + route path | Per-route (see below) | Per-router (after auth) | Fair per-user limits, harder to circumvent by rotating IPs |
+Correction to the above: `zValidator` should stay before the handler but after credit check is acceptable because an invalid body returning 400 won't trigger `creditDeduct` (deduct only fires on status < 400). However, putting `zValidator` before credit check avoids the Supabase read entirely for malformed requests. **Final order: rateLimiter → zValidator → creditCheck → handler → creditDeduct.**
 
-**Per-route user limits (recommended):**
-
-| Route | Limit | Window | Rationale |
-|-------|-------|--------|-----------|
-| `POST /ai/chat/stream` | 20 req | 60 min | AI calls are expensive; prevent runaway Anthropic billing |
-| `POST /ai/chat` | 20 req | 60 min | Same pool as stream endpoint |
-| `POST /ai/tools/execute` | 30 req | 60 min | Tool calls cheaper but still Anthropic API-backed |
-| `POST /storage/upload` | 50 req | 60 min | Storage uploads — prevent storage abuse |
-| `POST /bugs` | 10 req | 60 min | Bug reports — prevent spam |
-| All other authenticated routes | 300 req | 15 min | General protection |
-
-**keyGenerator pattern for user-tier limiter:**
+### Credit Cost Constants
 
 ```typescript
-keyGenerator: (c) => {
-  const auth = c.get('auth');
-  const userId = auth?.userId ?? c.req.header('X-Forwarded-For') ?? 'anonymous';
-  const path = c.req.routePath;
-  return `${userId}:${path}`;
-}
+// src/lib/creditService.ts
+export const CREDIT_COSTS = {
+  chat: 1,           // /ai/chat and /ai/chat/stream
+  tools_execute: 1,  // /ai/tools/execute (used by plugins)
+  vision: 1,         // /ai/vision/nutrition (Haiku — cheap enough to cost same)
+  program: 1,        // ai_programs_generate tool call (charged at chat level)
+} as const;
+
+export const EARN_AMOUNTS = {
+  activity_habit: 1,
+  activity_cardio: 2,
+  activity_nutrition: 1,
+  activity_measurement: 1,
+  activity_stretching: 1,
+} as const;
+
+export const DAILY_EARN_CAP = 5;  // max AI credits earnable per day from activity
+export const STARTING_CREDITS = 5; // default on new user row
 ```
 
-This combines userId with the route path — so hitting `/ai/chat/stream` does not consume the `/storage/upload` quota. Falls back to IP if auth context is somehow absent (defensive).
+### Which Tool Executors Earn Credits
 
-**Standard headers to return:**
-- `standardHeaders: "draft-7"` — returns `RateLimit: limit=20, remaining=18, reset=1714500000`
-- On 429: include `Retry-After` header (automatically added by `hono-rate-limiter`)
+Not all tool executors earn credits — only writes that represent real user activity. Read-only tools (`habits_get_today`, `cardio_get_history`, `wearables_get_summary`, etc.) do not earn. Logging tools that earn:
 
-### 2. Supabase Storage Integration Point
+| Tool | Earn Amount | Source Label |
+|------|-------------|--------------|
+| `habits_log` | 1 | `activity_habit` |
+| `nutrition_log_meal` | 1 | `activity_nutrition` |
+| `measurements_log` | 1 | `activity_measurement` |
+| `stretching_log_session` | 1 | `activity_stretching` |
+| `cardio_log_session` | 2 | `activity_cardio` |
 
-**Current state:** The `authMiddleware` uses `SUPABASE_SERVICE_KEY ?? SUPABASE_PUBLISHABLE_KEY`. The publishable key is the one available in production (no service key hardcoded — correct). Storage operations require deciding between:
+`journal_log_mood`, `sleep_log`, and `hydration_log` are excluded from earning — these are frequent micro-logs that would trivially saturate the daily cap without meaningful effort.
 
-- **Service key upload (backend-side):** Backend receives binary from mobile, authenticates user, uploads to Supabase Storage on behalf of user. File is stored under `{userId}/{filename}`. Public URL returned to client and stored in DB column.
-- **Presigned URL flow (client-initiated):** Backend generates a signed upload URL, client uploads directly to Supabase Storage. Backend never sees the binary.
+### Mobile Activity Logging Surface
 
-**Recommendation: backend-proxied upload via service key** for v1.3. Reasons:
-- Simpler mobile-side code: one `multipart/form-data` POST to the Hono API
-- Consistent auth model: the Hono authMiddleware already validates the user — no separate Supabase Storage JWT flow needed on mobile
-- Backend can enforce file size, MIME type, and path naming before storage touches the binary
-- IMPORTANT: The service key is already available (`SUPABASE_SERVICE_KEY` env var). The `adminClient` in `auth.ts` uses it. The storage upload client should use the same service key to bypass Storage RLS.
-- Storage RLS policy is still defined (INSERT by user path folder), but the service key bypasses it — this is safe because the backend has already verified the user identity before setting the storage path.
+Plugins log activities through two paths:
+1. **Via AI tool call** — user says "j'ai fait 5km" → AI calls `cardio_log_session` → tool executor fires earn
+2. **Direct Supabase writes from mobile** — plugin screens call Supabase JS directly without going through the API
 
-**Where the storage client lives:** A new `src/lib/storageClient.ts` utility, separate from the auth client, using the service key explicitly. This avoids importing `adminClient` from auth.ts into routes (leaking concerns).
+Path 2 is the challenge: when a user logs a workout from the cardio screen directly, it bypasses the tool executor entirely. Two options:
 
-**Storage buckets to create:**
+- **Option A (recommended):** Add lightweight REST endpoints for each write-path activity (e.g., `POST /activity/log`) that the mobile calls in addition to the Supabase write. The endpoint validates auth, calls `creditService.earnCredits`, and returns quickly. The mobile Supabase write and the credit earn call are fired in parallel.
+- **Option B:** Supabase database trigger on `cardio_sessions`, `habit_logs`, etc. that calls a Supabase Edge Function to earn credits. More complex, harder to test.
 
-| Bucket | Visibility | Max file size | Allowed MIME types | Path pattern |
-|--------|------------|--------------|-------------------|-------------|
-| `profile-photos` | Public | 5 MB | `image/jpeg`, `image/png`, `image/webp` | `{userId}/avatar.{ext}` |
-| `meal-photos` | Private | 10 MB | `image/jpeg`, `image/png`, `image/webp` | `{userId}/{date}/{uuid}.{ext}` |
-| `exports` | Private | 25 MB | `application/pdf`, `text/csv` | `{userId}/{filename}` |
-
-**Public vs private rationale:**
-- `profile-photos` public: avatars are viewed by other users (community plugin, leaderboards). Public bucket means no signed URL needed to display an avatar.
-- `meal-photos` private: food photos are personal health data. Signed URLs required for display.
-- `exports` private: user's full data export — never public.
-
-**File upload data flow:**
-
-```
-Mobile app (multipart/form-data POST)
-  |
-  v
-POST /storage/upload
-  ├── authMiddleware validates JWT → sets c.get('auth').userId
-  ├── userRateLimiter checks upload quota
-  ├── validationMiddleware: file size, MIME type
-  ├── storageClient.upload(bucket, `{userId}/{filename}`, fileBytes, { contentType })
-  |
-  v
-Supabase Storage returns { path, fullPath }
-  |
-  v
-storageClient.getPublicUrl(bucket, path) → { data: { publicUrl } }
-  |
-  v
-Handler inserts publicUrl into DB column (user_profiles.avatar_url, etc.)
-  |
-  v
-Response: { url: publicUrl, path }
-```
-
-**Lifecycle policy — no native Supabase TTL support (CONFIRMED LOW confidence):**
-Supabase Storage has no built-in object expiration TTL as of 2026-04. The community workaround is a scheduled Supabase Edge Function or Vercel cron that queries `storage.objects` where `created_at < NOW() - INTERVAL 'N days'` and calls `storage.from(bucket).remove(paths)`. For v1.3, use the existing Vercel cron mechanism (add a `POST /storage/cron/cleanup` endpoint) with a weekly schedule — consistent with the supplement scraper cron already in `vercel.json`.
-
-### 3. Input Validation Injection Point
-
-**Current state:** The `bugs.ts` route does manual field checks (`if (!title || !description)`). No Zod schema validation at middleware level. Hono has no built-in validation for request bodies.
-
-`zod` is already in `dependencies` — no new package needed.
-
-**Recommended approach:** Per-route validation using Hono's built-in `validator` middleware with `zod`:
+**Recommendation: Option A** — keep all credit logic in Hono where it is testable, visible, and consistent with the existing backend pattern. Add a single `POST /activity/earn` endpoint that accepts `{ activity_type }` and calls `creditService.earnCredits`. The mobile calls this fire-and-forget from each plugin store after a successful direct Supabase write.
 
 ```typescript
-import { validator } from 'hono/validator';
-import { z } from 'zod';
-
-router.post('/upload',
-  validator('form', (value, c) => {
-    // multipart form validation
-  }),
-  async (c) => { ... }
-);
+// New: src/routes/credits.ts (excerpt)
+router.post('/earn', authMiddleware, zValidator('json', earnSchema), async (c) => {
+  const { activity_type } = c.req.valid('json');
+  const { userId } = c.get('auth');
+  await creditService.earnCredits(userId, `activity_${activity_type}`);
+  return c.json({ ok: true });
+});
 ```
-
-**Where validation fits in the chain:** After auth, before the handler. The `validator` middleware is applied per-route, not globally — this is the Hono convention. No new middleware file needed; schemas are co-located with their routes.
-
-### 4. CORS Tightening
-
-Current `cors()` config allows `*.vercel.app` which is overly broad (any Vercel-hosted site can call the API). For v1.3, add `process.env.MOBILE_ORIGIN` (the production Expo app deep link origin) and remove the wildcard `*.vercel.app` or replace it with specific origins.
-
-This is a modification to `app.ts` only — no new file.
 
 ---
 
-## New Components
+## Scaling Considerations
 
-### `backend/api/src/middleware/rateLimiter.ts` (NEW)
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 0-10k users | Current approach is correct. Supabase single-row upsert on user_ai_credits is fast. No caching needed. |
+| 10k-100k users | Add Redis cache for balance reads (5s TTL). The creditCheck middleware hits Supabase on every AI request — at 10k DAU this becomes a hot path. |
+| 100k+ users | Move to Postgres advisory locks or serializable transactions to prevent double-spend on parallel requests. |
 
-Exports two ready-to-use middleware factories:
-
-```
-export const ipRateLimiter   → rateLimiter({ windowMs: 15min, limit: 200, keyGenerator: IP })
-export const userRateLimiter → rateLimiter({ windowMs: 60min, limit: 20,  keyGenerator: userId:path })
-export const aiRateLimiter   → rateLimiter({ windowMs: 60min, limit: 20,  keyGenerator: userId:path })
-```
-
-Uses `RedisStore` from `@hono-rate-limiter/redis` with `@upstash/redis` client initialized from env vars (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`). Both env vars injected via Vercel KV integration.
-
-Single file owns all rate limiter configuration so limits can be tuned in one place.
-
-**Type consideration:** The `ContextVariableMap` augmentation in `auth.ts` already declares `auth: AuthContext`. The `rateLimiter.ts` file will import this type via Hono's module augmentation — no extra declaration needed.
-
-### `backend/api/src/lib/storageClient.ts` (NEW)
-
-Thin wrapper around `@supabase/supabase-js` Storage, initialized with the service key to bypass Storage RLS. Exports:
-
-```typescript
-export function uploadFile(bucket: string, path: string, file: File | ArrayBuffer, options: { contentType: string; upsert?: boolean }): Promise<{ url: string; path: string }>
-export function deleteFile(bucket: string, paths: string[]): Promise<void>
-export function getSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string>
-export function getPublicUrl(bucket: string, path: string): string
-```
-
-Keeps `createClient` calls out of route files. Single place for storage configuration.
-
-**Why separate from `auth.ts` adminClient:** The `adminClient` in `auth.ts` is created with `autoRefreshToken: false, persistSession: false` for JWT validation. Storage operations have different semantics (file bodies, streaming). Keeping them separate avoids accidental misuse.
-
-### `backend/api/src/routes/storage.ts` (NEW)
-
-Hono router for file upload endpoints. Mounted at `/storage` in `app.ts`.
-
-Routes:
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/storage/upload/avatar` | Upload profile photo → `profile-photos` bucket |
-| `POST` | `/storage/upload/meal-photo` | Upload meal scan photo → `meal-photos` bucket |
-| `DELETE` | `/storage/delete` | Delete a file by path + bucket |
-| `POST` | `/storage/cron/cleanup` | Vercel cron: delete files older than policy window |
-
-All routes except `/cron/cleanup` are protected by `authMiddleware` + `userRateLimiter`. The cron endpoint is protected by a `CRON_SECRET` header check (Vercel cron convention).
-
-Middleware chain inside this router:
-
-```
-router.use('*', authMiddleware)
-router.use('*', userRateLimiter)    ← upload-specific quota
-router.post('/upload/avatar',
-  bodyLimit({ maxSize: 5 * 1024 * 1024 }),
-  validator('form', avatarSchema),
-  handler
-)
-```
-
-### `supabase/migrations/026_storage_buckets.sql` (NEW)
-
-Creates the three buckets and their RLS policies. Example pattern:
-
-```sql
--- Create buckets via Supabase Storage API (not SQL migration directly)
--- RLS on storage.objects table:
-CREATE POLICY "profile_photos_own_insert"
-  ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'profile-photos'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
-
-CREATE POLICY "profile_photos_public_select"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'profile-photos');  -- public bucket: no auth restriction on reads
-```
-
-Note: Buckets themselves (public/private flag, allowed MIME types, max file size) are configured via the Supabase Dashboard or `supabase/config.toml`, not SQL migrations. The SQL migration only sets the RLS policies on `storage.objects`. This is an important distinction — mark this in the phase plan.
+At current Ziko scale (early product), Option A with direct Supabase upserts is correct. The race condition window for parallel requests is ~50ms and rate limiting constrains bursts to 20 AI calls per 60 minutes per user.
 
 ---
 
-## Modified Components
+## Anti-Patterns
 
-### `backend/api/src/app.ts` (MODIFY)
+### Anti-Pattern 1: Deducting Credits Before the AI Call Succeeds
 
-Changes:
-1. Import `ipRateLimiter` from `./middleware/rateLimiter.js`
-2. Import `storageRouter` from `./routes/storage.js`
-3. Apply `ipRateLimiter` AFTER `cors()`, BEFORE any route (line ~38)
-4. Mount `/storage` router
-5. Tighten CORS origin list: remove wildcard `*.vercel.app`, add specific allowed origins via env var `ALLOWED_ORIGINS`
-6. Export `PUT` handler from Vercel exports (for Storage presigned URL uploads if needed later)
+**What people do:** Deduct credits at the start of the handler, before `streamText` or `generateText` is called.
 
-```typescript
-// After cors(), before routes:
-app.use('*', ipRateLimiter);
+**Why it's wrong:** If Anthropic returns an error, the user loses a credit for a failed request. This kills trust in the system.
 
-// New route mount:
-app.route('/storage', storageRouter);
-```
+**Do this instead:** Deduct only after the handler returns a successful response status. The `creditDeduct` middleware checks `c.res.status < 400` before writing.
 
-### `backend/api/src/routes/ai.ts` (MODIFY)
+### Anti-Pattern 2: Blocking the Activity Log on Credit Earn
 
-Changes:
-1. Import `aiRateLimiter` from `../middleware/rateLimiter.js`
-2. Apply after `authMiddleware` at the router level
+**What people do:** `await creditService.earnCredits(...)` inside the tool executor before returning to the caller.
 
-```typescript
-const router = new Hono();
-router.use('*', authMiddleware);
-router.use('*', aiRateLimiter);   // ← ADD: per-user, per-path AI quota
-```
+**Why it's wrong:** A Supabase hiccup in the credit earn path would fail the habit log. The activity log must always succeed independently of the credit system.
 
-No handler changes needed.
+**Do this instead:** Fire-and-forget with `.catch()` logging. Credits are a bonus, never a dependency.
 
-### `backend/api/src/routes/bugs.ts` (MODIFY)
+### Anti-Pattern 3: Storing Credit Balance Only in Redis
 
-Changes:
-1. Import `userRateLimiter` from `../middleware/rateLimiter.js` (or a specific `bugsRateLimiter` variant with tighter limits: 10/hour)
-2. Apply after `authMiddleware`
-3. Replace manual `if (!title || !description)` check with a Zod `validator` schema (improves consistency and error message format)
+**What people do:** Use Redis INCR/DECR for the credit counter (feels like it matches the rate limiter pattern).
 
-### `backend/api/vercel.json` (MODIFY)
+**Why it's wrong:** Redis data is ephemeral on Upstash free tier; credit balances must survive cache evictions. The transaction audit trail requires a persistent store for user trust and potential support requests.
 
-Add the storage cleanup cron:
+**Do this instead:** Supabase as the source of truth. Redis remains only for rate limiting (time-windowed, expected to expire).
 
-```json
-{
-  "crons": [
-    { "path": "/supplements/cron/scrape", "schedule": "0 3 * * 1" },
-    { "path": "/storage/cron/cleanup",    "schedule": "0 4 * * 0" }
-  ]
-}
-```
+### Anti-Pattern 4: One Daily Cron to Reset Earn Caps
 
-Sunday 04:00 UTC for storage cleanup — offset from supplement scraper to avoid simultaneous cron cold starts.
+**What people do:** A midnight Vercel cron that sets `daily_credits_earned = 0` for all users.
 
-### `backend/api/package.json` (MODIFY)
+**Why it's wrong:** At scale this is a large table scan. On Vercel serverless it may hit timeout limits. It requires a cron to be always deployed and monitored.
 
-Add new dependencies:
-
-```json
-{
-  "dependencies": {
-    "hono-rate-limiter": "^0.5.0",
-    "@hono-rate-limiter/redis": "^0.5.0",
-    "@upstash/redis": "^1.31.0"
-  }
-}
-```
-
-`@upstash/redis` replaces the need for `ioredis` or `@redis/client` — it uses HTTP so it works in Vercel serverless without TCP connection pool management.
+**Do this instead:** Lazy reset — check `daily_reset_date < CURRENT_DATE` at earn time and reset inline. No cron dependency, works correctly on Vercel serverless.
 
 ---
 
 ## Build Order
 
-Dependencies flow strictly from foundation to features. Each step is a prerequisite for the next.
+The following order respects data dependencies. Each step can be built and tested independently.
 
-### Step 1 — Redis Infrastructure (no code, no deploy)
+1. **Database migration** (`026_ai_credits.sql`) — must be first; all backend code depends on these tables
+2. **`creditService.ts`** — pure logic, no HTTP, testable in isolation; depends on migration being applied
+3. **`credits.ts` middleware** — depends on creditService
+4. **`routes/credits.ts`** — depends on creditService; adds balance and history endpoints
+5. **`app.ts` route mount** — one-line change to mount the credits router
+6. **`routes/ai.ts` modifications** — switch vision model to Haiku; insert credit middleware; depends on credits.ts middleware
+7. **Tool executor modifications** (habits, nutrition, measurements, stretching, cardio) — fire-and-forget earn; depends on creditService
+8. **Mobile `creditStore.ts`** — fetches /credits/balance; depends on routes/credits.ts being deployed
+9. **Mobile UI** (AI chat credit display, gamification dual balance) — depends on creditStore
 
-Provision Upstash Redis via Vercel integration (dashboard: Storage → Create KV). This injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` into Vercel environment. Set the same two vars locally in `backend/api/.env` for development testing.
-
-**Validation gate:** `curl -H "Authorization: Bearer $KV_REST_API_TOKEN" $KV_REST_API_URL/ping` returns `+PONG`.
-
-### Step 2 — Install Packages
-
-```bash
-cd backend/api
-npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis
-```
-
-**Validation gate:** `npm run type-check` passes.
-
-### Step 3 — Rate Limiter Middleware (`src/middleware/rateLimiter.ts`)
-
-Build `rateLimiter.ts` with `ipRateLimiter`, `userRateLimiter`, `aiRateLimiter` exports. Test in isolation by writing a minimal test script that creates a `Hono` app with the middleware and sends 5 rapid requests — verify 429 on the 4th/5th.
-
-**Validation gate:** 429 response returned with `RateLimit-Remaining: 0` and `Retry-After` header after limit exceeded.
-
-### Step 4 — Apply Rate Limiters to Existing Routes
-
-4a. Modify `app.ts`: add `ipRateLimiter` globally
-4b. Modify `routes/ai.ts`: add `aiRateLimiter` at router level
-4c. Modify `routes/bugs.ts`: add `userRateLimiter`
-
-**Validation gate:** `POST /ai/chat` with 21 rapid requests from same user returns 429 on request 21. `/health` (unprotected) never returns 429 regardless of request count.
-
-### Step 5 — Supabase Storage Buckets
-
-Create buckets via Supabase Dashboard:
-1. `profile-photos` (public, max 5 MB, allowed: image/*)
-2. `meal-photos` (private, max 10 MB, allowed: image/*)
-3. `exports` (private, max 25 MB, allowed: application/pdf, text/csv)
-
-Then write `supabase/migrations/026_storage_rls.sql` with RLS policies on `storage.objects` for each bucket.
-
-**Validation gate:** Attempting upload to `meal-photos` without auth returns 403. Authenticated upload to `{userId}/test.jpg` succeeds.
-
-### Step 6 — Storage Client Utility (`src/lib/storageClient.ts`)
-
-Build `storageClient.ts` as a standalone module. Test the `uploadFile` and `getPublicUrl` functions directly with a test script before wiring into routes.
-
-**Validation gate:** `uploadFile('profile-photos', 'test-user/avatar.jpg', buffer, { contentType: 'image/jpeg' })` returns a non-null `url`.
-
-### Step 7 — Storage Routes (`src/routes/storage.ts` + mount in `app.ts`)
-
-Build `storage.ts` router with avatar upload, meal photo upload, delete, and cron cleanup. Wire into `app.ts`. Add Vercel cron entry in `vercel.json`.
-
-**Validation gate:** `POST /storage/upload/avatar` with a valid JPEG returns `{ url, path }`. `POST /storage/upload/avatar` with an invalid MIME type returns 415. `POST /storage/cron/cleanup` without `CRON_SECRET` header returns 401.
-
-### Step 8 — CORS Tightening
-
-Replace wildcard `*.vercel.app` in `app.ts` cors config with an explicit list via `ALLOWED_ORIGINS` env var. Update env vars on Vercel.
-
-**Validation gate:** Request from an unlisted origin receives CORS 403. Request from the Expo app origin (`exp://`) receives correct CORS headers.
-
-### Step 9 — Deploy and Smoke Test
-
-```bash
-cd backend/api && vercel --prod --yes
-```
-
-Smoke test:
-1. `GET /health` → 200
-2. `POST /ai/chat` (authenticated) → responds normally
-3. `POST /ai/chat` 21 times rapid → 429 on #21
-4. `POST /storage/upload/avatar` (authenticated) → `{ url }` in response
-5. Check Upstash dashboard: keys created with correct TTL
-
----
-
-## Architectural Decisions
-
-### Decision 1: Upstash over Vercel KV directly
-
-Vercel KV is Upstash under the hood. Using `@upstash/redis` directly (rather than `@vercel/kv`) gives:
-- Portability: not locked to Vercel-managed Redis if self-hosting later
-- Direct access to `ephemeralCache` option in `@upstash/ratelimit` (warm-invocation caching reduces Redis calls)
-- Same env vars either way (`KV_REST_API_URL` / `KV_REST_API_TOKEN`)
-
-### Decision 2: Two-tier rate limiting (IP + user) rather than user-only
-
-IP-tier runs BEFORE auth. This is essential for preventing authentication endpoint floods (someone hammering `POST /ai/chat` with invalid tokens never reaches `adminClient.auth.getUser()` — reduces Supabase Auth API costs). User-tier runs AFTER auth — uses the verified `userId` as the key, which is far more reliable than IP (NAT, VPN, shared WiFi all share one IP).
-
-### Decision 3: Backend-proxied storage upload (not presigned URLs)
-
-Presigned URLs would require the mobile app to:
-1. Call `POST /storage/generate-url` → get signed URL
-2. Call Supabase Storage directly with the signed URL
-
-Two-step flow from mobile, additional error surface. Backend-proxied upload keeps mobile code simpler: one POST with `multipart/form-data`. The overhead (backend touches the binary) is acceptable for the file sizes involved (5–10 MB photos). Presigned URLs would be the right call at >100 MB or for bulk uploads — not the use case here.
-
-### Decision 4: No native Supabase Storage lifecycle policy (workaround via cron)
-
-Supabase Storage has no built-in object TTL/expiration as of 2026-04. The `storage.objects` table is queryable via the service key, so a weekly cron (`POST /storage/cron/cleanup`) that calls `storage.from(bucket).remove(oldPaths)` is sufficient for v1.3. Flag for re-evaluation if Supabase ships native lifecycle policies.
-
-### Decision 5: Zod validation co-located with routes (not a global middleware)
-
-A global body-validation middleware would need to know every route's schema. In Hono, `validator('json', schema)` or `validator('form', schema)` is applied per-route — the schema lives next to the handler, easy to read and maintain. This matches how the rest of the codebase is structured (manual checks inline, no framework-level validation today).
-
----
-
-## Data Flow Changes
-
-### Rate Limiting Data Flow
-
-```
-Request arrives at Vercel function
-  |
-  v
-ipRateLimiter: key = X-Forwarded-For header
-  → GET upstash:ratelimit:{ip}:{window}
-  → increment + expire
-  → if count > 200: return 429 with Retry-After
-  |
-  v
-authMiddleware: validates JWT → sets userId in context
-  |
-  v
-userRateLimiter: key = {userId}:{routePath}
-  → GET upstash:ratelimit:{userId}:{route}:{window}
-  → increment + expire
-  → if count > limit: return 429 with RateLimit, Retry-After headers
-  |
-  v
-Route handler executes normally
-```
-
-### File Upload Data Flow (new)
-
-```
-Mobile: POST /storage/upload/avatar
-  Content-Type: multipart/form-data
-  Body: file (JPEG/PNG, ≤5 MB)
-  |
-  v
-authMiddleware → userId in context
-  |
-  v
-userRateLimiter → upload quota check
-  |
-  v
-bodyLimit({ maxSize: 5MB }) → 413 if exceeded
-  |
-  v
-validator('form', schema) → 400 if MIME type invalid
-  |
-  v
-storageClient.uploadFile(
-  'profile-photos',
-  `{userId}/avatar.{ext}`,
-  await file.arrayBuffer(),
-  { contentType: file.type, upsert: true }
-)
-  |
-  v
-supabase Storage → stores file, returns path
-  |
-  v
-storageClient.getPublicUrl('profile-photos', path)
-  → https://{project}.supabase.co/storage/v1/object/public/profile-photos/{userId}/avatar.jpg
-  |
-  v
-UPDATE user_profiles SET avatar_url = publicUrl WHERE id = userId
-  |
-  v
-Response: { url: publicUrl, path }
-  |
-  v
-Mobile: stores url in user profile state,
-        displays avatar from publicUrl directly (CDN-cached)
-```
-
----
-
-## Serverless Constraints Summary
-
-| Constraint | Impact | Mitigation |
-|------------|--------|------------|
-| No persistent memory between invocations | `MemoryStore` for rate limiting is useless | Upstash Redis (HTTP, not TCP) — state survives across invocations |
-| 10s default function timeout on Vercel Hobby | Large file uploads may timeout | Set `maxDuration: 30` in `vercel.json` functions config for the storage route |
-| 50 MB request body limit on Vercel | Photo uploads under 10 MB safe | `bodyLimit` middleware acts as secondary guard before Vercel's limit |
-| Cold start latency | Redis call on first request adds ~50ms | `ephemeralCache` option in Upstash reduces Redis hits on warm invocations |
-| No background threads | Cron cleanup must be a triggered endpoint | Vercel cron (`vercel.json`) calls `POST /storage/cron/cleanup` on schedule |
+Steps 3-7 can be done in parallel once creditService.ts exists. Steps 8-9 can be done in parallel once the backend is deployed.
 
 ---
 
 ## Sources
 
-- `backend/api/src/app.ts` — existing middleware chain, CORS config, route mounts
-- `backend/api/src/middleware/auth.ts` — `ContextVariableMap` augmentation, adminClient pattern
-- `backend/api/src/routes/ai.ts` — existing `router.use('*', authMiddleware)` pattern
-- `backend/api/src/routes/bugs.ts` — existing manual validation pattern
-- `backend/api/vercel.json` — cron configuration, rewrite pattern
-- `backend/api/package.json` — current dependencies (hono 4.7, supabase-js 2.50, zod 4.3)
-- `hono-rate-limiter` GitHub + Fiberplane article: https://fiberplane.com/blog/rate-limiting-intro/
-- `@hono-rate-limiter/redis` npm: https://www.npmjs.com/package/@hono-rate-limiter/redis
-- `@upstash/ratelimit` serverless features: https://upstash.com/blog/upstash-ratelimit
-- Upstash on Vercel guide: https://upstash.com/blog/edge-rate-limiting
-- Hono file upload docs: https://hono.dev/examples/file-upload
-- Supabase Storage standard uploads: https://supabase.com/docs/guides/storage/uploads/standard-uploads
-- Supabase Storage access control / RLS: https://supabase.com/docs/guides/storage/security/access-control
-- Supabase Storage buckets fundamentals: https://supabase.com/docs/guides/storage/buckets/fundamentals
-- Supabase `getPublicUrl` API: https://supabase.com/docs/reference/javascript/storage-from-getpublicurl
-- Supabase Storage delete objects: https://supabase.com/docs/guides/storage/management/delete-objects
-- Supabase lifecycle policy (no native TTL): https://github.com/orgs/supabase/discussions/20171
+- Verified from source: `backend/api/src/app.ts` — middleware chain order
+- Verified from source: `backend/api/src/middleware/rateLimiter.ts` — existing rate limiter pattern
+- Verified from source: `backend/api/src/middleware/auth.ts` — auth context pattern
+- Verified from source: `backend/api/src/routes/ai.ts` — current AI routes, vision model, limiter placement
+- Verified from source: `backend/api/src/tools/registry.ts` — all tool executors and write-path tools
+- Verified from source: `backend/api/src/tools/db.ts` — Supabase client pattern used by tools
+- Verified from source: `supabase/migrations/007_gamification_schema.sql` — existing coin/xp table structure and RLS pattern
+- Verified from source: `.planning/PROJECT.md` — v1.4 feature requirements and cost targets
 
 ---
-*Architecture research for: Security + Cloud Infrastructure — Ziko Platform v1.3*
-*Researched: 2026-04-02*
+*Architecture research for: AI Credit System & Gamification Integration — Ziko v1.4*
+*Researched: 2026-04-05*

@@ -1,424 +1,438 @@
-# Pitfalls Research: Security + Cloud Infrastructure (v1.3)
+# Pitfalls Research
 
-**Domain:** Serverless rate limiting (Hono v4 on Vercel) + Supabase Storage (React Native / Expo)
-**Researched:** 2026-04-02
-**Milestone context:** Adding rate limiting and Supabase Storage buckets to an existing Hono v4 API already deployed on Vercel serverless. Mobile client is Expo SDK 54 with the Supabase JS client.
-
----
-
-## Summary
-
-The v1.3 feature surface has two distinct failure clusters:
-
-1. **Rate limiting in serverless** — In-memory stores are silently useless on Vercel (no shared state between function instances). IP-based limiting collapses under Vercel's proxy layer. Both failures pass local testing and provide zero protection in production.
-2. **Supabase Storage integration** — RLS policy patterns differ fundamentally from all 24 existing migrations. File uploads from React Native have three distinct corruption failure modes (0-byte, wrong MIME type, garbled binary). Vercel's 4.5 MB body limit silently blocks large photos if uploads route through the API.
-
-A third cluster applies only to the PDF export use case: Chromium-based PDF generation on Vercel serverless is unreliable due to cold-start timeouts exceeding the function execution budget.
+**Domain:** AI credit/quota system with activity-based rewards on Vercel serverless + Supabase
+**Researched:** 2026-04-05
+**Confidence:** HIGH (critical pitfalls verified via official docs and authoritative post-mortems)
 
 ---
 
 ## Critical Pitfalls
 
-### CRIT-01: In-Memory Rate Limiting Is Silently Useless on Vercel
+### Pitfall 1: Race Condition on Credit Deduction — Concurrent Serverless Invocations
 
-**What goes wrong:** `hono-rate-limiter` ships with a `MemoryStore` default. On a local dev server (single process), it works correctly. On Vercel serverless, each cold-start creates a fresh function instance with a blank in-memory `Map`. Warm instances do not share memory. A user sending 100 requests/minute can hit 10 separate warm instances and bypass a "10 req/min" limit — each instance counts only the fraction it received.
+**What goes wrong:**
+Two AI requests arrive simultaneously (e.g., user double-taps "Send"). Both serverless function instances read the same credit balance (say, 3 credits). Both check "balance >= cost?" in application code and both pass. Both update the row to an absolute new value. Balance goes to -1. The `CHECK (balance >= 0)` constraint is never evaluated because both sessions read the pre-decrement value and write an absolute value — the classic read-modify-write anti-pattern.
 
-**Why it happens:** Vercel functions are stateless by design. There is no shared memory between concurrent invocations. The MemoryStore counter resets on every cold start and is never synchronized.
-
-**Consequences:** The rate limiter appears to work in `npm run backend` (local), passes any pre-deploy test, and silently provides zero protection in production. The `hono-rate-limiter` README frames MemoryStore as "works out of the box" — the serverless caveat is in a secondary section.
-
-**Prevention:** Use an external atomic store. Recommended: `@upstash/ratelimit` with Upstash Redis. It is HTTP-based (no persistent TCP connection), designed specifically for serverless, and the free tier (10,000 commands/day) is sufficient for a fitness app at early stage.
-
-Minimal pattern for Hono:
-
-```typescript
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(20, "1 m"),
-  analytics: true,
-});
-
-app.use("/ai/*", async (c, next) => {
-  const identifier = c.get("auth")?.userId
-    ?? c.req.header("x-real-ip")
-    ?? "anon";
-  const { success, limit, remaining, reset } = await ratelimit.limit(identifier);
-  c.header("X-RateLimit-Limit", String(limit));
-  c.header("X-RateLimit-Remaining", String(remaining));
-  c.header("X-RateLimit-Reset", String(reset));
-  if (!success) return c.json({ error: "Too Many Requests" }, 429);
-  return next();
-});
-```
-
-Required env vars in `backend/api/.env` AND Vercel dashboard:
-```
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-```
-
-**Detection:** Rate limiting works locally but repeated hammering of the deployed endpoint never returns 429.
-
-**Phase warning:** Any plan that adds rate limiting must start with external store provisioning. The middleware is the easy part; the store is the gating dependency.
-
----
-
-### CRIT-02: IP-Based Rate Limiting Breaks When Vercel Acts as Proxy
-
-**What goes wrong:** Using raw request IP or naively reading `x-forwarded-for` for per-IP rate limiting can cause every user in a deployment to share a single rate limit bucket — specifically Vercel's own egress IPs.
-
-**Why it happens:** On non-Enterprise Vercel plans, `x-forwarded-for` is overwritten by Vercel. Multiple real users appear as the same handful of Vercel egress IPs. A practical consequence is that the rate limiter rate-limits the entire user base simultaneously after a few power users trigger the threshold.
-
-**Consequences:** A single active user triggers the per-IP bucket and rate-limits everyone sharing that Vercel egress IP. Or the limit is never triggered because the IP is constant and recognized as Vercel infrastructure.
-
-**Prevention:**
-1. For authenticated endpoints (AI chat, barcode scan), use `userId` from the Supabase JWT as the rate limit key. The auth middleware already sets `c.set('auth', { userId })`.
-2. For unauthenticated endpoints, read `c.req.header('x-real-ip')` first — this header is set by Vercel to the actual client IP and is more reliable than `x-forwarded-for`.
-3. Never use `x-forwarded-for` as the sole source — it can be spoofed before reaching Vercel and is overwritten at the Vercel layer.
-
-```typescript
-// Key selection order for rate limiting
-const key = c.get("auth")?.userId           // authenticated: per user (preferred)
-  ?? c.req.header("x-real-ip")              // unauthenticated: real client IP
-  ?? c.req.header("x-forwarded-for")?.split(",")[0]
-  ?? "unknown";
-```
-
----
-
-### CRIT-03: Supabase Storage RLS Cannot Use the Standard `auth.uid() = user_id` Pattern
-
-**What goes wrong:** All 24 existing migrations use `auth.uid() = user_id` for RLS. Storage objects in user-owned buckets (profile photos, meal scan photos) do NOT have a `user_id` column. Copying any existing RLS migration block onto `storage.objects` produces a policy that matches nothing — every INSERT and SELECT is silently denied.
-
-**Why it happens:** `storage.objects` is a special system table. Ownership must be expressed via path prefix using the `storage.foldername(name)` helper function, or via the `owner_id` system column set automatically at upload time. This is a known trap — the same `auth.uid() = user_id` assumption already burned the project on `food_products` (migration 024 required `auth.role() = 'authenticated'`). Storage is a different divergence but the same category of error.
-
-**Consequences:** All uploads and downloads return 403. The Supabase JS client returns a storage error object rather than throwing, so the mobile app can swallow the error silently if the calling code does not check `if (error) throw error`.
-
-**Prevention:** Use path-prefix scoping. All user-owned files must be stored under `{userId}/{filename}`:
-
-```sql
--- Users may upload only to their own folder
-CREATE POLICY "users_upload_own"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'profile-photos'
-  AND (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')
-);
-
--- Users may read only their own files
-CREATE POLICY "users_read_own"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'profile-photos'
-  AND (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')
-);
-```
-
-Mobile upload path must match: always upload to `{userId}/avatar.jpg`, never to a flat `avatar.jpg` path.
-
-For shared/catalogue buckets with no per-user ownership (e.g. a public exercise illustrations bucket):
-```sql
-CREATE POLICY "authenticated_read"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (bucket_id = 'exercise-media');
-```
-
-**Detection:** `supabase.storage.from('bucket').upload(...)` returns `{ error: { message: 'new row violates row-level security policy' } }`. Always assert `if (storageError) throw storageError` after every Storage call.
-
----
-
-### CRIT-04: Vercel 4.5 MB Body Limit Silently Blocks Photo Uploads Through the API
-
-**What goes wrong:** If the mobile app uploads a photo by POSTing to the Hono API (which then proxies it to Supabase Storage), any file over 4.5 MB triggers `413 FUNCTION_PAYLOAD_TOO_LARGE` at the Vercel infrastructure layer before the Hono handler runs.
-
-**Why it happens:** Vercel serverless functions enforce a hard 4.5 MB request body limit on all plans. Profile photos from iPhone 14+ and modern Android cameras routinely exceed this. The Hono handler never receives the request — there is no server-side log entry.
-
-**Consequences:** Users with newer phones silently fail to upload profile photos. The mobile app receives a 413 with no JSON body; if the Supabase client wrapper does not handle non-JSON error responses, the app may crash or display a generic error with no actionable message.
-
-**Prevention:** Never route binary file uploads through the Hono API. Use a signed URL flow:
-
-1. Mobile calls `POST /storage/upload-token` on Hono (tiny JSON request — just auth + bucket + filename).
-2. Hono calls `supabase.storage.from(bucket).createSignedUploadUrl(path)` and returns the `{ signedUrl, token, path }` to the mobile client.
-3. Mobile uploads directly to Supabase Storage via `uploadToSignedUrl` — Vercel is not in the path.
-
-```typescript
-// Hono: token endpoint (tiny, always under 4.5 MB limit)
-app.post("/storage/upload-token", authMiddleware, async (c) => {
-  const { bucket, filename } = await c.req.json();
-  const userId = c.get("auth").userId;
-  const path = `${userId}/${filename}`;
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUploadUrl(path, { expiresIn: 300 });
-  if (error) return c.json({ error: error.message }, 500);
-  return c.json(data);
-});
-```
-
-```typescript
-// Mobile: direct upload to Storage (bypasses Vercel)
-const { data: tokenData } = await apiClient.post("/storage/upload-token", {
-  bucket: "profile-photos",
-  filename: "avatar.jpg",
-});
-const { error } = await supabase.storage
-  .from("profile-photos")
-  .uploadToSignedUrl(tokenData.path, tokenData.token, arrayBuffer, {
-    contentType: "image/jpeg",
-  });
-```
-
----
-
-## Integration Pitfalls
-
-### INT-01: React Native Upload Produces 0-Byte Files or Wrong MIME Type
-
-**What goes wrong:** Three distinct failure modes observed in production React Native / Supabase Storage integrations:
-- Uploading a `File` object → 0-byte file on iOS
-- Uploading a raw base64 string (not decoded) → garbled binary stored as UTF-8 text
-- Global `Content-Type: application/json` header on the Supabase client → file stored as `application/json` regardless of the `contentType` option passed to `.upload()`
+With Vercel Fluid Compute (default since early 2025), a single function instance now handles multiple concurrent requests. Module-level variables are shared across simultaneous invocations. In-process "check then act" logic on shared state is therefore even more dangerous than in the traditional one-request-per-instance model.
 
 **Why it happens:**
-- React Native does not implement the browser `File` API for binary reading on iOS.
-- Supabase Storage's `.upload()` requires a `Blob`, `ArrayBuffer`, or `ReadableStream` — not a base64 string.
-- If the Supabase client was initialized with `headers: { 'Content-Type': 'application/json' }` (a common pattern copied from REST setup guides), it overrides the per-upload content type.
+The pattern `SELECT balance → check in JS → UPDATE SET balance = newValue` is obvious to write and correct in single-threaded testing. Two sessions can both pass the check on the same stale read. Developers rarely test concurrent AI requests in local development.
 
-**Prevention:**
+**How to avoid:**
+Move the check-and-decrement into a single atomic `SECURITY DEFINER` PostgreSQL function called via Supabase RPC. The function uses `SELECT ... FOR UPDATE` to row-lock before checking, then uses a relative update (not an absolute value):
 
-```typescript
-import { decode } from 'base64-arraybuffer';
-import * as ImagePicker from 'expo-image-picker';
+```sql
+CREATE OR REPLACE FUNCTION deduct_ai_credits(p_user_id UUID, p_cost INT)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_balance INT;
+BEGIN
+  SELECT balance INTO v_balance
+  FROM ai_credits
+  WHERE user_id = p_user_id
+  FOR UPDATE;                      -- row lock: concurrent calls queue here
 
-const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  allowsEditing: true,
-  base64: true,
-  quality: 0.8,
-});
+  IF v_balance IS NULL THEN
+    RAISE EXCEPTION 'user_not_found';
+  END IF;
 
-if (!result.canceled && result.assets[0]?.base64) {
-  const arrayBuffer = decode(result.assets[0].base64);
-  const { error } = await supabase.storage
-    .from('profile-photos')
-    .upload(`${userId}/avatar.jpg`, arrayBuffer, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
-  if (error) throw error;
-}
+  IF v_balance < p_cost THEN
+    RAISE EXCEPTION 'insufficient_credits';
+  END IF;
+
+  UPDATE ai_credits
+  SET balance = balance - p_cost   -- relative: safe against concurrent writes
+  WHERE user_id = p_user_id;
+
+  RETURN v_balance - p_cost;
+END;
+$$;
 ```
 
-Do NOT initialize the Supabase client with a global `Content-Type` header. The storage upload uses multipart internally; a global JSON content-type header corrupts every binary upload silently.
-
----
-
-### INT-02: Public Bucket Exposes All User Files Without Authentication
-
-**What goes wrong:** Setting a bucket to `public: true` in the Supabase dashboard or via `createBucket` means anyone with the file URL — including unauthenticated users and scrapers — can read any file in the bucket. RLS policies are bypassed for GET requests on public buckets.
-
-**Why it happens:** Public buckets are designed for genuinely public assets (marketing images, CDN-served illustrations). Teams use them for convenience (no signed URL generation) without realizing the RLS bypass.
-
-**Consequences:** Profile photos and meal scan photos (personal health data) become publicly readable if the URL is guessed or leaked. This violates RGPD — personal health data must not be publicly accessible.
-
-**Prevention:** Keep profile photos and meal scan photos in private buckets. Serve them via signed URLs with appropriate expiry:
-
-```typescript
-// For profile photo display (cache locally, long expiry)
-const { data } = await supabase.storage
-  .from('profile-photos')
-  .createSignedUrl(`${userId}/avatar.jpg`, 60 * 60 * 24 * 7); // 7 days
-
-// For transient meal scan photos (short-lived)
-const { data } = await supabase.storage
-  .from('meal-scans')
-  .createSignedUrl(`${userId}/${scanId}.jpg`, 3600); // 1 hour
+Add a database-level safety net as a last resort:
+```sql
+ALTER TABLE ai_credits ADD CONSTRAINT positive_balance CHECK (balance >= 0);
 ```
 
-Only use a public bucket for non-personal, truly public assets such as a shared exercise illustration library.
+The API endpoint calls this RPC first; if it raises an exception, return HTTP 402 before calling Claude. Claude is never called if the deduction fails.
+
+**Warning signs:**
+- Users reporting "credits went negative" in logs
+- `balance` column showing -1 or -2 in production rows
+- Two near-simultaneous AI requests both succeed when only one credit remained
+
+**Phase to address:** Credit DB schema + RPC functions phase (Phase 1 of milestone). This must be correct before any AI endpoint is wired to credit checking.
 
 ---
 
-### INT-03: Signed Upload URLs Expire in 60 Seconds — Mobile UX Trap
+### Pitfall 2: Activity Reward Double-Crediting — Non-Idempotent Event Handlers
 
-**What goes wrong:** The default `expiresIn` for `createSignedUploadUrl` is 60 seconds. If the upload token is generated when the user opens the photo picker, and they spend 90 seconds cropping and previewing, the token is expired when `uploadToSignedUrl` is called. The error response is a 400 with a non-obvious message that is easy to misidentify as a network or auth error.
+**What goes wrong:**
+A user logs a workout. The backend awards +5 AI credits. The mobile network times out before the response arrives. The mobile client retries. The backend awards +5 again. The user now has 10 credits from one workout. With daily caps, this inflates balances and breaks the €0.75/user/month cost model.
 
-**Why it happens:** Signed upload URLs are intentionally time-limited. 60 seconds is appropriate for automated server-to-server flows but is too short for interactive mobile UX with photo editing.
+Stigg, a credits infrastructure company, documented this in a post-mortem: "Usage pipelines are at-least-once by design. We thought this would be a minor detail, but retries quickly became one of the hardest problems." Their solution required making every deduction flow idempotent.
 
-**Prevention:**
-1. Generate the signed URL at the moment the user confirms upload (after preview), not when the picker opens.
-2. Always set an explicit `expiresIn` of at least 300 seconds (5 minutes) for interactive flows.
-3. On the mobile side, detect upload errors and retry by fetching a fresh token — never re-use an expired token.
+**Why it happens:**
+Reward grants are added as a side effect of the activity log endpoint with no idempotency key. Mobile clients correctly retry on timeout — which triggers duplicate awards. The problem only surfaces in production on flaky connections.
 
-```typescript
-// In Hono: generate with explicit 5-minute expiry
-const { data } = await supabase.storage
-  .from(bucket)
-  .createSignedUploadUrl(path, { expiresIn: 300 });
+**How to avoid:**
+Create a `credit_events` ledger table with a `UNIQUE` constraint on `(user_id, event_type, idempotency_key)`. The idempotency key must be deterministic from the triggering record — use the database UUID of the source row (workout session ID, habit log ID, etc.):
+
+```sql
+CREATE TABLE credit_events (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES auth.users(id),
+  event_type    TEXT NOT NULL,        -- 'workout_reward', 'ai_deduction', 'daily_base', etc.
+  amount        INT  NOT NULL,        -- positive = grant, negative = deduction
+  idempotency_key TEXT NOT NULL,      -- deterministic from source record UUID
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, event_type, idempotency_key)
+);
 ```
 
+On insert, use `ON CONFLICT DO NOTHING` — duplicate grants are silently skipped on retry. The ledger is also the audit trail for debugging balance discrepancies.
+
+**Warning signs:**
+- User balances grow faster than expected after heavy activity logging on slow connections
+- `credit_events` shows multiple rows with the same source record ID
+- Mobile retry logs show reward endpoint called 2-3 times for one workout save
+
+**Phase to address:** Credit DB schema phase. The `credit_events` table and idempotency strategy must be designed before implementing any reward triggers.
+
 ---
 
-### INT-04: Supabase Storage Has No Native Lifecycle Policies
+### Pitfall 3: Daily Reset Without Persistent Process — Vercel Cron Reliability
 
-**What goes wrong:** The milestone requirement includes "lifecycle policies — auto-cleanup of old assets." Teams assume this mirrors AWS S3 TTL rules (declarative, set-and-forget). Supabase Storage does not expose S3 lifecycle APIs. There is no built-in object expiration mechanism.
+**What goes wrong:**
+Daily base credit allocation depends on a Vercel cron. Vercel explicitly states: "We cannot assure a timely cron job invocation — a job configured as `0 0 * * *` will trigger anywhere between 00:00 and 00:59." More critically, Vercel's event-driven system "can occasionally deliver the same cron event more than once" — a non-idempotent reset doubles user balances on those days.
 
-**Why it happens:** Supabase Storage is S3-compatible at the protocol level but its hosted service does not surface the S3 lifecycle configuration API. This is an open feature request in the Supabase community as of 2025 with no delivery timeline.
+If the cron function iterates over all users in a single invocation, it hits the 60-second (Hobby) or 300-second (Pro) function timeout ceiling and leaves a fraction of users without their daily grant, with no retry mechanism.
 
-**Consequences:** Meal scan photos and PDF exports accumulate indefinitely. Storage costs grow unbounded. The lifecycle cleanup requirement cannot be satisfied with a declarative policy — it requires code.
+**Why it happens:**
+Developers port a traditional "run at midnight" cron pattern to serverless without accounting for at-least-once delivery semantics and the absence of a persistent process.
 
-**Prevention:** Implement cleanup via a Vercel cron (already used for supplement scraping in the project). Pattern using `user_metadata.expires_at`:
+**How to avoid:**
+Prefer a lazy allocation model over a push cron:
+- When a user makes an AI request, check whether today's base allocation has been issued: `WHERE user_id = $1 AND event_type = 'daily_base' AND DATE(created_at AT TIME ZONE 'UTC') = CURRENT_DATE`
+- If not found, insert it atomically inside the same transaction as the credit check
+- This eliminates the cron dependency entirely for base grants
 
-At upload time, tag the file with an expiry:
-```typescript
-await supabase.storage.from('meal-scans').upload(path, arrayBuffer, {
-  contentType: 'image/jpeg',
-  metadata: { expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() },
-});
+If a batch cron is still required (e.g., for analysis or pro-tier features):
+- Use `INSERT ... ON CONFLICT DO NOTHING` keyed on `(user_id, 'daily_base', CURRENT_DATE::text)` as the idempotency key
+- Paginate the user batch (200 users per invocation) and chain via a queue rather than iterating all users at once
+- Verify the `CRON_SECRET` Authorization header on the endpoint before processing
+
+**Warning signs:**
+- Some users receive double base credits on certain days (check `credit_events` for duplicate `daily_base` rows)
+- Users in UTC+X time zones report their daily credits reset in the middle of their afternoon
+- Cron logs show 504 timeouts when user count grows past ~500
+
+**Phase to address:** Credit allocation architecture phase. Decide lazy vs. batch cron before writing any allocation code — changing the model later requires migrating existing logic.
+
+---
+
+### Pitfall 4: Timezone Inconsistency in Daily Reward Caps
+
+**What goes wrong:**
+Activity reward caps are "per day" — e.g., earn credits for up to 2 workouts per day. The backend evaluates "today" using `DATE(created_at)` which defaults to UTC. A user in Paris (UTC+2) logs their first workout at 11:30 PM local time (21:30 UTC = "today" UTC). They log another at 12:10 AM local time (22:10 UTC = still "today" UTC). Both entries fall on the same UTC day and both count against the cap — from the user's perspective, they hit their daily cap in one evening of one day.
+
+**Why it happens:**
+`TIMESTAMPTZ` is stored correctly, but cap evaluation queries use `DATE(created_at)` without timezone conversion. Developers test in a single time zone and miss the edge case.
+
+**How to avoid:**
+For v1.4 MVP: pick UTC-based resets and communicate them clearly in the UI — "Daily credits reset at midnight UTC." Most games and apps use a standardized server-time reset. Add a visible "Resets in X hours" countdown to the credit balance widget. This is the correct tradeoff for MVP: predictable implementation, clear user communication.
+
+Do not implement per-user timezone resets in v1.4. The added complexity (storing user timezone, converting in every cap query) is not worth it until user timezone data is validated and user complaints confirm it is a pain point.
+
+Cap queries must consistently use:
+```sql
+DATE(created_at AT TIME ZONE 'UTC') = DATE(NOW() AT TIME ZONE 'UTC')
+```
+Never mix `DATE(created_at)` (implicit timezone) with explicit timezone queries in different parts of the codebase.
+
+**Warning signs:**
+- User complaints: "I only logged one workout but it says I hit my daily cap"
+- Users in UTC+X time zones consistently report cap issues in the evening
+- Cap query results differ between two engineers in different time zones when testing locally
+
+**Phase to address:** Cap evaluation logic phase. Commit to the timezone convention in the schema design phase; the convention must be documented and applied consistently everywhere.
+
+---
+
+### Pitfall 5: RLS Credit Check Per Row — Catastrophic Query Performance
+
+**What goes wrong:**
+A developer adds an RLS policy to `ai_messages` that includes a credit balance check: `USING (get_user_credits(auth.uid()) > 0)`. This function queries `ai_credits` on every row evaluated by the policy. With 10,000 messages being scanned for a history query, the database executes 10,000 credit lookups — one per row. A query that should take <5ms takes 30+ seconds.
+
+Supabase's own documentation warns: "Policies with subqueries execute for every row. With 10,000 documents, Postgres runs 10,000 subqueries even if you need 10 rows."
+
+**Why it happens:**
+RLS feels like the correct place for access control. Credit checks feel like access control. The combination seems architecturally clean. But RLS runs at the row level, not the statement level — every function call in a policy body is re-executed per row unless explicitly wrapped for caching.
+
+**How to avoid:**
+Do NOT put credit balance checks in RLS policies. Credit enforcement belongs at the API/service layer:
+1. The AI endpoint handler calls `deduct_ai_credits(user_id, cost)` RPC as its first operation
+2. If the RPC raises `insufficient_credits`, return HTTP 402 before calling Claude
+3. RLS on `ai_credits` itself enforces only ownership: `USING (user_id = (SELECT auth.uid()))`
+
+For any SECURITY DEFINER function that must appear in an RLS policy (for other reasons), always wrap `auth.uid()` in a sub-select — `(SELECT auth.uid())` instead of bare `auth.uid()` — so PostgreSQL can cache the result per-statement rather than per-row:
+
+```sql
+-- Slow: evaluated per row
+USING (auth.uid() = user_id)
+
+-- Fast: cached per statement (up to 99.99% improvement per Supabase benchmarks)
+USING ((SELECT auth.uid()) = user_id)
 ```
 
-In the cron job:
-```typescript
-// Query storage.objects for expired files
-const { data: expired } = await supabase
-  .from('objects') // storage.objects exposed via schema
-  .select('name, bucket_id')
-  .eq('bucket_id', 'meal-scans')
-  .lt('user_metadata->>expires_at', new Date().toISOString());
+**Warning signs:**
+- AI chat endpoints are slow (>500ms) even before Claude is called
+- `EXPLAIN ANALYZE` shows thousands of function invocations on an INSERT
+- Supabase Performance Advisor flags an `auth_rls_initplan` warning on the table
 
-if (expired?.length) {
-  await supabase.storage.from('meal-scans')
-    .remove(expired.map(f => f.name));
-}
+**Phase to address:** Credit DB schema + RPC functions phase. Establish "credit checks in API layer, not RLS" as an inviolable rule before any RLS policies are written for credit-adjacent tables.
+
+---
+
+### Pitfall 6: Haiku Vision Quality Regression and Deprecated Model ID
+
+**What goes wrong:**
+The food photo scan is migrated from Sonnet to Haiku for cost savings. In controlled testing with clean, well-lit images, Haiku performs acceptably. In production, users upload blurry photos, off-angle shots, dark kitchen lighting, and non-Latin packaging. Haiku misidentifies foods, returns inconsistent macro estimates, and occasionally hallucinates brand names. Users stop trusting nutrition tracking.
+
+A separate, urgent issue: `claude-3-haiku-20240307` (the old Haiku model ID) is deprecated and retires on **April 19, 2026** — less than two weeks from the start of this milestone. Any hardcoded reference to the old ID will cause API failures on that date.
+
+The current Haiku model is `claude-haiku-4-5-20251001`. The current Sonnet is `claude-sonnet-4-20250514`.
+
+**Why it happens:**
+QA runs with clean stock photos. The cost savings per scan are real ($1/MTok for Haiku input vs $3/MTok for Sonnet). The quality gap on degraded real-world images is not tested before launch. The deprecated model ID issue comes from copied constants that were never updated.
+
+**How to avoid:**
+- Grep for `claude-3-haiku-20240307` immediately in phase 1 of the milestone and replace with `claude-haiku-4-5-20251001`
+- Build a model routing layer: Haiku first; if the response fails schema validation (missing required fields, out-of-range macro values) or Haiku self-reports low confidence, retry with Sonnet
+- Run a blind quality test before committing to Haiku-only: 50 real user photos with varied quality conditions, scored for accuracy vs Sonnet
+- Log the model used per scan in `credit_events.metadata` for cost attribution analysis
+
+**Warning signs:**
+- User feedback: "The app identified my chicken breast as 'protein bar'"
+- Structured output parse failures increase after the model switch
+- Support tickets about incorrect calorie counts post-migration
+- API errors starting April 19, 2026 from the deprecated model ID
+
+**Phase to address:** Vision model migration phase. Fix the deprecated model ID in Phase 1 (it is a breaking change on a fixed date). Define the fallback strategy and run the image quality test before shipping Haiku-only in production.
+
+---
+
+### Pitfall 7: Rate Limiter and Credit System Double-Gate Confusion
+
+**What goes wrong:**
+The existing Upstash Redis rate limiter (from v1.3) blocks at N requests per window. The new credit system blocks when balance = 0. Both produce errors when the user "can't make AI requests." The mobile client receives HTTP 429 (rate limit) or 402 (out of credits) but shows a generic "Service temporarily unavailable" message. Users believe the service is broken, not that they need to earn more credits.
+
+A secondary failure: a developer sets the Redis rate limit window at the same daily request count as the credit quota. Users who spam requests hit the Redis bucket and consume their "rate limit budget" before the credit system runs, even on requests the credit system would have rejected — consuming both gates on a single user flow.
+
+**Why it happens:**
+Two independent enforcement mechanisms with overlapping effects are treated as interchangeable. Rate limiting governs request velocity (abuse prevention). Credits govern resource allocation (cost control). They have different semantics, different recovery actions, and different user communication needs.
+
+**How to avoid:**
+Keep both systems with distinct, non-overlapping configurations:
+- Rate limiter: abuse threshold — high count, short window (e.g., 30 req/min per user). Not a daily budget tool.
+- Credit system: daily cost allocation — enforced as a first-class business rule with recovery path
+
+Return distinct error codes and responses:
+```json
+{ "error": "rate_limited", "retry_after": 60 }        // 429
+{ "error": "insufficient_credits", "balance": 0, "resets_at": "2026-04-06T00:00:00Z" }  // 402
 ```
 
-Alternatively list files per user and delete those older than the retention window. The cron pattern already exists in the project (`POST /supplements/cron/scrape`) — reuse it.
+Mobile client handles each with specific UI:
+- 429 → brief toast "Slow down a bit"
+- 402 → credit exhaustion modal with "Here's how to earn more credits today" action list
 
----
-
-### INT-05: CORS Middleware Must Be the First Registered Middleware in Hono
-
-**What goes wrong:** Placing `app.use(cors(...))` after `app.use('/ai/*', authMiddleware)` causes OPTIONS preflight requests to reach the auth middleware first and return 401. The CORS headers are never set on the 401 response. The Expo app's `fetch` layer sees a CORS error instead of an auth error.
-
-**Why it happens:** Hono executes middleware in registration order. OPTIONS is a real HTTP method — if auth middleware runs first and rejects it, the browser/RN HTTP layer cannot distinguish a CORS failure from a network failure.
-
-**Consequences:** Debugging is expensive. The backend logs show 401. The mobile app logs show a network or CORS error. Teams spend significant time diagnosing auth when the real issue is middleware order.
-
-**Prevention:**
-
+Document the precedence order as a comment in the AI endpoint:
 ```typescript
-// CORRECT: cors registered before everything else
-app.use('*', cors({
-  origin: [
-    'https://ziko-api-lilac.vercel.app',
-    'http://localhost:3000',
-    'exp://localhost:8081',
-  ],
-  allowHeaders: ['Content-Type', 'Authorization'],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  maxAge: 86400,
-}));
-
-// Auth middleware registered after CORS
-app.use('/ai/*', authMiddleware);
-app.use('/storage/*', authMiddleware);
+// Gate 1: abuse prevention (rate limiter — Upstash Redis)
+// Gate 2: cost control (credit system — Supabase RPC)
+// Gate 3: Claude API call
 ```
 
-`allowHeaders` must list every custom header the Expo app sends. Missing `Authorization` from this list is the most common cause of preflight rejection. When using Vercel AI SDK on the client, also ensure `Content-Type` is listed.
+**Warning signs:**
+- Mobile error handler has a single catch-all block for all AI failures
+- Users report "out of service" but their credit balance never decreased
+- The Redis rate limit threshold equals or is lower than the daily credit quota
+
+**Phase to address:** API endpoint integration phase, after both systems are built individually. The error code taxonomy and client-side handling must be designed explicitly before either system is wired into the AI endpoint.
 
 ---
 
-### INT-06: PDF Generation on Vercel Serverless Timeouts on the Free Plan
+### Pitfall 8: Token Counting Inaccuracy — Cost Budget Drift
 
-**What goes wrong:** Using Puppeteer or Playwright to generate a PDF (for the "exports/PDF" bucket) exceeds Vercel's 10-second function timeout on the free plan. Cold-starting Chromium alone takes 10–20 seconds. Even on Pro (60-second timeout), cold starts on low-traffic endpoints remain unpredictable.
+**What goes wrong:**
+The goal is €0.75/user/month. The team sizes credit costs per feature based on token estimates from the Vercel AI SDK's `usage` object. Six months post-launch, actual Anthropic invoices are 35% higher than projected.
 
-**Why it happens:** Headless Chromium is 50–100 MB unzipped. On a cold-start, the function must initialize the binary, launch the browser, and render the page within the execution window. Free-plan functions have a hard 10-second limit.
+Root cause: the Vercel AI SDK v6 maps Anthropic's token usage inconsistently. The [Vercel AI SDK GitHub issue #9921](https://github.com/vercel/ai/issues/9921) documents "token usage normalization" problems — input tokens are mapped incorrectly to totals, and prompt cache write costs are not represented at all. With the conversation system prompt (user context injection) being cached on repeat requests, cache reads are cheap but cache writes are expensive and untracked — the two errors partially cancel but not fully.
 
-**Consequences:** PDF export endpoint returns 504 Gateway Timeout for the majority of requests. The failure is non-deterministic — warm instances may succeed, cold ones fail — making it hard to reproduce in testing.
+**Why it happens:**
+Developers trust `usage.totalTokens` from the AI SDK as ground truth. The SDK abstraction hides provider-specific billing details. Estimates are validated only against each other, not against the Anthropic billing dashboard.
 
-**Prevention:** Two viable approaches, in order of preference:
+**How to avoid:**
+- Use Anthropic's `messages.countTokens` API endpoint to calibrate per-feature token costs before setting credit prices. Count with the actual system prompt and a representative user message.
+- Pull actual cost data from the Anthropic usage API weekly during the first month of production — compare against credit system projections
+- Track cache hits vs. misses in `credit_events.metadata` — the system prompt is identical per user per request and should hit the cache reliably
+- Set conservative hard limits: alert at 60% of monthly budget per user, hard-stop AI at 85%, leaving headroom for estimation error
 
-1. **Avoid Chromium entirely.** Use `@react-pdf/renderer` (renders React component trees to PDF without a browser, runs in Node.js). Suitable for structured exports: workout history, nutrition summary, body measurements report. Fast, deterministic, no cold start penalty.
+**Warning signs:**
+- Monthly Anthropic invoice consistently 20-40% above projections
+- The `usage` object in AI SDK responses shows suspiciously round token counts
+- Prompt caching is enabled but the expected cost reduction is not visible in billing
 
-2. **If HTML-to-PDF is required.** Use `@sparticuz/chromium-min` (a stripped ~15 MB Chromium build designed for serverless) with `puppeteer-core`. Set Vercel function `maxDuration: 60` and target the `iad1` region (lowest cold start latency). This is still fragile — prefer option 1.
-
-Never use the `puppeteer` package (which downloads its own full Chromium) on Vercel — it will exceed the 250 MB function bundle size limit.
-
----
-
-### INT-07: `hono-rate-limiter` README Is Misleading About Serverless Environments
-
-**What goes wrong:** Teams read the Getting Started section of `hono-rate-limiter`, implement `MemoryStore`, and deploy. The README documents the serverless caveat in a separate "Stores" section that is easy to skip.
-
-**Exact README warning (Stores section):** "MemoryStore does not synchronize state across instances. Deployments requiring more consistently enforced rate limits should use an external store."
-
-**Prevention:** Before writing any rate limiting code, read the Stores section. The implementation decision (which store) must precede the middleware code. See CRIT-01 for the correct store setup.
+**Phase to address:** Cost modeling phase, before setting credit prices. Validate token estimates with real API calls against the Anthropic billing dashboard — not just SDK approximations.
 
 ---
 
-## Prevention Strategies
+## Technical Debt Patterns
 
-### Strategy A: External Store Before Any Middleware Code
+Shortcuts that seem reasonable but create long-term problems.
 
-Provision Upstash Redis and confirm `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in the Vercel environment dashboard before writing any middleware. The store is the gating dependency — without it, all rate limiting code provides false security.
-
-### Strategy B: userId as Primary Rate Limit Key
-
-Use `userId` from the Supabase JWT for all authenticated endpoints (AI chat, barcode scan). Fall back to `x-real-ip` for unauthenticated endpoints. Never use `x-forwarded-for` as the primary key. Never use IP as the key for authenticated routes — a VPN user gets a new IP on every reconnect.
-
-### Strategy C: Signed URL Upload Pattern — Never Proxy Binaries Through Hono
-
-The Hono API must never receive binary file bodies. All upload flows follow: mobile requests a signed URL from Hono (tiny JSON exchange) → mobile uploads directly to Supabase Storage. This sidesteps the Vercel 4.5 MB body limit and reduces function invocation count and cost.
-
-### Strategy D: Storage RLS Uses Path Prefix, Not user_id Column
-
-Every Storage RLS policy for user-owned buckets uses `(storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub')`. File paths are structured as `{userId}/{filename}` in all client upload code. The RLS policy and the upload path convention must be consistent — if the client uploads to a flat path, the policy denies it.
-
-### Strategy E: ArrayBuffer for All React Native File Uploads
-
-All image uploads from React Native use `decode(base64)` from `base64-arraybuffer` before calling `.upload()`. Never pass `File`, `Blob` from a URI string, or raw base64 strings. Always pass `contentType` explicitly. Never set a global `Content-Type: application/json` header on the Supabase client instance.
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Store balance as a mutable column with no ledger | Simple schema, easy to query | No audit trail; impossible to debug discrepancies; can't reconstruct history | Never — add `credit_events` ledger from day one |
+| Skip idempotency keys on reward grants | Faster to build | Double-crediting on mobile retries; inflated balances; broken cost model | Never for production |
+| Put credit check in RLS policy | Feels like "proper" access control | Per-row query execution destroys performance at scale | Never |
+| UTC midnight resets without communicating it | Simpler cap queries | User confusion for non-UTC users | Acceptable if clearly communicated in UI with countdown |
+| Haiku-only for all vision tasks | Lower API cost | Quality regression on real-world photos; user trust damage | Only with Sonnet fallback path in place |
+| Cron credit grant without idempotency | Simple cron logic | Double allocation on Vercel's occasional duplicate cron delivery | Never |
+| Same error response for rate limit and credit exhaustion | One error handler on mobile | User cannot distinguish "wait" from "earn more credits" — wrong UX recovery action | Never in production |
 
 ---
 
-## Phase-Specific Warnings
+## Integration Gotchas
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|----------------|------------|
-| Rate limiting middleware setup | CRIT-01: MemoryStore silently useless | Provision Upstash Redis before writing any middleware code |
-| Per-IP limiting on unauthenticated routes | CRIT-02: Vercel IP address collapse | Use `x-real-ip`; use `userId` for authenticated routes |
-| Supabase Storage bucket creation + RLS | CRIT-03: Copy-paste from user_id migrations | Write RLS from scratch using `storage.foldername(name)[1]` pattern; never copy existing migration |
-| File upload flow design | CRIT-04: Vercel 4.5 MB body limit | Implement signed URL flow; never proxy binary bodies through Hono |
-| Mobile image upload implementation | INT-01: 0-byte or corrupted files | Use `base64-arraybuffer` decode; explicit `contentType`; no global JSON header |
-| Profile photo bucket | INT-02: Public bucket exposes personal data | Private bucket only; serve via signed URLs with appropriate expiry |
-| Photo upload UX (pick → preview → confirm) | INT-03: Signed URL 60-second expiry | Generate signed URL at confirm step, not at picker open; set 5-minute expiry |
-| Lifecycle cleanup for exports and meal scans | INT-04: No native lifecycle in Supabase Storage | Vercel cron + `.remove()` loop; tag files with `expires_at` in user_metadata at upload time |
-| CORS configuration | INT-05: Auth middleware before CORS causes preflight 401 | `app.use('*', cors(...))` must be the first middleware registered |
-| PDF export endpoint | INT-06: Chromium cold-start timeout | Use `@react-pdf/renderer` for structured data exports; avoid Puppeteer entirely |
+Common mistakes when connecting to external services.
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Anthropic API + Vercel AI SDK v6 | Trust `usage.totalTokens` for cost accounting | Reconcile weekly with Anthropic usage API; use `messages.countTokens` for pre-launch calibration |
+| Supabase RPC for credit deduction | Ignore exceptions from RPC call | Catch `insufficient_credits` exception; map to HTTP 402, not 500 |
+| Vercel Cron for daily allocation | `UPDATE ... SET balance = base_amount` unconditionally | Use `INSERT ... ON CONFLICT DO NOTHING` with date-keyed idempotency; prefer lazy per-request allocation |
+| Upstash Redis + credit system | Set rate limit threshold equal to daily credit quota | Rate limiter = abuse threshold (high, per minute); credit system = business rule (daily quota) |
+| Haiku vision model | Swap model ID and test with clean images only | Test with degraded real-world photos; build confidence check + Sonnet fallback |
+| Mobile client retries | Retry all failed AI requests without idempotency key | Pass deterministic `X-Idempotency-Key` header; backend uses source record UUID for reward dedup |
+| Old Haiku model ID | Continue using `claude-3-haiku-20240307` | Migrate to `claude-haiku-4-5-20251001` — old ID retires April 19, 2026 |
+
+---
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| RLS credit check per row | AI endpoints slow >500ms; Supabase timeouts | Move credit enforcement to API layer; never in RLS | ~1,000 rows in the table |
+| Missing compound index on `credit_events(user_id, event_type, created_at)` | Daily cap queries do full table scans | Add index on table creation | ~10,000 events |
+| Cron iterates all users in one invocation | 504 timeouts from Vercel | Paginate (200 users/invocation) or use lazy per-request allocation | ~500 users |
+| `SELECT ... FOR UPDATE` without connection pooling | Connection exhaustion under burst traffic | Use Supabase Supavisor pooler for all serverless connections | ~50 concurrent AI requests |
+| Cap query without date filter | Full scan of `credit_events` on every AI request | Always include `created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')` | ~50,000 events |
+| No index on `ai_credits(user_id)` | Credit lookup slow under concurrent requests | Add index; `user_id` is the only lookup key | ~10,000 users |
+
+---
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Embed credit balance in JWT claims | JWT is static until refresh; stale balance enables exploitation window | Always query live balance from DB; never gate on JWT-embedded credit data |
+| Accept `cost` parameter from client | Client sends `cost: 0` and gets unlimited free AI | Cost per action is hardcoded server-side; never client-supplied |
+| Reward endpoint callable without auth check | Unauthenticated POST grants free credits | All reward grants require valid Supabase Bearer token; validate before any DB write |
+| Cron endpoint without `CRON_SECRET` verification | Anyone can POST to `/cron/daily-credits` and mass-grant credits | Verify `Authorization: Bearer ${CRON_SECRET}` header; return 401 otherwise |
+| `SECURITY DEFINER` function without `SET search_path` | Schema injection attacks | Always set `SET search_path = public` (or empty) in all SECURITY DEFINER functions |
+| Log absolute credit balance in application logs | Financial PII leakage | Log only event type and delta amount; never the absolute balance |
+
+---
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| No credit balance visible in the UI | Users send requests, get rejected without knowing why | Show balance in the AI chat header and on the photo scan button |
+| Generic "error" for credit exhaustion | Users retry repeatedly, burning rate limit budget | Show "No credits left today — earn more by logging a workout" with actionable list |
+| No daily reset countdown | Users don't know when to expect their next credits | Show "Resets in X hours" next to balance |
+| Credit deducted shown after AI response | Feels like a surprise bill after the fact | Deduct before calling Claude; show "Using 1 credit..." in loading state |
+| No feedback when activity earns credits | Users don't discover the reward system | Show "+5 credits" toast after workout/habit/meal logging |
+| Daily earn cap not visible until hit | Users log more activities expecting more credits | Show "2/2 workouts rewarded today" progress next to the gamification panel |
+| Coins and AI credits visually undifferentiated | Users try to spend coins on AI features | Distinct iconography: coins = shop currency (coin icon); AI credits = AI fuel (lightning bolt icon) |
+
+---
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Credit deduction RPC:** Works in isolation — verify the refund path when Claude API call fails after a successful deduction (credits consumed but no response delivered)
+- [ ] **Daily reward cap:** Correct count per day — verify the cap query uses identical timezone convention as the allocation reset logic
+- [ ] **Haiku migration:** Scans work in QA — verify with degraded image set (blurry, dark, off-angle, non-Latin packaging) before shipping
+- [ ] **Cron daily allocation:** Runs in test — verify idempotency when triggered twice in the same minute (Vercel duplicate delivery scenario)
+- [ ] **RLS on `ai_credits`:** Allows user to read own balance — verify it blocks reads of other users' balances AND blocks direct INSERT/UPDATE (only the RPC function modifies balances)
+- [ ] **Error codes on mobile:** Client handles HTTP 402 — verify it shows the "earn more credits" UI and not the generic error screen
+- [ ] **Deprecated model ID audit:** Grep codebase for `claude-3-haiku-20240307` — must be zero results before any deploy
+- [ ] **Token cost estimates:** Validated against actual Anthropic API billing — not just AI SDK `usage` object approximations
+
+---
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Negative balances in production | MEDIUM | Set all negatives to 0 via migration; add `CHECK (balance >= 0)` constraint; deploy `deduct_ai_credits` RPC fix; audit `credit_events` for anomalies |
+| Double-credited reward events discovered | LOW | Query `credit_events` for duplicate `idempotency_key` values; calculate over-credited amount; apply corrective debit events (append to ledger, never delete rows); add UNIQUE constraint |
+| Cron double-fired and doubled daily allocations | LOW | Add `ON CONFLICT DO NOTHING` to allocation insert; apply corrective debit for the excess; total impact bounded by one day's base grant per user |
+| Haiku quality regression causing user churn | HIGH | Roll back to Sonnet immediately (one constant change); analyze misidentification patterns; build Haiku + Sonnet fallback pipeline before re-enabling Haiku |
+| Cost budget exceeded due to token estimation errors | MEDIUM | Pull Anthropic usage API data to identify gap; adjust credit costs per feature upward; communicate to users via in-app notice; implement hard per-user spend ceiling |
+| RLS policy causing 30-second query timeouts | LOW | Drop the offending policy; move check to API layer; add missing index; deploy in one migration |
+
+---
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Race condition on credit deduction | Credit DB schema + RPC functions | Load test concurrent requests; verify no negative balances after 100 concurrent deductions |
+| Activity reward double-crediting | Credit DB schema + RPC functions | Simulate mobile retry; verify `credit_events` UNIQUE constraint fires on second insert |
+| Unreliable cron daily reset | Credit allocation architecture | Call the grant endpoint twice in 1 minute; verify idempotent result in `credit_events` |
+| Timezone cap inconsistency | Cap evaluation logic | Document UTC-reset decision; add UI "Resets at midnight UTC" label in credit widget |
+| RLS performance catastrophe | Credit DB schema + RPC functions | Run `EXPLAIN ANALYZE` on AI message insert; confirm no credit balance function calls appear |
+| Haiku vision regression | Vision model migration | Run 50-photo blind test; define fallback trigger; test fallback path end-to-end |
+| Rate limiter / credit double-gate confusion | API endpoint integration | Verify distinct HTTP error codes; test mobile error handler per code path |
+| Token counting inaccuracy | Cost modeling (pre-launch) | Compare 10 test conversations against Anthropic billing dashboard; adjust credit prices accordingly |
+| Deprecated Haiku model ID (breaking April 19, 2026) | Phase 1 — immediate | `grep -r 'claude-3-haiku-20240307' .` must return zero results before any deploy |
 
 ---
 
 ## Sources
 
-- [hono-rate-limiter (rhinobase/hono-rate-limiter)](https://github.com/rhinobase/hono-rate-limiter) — MemoryStore serverless warning; MEDIUM confidence (community package)
-- [Rate Limiting Hono Apps: An Introduction (Fiberplane)](https://fiberplane.com/blog/rate-limiting-intro/) — distributed state failure analysis; MEDIUM confidence
-- [Upstash Serverless Rate Limiting](https://upstash.com/blog/upstash-ratelimit) — sliding window, serverless-first design; HIGH confidence (official)
-- [Vercel Functions Limitations — 4.5 MB body limit](https://vercel.com/docs/functions/limitations) — HIGH confidence (official docs)
-- [How to bypass Vercel 4.5 MB body limit](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions) — signed URL pattern; HIGH confidence (official KB)
-- [Vercel Request Headers — x-real-ip](https://vercel.com/docs/headers/request-headers) — IP header behavior; HIGH confidence (official docs)
-- [Add Rate Limiting with Vercel KV](https://vercel.com/guides/rate-limiting-edge-middleware-vercel-kv) — HIGH confidence (official guide)
-- [Supabase Storage Access Control — RLS + foldername helper](https://supabase.com/docs/guides/storage/security/access-control) — HIGH confidence (official docs)
-- [Supabase Storage Ownership — owner_id column](https://supabase.com/docs/guides/storage/security/ownership) — HIGH confidence (official docs)
-- [Supabase Storage Hierarchical RLS Challenges](https://supabase.com/docs/guides/troubleshooting/supabase-storage-inefficient-folder-operations-and-hierarchical-rls-challenges-b05a4d) — HIGH confidence (official troubleshooting)
-- [React Native file upload with Supabase Storage (Supabase Blog)](https://supabase.com/blog/react-native-storage) — ArrayBuffer + base64-arraybuffer pattern; HIGH confidence (official)
-- [Upload of ArrayBuffer ends up corrupted (supabase/supabase #7252)](https://github.com/supabase/supabase/issues/7252) — content-type corruption; MEDIUM confidence (community issue)
-- [Uploaded files as 0 bytes in React Native Expo (discussion #2336)](https://github.com/orgs/supabase/discussions/2336) — File object on iOS; MEDIUM confidence (community)
-- [Supabase Storage saves as application/json despite contentType (discussion #34982)](https://github.com/orgs/supabase/discussions/34982) — global header override; MEDIUM confidence (community)
-- [Hono CORS Content-Type issue (#4184)](https://github.com/honojs/hono/issues/4184) — CORS middleware ordering; MEDIUM confidence (maintainer response)
-- [Expiring objects in Supabase Storage — no native lifecycle (discussion #20171)](https://github.com/orgs/supabase/discussions/20171) — lifecycle gap confirmed; MEDIUM confidence (community + maintainer)
-- [HTML to PDF benchmark 2026: Playwright vs Puppeteer (pdf4.dev)](https://pdf4.dev/blog/html-to-pdf-benchmark-2026) — Chromium cold start timing; MEDIUM confidence (third-party benchmark)
+- Stigg engineering blog: "We've built AI Credits. And it was harder than we expected." — idempotency is the hardest problem in usage pipelines (at-least-once delivery)
+- [Flexprice: Credit-Based Billing for AI Applications](https://flexprice.io/blog/how-to-implement-credit-based-billing-for-ai-applications) — double-charging, optimistic locking, idempotency keys
+- [EnterpriseDB: PostgreSQL Anti-Patterns Read-Modify-Write Cycles](https://www.enterprisedb.com/blog/postgresql-anti-patterns-read-modify-write-cycles) — four solutions to balance race conditions; `FOR UPDATE` pattern
+- [blog.pjam.me: Atomic Increment/Decrement in SQL](https://blog.pjam.me/posts/atomic-operations-in-sql/) — relative vs. absolute update, deadlock ordering, `RETURNING` for validation
+- [Supabase RLS Performance and Best Practices](https://supabase.com/docs/guides/troubleshooting/rls-performance-and-best-practices-Z5Jjwv) — per-row subquery cost; `(SELECT auth.uid())` caching pattern showing up to 99.99% improvement
+- [Supabase Performance and Security Advisors](https://supabase.com/docs/guides/database/database-advisors?queryGroups=lint&lint=0003_auth_rls_initplan) — `auth_rls_initplan` lint warning
+- [Vercel Cron Jobs documentation](https://vercel.com/docs/cron-jobs) — no timely guarantee; at-least-once delivery; idempotency requirement explicitly stated
+- [Vercel Fluid Compute](https://vercel.com/docs/fluid-compute) — concurrent requests on same instance; module-level state sharing risk introduced in early 2025
+- [Vercel AI SDK GitHub issue #9921](https://github.com/vercel/ai/issues/9921) — token usage normalization inaccuracies: Anthropic input tokens mapped incorrectly, cache write costs missing
+- [Anthropic Models Overview (current, April 2026)](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5-20251001` is current Haiku; `claude-3-haiku-20240307` deprecated April 19 2026
+- [GitHub: Supabase SERIALIZABLE isolation discussion #30334](https://github.com/orgs/supabase/discussions/30334) — SERIALIZABLE isolation for high-concurrency updates; Supabase RPC as atomic mechanism
+- [Token Counting Explained — Propel 2025](https://www.propelcode.ai/blog/token-counting-tiktoken-anthropic-gemini-guide-2025) — `messages.countTokens` for accurate pre-call estimation
+
+---
+*Pitfalls research for: AI credit system with activity rewards — Vercel serverless + Supabase (v1.4 milestone)*
+*Researched: 2026-04-05*

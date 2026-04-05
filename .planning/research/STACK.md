@@ -1,365 +1,288 @@
-# Stack Research — Security + Cloud Infrastructure (v1.3)
+# Stack Research — AI Credit System & Monetisation (v1.4)
 
-**Project:** Ziko Platform — v1.3 Security + Cloud Infrastructure milestone
-**Researched:** 2026-04-02
-**Scope:** NEW stack additions only. Validated existing: Hono v4 (`^4.7.0`), `@supabase/supabase-js` (`^2.50.0`),
-`zod` (`^4.3.6`), Vercel deployment, `hono/cors` (already wired in `app.ts`). None of these are re-researched.
-
----
-
-## Context: What the Existing API Looks Like
-
-`backend/api/src/app.ts` currently registers:
-
-1. `hono/logger` — global
-2. `hono/cors` — global, origin-whitelist callback, already permits `*.vercel.app` broadly
-3. Auth middleware — JWT validation via Supabase, per-route
-4. Six route groups: `/ai`, `/plugins`, `/webhooks`, `/bugs`, `/supplements`, `/pantry`
-
-The middleware chain is the insertion point for rate limiting and hardened CORS. Middleware order
-in Hono is strictly positional — rate limiting must come BEFORE auth to block abuse before
-incurring Supabase auth cost.
+**Project:** Ziko Platform — v1.4 Système de Crédits IA & Monétisation
+**Researched:** 2026-04-05
+**Confidence:** HIGH
+**Scope:** NEW stack additions only. The following are validated and NOT re-researched:
+Expo SDK 54, RN 0.81, Expo Router v4, Hono v4 (`^4.7.0`), `@supabase/supabase-js` (`^2.50.0`),
+`zod ^4.3.6`, `@upstash/redis ^1.37.0`, `@upstash/ratelimit ^2.0.8`, `ai ^6.0.116`,
+`@ai-sdk/anthropic ^3.0.58`, Zustand v5, TanStack Query v5, NativeWind v4.
 
 ---
 
-## New Dependencies
+## What This Milestone Actually Needs
 
-### 1. Rate Limiting — Upstash Redis + hono-rate-limiter
+Three capability areas drive all new stack decisions:
 
-**The core constraint:** Vercel is a serverless/edge platform. Each function invocation is
-stateless — there is no persistent in-process memory between requests. In-memory rate limiters
-(e.g., `rate-limiter-flexible` with `MemoryStore`, or `express-rate-limit` defaults) accumulate
-state per-instance and reset on every cold start. On Vercel with potentially hundreds of concurrent
-instances, in-memory counters are siloed: User A's 10 requests could hit 10 different instances,
-each seeing count=1, and the limit is never triggered. This makes in-memory rate limiting
-**functionally useless** in serverless.
+1. **Haiku vision migration** — swap `claude-sonnet-4-20250514` for `claude-haiku-4-5-20251001`
+   on the food photo scan path. No new package — the existing `@ai-sdk/anthropic` already supports it.
+2. **Credit quota logic** — per-user daily/monthly counters with atomic check-and-decrement.
+   Upstash Redis (already installed) handles this. No new package.
+3. **Cost telemetry** — log token usage per AI call to Supabase for cost-cap enforcement.
+   Vercel AI SDK's `onFinish` callback provides token counts. No new package.
 
-**Required:** An external, HTTP-based, atomic counter store that all Vercel instances share.
-Upstash Redis is the canonical solution — it speaks REST (no TCP connection pooling, which is also
-incompatible with serverless), is deployed globally, and integrates as a first-class Vercel
-add-on.
-
-**Recommended approach:** `hono-rate-limiter` + `@hono-rate-limiter/redis` adapter using Upstash
-Redis as the store.
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `hono-rate-limiter` | `0.5.3` | Core Hono rate-limiting middleware (express-rate-limit inspired API) |
-| `@hono-rate-limiter/redis` | `0.1.4` | RedisStore adapter that plugs into hono-rate-limiter |
-| `@upstash/redis` | `1.37.0` | HTTP-based Upstash Redis client (REST, no persistent connections) |
-
-**Why this combination over `@upstash/ratelimit` alone:**
-`@upstash/ratelimit` (`2.0.8`) is the lower-level Upstash primitive. It provides sliding window,
-fixed window, and token bucket algorithms directly. It can be used standalone in Hono middleware,
-but requires writing the middleware wrapper manually. `hono-rate-limiter` provides the ergonomic
-Hono middleware API (standard headers, `keyGenerator`, per-route config) and the RedisStore
-adapter wires Upstash underneath. For this project, `hono-rate-limiter` + the Redis adapter is
-the better DX — it is the same pattern used for the AI chat endpoint and produces standard
-`RateLimit-*` response headers automatically.
-
-**Install:**
-```bash
-npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis
-```
-(Run from `backend/api/`)
-
-**Usage pattern (per-route, after global CORS, before auth):**
-```ts
-import { rateLimiter } from 'hono-rate-limiter';
-import { RedisStore } from '@hono-rate-limiter/redis';
-import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
-// Per-IP fallback, per-user when auth is present
-const keyGenerator = (c: Context): string => {
-  const userId = c.get('auth')?.userId;
-  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-  return userId ? `user:${userId}` : `ip:${ip}`;
-};
-
-// AI chat — expensive endpoint, tighter limit
-export const aiRateLimiter = rateLimiter({
-  windowMs: 60 * 1000,      // 1-minute window
-  limit: 20,                // 20 req/min per user/IP
-  keyGenerator,
-  store: new RedisStore({ client: redis }),
-});
-
-// Barcode scan — moderate limit
-export const barcodeRateLimiter = rateLimiter({
-  windowMs: 60 * 1000,
-  limit: 60,
-  keyGenerator,
-  store: new RedisStore({ client: redis }),
-});
-```
-
-**Response headers emitted automatically:**
-- `RateLimit-Limit` — the configured limit
-- `RateLimit-Remaining` — requests left in window
-- `RateLimit-Reset` — Unix timestamp of window reset
-
-**New environment variables required:**
-```
-UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-token
-```
-Both are injected automatically by the Vercel Upstash integration (Dashboard → Storage → Upstash
-Redis → Connect to project).
-
-**Confidence:** HIGH — `@upstash/redis` and `@upstash/ratelimit` are the documented Vercel
-solution for serverless rate limiting. `hono-rate-limiter` is the Hono-native wrapper. Version
-numbers confirmed via `npm view` directly.
+Net result: **zero new npm packages required.** All capabilities exist in the current stack.
+The work is entirely in new routes, new SQL schema, and new logic.
 
 ---
 
-### 2. Input Validation — `@hono/zod-validator`
+## No New Dependencies — Rationale
 
-The project already has `zod ^4.3.6` in `backend/api/package.json`. The missing piece is the
-Hono-specific middleware wrapper that validates incoming requests against Zod schemas.
+### Why `@ai-sdk/anthropic ^3.0.58` Already Handles Haiku
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `@hono/zod-validator` | `0.7.6` | Validates request body/query/headers against Zod schemas in Hono routes |
+The `@ai-sdk/anthropic` provider accepts any valid Anthropic model ID as a string:
 
-**Peer dependency compatibility confirmed:**
-`@hono/zod-validator` 0.7.6 declares `peerDependencies: { hono: ">=3.9.0", zod: "^3.25.0 || ^4.0.0" }`.
-The project's `zod ^4.3.6` is within that range — install resolves cleanly without version
-conflicts.
-
-**Install:**
-```bash
-npm install @hono/zod-validator
-```
-(Run from `backend/api/`)
-
-**Usage pattern:**
 ```ts
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+// Current (Sonnet — orchestrator)
+const AGENT_MODEL = anthropic('claude-sonnet-4-20250514');
 
-const chatSchema = z.object({
-  messages: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string().min(1).max(32_000),
-  })).min(1).max(50),
-  conversation_id: z.string().uuid().optional(),
-});
-
-aiRouter.post('/chat', zValidator('json', chatSchema), authMiddleware, async (c) => {
-  const body = c.req.valid('json'); // typed, validated
-  // ...
-});
+// New (Haiku — vision scan path only)
+const SCAN_MODEL  = anthropic('claude-haiku-4-5-20251001');
 ```
 
-Validation failures return HTTP 400 with a ZodError body by default. Custom error handler:
+The SDK's unified interface means vision messages (`{ type: 'image', image: url }`) work
+identically across both models. The provider handles base64 conversion internally when
+Supabase Storage signed URLs are passed — no additional image-handling library needed.
+
+**Haiku model facts (verified):**
+- API model ID: `claude-haiku-4-5-20251001`
+- Input: $1.00 / 1M tokens; Output: $5.00 / 1M tokens
+- Context window: 200K tokens
+- Vision: supported (multimodal — text + image)
+- Typical food scan: ~800 input tokens + ~200 output = ~$0.001 per scan (well under €0.003 target)
+
+**Confidence:** HIGH — model ID and pricing confirmed via Anthropic API docs and Helicone pricing
+calculator. The `@ai-sdk/anthropic` provider's multi-model support is documented in the AI SDK
+provider reference.
+
+---
+
+### Why Upstash Redis Already Handles Credit Quotas
+
+The existing `@upstash/redis ^1.37.0` client supports `INCR`, `GET`, `EXPIRE`, and pipeline/
+multi-exec transactions natively. The Upstash HTTP REST API supports MULTI/EXEC blocks for atomic
+check-and-decrement operations — critical for preventing race conditions on credit deduction.
+
+**Daily quota pattern (no new package):**
+
 ```ts
-zValidator('json', chatSchema, (result, c) => {
-  if (!result.success) {
-    return c.json({ error: 'Validation failed', issues: result.error.issues }, 400);
+import { redis } from '../lib/redis.js';  // existing client
+
+// Atomic check + decrement using pipeline
+async function consumeCredit(userId: string, action: 'scan' | 'chat' | 'program'): Promise<boolean> {
+  const key = `credits:${userId}:${action}:${todayKey()}`;  // e.g. credits:abc:scan:2026-04-05
+
+  const pipeline = redis.pipeline();
+  pipeline.get(key);
+  pipeline.incr(key);
+  const [current, next] = await pipeline.exec() as [number | null, number];
+
+  // Set TTL only on first write (key expiry aligns with calendar day UTC)
+  if (next === 1) {
+    const secondsUntilMidnight = getSecondsUntilMidnightUTC();
+    await redis.expire(key, secondsUntilMidnight);
   }
-})
+
+  const DAILY_LIMITS: Record<string, number> = {
+    scan: 3,    // 1 base + 2 earnable
+    chat: 3,    // 1 base + 2 earnable
+    program: 2, // 1 base + 1 earnable (monthly cap handled separately)
+  };
+
+  if ((current ?? 0) >= DAILY_LIMITS[action]) {
+    // Roll back the increment — user was over limit before this call
+    await redis.decr(key);
+    return false;
+  }
+  return true;
+}
 ```
 
-**Why not valibot or yup:** `zod` is already a project dependency. Adding a second validation
-library for the same purpose is pure noise.
+For monthly program quotas, the same pattern applies with a `YYYY-MM` key suffix and TTL set
+to seconds until end-of-month. The existing `redis` singleton in `backend/api/src/lib/redis.ts`
+is reused directly — no new client instantiation.
 
-**Confidence:** HIGH — official Hono middleware, peer deps verified via `npm view`.
+**Confidence:** HIGH — Upstash Redis pipeline/exec pattern confirmed via Upstash docs and
+GitHub examples. Existing `@upstash/redis` client version `1.37.0` includes `pipeline()`.
 
 ---
 
-### 3. Supabase Storage — No New Package
+### Why Vercel AI SDK Already Handles Cost Telemetry
 
-**Finding:** `@supabase/supabase-js ^2.50.0` already includes the Storage client. No new package
-is required. The Storage API is part of the existing Supabase JS client.
+The `generateText` and `streamText` functions in `ai ^6.0.116` expose token usage in their
+return values and `onFinish` callbacks. No external observability package (LangFuse, Helicone,
+Langsmith) is needed — the token counts feed directly into a Supabase `ai_cost_log` table.
 
-**Key JS client methods available (supabase-js v2.x):**
+**Token tracking pattern (no new package):**
 
 ```ts
-// Create a private bucket (run once, or in migration)
-await supabase.storage.createBucket('profile-photos', {
-  public: false,
-  fileSizeLimit: 5 * 1024 * 1024,   // 5 MB
-  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+// generateText (sync vision scan)
+const result = await generateText({
+  model: SCAN_MODEL,
+  messages: [{ role: 'user', content: [{ type: 'image', image: signedUrl }, { type: 'text', text: prompt }] }],
 });
+const { inputTokens, outputTokens } = result.usage;
+await logCost(userId, 'scan', inputTokens, outputTokens, 'claude-haiku-4-5-20251001');
 
-// Upload a file from the backend (service role client)
-const { data, error } = await supabase.storage
-  .from('profile-photos')
-  .upload(`${userId}/avatar.jpg`, fileBuffer, {
-    contentType: 'image/jpeg',
-    upsert: true,
-    cacheControl: '3600',
-  });
-
-// Generate a signed URL for client to download privately
-const { data: urlData } = await supabase.storage
-  .from('profile-photos')
-  .createSignedUrl(`${userId}/avatar.jpg`, 60 * 60); // 1-hour TTL
-
-// Generate a signed UPLOAD URL (mobile client uploads directly to Storage)
-const { data: uploadData } = await supabase.storage
-  .from('meal-photos')
-  .createSignedUploadUrl(`${userId}/${Date.now()}.jpg`);
-// Returns: { signedUrl, token, path }
-// Client uses uploadToSignedUrl() — no backend bandwidth consumed
-
-// List files in a user's folder
-const { data: files } = await supabase.storage
-  .from('profile-photos')
-  .list(userId, { limit: 10 });
-
-// Delete a file
-await supabase.storage
-  .from('profile-photos')
-  .remove([`${userId}/old-avatar.jpg`]);
-```
-
-**Signed upload URL pattern** is preferred for mobile photo uploads (profile photos, meal scan
-photos): the Hono backend generates a short-lived signed URL, the mobile client uploads directly
-to Supabase Storage, and the backend never buffers the binary payload. This avoids Vercel's
-function memory limits and 4.5 MB request body limit.
-
-**Confidence:** HIGH — official Supabase docs confirmed. `@supabase/supabase-js` already in
-`package.json`.
-
----
-
-### 4. CORS Hardening — No New Package
-
-**Finding:** `hono/cors` is already imported and wired in `app.ts`. No new package. The current
-configuration is permissive (`*.vercel.app` wildcard). Hardening is a configuration change.
-
-**Current issue in `app.ts`:**
-```ts
-/^https?:\/\/.*\.vercel\.app$/,  // too broad — allows ANY *.vercel.app
-```
-
-**Hardened pattern:**
-```ts
-cors({
-  origin: (origin) => {
-    const allowed = new Set([
-      'https://ziko-api-lilac.vercel.app',   // production API
-      'https://ziko-app.com',                 // marketing site
-      process.env.APP_ORIGIN ?? '',           // override via env
-    ]);
-    // Expo dev tools / local development
-    if (!origin || /^exp:\/\//.test(origin) || /^https?:\/\/localhost/.test(origin)) {
-      return origin ?? '*';
-    }
-    return allowed.has(origin) ? origin : null;
+// streamText (chat) — use onFinish callback
+const response = streamText({
+  model: AGENT_MODEL,
+  messages,
+  onFinish: async ({ usage }) => {
+    await logCost(userId, 'chat', usage.inputTokens, usage.outputTokens, 'claude-sonnet-4-20250514');
   },
-  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400,
-  credentials: true,
-})
+});
 ```
 
-This is a code change to `app.ts`, not a new dependency. Add `APP_ORIGIN` env var for
-staging/preview environments.
+`result.usage` shape (AI SDK v6): `{ inputTokens: number, outputTokens: number, totalTokens: number }`.
 
-**Confidence:** HIGH — `hono/cors` built-in docs confirmed full API.
+**Confidence:** HIGH — `usage` object shape confirmed via official ai-sdk.dev docs for
+`generateText` reference. `onFinish` callback with `usage` confirmed for `streamText`.
 
 ---
 
-## Integration Notes
+## New SQL Schema (Supabase migrations)
 
-### Middleware Order in Hono (critical — positional)
+No npm packages. All new capability lives in the database and backend logic.
 
-```
-Request →
-  1. hono/logger          (already in place)
-  2. hono/cors            (already in place — hardened config)
-  3. rateLimiter()        (NEW — must be before auth to block before Supabase cost)
-  4. authMiddleware       (already in place — per-route)
-  5. zValidator()         (NEW — per-route, after auth or before depending on endpoint)
-  6. Route handler
-```
-
-Rate limiting BEFORE auth is deliberate: a brute-force attack should be blocked at the rate
-limiter without ever reaching the Supabase auth call (which costs both latency and database load).
-
-Rate limiting should be applied per-route, not globally, with different limits per endpoint type:
-- `/ai/chat` and `/ai/chat/stream` — tightest limits (LLM calls are expensive)
-- `/pantry/barcode/*` — moderate limits (external OFF API calls)
-- `/ai/tools/execute` — same as `/ai/chat`
-- `/health`, `/plugins` — no rate limiting (low-cost, read-only)
-
-### Supabase Storage Buckets to Create
-
-Three buckets are needed, all private:
-
-| Bucket | Max file size | Allowed types | Notes |
-|--------|--------------|---------------|-------|
-| `profile-photos` | 5 MB | `image/jpeg, image/png, image/webp` | One file per user, upsert |
-| `meal-photos` | 10 MB | `image/jpeg, image/png, image/webp` | One per meal scan log |
-| `exports` | 25 MB | `application/pdf` | User data exports (future) |
-
-Buckets are created via Supabase Dashboard SQL migration or via the JS client in a one-time
-setup script. RLS policies on `storage.objects` restrict each user to their own path prefix
-(`auth.uid()::text = (storage.foldername(name))[1]`).
-
-### Lifecycle Policy (Object Cleanup)
-
-**Finding:** Supabase Storage does NOT have native S3-style lifecycle policies (auto-expiry rules)
-as of 2026-04-02. The `expires_at` metadata field exists on uploads but Supabase does not
-automatically delete expired objects — it is only a marker.
-
-**Recommended workaround:** pg_cron job (Supabase provides pg_cron as a built-in extension):
+### Migration: `ai_credits` table
 
 ```sql
--- Run daily at 3am UTC — delete meal-photos older than 90 days
-SELECT cron.schedule(
-  'cleanup-meal-photos',
-  '0 3 * * *',
-  $$
-    SELECT storage.fdelete('meal-photos', name)
-    FROM storage.objects
-    WHERE bucket_id = 'meal-photos'
-      AND created_at < NOW() - INTERVAL '90 days';
-  $$
+CREATE TABLE public.ai_credits (
+  user_id        UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  balance        INTEGER NOT NULL DEFAULT 0,   -- earnable credits (activity-based)
+  lifetime_used  INTEGER NOT NULL DEFAULT 0,   -- monotonic counter for analytics
+  updated_at     TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (user_id)
 );
+ALTER TABLE public.ai_credits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ai_credits_own" ON public.ai_credits
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 ```
 
-This is a Supabase migration (SQL), not a new npm package or Vercel cron.
+### Migration: `ai_cost_log` table
 
-**Confidence:** MEDIUM — pg_cron availability confirmed (Supabase built-in), but the exact
-`storage.fdelete` function signature should be verified against the current Supabase version
-before shipping. The pattern is community-validated; official Supabase docs don't show this exact
-function signature. Alternative: call `supabase.storage.from(bucket).remove([paths])` from a
-Supabase Edge Function triggered by pg_cron.
+```sql
+CREATE TABLE public.ai_cost_log (
+  id             BIGSERIAL PRIMARY KEY,
+  user_id        UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  action         TEXT NOT NULL,              -- 'scan' | 'chat' | 'program'
+  model          TEXT NOT NULL,
+  input_tokens   INTEGER NOT NULL,
+  output_tokens  INTEGER NOT NULL,
+  cost_usd       NUMERIC(10, 6) NOT NULL,   -- computed at insert time
+  created_at     TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.ai_cost_log ENABLE ROW LEVEL SECURITY;
+-- Users can read their own cost log; only backend service role can write
+CREATE POLICY "ai_cost_log_read" ON public.ai_cost_log FOR SELECT
+  USING (auth.uid() = user_id);
+```
+
+These are the only schema additions. The existing `user_plugins`, `gamification`, and
+`coins` tables from the gamification plugin are not modified — the dual balance (coins vs
+AI credits) is maintained as separate concerns: coins in gamification plugin tables,
+AI credits in the new `ai_credits` table.
+
+**Confidence:** HIGH — pattern follows existing RLS conventions in the project (21 prior
+migrations all use this exact policy structure). No new Supabase feature needed.
+
+---
+
+## Integration Points (Existing Code to Modify)
+
+These are modifications to existing files, not new dependencies:
+
+### `backend/api/src/routes/ai.ts`
+
+| Change | What | Why |
+|--------|------|-----|
+| Add `SCAN_MODEL` constant | `anthropic('claude-haiku-4-5-20251001')` | Vision path uses Haiku, not Sonnet |
+| Wrap chat handler | Call `consumeCredit(userId, 'chat')` before `streamText` | Enforce daily chat quota |
+| Wrap tool execute | Call `consumeCredit(userId, 'chat')` | Same quota pool as chat |
+| Add `POST /ai/scan` route | `generateText` with image + Haiku | Replace current Sonnet scan |
+| `onFinish` in streamText | `logCost(userId, ...)` | Persist token usage for cost cap |
+
+### `backend/api/src/routes/ai.ts` — new endpoint
+
+```ts
+// POST /ai/scan — food photo scan, Haiku vision, credit-gated
+router.post('/scan', authMiddleware, barcodeScanLimiter, async (c) => {
+  const { userId } = c.get('auth');
+  const { image_url } = await c.req.json();   // Supabase Storage signed URL
+
+  const allowed = await consumeCredit(userId, 'scan');
+  if (!allowed) return c.json({ error: 'scan_quota_exceeded', creditsRemaining: 0 }, 429);
+
+  const result = await generateText({
+    model: SCAN_MODEL,
+    messages: [{ role: 'user', content: [
+      { type: 'image', image: image_url },
+      { type: 'text', text: SCAN_PROMPT },
+    ]}],
+  });
+
+  await logCost(userId, 'scan', result.usage.inputTokens, result.usage.outputTokens, 'claude-haiku-4-5-20251001');
+  return c.json({ analysis: result.text });
+});
+```
+
+### `plugins/gamification/src/` — credit earn events
+
+The existing gamification plugin dispatches XP and coin awards on activity events. The same
+activity hooks trigger AI credit earnings. The pattern is an additive call to a new
+`earnAICredit(userId, action)` backend route — no change to the gamification plugin internals.
+
+New backend route: `POST /ai/credits/earn` (auth-gated, idempotent with daily cap check).
 
 ---
 
 ## What NOT to Add
 
-| Rejected option | Why |
-|-----------------|-----|
-| `rate-limiter-flexible` or `express-rate-limit` | In-memory stores — non-functional on Vercel serverless where each instance has isolated memory. Never use for multi-instance deployments. |
-| `@upstash/ratelimit` standalone | Requires writing a custom Hono middleware wrapper. `hono-rate-limiter` + the Redis adapter provides the same Upstash backend with a complete Hono-native API. Only use `@upstash/ratelimit` directly if fine-grained algorithm control (token bucket, sliding window) is needed — not required here. |
-| `helmet` (Node.js security headers) | Hono is not Express. `helmet` targets Node.js `http.IncomingMessage` and does not work with Hono's `Context`. Hono has a built-in `secureHeaders()` middleware (`hono/secure-headers`) that sets the same headers (X-Content-Type-Options, X-Frame-Options, etc.) natively. If security headers are in scope, use `hono/secure-headers`, not helmet. |
-| `joi` or `yup` for validation | `zod` is already a project dependency at `^4.3.6`. A second validation library for the same purpose adds bundle weight and cognitive overhead with zero benefit. |
-| `multer` or `formidable` for file uploads | Not compatible with Hono's Vercel adapter. More importantly, the signed upload URL pattern (Hono generates URL → mobile uploads directly to Supabase) means the backend never receives file payloads. No multipart parser needed. |
-| `ioredis` or `redis` npm package | These use TCP connections, which are incompatible with Vercel's serverless environment (connections are closed between invocations, causing connection pool exhaustion). Upstash Redis communicates over HTTP/REST — it is the only Redis client appropriate for Vercel serverless. |
-| A separate KV store (Vercel KV, Redis Cloud) | Upstash Redis is the documented first-class Vercel integration for rate limiting and is already recommended by Vercel's own templates. Introducing a second KV provider adds operational complexity for no gain. |
-| `@supabase/storage-js` standalone | The storage client is already bundled inside `@supabase/supabase-js`. Installing it separately would be a duplicate. |
+| Rejected | Why | Use Instead |
+|----------|-----|-------------|
+| LangFuse / Helicone / LangSmith | External observability adds vendor dependency + latency. Token counts from `result.usage` are sufficient for cost enforcement. Observability can be added later if needed. | `ai` SDK `usage` + Supabase `ai_cost_log` |
+| Anthropic Admin API for cost tracking | Requires Admin API key (separate from standard key). Aggregate usage dashboard, not per-user. Doesn't give per-call granularity needed for quota enforcement. | `result.usage` from `generateText` |
+| `@anthropic-ai/sdk` direct | Already using `@ai-sdk/anthropic` wrapper — using both creates dual SDK confusion. Model switching is trivial with the AI SDK provider pattern. | `@ai-sdk/anthropic` already present |
+| Stripe / payment SDK | Premium tier is explicitly future scope. Architecture should be *ready* for it (clean `tier` field on user profile), but no billing integration this milestone. | Future milestone |
+| Separate quota microservice | Overkill. Upstash Redis counters with TTL handle atomic quota logic at zero extra infrastructure cost. A separate service adds latency and deployment complexity. | Upstash Redis (existing) |
+| `pg-boss` or `BullMQ` for credit events | No async job queue needed. Credit earning is synchronous (log activity → POST /ai/credits/earn → increment Redis counter + Supabase balance). Vercel's serverless invocation is the queue. | Direct HTTP call from mobile |
+| `decimal.js` or `dinero.js` for money math | Cost amounts are stored as `NUMERIC(10,6)` in Postgres and computed server-side from integer token counts × fixed rate. No floating-point currency arithmetic in JS needed. | Postgres `NUMERIC` type |
+| Supabase Edge Functions for quota | The Hono backend already handles all API logic. Adding Edge Functions creates a second runtime to maintain. Upstash Redis quota checks add <5ms to any Hono handler. | Hono routes (existing) |
 
 ---
 
-## Summary of New npm Installs
+## Model Cost Reference (for cost cap enforcement)
+
+| Model | Input $/1M | Output $/1M | Typical use | Cost per call (est.) |
+|-------|-----------|------------|-------------|----------------------|
+| `claude-haiku-4-5-20251001` | $1.00 | $5.00 | Food scan (vision) | ~$0.001 |
+| `claude-sonnet-4-20250514` | $3.00 | $15.00 | Chat, programs | ~$0.006–$0.015 |
+
+At the project's target of €0.75/user/month:
+- 50 Haiku scans = ~$0.05
+- 60 Sonnet chat turns = ~$0.36–$0.90
+- Mixed usage at free tier (3 scans/day + 3 chats/day capped) = ~$0.40–$0.75/month
+
+The dual-model approach (Haiku for vision, Sonnet for chat) is the primary cost lever.
+Sonnet for vision scans would be 3× more expensive per scan.
+
+---
+
+## Installation
+
+No new packages. Existing `backend/api/package.json` dependencies cover all v1.4 requirements.
 
 ```bash
-# From backend/api/
-npm install hono-rate-limiter @hono-rate-limiter/redis @upstash/redis @hono/zod-validator
+# No npm install needed for v1.4
+# All capabilities exist in:
+# - @ai-sdk/anthropic ^3.0.58  (multi-model support, vision)
+# - ai ^6.0.116               (usage tracking via result.usage / onFinish)
+# - @upstash/redis ^1.37.0    (atomic quota counters)
+# - @supabase/supabase-js ^2.50.0  (cost_log table, credits table)
 ```
 
-That is 4 new packages. No mobile app changes (`apps/mobile/`) are required for this milestone.
+Only a Supabase migration (SQL) and new route/middleware logic in the Hono API are required.
 
 ---
 
@@ -367,27 +290,28 @@ That is 4 new packages. No mobile app changes (`apps/mobile/`) are required for 
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Rate limiting (Upstash + hono-rate-limiter) | HIGH | Versions confirmed via `npm view`. Upstash HTTP REST confirmed for serverless. Vercel first-class integration documented. |
-| Input validation (`@hono/zod-validator`) | HIGH | Peer deps verified: `zod ^3.25.0 \|\| ^4.0.0` — compatible with project's `zod ^4.3.6`. |
-| Supabase Storage API | HIGH | `@supabase/supabase-js` already installed. Storage client methods confirmed via official docs. |
-| CORS hardening | HIGH | `hono/cors` already in place — configuration change only, no new package. |
-| Lifecycle cleanup (pg_cron) | MEDIUM | pg_cron confirmed as Supabase built-in, but `storage.fdelete` function signature needs validation against live Supabase version before shipping. |
+| Haiku model ID + vision | HIGH | `claude-haiku-4-5-20251001` confirmed via Anthropic API docs. Vision confirmed multimodal. |
+| AI SDK multi-model switching | HIGH | `@ai-sdk/anthropic` provider string-based model ID — confirmed via ai-sdk.dev provider docs. |
+| Token usage from `result.usage` | HIGH | AI SDK v6 `generateText` returns `usage.inputTokens`, `usage.outputTokens` — documented in official reference. |
+| Upstash Redis quota counters | HIGH | `pipeline()`, `incr()`, `expire()` all present in `@upstash/redis ^1.37.0`. MULTI/EXEC atomicity confirmed. |
+| Cost estimates | MEDIUM | Based on published Anthropic pricing as of 2026-04-05 and estimated token counts per action type. Actual costs will vary ±30% with real prompts. |
+| Supabase RLS for credits | HIGH | Pattern is identical to all 21 existing migrations in the project. |
+| Zero new npm packages | HIGH | Verified against existing `package.json` — all required capabilities are present in current dependencies. |
 
 ---
 
 ## Sources
 
-- [GitHub: rhinobase/hono-rate-limiter](https://github.com/rhinobase/hono-rate-limiter) — v0.5.3, configuration API, RedisStore integration
-- [npm: @hono-rate-limiter/redis](https://www.npmjs.com/package/@hono-rate-limiter/redis) — v0.1.4, Upstash RedisStore pattern
-- [npm: @upstash/redis](https://www.npmjs.com/package/@upstash/redis) — v1.37.0, HTTP REST Redis client for serverless
-- [npm: @upstash/ratelimit](https://www.npmjs.com/package/@upstash/ratelimit) — v2.0.8, algorithms reference
-- [Upstash Documentation: Ratelimit Overview](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) — serverless HTTP approach, no TCP connections
-- [Vercel Template: Ratelimit with Upstash Redis](https://vercel.com/templates/next.js/ratelimit-with-upstash-redis) — confirms Vercel first-class integration
-- [npm: @hono/zod-validator](https://www.npmjs.com/package/@hono/zod-validator) — v0.7.6, peerDeps `zod ^3.25.0 || ^4.0.0`
-- [GitHub Issue #1148: Upgrade to zod v4](https://github.com/honojs/middleware/issues/1148) — confirms zod v4 support merged in PR #1173 (May 27 2025)
-- [Hono Docs: CORS Middleware](https://hono.dev/docs/middleware/builtin/cors) — full configuration API
-- [Supabase Docs: Storage Quickstart](https://supabase.com/docs/guides/storage/quickstart) — bucket creation, upload
-- [Supabase Docs: Create Signed Upload URL](https://supabase.com/docs/reference/javascript/storage-from-createsigneduploadurl) — mobile direct upload pattern
-- [Supabase Docs: Standard Uploads](https://supabase.com/docs/guides/storage/uploads/standard-uploads) — upload options, contentType, upsert
-- [GitHub Discussion: Expiring objects in Storage](https://github.com/orgs/supabase/discussions/20171) — confirms no native lifecycle policies, manual cleanup required
-- [Supabase Docs: pg_cron](https://supabase.com/docs/guides/database/extensions/pg_cron) — scheduled cleanup approach
+- [Anthropic API Docs: Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5-20251001` model ID confirmed
+- [Helicone Pricing: claude-haiku-4-5-20251001](https://www.helicone.ai/llm-cost/provider/anthropic/model/claude-haiku-4-5-20251001) — $1.00/$5.00 per 1M tokens confirmed
+- [Anthropic API Docs: Vision](https://platform.claude.com/docs/en/build-with-claude/vision) — image input formats for Claude models
+- [AI SDK Docs: generateText Reference](https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-text) — `result.usage` shape, `onFinish` callback
+- [AI SDK Docs: Anthropic Provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic) — model switching pattern, multimodal support
+- [Upstash Redis JS SDK](https://github.com/upstash/redis-js) — `pipeline()`, `exec()`, `incr()`, `expire()` API
+- [Upstash Blog: Pipeline REST API](https://upstash.com/blog/pipeline) — atomicity guarantees for MULTI/EXEC vs pipeline
+- [Caylent: Claude Haiku 4.5 Deep Dive](https://caylent.com/blog/claude-haiku-4-5-deep-dive-cost-capabilities-and-the-multi-agent-opportunity) — cost/capability comparison Haiku vs Sonnet
+
+---
+
+*Stack research for: AI credit system, dual balance, Haiku vision migration*
+*Researched: 2026-04-05*
