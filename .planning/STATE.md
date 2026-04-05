@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.4
-milestone_name: Système de Crédits IA & Monétisation
-status: planning
-stopped_at: Phase 17 context gathered
-last_updated: "2026-04-05T12:11:41.893Z"
-last_activity: 2026-04-05 — v1.4 roadmap created (Phases 17–21)
+milestone_name: Systeme de Credits IA & Monetisation
+status: executing
+stopped_at: Completed 17-db-foundation-model-fix 17-02-PLAN.md — migration 026 AI credits foundation complete
+last_updated: "2026-04-05T12:37:54.659Z"
+last_activity: 2026-04-05
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement.
-**Current focus:** v1.4 — Phase 17: DB Foundation + Model Fix
+**Current focus:** Phase 17 — db-foundation-model-fix
 
 ## Current Position
 
-Phase: 17 of 21 (DB Foundation + Model Fix)
-Plan: — of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-04-05 — v1.4 roadmap created (Phases 17–21)
+Phase: 17 (db-foundation-model-fix) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-05
 
 Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 17-db-foundation-model-fix P17-02 | 1m 37s | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Recent decisions affecting current work:
 - [v1.4 Roadmap]: Redis (Upstash) is rate limiting only — credit balance lives exclusively in Supabase for durable audit trail; never conflate 429 (rate limit) with 402 (credit exhaustion)
 - [v1.4 Roadmap]: Phase 20 depends on Phase 18 (not Phase 19) — activity earn hooks need creditService only, not the HTTP routes
 - [v1.4 Roadmap]: `claude-3-haiku-20240307` retires April 19, 2026 — grep-and-replace to `claude-haiku-4-5-20251001` must be the first commit of Phase 17
+- [Phase 17-db-foundation-model-fix]: SECURITY DEFINER + FOR UPDATE row lock in deduct_ai_credits prevents negative balances under concurrent Vercel Fluid Compute requests
+- [Phase 17-db-foundation-model-fix]: Partial unique index (WHERE idempotency_key IS NOT NULL) on ai_credit_transactions prevents double-crediting on mobile retry
+- [Phase 17-db-foundation-model-fix]: tier TEXT NOT NULL DEFAULT 'free' on user_profiles — existing rows auto-migrate to free tier; Phase 18 reads this for premium bypass
 
 ### Pending Todos
 
@@ -80,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T12:11:41.890Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-db-foundation-model-fix/17-CONTEXT.md
+Last session: 2026-04-05T12:37:54.655Z
+Stopped at: Completed 17-db-foundation-model-fix 17-02-PLAN.md — migration 026 AI credits foundation complete
+Resume file: None

@@ -14,8 +14,8 @@ Requirements for AI Credit System & Monetization milestone. Each maps to roadmap
 - [ ] **CRED-03**: User receives 1 free AI program generation per month without any activity
 - [ ] **CRED-04**: User sees the credit cost displayed next to each AI action button before using it
 - [ ] **CRED-05**: User sees an exhaustion bottom sheet when credits reach 0, explaining why and how to earn more
-- [ ] **CRED-06**: User's credits are deducted atomically via PostgreSQL RPC (no negative balance possible)
-- [ ] **CRED-07**: User has a separate AI credits balance from shop coins (dual balance)
+- [x] **CRED-06**: User's credits are deducted atomically via PostgreSQL RPC (no negative balance possible)
+- [x] **CRED-07**: User has a separate AI credits balance from shop coins (dual balance)
 
 ### Activity Earn
 
@@ -38,7 +38,7 @@ Requirements for AI Credit System & Monetization milestone. Each maps to roadmap
 
 ### Premium Prep
 
-- [ ] **PREM-01**: User profile has a tier column (free/premium) — premium users bypass credit gate
+- [x] **PREM-01**: User profile has a tier column (free/premium) — premium users bypass credit gate
 - [ ] **PREM-02**: Credit gate middleware checks tier before deducting credits
 
 ## v2 Requirements
@@ -77,8 +77,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | CRED-03 | Phase 18 | Pending |
 | CRED-04 | Phase 21 | Pending |
 | CRED-05 | Phase 21 | Pending |
-| CRED-06 | Phase 17 | Pending |
-| CRED-07 | Phase 17 | Pending |
+| CRED-06 | Phase 17 | Complete |
+| CRED-07 | Phase 17 | Complete |
 | EARN-01 | Phase 20 | Pending |
 | EARN-02 | Phase 20 | Pending |
 | EARN-03 | Phase 20 | Pending |
@@ -92,7 +92,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | COST-01 | Phase 17 | Pending |
 | COST-02 | Phase 19 | Pending |
 | COST-03 | Phase 19 | Pending |
-| PREM-01 | Phase 17 | Pending |
+| PREM-01 | Phase 17 | Complete |
 | PREM-02 | Phase 18 | Pending |
 
 **Coverage:**
