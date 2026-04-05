@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.4
-milestone_name: "Système de Crédits IA & Monétisation"
-status: in_progress
-stopped_at: null
-last_updated: "2026-04-05"
-last_activity: 2026-04-05
+milestone_name: Système de Crédits IA & Monétisation
+status: planning
+stopped_at: Phase 17 context gathered
+last_updated: "2026-04-05T12:11:41.893Z"
+last_activity: 2026-04-05 — v1.4 roadmap created (Phases 17–21)
 progress:
   total_phases: 5
   completed_phases: 0
@@ -35,6 +35,7 @@ Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0 (v1.4)
 - Average duration: —
 - Total execution time: 0 hours
@@ -46,6 +47,7 @@ Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: —
 - Trend: —
 
@@ -78,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05
-Stopped at: v1.4 roadmap created — 5 phases defined (17–21), 22 requirements mapped, ready to plan Phase 17
-Resume file: None
+Last session: 2026-04-05T12:11:41.890Z
+Stopped at: Phase 17 context gathered
+Resume file: .planning/phases/17-db-foundation-model-fix/17-CONTEXT.md
