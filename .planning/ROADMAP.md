@@ -60,7 +60,7 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
 
 ---
 
-### 🚧 v1.4 Systeme de Credits IA & Monetisation (In Progress)
+### v1.4 Systeme de Credits IA & Monetisation (In Progress)
 
 **Milestone Goal:** Implement a gamified AI credit system that controls API costs (max EUR 0.75/month per user) while rewarding user engagement with activity-based credit earning, a visible dual balance, and a Haiku vision model migration for 70% per-scan cost reduction.
 
@@ -98,7 +98,10 @@ Plans:
   4. The `creditCheck(cost)` middleware returns 402 with `{ error: 'insufficient_credits' }` before the handler runs when balance is 0
   5. The `creditDeduct(cost)` middleware only fires when the handler returns status < 400 — a handler error does not consume a credit
   6. Premium users (`tier = 'premium'`) pass through `creditCheck` without deduction
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 18-01-PLAN.md — Credit config constants + creditService business logic layer
+- [ ] 18-02-PLAN.md — creditGate middleware pair + AI route wiring
 
 ### Phase 19: Backend Routes + AI Integration
 **Goal**: The credits API is mounted and all AI endpoints (chat, stream, tools, vision scan) enforce credit gating and log token usage for cost monitoring
@@ -164,7 +167,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 15. Lifecycle & Cleanup | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 16. Security Middleware Regression Fix | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 17. DB Foundation + Model Fix | v1.4 | 2/2 | Complete    | 2026-04-05 |
-| 18. Credit Service + Middleware | v1.4 | 0/TBD | Not started | - |
+| 18. Credit Service + Middleware | v1.4 | 0/2 | Not started | - |
 | 19. Backend Routes + AI Integration | v1.4 | 0/TBD | Not started | - |
 | 20. Activity Earn Hooks | v1.4 | 0/TBD | Not started | - |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 0/TBD | Not started | - |
