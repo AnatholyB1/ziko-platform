@@ -1,13 +1,9 @@
 ﻿import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
-import { AGENT_MODEL } from '../config/models.js';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { anthropic } from '@ai-sdk/anthropic';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
-import { createUserRateLimiter } from '../middleware/rateLimiter.js';
-import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
 import { fetchUserContext, type UserContext } from '../context/user.js';
 import {
@@ -17,37 +13,17 @@ import {
 } from '../context/conversation.js';
 
 const router = new Hono();
-
-// Supabase client for storage signed download URLs
-const supabaseUrl = process.env.SUPABASE_URL!;
-const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-const supabase = createClient(supabaseUrl, serviceKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-
-// ─── Zod schemas for input validation (SEC-03) ───────────────────
-
-const messageSchema = z.object({
-  role: z.enum(['user', 'assistant', 'system']),
-  content: z.string(),
-}).strict();
-
-const chatSchema = z.object({
-  messages: z.array(messageSchema).min(1),
-  conversation_id: z.string().optional(),
-}).strict();
-
-const toolExecuteSchema = z.object({
-  tool_name: z.string(),
-  parameters: z.record(z.string(), z.unknown()).optional(),
-}).strict();
 router.use('*', authMiddleware);
 
-// Per-user rate limiters (per D-02, D-03, D-04, D-06)
-// These run AFTER authMiddleware (D-13) so c.get('auth').userId is available
-const aiChatLimiter = createUserRateLimiter(20, '60 m', 'ai-chat');       // D-02: 20/60min
-const aiToolsLimiter = createUserRateLimiter(30, '60 m', 'ai-tools');     // D-03: 30/60min
-const barcodeScanLimiter = createUserRateLimiter(20, '60 m', 'barcode');  // D-04: 20/60min
+const AGENT_MODEL = anthropic('claude-sonnet-4-20250514');
+
+// ─── Supabase Client (token logging) ─────────────────────────
+// Service key for server-side inserts to ai_cost_log — same pattern as creditGate.ts
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } },
+);
 
 // ─── Dynamic system prompt ────────────────────────────────────────
 
@@ -139,13 +115,37 @@ function buildSDKTools(userId: string, userToken?: string) {
   );
 }
 
+// ─── Token Usage Logging (COST-02) ───────────────────────────
+// Fire-and-forget insert to ai_cost_log — same pattern as creditDeduct (creditGate.ts:127-130).
+// Uses totalUsage (aggregated all steps) NOT usage (final step only) — Pitfall 1.
+function logTokenUsage(
+  userId: string,
+  modelId: string,
+  totalUsage: { inputTokens: number | undefined; outputTokens: number | undefined }
+) {
+  Promise.resolve(
+    supabase
+      .from('ai_cost_log')
+      .insert({
+        user_id: userId,
+        model: modelId,
+        input_tokens: totalUsage.inputTokens ?? 0,
+        output_tokens: totalUsage.outputTokens ?? 0,
+      })
+  ).catch((err: unknown) => console.error('[TokenLog] insert failed:', err));
+}
+
 // ─── Routes ────────────────────────────────────────────────────────
 
 router.get('/tools', (c) => c.json({ tools: allToolSchemas }));
 
-router.post('/tools/execute', aiToolsLimiter, zValidator('json', toolExecuteSchema), async (c) => {
+router.post('/tools/execute', async (c) => {
   const auth = c.get('auth');
-  const { tool_name, parameters = {} } = c.req.valid('json');
+  const { tool_name, parameters = {} } = await c.req.json<{
+    tool_name: string;
+    parameters?: Record<string, unknown>;
+  }>();
+  if (!tool_name) return c.json({ error: 'tool_name is required' }, 400);
   const executor = getToolExecutor(tool_name);
   if (!executor) return c.json({ error: `Unknown tool: ${tool_name}` }, 404);
   try {
@@ -158,14 +158,12 @@ router.post('/tools/execute', aiToolsLimiter, zValidator('json', toolExecuteSche
   }
 });
 
-// ─── Credit gating (Phase 18) ─────────────────────────────────────
-// creditCheck gates: premium bypass, free quota pass-through, or 402
-// creditDeduct deducts after handler success only (status < 400)
-// Streaming: HTTP 200 set before stream — credit charged on header send
-
 // Streaming endpoint with context injection + conversation persistence
-router.post('/chat/stream', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), zValidator('json', chatSchema), async (c) => {
-  const { messages, conversation_id: bodyConversationId } = c.req.valid('json');
+router.post('/chat/stream', async (c) => {
+  const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    conversation_id?: string;
+  }>();
   const auth = c.get('auth');
   const userId = auth.userId;
   const userToken = c.req.header('Authorization')?.slice(7);
@@ -201,6 +199,9 @@ router.post('/chat/stream', aiChatLimiter, creditCheck('chat'), creditDeduct('ch
     messages: allMessages,
     tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
+    onFinish: ({ totalUsage }) => {
+      logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+    },
   });
 
   c.header('Content-Type', 'text/event-stream');
@@ -258,8 +259,11 @@ router.post('/chat/stream', aiChatLimiter, creditCheck('chat'), creditDeduct('ch
 });
 
 // Non-streaming endpoint with context injection + conversation persistence
-router.post('/chat', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), zValidator('json', chatSchema), async (c) => {
-  const { messages, conversation_id: bodyConversationId } = c.req.valid('json');
+router.post('/chat', async (c) => {
+  const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    conversation_id?: string;
+  }>();
   const auth = c.get('auth');
   const userId = auth.userId;
   const userToken = c.req.header('Authorization')?.slice(7);
@@ -288,6 +292,9 @@ router.post('/chat', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), z
     messages: allMessages,
     tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
+    onFinish: ({ totalUsage }) => {
+      logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+    },
   });
 
   const { text } = result;
@@ -318,16 +325,26 @@ router.post('/chat', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), z
 
 // ─── Vision: Food Nutrition Analysis ──────────────────────────────
 
-router.post('/vision/nutrition', barcodeScanLimiter, async (c) => {
-  const { image, storage_path, meal_context } = await c.req.json<{
-    image?: string;        // base64 — backward compat (D-23)
-    storage_path?: string; // new signed URL path (D-23)
+router.post('/vision/nutrition', async (c) => {
+  const { image, meal_context } = await c.req.json<{
+    image: string; // base64 encoded image
     meal_context?: string;
   }>();
 
-  // Require at least one image source (D-23)
-  if (!image && !storage_path) {
-    return c.json({ error: 'image or storage_path is required' }, 400);
+  if (!image) return c.json({ error: 'image (base64) is required' }, 400);
+
+  // Validate base64 size (max ~10MB raw)
+  if (image.length > 14_000_000) {
+    return c.json({ error: 'Image too large (max 10MB)' }, 413);
+  }
+
+  // Detect media type from base64 header or default to jpeg
+  let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
+  let base64Data = image;
+  const dataUrlMatch = image.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
+  if (dataUrlMatch) {
+    mediaType = dataUrlMatch[1] as typeof mediaType;
+    base64Data = image.slice(dataUrlMatch[0].length);
   }
 
   const prompt = `Analyze this food image and estimate the nutritional content.
@@ -358,48 +375,21 @@ Rules:
 - Numbers should be rounded to 1 decimal place`;
 
   try {
-    // Build image content part for Claude
-    let imageContent: { type: 'image'; image: string | URL; mediaType?: string };
-
-    if (storage_path) {
-      // New flow: generate signed download URL (D-24)
-      const { data: readData, error: readError } = await supabase.storage
-        .from('scan-photos')
-        .createSignedUrl(storage_path, 300); // 300s TTL
-
-      if (readError || !readData?.signedUrl) {
-        console.error('[Vision] createSignedUrl error:', readError);
-        return c.json({ error: 'Failed to retrieve image for analysis' }, 500);
-      }
-
-      // Pass URL to Claude — Vercel AI SDK v6 accepts URL objects (D-25)
-      imageContent = { type: 'image', image: new URL(readData.signedUrl) };
-    } else {
-      // Legacy base64 flow — unchanged (D-23 backward compat)
-      // Validate base64 size (max ~10MB raw)
-      if (image!.length > 14_000_000) {
-        return c.json({ error: 'Image too large (max 10MB)' }, 413);
-      }
-
-      let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
-      let base64Data = image!;
-      const dataUrlMatch = image!.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
-      if (dataUrlMatch) {
-        mediaType = dataUrlMatch[1] as typeof mediaType;
-        base64Data = image!.slice(dataUrlMatch[0].length);
-      }
-
-      imageContent = { type: 'image', image: base64Data, mediaType };
-    }
-
     const { text } = await generateText({
       model: AGENT_MODEL,
       messages: [
         {
           role: 'user',
           content: [
-            imageContent,
-            { type: 'text', text: prompt },
+            {
+              type: 'image',
+              image: base64Data,
+              mediaType,
+            },
+            {
+              type: 'text',
+              text: prompt,
+            },
           ],
         },
       ],
