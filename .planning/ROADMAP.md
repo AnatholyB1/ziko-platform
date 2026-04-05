@@ -100,7 +100,9 @@ Plans:
   1. `POST /storage/cron/cleanup` is registered as a Vercel cron job in `vercel.json` and runs on schedule — the endpoint is authenticated via `CRON_SECRET` header (401 without it)
   2. Calling the cleanup endpoint removes `scan-photos` objects with metadata `expires_at` older than 90 days — objects within the retention window are not affected
   3. Calling the cleanup endpoint removes `exports` objects older than 7 days — the removal uses `supabase.storage.from(bucket).remove([paths])` (not raw SQL DELETE) so no orphaned storage objects remain
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 15-01-PLAN.md — Cron cleanup endpoint + vercel.json entry for scan-photos (90d) and exports (7d)
 
 ---
 
@@ -148,7 +150,7 @@ Plans:
 Plans:
 - [x] 14-01-PLAN.md — SQL migration: storage buckets + RLS (profile-photos, scan-photos, exports)
 - [x] 14-02-PLAN.md — Backend storage route: GET /storage/upload-url with signed URL generation
-- [ ] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
+- [x] 14-03-PLAN.md — Mobile + backend vision migration: signed URL upload flow end-to-end
 
 ### Phase 15: Lifecycle & Cleanup
 **Goal**: Ephemeral storage assets are automatically purged on schedule — scan photos older than 90 days and exports older than 7 days are removed via the Vercel cron endpoint, keeping storage costs bounded without manual intervention
@@ -158,7 +160,9 @@ Plans:
   1. `POST /storage/cron/cleanup` is registered as a Vercel cron job in `vercel.json` and runs on schedule — the endpoint is authenticated via `CRON_SECRET` header (401 without it)
   2. Calling the cleanup endpoint removes `scan-photos` objects with metadata `expires_at` older than 90 days — objects within the retention window are not affected
   3. Calling the cleanup endpoint removes `exports` objects older than 7 days — the removal uses `supabase.storage.from(bucket).remove([paths])` (not raw SQL DELETE) so no orphaned storage objects remain
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 15-01-PLAN.md — Cron cleanup endpoint + vercel.json entry for scan-photos (90d) and exports (7d)
 
 ---
 
@@ -183,7 +187,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 12. Infra + Rate Limiting | v1.3 | 2/2 | Complete   | 2026-04-02 |
 | 13. API Security Hardening | v1.3 | 1/1 | Complete   | 2026-04-03 |
 | 14. Supabase Storage | v1.3 | 3/3 | Complete    | 2026-04-03 |
-| 15. Lifecycle & Cleanup | v1.3 | 0/? | Not started | -- |
+| 15. Lifecycle & Cleanup | v1.3 | 0/1 | Not started | -- |
 
 ---
 *Roadmap created: 2026-03-26 -- Milestone v1.0 Landing Page*
@@ -191,3 +195,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 *Updated: 2026-04-02 -- Phase 12 planned: 2 plans in 2 waves*
 *Updated: 2026-04-03 -- Phase 13 planned: 1 plan in 1 wave*
 *Updated: 2026-04-03 -- Phase 14 planned: 3 plans in 3 waves*
+*Updated: 2026-04-05 -- Phase 15 planned: 1 plan in 1 wave*
