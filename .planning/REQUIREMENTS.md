@@ -32,7 +32,7 @@ Requirements for AI Credit System & Monetization milestone. Each maps to roadmap
 
 ### Vision & Cost
 
-- [ ] **COST-01**: Photo scan uses Claude Haiku 4.5 instead of Sonnet (~70% cost reduction)
+- [x] **COST-01**: Photo scan uses Claude Haiku 4.5 instead of Sonnet (~70% cost reduction)
 - [ ] **COST-02**: Each AI API call's token usage is logged to Supabase for cost tracking
 - [ ] **COST-03**: Monthly cost per active freemium user stays under €0.75
 
@@ -89,7 +89,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | EARN-08 | Phase 21 | Pending |
 | EARN-09 | Phase 21 | Pending |
 | EARN-10 | Phase 18 | Pending |
-| COST-01 | Phase 17 | Pending |
+| COST-01 | Phase 17 | Complete |
 | COST-02 | Phase 19 | Pending |
 | COST-03 | Phase 19 | Pending |
 | PREM-01 | Phase 17 | Complete |

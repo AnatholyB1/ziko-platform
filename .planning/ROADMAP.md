@@ -64,7 +64,7 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
 
 **Milestone Goal:** Implement a gamified AI credit system that controls API costs (max EUR 0.75/month per user) while rewarding user engagement with activity-based credit earning, a visible dual balance, and a Haiku vision model migration for 70% per-scan cost reduction.
 
-- [ ] **Phase 17: DB Foundation + Model Fix** — Migration 026 (credit tables + atomic RPC) and deprecated Haiku model ID replacement
+- [x] **Phase 17: DB Foundation + Model Fix** — Migration 026 (credit tables + atomic RPC) and deprecated Haiku model ID replacement (completed 2026-04-05)
 - [ ] **Phase 18: Credit Service + Middleware** — `creditService.ts` pure logic + Hono middleware pair (creditCheck / creditDeduct)
 - [ ] **Phase 19: Backend Routes + AI Integration** — Credits router, AI route credit gating, Haiku vision endpoint, cost telemetry
 - [ ] **Phase 20: Activity Earn Hooks** — Fire-and-forget earn triggers on 6 tool executors with idempotency end-to-end
@@ -82,9 +82,9 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
   3. Every occurrence of `claude-3-haiku-20240307` in the codebase is replaced with `claude-haiku-4-5-20251001` — zero grep results for the old ID
   4. `user_profiles` has a `tier TEXT DEFAULT 'free'` column — existing rows read as `'free'` with no migration data loss
   5. Existing users each have a welcome credit row (5 credits) inserted by the migration's one-time bulk insert
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 17-01-PLAN.md — Grep audit + centralized model constants file (AGENT_MODEL + VISION_MODEL)
+- [x] 17-01-PLAN.md — Grep audit + centralized model constants file (AGENT_MODEL + VISION_MODEL)
 - [x] 17-02-PLAN.md — Migration 026: credit tables, atomic deduct RPC, tier column, welcome credits
 
 ### Phase 18: Credit Service + Middleware
@@ -163,7 +163,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 14. Supabase Storage | v1.3 | 3/3 | Complete | 2026-04-03 |
 | 15. Lifecycle & Cleanup | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 16. Security Middleware Regression Fix | v1.3 | 1/1 | Complete | 2026-04-05 |
-| 17. DB Foundation + Model Fix | v1.4 | 1/2 | In Progress|  |
+| 17. DB Foundation + Model Fix | v1.4 | 2/2 | Complete   | 2026-04-05 |
 | 18. Credit Service + Middleware | v1.4 | 0/TBD | Not started | - |
 | 19. Backend Routes + AI Integration | v1.4 | 0/TBD | Not started | - |
 | 20. Activity Earn Hooks | v1.4 | 0/TBD | Not started | - |

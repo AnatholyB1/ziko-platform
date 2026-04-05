@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Systeme de Credits IA & Monetisation
-status: executing
-stopped_at: Completed 17-db-foundation-model-fix 17-02-PLAN.md — migration 026 AI credits foundation complete
-last_updated: "2026-04-05T12:37:54.659Z"
+status: verifying
+stopped_at: Completed 17-db-foundation-model-fix 17-01-PLAN.md
+last_updated: "2026-04-05T12:38:59.520Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 Phase: 17 (db-foundation-model-fix) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-05
 
 Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 
 *Updated after each plan completion*
 | Phase 17-db-foundation-model-fix P17-02 | 1m 37s | 2 tasks | 1 files |
+| Phase 17-db-foundation-model-fix P01 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 17-db-foundation-model-fix]: SECURITY DEFINER + FOR UPDATE row lock in deduct_ai_credits prevents negative balances under concurrent Vercel Fluid Compute requests
 - [Phase 17-db-foundation-model-fix]: Partial unique index (WHERE idempotency_key IS NOT NULL) on ai_credit_transactions prevents double-crediting on mobile retry
 - [Phase 17-db-foundation-model-fix]: tier TEXT NOT NULL DEFAULT 'free' on user_profiles — existing rows auto-migrate to free tier; Phase 18 reads this for premium bypass
+- [Phase 17-db-foundation-model-fix]: models.ts is the ONLY file calling anthropic() with model ID strings — consumers import pre-built AGENT_MODEL and VISION_MODEL constants
+- [Phase 17-db-foundation-model-fix]: VISION_MODEL uses claude-haiku-4-5-20251001 to replace deprecated haiku-3 model (April 19 2026 retirement deadline) — pre-positioned for Phase 19 COST-01
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T12:37:54.655Z
-Stopped at: Completed 17-db-foundation-model-fix 17-02-PLAN.md — migration 026 AI credits foundation complete
+Last session: 2026-04-05T12:38:59.516Z
+Stopped at: Completed 17-db-foundation-model-fix 17-01-PLAN.md
 Resume file: None
