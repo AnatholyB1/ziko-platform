@@ -1,7 +1,6 @@
 ﻿import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
@@ -11,11 +10,11 @@ import {
   appendMessages,
   updateConversationTitle,
 } from '../context/conversation.js';
+import { AGENT_MODEL, VISION_MODEL } from '../config/models.js';
+import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
 
 const router = new Hono();
 router.use('*', authMiddleware);
-
-const AGENT_MODEL = anthropic('claude-sonnet-4-20250514');
 
 // ─── Supabase Client (token logging) ─────────────────────────
 // Service key for server-side inserts to ai_cost_log — same pattern as creditGate.ts
@@ -325,7 +324,10 @@ router.post('/chat', async (c) => {
 
 // ─── Vision: Food Nutrition Analysis ──────────────────────────────
 
-router.post('/vision/nutrition', async (c) => {
+router.post('/vision/nutrition', creditCheck('scan'), creditDeduct('scan'), async (c) => {
+  const auth = c.get('auth');
+  const userId = auth.userId;
+
   const { image, meal_context } = await c.req.json<{
     image: string; // base64 encoded image
     meal_context?: string;
@@ -374,32 +376,63 @@ Rules:
 - If you cannot identify food in the image, return: {"foods": [], "description": "No food detected"}
 - Numbers should be rounded to 1 decimal place`;
 
+  const imageContent = {
+    type: 'image' as const,
+    image: base64Data,
+    mediaType,
+  };
+
   try {
+    // Primary: VISION_MODEL (Haiku) — 70% cheaper per scan (D-07)
     const { text } = await generateText({
+      model: VISION_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            imageContent,
+            { type: 'text', text: prompt },
+          ],
+        },
+      ],
+      onFinish: ({ totalUsage }) => {
+        logTokenUsage(userId, 'claude-haiku-4-5-20251001', totalUsage);
+      },
+    });
+
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+
+    // Inner try/catch: only catch JSON parse failures (D-09, Pitfall 3)
+    try {
+      const result = JSON.parse(cleaned);
+      return c.json(result);
+    } catch (parseErr) {
+      // D-09: Only fall back on SyntaxError (parse failure), not on other errors
+      if (!(parseErr instanceof SyntaxError)) throw parseErr;
+      console.warn('[Vision] Haiku JSON parse failed, falling back to Sonnet');
+    }
+
+    // Fallback: AGENT_MODEL (Sonnet) — only reached on Haiku parse failure
+    const { text: fallbackText } = await generateText({
       model: AGENT_MODEL,
       messages: [
         {
           role: 'user',
           content: [
-            {
-              type: 'image',
-              image: base64Data,
-              mediaType,
-            },
-            {
-              type: 'text',
-              text: prompt,
-            },
+            imageContent,
+            { type: 'text', text: prompt },
           ],
         },
       ],
+      onFinish: ({ totalUsage }) => {
+        logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+      },
     });
 
-    // Parse the JSON response
-    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
-    const result = JSON.parse(cleaned);
+    const fallbackCleaned = fallbackText.replace(/```json\n?|\n?```/g, '').trim();
+    const fallbackResult = JSON.parse(fallbackCleaned);
+    return c.json(fallbackResult);
 
-    return c.json(result);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[Vision Error]', msg);
