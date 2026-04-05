@@ -15,10 +15,10 @@
 
 ### Supabase Storage
 
-- [ ] **STORE-01**: User peut uploader et mettre à jour sa photo de profil depuis l'app mobile — photo stockée dans bucket `profile-photos`, public URL persistée dans `user_profiles`
-- [ ] **STORE-02**: App peut uploader des photos de scan dans bucket `scan-photos` via signed URL (upload direct vers Supabase Storage, contourne la limite 4.5 MB Vercel)
-- [ ] **STORE-03**: Bucket `exports` créé et accessible via signed URL pour futurs exports PDF / données (infrastructure uniquement en v1.3)
-- [ ] **STORE-04**: Hono expose GET /storage/upload-url?bucket=&path= — retourne une signed URL d'upload valable 60 secondes pour upload direct depuis mobile
+- [x] **STORE-01**: User peut uploader et mettre à jour sa photo de profil depuis l'app mobile — photo stockée dans bucket `profile-photos`, public URL persistée dans `user_profiles`
+- [x] **STORE-02**: App peut uploader des photos de scan dans bucket `scan-photos` via signed URL (upload direct vers Supabase Storage, contourne la limite 4.5 MB Vercel)
+- [x] **STORE-03**: Bucket `exports` créé et accessible via signed URL pour futurs exports PDF / données (infrastructure uniquement en v1.3)
+- [x] **STORE-04**: Hono expose GET /storage/upload-url?bucket=&path= — retourne une signed URL d'upload valable 60 secondes pour upload direct depuis mobile
 
 ### API Security
 
@@ -81,10 +81,10 @@
 | SEC-01 | Phase 13 | Complete |
 | SEC-02 | Phase 13 | Complete |
 | SEC-03 | Phase 13 | Complete |
-| STORE-01 | Phase 14 | Pending |
-| STORE-02 | Phase 14 | Pending |
-| STORE-03 | Phase 14 | Pending |
-| STORE-04 | Phase 14 | Pending |
+| STORE-01 | Phase 14 | Complete |
+| STORE-02 | Phase 14 | Complete |
+| STORE-03 | Phase 14 | Complete |
+| STORE-04 | Phase 14 | Complete |
 | INFRA-02 | Phase 15 | Pending |
 
 **Coverage:**
