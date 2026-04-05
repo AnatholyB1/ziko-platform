@@ -65,7 +65,7 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
 **Milestone Goal:** Implement a gamified AI credit system that controls API costs (max EUR 0.75/month per user) while rewarding user engagement with activity-based credit earning, a visible dual balance, and a Haiku vision model migration for 70% per-scan cost reduction.
 
 - [x] **Phase 17: DB Foundation + Model Fix** — Migration 026 (credit tables + atomic RPC) and deprecated Haiku model ID replacement (completed 2026-04-05)
-- [ ] **Phase 18: Credit Service + Middleware** — `creditService.ts` pure logic + Hono middleware pair (creditCheck / creditDeduct)
+- [x] **Phase 18: Credit Service + Middleware** — `creditService.ts` pure logic + Hono middleware pair (creditCheck / creditDeduct) (completed 2026-04-05)
 - [ ] **Phase 19: Backend Routes + AI Integration** — Credits router, AI route credit gating, Haiku vision endpoint, cost telemetry
 - [ ] **Phase 20: Activity Earn Hooks** — Fire-and-forget earn triggers on 6 tool executors with idempotency end-to-end
 - [ ] **Phase 21: Mobile UI — Credit Display + Exhaustion UX** — creditStore, dual balance card, exhaustion bottom sheet, earn toasts
@@ -98,10 +98,10 @@ Plans:
   4. The `creditCheck(cost)` middleware returns 402 with `{ error: 'insufficient_credits' }` before the handler runs when balance is 0
   5. The `creditDeduct(cost)` middleware only fires when the handler returns status < 400 — a handler error does not consume a credit
   6. Premium users (`tier = 'premium'`) pass through `creditCheck` without deduction
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 18-01-PLAN.md — Credit config constants + creditService business logic layer
-- [ ] 18-02-PLAN.md — creditGate middleware pair + AI route wiring
+- [x] 18-01-PLAN.md — Credit config constants + creditService business logic layer
+- [x] 18-02-PLAN.md — creditGate middleware pair + AI route wiring
 
 ### Phase 19: Backend Routes + AI Integration
 **Goal**: The credits API is mounted and all AI endpoints (chat, stream, tools, vision scan) enforce credit gating and log token usage for cost monitoring
@@ -113,7 +113,11 @@ Plans:
   3. Every AI API call logs `input_tokens`, `output_tokens`, `model`, and `user_id` to a `ai_cost_log` table via the `onFinish` callback — enabling weekly Anthropic billing reconciliation
   4. `POST /ai/scan` uses `claude-haiku-4-5-20251001` for vision and falls back to Sonnet when structured-output validation fails — confirmed by running a degraded-photo test set
   5. Monthly simulated cost for a free-tier user at maximum daily usage stays within the EUR 0.75 ceiling based on measured token counts
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 19-01-PLAN.md — Migration 027 (ai_cost_log table) + creditService.getBalanceSummary helper
+- [ ] 19-02-PLAN.md — Credits router (GET /balance) + token usage logging on chat routes
+- [ ] 19-03-PLAN.md — Vision route upgrade (Haiku + Sonnet fallback + credit gate + telemetry) + cost ceiling verification
 **UI hint**: yes
 
 ### Phase 20: Activity Earn Hooks
@@ -167,8 +171,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 15. Lifecycle & Cleanup | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 16. Security Middleware Regression Fix | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 17. DB Foundation + Model Fix | v1.4 | 2/2 | Complete    | 2026-04-05 |
-| 18. Credit Service + Middleware | v1.4 | 0/2 | Not started | - |
-| 19. Backend Routes + AI Integration | v1.4 | 0/TBD | Not started | - |
+| 18. Credit Service + Middleware | v1.4 | 2/2 | Complete   | 2026-04-05 |
+| 19. Backend Routes + AI Integration | v1.4 | 0/3 | In progress | - |
 | 20. Activity Earn Hooks | v1.4 | 0/TBD | Not started | - |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 0/TBD | Not started | - |
 
