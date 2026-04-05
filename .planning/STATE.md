@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Security + Cloud Infrastructure
+milestone: v1.1
+milestone_name: Smart Pantry Plugin
 status: verifying
-stopped_at: Completed 14-supabase-storage 14-03-PLAN.md — Mobile signed URL upload migration complete
-last_updated: "2026-04-03T10:51:59.995Z"
-last_activity: 2026-04-03
+stopped_at: Completed 15-lifecycle-cleanup 15-01-PLAN.md
+last_updated: "2026-04-05T08:40:39.433Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 11
+  completed_plans: 11
   percent: 0
 ---
 
@@ -18,25 +18,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-02)
+See: .planning/PROJECT.md (updated 2026-03-28)
 
-**Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-**Current focus:** Phase 14 — supabase-storage
+**Core value:** A fitness user has a single app that coaches them, tracks everything, and now tells them what to cook based on what's in their kitchen.
+**Current focus:** Phase 08 — calorie-tracker-sync
 
 ## Current Position
 
-Phase: 15
+Phase: 9
 Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-04-03
+Last activity: 2026-03-30
 
-Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
+Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0 (v1.3)
+- Total plans completed: 0
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -64,20 +64,7 @@ Progress: [░░░░░░░░░░] 0% (v1.3 milestone — 0/4 phases)
 | Phase 08-calorie-tracker-sync P02 | 8 | 2 tasks | 4 files |
 | Phase 08 P03 | 5 | 2 tasks | 3 files |
 | Phase 08-calorie-tracker-sync P03 | 5 | 3 tasks | 3 files |
-| Phase 09-smart-shopping-list P09-01 | 2 | 2 tasks | 3 files |
-| Phase 09-smart-shopping-list P09-02 | 3 | 2 tasks | 5 files |
-| Phase 10-data-foundation-tech-debt P10-01 | 10 | 2 tasks | 2 files |
-| Phase 10-data-foundation-tech-debt P10-02 | 5m | 2 tasks | 2 files |
-| Phase 10-data-foundation-tech-debt P10-03 | 5m | 3 tasks | 5 files |
-| Phase 11-barcode-ui-score-display P01 | 1m 43s | 2 tasks | 4 files |
-| Phase 11-barcode-ui-score-display P11-02 | 15min | 1 tasks | 1 files |
-| Phase 11-barcode-ui-score-display P11-03 | 1m 11s | 1 tasks | 1 files |
-| Phase 12-infra-rate-limiting P01 | 18 | 2 tasks | 4 files |
-| Phase 12-infra-rate-limiting P02 | 8 | 2 tasks | 2 files |
-| Phase 13-api-security-hardening P01 | 8 | 2 tasks | 3 files |
-| Phase 14-supabase-storage P14-01 | 1min | 1 tasks | 1 files |
-| Phase 14-supabase-storage P14-02 | 4min | 2 tasks | 2 files |
-| Phase 14-supabase-storage P14-03 | 6 | 2 tasks | 3 files |
+| Phase 15-lifecycle-cleanup P01 | 2m | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -117,54 +104,8 @@ Recent decisions affecting current work:
 - [Phase 08-calorie-tracker-sync]: Added missing ./screens/RecipeConfirm export to plugins/pantry/package.json (Rule 3 auto-fix from Plan 02)
 - [Phase 08]: pantry.confirm_back and pantry.confirm_success intentionally omitted — screens use standard nav and showAlert without t() calls
 - [Phase 08]: pantry.confirm_back and pantry.confirm_success intentionally omitted — screens use standard nav and showAlert respectively, with no t() call for these strings
-- [Phase 09-smart-shopping-list]: shopping_list_items uses source enum ('low_stock' | 'recipe') matching context D-07; pantry_item_id nullable FK with ON DELETE SET NULL for recipe ingredients without pantry match
-- [Phase 09-smart-shopping-list]: PantryTabBar extracted to shared component in components/ — both PantryDashboard and ShoppingList import from ../components/PantryTabBar
-- [Phase 09-smart-shopping-list]: ShoppingList auto-populates low-stock pantry items on every mount — dedup by pantry_item_id presence in existing list
-- [v1.2 Roadmap]: food_products is a shared catalogue (no user_id) — RLS must use auth.role() = 'authenticated', NOT the standard auth.uid() = user_id pattern; copying any existing migration will silently block all reads
-- [v1.2 Roadmap]: nutrition_logs FK (food_product_id) must be nullable — barcode scan is optional; manual log entries must continue to work unchanged
-- [v1.2 Roadmap]: offApi.ts must use world.openfoodfacts.org (production) — pantry barcode.ts uses .net (staging); these two utilities are intentionally independent and must not be merged
-- [v1.2 Roadmap]: ecoscore_grade returns 'a-plus' and 'not-applicable' — ScoreBadge must handle both before render (map 'a-plus' to green "A+", hide badge for 'not-applicable' and unknown values)
-- [v1.2 Roadmap]: serving_size is free text in OFF API — extract grams via regex /([\d.]+)\s*g/i, default to 100 on failure; never let NaN reach macro calculation or log insert
-- [v1.2 Roadmap]: pantry_log_recipe_cooked AI tool requires three coordinated edits in registry.ts (import + executors record + allToolSchemas array); remove direct Supabase call from RecipeConfirm.tsx in the same task — never have both active simultaneously
-- [v1.2 Roadmap]: DEBT-04 (Nyquist VALIDATION.md) is documentation-only — read each phase plan and cross-check against live app state before writing; no code changes
-- [Phase 10-data-foundation-tech-debt]: D-05: low-stock shopping list item sets quantity = purchased amount directly (not threshold+1)
-- [Phase 10-data-foundation-tech-debt]: D-03/D-04: recipe ingredient check-off adds to existing pantry qty if matched, inserts new item if unmatched
-- [Phase 10-data-foundation-tech-debt]: pantry_log_recipe_cooked imports nutrition_log_meal directly — no HTTP round-trip (D-06)
-- [Phase 10-data-foundation-tech-debt]: RecipeConfirm.tsx uses tool_name + parameters fields (not tool + params) — verified from ai.ts routes inspection
-- [Phase 10-data-foundation-tech-debt]: food_products uses auth.role() = 'authenticated' RLS — shared catalogue has no user_id column
-- [Phase 11-barcode-ui-score-display]: ScoreBadge uses module-level GRADE_COLORS/GRADE_LABELS constants — semantic colors, no theme dependency; returns null for null or unrecognized grades
-- [Phase 11-barcode-ui-score-display]: NutritionEntry grade fields optional (string | null) — matches Supabase select('*') where columns absent in older rows
-- [Phase 11-02]: Tab font size reduced from 14 to 12 for 4-tab LogMealScreen layout to prevent overflow
-- [Phase 11-02]: Barcode tab camera is inline in tab content area (not modal) — consistent with AI scan tab pattern (D-08)
-- [Phase 11-02]: IIFE used for scaled macros row computation — avoids extra state variables for derived values
-- [Phase 11-02]: scannedRef uses useRef (not useState) for scan guard in LogMealScreen barcode tab — prevents re-render race before async lookup resolves
-- [Phase 11-03]: Widget positioned after macros row and before TDEE Calculator link per UI-SPEC
-- [Phase 11-03]: gradeToNum maps a-plus as 1 (same as a) — avgNutriscore output is always a single letter a-e, never a-plus
-- [v1.3 Roadmap]: Rate limiting requires Upstash Redis (HTTP-based) — in-memory MemoryStore is silently useless on Vercel serverless (isolated per cold start); INFRA-01 must be provisioned before any middleware code is written
-- [v1.3 Roadmap]: Middleware order is fixed — logger → cors → ipRateLimiter → [route mount] → authMiddleware → userRateLimiter → zValidator → handler; CORS must be first (preflight OPTIONS must never hit auth middleware)
-- [v1.3 Roadmap]: Rate limiting key selection — userId (authenticated) > x-real-ip (Vercel-set) > x-forwarded-for (last resort); never use x-forwarded-for as primary (Vercel overwrites with egress proxy IPs, collapsing all users into one bucket)
-- [v1.3 Roadmap]: Storage uploads use signed URL pattern (NOT backend proxy) — Vercel hard limit is 4.5 MB applied before handler runs; signed URL: POST /storage/upload-url (tiny JSON) → mobile uploads directly to Supabase Storage
-- [v1.3 Roadmap]: Storage RLS uses path-prefix pattern — (storage.foldername(name))[1] = (SELECT auth.jwt()->>'sub'); NEVER copy from existing migrations (auth.uid() = user_id does not work on storage.objects which has no user_id column)
-- [v1.3 Roadmap]: All three storage buckets are private — profile-photos (5 MB, images), scan-photos (10 MB, images, 90-day retention), exports (25 MB, PDF/CSV, 7-day retention)
-- [v1.3 Roadmap]: React Native upload uses decode(base64) from base64-arraybuffer → ArrayBuffer with explicit contentType; no File objects, no raw base64, no global Content-Type: application/json on Supabase client
-- [v1.3 Roadmap]: Signed URL expiry set to 300 seconds (not default 60) — generate at confirm step, not when photo picker opens; retry on expiry by fetching fresh token
-- [v1.3 Roadmap]: Lifecycle cleanup via Vercel cron (POST /storage/cron/cleanup) — uses supabase.storage.from(bucket).remove([paths]) not raw SQL DELETE (which orphans objects); reuses cron pattern from supplement scraper
-- [v1.3 Roadmap]: INFRA-02 (lifecycle cron) depends on storage buckets existing — Phase 15 must come after Phase 14
-- [v1.3 Roadmap]: SEC-01/02/03 (CORS, headers, Zod validation) are independent of rate limiting and storage — placed in Phase 13 between rate limiting and storage
-- [Phase 12-infra-rate-limiting]: Used @upstash/redis HTTP client (not ioredis) for Vercel serverless compatibility
-- [Phase 12-infra-rate-limiting]: slidingWindow algorithm chosen over fixedWindow to avoid boundary spike traffic
-- [Phase 12-infra-rate-limiting]: createUserRateLimiter factory returns independent limiter per route (no stacking)
-- [Phase 12-infra-rate-limiting]: ipRateLimiter placed after cors so preflight OPTIONS bypass IP quota; health check exempt via EXEMPT_PATHS set in rateLimiter.ts
-- [Phase 12-infra-rate-limiting]: aiChatLimiter shared between /chat and /chat/stream — same Redis prefix enforces 20/60min across both endpoints per D-02
-- [Phase 13-api-security-hardening]: z.record(z.string(), z.unknown()) required for Zod v4 compat — 2-arg API
-- [Phase 13-api-security-hardening]: *.vercel.app wildcard removed — APP_ORIGIN must be set explicitly for preview deploys
-- [Phase 13-api-security-hardening]: secureHeaders() placed after CORS, before ipRateLimiter; zValidator inline per route
-- [Phase 14-supabase-storage]: Storage RLS uses path-prefix pattern (storage.foldername(name))[1] = auth.uid()::text — never copy auth.uid() = user_id from table migrations (storage.objects has no user_id column)
-- [Phase 14-supabase-storage]: profile-photos public=false in bucket row but SELECT TO public in policy — bucket flag is for Supabase dashboard UI only, RLS policy controls actual access
-- [Phase 14-supabase-storage]: exports bucket has no INSERT policy from mobile — server-side writes only in Phase 15; avatars bucket (017) left untouched for backward compat
-- [Phase 14-supabase-storage]: createSignedUploadUrl in @supabase/storage-js does not support expiresIn option — TTL is fixed server-side; call made without options argument
-- [Phase 14-supabase-storage]: D-25: new URL(readData.signedUrl) passed to Claude — Vercel AI SDK v6 accepts URL objects directly for vision; no mediaType needed when passing URL (only required for base64)
-- [Phase 14-supabase-storage]: D-23: POST /vision/nutrition dual-mode — storage_path (new signed URL) OR image/base64 (backward compat); 400 returned when neither provided
+- [Phase 15-lifecycle-cleanup]: storageCleanupRouter is a separate Hono instance without authMiddleware — required because storageRouter.use('*', authMiddleware) blocks CRON_SECRET-authenticated cron requests
+- [Phase 15-lifecycle-cleanup]: Promise.allSettled used for per-folder enumeration — one failing user folder does not abort the entire cleanup run
 
 ### Pending Todos
 
@@ -172,16 +113,14 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 12: INFRA-01 Upstash provisioning is a manual step (Vercel dashboard) — must be done before any rate limiting code is written; MemoryStore default silently passes all local tests but provides zero protection on Vercel
-- Phase 12: x-forwarded-for collapses all users to Vercel egress IPs — always use x-real-ip for unauthenticated IP key; userId for all authenticated routes
-- Phase 13: CORS wildcard *.vercel.app is a live security flaw — active until Phase 13 ships; do not delay Phase 13 after Phase 12
-- Phase 14: Storage RLS pattern diverges from all 24 existing migrations — write from scratch, never copy from any existing migration file
-- Phase 14: SUPABASE_SERVICE_KEY availability in Vercel env must be confirmed before Phase 14 execution — storageClient.ts needs it to bypass Storage RLS for backend operations
-- Phase 14: React Native upload produces 0-byte files with File object on iOS — always use base64-arraybuffer decode pattern
-- Phase 15: Vercel cron endpoint must be authenticated via CRON_SECRET header — same pattern as existing supplement scraper cron
+- Phase 6: Three registration touch points (PluginLoader.tsx, registry.ts, 022 migration) must all be wired in the same plan — Metro bundler silently omits missing plugins
+- Phase 7: Inject macro summary into system prompt via `fetchUserContext` to protect 5-step tool-call budget — do not let `nutrition_get_today` consume an agent step
+- Phase 8: Gate "Auto-log macros" UI on nutrition plugin installation check — show graceful fallback if nutrition plugin is not installed (RESOLVED in plan 08-02 via nutritionInstalled state)
+- Phase 8: Call `app_navigate(nutrition_dashboard)` immediately after `pantry_log_recipe_cooked` succeeds to prevent duplicate logging (RESOLVED in plan 08-01 via router.replace)
+- Phase 8: Confirm exact `meal_type` enum values in `003_nutrition_schema.sql` before implementing `pantry_log_recipe_cooked` (RESOLVED — exactly: breakfast | lunch | dinner | snack)
 
 ## Session Continuity
 
-Last session: 2026-04-03T10:47:48.524Z
-Stopped at: Completed 14-supabase-storage 14-03-PLAN.md — Mobile signed URL upload migration complete
+Last session: 2026-04-05T08:40:34.199Z
+Stopped at: Completed 15-lifecycle-cleanup 15-01-PLAN.md
 Resume file: None
