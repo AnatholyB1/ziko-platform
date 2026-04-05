@@ -7,6 +7,10 @@
     {
       "path": "/supplements/cron/scrape",
       "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/storage/cron/cleanup",
+      "schedule": "0 4 * * *"
     }
   ]
 }
