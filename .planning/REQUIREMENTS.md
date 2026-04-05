@@ -72,34 +72,34 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CRED-01 | — | Pending |
-| CRED-02 | — | Pending |
-| CRED-03 | — | Pending |
-| CRED-04 | — | Pending |
-| CRED-05 | — | Pending |
-| CRED-06 | — | Pending |
-| CRED-07 | — | Pending |
-| EARN-01 | — | Pending |
-| EARN-02 | — | Pending |
-| EARN-03 | — | Pending |
-| EARN-04 | — | Pending |
-| EARN-05 | — | Pending |
-| EARN-06 | — | Pending |
-| EARN-07 | — | Pending |
-| EARN-08 | — | Pending |
-| EARN-09 | — | Pending |
-| EARN-10 | — | Pending |
-| COST-01 | — | Pending |
-| COST-02 | — | Pending |
-| COST-03 | — | Pending |
-| PREM-01 | — | Pending |
-| PREM-02 | — | Pending |
+| CRED-01 | Phase 21 | Pending |
+| CRED-02 | Phase 18 | Pending |
+| CRED-03 | Phase 18 | Pending |
+| CRED-04 | Phase 21 | Pending |
+| CRED-05 | Phase 21 | Pending |
+| CRED-06 | Phase 17 | Pending |
+| CRED-07 | Phase 17 | Pending |
+| EARN-01 | Phase 20 | Pending |
+| EARN-02 | Phase 20 | Pending |
+| EARN-03 | Phase 20 | Pending |
+| EARN-04 | Phase 20 | Pending |
+| EARN-05 | Phase 20 | Pending |
+| EARN-06 | Phase 20 | Pending |
+| EARN-07 | Phase 18 | Pending |
+| EARN-08 | Phase 21 | Pending |
+| EARN-09 | Phase 21 | Pending |
+| EARN-10 | Phase 18 | Pending |
+| COST-01 | Phase 17 | Pending |
+| COST-02 | Phase 19 | Pending |
+| COST-03 | Phase 19 | Pending |
+| PREM-01 | Phase 17 | Pending |
+| PREM-02 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 ⚠️
+- Mapped to phases: 22
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-05*
-*Last updated: 2026-04-05 after initial definition*
+*Last updated: 2026-04-05 — traceability mapped to Phases 17–21*
