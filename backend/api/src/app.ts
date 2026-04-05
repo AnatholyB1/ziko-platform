@@ -2,16 +2,13 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { handle } from 'hono/vercel';
-import { secureHeaders } from 'hono/secure-headers';
-import { ipRateLimiter } from './middleware/rateLimiter.js';
-import { z } from 'zod';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
-import { storageRouter, storageCleanupRouter } from './routes/storage.js';
+import { creditsRouter } from './routes/credits.js';
 
 const app = new Hono();
 
@@ -21,13 +18,13 @@ app.use(
   '*',
   cors({
     origin: (origin) => {
-      const allowed: (string | RegExp)[] = [
+      // Allow Expo dev tools, production app, and localhost
+      const allowed = [
         /^exp:\/\//,
         /^https?:\/\/localhost/,
+        /^https?:\/\/.*\.vercel\.app$/,
+        process.env.APP_ORIGIN ?? '',
       ];
-      if (process.env.APP_ORIGIN) {
-        allowed.push(process.env.APP_ORIGIN);
-      }
       return allowed.some((p) =>
         typeof p === 'string' ? p === origin : p.test(origin),
       )
@@ -39,8 +36,6 @@ app.use(
     maxAge: 86400,
   }),
 );
-app.use('*', secureHeaders());
-app.use('*', ipRateLimiter);
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -52,17 +47,13 @@ app.route('/webhooks', webhooksRouter);
 app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
-app.route('/storage', storageRouter);
-app.route('/storage', storageCleanupRouter);
+app.route('/credits', creditsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
 
 // Error handler
 app.onError((err, c) => {
-  if (err instanceof z.ZodError) {
-    return c.json({ error: 'Validation error', details: err.issues }, 400);
-  }
   console.error('[API Error]', err);
   return c.json({ error: 'Internal server error' }, 500);
 });
