@@ -7,7 +7,7 @@
 
 ### Rate Limiting
 
-- [x] **RATE-01**: API retourne 429 + Retry-After quand un IP dépasse le seuil global avant authentification (protection unauthenticated flood via Upstash Redis)
+- [ ] **RATE-01**: API retourne 429 + Retry-After quand un IP dépasse le seuil global avant authentification (protection unauthenticated flood via Upstash Redis)
 - [x] **RATE-02**: API retourne 429 + Retry-After sur POST /ai/chat et /ai/chat/stream quand un utilisateur authentifié dépasse son quota de requêtes par userId
 - [x] **RATE-03**: API retourne 429 + Retry-After sur POST /ai/tools/execute quand un utilisateur dépasse son quota par userId
 - [x] **RATE-04**: API retourne 429 + Retry-After sur l'endpoint barcode/scan quand un utilisateur dépasse son quota par userId
@@ -22,14 +22,14 @@
 
 ### API Security
 
-- [x] **SEC-01**: CORS restreint aux origines explicites — supprime le wildcard `*.vercel.app` (faille de sécurité active)
-- [x] **SEC-02**: `secureHeaders()` Hono appliqué globalement — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, etc.
-- [x] **SEC-03**: Input validation via `zValidator` enforced sur /ai/chat, /ai/chat/stream, et /ai/tools/execute — schémas Zod avant que les inputs atteignent Claude Sonnet
+- [ ] **SEC-01**: CORS restreint aux origines explicites — supprime le wildcard `*.vercel.app` (faille de sécurité active)
+- [ ] **SEC-02**: `secureHeaders()` Hono appliqué globalement — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, etc.
+- [ ] **SEC-03**: Input validation via `zValidator` enforced sur /ai/chat, /ai/chat/stream, et /ai/tools/execute — schémas Zod avant que les inputs atteignent Claude Sonnet
 
 ### Infrastructure
 
 - [x] **INFRA-01**: Upstash Redis provisionné et connecté à l'environnement Vercel (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN dans les env vars)
-- [ ] **INFRA-02**: Vercel cron POST /storage/cron/cleanup actif — supprime les objets `scan-photos` > 90 jours et `exports` > 7 jours via Supabase Storage JS client
+- [x] **INFRA-02**: Vercel cron POST /storage/cron/cleanup actif — supprime les objets `scan-photos` > 90 jours et `exports` > 7 jours via Supabase Storage JS client
 
 ## Future Requirements (v1.4+)
 
@@ -73,25 +73,26 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INFRA-01 | Phase 12 | Complete |
-| RATE-01 | Phase 12 | Complete |
+| RATE-01 | Phase 16 | Pending (regression fix) |
 | RATE-02 | Phase 12 | Complete |
 | RATE-03 | Phase 12 | Complete |
 | RATE-04 | Phase 12 | Complete |
 | RATE-05 | Phase 12 | Complete |
-| SEC-01 | Phase 13 | Complete |
-| SEC-02 | Phase 13 | Complete |
-| SEC-03 | Phase 13 | Complete |
+| SEC-01 | Phase 16 | Pending (regression fix) |
+| SEC-02 | Phase 16 | Pending (regression fix) |
+| SEC-03 | Phase 16 | Pending (regression fix) |
 | STORE-01 | Phase 14 | Complete |
 | STORE-02 | Phase 14 | Complete |
 | STORE-03 | Phase 14 | Complete |
 | STORE-04 | Phase 14 | Complete |
-| INFRA-02 | Phase 15 | Pending |
+| INFRA-02 | Phase 15 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 14 total
 - Mapped to phases: 14
+- Pending (gap closure): 4 (RATE-01, SEC-01, SEC-02, SEC-03 → Phase 16)
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-02 — milestone v1.3 initial definition*
+*Last updated: 2026-04-05 — Phase 16 gap closure added; RATE-01, SEC-01, SEC-02, SEC-03 reset to Pending*
