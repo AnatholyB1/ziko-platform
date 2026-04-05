@@ -88,8 +88,8 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 ## Context
 
 - **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure)
-- **Mobile app state**: 18 plugins, 25 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
-- **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup
+- **Mobile app state**: 18 plugins, 26 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
+- **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup, centralized model config (`backend/api/src/config/models.ts`)
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
 - **Legal jurisdiction**: French law — RGPD, mentions legales mandatory, CGU required.
 - **Infrastructure**: API + web on Vercel, Supabase (DB + Auth + Storage), Upstash Redis
@@ -110,10 +110,12 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 | Signed URL upload pattern | Vercel hard limit 4.5 MB; mobile uploads directly to Supabase Storage | v1.3 |
 | Path-prefix RLS for storage | `storage.objects` has no `user_id` column; `(storage.foldername(name))[1]` pattern | v1.3 |
 | Sliding window over fixed window | Prevents boundary spike traffic in rate limiting | v1.3 |
+| Separate AI credits table (not gamification coins) | Dual balance — coins are unlimited reward currency, credits are cost-controlled AI currency (CRED-07) | v1.4 Phase 17 |
+| Centralized model constants file | Single file to update when model IDs change; prevents drift across 3+ backend files (COST-01) | v1.4 Phase 17 |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-05 — v1.3 shipped, milestone completed*
+*Last updated: 2026-04-05 — v1.4 Phase 17 complete: DB foundation + model config centralization*
