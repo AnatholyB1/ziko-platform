@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { AGENT_MODEL } from '../config/models.js';
 import { clientForUser } from './db.js';
 
 // ── Tool: ai_programs_generate ────────────────────────────────
@@ -65,7 +65,7 @@ Return ONLY valid JSON:
   let rawText = '';
   try {
     const { text } = await generateText({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: AGENT_MODEL,
       messages: [{ role: 'user', content: prompt }],
       maxOutputTokens: 4000,
     });
@@ -166,7 +166,7 @@ For "more_volume": add more sets.
 For "less_volume": remove sets.`;
 
   const { text } = await generateText({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: AGENT_MODEL,
     messages: [{ role: 'user', content: prompt }],
   });
 

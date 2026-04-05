@@ -1,7 +1,7 @@
 ﻿import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { AGENT_MODEL } from '../config/models.js';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { createClient } from '@supabase/supabase-js';
@@ -47,8 +47,6 @@ router.use('*', authMiddleware);
 const aiChatLimiter = createUserRateLimiter(20, '60 m', 'ai-chat');       // D-02: 20/60min
 const aiToolsLimiter = createUserRateLimiter(30, '60 m', 'ai-tools');     // D-03: 30/60min
 const barcodeScanLimiter = createUserRateLimiter(20, '60 m', 'barcode');  // D-04: 20/60min
-
-const AGENT_MODEL = anthropic('claude-sonnet-4-20250514');
 
 // ─── Dynamic system prompt ────────────────────────────────────────
 

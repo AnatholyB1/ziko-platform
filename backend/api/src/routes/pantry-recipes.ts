@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { generateObject, NoObjectGeneratedError } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { AGENT_MODEL } from '../config/models.js';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
 import { clientForUser } from '../tools/db.js';
@@ -122,7 +122,7 @@ ${body.preferences ? `Préférences de l'utilisateur : ${body.preferences}\n\n` 
 
   try {
     const { object } = await generateObject({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: AGENT_MODEL,
       schema: ResponseSchema,
       maxOutputTokens: 2000,
       system:
