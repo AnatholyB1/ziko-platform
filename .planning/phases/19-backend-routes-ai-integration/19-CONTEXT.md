@@ -78,7 +78,7 @@ Mount the credits balance API and complete AI endpoint credit integration: add `
 - Route files export a named router (`export { router as creditsRouter }`)
 - All routes under `/ai/*` apply `router.use('*', authMiddleware)` at top
 - Supabase admin client instantiation pattern: same in every route/service file
-- onFinish callback in Vercel AI SDK v6 receives `{ usage: { promptTokens, completionTokens } }` + `finishReason`
+- onFinish callback in Vercel AI SDK v6 receives `{ totalUsage: { inputTokens, outputTokens } }` — use `totalUsage` (aggregated across all steps), NOT `usage` (single step only). Field names are `inputTokens`/`outputTokens`, NOT `promptTokens`/`completionTokens` (those are AI SDK v3 names). [Verified: node_modules/ai/dist/index.d.ts]
 - Streaming uses `streamText(...)` — `onFinish` fires after stream completes
 - Migration file naming: `0NN_snake_case.sql`, RLS with `(SELECT auth.uid())` pattern from migration 026
 
