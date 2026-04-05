@@ -237,3 +237,30 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
     earnHint,
   };
 }
+
+/** Balance summary for GET /credits/balance endpoint (Phase 19, SC-1). */
+export interface BalanceSummary {
+  balance: number;
+  dailyEarned: number;
+}
+
+export async function getBalanceSummary(userId: string): Promise<BalanceSummary> {
+  const todayUTC = getTodayUTC();
+  const todayStart = `${todayUTC}T00:00:00Z`;
+
+  // Two queries in parallel — no N+1
+  const [balanceResult, earnResult] = await Promise.all([
+    getBalance(userId),
+    supabase
+      .from('ai_credit_transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', 'earn')
+      .gte('created_at', todayStart),
+  ]);
+
+  return {
+    balance: balanceResult.balance,
+    dailyEarned: earnResult.count ?? 0,
+  };
+}
