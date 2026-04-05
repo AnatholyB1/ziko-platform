@@ -7,6 +7,7 @@ import { zValidator } from '@hono/zod-validator';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
 import { createUserRateLimiter } from '../middleware/rateLimiter.js';
+import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
 import { fetchUserContext, type UserContext } from '../context/user.js';
 import {
@@ -157,8 +158,13 @@ router.post('/tools/execute', aiToolsLimiter, zValidator('json', toolExecuteSche
   }
 });
 
+// ─── Credit gating (Phase 18) ─────────────────────────────────────
+// creditCheck gates: premium bypass, free quota pass-through, or 402
+// creditDeduct deducts after handler success only (status < 400)
+// Streaming: HTTP 200 set before stream — credit charged on header send
+
 // Streaming endpoint with context injection + conversation persistence
-router.post('/chat/stream', aiChatLimiter, zValidator('json', chatSchema), async (c) => {
+router.post('/chat/stream', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), zValidator('json', chatSchema), async (c) => {
   const { messages, conversation_id: bodyConversationId } = c.req.valid('json');
   const auth = c.get('auth');
   const userId = auth.userId;
@@ -252,7 +258,7 @@ router.post('/chat/stream', aiChatLimiter, zValidator('json', chatSchema), async
 });
 
 // Non-streaming endpoint with context injection + conversation persistence
-router.post('/chat', aiChatLimiter, zValidator('json', chatSchema), async (c) => {
+router.post('/chat', aiChatLimiter, creditCheck('chat'), creditDeduct('chat'), zValidator('json', chatSchema), async (c) => {
   const { messages, conversation_id: bodyConversationId } = c.req.valid('json');
   const auth = c.get('auth');
   const userId = auth.userId;
