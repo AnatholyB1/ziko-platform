@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Systeme de Credits IA & Monetisation
-status: verifying
+status: executing
 stopped_at: Phase 20 context gathered (discuss mode)
-last_updated: "2026-04-05T22:22:58.698Z"
-last_activity: 2026-04-05
+last_updated: "2026-04-09T19:57:30.289Z"
+last_activity: 2026-04-09 -- Phase 20 execution started
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 7
+  total_plans: 9
   completed_plans: 7
-  percent: 100
+  percent: 78
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement.
-**Current focus:** Phase 17 — db-foundation-model-fix
+**Current focus:** Phase 20 — activity-earn-hooks
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-05
+Phase: 20 (activity-earn-hooks) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 20
+Last activity: 2026-04-09 -- Phase 20 execution started
 
 Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 
