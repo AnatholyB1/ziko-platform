@@ -10,6 +10,20 @@ import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS } from '../store';
 import type { RoutePoint } from '../store';
 
+// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
+async function earnCredit(supabase: any, source: string, key: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+    fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ source, idempotency_key: key }),
+    }).catch(() => {});
+  } catch {}
+}
+
 const GPS_ACTIVITY_TYPES = ['running', 'cycling', 'walking'] as const;
 
 // Haversine formula — distance in km between two GPS coords
@@ -213,6 +227,8 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
         .single();
 
       if (error) throw error;
+      // Fire-and-forget earn (D-11)
+      if (data) earnCredit(supabase, 'cardio', (data as any).id);
       addSession(data);
       Vibration.vibrate([0, 200, 100, 200]);
       router.replace('/(plugins)/cardio/dashboard' as any);

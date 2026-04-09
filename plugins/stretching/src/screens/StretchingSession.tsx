@@ -6,6 +6,20 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useStretchingStore } from '../store';
 
+// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
+async function earnCredit(supabase: any, source: string, key: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+    fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ source, idempotency_key: key }),
+    }).catch(() => {});
+  } catch {}
+}
+
 export default function StretchingSession({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { routineId } = useLocalSearchParams<{ routineId: string }>();
@@ -52,12 +66,14 @@ export default function StretchingSession({ supabase }: { supabase: any }) {
     if (isLast) {
       // Save log
       try {
-        await supabase.from('stretching_logs').insert({
+        const { data: logData } = await supabase.from('stretching_logs').insert({
           routine_id: activeRoutine.id,
           routine_name: activeRoutine.name,
           duration_seconds: activeRoutine.exercises.reduce((s, e) => s + e.duration_seconds, 0),
           date: new Date().toISOString().split('T')[0],
-        });
+        }).select('id').single();
+        // Fire-and-forget earn (D-11)
+        if (logData) earnCredit(supabase, 'stretch', (logData as any).id);
       } catch {}
       stopRoutine();
       router.back();

@@ -6,6 +6,20 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useMeasurementsStore } from '../store';
 
+// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
+async function earnCredit(supabase: any, source: string, key: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+    fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ source, idempotency_key: key }),
+    }).catch(() => {});
+  } catch {}
+}
+
 function MeasureInput({ label, value, onChange, unit, theme }: any) {
   return (
     <View style={{ marginBottom: 14 }}>
@@ -59,6 +73,8 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
       }).select().single();
       if (error) throw error;
       if (data) addEntry(data);
+      // Fire-and-forget earn (D-11)
+      if (data) earnCredit(supabase, 'measurement', (data as any).id);
       router.back();
     } catch (e: any) {
       Alert.alert('Erreur', e.message ?? 'Sauvegarde impossible');

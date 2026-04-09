@@ -13,6 +13,20 @@ import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import ScoreBadge from '../components/ScoreBadge';
 import { getOrFetchProduct, FoodProduct } from '../utils/offApi';
 
+// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
+async function earnCredit(supabase: any, source: string, key: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+    fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ source, idempotency_key: key }),
+    }).catch(() => {});
+  } catch {}
+}
+
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 type MealType = typeof MEAL_TYPES[number];
 
@@ -108,6 +122,8 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     setSaving(false);
     if (error) { showAlert(t('general.error'), error.message); return; }
     addLog(data);
+    // Fire-and-forget earn (D-11)
+    earnCredit(supabase, 'meal', (data as any).id);
     router.back();
   };
 
