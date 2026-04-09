@@ -212,6 +212,25 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
   };
 }
 
+/**
+ * Records a free-quota slot usage so getQuotaStatus correctly advances usedToday.
+ * Without this, withinFreeQuota is always true (usedToday never increments for free slots).
+ * Uses type='quota' — best-effort, never throws.
+ */
+export async function trackQuotaUsage(userId: string, source: string, idempotencyKey: string): Promise<void> {
+  try {
+    await supabase.from('ai_credit_transactions').insert({
+      user_id: userId,
+      type: 'quota',
+      amount: 0,
+      source,
+      idempotency_key: idempotencyKey,
+    });
+  } catch {
+    // Best-effort — quota tracking must never fail the AI response
+  }
+}
+
 /** Balance summary for GET /credits/balance endpoint (Phase 19, SC-1). */
 export interface BalanceSummary {
   balance: number;

@@ -130,8 +130,14 @@ export function creditDeduct(action: CreditAction) {
     // Handler (and all downstream middleware including zValidator) runs first
     await next();
 
-    // Free quota slot or premium — no deduction needed
+    // Free quota slot or premium — track usage so getQuotaStatus advances, then skip deduction
     if (c.get('creditPassThrough') === true) {
+      const userId = c.get('auth').userId;
+      const idempotencyKey = c.req.header('X-Request-Id') ?? crypto.randomUUID();
+      // Only track quota for non-premium (premium bypass should not consume quota slots)
+      creditService
+        .trackQuotaUsage(userId, action, idempotencyKey)
+        .catch(() => {});
       return;
     }
 
