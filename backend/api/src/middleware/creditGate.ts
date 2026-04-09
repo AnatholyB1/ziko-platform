@@ -74,6 +74,24 @@ export function creditCheck(action: CreditAction) {
     const cost = CREDIT_COSTS[action];
 
     if (quota.balance < cost) {
+      // D-09: Add earned_today sources for exhaustion sheet
+      const todayUTC = new Date().toISOString().split('T')[0];
+      const { data: earnedRows } = await supabase
+        .from('ai_credit_transactions')
+        .select('source')
+        .eq('user_id', userId)
+        .eq('type', 'earn')
+        .gte('created_at', `${todayUTC}T00:00:00Z`);
+
+      // Deduplicate sources (Pitfall 4 from RESEARCH.md)
+      const earned_today = [...new Set((earnedRows ?? []).map((r: any) => r.source))];
+
+      // Reset timestamp = next UTC midnight
+      const now = new Date();
+      const reset_timestamp = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1
+      )).toISOString();
+
       return c.json(
         {
           error: 'insufficient_credits',
@@ -82,6 +100,8 @@ export function creditCheck(action: CreditAction) {
           daily_used: quota.dailyUsed,
           daily_quota: quota.dailyQuota,
           earn_hint: quota.earnHint,
+          earned_today,
+          reset_timestamp,
         },
         402,
       );
