@@ -68,7 +68,7 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
 - [x] **Phase 18: Credit Service + Middleware** — `creditService.ts` pure logic + Hono middleware pair (creditCheck / creditDeduct) (completed 2026-04-05)
 - [x] **Phase 19: Backend Routes + AI Integration** — Credits router, AI route credit gating, Haiku vision endpoint, cost telemetry (completed 2026-04-05)
 - [ ] **Phase 20: Activity Earn Hooks** — Fire-and-forget earn triggers on 6 tool executors with idempotency end-to-end
-- [ ] **Phase 21: Mobile UI — Credit Display + Exhaustion UX** — creditStore, dual balance card, exhaustion bottom sheet, earn toasts
+- [x] **Phase 21: Mobile UI — Credit Display + Exhaustion UX** — creditStore, dual balance card, exhaustion bottom sheet, earn toasts (completed 2026-04-09)
 
 ## Phase Details
 
@@ -145,10 +145,10 @@ Plans:
   4. After logging a habit, meal, measurement, stretch, or cardio session, a "+1 AI credit" toast appears in the post-save confirmation — immediately after the save succeeds
   5. The gamification dashboard shows coins and AI credits as visually distinct balances with distinct iconography — coins and credits are never confused
   6. The daily earn progress is visible (e.g., "2 bonus credits earned today — log a stretch to earn more")
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 21-01-PLAN.md — Credit store, earn toast, exhaustion sheet, 402 backend extension
-- [ ] 21-02-PLAN.md — Balance chip, dual card, cost labels, earn toast wiring on 6 screens
+- [x] 21-01-PLAN.md — Credit store, earn toast, exhaustion sheet, 402 backend extension
+- [x] 21-02-PLAN.md — Balance chip, dual card, cost labels, earn toast wiring on 6 screens
 **UI hint**: yes
 
 ---
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 18. Credit Service + Middleware | v1.4 | 2/2 | Complete   | 2026-04-05 |
 | 19. Backend Routes + AI Integration | v1.4 | 3/3 | Complete   | 2026-04-05 |
 | 20. Activity Earn Hooks | v1.4 | 0/2 | Planning complete | - |
-| 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 0/TBD | Not started | - |
+| 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 2/2 | Complete   | 2026-04-09 |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
