@@ -11,6 +11,8 @@ import { useThemeStore } from '../src/stores/themeStore';
 import { supabase } from '../src/lib/supabase';
 import CustomAlert from '../src/components/CustomAlert';
 import BugReportModal from '../src/components/BugReportModal';
+import CreditEarnToast from '../src/components/CreditEarnToast';
+import CreditExhaustionSheet from '../src/components/CreditExhaustionSheet';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,6 +71,8 @@ export default function RootLayout() {
             </Stack>
             <CustomAlert />
             <BugReportModal />
+            <CreditEarnToast />
+            <CreditExhaustionSheet />
           </PluginLoader>
         </QueryClientProvider>
       </SafeAreaProvider>
