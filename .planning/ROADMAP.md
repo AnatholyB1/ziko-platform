@@ -147,8 +147,8 @@ Plans:
   6. The daily earn progress is visible (e.g., "2 bonus credits earned today — log a stretch to earn more")
 **Plans:** 2 plans
 Plans:
-- [ ] 20-01-PLAN.md — POST /credits/earn endpoint + 5 backend tool executor earn hooks
-- [ ] 20-02-PLAN.md — Shared mobile earn helper + 6 screen-side earn hooks
+- [ ] 21-01-PLAN.md — Credit store, earn toast, exhaustion sheet, 402 backend extension
+- [ ] 21-02-PLAN.md — Balance chip, dual card, cost labels, earn toast wiring on 6 screens
 **UI hint**: yes
 
 ---
