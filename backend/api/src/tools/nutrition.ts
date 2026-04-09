@@ -1,4 +1,5 @@
 import { clientForUser } from './db.js';
+import { earnCredits } from '../services/creditService.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -65,6 +66,10 @@ export async function nutrition_log_meal(
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Fire-and-forget earn (D-03): entry.id is the idempotency key
+  earnCredits(userId, 'meal', (data as any).id).catch(() => {});
+
   return { success: true, entry: data };
 }
 

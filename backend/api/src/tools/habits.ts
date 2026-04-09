@@ -1,4 +1,5 @@
 import { clientForUser } from './db.js';
+import { earnCredits } from '../services/creditService.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -63,6 +64,11 @@ export async function habits_log(
   );
 
   if (error) throw new Error(error.message);
+
+  // Fire-and-forget earn (D-03): never await, never throw
+  const date = today();
+  earnCredits(userId, 'habit', `habit_${habit_id}_${date}`).catch(() => {});
+
   return { success: true, habit_name: (habit as any).name, value: value ?? 1, date: today() };
 }
 

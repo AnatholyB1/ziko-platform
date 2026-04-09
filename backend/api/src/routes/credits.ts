@@ -27,4 +27,23 @@ router.get('/balance', async (c) => {
   });
 });
 
+// EARN-01..06: POST /credits/earn — mobile-side earn path (D-06)
+router.post('/earn', async (c) => {
+  const { userId } = c.get('auth');
+  const body = await c.req.json().catch(() => ({}));
+  const { source, idempotency_key } = body as { source?: string; idempotency_key?: string };
+
+  if (!source || !idempotency_key) {
+    return c.json({ credited: false }, 200); // Per D-06: always 200, silent failure
+  }
+
+  const VALID_SOURCES = ['workout', 'habit', 'meal', 'measurement', 'stretch', 'cardio'];
+  if (!VALID_SOURCES.includes(source)) {
+    return c.json({ credited: false }, 200);
+  }
+
+  const result = await creditService.earnCredits(userId, source, idempotency_key);
+  return c.json({ credited: result.credited });
+});
+
 export { router as creditsRouter };
