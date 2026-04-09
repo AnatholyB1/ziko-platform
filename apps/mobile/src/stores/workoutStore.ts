@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramExercise } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
+import { callCreditsEarn } from '../lib/earnCredits';
 
 interface ActiveSet {
   exerciseId: string;
@@ -144,6 +145,9 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .update({ ended_at: new Date().toISOString() })
         .eq('id', currentSession.id);
     }
+
+    // Fire-and-forget earn (D-09): session UUID as idempotency key
+    callCreditsEarn(supabase, 'workout', currentSession.id);
 
     set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },

@@ -19,6 +19,20 @@ import {
   cancelHabitReminder,
 } from '../notifications';
 
+// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
+async function earnCredit(supabase: any, source: string, key: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+    fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ source, idempotency_key: key }),
+    }).catch(() => {});
+  } catch {}
+}
+
 // Cross-plugin: persona for agent name / coaching style
 let usePersonaStore: any = null;
 try { usePersonaStore = require('@ziko/plugin-persona').usePersonaStore; } catch {}
@@ -515,6 +529,9 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
     updateLog(habit.id, newValue);
     if (newValue >= 1) {
       try { await awardHabitXP(supabase, habit.name); } catch {}
+      // Fire-and-forget earn (D-01, D-02)
+      const todayStr = new Date().toISOString().split('T')[0];
+      earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`);
     }
   };
 
@@ -533,6 +550,9 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
     if (newValue === habit.target) {
       try { await awardHabitXP(supabase, habit.name); } catch {}
     }
+    // Fire-and-forget earn on every increment (D-01: per-tick, cap handles overcounting)
+    const todayStr = new Date().toISOString().split('T')[0];
+    earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`);
   };
 
   // ── Save/remove reminder ──────────────────────────────────
