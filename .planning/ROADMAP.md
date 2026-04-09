@@ -66,7 +66,7 @@ Five phases secured the Hono backend and added cloud storage infrastructure. Pha
 
 - [x] **Phase 17: DB Foundation + Model Fix** — Migration 026 (credit tables + atomic RPC) and deprecated Haiku model ID replacement (completed 2026-04-05)
 - [x] **Phase 18: Credit Service + Middleware** — `creditService.ts` pure logic + Hono middleware pair (creditCheck / creditDeduct) (completed 2026-04-05)
-- [ ] **Phase 19: Backend Routes + AI Integration** — Credits router, AI route credit gating, Haiku vision endpoint, cost telemetry
+- [x] **Phase 19: Backend Routes + AI Integration** — Credits router, AI route credit gating, Haiku vision endpoint, cost telemetry (completed 2026-04-05)
 - [ ] **Phase 20: Activity Earn Hooks** — Fire-and-forget earn triggers on 6 tool executors with idempotency end-to-end
 - [ ] **Phase 21: Mobile UI — Credit Display + Exhaustion UX** — creditStore, dual balance card, exhaustion bottom sheet, earn toasts
 
@@ -113,11 +113,11 @@ Plans:
   3. Every AI API call logs `input_tokens`, `output_tokens`, `model`, and `user_id` to a `ai_cost_log` table via the `onFinish` callback — enabling weekly Anthropic billing reconciliation
   4. `POST /ai/scan` uses `claude-haiku-4-5-20251001` for vision and falls back to Sonnet when structured-output validation fails — confirmed by running a degraded-photo test set
   5. Monthly simulated cost for a free-tier user at maximum daily usage stays within the EUR 0.75 ceiling based on measured token counts
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 19-01-PLAN.md — Migration 027 (ai_cost_log table) + creditService.getBalanceSummary helper
-- [ ] 19-02-PLAN.md — Credits router (GET /balance) + token usage logging on chat routes
-- [ ] 19-03-PLAN.md — Vision route upgrade (Haiku + Sonnet fallback + credit gate + telemetry) + cost ceiling verification
+- [x] 19-01-PLAN.md — Migration 027 (ai_cost_log table) + creditService.getBalanceSummary helper
+- [x] 19-02-PLAN.md — Credits router (GET /balance) + token usage logging on chat routes
+- [x] 19-03-PLAN.md — Vision route upgrade (Haiku + Sonnet fallback + credit gate + telemetry) + cost ceiling verification
 **UI hint**: yes
 
 ### Phase 20: Activity Earn Hooks
@@ -129,7 +129,10 @@ Plans:
   2. Simulating a mobile retry (calling the same tool twice with the same record UUID) results in exactly one credit transaction row — the second call hits ON CONFLICT and is silently skipped
   3. A credit earn call that fails (network error, cap already reached) does not prevent the underlying activity log from saving — fire-and-forget with error logging only
   4. All 17 plugin screens that write directly to Supabase (bypassing tool executors) are identified, and those that correspond to earn-eligible activities call `POST /credits/earn` from the mobile side after a successful write
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 20-01-PLAN.md — POST /credits/earn endpoint + 5 backend tool executor earn hooks
+- [ ] 20-02-PLAN.md — Shared mobile earn helper + 6 screen-side earn hooks
 
 ### Phase 21: Mobile UI — Credit Display + Exhaustion UX
 **Goal**: Users can see their credit balance at all times, understand the cost of each AI action before taking it, and know how to earn more credits when their balance is exhausted
@@ -142,7 +145,10 @@ Plans:
   4. After logging a habit, meal, measurement, stretch, or cardio session, a "+1 AI credit" toast appears in the post-save confirmation — immediately after the save succeeds
   5. The gamification dashboard shows coins and AI credits as visually distinct balances with distinct iconography — coins and credits are never confused
   6. The daily earn progress is visible (e.g., "2 bonus credits earned today — log a stretch to earn more")
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 20-01-PLAN.md — POST /credits/earn endpoint + 5 backend tool executor earn hooks
+- [ ] 20-02-PLAN.md — Shared mobile earn helper + 6 screen-side earn hooks
 **UI hint**: yes
 
 ---
@@ -172,8 +178,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 16. Security Middleware Regression Fix | v1.3 | 1/1 | Complete | 2026-04-05 |
 | 17. DB Foundation + Model Fix | v1.4 | 2/2 | Complete    | 2026-04-05 |
 | 18. Credit Service + Middleware | v1.4 | 2/2 | Complete   | 2026-04-05 |
-| 19. Backend Routes + AI Integration | v1.4 | 0/3 | In progress | - |
-| 20. Activity Earn Hooks | v1.4 | 0/TBD | Not started | - |
+| 19. Backend Routes + AI Integration | v1.4 | 3/3 | Complete   | 2026-04-05 |
+| 20. Activity Earn Hooks | v1.4 | 0/2 | Planning complete | - |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 0/TBD | Not started | - |
 
 ---
