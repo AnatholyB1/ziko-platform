@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramExercise } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
-import { callCreditsEarn } from '../lib/earnCredits';
+import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 
 interface ActiveSet {
   exerciseId: string;
@@ -146,8 +146,13 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .eq('id', currentSession.id);
     }
 
-    // Fire-and-forget earn (D-09): session UUID as idempotency key
-    callCreditsEarn(supabase, 'workout', currentSession.id);
+    // Earn credit and show toast if credited (D-09): session UUID as idempotency key
+    callCreditsEarnWithResult(supabase, 'workout', currentSession.id).then((result) => {
+      if (result.credited) {
+        const { useCreditStore } = require('../stores/creditStore');
+        useCreditStore.getState().showEarnToast();
+      }
+    });
 
     set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },

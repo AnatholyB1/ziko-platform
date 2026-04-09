@@ -29,3 +29,34 @@ export async function callCreditsEarn(
     // Swallow all errors — earn must never block activity save
   }
 }
+
+/**
+ * Awaitable credit earn call — returns { credited } for toast triggering.
+ * Used by screens that want to show the earn toast (Phase 21, D-06).
+ * Falls back to { credited: false } on any error — never throws.
+ */
+export async function callCreditsEarnWithResult(
+  supabase: { auth: { getSession: () => Promise<{ data: { session: { access_token: string } | null } }> } },
+  source: string,
+  idempotencyKey: string,
+): Promise<{ credited: boolean }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { credited: false };
+
+    const res = await fetch(`${API_URL}/credits/earn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ source, idempotency_key: idempotencyKey }),
+    });
+
+    if (!res.ok) return { credited: false };
+    const data = await res.json();
+    return { credited: data.credited === true };
+  } catch {
+    return { credited: false };
+  }
+}

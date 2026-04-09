@@ -18,19 +18,25 @@ import {
   scheduleHabitReminder,
   cancelHabitReminder,
 } from '../notifications';
+import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
-// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
-async function earnCredit(supabase: any, source: string, key: string) {
+// Awaitable credit earn helper — returns { credited } for toast triggering
+async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) return { credited: false };
     const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
-    fetch(`${API_URL}/credits/earn`, {
+    const res = await fetch(`${API_URL}/credits/earn`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ source, idempotency_key: key }),
-    }).catch(() => {});
-  } catch {}
+    });
+    if (!res.ok) return { credited: false };
+    const data = await res.json();
+    return { credited: data.credited === true };
+  } catch {
+    return { credited: false };
+  }
 }
 
 // Cross-plugin: persona for agent name / coaching style
@@ -529,9 +535,11 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
     updateLog(habit.id, newValue);
     if (newValue >= 1) {
       try { await awardHabitXP(supabase, habit.name); } catch {}
-      // Fire-and-forget earn (D-01, D-02)
+      // Earn credit and show toast if credited (D-01, D-02)
       const todayStr = new Date().toISOString().split('T')[0];
-      earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`);
+      earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`).then((r) => {
+        if (r.credited) useCreditStore.getState().showEarnToast();
+      });
     }
   };
 
@@ -550,9 +558,11 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
     if (newValue === habit.target) {
       try { await awardHabitXP(supabase, habit.name); } catch {}
     }
-    // Fire-and-forget earn on every increment (D-01: per-tick, cap handles overcounting)
+    // Earn credit and show toast if credited (D-01: per-tick, cap handles overcounting)
     const todayStr = new Date().toISOString().split('T')[0];
-    earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`);
+    earnCredit(supabase, 'habit', `habit_${habit.id}_${todayStr}`).then((r) => {
+      if (r.credited) useCreditStore.getState().showEarnToast();
+    });
   };
 
   // ── Save/remove reminder ──────────────────────────────────

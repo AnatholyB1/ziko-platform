@@ -6,6 +6,8 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useAIProgramsStore } from '../store';
 
+const CREDIT_COSTS = { chat: 4, scan: 3, program: 4 } as const;
+
 const GOALS = [
   { id: 'muscle_gain', label: '💪 Prise de muscle', desc: 'Hypertrophie et volume' },
   { id: 'fat_loss', label: '🔥 Perte de gras', desc: 'Déficit calorique + cardio' },
@@ -133,6 +135,9 @@ export default function GenerateProgram({ supabase }: { supabase: any }) {
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
             {isGenerating ? 'Génération en cours...' : 'Générer le programme'}
           </Text>
+          {!isGenerating && (
+            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', marginLeft: 4 }}>{CREDIT_COSTS.program}⚡</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

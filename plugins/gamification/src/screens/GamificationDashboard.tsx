@@ -5,11 +5,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
 import { useGamificationStore, loadGamification } from '../store';
 import { usePluginRegistry, useThemeStore } from '@ziko/plugin-sdk';
 import { useCommunityStore, loadCommunity, sendXpGift, sendCoinGift } from '@ziko/plugin-community';
+import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -34,8 +35,23 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
   const [giftMessage, setGiftMessage] = useState('');
   const [sending, setSending] = useState(false);
 
+  const creditBalance = useCreditStore((s) => s.balance);
+  const dailyEarned = useCreditStore((s) => s.dailyEarned);
+  const dailyCap = useCreditStore((s) => s.dailyCap);
+  const fetchCreditBalance = useCreditStore((s) => s.fetchBalance);
+
   const load = useCallback(() => loadGamification(supabase), []);
   useEffect(() => { load(); }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadCredits = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) fetchCreditBalance(session.access_token);
+      };
+      loadCredits();
+    }, [])
+  );
 
   useEffect(() => {
     if (communityEnabled) loadCommunity(supabase);
@@ -148,6 +164,57 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
           <StatCard icon="💰" label="Pièces" value={`${profile?.coins ?? 0}`} color="#F59E0B" />
           <StatCard icon="🔥" label="Streak" value={`${profile?.current_streak ?? 0}j`} color="#EF4444" />
           <StatCard icon="🏆" label="Record" value={`${profile?.longest_streak ?? 0}j`} color="#7C3AED" />
+        </View>
+
+        {/* ── Dual Balance Card (D-01: coins + AI credits) ── */}
+        <View style={{
+          backgroundColor: theme.surface,
+          borderRadius: 16,
+          padding: 16,
+          marginHorizontal: 16,
+          marginTop: 16,
+          marginBottom: 0,
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: theme.border,
+        }}>
+          {/* Coins side */}
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <Text style={{ fontSize: 24 }}>💰</Text>
+            <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>{(profile?.coins ?? 0).toLocaleString()}</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>coins</Text>
+          </View>
+
+          {/* Divider */}
+          <View style={{ width: 1, height: 48, backgroundColor: theme.border }} />
+
+          {/* AI Credits side */}
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <Ionicons name="flash" size={24} color="#FFB800" />
+            <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>{creditBalance}</Text>
+            <Text style={{ color: theme.muted, fontSize: 12 }}>credits IA</Text>
+          </View>
+        </View>
+
+        {/* Daily earn progress (EARN-09) */}
+        <View style={{
+          marginHorizontal: 16,
+          marginTop: 10,
+          marginBottom: 0,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          backgroundColor: '#FFB80010',
+          borderRadius: 10,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <Ionicons name="flash" size={14} color="#FFB800" />
+          <Text style={{ color: theme.muted, fontSize: 13 }}>
+            {dailyEarned} / {dailyCap} bonus credits earned today
+          </Text>
         </View>
 
         {/* ── Shop Button ────────────────────────────── */}

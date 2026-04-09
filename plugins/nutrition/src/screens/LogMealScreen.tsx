@@ -10,21 +10,29 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNutritionStore } from '../store';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
+import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 import ScoreBadge from '../components/ScoreBadge';
 import { getOrFetchProduct, FoodProduct } from '../utils/offApi';
 
-// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
-async function earnCredit(supabase: any, source: string, key: string) {
+const CREDIT_COSTS = { chat: 4, scan: 3, program: 4 } as const;
+
+// Awaitable credit earn helper — returns { credited } for toast triggering
+async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) return { credited: false };
     const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
-    fetch(`${API_URL}/credits/earn`, {
+    const res = await fetch(`${API_URL}/credits/earn`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ source, idempotency_key: key }),
-    }).catch(() => {});
-  } catch {}
+    });
+    if (!res.ok) return { credited: false };
+    const data = await res.json();
+    return { credited: data.credited === true };
+  } catch {
+    return { credited: false };
+  }
 }
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -122,8 +130,10 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     setSaving(false);
     if (error) { showAlert(t('general.error'), error.message); return; }
     addLog(data);
-    // Fire-and-forget earn (D-11)
-    earnCredit(supabase, 'meal', (data as any).id);
+    // Earn credit and show toast if credited (D-11)
+    earnCredit(supabase, 'meal', (data as any).id).then((r) => {
+      if (r.credited) useCreditStore.getState().showEarnToast();
+    });
     router.back();
   };
 
@@ -428,11 +438,13 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
                     style={{ flex: 1, backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
                     <Ionicons name="camera" size={20} color="#fff" />
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('nutrition.camera')}</Text>
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{CREDIT_COSTS.scan}⚡</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => pickImage('gallery')}
                     style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 14, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: theme.border }}>
                     <Ionicons name="images" size={20} color={theme.primary} />
                     <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>{t('nutrition.gallery')}</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11, fontWeight: '700' }}>{CREDIT_COSTS.scan}⚡</Text>
                   </TouchableOpacity>
                 </View>
               </View>

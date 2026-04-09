@@ -5,19 +5,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useMeasurementsStore } from '../store';
+import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
-// Fire-and-forget credit earn helper (inline — plugin cannot import from apps/mobile)
-async function earnCredit(supabase: any, source: string, key: string) {
+// Awaitable credit earn helper — returns { credited } for toast triggering
+async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
+    if (!session?.access_token) return { credited: false };
     const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
-    fetch(`${API_URL}/credits/earn`, {
+    const res = await fetch(`${API_URL}/credits/earn`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify({ source, idempotency_key: key }),
-    }).catch(() => {});
-  } catch {}
+    });
+    if (!res.ok) return { credited: false };
+    const data = await res.json();
+    return { credited: data.credited === true };
+  } catch {
+    return { credited: false };
+  }
 }
 
 function MeasureInput({ label, value, onChange, unit, theme }: any) {
@@ -73,8 +79,10 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
       }).select().single();
       if (error) throw error;
       if (data) addEntry(data);
-      // Fire-and-forget earn (D-11)
-      if (data) earnCredit(supabase, 'measurement', (data as any).id);
+      // Earn credit and show toast if credited (D-11)
+      if (data) earnCredit(supabase, 'measurement', (data as any).id).then((r) => {
+        if (r.credited) useCreditStore.getState().showEarnToast();
+      });
       router.back();
     } catch (e: any) {
       Alert.alert('Erreur', e.message ?? 'Sauvegarde impossible');
