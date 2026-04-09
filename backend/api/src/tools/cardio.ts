@@ -1,4 +1,5 @@
 import { clientForUser } from './db.js';
+import { earnCredits } from '../services/creditService.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -51,6 +52,10 @@ export async function cardio_log_session(
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Fire-and-forget earn (D-03): session.id is the idempotency key
+  earnCredits(userId, 'cardio', (data as any).id).catch(() => {});
+
   return { success: true, session: data };
 }
 

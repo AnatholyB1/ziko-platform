@@ -1,4 +1,5 @@
 import { clientForUser } from './db.js';
+import { earnCredits } from '../services/creditService.js';
 
 // ── Tool: stretching_get_routines ─────────────────────────────────
 export async function stretching_get_routines(
@@ -64,6 +65,10 @@ export async function stretching_log_session(
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Fire-and-forget earn (D-03): session.id is the idempotency key
+  earnCredits(userId, 'stretch', (data as any).id).catch(() => {});
+
   return { success: true, session: data };
 }
 
