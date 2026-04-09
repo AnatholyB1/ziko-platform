@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,16 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  Keyboard,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useAIStore } from '../../../src/stores/aiStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
+import { useCreditStore } from '../../../src/stores/creditStore';
+import { CREDIT_COSTS } from '../../../src/lib/creditCosts';
 import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
 import { useCommunityStore, loadCommunity, getOrCreateDMConversation } from '@ziko/plugin-community';
 import { supabase } from '../../../src/lib/supabase';
@@ -170,6 +173,9 @@ export default function AIScreen() {
   const [input, setInput] = useState('');
   const flatlistRef = useRef<FlatList>(null);
 
+  const creditBalance = useCreditStore((s) => s.balance);
+  const fetchBalance = useCreditStore((s) => s.fetchBalance);
+
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const communityEnabled = enabledPlugins.includes('community');
   const friends = useCommunityStore((s) => s.friends);
@@ -179,6 +185,18 @@ export default function AIScreen() {
   useEffect(() => {
     createConversation().catch(() => {});
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadBalance = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          fetchBalance(session.access_token);
+        }
+      };
+      loadBalance();
+    }, [])
+  );
 
   // Execute AI actions after streaming completes
   useEffect(() => {
@@ -204,8 +222,27 @@ export default function AIScreen() {
     setInput('');
     try {
       await sendMessage(text);
-    } catch {
-      // Error handled in store
+    } catch (err: any) {
+      const msg = err?.message ?? '';
+      const match = msg.match(/^AI API error 402: (.+)$/);
+      if (match) {
+        try {
+          Keyboard.dismiss();
+          const body = JSON.parse(match[1]);
+          useCreditStore.getState().showExhaustionSheet({
+            balance: body.balance ?? 0,
+            required: body.required ?? 0,
+            earned_today: body.earned_today ?? [],
+            earn_hint: body.earn_hint ?? '',
+            reset_timestamp: body.reset_timestamp ?? '',
+          });
+          // Refresh balance display after 402
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            useCreditStore.getState().fetchBalance(session.access_token);
+          }
+        } catch {}
+      }
     }
   };
 
@@ -245,6 +282,18 @@ export default function AIScreen() {
             <Text style={{ color: isStreaming ? '#4CAF50' : theme.muted, fontSize: 11 }}>
               {isStreaming ? `● ${t('ai.thinking')}` : `● ${t('ai.online')}`}
             </Text>
+          </View>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            backgroundColor: '#FFB80015',
+            borderRadius: 12,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+          }}>
+            <Ionicons name="flash" size={14} color="#FFB800" />
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 13 }}>{creditBalance}</Text>
           </View>
           {communityEnabled && (
             <TouchableOpacity
@@ -319,17 +368,22 @@ export default function AIScreen() {
             onPress={handleSend}
             disabled={!input.trim() || isStreaming}
             style={{
-              width: 44,
               height: 44,
               borderRadius: 22,
+              paddingHorizontal: 14,
               backgroundColor: input.trim() && !isStreaming ? theme.primary : theme.border,
               alignItems: 'center',
               justifyContent: 'center',
+              flexDirection: 'row',
+              gap: 4,
             }}
           >
             {isStreaming
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Ionicons name="send" size={18} color="#fff" />
+              : <>
+                  <Ionicons name="send" size={18} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{CREDIT_COSTS.chat}⚡</Text>
+                </>
             }
           </TouchableOpacity>
         </View>
