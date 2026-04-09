@@ -158,7 +158,7 @@ router.post('/tools/execute', async (c) => {
 });
 
 // Streaming endpoint with context injection + conversation persistence
-router.post('/chat/stream', async (c) => {
+router.post('/chat/stream', creditCheck('chat'), creditDeduct('chat'), async (c) => {
   const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;
@@ -258,7 +258,7 @@ router.post('/chat/stream', async (c) => {
 });
 
 // Non-streaming endpoint with context injection + conversation persistence
-router.post('/chat', async (c) => {
+router.post('/chat', creditCheck('chat'), creditDeduct('chat'), async (c) => {
   const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
     messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     conversation_id?: string;

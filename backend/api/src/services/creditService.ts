@@ -89,47 +89,21 @@ export async function earnCredits(
   source: string,
   idempotencyKey: string,
 ): Promise<{ credited: boolean }> {
-  const todayUTC = getTodayUTC();
-
-  // Check daily earn cap (EARN-07)
-  const { count } = await supabase
-    .from('ai_credit_transactions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('type', 'earn')
-    .gte('created_at', `${todayUTC}T00:00:00Z`);
-
-  if ((count ?? 0) >= DAILY_EARN_CAP) {
-    return { credited: false };
-  }
-
-  // Insert earn transaction — partial unique index enforces ON CONFLICT DO NOTHING at DB level
-  // If idempotency_key is already used for this (user_id, source), Supabase returns error code 23505
-  const { error: insertError } = await supabase.from('ai_credit_transactions').insert({
-    user_id: userId,
-    type: 'earn',
-    amount: EARN_AMOUNT,
-    source,
-    idempotency_key: idempotencyKey,
+  // Use SECURITY DEFINER RPC — direct INSERT fails with publishable key due to RLS
+  // (auth.uid() is null on server-side clients without a user JWT)
+  const { data, error } = await supabase.rpc('earn_ai_credits', {
+    p_user_id: userId,
+    p_source: source,
+    p_idempotency_key: idempotencyKey,
+    p_amount: EARN_AMOUNT,
+    p_daily_cap: DAILY_EARN_CAP,
   });
 
-  if (insertError) {
-    // 23505 = unique_violation — duplicate idempotency key (EARN-10)
-    if (insertError.code === '23505') {
-      return { credited: false };
-    }
-    // Other DB error — do not increment balance
+  if (error || !data) {
     return { credited: false };
   }
 
-  // Read-then-write balance increment (earn races add only; minor underpayment ok)
-  const { balance: currentBalance } = await getBalance(userId);
-  await supabase
-    .from('user_ai_credits')
-    .update({ balance: currentBalance + EARN_AMOUNT })
-    .eq('user_id', userId);
-
-  return { credited: true };
+  return { credited: (data as { credited: boolean }).credited === true };
 }
 
 /**
