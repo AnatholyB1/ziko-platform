@@ -44,9 +44,9 @@ eas submit --platform android --profile production
 
 À configurer une fois dans **Play Console → Testing → Internal testing** :
 
+- [x] Lien d'opt-in : **https://play.google.com/apps/internaltest/4701476780923858257**
 - [ ] Créer une mailing list de testeurs (max 100 emails Google)
-- [ ] Récupérer le lien d'opt-in (`https://play.google.com/apps/internaltest/...`)
-- [ ] Partager le lien aux testeurs (ils l'ouvrent, acceptent, puis téléchargent depuis le Play Store comme une app normale)
+- [ ] Partager le lien d'opt-in aux testeurs (ils l'ouvrent, acceptent, puis téléchargent depuis le Play Store comme une app normale)
 
 Champs de release internal (**Play Console → Internal testing → Create new release**) :
 - [ ] **Release name** : auto = `versionCode (versionName)` — laisser par défaut
