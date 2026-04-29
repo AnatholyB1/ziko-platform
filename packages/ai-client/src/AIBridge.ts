@@ -198,7 +198,7 @@ export class AIBridge {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve();
         } else {
-          reject(new Error(`AI API error ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
+          reject(new Error(`AI API error ${xhr.status}: ${xhr.responseText.slice(0, 500)}`));
         }
       };
 
