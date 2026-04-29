@@ -1,6 +1,6 @@
 ---
 id: SEED-001
-status: dormant
+status: harvested
 planted: 2026-03-28
 planted_during: milestone v1.0 (post-launch, all 5 phases complete)
 trigger_when: next major milestone — any milestone touching nutrition, AI coaching, or plugin expansion

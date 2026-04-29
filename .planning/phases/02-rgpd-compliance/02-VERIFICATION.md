@@ -1,19 +1,8 @@
 ---
 phase: 02-rgpd-compliance
 verified: 2026-03-26T00:00:00Z
-status: gaps_found
-score: 4/5 success criteria verified
-gaps:
-  - truth: "The deletion endpoint rejects more than 5 requests per minute from the same IP (rate limiting active)"
-    status: partial
-    reason: "Rate limiting code is fully implemented and correct in src/actions/account.ts, but REQUIREMENTS.md still marks RGPD-03 as Pending (checkbox unchecked, table row shows Pending). The requirement tracker has not been updated to reflect completion."
-    artifacts:
-      - path: "src/lib/ratelimit.ts"
-        issue: "File exists and is correct — no code issue"
-      - path: "src/actions/account.ts"
-        issue: "Rate limit check at line 54 is correctly placed before Supabase calls — no code issue"
-    missing:
-      - "Update REQUIREMENTS.md: change '- [ ] **RGPD-03**' to '- [x] **RGPD-03**' and change '| RGPD-03 | Phase 2 | Pending |' to '| RGPD-03 | Phase 2 | Complete |'"
+status: passed
+score: 5/5 success criteria verified
 human_verification:
   - test: "End-to-end deletion flow"
     expected: "User submits the form with a real email; success message appears; account is deleted in Supabase; subsequent login attempt fails"
