@@ -1,14 +1,14 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions,
-  Modal, FlatList, TextInput, Alert, ActivityIndicator,
+  Modal, FlatList, TextInput, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { MotiView } from 'moti';
 import { useGamificationStore, loadGamification } from '../store';
-import { usePluginRegistry, useThemeStore } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useCommunityStore, loadCommunity, sendXpGift, sendCoinGift } from '@ziko/plugin-community';
 import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
@@ -60,7 +60,7 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
   const handleSendGift = async (friendId: string) => {
     const amount = parseInt(giftAmount, 10);
     if (!amount || amount <= 0) {
-      Alert.alert('Erreur', 'Saisis un montant valide.');
+      showAlert('Erreur', 'Saisis un montant valide.');
       return;
     }
     setSending(true);
@@ -70,13 +70,13 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
       } else {
         await sendCoinGift(supabase, friendId, amount, giftMessage || undefined);
       }
-      Alert.alert('Envoyé !', `${amount} ${giftType === 'xp' ? 'XP' : 'pièces'} envoyé(es).`);
+      showAlert('Envoyé !', `${amount} ${giftType === 'xp' ? 'XP' : 'pièces'} envoyé(es).`);
       setShowGiftModal(false);
       setGiftAmount('');
       setGiftMessage('');
       await load();
     } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? 'Envoi impossible.');
+      showAlert('Erreur', e?.message ?? 'Envoi impossible.');
     }
     setSending(false);
   };
