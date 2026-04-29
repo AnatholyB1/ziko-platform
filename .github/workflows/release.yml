@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'beta*'
+
+jobs:
+  quality:
+    name: Type-check & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+  eas-build-submit:
+    name: EAS Build & Submit
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      # v* → build production (iOS + Android) + submit Android to production track
+      - name: Build production (v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: eas build --platform all --profile production --non-interactive
+        working-directory: apps/mobile
+
+      - name: Submit Android to production track (v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: eas submit --platform android --profile production --non-interactive
+        working-directory: apps/mobile
+
+      # beta* → build preview Android + submit to internal track
+      - name: Build preview Android (beta* tag)
+        if: startsWith(github.ref, 'refs/tags/beta')
+        run: eas build --platform android --profile preview --non-interactive
+        working-directory: apps/mobile
+
+      - name: Submit Android to internal track (beta* tag)
+        if: startsWith(github.ref, 'refs/tags/beta')
+        run: eas submit --platform android --profile internal --non-interactive
+        working-directory: apps/mobile
