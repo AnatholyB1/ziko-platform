@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function ProfileScreen() {
   const profile = useAuthStore((s) => s.profile);
   const signOut = useAuthStore((s) => s.signOut);
-  const { theme, equippedBanner, setTheme, setBanner } = useThemeStore();
+  const { theme, equippedBanner, setTheme, setBanner, resetTheme } = useThemeStore();
   const { t } = useTranslation();
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const gamifEnabled = enabledPlugins.includes('gamification');
@@ -34,6 +34,19 @@ export default function ProfileScreen() {
   }, [gamifEnabled]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleResetTheme = async () => {
+    resetTheme();
+    if (gamifEnabled) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('user_gamification')
+          .update({ equipped_theme: null, equipped_banner_name: null, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+    }
+  };
 
   const handleSignOut = () => {
     showAlert(t('profile.signOut'), t('profile.signOutConfirm'), [
@@ -279,6 +292,7 @@ export default function ProfileScreen() {
           { icon: 'flask-outline', label: t('supplements.title'), onPress: () => router.push('/(app)/(plugins)/supplements/list' as any) },
           { icon: 'chatbubble-outline', label: t('ai.title'), onPress: () => router.push('/(app)/ai') },
           { icon: 'help-circle-outline', label: t('profile.helpSupport'), onPress: () => {} },
+          ...(theme.id !== 'default' ? [{ icon: 'color-palette-outline', label: 'Réinitialiser le thème', onPress: handleResetTheme }] : []),
         ].map((item) => (
           <TouchableOpacity key={item.label} onPress={item.onPress}
             style={{ backgroundColor: theme.surface, borderRadius: 14, padding: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: theme.border }}>
