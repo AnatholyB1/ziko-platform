@@ -440,4 +440,37 @@ Rules:
   }
 });
 
+// ─── Program Generation (CRED-03) ─────────────────────────────
+// Dedicated route with monthly quota gate: 1 free base + 1 bonus (earned activity).
+// Uses same tool executor as the agent tool, but gated at the route level.
+
+router.post('/programs/generate', creditCheck('program'), creditDeduct('program'), async (c) => {
+  const auth = c.get('auth');
+  const userId = auth.userId;
+  const userToken = c.req.header('Authorization')?.slice(7);
+
+  const body = await c.req.json<{
+    goal: string;
+    days_per_week: number;
+    split_type?: string;
+    experience_level?: string;
+    equipment?: string;
+  }>();
+
+  if (!body.goal) return c.json({ error: 'goal is required' }, 400);
+  if (!body.days_per_week) return c.json({ error: 'days_per_week is required' }, 400);
+
+  const executor = getToolExecutor('ai_programs_generate');
+  if (!executor) return c.json({ error: 'ai_programs_generate executor not found' }, 500);
+
+  try {
+    const result = await executor(body as Record<string, unknown>, userId, userToken);
+    return c.json(result);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Programs Generate Error]', msg);
+    return c.json({ error: msg }, 500);
+  }
+});
+
 export { router as aiRouter };

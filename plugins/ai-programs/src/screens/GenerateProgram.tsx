@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useAIProgramsStore } from '../store';
 
 const CREDIT_COSTS = { chat: 4, scan: 3, program: 4 } as const;
@@ -55,22 +55,40 @@ export default function GenerateProgram({ supabase }: { supabase: any }) {
   const [equipment, setEquipment] = useState('full_gym');
 
   const handleGenerate = async () => {
-    if (!goal) { Alert.alert('Erreur', 'Choisis un objectif'); return; }
-    if (!split) { Alert.alert('Erreur', 'Choisis un type de split'); return; }
+    if (!goal) { showAlert('Erreur', 'Choisis un objectif'); return; }
+    if (!split) { showAlert('Erreur', 'Choisis un type de split'); return; }
     setIsGenerating(true);
     try {
-      const name = `Programme ${GOALS.find(g => g.id === goal)?.label ?? goal} — ${days}j`;
-      const { data, error } = await supabase.from('ai_generated_programs').insert({
-        name, goal, split_type: split, days_per_week: days,
-        experience_level: 'intermediate', equipment,
-        program_data: { status: 'pending_generation' },
-        is_active: true,
-      }).select().single();
-      if (error) throw error;
-      if (data) addProgram(data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Non authentifié');
+      const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+      const res = await fetch(`${API_URL}/ai/programs/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          goal,
+          days_per_week: days,
+          split_type: split,
+          experience_level: 'intermediate',
+          equipment,
+        }),
+      });
+      if (res.status === 402) {
+        showAlert('Crédits insuffisants', 'Tu as utilisé ton programme gratuit du mois. Log des activités pour gagner des crédits.');
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error ?? 'Génération impossible');
+      }
+      const data = await res.json();
+      if (data.program) addProgram(data.program);
       router.back();
     } catch (e: any) {
-      Alert.alert('Erreur', e.message ?? 'Génération impossible');
+      showAlert('Erreur', e.message ?? 'Génération impossible');
     }
     setIsGenerating(false);
   };
