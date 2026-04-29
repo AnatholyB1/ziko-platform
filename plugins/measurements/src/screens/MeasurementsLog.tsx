@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useMeasurementsStore } from '../store';
 import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
@@ -62,7 +62,7 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
 
   const handleSave = async () => {
     if (!weight && !bodyFat && !waist && !chest && !arm && !thigh && !hip) {
-      Alert.alert('Erreur', 'Remplis au moins un champ');
+      showAlert('Erreur', 'Remplis au moins un champ');
       return;
     }
     setSaving(true);
@@ -85,7 +85,7 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
       });
       router.back();
     } catch (e: any) {
-      Alert.alert('Erreur', e.message ?? 'Sauvegarde impossible');
+      showAlert('Erreur', e.message ?? 'Sauvegarde impossible');
     }
     setSaving(false);
   };
