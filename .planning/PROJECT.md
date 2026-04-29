@@ -6,20 +6,22 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 ## Core Value
 
-A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and now shows them exactly what's in their food.
-
-## Current Milestone: v1.4 Système de Crédits IA & Monétisation
-
-**Goal:** Implémenter un système de crédits IA gamifié qui contrôle les coûts API (€0.75/mois max par utilisateur) tout en récompensant l'engagement utilisateur.
-
-**Target features:**
-- Double solde — coins shop (existant, gain illimité) + crédits IA (nouveau, gain plafonné par activité)
-- Quotas IA — base gratuite + bonus gagnables par activité (scan photo 1+2/jour, chat 1+2/jour, programme 1+1/mois)
-- Gain de crédits IA par activités : log workout, habitudes, repas, mesures, stretching, course/cardio
-- Vision Haiku — scan photo migré vers claude-haiku (€0.003/scan au lieu de €0.01)
-- Architecture prête pour tier premium futur
+A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement.
 
 ---
+
+<details>
+<summary>✅ v1.4 Système de Crédits IA & Monétisation — SHIPPED 2026-04-29</summary>
+
+**What shipped:**
+- Atomic PostgreSQL credit system — dual-table balance+ledger (`user_ai_credits` + `ai_credit_transactions`) with SECURITY DEFINER `deduct_ai_credits` RPC and SELECT FOR UPDATE row lock
+- `creditService.ts` + `creditCheck`/`creditDeduct` Hono middleware pair gating all AI routes; premium tier bypass
+- `GET /credits/balance`, `POST /credits/earn` endpoints; AI chat/stream/scan credit-gated; `ai_cost_log` per-call token logging; monthly cost ceiling ≤ €0.75 verified
+- Haiku vision migration (`claude-haiku-4-5-20251001`, ~70% cost reduction); centralized `models.ts`
+- Fire-and-forget earn hooks in 5 backend tool executors + 6 mobile screens; idempotent via record-UUID
+- `CreditEarnToast`, `CreditExhaustionSheet`, balance chip, dual-balance card, cost labels, `/ai/programs/generate` monthly quota route
+
+</details>
 
 <details>
 <summary>Previous: v1.2 Barcode Enrichment + Tech Debt — SHIPPED 2026-04-02</summary>
@@ -71,6 +73,19 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - [x] Supabase Storage — 3 private buckets, signed URL upload flow, mobile bypass of Vercel body limit
 - [x] Lifecycle cron — daily cleanup of scan-photos (90d) and exports (7d)
 
+### Validated (v1.4 — Système de Crédits IA & Monétisation)
+
+- [x] Atomic PostgreSQL credit deduction via SECURITY DEFINER RPC — no negative balance possible (CRED-06)
+- [x] Dual balance — shop coins + AI credits as separate balances (CRED-07)
+- [x] Daily base allocation (1 chat + 1 scan) without activity; monthly program quota (1/month) (CRED-02, CRED-03)
+- [x] Activity earn hooks — workout, habits, meals, measurements, stretching, cardio → +1 credit (EARN-01–06)
+- [x] Idempotent earning — mobile retry does not double-credit (partial unique index + ON CONFLICT) (EARN-10)
+- [x] Daily earn cap (EARN-07); earn toast after activity save (EARN-08); daily progress visible (EARN-09)
+- [x] Balance chip in AI header; cost labels on action buttons; exhaustion bottom sheet (CRED-01, CRED-04, CRED-05)
+- [x] Haiku vision migration — `claude-haiku-4-5-20251001`, ~70% cost reduction; centralized `models.ts` (COST-01)
+- [x] Per-call token logging to `ai_cost_log`; monthly cost ≤ €0.75 verified (COST-02, COST-03)
+- [x] `user_profiles.tier` column (free/premium); middleware bypasses deduction for premium (PREM-01, PREM-02)
+
 ### Deferred
 
 **Coach Platform (future web milestone)**
@@ -112,10 +127,15 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 | Sliding window over fixed window | Prevents boundary spike traffic in rate limiting | v1.3 |
 | Separate AI credits table (not gamification coins) | Dual balance — coins are unlimited reward currency, credits are cost-controlled AI currency (CRED-07) | v1.4 Phase 17 |
 | Centralized model constants file | Single file to update when model IDs change; prevents drift across 3+ backend files (COST-01) | v1.4 Phase 17 |
+| SECURITY DEFINER + SELECT FOR UPDATE in deduct RPC | Application-layer check-then-deduct races under Vercel Fluid Compute produce negative balances; DB-level lock eliminates it | v1.4 Phase 17 ✓ |
+| Partial unique index (WHERE idempotency_key IS NOT NULL) | ON CONFLICT DO NOTHING eliminates double-crediting on mobile retry without requiring all rows to have idempotency keys | v1.4 Phase 17 ✓ |
+| Lazy daily-reset (date-keyed check at earn time) | No cron dependency — avoids Vercel at-least-once cron delivery causing double-resets | v1.4 Phase 18 ✓ |
+| POST /earn always returns HTTP 200 { credited: boolean } | Mobile client must never crash on earn failure; 4xx would require error handling in fire-and-forget context | v1.4 Phase 20 ✓ |
+| AIBridge 402 body slice extended 200→500 chars | earned_today array with ≥1 source exceeds 200 chars; truncation caused silent JSON.parse failure and no exhaustion sheet | v1.4 Phase 21 ✓ |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-05 — v1.4 Phase 17 complete: DB foundation + model config centralization*
+*Last updated: 2026-04-29 — v1.4 milestone complete: Système de Crédits IA & Monétisation*

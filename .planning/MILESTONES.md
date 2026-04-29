@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.4 Système de Crédits IA & Monétisation (Shipped: 2026-04-29)
+
+**Phases completed:** 5 phases, 11 plans (Phases 17–21)
+
+**Key accomplishments:**
+
+1. **Atomic PostgreSQL Credit System** — `user_ai_credits` + `ai_credit_transactions` dual-table architecture; `deduct_ai_credits` SECURITY DEFINER RPC with SELECT FOR UPDATE row lock prevents negative balances under concurrent Vercel Fluid Compute; partial unique index eliminates double-crediting on mobile retry
+2. **Credit Service + Middleware** — `creditService.ts` as single authoritative credit logic (getBalance, earnCredits, deductCredits, getQuotaStatus); `creditCheck`/`creditDeduct` Hono middleware pair gates all AI routes; premium tier bypass via `user_profiles.tier`
+3. **AI Cost Telemetry + Credit-Gated Routes** — `GET /credits/balance`, `POST /credits/earn`; AI chat/stream/scan credit-gated; `ai_cost_log` per-call token logging for billing reconciliation; monthly cost ceiling ≤ €0.75 verified for freemium
+4. **Haiku Vision Migration** — food scan migrated to `claude-haiku-4-5-20251001` (~70% cost reduction vs Sonnet); Sonnet fallback on Zod parse failure; centralized `models.ts` eliminates model ID drift across backend
+5. **Fire-and-Forget Activity Earn Hooks** — `POST /credits/earn` with VALID_SOURCES allowlist; idempotent earn hooks in 5 backend tool executors + 6 mobile screens via record-UUID idempotency keys
+6. **Gamified Credit UI** — `CreditEarnToast` (MotiView floating pill); `CreditExhaustionSheet` (6-activity checklist + reset countdown); balance chip in AI header; dual-balance card (coins + credits IA) in gamification; cost labels on AI action buttons; `/ai/programs/generate` route with proper monthly quota gate
+
+---
+
 ## v1.3 Security + Cloud Infrastructure (Shipped: 2026-04-05)
 
 **Phases completed:** 5 phases, 8 plans (Phases 12-16)

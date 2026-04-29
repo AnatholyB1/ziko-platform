@@ -2,26 +2,26 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Systeme de Credits IA & Monetisation
-status: executing
-stopped_at: Phase 20 complete — activity earn hooks verified
-last_updated: "2026-04-09T22:15:00.000Z"
-last_activity: 2026-04-09 -- Phase 20 complete (2/2 plans, verified 13/13)
+status: complete
+stopped_at: v1.4 milestone archived — all 5 phases shipped
+last_updated: "2026-04-29T00:00:00.000Z"
+last_activity: 2026-04-29 -- v1.4 milestone complete (5 phases, 11 plans, tagged v1.4)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 11
   completed_plans: 11
-  percent: 88
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-05)
+See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement.
-**Current focus:** Phase 20 complete — ready for Phase 21
+**Current focus:** v1.4 milestone complete — planning next milestone
 
 ## Current Position
 

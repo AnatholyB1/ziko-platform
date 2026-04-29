@@ -84,6 +84,77 @@
 
 ---
 
+## Milestone: v1.3 — Security + Cloud Infrastructure
+
+**Shipped:** 2026-04-05
+**Phases:** 5 (12–16) | **Plans:** 8
+
+### What Was Built
+- Upstash Redis sliding window rate limiting — IP flood (200/60s) + per-user AI/scan/tools quotas; 429 with Retry-After
+- CORS locked to explicit origins, `secureHeaders()` on all responses, Zod `.strict()` on all AI POST routes
+- Supabase Storage: 3 private buckets, path-prefix RLS, signed URL upload bypassing Vercel 4.5MB limit
+- Lifecycle cron (Vercel, daily 4am UTC) — purges scan-photos >90d and exports >7d via Promise.allSettled
+- Phase 16 regression fix — Phase 15 commit reverted Phase 12+13 middleware; audit detected it; targeted restore
+
+### What Worked
+- Milestone audit caught the Phase 15 regression before shipping — saved a security regression reaching production
+- Three-phase storage design (bucket creation → signed URLs → lifecycle) kept each phase cleanly scoped
+- `Promise.allSettled` for cron cleanup was the right choice — partial failures don't abort the run
+
+### What Was Inefficient
+- Phase 16 existed only because Phase 15 introduced a regression — better pre-commit review of middleware file ordering would have prevented it
+- Rate limiting constants were hardcoded rather than extracted to a config file — makes future tuning harder
+
+### Patterns Established
+- Signed URL upload pattern: mobile → `GET /storage/upload-url` → Supabase Storage directly (bypasses Vercel limit)
+- Path-prefix RLS: `(storage.foldername(name))[1] = auth.uid()` — no user_id column on storage objects
+- Sliding window over fixed window for rate limiting — prevents boundary spike bursts
+
+### Key Lessons
+1. Middleware ordering bugs are silent — a lint or ordered-import check would catch revert regressions
+2. The audit step before milestone close paid off immediately: caught a real security regression
+3. Lifecycle cleanup with `Promise.allSettled` is the correct pattern for multi-bucket cron jobs
+
+---
+
+## Milestone: v1.4 — Système de Crédits IA & Monétisation
+
+**Shipped:** 2026-04-29
+**Phases:** 5 (17–21) | **Plans:** 11
+
+### What Was Built
+- Atomic PostgreSQL credit system — SECURITY DEFINER `deduct_ai_credits` RPC with SELECT FOR UPDATE row lock; partial unique index for idempotent earn; `balance_after` trigger; new-user welcome credit trigger
+- `creditService.ts` — single authoritative credit logic; `creditCheck`/`creditDeduct` Hono middleware pair gating routes without modifying handlers; premium bypass via `user_profiles.tier`
+- Credit API routes, AI cost telemetry, Haiku vision migration (~70% cost reduction), monthly cost ceiling ≤ €0.75 verified
+- Fire-and-forget earn hooks on 5 backend tool executors + 6 mobile screens; idempotent via record-UUID keys
+- Full credit UI: Zustand creditStore, earn toast (MotiView), exhaustion bottom sheet with 6-activity checklist, balance chip, dual-balance card, cost labels; `/ai/programs/generate` monthly quota route
+
+### What Worked
+- Phase dependency order (17 DB → 18 service → 19 routes + 20 earn → 21 UI) was correct — no integration surprises
+- Separating the credit deduction concern into a SECURITY DEFINER RPC from the start eliminated the concurrency bug class entirely
+- Pre-close audit (`/gsd-audit-milestone`) was highly effective: found the AIBridge truncation bug (200→500 chars) and the CRED-03 dead code — both fixed before tagging
+- Fire-and-forget `.catch(() => {})` pattern for earn hooks kept activity saves unblocked — correct architectural choice
+
+### What Was Inefficient
+- REQUIREMENTS.md traceability table was not updated after Phase 17 (stale through Phases 18–21) — the audit had to cross-reference VERIFICATION.md files instead of the requirements doc
+- Phase 20 ROADMAP.md progress table showed `0/2` after execution — STATE.md and SUMMARY.md were correct but ROADMAP.md was not updated at phase completion
+- Audit found 2 gaps (CRED-03, CRED-05) that required 4 fix commits post-audit — these could have been caught earlier with more integration testing
+
+### Patterns Established
+- `SECURITY DEFINER + SELECT FOR UPDATE` in credit deduction RPC — the correct pattern for atomic balance ops under serverless concurrency
+- `POST /earn` always returns HTTP 200 `{ credited: boolean }` — fire-and-forget endpoints must never 4xx; let the caller ignore failures
+- Inline earnCredit helper in plugins (not cross-package import) — plugins cannot import from `apps/mobile/src`; 13-line inline is acceptable duplication
+- `workoutStore` uses `require()` for creditStore import — avoids circular Zustand store dependency
+- AIBridge 402 body size: always size the slice to the known-bounded max response size, not an arbitrary small constant
+
+### Key Lessons
+1. Update REQUIREMENTS.md traceability table after each phase — stale requirements docs create audit overhead
+2. Update ROADMAP.md progress table at phase completion, not milestone close — prevents accumulation of stale entries
+3. The `/gsd-audit-milestone` step is worth the time: it found 2 real bugs in v1.4 that would have shipped broken
+4. Size error response body slices to the actual max payload size — a 200-char limit on a 250-char response is a silent failure mode
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -93,10 +164,14 @@
 | v1.0 | ~5 | 5 | Established Next.js + i18n + legal foundation |
 | v1.1 | ~8 | 4 | First mobile plugin — pantry + AI tools pattern established |
 | v1.2 | ~4 | 2 | Data-before-UI strategy, shared catalogue pattern |
+| v1.3 | ~6 | 5 | Security hardening + audit-before-close catches regression |
+| v1.4 | ~12 | 5 | Gamified credit system — DB-first concurrency safety, pre-close audit finds 2 bugs |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **Split data layer from UI layer** — always a separate phase, never mixed. Zero integration surprises in v1.2.
+1. **Split data layer from UI layer** — always a separate phase, never mixed. Zero integration surprises in v1.2, v1.4.
 2. **Write SUMMARY one_liners immediately** — missing them costs time at milestone close and makes audit harder
 3. **useRef for scan guards** (not useState) — prevents re-render races in camera/barcode flows
 4. **`.maybeSingle()` not `.single()`** for optional plugin checks — PGRST116 is a common gotcha
+5. **Run `/gsd-audit-milestone` before close** — caught a security regression (v1.3) and 2 functional bugs (v1.4)
+6. **Keep REQUIREMENTS.md traceability current** — stale traceability forces audit to cross-reference VERIFICATION.md files
