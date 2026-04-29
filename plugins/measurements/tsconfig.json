@@ -4,5 +4,5 @@
     "outDir": "dist",
     "jsx": "react-native"
   },
-  "include": ["src"]
+  "include": ["src", "../../apps/mobile/src/stores/creditStore.ts"]
 }
