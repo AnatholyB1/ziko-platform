@@ -71,6 +71,16 @@ jobs:
         if: steps.migrations.outputs.changed == 'true'
         run: |
           supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+          # The DB was set up outside supabase CLI so migration history is empty.
+          # Mark all migrations NOT added in this commit as already applied,
+          # so db push only runs the new ones.
+          NEW=$(git diff --name-only HEAD~1 HEAD | grep '^supabase/migrations/' | xargs -I{} basename {} .sql)
+          for f in supabase/migrations/*.sql; do
+            version=$(basename "$f" .sql)
+            if ! echo "$NEW" | grep -qx "$version"; then
+              supabase migration repair --status applied "$version" 2>/dev/null || true
+            fi
+          done
           supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
