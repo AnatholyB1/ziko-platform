@@ -837,6 +837,11 @@ export default function WorkoutSessionScreen() {
                     <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
                       {describeExercise(pe)}
                     </Text>
+                    {(pe.exercises as any)?.instructions ? (
+                      <Text style={{ color: theme.muted, fontSize: 11, marginTop: 4, fontStyle: 'italic' }} numberOfLines={2}>
+                        {(pe.exercises as any).instructions}
+                      </Text>
+                    ) : null}
                     {pe.notes ? (
                       <Text style={{ color: theme.primary, fontSize: 11, marginTop: 3, fontStyle: 'italic' }}>
                         {pe.notes}
@@ -929,6 +934,11 @@ export default function WorkoutSessionScreen() {
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 24, textAlign: 'center', marginBottom: 4 }}>
                 {tExercise(currentEx.exercises?.name ?? 'Exercise')}
               </Text>
+              {(currentEx.exercises as any)?.instructions ? (
+                <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginBottom: 4, fontStyle: 'italic' }} numberOfLines={2}>
+                  {(currentEx.exercises as any).instructions}
+                </Text>
+              ) : null}
               {currentEx.notes ? (
                 <Text style={{ color: theme.primary, fontSize: 12, textAlign: 'center', marginBottom: 8, fontStyle: 'italic' }}>
                   {currentEx.notes}

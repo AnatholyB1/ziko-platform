@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, ScrollView, TouchableOpacity, TextInput, RefreshControl,
-  ActivityIndicator, Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { router } from 'expo-router';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useSupplementsStore, MAX_COMPARE } from '../store';
 import type { Supplement, SupplementCategory, SupplementBrand } from '../store';
 
@@ -104,7 +104,6 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { setHasMore(true); loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]);
-  useFocusEffect(useCallback(() => { setHasMore(true); loadSupplements(); }, [selectedCategory, selectedBrand, searchQuery]));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -374,7 +373,7 @@ export default function SupplementsListScreen({ supabase }: { supabase: any }) {
                 <TouchableOpacity onPress={() => {
                   if (inCompare) return;
                   if (!addToCompare(s)) {
-                    Alert.alert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
+                    showAlert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
                   }
                 }}>
                   <Ionicons name={inCompare ? 'checkmark-circle' : 'git-compare-outline'} size={20}

@@ -157,6 +157,11 @@ export default function AIProgramsDashboard({ supabase }: { supabase: any }) {
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
       >
+        {router.canGoBack() && (
+          <TouchableOpacity onPress={() => router.back()} style={{ marginBottom: 12 }}>
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
+          </TouchableOpacity>
+        )}
         <Text style={{ color: theme.text, fontSize: 28, fontWeight: '800' }}>Programmes IA</Text>
         <Text style={{ color: theme.muted, fontSize: 14, marginTop: 4 }}>Générés par ton coach IA</Text>
 
