@@ -599,7 +599,7 @@ export default function DashboardScreen() {
                 width: 44, height: 44, borderRadius: 14, backgroundColor: '#FF5C1A18',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <Text style={{ fontSize: 22 }}>🥗</Text>
+                <Ionicons name="restaurant" size={24} color="#FF5C1A" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>{t('home.trackCalories')}</Text>
