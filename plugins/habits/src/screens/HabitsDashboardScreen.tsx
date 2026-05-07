@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  Alert, Modal, TextInput, Platform,
+  Modal, TextInput, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import { MotiView } from 'moti';
 import { router } from 'expo-router';
 import { format } from 'date-fns';
 import { colors as C } from '@ziko/ui';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useHabitsStore, DEFAULT_HABITS } from '../store';
 import type { Habit } from '../store';
 import { awardHabitXP } from '@ziko/plugin-gamification/store';
@@ -570,7 +570,7 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
     if (!reminderHabit || !userId) return;
     // Validate HH:MM
     if (!/^\d{1,2}:\d{2}$/.test(time)) {
-      Alert.alert(t('habits.invalidTime'), t('habits.invalidTimeDesc'));
+      showAlert(t('habits.invalidTime'), t('habits.invalidTimeDesc'));
       return;
     }
     await supabase.from('habits').update({ reminder_time: time }).eq('id', reminderHabit.id);

@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Sentry from '@sentry/react-native';
 import { useAuthStore } from '../src/stores/authStore';
 import { PluginLoader } from '../src/lib/PluginLoader';
 import { useThemeStore } from '../src/stores/themeStore';
@@ -13,6 +14,18 @@ import CustomAlert from '../src/components/CustomAlert';
 import BugReportModal from '../src/components/BugReportModal';
 import CreditEarnToast from '../src/components/CreditEarnToast';
 import CreditExhaustionSheet from '../src/components/CreditExhaustionSheet';
+import ErrorBoundary from '../src/components/ErrorBoundary';
+import { initSentry, setUserContext, clearUserContext } from '../src/lib/sentry';
+
+// Init Sentry before anything renders
+initSentry();
+
+// Catch unhandled JS exceptions outside React tree
+const defaultHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+  Sentry.captureException(error, { extra: { isFatal } });
+  defaultHandler(error, isFatal);
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +38,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const initialize = useAuthStore((s) => s.initialize);
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const session = useAuthStore((s) => s.session);
@@ -36,6 +49,15 @@ export default function RootLayout() {
   useEffect(() => {
     initialize();
   }, []);
+
+  // Sync Sentry user context with auth state
+  useEffect(() => {
+    if (session?.user) {
+      setUserContext(session.user.id, session.user.email);
+    } else {
+      clearUserContext();
+    }
+  }, [session?.user?.id]);
 
   // Sync theme/banner from DB when user is authenticated
   useEffect(() => {
@@ -60,22 +82,26 @@ export default function RootLayout() {
   if (!isInitialized) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <PluginLoader>
-            <StatusBar style={theme.statusBarStyle} backgroundColor={theme.statusBarBg} />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(app)" options={{ headerShown: false }} />
-            </Stack>
-            <CustomAlert />
-            <BugReportModal />
-            <CreditEarnToast />
-            <CreditExhaustionSheet />
-          </PluginLoader>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <PluginLoader>
+              <StatusBar style={theme.statusBarStyle} backgroundColor={theme.statusBarBg} />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(app)" options={{ headerShown: false }} />
+              </Stack>
+              <CustomAlert />
+              <BugReportModal />
+              <CreditEarnToast />
+              <CreditExhaustionSheet />
+            </PluginLoader>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);
