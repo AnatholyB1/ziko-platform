@@ -236,7 +236,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     const { data } = await supabase
       .from('workout_programs')
-      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups, category)))')
+      .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr, muscle_groups, category)))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -259,7 +259,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   loadProgramDetail: async (programId) => {
     const { data } = await supabase
       .from('workout_programs')
-      .select('*, program_workouts(*, program_exercises(*, exercises(name, muscle_groups, body_part, equipment, target_muscle)))')
+      .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr, muscle_groups, body_part, equipment, target_muscle)))')
       .eq('id', programId)
       .single();
 
@@ -304,7 +304,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const { data } = await supabase
       .from('program_exercises')
       .insert({ workout_id: workoutId, ...exercise })
-      .select('*, exercises(name, muscle_groups)')
+      .select('*, exercises(name, name_fr, muscle_groups)')
       .single();
 
     return (data as ProgramExercise) ?? null;

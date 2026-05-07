@@ -33,7 +33,7 @@ interface WorkoutDay {
   day_of_week: number | null;
   name: string;
   order_index: number;
-  program_exercises: (ProgramExercise & { exercises?: { name: string; muscle_groups: string[] } })[];
+  program_exercises: (ProgramExercise & { exercises?: { name: string; name_fr?: string | null; muscle_groups: string[] } })[];
 }
 
 // ── Exercise config form state ────────────────────────────
@@ -114,7 +114,7 @@ export default function ProgramDetailScreen() {
 
     const { data: wkts } = await supabase
       .from('program_workouts')
-      .select('*, program_exercises(*, exercises(name, muscle_groups))')
+      .select('*, program_exercises(*, exercises(name, name_fr, muscle_groups))')
       .eq('program_id', id)
       .order('day_of_week');
     const workoutList = (wkts ?? []) as WorkoutDay[];
@@ -612,7 +612,7 @@ export default function ProgramDetailScreen() {
                     <Ionicons name="barbell-outline" size={14} color={theme.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>{tExercise(pe.exercises?.name ?? t('workout.exerciseFallback'))}</Text>
+                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>{tExercise(pe.exercises?.name ?? t('workout.exerciseFallback'), pe.exercises?.name_fr)}</Text>
                     <Text style={{ color: theme.muted, fontSize: 11, marginTop: 1 }}>{formatExerciseDetail(pe)}</Text>
                   </View>
                 </TouchableOpacity>
