@@ -9,6 +9,7 @@ import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
 import { creditsRouter } from './routes/credits.js';
+import { storageRouter, storageCleanupRouter } from './routes/storage.js';
 
 const app = new Hono();
 
@@ -48,6 +49,8 @@ app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
 app.route('/credits', creditsRouter);
+app.route('/storage', storageRouter);
+app.route('/storage', storageCleanupRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

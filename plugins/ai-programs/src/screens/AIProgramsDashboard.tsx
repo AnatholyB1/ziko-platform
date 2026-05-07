@@ -201,7 +201,7 @@ export default function AIProgramsDashboard({ supabase }: { supabase: any }) {
                   )}
                 </View>
                 <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8 }}>
-                  Créé le {new Date(p.created_at).toLocaleDateString('fr-FR')}
+                  Créé le {p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : '—'}
                 </Text>
                 {/* Import button */}
                 <TouchableOpacity

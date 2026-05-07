@@ -709,7 +709,7 @@ export default function WorkoutSessionScreen() {
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('workout.finish'), onPress: async () => {
-          await saveSessionStats();
+          try { await saveSessionStats(); } catch {}
           try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
           router.back();
         },
