@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  Alert, TextInput, Dimensions,
+  Alert, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 
@@ -26,27 +26,40 @@ interface ReviewAgg {
 }
 
 // ── Constants ─────────────────────────────────────────────
-const { width: SCREEN_W } = Dimensions.get('window');
 
-const CATEGORY_BASE: Record<string, { labelKey: string; color: string | null; icon: string }> = {
-  all:       { labelKey: 'store.catAll',       color: null, icon: 'apps' },
-  coaching:  { labelKey: 'store.catCoaching',  color: null, icon: 'fitness' },
-  nutrition: { labelKey: 'store.catNutrition', color: '#4CAF50', icon: 'leaf' },
-  analytics: { labelKey: 'store.catAnalytics', color: '#FF9800', icon: 'stats-chart' },
-  persona:   { labelKey: 'store.catPersona',   color: '#FF6584', icon: 'person-circle' },
-  social:    { labelKey: 'store.catSocial',    color: '#00BCD4', icon: 'people' },
+// v2 categories — matches design and PluginCategory type
+const STORE_CATS = [
+  { id: 'all',      label: 'Tous' },
+  { id: 'training', label: 'Training' },
+  { id: 'nutrition',label: 'Nutrition' },
+  { id: 'health',   label: 'Santé' },
+  { id: 'coaching', label: 'Coaching' },
+  { id: 'social',   label: 'Social' },
+] as const;
+
+// Plugin accent colors by id
+const PLUGIN_COLORS: Record<string, string> = {
+  habits:        '#FF5C1A',
+  nutrition:     '#FF5C1A',
+  persona:       '#FF6584',
+  stats:         '#E8A33A',
+  gamification:  '#FF5C1A',
+  community:     '#2E7BF6',
+  stretching:    '#FF5C1A',
+  sleep:         '#7B5BD0',
+  measurements:  '#2E9E5B',
+  timer:         '#FF5C1A',
+  'ai-programs': '#2E7BF6',
+  journal:       '#FF5C1A',
+  hydration:     '#2E7BF6',
+  cardio:        '#E94B3C',
+  supplements:   '#2E9E5B',
+  wearables:     '#E91E63',
+  rpe:           '#7B5BD0',
 };
 
-const CATEGORIES = Object.keys(CATEGORY_BASE);
-
-function getCategoryMeta(theme: any) {
-  return Object.fromEntries(
-    Object.entries(CATEGORY_BASE).map(([k, v]) => [
-      k,
-      { ...v, color: v.color ?? (k === 'coaching' ? theme.primary : theme.text) },
-    ])
-  );
-}
+// Plugins shown in the "À la une" horizontal row
+const FEATURED_IDS = new Set(['habits', 'ai-programs']);
 
 // ── Main screen ───────────────────────────────────────────
 export default function PluginStoreScreen() {
