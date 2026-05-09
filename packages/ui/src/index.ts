@@ -9,7 +9,6 @@ export {
   ProgressBar,
   Divider,
   Skeleton,
-  colors,
   spacing,
   radius,
   typography,

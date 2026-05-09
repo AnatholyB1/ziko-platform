@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { router } from 'expo-router';
 import { format } from 'date-fns';
-import { colors as C } from '@ziko/ui';
 import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useHabitsStore, DEFAULT_HABITS } from '../store';
 import type { Habit } from '../store';
@@ -76,7 +75,7 @@ function getMotivation(style = 'motivational', completed: number, total: number)
 function ProgressRing({ completed, total }: { completed: number; total: number }) {
   const theme = useThemeStore((s) => s.theme);
   const pct = total > 0 ? completed / total : 0;
-  const color = pct === 1 ? C.accent : pct >= 0.5 ? theme.primary : C.warning;
+  const color = pct === 1 ? theme.warn : pct >= 0.5 ? theme.primary : theme.warn;
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.8 }}
@@ -158,7 +157,7 @@ function HabitCard({
             )}
           </View>
           {streak > 0 && (
-            <Text style={{ color: C.warning, fontSize: 12, marginTop: 2 }}>🔥 {t('habits.streakDays', { count: String(streak) })}</Text>
+            <Text style={{ color: theme.warn, fontSize: 12, marginTop: 2 }}>🔥 {t('habits.streakDays', { count: String(streak) })}</Text>
           )}
         </View>
 
@@ -207,13 +206,13 @@ function HabitCard({
                 <Text style={{ color: theme.muted, fontSize: 13 }}>
                   {value} / {habit.target} {habit.unit ?? ''}
                 </Text>
-                {isCompleted && <Text style={{ color: C.accent, fontSize: 13 }}>{t('habits.goalReached')}</Text>}
+                {isCompleted && <Text style={{ color: theme.warn, fontSize: 13 }}>{t('habits.goalReached')}</Text>}
               </View>
               <View style={{ height: 6, backgroundColor: theme.border, borderRadius: 3 }}>
                 <View style={{
                   width: `${Math.min((value / habit.target) * 100, 100)}%`,
                   height: '100%',
-                  backgroundColor: isCompleted ? C.accent : habit.color,
+                  backgroundColor: isCompleted ? theme.warn : habit.color,
                   borderRadius: 3,
                 }} />
               </View>
@@ -292,7 +291,7 @@ function ReminderModal({
               onPress={onRemove}
               style={{ borderRadius: 12, padding: 14, alignItems: 'center', marginBottom: 8 }}
             >
-              <Text style={{ color: C.error, fontSize: 14 }}>{t('habits.removeReminder')}</Text>
+              <Text style={{ color: '#EF4444', fontSize: 14 }}>{t('habits.removeReminder')}</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={onClose} style={{ padding: 14, alignItems: 'center' }}>
@@ -669,12 +668,12 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
             animate={{ opacity: 1 }}
             transition={{ type: 'timing', duration: 350, delay: 160 }}
             style={{
-              backgroundColor: C.accent + '11',
+              backgroundColor: theme.warn + '11',
               borderRadius: 16,
               padding: 14,
               marginBottom: 16,
               borderWidth: 1,
-              borderColor: C.accent + '33',
+              borderColor: theme.warn + '33',
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
@@ -688,11 +687,11 @@ export default function HabitsDashboardScreen({ supabase }: { supabase: any }) {
               <View style={{ height: 4, backgroundColor: theme.border, borderRadius: 2, marginTop: 6 }}>
                 <View style={{
                   width: `${Math.min((totalCalories / calorieGoal) * 100, 100)}%`,
-                  height: '100%', backgroundColor: C.accent, borderRadius: 2,
+                  height: '100%', backgroundColor: theme.warn, borderRadius: 2,
                 }} />
               </View>
             </View>
-            <Text style={{ color: C.accent, fontWeight: '700', fontSize: 14 }}>
+            <Text style={{ color: theme.warn, fontWeight: '700', fontSize: 14 }}>
               {totalCalories} / {calorieGoal} kcal
             </Text>
           </MotiView>

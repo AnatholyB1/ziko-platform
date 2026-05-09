@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,18 +7,19 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, useThemeStore } from '@ziko/plugin-sdk';
 import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../src/lib/supabase';
-import { Button, Input, colors, spacing } from '@ziko/ui';
+import { Button, Input, spacing } from '@ziko/ui';
 import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const theme = useThemeStore((s) => s.theme);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +47,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -68,7 +69,7 @@ export default function LoginScreen() {
               contentFit="contain"
               transition={300}
             />
-            <Text style={{ fontSize: 16, color: colors.textMuted, marginTop: 6 }}>
+            <Text style={{ fontSize: 16, color: theme.muted, marginTop: 6 }}>
               {t('auth.tagline')}
             </Text>
           </MotiView>
@@ -78,7 +79,7 @@ export default function LoginScreen() {
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'timing', duration: 450, delay: 100 }}
           >
-            <Text style={{ fontSize: 26, fontWeight: '700', color: colors.text, marginBottom: 28 }}>
+            <Text style={{ fontSize: 26, fontWeight: '700', color: theme.text, marginBottom: 28 }}>
               {t('auth.welcomeBack')}
             </Text>
 
@@ -111,38 +112,38 @@ export default function LoginScreen() {
 
             {/* Divider */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <Text style={{ color: colors.textMuted, marginHorizontal: 12, fontSize: 13 }}>{t('general.or')}</Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
+              <Text style={{ color: theme.muted, marginHorizontal: 12, fontSize: 13 }}>{t('general.or')}</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
             </View>
 
             {/* Google */}
             <TouchableOpacity
               onPress={handleGoogleLogin}
               style={{
-                backgroundColor: colors.surface,
+                backgroundColor: theme.surface,
                 borderRadius: 14,
                 paddingVertical: 15,
                 alignItems: 'center',
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: theme.border,
                 flexDirection: 'row',
                 justifyContent: 'center',
                 gap: 10,
               }}
             >
-              <Ionicons name="logo-google" size={18} color={colors.text} />
-              <Text style={{ color: colors.text, fontWeight: '500', fontSize: 15 }}>
+              <Ionicons name="logo-google" size={18} color={theme.text} />
+              <Text style={{ color: theme.text, fontWeight: '500', fontSize: 15 }}>
                 Continuer avec Google
               </Text>
             </TouchableOpacity>
 
             {/* Register link */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl }}>
-              <Text style={{ color: colors.textMuted }}>{t('auth.noAccount')} </Text>
+              <Text style={{ color: theme.muted }}>{t('auth.noAccount')} </Text>
               <Link href="/(auth)/register" asChild>
                 <TouchableOpacity>
-                  <Text style={{ color: colors.primary, fontWeight: '600' }}>{t('auth.register')}</Text>
+                  <Text style={{ color: theme.primary, fontWeight: '600' }}>{t('auth.register')}</Text>
                 </TouchableOpacity>
               </Link>
             </View>

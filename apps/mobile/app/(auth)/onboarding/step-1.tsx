@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -6,11 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
-import { colors, Input, Button } from '@ziko/ui';
-import { useTranslation } from '@ziko/plugin-sdk';
+import { Input, Button } from '@ziko/ui';
+import { useTranslation, useThemeStore } from '@ziko/plugin-sdk';
 
 export default function OnboardingStep1() {
   const { t } = useTranslation();
+  const theme = useThemeStore((s) => s.theme);
   const user = useAuthStore((s) => s.user);
   const [name, setName] = useState('');
 
@@ -26,7 +27,7 @@ export default function OnboardingStep1() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1, padding: 24 }}>
         {/* Progress dots */}
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
@@ -38,7 +39,7 @@ export default function OnboardingStep1() {
               transition={{ type: 'spring', delay: i * 60 }}
               style={{
                 flex: 1, height: 4, borderRadius: 2,
-                backgroundColor: i <= 1 ? colors.primary : colors.border,
+                backgroundColor: i <= 1 ? theme.primary : theme.border,
               }}
             />
           ))}
@@ -56,11 +57,11 @@ export default function OnboardingStep1() {
             transition={300}
           />
 
-          <Text style={{ color: colors.textMuted, marginTop: 24, fontSize: 13 }}>{t('onboarding.step', { current: '1', total: '5' })}</Text>
-          <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text, marginTop: 8 }}>
+          <Text style={{ color: theme.muted, marginTop: 24, fontSize: 13 }}>{t('onboarding.step', { current: '1', total: '5' })}</Text>
+          <Text style={{ fontSize: 28, fontWeight: '700', color: theme.text, marginTop: 8 }}>
             {t('onboarding.whatsYourName')}
           </Text>
-          <Text style={{ color: colors.textMuted, marginTop: 8, fontSize: 15 }}>
+          <Text style={{ color: theme.muted, marginTop: 8, fontSize: 15 }}>
             {t('onboarding.personalise')}
           </Text>
 
@@ -94,4 +95,3 @@ export default function OnboardingStep1() {
     </SafeAreaView>
   );
 }
-

@@ -1,10 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  StyleSheet,
   ViewStyle,
   TextStyle,
   TextInput,
@@ -12,24 +11,9 @@ import {
   StyleProp,
 } from 'react-native';
 import { MotiView } from 'moti';
+import { useThemeStore, ThemePalette } from '@ziko/plugin-sdk';
 
-// â”€â”€ Design Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export const colors = {
-  primary: '#FF5C1A',
-  primaryDark: '#D94A10',
-  accent: '#FF9500',
-  background: '#F7F6F3',
-  surface: '#FFFFFF',
-  surfaceLight: '#EFEFEC',
-  border: '#E2E0DA',
-  text: '#1C1A17',
-  textMuted: '#7A7670',
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  white: '#FFFFFF',
-} as const;
-
+// ── Static tokens (no theme dependency) ─────────────────────
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -57,11 +41,32 @@ export const typography = {
   button: { fontSize: 15, fontWeight: '600' as const },
 } as const;
 
-// â”€â”€ Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Internal helper ──────────────────────────────────────────
+function resolveCardStyle(theme: ThemePalette, override?: ThemePalette['cardStyle']): ViewStyle {
+  const style = override ?? theme.cardStyle;
+  switch (style) {
+    case 'flat':
+      return { borderWidth: 1, borderColor: theme.border };
+    case 'outlined':
+      return { borderWidth: 1.5, borderColor: theme.text };
+    case 'shadow':
+    default:
+      return {
+        borderWidth: 0,
+        shadowColor: theme.cardDark,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      };
+  }
+}
+
+// ── Button ───────────────────────────────────────────────────
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'accent' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'dark' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -81,24 +86,26 @@ export function Button({
   textStyle,
   leftIcon,
 }: ButtonProps) {
+  const theme = useThemeStore((s) => s.theme);
+
   const sizeStyles: Record<string, ViewStyle> = {
     sm: { paddingVertical: 8, paddingHorizontal: 16 },
     md: { paddingVertical: 15, paddingHorizontal: 24 },
     lg: { paddingVertical: 18, paddingHorizontal: 32 },
   };
   const variantStyles: Record<string, ViewStyle> = {
-    primary: { backgroundColor: colors.primary },
-    accent: { backgroundColor: colors.accent },
-    outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.primary },
+    primary: { backgroundColor: theme.primary },
+    dark: { backgroundColor: theme.cardDark },
+    outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: theme.primary },
     ghost: { backgroundColor: 'transparent' },
-    danger: { backgroundColor: colors.error + '22', borderWidth: 1, borderColor: colors.error },
+    danger: { backgroundColor: '#EF444422', borderWidth: 1, borderColor: '#EF4444' },
   };
   const textVariant: Record<string, TextStyle> = {
-    primary: { color: colors.white },
-    accent: { color: '#0D0F18' },
-    outline: { color: colors.primary },
-    ghost: { color: colors.textMuted },
-    danger: { color: colors.error },
+    primary: { color: '#FFFFFF' },
+    dark: { color: theme.cardDarkText },
+    outline: { color: theme.primary },
+    ghost: { color: theme.muted },
+    danger: { color: '#EF4444' },
   };
 
   return (
@@ -107,15 +114,23 @@ export function Button({
       disabled={disabled || loading}
       activeOpacity={0.75}
       style={[
-        styles.button,
+        {
+          borderRadius: radius.md,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'row',
+        },
         sizeStyles[size],
         variantStyles[variant],
-        (disabled || loading) && styles.buttonDisabled,
+        (disabled || loading) && { opacity: 0.45 },
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'accent' ? '#0D0F18' : colors.white} />
+        <ActivityIndicator
+          size="small"
+          color={variant === 'dark' ? theme.cardDarkText : '#FFFFFF'}
+        />
       ) : (
         <>
           {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
@@ -126,62 +141,89 @@ export function Button({
   );
 }
 
-// â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Card ─────────────────────────────────────────────────────
 interface CardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padding?: keyof typeof spacing;
-  /** Animate in on mount */
   animate?: boolean;
   delay?: number;
+  cardStyle?: 'flat' | 'shadow' | 'outlined';
 }
 
-export function Card({ children, style, padding = 'md', animate = false, delay = 0 }: CardProps) {
+export function Card({
+  children,
+  style,
+  padding = 'md',
+  animate = false,
+  delay = 0,
+  cardStyle,
+}: CardProps) {
+  const theme = useThemeStore((s) => s.theme);
+  const baseStyle: ViewStyle = {
+    backgroundColor: theme.surface,
+    borderRadius: radius.lg,
+    padding: spacing[padding],
+    ...resolveCardStyle(theme, cardStyle),
+  };
+
   if (animate) {
     return (
       <MotiView
         from={{ opacity: 0, translateY: 12 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'timing', duration: 350, delay }}
-        style={[styles.card, { padding: spacing[padding] }, style]}
+        style={[baseStyle, style]}
       >
         {children}
       </MotiView>
     );
   }
-  return (
-    <View style={[styles.card, { padding: spacing[padding] }, style]}>
-      {children}
-    </View>
-  );
+  return <View style={[baseStyle, style]}>{children}</View>;
 }
 
-// â”€â”€ Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Badge ────────────────────────────────────────────────────
 interface BadgeProps {
   label: string;
   color?: string;
   textColor?: string;
 }
 
-export function Badge({ label, color = colors.primary, textColor }: BadgeProps) {
-  const tc = textColor ?? color;
+export function Badge({ label, color, textColor }: BadgeProps) {
+  const theme = useThemeStore((s) => s.theme);
+  const c = color ?? theme.primary;
+  const tc = textColor ?? c;
   return (
-    <View style={[styles.badge, { backgroundColor: color + '22' }]}>
+    <View style={{
+      backgroundColor: c + '22',
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+      alignSelf: 'flex-start',
+    }}>
       <Text style={[typography.caption, { color: tc, fontWeight: '600' }]}>{label}</Text>
     </View>
   );
 }
 
-// â”€â”€ Tag â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export function Tag({ label, color = colors.accent }: { label: string; color?: string }) {
+// ── Tag ──────────────────────────────────────────────────────
+export function Tag({ label, color }: { label: string; color?: string }) {
+  const theme = useThemeStore((s) => s.theme);
+  const c = color ?? theme.warn;
   return (
-    <View style={{ backgroundColor: color + '18', borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' }}>
-      <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{label}</Text>
+    <View style={{
+      backgroundColor: c + '18',
+      borderRadius: radius.sm,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      alignSelf: 'flex-start',
+    }}>
+      <Text style={{ color: c, fontSize: 11, fontWeight: '600' }}>{label}</Text>
     </View>
   );
 }
 
-// â”€â”€ Input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Input ────────────────────────────────────────────────────
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
@@ -189,26 +231,39 @@ interface InputProps extends TextInputProps {
 }
 
 export function Input({ label, error, containerStyle, style, ...props }: InputProps) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <View style={[{ marginBottom: spacing.md }, containerStyle]}>
       {label && (
-        <Text style={[typography.bodySmall, { color: colors.textMuted, marginBottom: 6 }]}>
+        <Text style={[typography.bodySmall, { color: theme.muted, marginBottom: 6 }]}>
           {label}
         </Text>
       )}
       <TextInput
         {...props}
-        style={[styles.input, error ? styles.inputError : null, style]}
-        placeholderTextColor={colors.textMuted}
+        style={[
+          {
+            backgroundColor: theme.background,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: error ? '#EF4444' : theme.border,
+            paddingHorizontal: spacing.md,
+            paddingVertical: 14,
+            color: theme.text,
+            fontSize: 15,
+          },
+          style,
+        ]}
+        placeholderTextColor={theme.muted}
       />
       {error && (
-        <Text style={[typography.caption, { color: colors.error, marginTop: 4 }]}>{error}</Text>
+        <Text style={[typography.caption, { color: '#EF4444', marginTop: 4 }]}>{error}</Text>
       )}
     </View>
   );
 }
 
-// â”€â”€ ScreenHeader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ScreenHeader ─────────────────────────────────────────────
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
@@ -216,12 +271,19 @@ interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, subtitle, right }: ScreenHeaderProps) {
+  const theme = useThemeStore((s) => s.theme);
   return (
-    <View style={styles.screenHeader}>
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+      paddingTop: spacing.sm,
+    }}>
       <View style={{ flex: 1 }}>
-        <Text style={[typography.h2, { color: colors.text }]}>{title}</Text>
+        <Text style={[typography.h2, { color: theme.text }]}>{title}</Text>
         {subtitle && (
-          <Text style={[typography.bodySmall, { color: colors.textMuted, marginTop: 2 }]}>
+          <Text style={[typography.bodySmall, { color: theme.muted, marginTop: 2 }]}>
             {subtitle}
           </Text>
         )}
@@ -231,7 +293,7 @@ export function ScreenHeader({ title, subtitle, right }: ScreenHeaderProps) {
   );
 }
 
-// â”€â”€ StatCard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── StatCard ─────────────────────────────────────────────────
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -242,107 +304,83 @@ interface StatCardProps {
   delay?: number;
 }
 
-export function StatCard({ label, value, unit, color = colors.primary, style, animate, delay }: StatCardProps) {
+export function StatCard({ label, value, unit, color, style, animate, delay }: StatCardProps) {
+  const theme = useThemeStore((s) => s.theme);
+  const c = color ?? theme.primary;
   return (
     <Card style={[{ alignItems: 'center', flex: 1 }, style]} animate={animate} delay={delay}>
-      <Text style={[typography.h2, { color }]}>{value}</Text>
-      {unit && <Text style={[typography.caption, { color: colors.textMuted }]}>{unit}</Text>}
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: 4 }]}>{label}</Text>
+      <Text style={[typography.h2, { color: c }]}>{value}</Text>
+      {unit && <Text style={[typography.caption, { color: theme.muted }]}>{unit}</Text>}
+      <Text style={[typography.caption, { color: theme.muted, marginTop: 4 }]}>{label}</Text>
     </Card>
   );
 }
 
-// â”€â”€ ProgressBar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── ProgressBar ──────────────────────────────────────────────
 interface ProgressBarProps {
-  progress: number; // 0-1
+  progress: number; // 0–1
   color?: string;
   height?: number;
   style?: ViewStyle;
 }
 
-export function ProgressBar({ progress, color = colors.primary, height = 6, style }: ProgressBarProps) {
+export function ProgressBar({ progress, color, height = 6, style }: ProgressBarProps) {
+  const theme = useThemeStore((s) => s.theme);
+  const c = color ?? theme.primary;
   const pct = Math.min(Math.max(progress, 0), 1);
   return (
-    <View style={[{ height, backgroundColor: colors.border, borderRadius: height / 2, overflow: 'hidden' }, style]}>
+    <View style={[{
+      height,
+      backgroundColor: theme.border,
+      borderRadius: height / 2,
+      overflow: 'hidden',
+    }, style]}>
       <MotiView
         from={{ width: '0%' }}
         animate={{ width: `${pct * 100}%` as any }}
         transition={{ type: 'timing', duration: 600 }}
-        style={{ height: '100%', backgroundColor: color, borderRadius: height / 2 }}
+        style={{ height: '100%', backgroundColor: c, borderRadius: height / 2 }}
       />
     </View>
   );
 }
 
-// â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Divider ──────────────────────────────────────────────────
 export function Divider({ style }: { style?: ViewStyle }) {
-  return <View style={[styles.divider, style]} />;
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <View style={[{
+      height: 1,
+      backgroundColor: theme.border,
+      marginVertical: spacing.md,
+    }, style]} />
+  );
 }
 
-// â”€â”€ Skeleton â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export function Skeleton({ width, height = 16, borderRadius = radius.sm, style }: {
+// ── Skeleton ─────────────────────────────────────────────────
+export function Skeleton({
+  width,
+  height = 16,
+  borderRadius = radius.sm,
+  style,
+}: {
   width?: number | string;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;
 }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
     <MotiView
       from={{ opacity: 0.3 }}
       animate={{ opacity: 0.7 }}
       transition={{ type: 'timing', duration: 800, loop: true }}
-      style={[{ width: width as any, height, borderRadius, backgroundColor: colors.surfaceLight }, style]}
+      style={[{
+        width: width as any,
+        height,
+        borderRadius,
+        backgroundColor: theme.border,
+      }, style]}
     />
   );
 }
-
-// â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const styles = StyleSheet.create({
-  button: {
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  buttonDisabled: {
-    opacity: 0.45,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-    alignSelf: 'flex-start',
-  },
-  input: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    color: colors.text,
-    fontSize: 15,
-  },
-  inputError: {
-    borderColor: colors.error,
-  },
-  screenHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    paddingTop: spacing.sm,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
-  },
-});
-

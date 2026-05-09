@@ -10,7 +10,7 @@ import { useAIStore } from '../../src/stores/aiStore';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
-import { colors, Card, ProgressBar } from '@ziko/ui';
+import { Card, ProgressBar } from '@ziko/ui';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import type { ProgramExercise } from '@ziko/plugin-sdk';
@@ -44,10 +44,11 @@ let useMeasurementsStore: any = null;
 try { useMeasurementsStore = require('@ziko/plugin-measurements').useMeasurementsStore; } catch {}
 
 function StreakBadge({ count, primary }: { count: number; primary?: string }) {
+  const theme = useThemeStore((s) => s.theme);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: theme.warn + '20', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 }}>
       <Text style={{ fontSize: 14 }}>{"\uD83D\uDD25"}</Text>
-      <Text style={{ color: colors.warning, fontWeight: '700', fontSize: 13 }}>{count}d</Text>
+      <Text style={{ color: theme.warn, fontWeight: '700', fontSize: 13 }}>{count}d</Text>
     </View>
   );
 }
@@ -316,7 +317,7 @@ export default function DashboardScreen() {
           </View>
           <ProgressBar
             progress={weeklyCount / weeklyGoal}
-            color={weeklyCount >= weeklyGoal ? colors.accent : theme.primary}
+            color={weeklyCount >= weeklyGoal ? theme.warn : theme.primary}
             height={8}
           />
         </MotiView>
@@ -487,8 +488,8 @@ export default function DashboardScreen() {
             </Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <DaySummaryCard title={t('home.thisWeek')} value={weeklyCount} icon={"\uD83C\uDFCB\uFE0F"} color={theme.primary} delay={0} />
-              <DaySummaryCard title={t('general.today')} value={todaySession ? '\u2705' : '\u274C'} icon="\uD83D\uDCCA" color={todaySession ? colors.accent : theme.muted} delay={80} />
-              <DaySummaryCard title="Goal" value={profile?.goal?.replace('_', ' ') ?? '-'} icon={"\uD83C\uDFAF"} color={colors.warning} delay={160} />
+              <DaySummaryCard title={t('general.today')} value={todaySession ? '\u2705' : '\u274C'} icon="\uD83D\uDCCA" color={todaySession ? theme.warn : theme.muted} delay={80} />
+              <DaySummaryCard title="Goal" value={profile?.goal?.replace('_', ' ') ?? '-'} icon={"\uD83C\uDFAF"} color={theme.warn} delay={160} />
             </View>
           </MotiView>
         )}
@@ -694,7 +695,7 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                   {session.total_volume_kg != null && (
-                    <Text style={{ color: colors.accent, fontWeight: '700', fontSize: 14 }}>
+                    <Text style={{ color: theme.warn, fontWeight: '700', fontSize: 14 }}>
                       {session.total_volume_kg.toLocaleString()} kg
                     </Text>
                   )}
