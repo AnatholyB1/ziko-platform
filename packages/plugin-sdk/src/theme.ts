@@ -17,6 +17,19 @@ export interface ThemePalette {
   tabBarInactive: string;
   statusBarStyle: 'dark' | 'light';
   statusBarBg: string;
+  // Semantic tokens
+  success: string;
+  info: string;
+  violet: string;
+  warn: string;
+  // Dark surface
+  cardDark: string;
+  cardDarkText: string;
+  // Card style
+  cardStyle: 'flat' | 'shadow' | 'outlined';
+  // Typography
+  fontDisplay: string;
+  fontBody: string;
 }
 
 // ── Default (Sport Orange) ──────────────────────────────
@@ -36,6 +49,15 @@ export const DEFAULT_THEME: ThemePalette = {
   tabBarInactive: '#7A7670',
   statusBarStyle: 'dark',
   statusBarBg: '#F7F6F3',
+  success: '#2E9E5B',
+  info: '#2E7BF6',
+  violet: '#7B5BD0',
+  warn: '#E8A33A',
+  cardDark: '#1C1A17',
+  cardDarkText: '#FFFAF6',
+  cardStyle: 'shadow',
+  fontDisplay: 'Manrope_800ExtraBold',
+  fontBody: 'Geist_400Regular',
 };
 
 // ── Theme Definitions ───────────────────────────────────
