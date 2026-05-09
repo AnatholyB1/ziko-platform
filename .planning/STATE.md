@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.4
-milestone_name: Systeme de Credits IA & Monetisation
+milestone_name: Système de Crédits IA & Monétisation
 status: complete
-stopped_at: v1.4 milestone archived — all 5 phases shipped
-last_updated: "2026-04-29T00:00:00.000Z"
-last_activity: 2026-04-29 -- v1.4 milestone complete (5 phases, 11 plans, tagged v1.4)
+last_updated: "2026-05-10"
+last_activity: 2026-05-10 -- v1.4 milestone archived
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 21
+  completed_phases: 21
+  total_plans: 52
+  completed_plans: 52
   percent: 100
 ---
 
@@ -18,17 +17,16 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-29)
+See: .planning/PROJECT.md (updated 2026-05-10)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement.
-**Current focus:** v1.4 milestone complete — planning next milestone
+**Current focus:** v1.4 milestone archived — ready for next milestone
 
 ## Current Position
 
-Phase: 20 (activity-earn-hooks) — COMPLETE
-Plan: 2 of 2
-Status: Phase 20 verified (13/13 must-haves)
-Last activity: 2026-04-09 -- Phase 20 execution started
+Milestone: v1.4 — ARCHIVED 2026-05-10
+All 5 phases complete (17–21), 11 plans shipped
+Status: Milestone complete, git tagged v1.4
 
 Progress: [░░░░░░░░░░] 0% (v1.4 milestone — 0/5 phases)
 
@@ -87,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-05T22:22:58.693Z
-Stopped at: Phase 20 context gathered (discuss mode)
-Resume file: .planning/phases/20-activity-earn-hooks/20-CONTEXT.md
+Last session: 2026-04-29T22:01:31.987Z
+Stopped at: context exhaustion at 90% (2026-04-29)
+Resume file: None
