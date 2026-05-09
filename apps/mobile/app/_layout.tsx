@@ -16,6 +16,16 @@ import CreditEarnToast from '../src/components/CreditEarnToast';
 import CreditExhaustionSheet from '../src/components/CreditExhaustionSheet';
 import ErrorBoundary from '../src/components/ErrorBoundary';
 import { initSentry, setUserContext, clearUserContext } from '../src/lib/sentry';
+import {
+  useFonts,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
+import {
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+} from '@expo-google-fonts/geist';
 
 // Init Sentry before anything renders
 initSentry();
@@ -45,6 +55,14 @@ function RootLayout() {
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
   const setBanner = useThemeStore((s) => s.setBanner);
+
+  const [fontsLoaded] = useFonts({
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+  });
 
   useEffect(() => {
     initialize();
@@ -79,7 +97,7 @@ function RootLayout() {
     }
   }, [isInitialized]);
 
-  if (!isInitialized) return null;
+  if (!isInitialized || !fontsLoaded) return null;
 
   return (
     <ErrorBoundary>
