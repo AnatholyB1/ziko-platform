@@ -4,7 +4,6 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -73,7 +72,7 @@ export default function PluginStoreScreen() {
   const [reviews, setReviews] = useState<ReviewAgg[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
+  const [category, setCategory] = useState<string>('all');
 
   // ── Load data ──────────────────
   const load = useCallback(async () => {
@@ -149,118 +148,119 @@ export default function PluginStoreScreen() {
   // ── Filter ──────────────────────
   const filtered = useMemo(() => {
     let list = plugins;
-    if (category !== 'all') list = list.filter((p) => p.manifest.category === category);
+    if (category !== 'all') {
+      list = list.filter((p) => {
+        const cat = p.manifest.category;
+        // Map legacy categories to new ones
+        const mapped = cat === 'analytics' || cat === 'persona' ? 'coaching' : cat;
+        return mapped === category;
+      });
+    }
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p) =>
         p.manifest.name.toLowerCase().includes(q) ||
-        p.manifest.description?.toLowerCase().includes(q) ||
-        p.manifest.category?.toLowerCase().includes(q)
+        p.manifest.description?.toLowerCase().includes(q)
       );
     }
     return list;
   }, [plugins, category, search]);
 
-  const installed = filtered.filter((p) => userPlugins.includes(p.plugin_id));
-  const available = filtered.filter((p) => !userPlugins.includes(p.plugin_id));
-
   const getRating = (pid: string) => reviews.find((r) => r.plugin_id === pid);
 
-  // ── Render ─────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Header */}
-      <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text }}>{t('store.title')}</Text>
-        <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>{t('store.discover')}</Text>
-      </View>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+      >
+        {/* ── Header ───────────────────────── */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16, marginBottom: 16 }}>
+          <View>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: (theme as any).muted }}>Étend ton Ziko</Text>
+            <Text style={{ fontSize: 26, fontWeight: '800', color: theme.text, lineHeight: 30, marginTop: 2 }}>
+              Boutique<Text style={{ color: theme.primary }}>.</Text>
+            </Text>
+          </View>
+        </View>
 
-      {/* Search bar */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+        {/* ── Search ───────────────────────── */}
         <View style={{
           flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface,
-          borderRadius: 14, borderWidth: 1, borderColor: theme.border, paddingHorizontal: 14, height: 44,
+          borderRadius: 14, borderWidth: 1, borderColor: (theme as any).border,
+          paddingHorizontal: 14, height: 44, marginBottom: 14,
         }}>
-          <Ionicons name="search" size={18} color="#7A7670" />
+          <Ionicons name="search" size={16} color={(theme as any).muted} />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder={t('store.searchPlugin')}
-            placeholderTextColor="#B0ADA8"
-            style={{ flex: 1, marginLeft: 10, fontSize: 14, color: theme.text }}
+            placeholder="Rechercher un module…"
+            placeholderTextColor={(theme as any).muted}
+            style={{ flex: 1, marginLeft: 10, fontSize: 13, color: theme.text }}
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color="#B0ADA8" />
+              <Ionicons name="close-circle" size={16} color={(theme as any).muted} />
             </TouchableOpacity>
           )}
         </View>
-      </View>
 
-      {/* Category pills */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 8 }}>
-        {CATEGORIES.map((cat) => {
-          const categoryMeta = getCategoryMeta(theme);
-          const meta = categoryMeta[cat];
-          const active = cat === category;
-          return (
-            <TouchableOpacity key={cat} onPress={() => setCategory(cat)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-                height: 36, paddingHorizontal: 14, borderRadius: 20,
-                backgroundColor: active ? theme.text : theme.surface,
-                borderWidth: 1, borderColor: active ? theme.text : theme.border,
-              }}>
-              <Ionicons name={meta.icon as any} size={14} color={active ? theme.surface : meta.color} />
-              <Text style={{ fontSize: 13, fontWeight: '600', color: active ? theme.surface : theme.text }}>
-                {t(meta.labelKey)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        {/* ── Category pills ───────────────── */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -20 }}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 8, marginBottom: 16 }}>
+          {STORE_CATS.map((cat) => {
+            const active = cat.id === category;
+            return (
+              <TouchableOpacity key={cat.id} onPress={() => setCategory(cat.id)}
+                style={{
+                  paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
+                  backgroundColor: active ? theme.text : theme.text + '10',
+                }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#fff' : theme.text }}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
-      >
-        {/* Installed section */}
-        {installed.length > 0 && (
-          <>
-            <SectionTitle icon="checkmark-circle" label={t('store.installedCount', { count: String(installed.length) })} />
-            {installed.map((p) => (
-              <PluginCard key={p.plugin_id} plugin={p} installed rating={getRating(p.plugin_id)}
-                onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
-                onInstall={() => {
-                  const mainRoute = p.manifest.routes.find((r) => r.showInTabBar) ?? p.manifest.routes[0];
-                  if (mainRoute) router.push(mainRoute.path as any);
-                }}
-                onUninstall={() => uninstallPlugin(p.plugin_id)}
-              />
-            ))}
-            <View style={{ height: 1, backgroundColor: theme.border, marginVertical: 16 }} />
-          </>
+        {/* ── Featured (only cat=all, no search) ── */}
+        {category === 'all' && search === '' && (
+          <FeaturedRow
+            plugins={plugins}
+            installed={userPlugins}
+            onInstall={(p) => installPlugin(p.plugin_id, p.manifest)}
+            onUninstall={(p) => uninstallPlugin(p.plugin_id)}
+          />
         )}
 
-        {/* Available section */}
-        {available.length > 0 && (
-          <>
-            <SectionTitle icon="sparkles" label={t('store.availableCount', { count: String(available.length) })} />
-            {available.map((p) => (
-              <PluginCard key={p.plugin_id} plugin={p} installed={false} rating={getRating(p.plugin_id)}
-                onPress={() => router.push(`/(app)/store/${p.plugin_id}` as any)}
-                onInstall={() => installPlugin(p.plugin_id, p.manifest)}
-              />
-            ))}
-          </>
-        )}
+        {/* ── Plugin list ───────────────────── */}
+        <Text style={{
+          fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
+          color: (theme as any).muted, marginBottom: 10,
+        }}>
+          {category === 'all'
+            ? 'Tous les modules'
+            : STORE_CATS.find((c) => c.id === category)?.label ?? ''}
+        </Text>
 
-        {filtered.length === 0 && (
-          <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <Ionicons name="search-outline" size={48} color="#E2E0DA" />
-            <Text style={{ color: theme.muted, fontSize: 15, marginTop: 12 }}>{t('store.noPlugins')}</Text>
+        {filtered.length === 0 ? (
+          <View style={{ alignItems: 'center', paddingTop: 48 }}>
+            <Ionicons name="search-outline" size={40} color={(theme as any).border} />
+            <Text style={{ color: (theme as any).muted, fontSize: 14, marginTop: 12 }}>Aucun module trouvé</Text>
           </View>
+        ) : (
+          filtered.map((p) => (
+            <PluginRow
+              key={p.plugin_id}
+              plugin={p}
+              isInstalled={userPlugins.includes(p.plugin_id)}
+              rating={getRating(p.plugin_id)}
+              onInstall={() => installPlugin(p.plugin_id, p.manifest)}
+              onUninstall={() => uninstallPlugin(p.plugin_id)}
+            />
+          ))
         )}
       </ScrollView>
     </SafeAreaView>
