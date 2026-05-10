@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Système de Crédits IA & Monétisation
-status: complete
-last_updated: "2026-05-10"
-last_activity: 2026-05-10 -- v1.4 milestone archived
+milestone: v1.0
+milestone_name: milestone
+status: completed
+stopped_at: context exhaustion at 96% (2026-05-10)
+last_updated: "2026-05-10T01:23:25.707Z"
 progress:
   total_phases: 21
   completed_phases: 21
@@ -85,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-29T22:01:31.987Z
-Stopped at: context exhaustion at 90% (2026-04-29)
+Last session: 2026-05-10T01:23:25.700Z
+Stopped at: context exhaustion at 96% (2026-05-10)
 Resume file: None
