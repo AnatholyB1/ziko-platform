@@ -103,7 +103,7 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      ["@sentry/react-native", { "uploadSourceMaps": false }]
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true
