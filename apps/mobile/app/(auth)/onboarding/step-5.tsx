@@ -1,87 +1,103 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeStore } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
-import { useTranslation } from '@ziko/plugin-sdk';
+
+const TOTAL = 8;
+const STEP = 4;
+
+const EQUIP = [
+  { id: 'gym',        label: 'Salle complète', sub: 'Barres, machines, racks',    icon: 'barbell-outline' as const },
+  { id: 'home',       label: 'Home gym',       sub: 'Haltères, banc, élastiques', icon: 'scale-outline' as const },
+  { id: 'bodyweight', label: 'Poids du corps', sub: 'Tractions, dips, push-ups',  icon: 'person-outline' as const },
+  { id: 'outdoor',    label: 'Extérieur',      sub: 'Course, parc, calisthénie',  icon: 'walk-outline' as const },
+];
+
+function OBShell({ step, total, onBack, onNext, canNext, children }: {
+  step: number; total: number; onBack: () => void; onNext: () => void; canNext: boolean; children: React.ReactNode;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
+        <TouchableOpacity onPress={onBack} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: theme.text + '10', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="chevron-back" size={16} color={theme.text} />
+        </TouchableOpacity>
+        <View style={{ flex: 1, height: 4, backgroundColor: theme.text + '14', borderRadius: 999, overflow: 'hidden' }}>
+          <View style={{ width: `${((step + 1) / total) * 100}%` as any, height: '100%', backgroundColor: '#FF5C1A', borderRadius: 999 }} />
+        </View>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted }}>{step + 1}/{total}</Text>
+      </View>
+      <View style={{ flex: 1, paddingHorizontal: 22 }}>{children}</View>
+      <View style={{ paddingHorizontal: 18, paddingBottom: 22, paddingTop: 10 }}>
+        <TouchableOpacity onPress={canNext ? onNext : undefined} style={{ paddingVertical: 15, borderRadius: 16, alignItems: 'center', backgroundColor: '#FF5C1A', opacity: canNext ? 1 : 0.35 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Continuer</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 export default function OnboardingStep5() {
-  const { t } = useTranslation();
+  const theme = useThemeStore((s) => s.theme);
   const user = useAuthStore((s) => s.user);
-  const refreshProfile = useAuthStore((s) => s.refreshProfile);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const handleFinish = async () => {
-    setIsLoading(true);
-    try {
-      const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
-      if (!uid) return;
-      await supabase
-        .from('user_profiles')
-        .update({ onboarding_done: true })
-        .eq('id', uid);
-      await refreshProfile();
-      router.replace('/(app)');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleNext = async () => {
+    if (!selected || saving) return;
+    setSaving(true);
+    const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+    if (uid) await supabase.from('user_profiles').update({ equipment: selected }).eq('id', uid);
+    setSaving(false);
+    router.push('/(auth)/onboarding/step-6' as any);
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
-      <View style={{ flex: 1, padding: 24, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ flexDirection: 'row', gap: 6, position: 'absolute', top: 24 + 8, left: 24, right: 24 }}>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: '#FF5C1A' }} />
-          ))}
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <OBShell step={STEP} total={TOTAL} onBack={() => router.back()} onNext={handleNext} canNext={!!selected && !saving}>
+        <View style={{ marginTop: 18, marginBottom: 22 }}>
+          <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase', color: '#FF5C1A', marginBottom: 8 }}>Étape 4</Text>
+          <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, lineHeight: 30, letterSpacing: -0.5 }}>Quel équipement as-tu ?</Text>
+          <Text style={{ fontSize: 14, color: theme.muted, marginTop: 8, lineHeight: 20 }}>Pour proposer les bons exercices et alternatives.</Text>
         </View>
-
-        <Image
-          source={require('../../../assets/image/renard.png')}
-          style={{ width: 160, height: 160, marginBottom: 24 }}
-          contentFit="contain"
-          transition={300}
-        />
-        <Text style={{ fontSize: 32, fontWeight: '800', color: '#1C1A17', textAlign: 'center' }}>
-          {t('onboarding.allSet')}
-        </Text>
-        <Text style={{ color: '#7A7670', marginTop: 12, fontSize: 15, textAlign: 'center', lineHeight: 22 }}>
-          {t('onboarding.allSetDesc')}
-        </Text>
-
-        <View style={{ marginTop: 48, gap: 12, width: '100%' }}>
-          {[t('onboarding.bullet1'), t('onboarding.bullet2'), t('onboarding.bullet3')].map((item) => (
-            <View key={item} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FF5C1A' + '22', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#FF5C1A', fontSize: 12 }}>✓</Text>
-              </View>
-              <Text style={{ color: '#1C1A17', fontSize: 15 }}>{item}</Text>
-            </View>
-          ))}
+        <View style={{ gap: 10 }}>
+          {EQUIP.map((eq) => {
+            const active = selected === eq.id;
+            return (
+              <TouchableOpacity
+                key={eq.id}
+                onPress={() => setSelected(eq.id)}
+                style={{
+                  padding: 14, borderRadius: 16,
+                  backgroundColor: active ? '#FF5C1A' + '10' : theme.surface,
+                  borderWidth: active ? 2 : 1,
+                  borderColor: active ? '#FF5C1A' : theme.border,
+                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                }}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#FF5C1A' + '18', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name={eq.icon} size={20} color="#FF5C1A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>{eq.label}</Text>
+                  <Text style={{ fontSize: 12, color: theme.muted, marginTop: 3 }}>{eq.sub}</Text>
+                </View>
+                <View style={{
+                  width: 22, height: 22, borderRadius: 11,
+                  borderWidth: active ? 6 : 1.5,
+                  borderColor: active ? '#FF5C1A' : theme.border,
+                  backgroundColor: active ? '#fff' : 'transparent',
+                }} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
-
-        <TouchableOpacity
-          onPress={handleFinish}
-          disabled={isLoading}
-          style={{
-            position: 'absolute',
-            bottom: 32,
-            left: 24,
-            right: 24,
-            backgroundColor: '#FF5C1A',
-            borderRadius: 16,
-            paddingVertical: 18,
-            alignItems: 'center',
-            opacity: isLoading ? 0.7 : 1,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-            {isLoading ? t('general.loading') : t('onboarding.getStarted')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </OBShell>
     </SafeAreaView>
   );
 }
