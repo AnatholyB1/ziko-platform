@@ -350,99 +350,90 @@ function FeaturedRow({
   );
 }
 
-// ── Plugin card ───────────────────────────────────────────
-const PluginCard = React.memo(function PluginCard({ plugin, installed, rating, onPress, onInstall, onUninstall }: {
+// ── Plugin row ────────────────────────────────────────────
+const PluginRow = React.memo(function PluginRow({
+  plugin,
+  isInstalled,
+  rating,
+  onInstall,
+  onUninstall,
+}: {
   plugin: RegistryPlugin;
-  installed: boolean;
+  isInstalled: boolean;
   rating?: ReviewAgg;
-  onPress: () => void;
   onInstall: () => void;
-  onUninstall?: () => void;
+  onUninstall: () => void;
 }) {
   const theme = useThemeStore((s) => s.theme);
-  const { t } = useTranslation();
   const m = plugin.manifest;
-  const categoryMeta = getCategoryMeta(theme);
-  const catMeta = categoryMeta[m.category] ?? categoryMeta.coaching;
-  const color = catMeta.color;
+  const color = PLUGIN_COLORS[plugin.plugin_id] ?? theme.primary;
+  const isPremium = m.price !== 'free';
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}
-      style={{
-        backgroundColor: theme.surface, borderRadius: 18, padding: 16, marginBottom: 10,
-        borderWidth: 1, borderColor: installed ? theme.primary + '33' : theme.border,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8,
-        elevation: 2,
+    <View style={{
+      backgroundColor: theme.surface, borderRadius: 16, padding: 12,
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      borderWidth: 1, borderColor: theme.border, marginBottom: 8,
+    }}>
+      {/* Icon */}
+      <View style={{
+        width: 44, height: 44, borderRadius: 12, flex: 0,
+        backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center',
       }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        {/* Icon */}
-        <View style={{
-          width: 56, height: 56, borderRadius: 16, backgroundColor: color + '18',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Ionicons name={(m.icon || 'grid') as any} size={26} color={color} />
-        </View>
+        <Ionicons name={(m.icon || 'grid') as any} size={20} color={color} />
+      </View>
 
-        {/* Info */}
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{m.name}</Text>
-            {installed && (
-              <View style={{ backgroundColor: theme.primary + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-                <Text style={{ color: theme.primary, fontSize: 10, fontWeight: '700' }}>{t('store.installed').toUpperCase()}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Category + rating */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-            <View style={{ backgroundColor: color + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 }}>
-              <Text style={{ color, fontSize: 11, fontWeight: '600' }}>{t(catMeta.labelKey)}</Text>
+      {/* Info */}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {/* Name + PRO badge */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{m.name}</Text>
+          {isPremium && (
+            <View style={{
+              backgroundColor: (theme as any).warn + '22', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6,
+            }}>
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: (theme as any).warn }}>PRO</Text>
             </View>
-            {rating && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Stars rating={rating.avg} size={11} />
-                <Text style={{ color: theme.muted, fontSize: 11 }}>{rating.avg.toFixed(1)} ({rating.count})</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Description */}
-          <Text numberOfLines={2} style={{ color: theme.muted, fontSize: 13, marginTop: 6, lineHeight: 18 }}>
-            {m.description}
+          )}
+        </View>
+        {/* Description */}
+        <Text numberOfLines={1} style={{ fontSize: 11, color: theme.muted, marginTop: 2, lineHeight: 15 }}>
+          {m.description}
+        </Text>
+        {/* Rating + price */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+          {rating && (
+            <Text style={{ fontSize: 10.5, color: theme.muted }}>
+              ⭐ {rating.avg.toFixed(1)} ·{' '}
+            </Text>
+          )}
+          <Text style={{
+            fontSize: 10.5, fontWeight: '700',
+            color: m.price === 'free' ? (theme as any).success : theme.primary,
+          }}>
+            {m.price === 'free' ? 'Gratuit' : `${m.price} €/mo`}
           </Text>
         </View>
       </View>
 
-      {/* Actions */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 12, gap: 8 }}>
-        {/* Price tag */}
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize: 13 }}>
-            {m.price === 'free' ? t('store.free') : `${m.price} €`}
-          </Text>
-        </View>
-
-        {installed ? (
-          <>
-            <TouchableOpacity onPress={onInstall}
-              style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9 }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{t('store.open')}</Text>
-            </TouchableOpacity>
-            {onUninstall && (
-              <TouchableOpacity onPress={onUninstall}
-                style={{ backgroundColor: '#F4F3F0', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 }}>
-                <Ionicons name="trash-outline" size={16} color="#F44336" />
-              </TouchableOpacity>
-            )}
-          </>
-        ) : (
-          <TouchableOpacity onPress={onInstall}
-            style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 9 }}>
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{t('store.install')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
+      {/* Toggle button */}
+      <TouchableOpacity
+        onPress={isInstalled ? onUninstall : onInstall}
+        activeOpacity={0.75}
+        style={{
+          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+          backgroundColor: isInstalled
+            ? (theme as any).success + '18'
+            : theme.primary,
+        }}
+      >
+        <Text style={{
+          fontSize: 11, fontWeight: '700',
+          color: isInstalled ? (theme as any).success : '#fff',
+        }}>
+          {isInstalled ? '✓' : 'Installer'}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 });
