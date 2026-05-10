@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, usePluginRegistry } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 
 // ── Shared chrome ──────────────────────────────────────────────
@@ -302,6 +302,8 @@ export default function SettingsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
+  const installedPlugins = usePluginRegistry((s) => s.installedPlugins);
   const [sub, setSub] = useState<SubView>(null);
 
   if (sub === 'notifications') return <NotifSubScreen onBack={() => setSub(null)} />;
@@ -371,6 +373,7 @@ export default function SettingsScreen() {
 
         <STGroup title="Compte">
           <STRow icon="person-outline" tint="#FF5C1A" label="Informations personnelles" sub="Nom, email, téléphone" onPress={() => showAlert('Bientôt', 'Cette section arrive dans la prochaine version.')} />
+          <STRow icon="flag-outline" tint="#2E7BF6" label="Objectif fitness" sub="Perte de poids, force, masse…" onPress={() => router.push('/(app)/profile/goal-edit' as any)} />
           <STRow icon="lock-closed-outline" tint={theme.text} label="Mot de passe" sub="Modifier" onPress={() => router.push('/(auth)/forgot' as any)} />
           <STRow icon="shield-checkmark-outline" tint="#2E7BF6" label="Confidentialité" sub="Profil public · Données partagées" onPress={() => showAlert('Confidentialité', 'Tes données sont chiffrées et ne sont jamais revendues.')} />
           <STRow icon="trash-outline" tint="#E94B3C" label="Supprimer le compte" danger onPress={handleDeleteAccount} />
@@ -378,7 +381,7 @@ export default function SettingsScreen() {
 
         <STGroup title="Abonnement">
           <STRow icon="sparkles-outline" tint="#FF5C1A" label="Plan actuel" right="Free" onPress={() => router.push('/(app)/paywall' as any)} />
-          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right="Voir solde" onPress={() => router.back()} />
+          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right="Voir solde" onPress={() => router.push('/(app)/ai' as any)} />
           <STRow icon="card-outline" tint={theme.text} label="Passer Premium" sub="9,99€/mois — annulable à tout moment" onPress={() => router.push('/(app)/paywall' as any)} />
         </STGroup>
 
@@ -386,7 +389,7 @@ export default function SettingsScreen() {
           <STRow icon="notifications-outline" tint="#7B5BD0" label="Notifications" sub="Push, sons, rappels" onPress={() => setSub('notifications')} />
           <STRow icon="color-palette-outline" tint="#2E7BF6" label="Apparence" sub="Thème · Langue · Unités" onPress={() => setSub('appearance')} />
           <STRow icon="link-outline" tint="#2E9E5B" label="Intégrations" right="2 actives" onPress={() => setSub('integrations')} />
-          <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right="17 / 17" onPress={() => router.push('/(app)/modules' as any)} />
+          <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right={`${enabledPlugins.length} / ${installedPlugins.length}`} onPress={() => router.push('/(app)/modules' as any)} />
           <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => router.push('/(app)/referral' as any)} />
         </STGroup>
 

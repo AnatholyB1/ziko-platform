@@ -12,6 +12,8 @@ import { useTranslation } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import type { ProgramExercise } from '@ziko/plugin-sdk';
+import { SearchOverlay } from '../../src/components/SearchOverlay';
+import { ErrorScreen } from '../../src/components/ErrorScreen';
 
 // Cross-plugin stores (optional, fail gracefully)
 let useSleepStore: any = null;
@@ -441,6 +443,8 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [quickSheet, setQuickSheet] = React.useState<null | 'water' | 'mood' | 'weight'>(null);
+  const [showSearch, setShowSearch] = React.useState(false);
+  const [loadError, setLoadError] = React.useState(false);
 
   // Cross-plugin: wellness data
   const sleepLogs: any[] = useSleepStore ? useSleepStore((s: any) => s.logs) : EMPTY;
@@ -464,11 +468,13 @@ export default function DashboardScreen() {
   const waterPct = hydrationGoal > 0 ? Math.round(Math.min(hydrationTodayMl / hydrationGoal, 1) * 100) : 0;
 
   useEffect(() => {
-    loadRecentSessions(30);
-    loadPrograms();
-    if (useHydrationStore) useHydrationStore.getState().loadToday?.(supabase);
-    if (useSleepStore) useSleepStore.getState().loadRecent?.(supabase);
-    if (useJournalStore) useJournalStore.getState().loadRecent?.(supabase);
+    Promise.all([
+      loadRecentSessions(30),
+      loadPrograms(),
+      useHydrationStore?.getState().loadToday?.(supabase),
+      useSleepStore?.getState().loadRecent?.(supabase),
+      useJournalStore?.getState().loadRecent?.(supabase),
+    ]).catch(() => setLoadError(true));
   }, []);
 
   const onRefresh = async () => {
@@ -548,8 +554,15 @@ export default function DashboardScreen() {
     router.push('/(app)/workout/session');
   };
 
+  if (loadError) {
+    return (
+      <ErrorScreen kind="error" onAction={() => { setLoadError(false); onRefresh(); }} />
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <SearchOverlay visible={showSearch} onClose={() => setShowSearch(false)} />
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingTop: 20 + insets.top, paddingBottom: 120 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
@@ -569,10 +582,22 @@ export default function DashboardScreen() {
                 <Text style={{ color: theme.warn, fontWeight: '700', fontSize: 12 }}>{streak}j</Text>
               </View>
             )}
-            <TouchableOpacity style={{
-              width: 36, height: 36, borderRadius: 12, backgroundColor: theme.surface,
-              borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center',
-            }}>
+            <TouchableOpacity
+              onPress={() => setShowSearch(true)}
+              style={{
+                width: 36, height: 36, borderRadius: 12, backgroundColor: theme.surface,
+                borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="search-outline" size={16} color={theme.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/(app)/notifications' as any)}
+              style={{
+                width: 36, height: 36, borderRadius: 12, backgroundColor: theme.surface,
+                borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center',
+              }}
+            >
               <Ionicons name="notifications-outline" size={16} color={theme.text} />
             </TouchableOpacity>
             <View style={{

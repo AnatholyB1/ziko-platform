@@ -13,10 +13,10 @@ import { useCreditStore } from '../../../src/stores/creditStore';
 
 // ── IdentityCard ─────────────────────────────────────────────
 function IdentityCard({
-  name, level, levelLabel, levelPct, streak, onEdit,
+  name, level, levelLabel, levelPct, streak, onEdit, onAvatarPress,
 }: {
   name: string; level: number; levelLabel: string;
-  levelPct: number; streak: number; onEdit: () => void;
+  levelPct: number; streak: number; onEdit: () => void; onAvatarPress: () => void;
 }) {
   const theme = usePluginThemeStore((s) => s.theme);
   const initials = name.slice(0, 2).toUpperCase();
@@ -30,16 +30,20 @@ function IdentityCard({
       </Svg>
       <View style={{ padding: 18 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <View style={{
-            width: 64, height: 64, borderRadius: 32,
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: theme.primary,
-            shadowColor: theme.primary,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.5, shadowRadius: 12,
-          }}>
+          <TouchableOpacity
+            onPress={onAvatarPress}
+            activeOpacity={0.8}
+            style={{
+              width: 64, height: 64, borderRadius: 32,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: theme.primary,
+              shadowColor: theme.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.5, shadowRadius: 12,
+            }}
+          >
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 22 }}>{initials}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: theme.cardDarkText }}>{name}</Text>
             <Text style={{ fontSize: 11, color: 'rgba(255,250,246,.55)', marginTop: 1 }}>
@@ -398,6 +402,7 @@ export default function ProfileScreen() {
 
   const settingsItems = [
     { icon: 'person-outline', label: 'Compte & profil', onPress: () => router.push('/(app)/profile/settings') },
+    { icon: 'watch-outline', label: 'Appareils connectés', sub: 'Apple Watch · Garmin', onPress: () => router.push('/(app)/profile/device' as any) },
     { icon: 'grid-outline', label: 'Gérer mes modules', onPress: () => router.push('/(app)/store') },
     ...(gamifEnabled ? [{ icon: 'cart-outline', label: 'Boutique', onPress: () => router.push('/(app)/(plugins)/gamification/shop' as any) }] : []),
     { icon: 'chatbubble-outline', label: 'Coach IA', onPress: () => router.push('/(app)/ai') },
@@ -441,6 +446,7 @@ export default function ProfileScreen() {
             levelPct={levelPct}
             streak={streak}
             onEdit={() => router.push('/(app)/profile/settings')}
+            onAvatarPress={() => router.push('/(app)/profile/avatar' as any)}
           />
 
           {/* ── TotalsRow ────────────────────── */}
