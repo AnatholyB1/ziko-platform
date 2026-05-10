@@ -267,31 +267,87 @@ export default function PluginStoreScreen() {
   );
 }
 
-// ── Section title ──────────────────────────────────────────
-function SectionTitle({ icon, label }: { icon: string; label: string }) {
+// ── Featured row ──────────────────────────────────────────
+function FeaturedRow({
+  plugins,
+  installed,
+  onInstall,
+  onUninstall,
+}: {
+  plugins: RegistryPlugin[];
+  installed: string[];
+  onInstall: (p: RegistryPlugin) => void;
+  onUninstall: (p: RegistryPlugin) => void;
+}) {
   const theme = useThemeStore((s) => s.theme);
+  const featured = plugins.filter((p) => FEATURED_IDS.has(p.plugin_id));
+  if (featured.length === 0) return null;
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 4 }}>
-      <Ionicons name={icon as any} size={18} color={theme.primary} />
-      <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{label}</Text>
+    <View style={{ marginBottom: 20 }}>
+      <Text style={{
+        fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
+        color: theme.muted, marginBottom: 10,
+      }}>
+        À la une
+      </Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}>
+        {featured.map((p) => {
+          const m = p.manifest;
+          const color = PLUGIN_COLORS[p.plugin_id] ?? theme.primary;
+          const isInstalled = installed.includes(p.plugin_id);
+          return (
+            <View key={p.plugin_id} style={{
+              width: 230, backgroundColor: (theme as any).cardDark, borderRadius: 20,
+              padding: 14, gap: 10,
+            }}>
+              {/* Icon + name row */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{
+                  width: 40, height: 40, borderRadius: 11,
+                  backgroundColor: color + '30', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name={(m.icon || 'grid') as any} size={20} color={color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: (theme as any).cardDarkText }}>{m.name}</Text>
+                  <Text style={{ fontSize: 10.5, color: 'rgba(255,250,246,.55)' }}>
+                    {m.price === 'free' ? 'Gratuit' : `${m.price} \u20ac`}
+                  </Text>
+                </View>
+              </View>
+              {/* Description */}
+              <Text numberOfLines={2} style={{
+                fontSize: 11.5, color: 'rgba(255,250,246,.7)', lineHeight: 16,
+              }}>
+                {m.description}
+              </Text>
+              {/* Toggle button */}
+              <TouchableOpacity
+                onPress={() => isInstalled ? onUninstall(p) : onInstall(p)}
+                activeOpacity={0.8}
+                style={{
+                  alignSelf: 'flex-start', borderRadius: 999,
+                  paddingHorizontal: 14, paddingVertical: 8,
+                  backgroundColor: isInstalled
+                    ? 'rgba(255,250,246,.12)'
+                    : theme.primary,
+                }}
+              >
+                <Text style={{
+                  fontSize: 11.5, fontWeight: '700',
+                  color: isInstalled ? (theme as any).cardDarkText : '#fff',
+                }}>
+                  {isInstalled ? '\u2713 Install\u00e9' : 'Installer'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
-}
-
-// ── Star display ──────────────────────────────────────────
-function Stars({ rating, size = 12 }: { rating: number; size?: number }) {
-  const stars = [];
-  for (let i = 1; i <= 5; i++) {
-    stars.push(
-      <Ionicons
-        key={i}
-        name={i <= Math.round(rating) ? 'star' : 'star-outline'}
-        size={size}
-        color={i <= Math.round(rating) ? '#FFB800' : '#D4D2CD'}
-      />
-    );
-  }
-  return <View style={{ flexDirection: 'row', gap: 1 }}>{stars}</View>;
 }
 
 // ── Plugin card ───────────────────────────────────────────
