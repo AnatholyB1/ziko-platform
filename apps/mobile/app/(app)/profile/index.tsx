@@ -198,7 +198,7 @@ function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps:
   return (
     <View style={{ gap: 8 }}>
       {prs.map((pr) => (
-        <View key={pr.exercise} style={{
+        <TouchableOpacity key={pr.exercise} onPress={() => router.push({ pathname: '/(app)/profile/lift-detail' as any, params: { lift: pr.exercise } })} activeOpacity={0.7} style={{
           backgroundColor: theme.surface, borderRadius: 16, padding: 12,
           flexDirection: 'row', alignItems: 'center', gap: 12,
           shadowColor: theme.cardDark, shadowOffset: { width: 0, height: 1 },
@@ -222,7 +222,7 @@ function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps:
               ↑ {pr.delta} kg
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -401,9 +401,11 @@ export default function ProfileScreen() {
     { icon: 'grid-outline', label: 'Gérer mes modules', onPress: () => router.push('/(app)/store') },
     ...(gamifEnabled ? [{ icon: 'cart-outline', label: 'Boutique', onPress: () => router.push('/(app)/(plugins)/gamification/shop' as any) }] : []),
     { icon: 'chatbubble-outline', label: 'Coach IA', onPress: () => router.push('/(app)/ai') },
-    { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
-    { icon: 'help-circle-outline', label: 'Aide & FAQ', onPress: () => {} },
-    { icon: 'document-text-outline', label: 'Mentions légales', onPress: () => {} },
+    { icon: 'notifications-outline', label: 'Notifications', onPress: () => router.push('/(app)/notifications' as any) },
+    { icon: 'help-circle-outline', label: 'Aide & FAQ', onPress: () => router.push('/(app)/help' as any) },
+    { icon: 'document-text-outline', label: 'Mentions légales', onPress: () => router.push('/(app)/legal' as any) },
+    { icon: 'trophy-outline', label: 'Progression & niveaux', onPress: () => router.push('/(app)/profile/progression' as any) },
+    { icon: 'gift-outline', label: 'Parrainer un ami', onPress: () => router.push('/(app)/referral' as any) },
     ...(theme.id !== 'default' ? [{ icon: 'color-palette-outline', label: 'Réinitialiser le thème', onPress: handleResetTheme }] : []),
   ] as Array<{ icon: string; label: string; sub?: string; badge?: string; onPress: () => void }>;
 
