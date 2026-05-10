@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  Alert, TextInput,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -107,7 +107,7 @@ export default function PluginStoreScreen() {
   const installPlugin = async (pluginId: string, manifest: PluginManifest) => {
     if (!user) return;
     const perms = manifest.requiredPermissions ?? [];
-    Alert.alert(
+    showAlert(
       t('store.installConfirm', { name: manifest.name }),
       perms.length > 0
         ? t('store.permRequired', { perms: perms.map((p) => `• ${p}`).join('\n') })
@@ -116,7 +116,9 @@ export default function PluginStoreScreen() {
         { text: t('general.cancel'), style: 'cancel' },
         {
           text: t('store.install'), onPress: async () => {
-            const { error } = await supabase.from('user_plugins').upsert({ user_id: user.id, plugin_id: pluginId, is_enabled: true });
+            const { error } = await supabase
+              .from('user_plugins')
+              .upsert({ user_id: user.id, plugin_id: pluginId, is_enabled: true });
             if (!error) {
               setUserPlugins((prev) => [...prev, pluginId]);
               registerPlugin(manifest);
@@ -129,11 +131,15 @@ export default function PluginStoreScreen() {
 
   const uninstallPlugin = async (pluginId: string) => {
     if (!user) return;
-    Alert.alert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
+    showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('store.uninstall'), style: 'destructive', onPress: async () => {
-          await supabase.from('user_plugins').delete().eq('user_id', user.id).eq('plugin_id', pluginId);
+          await supabase
+            .from('user_plugins')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('plugin_id', pluginId);
           setUserPlugins((prev) => prev.filter((id) => id !== pluginId));
         },
       },
