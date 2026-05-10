@@ -7,7 +7,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { supabase } from '../../../src/lib/supabase';
 
 // ── Shared chrome ──────────────────────────────────────────────
 function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
@@ -42,10 +41,10 @@ function STGroup({ title, children }: { title: string; children: React.ReactNode
         borderWidth: 1, borderColor: theme.border, overflow: 'hidden',
       }}>
         {React.Children.map(children, (child, i) => (
-          <>
+          <React.Fragment key={i}>
             {i > 0 && <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: 12 }} />}
             {child}
-          </>
+          </React.Fragment>
         ))}
       </View>
     </View>
@@ -128,15 +127,15 @@ function NotifSubScreen({ onBack }: { onBack: () => void }) {
 }
 
 // ── Appearance sub-screen ──────────────────────────────────────
+const THEMES = [
+  { id: 'light', label: 'Clair', bg: '#F7F6F3', fg: '#1C1A17' },
+  { id: 'dark',  label: 'Sombre', bg: '#1C1A17', fg: '#FFFAF6' },
+  { id: 'auto',  label: 'Auto', bg: '#888', fg: '#fff' },
+];
+
 function AppearanceSubScreen({ onBack }: { onBack: () => void }) {
   const theme = useThemeStore((s) => s.theme);
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
-
-  const THEMES = [
-    { id: 'light', label: 'Clair', bg: '#F7F6F3', fg: '#1C1A17' },
-    { id: 'dark',  label: 'Sombre', bg: '#1C1A17', fg: '#FFFAF6' },
-    { id: 'auto',  label: 'Auto', bg: '#888', fg: '#fff' },
-  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -215,17 +214,17 @@ function AppearanceSubScreen({ onBack }: { onBack: () => void }) {
 }
 
 // ── Integrations sub-screen ────────────────────────────────────
+const INTEGRATIONS = [
+  { id: 1, name: 'Apple Health',   sub: 'Activité, sommeil, fréquence cardiaque', icon: 'heart-outline' as const,          tint: '#FF3B30', connected: true },
+  { id: 2, name: 'Apple Watch',    sub: 'Synchro auto · 47 séances importées',    icon: 'watch-outline' as const,          tint: '#1C1A17', connected: true },
+  { id: 3, name: 'Strava',         sub: 'Importer tes activités outdoor',         icon: 'bicycle-outline' as const,        tint: '#FC4C02', connected: false },
+  { id: 4, name: 'Garmin Connect', sub: 'Montres et capteurs Garmin',             icon: 'location-outline' as const,       tint: '#007AC1', connected: false },
+  { id: 5, name: 'MyFitnessPal',   sub: 'Synchro nutrition bidirectionnelle',     icon: 'nutrition-outline' as const,      tint: '#0072CE', connected: false },
+  { id: 6, name: 'Whoop',          sub: 'Récup, sommeil, charge',                 icon: 'pulse-outline' as const,         tint: '#3B3B3B', connected: false },
+];
+
 function IntegrationsSubScreen({ onBack }: { onBack: () => void }) {
   const theme = useThemeStore((s) => s.theme);
-
-  const INTEGRATIONS = [
-    { id: 1, name: 'Apple Health',   sub: 'Activité, sommeil, fréquence cardiaque', icon: 'heart-outline' as const,          tint: '#FF3B30', connected: true },
-    { id: 2, name: 'Apple Watch',    sub: 'Synchro auto · 47 séances importées',    icon: 'watch-outline' as const,          tint: '#1C1A17', connected: true },
-    { id: 3, name: 'Strava',         sub: 'Importer tes activités outdoor',         icon: 'bicycle-outline' as const,        tint: '#FC4C02', connected: false },
-    { id: 4, name: 'Garmin Connect', sub: 'Montres et capteurs Garmin',             icon: 'location-outline' as const,       tint: '#007AC1', connected: false },
-    { id: 5, name: 'MyFitnessPal',   sub: 'Synchro nutrition bidirectionnelle',     icon: 'nutrition-outline' as const,      tint: '#0072CE', connected: false },
-    { id: 6, name: 'Whoop',          sub: 'Récup, sommeil, charge',                 icon: 'pulse-outline' as const,         tint: '#3B3B3B', connected: false },
-  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -302,6 +301,7 @@ export default function SettingsScreen() {
   const theme = useThemeStore((s) => s.theme);
   const profile = useAuthStore((s) => s.profile);
   const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const [sub, setSub] = useState<SubView>(null);
 
   if (sub === 'notifications') return <NotifSubScreen onBack={() => setSub(null)} />;
@@ -316,8 +316,12 @@ export default function SettingsScreen() {
     showAlert('Se déconnecter', 'Confirmes-tu la déconnexion ?', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Déconnecter', style: 'destructive', onPress: async () => {
-        await supabase.auth.signOut();
-        router.replace('/(auth)/login');
+        try {
+          await signOut();
+          router.replace('/(auth)/login');
+        } catch {
+          showAlert('Erreur', 'La déconnexion a échoué. Réessaie.');
+        }
       }},
     ]);
   };
