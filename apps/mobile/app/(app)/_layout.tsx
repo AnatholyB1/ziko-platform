@@ -152,6 +152,13 @@ export default function AppLayout() {
         {/* Hidden screens — not shown in tab bar */}
         <Tabs.Screen name="ai" options={{ href: null }} />
         <Tabs.Screen name="(plugins)" options={{ href: null }} />
+        <Tabs.Screen name="calendar" options={{ href: null }} />
+        <Tabs.Screen name="paywall" options={{ href: null }} />
+        <Tabs.Screen name="notifications" options={{ href: null }} />
+        <Tabs.Screen name="help" options={{ href: null }} />
+        <Tabs.Screen name="legal" options={{ href: null }} />
+        <Tabs.Screen name="referral" options={{ href: null }} />
+        <Tabs.Screen name="modules" options={{ href: null }} />
       </Tabs>
       <ChatFAB />
       <BugReportFAB />
