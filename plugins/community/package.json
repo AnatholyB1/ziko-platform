@@ -15,7 +15,9 @@
     "./screens/ChallengeDetailScreen": "./src/screens/ChallengeDetailScreen.tsx",
     "./screens/CreateChallengeScreen": "./src/screens/CreateChallengeScreen.tsx",
     "./screens/CompareScreen": "./src/screens/CompareScreen.tsx",
-    "./screens/InviteScreen": "./src/screens/InviteScreen.tsx"
+    "./screens/InviteScreen": "./src/screens/InviteScreen.tsx",
+    "./screens/PostDetailScreen": "./src/screens/PostDetailScreen.tsx",
+    "./screens/GroupsScreen": "./src/screens/GroupsScreen.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

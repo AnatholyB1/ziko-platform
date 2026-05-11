@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl, Image,
 } from 'react-native';
@@ -7,6 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCommunityStore, loadCommunity } from '../store';
+import GroupsScreen from './GroupsScreen';
+
+const MOCK_FEED = [
+  { id: 'f1', author: 'Marie A.', initials: 'MA', color: '#7B5BD0', caption: 'PR du jour 💪 — 175 kg au soulevé de terre.', likes: 247, comments: 32, time: '2h' },
+  { id: 'f2', author: 'Tom K.',   initials: 'TK', color: '#2E7BF6', caption: 'Séance upper body terminée. Pump incroyable 🔥', likes: 89, comments: 7, time: '4h' },
+  { id: 'f3', author: 'Julie P.', initials: 'JP', color: '#2E9E5B', caption: 'Nouvelle semaine, nouveaux objectifs. C\'est parti !', likes: 134, comments: 14, time: '6h' },
+];
 
 function Card({ children, style }: { children: React.ReactNode; style?: any }) {
   const theme = useThemeStore((s) => s.theme);
@@ -63,6 +70,7 @@ export default function CommunityDashboard({ supabase }: { supabase: any }) {
 
   const load = useCallback(() => loadCommunity(supabase), []);
   useEffect(() => { load(); }, [load]);
+  const [activeTab, setActiveTab] = useState<'fil' | 'groupes'>('fil');
 
   const openGroupWorkouts = groupWorkouts.filter((g) => g.status === 'open' || g.status === 'in_progress');
 
@@ -88,7 +96,32 @@ export default function CommunityDashboard({ supabase }: { supabase: any }) {
         </View>
       </View>
 
-      <ScrollView
+      {/* Tabs */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 4 }}>
+        {(['fil', 'groupes'] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            onPress={() => setActiveTab(tab)}
+            style={{
+              paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
+              backgroundColor: activeTab === tab ? theme.text : theme.surface,
+              borderWidth: 1, borderColor: activeTab === tab ? theme.text : theme.border,
+            }}
+          >
+            <Text style={{ fontSize: 12.5, fontWeight: '700', color: activeTab === tab ? theme.background : theme.muted, textTransform: 'capitalize' }}>
+              {tab === 'fil' ? 'Fil' : 'Groupes'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {activeTab === 'groupes' && (
+        <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 8 }}>
+          <GroupsScreen supabase={supabase} />
+        </View>
+      )}
+
+      {activeTab === 'fil' && <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingTop: 4, gap: 20, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} tintColor={theme.primary} />}
@@ -291,7 +324,42 @@ export default function CommunityDashboard({ supabase }: { supabase: any }) {
             </View>
           </Card>
         )}
-      </ScrollView>
+        {/* ── Feed posts ──────────────────────────── */}
+        <Card>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+            <Ionicons name="newspaper-outline" size={14} color={theme.muted} />
+            <Text style={{ fontSize: 11, fontWeight: '800', color: theme.muted, letterSpacing: 0.8, textTransform: 'uppercase' }}>Fil d'actualité</Text>
+          </View>
+          {MOCK_FEED.map((post) => (
+            <TouchableOpacity
+              key={post.id}
+              onPress={() => router.push(`/(app)/(plugins)/community/post?id=${post.id}` as any)}
+              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border }}
+            >
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: post.color, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontWeight: '800', fontSize: 12, color: '#fff' }}>{post.initials}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: theme.text }}>{post.author}</Text>
+                  <Text style={{ fontSize: 10.5, color: theme.muted }}>· {post.time}</Text>
+                </View>
+                <Text style={{ fontSize: 12.5, color: theme.text, lineHeight: 18 }} numberOfLines={2}>{post.caption}</Text>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="heart-outline" size={13} color={theme.muted} />
+                    <Text style={{ fontSize: 11, color: theme.muted }}>{post.likes}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="chatbubble-outline" size={12} color={theme.muted} />
+                    <Text style={{ fontSize: 11, color: theme.muted }}>{post.comments}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </Card>
+      </ScrollView>}
     </SafeAreaView>
   );
 }
