@@ -187,7 +187,7 @@ function CreditsCard({ balance, resetTimestamp, monthly }: { balance: number; re
 }
 
 // ── PRsList ──────────────────────────────────────────────────
-function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps: number; delta: number }> }) {
+function PRsList({ prs }: { prs: Array<{ exercise: string; exerciseId: string; weight: number; reps: number; delta: number }> }) {
   const theme = usePluginThemeStore((s) => s.theme);
   if (prs.length === 0) {
     return (
@@ -202,7 +202,7 @@ function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps:
   return (
     <View style={{ gap: 8 }}>
       {prs.map((pr) => (
-        <TouchableOpacity key={pr.exercise} onPress={() => router.push({ pathname: '/(app)/profile/lift-detail' as any, params: { lift: pr.exercise } })} activeOpacity={0.7} style={{
+        <TouchableOpacity key={pr.exercise} onPress={() => router.push({ pathname: '/(app)/profile/lift-detail' as any, params: { lift: pr.exercise, exerciseId: pr.exerciseId } })} activeOpacity={0.7} style={{
           backgroundColor: theme.surface, borderRadius: 16, padding: 12,
           flexDirection: 'row', alignItems: 'center', gap: 12,
           shadowColor: theme.cardDark, shadowOffset: { width: 0, height: 1 },
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
   const [yearStats, setYearStats] = React.useState({ sessions: 0, volumeTonnes: 0, hours: 0 });
 
   // Personal records
-  const [prs, setPrs] = React.useState<Array<{ exercise: string; weight: number; reps: number; delta: number }>>([]);
+  const [prs, setPrs] = React.useState<Array<{ exercise: string; exerciseId: string; weight: number; reps: number; delta: number }>>([]);
 
   const load = useCallback(async () => {
     if (gamifEnabled) {
@@ -358,16 +358,16 @@ export default function ProfileScreen() {
     async function loadPRs() {
       const { data } = await supabase
         .from('session_sets')
-        .select('weight_kg, reps, exercises(name)')
+        .select('exercise_id, weight_kg, reps, exercises(name)')
         .not('weight_kg', 'is', null)
         .order('weight_kg', { ascending: false })
         .limit(50);
       if (!data) return;
-      const seen = new Map<string, { exercise: string; weight: number; reps: number; delta: number }>();
+      const seen = new Map<string, { exercise: string; exerciseId: string; weight: number; reps: number; delta: number }>();
       for (const s of data as any[]) {
         const name = s.exercises?.name ?? 'Exercice';
         if (!seen.has(name)) {
-          seen.set(name, { exercise: name, weight: s.weight_kg, reps: s.reps ?? 1, delta: 2.5 });
+          seen.set(name, { exercise: name, exerciseId: s.exercise_id, weight: s.weight_kg, reps: s.reps ?? 1, delta: 2.5 });
         }
       }
       setPrs(Array.from(seen.values()).slice(0, 4));
