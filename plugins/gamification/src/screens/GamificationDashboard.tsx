@@ -162,7 +162,7 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
         {/* ── Stats Row ──────────────────────────────── */}
         <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, gap: 12 }}>
           <StatCard icon="💰" label="Pièces" value={`${profile?.coins ?? 0}`} color="#F59E0B" />
-          <StatCard icon="🔥" label="Streak" value={`${profile?.current_streak ?? 0}j`} color="#EF4444" />
+          <StatCard icon="🔥" label="Streak" value={`${profile?.current_streak ?? 0}j`} color={theme.danger} />
           <StatCard icon="🏆" label="Record" value={`${profile?.longest_streak ?? 0}j`} color="#7C3AED" />
         </View>
 
@@ -372,7 +372,7 @@ export default function GamificationDashboard({ supabase }: { supabase: any }) {
                   </View>
                   <Text style={{
                     fontSize: 14, fontWeight: '700',
-                    color: tx.amount > 0 ? '#10B981' : '#EF4444',
+                    color: tx.amount > 0 ? theme.success : theme.danger,
                   }}>
                     {tx.amount > 0 ? '+' : ''}{tx.amount} XP
                   </Text>
