@@ -36,7 +36,7 @@ export default function WorkoutHistoryScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#7A7670" />
+          <Ionicons name="chevron-back" size={24} color={theme.muted} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 26, fontWeight: '800', color: theme.text }}>{t('workout.history')}</Text>
       </View>
@@ -52,13 +52,13 @@ export default function WorkoutHistoryScreen() {
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>{t('workout.workouts90d')}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
-            <Text style={{ color: '#FF9800', fontWeight: '700', fontSize: 22 }}>
+            <Text style={{ color: theme.warn, fontWeight: '700', fontSize: 22 }}>
               {(totalVolume / 1000).toFixed(1)}t
             </Text>
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>{t('workout.totalVolume')}</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border }}>
-            <Text style={{ color: '#4CAF50', fontWeight: '700', fontSize: 22 }}>
+            <Text style={{ color: theme.success, fontWeight: '700', fontSize: 22 }}>
               {Math.round(avgDuration)}m
             </Text>
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>{t('workout.avgDuration')}</Text>
@@ -96,7 +96,7 @@ export default function WorkoutHistoryScreen() {
               </View>
               {duration != null && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
-                  <Ionicons name="time-outline" size={12} color="#7A7670" />
+                  <Ionicons name="time-outline" size={12} color={theme.muted} />
                   <Text style={{ color: theme.muted, fontSize: 11 }}>{duration} min</Text>
                 </View>
               )}

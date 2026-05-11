@@ -91,7 +91,7 @@ export default function CreditExhaustionSheet() {
                     <Ionicons
                       name={done ? 'checkmark-circle' : ('ellipse-outline' as any)}
                       size={22}
-                      color={done ? '#4CAF50' : theme.muted}
+                      color={done ? theme.success : theme.muted}
                     />
                     <Ionicons name={icon as any} size={18} color={done ? theme.muted : theme.text} />
                     <Text style={{
