@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
-import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { useWorkoutStore, type CompletedSession } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
@@ -703,24 +703,64 @@ export default function WorkoutSessionScreen() {
     await endSession();
   };
 
+  // ── Build completed session for summary ───────────────
+  const buildCompletedSession = (): CompletedSession => {
+    const started = currentSession?.started_at ? new Date(currentSession.started_at).getTime() : Date.now();
+    const durationSeconds = Math.round((Date.now() - started) / 1000);
+
+    const exercises = isGuided
+      ? workoutExercises.map((we, idx) => {
+          const sets = (trackedSets.get(idx) ?? []).filter((s) => s.completed);
+          const totalVolume = sets.reduce((acc, s) => acc + (s.reps ?? 0) * (s.weight_kg ?? 0), 0);
+          const best = sets.reduce((best, s) => ((s.weight_kg ?? 0) > (best.weight_kg ?? 0) ? s : best), sets[0] ?? {} as TrackedSet);
+          return {
+            name: (we as any).exercises?.name_fr ?? (we as any).exercises?.name ?? 'Exercice',
+            sets: sets.map((s) => ({ reps: s.reps, weight: s.weight_kg })),
+            totalVolume,
+            bestSetLabel: best?.reps ? `${best.reps} × ${best.weight_kg ?? 0}kg` : undefined,
+          };
+        })
+      : freeExercises.map((ex) => {
+          const completed = ex.sets.filter((s) => s.completed);
+          const totalVolume = completed.reduce((acc, s) => acc + (parseInt(s.reps) || 0) * (parseFloat(s.weight) || 0), 0);
+          const best = completed.reduce((b, s) => (parseFloat(s.weight) > parseFloat(b.weight ?? '0') ? s : b), completed[0] ?? { reps: '', weight: '' });
+          return {
+            name: ex.name_fr ?? ex.name,
+            sets: completed.map((s) => ({ reps: parseInt(s.reps) || undefined, weight: parseFloat(s.weight) || undefined })),
+            totalVolume,
+            bestSetLabel: best?.reps ? `${best.reps} × ${best.weight}kg` : undefined,
+          };
+        });
+
+    return {
+      id: currentSession?.id ?? '',
+      durationSeconds,
+      exercises,
+    };
+  };
+
   // ── End session ────────────────────────────────────────
   const handleEndSession = () => {
     showAlert(t('workout.endWorkout'), t('workout.endWorkoutConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('workout.finish'), onPress: async () => {
+          const completed = buildCompletedSession();
           try { await saveSessionStats(); } catch {}
           try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
-          router.back();
+          useWorkoutStore.getState().setLastCompletedSession(completed);
+          router.replace('/(app)/workout/summary');
         },
       },
     ]);
   };
 
   const handleFinish = async () => {
+    const completed = buildCompletedSession();
     await saveSessionStats();
     try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
-    router.back();
+    useWorkoutStore.getState().setLastCompletedSession(completed);
+    router.replace('/(app)/workout/summary');
   };
 
   // ── Exercise description ───────────────────────────────
