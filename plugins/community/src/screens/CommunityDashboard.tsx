@@ -6,14 +6,9 @@ import { useThemeStore } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCommunityStore, loadCommunity } from '../store';
+import { useCommunityStore, loadCommunity, loadFeed, likePost, unlikePost, type Post } from '../store';
 import GroupsScreen from './GroupsScreen';
 
-const MOCK_FEED = [
-  { id: 'f1', author: 'Marie A.', initials: 'MA', color: '#7B5BD0', caption: 'PR du jour 💪 — 175 kg au soulevé de terre.', likes: 247, comments: 32, time: '2h' },
-  { id: 'f2', author: 'Tom K.',   initials: 'TK', color: '#2E7BF6', caption: 'Séance upper body terminée. Pump incroyable 🔥', likes: 89, comments: 7, time: '4h' },
-  { id: 'f3', author: 'Julie P.', initials: 'JP', color: '#2E9E5B', caption: 'Nouvelle semaine, nouveaux objectifs. C\'est parti !', likes: 134, comments: 14, time: '6h' },
-];
 
 function Card({ children, style }: { children: React.ReactNode; style?: any }) {
   const theme = useThemeStore((s) => s.theme);
@@ -65,10 +60,10 @@ export default function CommunityDashboard({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const {
     friends, pendingRequests, conversations, activeChallenges,
-    groupWorkouts, stats, recentEncouragements, isLoading,
+    groupWorkouts, stats, recentEncouragements, feed, isLoading,
   } = useCommunityStore();
 
-  const load = useCallback(() => loadCommunity(supabase), []);
+  const load = useCallback(() => Promise.all([loadCommunity(supabase), loadFeed(supabase)]), []);
   useEffect(() => { load(); }, [load]);
   const [activeTab, setActiveTab] = useState<'fil' | 'groupes'>('fil');
 
@@ -330,34 +325,52 @@ export default function CommunityDashboard({ supabase }: { supabase: any }) {
             <Ionicons name="newspaper-outline" size={14} color={theme.muted} />
             <Text style={{ fontSize: 11, fontWeight: '800', color: theme.muted, letterSpacing: 0.8, textTransform: 'uppercase' }}>Fil d'actualité</Text>
           </View>
-          {MOCK_FEED.map((post) => (
-            <TouchableOpacity
-              key={post.id}
-              onPress={() => router.push(`/(app)/(plugins)/community/post?id=${post.id}` as any)}
-              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border }}
-            >
-              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: post.color, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontWeight: '800', fontSize: 12, color: '#fff' }}>{post.initials}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: theme.text }}>{post.author}</Text>
-                  <Text style={{ fontSize: 10.5, color: theme.muted }}>· {post.time}</Text>
+          {feed.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+              <Ionicons name="newspaper-outline" size={36} color="#E2E0DA" />
+              <Text style={{ color: theme.muted, fontSize: 13, marginTop: 8 }}>
+                Aucune publication pour l'instant
+              </Text>
+            </View>
+          ) : feed.map((post) => {
+            const authorName = post.profile?.name ?? 'Utilisateur';
+            const initials = authorName.slice(0, 2).toUpperCase();
+            const diffMs = Date.now() - new Date(post.created_at).getTime();
+            const mins = Math.floor(diffMs / 60000);
+            const timeAgo = mins < 60 ? `${mins}m` : mins < 1440 ? `${Math.floor(mins / 60)}h` : `${Math.floor(mins / 1440)}j`;
+
+            return (
+              <TouchableOpacity
+                key={post.id}
+                onPress={() => router.push(`/(app)/(plugins)/community/post?id=${post.id}` as any)}
+                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.border }}
+              >
+                <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontWeight: '800', fontSize: 12, color: theme.primary }}>{initials}</Text>
                 </View>
-                <Text style={{ fontSize: 12.5, color: theme.text, lineHeight: 18 }} numberOfLines={2}>{post.caption}</Text>
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="heart-outline" size={13} color={theme.muted} />
-                    <Text style={{ fontSize: 11, color: theme.muted }}>{post.likes}</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: theme.text }}>{authorName}</Text>
+                    <Text style={{ fontSize: 10.5, color: theme.muted }}>· {timeAgo}</Text>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Ionicons name="chatbubble-outline" size={12} color={theme.muted} />
-                    <Text style={{ fontSize: 11, color: theme.muted }}>{post.comments}</Text>
+                  <Text style={{ fontSize: 12.5, color: theme.text, lineHeight: 18 }} numberOfLines={2}>{post.content}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+                    <TouchableOpacity
+                      onPress={() => post.liked_by_me ? unlikePost(supabase, post.id) : likePost(supabase, post.id)}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                    >
+                      <Ionicons name={post.liked_by_me ? 'heart' : 'heart-outline'} size={13} color={post.liked_by_me ? theme.primary : theme.muted} />
+                      <Text style={{ fontSize: 11, color: post.liked_by_me ? theme.primary : theme.muted }}>{post.likes_count}</Text>
+                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="chatbubble-outline" size={12} color={theme.muted} />
+                      <Text style={{ fontSize: 11, color: theme.muted }}>{post.comments_count}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </Card>
       </ScrollView>}
     </SafeAreaView>

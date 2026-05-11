@@ -164,6 +164,26 @@ export interface HabitEncouragement {
   created_at: string;
 }
 
+export interface Post {
+  id: string;
+  user_id: string;
+  content: string;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  profile: { name: string | null; avatar_url: string | null } | null;
+  liked_by_me: boolean;
+}
+
+export interface PostComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  profile: { name: string | null } | null;
+}
+
 export interface CommunityStats {
   user_id: string;
   messages_sent: number;
@@ -200,6 +220,7 @@ interface CommunityState {
   recentEncouragements: HabitEncouragement[];
   recentGiftsReceived: (XpGift | CoinGift)[];
   screenReactions: ScreenReaction[];
+  feed: Post[];
   isLoading: boolean;
 
   setData: (d: Partial<CommunityState>) => void;
@@ -220,6 +241,7 @@ export const useCommunityStore = create<CommunityState>()((set) => ({
   recentEncouragements: [],
   recentGiftsReceived: [],
   screenReactions: [],
+  feed: [],
   isLoading: false,
 
   setData: (data) => set(data),
@@ -771,4 +793,121 @@ export async function searchUsers(supabase: any, query: string): Promise<FriendP
     .limit(20);
 
   return data ?? [];
+}
+
+// ── Feed ─────────────────────────────────────────────────────
+
+export async function loadFeed(supabase: any, limit = 30) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data: rows } = await supabase
+    .from('community_posts')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (!rows || rows.length === 0) {
+    useCommunityStore.getState().setData({ feed: [] });
+    return;
+  }
+
+  const userIds = [...new Set<string>(rows.map((r: any) => r.user_id))];
+  const { data: profiles } = await supabase
+    .from('user_profiles')
+    .select('id, name, avatar_url')
+    .in('id', userIds);
+  const profileMap = new Map<string, { name: string | null; avatar_url: string | null }>(
+    (profiles ?? []).map((p: any) => [p.id, { name: p.name, avatar_url: p.avatar_url }])
+  );
+
+  const postIds = rows.map((r: any) => r.id);
+  const { data: myLikes } = await supabase
+    .from('post_likes')
+    .select('post_id')
+    .eq('user_id', user.id)
+    .in('post_id', postIds);
+  const likedSet = new Set<string>((myLikes ?? []).map((l: any) => l.post_id));
+
+  const feed: Post[] = rows.map((row: any) => ({
+    id: row.id,
+    user_id: row.user_id,
+    content: row.content,
+    likes_count: row.likes_count,
+    comments_count: row.comments_count,
+    created_at: row.created_at,
+    profile: profileMap.get(row.user_id) ?? null,
+    liked_by_me: likedSet.has(row.id),
+  }));
+
+  useCommunityStore.getState().setData({ feed });
+}
+
+export async function createPost(supabase: any, content: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('community_posts').insert({ user_id: user.id, content });
+  await loadFeed(supabase);
+}
+
+export async function likePost(supabase: any, postId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id });
+
+  const store = useCommunityStore.getState();
+  store.setData({
+    feed: store.feed.map((p) =>
+      p.id === postId ? { ...p, likes_count: p.likes_count + 1, liked_by_me: true } : p
+    ),
+  });
+}
+
+export async function unlikePost(supabase: any, postId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id);
+
+  const store = useCommunityStore.getState();
+  store.setData({
+    feed: store.feed.map((p) =>
+      p.id === postId ? { ...p, likes_count: Math.max(0, p.likes_count - 1), liked_by_me: false } : p
+    ),
+  });
+}
+
+export async function loadComments(supabase: any, postId: string): Promise<PostComment[]> {
+  const { data: rows } = await supabase
+    .from('post_comments')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (!rows || rows.length === 0) return [];
+
+  const userIds = [...new Set<string>(rows.map((r: any) => r.user_id))];
+  const { data: profiles } = await supabase
+    .from('user_profiles')
+    .select('id, name')
+    .in('id', userIds);
+  const profileMap = new Map<string, { name: string | null }>(
+    (profiles ?? []).map((p: any) => [p.id, { name: p.name }])
+  );
+
+  return rows.map((row: any) => ({
+    id: row.id,
+    post_id: row.post_id,
+    user_id: row.user_id,
+    content: row.content,
+    created_at: row.created_at,
+    profile: profileMap.get(row.user_id) ?? null,
+  }));
+}
+
+export async function addComment(supabase: any, postId: string, content: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, content });
 }
