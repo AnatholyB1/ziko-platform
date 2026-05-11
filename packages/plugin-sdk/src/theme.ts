@@ -22,6 +22,7 @@ export interface ThemePalette {
   info: string;
   violet: string;
   warn: string;
+  danger: string;
   // Dark surface
   cardDark: string;
   cardDarkText: string;
@@ -53,6 +54,7 @@ export const DEFAULT_THEME: ThemePalette = {
   info: '#2E7BF6',
   violet: '#7B5BD0',
   warn: '#E8A33A',
+  danger: '#EF4444',
   cardDark: '#1C1A17',
   cardDarkText: '#FFFAF6',
   cardStyle: 'shadow',
@@ -69,7 +71,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#2563EB', primaryLight: '#2563EB15', text: '#1E293B', muted: '#64748B',
     tabBarBg: '#FFFFFF', tabBarBorder: '#BFDBFE', tabBarActive: '#2563EB', tabBarInactive: '#94A3B8',
     statusBarStyle: 'dark', statusBarBg: '#EFF6FF',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#0F172A', cardDarkText: '#F0F9FF',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
@@ -80,7 +82,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#7C3AED', primaryLight: '#7C3AED15', text: '#1E1B4B', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#C4B5FD', tabBarActive: '#7C3AED', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#F5F3FF',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#1E1B4B', cardDarkText: '#FAF5FF',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
@@ -91,7 +93,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#16A34A', primaryLight: '#16A34A15', text: '#14532D', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#BBF7D0', tabBarActive: '#16A34A', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#F0FDF4',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#14532D', cardDarkText: '#F0FDF4',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
@@ -102,7 +104,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#DC2626', primaryLight: '#DC262615', text: '#450A0A', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#FECACA', tabBarActive: '#DC2626', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#FEF2F2',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#450A0A', cardDarkText: '#FFF1F2',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
@@ -113,7 +115,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#D97706', primaryLight: '#D9770615', text: '#451A03', muted: '#78716C',
     tabBarBg: '#FFFFFF', tabBarBorder: '#FDE68A', tabBarActive: '#D97706', tabBarInactive: '#A8A29E',
     statusBarStyle: 'dark', statusBarBg: '#FFFBEB',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#451A03', cardDarkText: '#FFFBEB',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
@@ -124,7 +126,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
     primary: '#FF5C1A', primaryLight: '#FF5C1A20', text: '#F5F5F5', muted: '#A3A3A3',
     tabBarBg: '#1A1A1A', tabBarBorder: '#333333', tabBarActive: '#FF5C1A', tabBarInactive: '#737373',
     statusBarStyle: 'light', statusBarBg: '#0F0F0F',
-    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A',
+    success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
     cardDark: '#0A0A0A', cardDarkText: '#F5F5F5',
     cardStyle: 'shadow',
     fontDisplay: 'Manrope_800ExtraBold', fontBody: 'Geist_400Regular',
