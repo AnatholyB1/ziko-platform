@@ -85,7 +85,9 @@ export function Hero() {
               className="flex flex-wrap gap-4"
             >
               <motion.a
-                href="#"
+                href="https://testflight.apple.com/join/ad7pvUxQ"
+                target="_blank"
+                rel="noopener noreferrer"
                 whileHover={ctaHover}
                 whileTap={ctaTap}
                 className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm inline-block"
