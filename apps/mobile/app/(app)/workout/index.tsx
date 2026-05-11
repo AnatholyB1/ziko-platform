@@ -164,7 +164,7 @@ function StartModes({ activeProgram, theme }: { activeProgram: WorkoutProgram | 
       label: 'Coach IA',
       sub: 'Génère ton plan',
       color: theme.violet,
-      onPress: () => router.push('/(app)/(plugins)/ai-programs/dashboard' as any),
+      onPress: () => router.push('/(app)/workout/ai-generate' as any),
     },
   ];
 
