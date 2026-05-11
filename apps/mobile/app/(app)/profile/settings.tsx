@@ -1,220 +1,422 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, Switch,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { useThemeStore, showAlert, usePluginRegistry } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { useThemeStore } from '../../../src/stores/themeStore';
-import { supabase } from '../../../src/lib/supabase';
-import { useTranslation, useI18nStore, type FitnessGoal, showAlert } from '@ziko/plugin-sdk';
-import { showBugReport } from '../../../src/components/BugReportModal';
 
-const GOALS: { id: FitnessGoal; labelKey: string }[] = [
-  { id: 'muscle_gain', labelKey: 'profile.goalMuscle' },
-  { id: 'fat_loss', labelKey: 'profile.goalFatLoss' },
-  { id: 'maintenance', labelKey: 'profile.goalMaintenance' },
-  { id: 'endurance', labelKey: 'profile.goalEndurance' },
+// ── Shared chrome ──────────────────────────────────────────────
+function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, paddingTop: 10 }}>
+      <TouchableOpacity
+        onPress={onBack}
+        style={{
+          width: 34, height: 34, borderRadius: 11,
+          backgroundColor: theme.text + '10',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <Ionicons name="chevron-back" size={16} color={theme.text} />
+      </TouchableOpacity>
+      <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text, letterSpacing: -0.4 }}>{title}</Text>
+    </View>
+  );
+}
+
+function STGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <View style={{ marginBottom: 18 }}>
+      <Text style={{
+        fontSize: 10.5, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase',
+        color: theme.muted, paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
+      }}>{title}</Text>
+      <View style={{
+        backgroundColor: theme.surface, borderRadius: 16,
+        borderWidth: 1, borderColor: theme.border, overflow: 'hidden',
+      }}>
+        {React.Children.map(children, (child, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: 12 }} />}
+            {child}
+          </React.Fragment>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function STRow({
+  icon, tint, label, sub, right, danger, onPress, toggleValue, onToggle,
+}: {
+  icon: string; tint: string; label: string; sub?: string;
+  right?: string; danger?: boolean; onPress?: () => void;
+  toggleValue?: boolean; onToggle?: (v: boolean) => void;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={onPress || onToggle ? 0.7 : 1}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 11, paddingHorizontal: 10 }}
+    >
+      <View style={{
+        width: 32, height: 32, borderRadius: 9,
+        backgroundColor: tint + '22',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Ionicons name={icon as any} size={15} color={tint} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 13.5, fontWeight: '600', color: danger ? '#E94B3C' : theme.text }}>{label}</Text>
+        {sub && <Text style={{ fontSize: 11, color: theme.muted, marginTop: 1 }}>{sub}</Text>}
+      </View>
+      {onToggle !== undefined ? (
+        <Switch
+          value={toggleValue}
+          onValueChange={onToggle}
+          trackColor={{ false: theme.border, true: '#2E9E5B' }}
+          thumbColor="#fff"
+        />
+      ) : right ? (
+        <Text style={{ fontSize: 12, color: theme.muted, fontWeight: '600', marginRight: 4 }}>{right}</Text>
+      ) : onPress ? (
+        <Ionicons name="chevron-forward" size={14} color={theme.muted} />
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
+// ── Notifications sub-screen ───────────────────────────────────
+function NotifSubScreen({ onBack }: { onBack: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+  const [s, setS] = useState({
+    sessionsReminder: true, hydration: true, streakAlert: true,
+    achievements: true, social: true, coach: true, marketing: false,
+    sound: true, haptics: true,
+  });
+  const set = (k: keyof typeof s) => (v: boolean) => setS((prev) => ({ ...prev, [k]: v }));
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <STHeader onBack={onBack} title="Notifications" />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
+        <STGroup title="Coach & rappels">
+          <STRow icon="barbell-outline" tint="#FF5C1A" label="Rappels de séance" sub="60 min avant" toggleValue={s.sessionsReminder} onToggle={set('sessionsReminder')} />
+          <STRow icon="water-outline" tint="#2E7BF6" label="Hydratation" sub="Toutes les 2h" toggleValue={s.hydration} onToggle={set('hydration')} />
+          <STRow icon="flame-outline" tint="#E94B3C" label="Alerte streak" sub="Avant que la chaîne casse" toggleValue={s.streakAlert} onToggle={set('streakAlert')} />
+          <STRow icon="sparkles-outline" tint="#FF5C1A" label="Coach IA quotidien" sub="Insight du matin" toggleValue={s.coach} onToggle={set('coach')} />
+        </STGroup>
+        <STGroup title="Activité">
+          <STRow icon="trophy-outline" tint="#E8A33A" label="PR & badges" toggleValue={s.achievements} onToggle={set('achievements')} />
+          <STRow icon="people-outline" tint="#2E7BF6" label="Communauté" sub="Likes, commentaires, follows" toggleValue={s.social} onToggle={set('social')} />
+          <STRow icon="megaphone-outline" tint={theme.muted} label="Promotions & nouveautés" toggleValue={s.marketing} onToggle={set('marketing')} />
+        </STGroup>
+        <STGroup title="Style">
+          <STRow icon="musical-notes-outline" tint="#7B5BD0" label="Sons" toggleValue={s.sound} onToggle={set('sound')} />
+          <STRow icon="phone-portrait-outline" tint="#E8A33A" label="Vibrations" toggleValue={s.haptics} onToggle={set('haptics')} />
+        </STGroup>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ── Appearance sub-screen ──────────────────────────────────────
+const THEMES = [
+  { id: 'light', label: 'Clair', bg: '#F7F6F3', fg: '#1C1A17' },
+  { id: 'dark',  label: 'Sombre', bg: '#1C1A17', fg: '#FFFAF6' },
+  { id: 'auto',  label: 'Auto', bg: '#888', fg: '#fff' },
 ];
 
+function AppearanceSubScreen({ onBack }: { onBack: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <STHeader onBack={onBack} title="Apparence" />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
+        <Text style={{
+          fontSize: 10.5, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase',
+          color: theme.muted, paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
+        }}>Thème</Text>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 18 }}>
+          {THEMES.map((t) => (
+            <TouchableOpacity
+              key={t.id}
+              activeOpacity={0.7}
+              style={{
+                flex: 1, borderRadius: 14, overflow: 'hidden',
+                borderWidth: 2, borderColor: t.id === 'light' ? '#FF5C1A' : theme.border,
+                backgroundColor: theme.surface,
+              }}
+            >
+              <View style={{ height: 60, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontWeight: '800', fontSize: 18, color: t.fg }}>Aa</Text>
+              </View>
+              <Text style={{
+                textAlign: 'center', padding: 8, fontSize: 12, fontWeight: '700',
+                color: t.id === 'light' ? '#FF5C1A' : theme.text,
+              }}>{t.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <STGroup title="Langue & région">
+          <STRow icon="globe-outline" tint="#2E7BF6" label="Langue" right="Français" />
+          <STRow icon="flag-outline" tint="#FF5C1A" label="Région" right="France" />
+        </STGroup>
+
+        <Text style={{
+          fontSize: 10.5, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase',
+          color: theme.muted, paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
+        }}>Unités</Text>
+        <View style={{
+          backgroundColor: theme.surface, borderRadius: 16,
+          borderWidth: 1, borderColor: theme.border, overflow: 'hidden',
+        }}>
+          {([
+            { id: 'metric',   label: 'Métrique', sub: 'kg · cm · km' },
+            { id: 'imperial', label: 'Impérial',  sub: 'lb · in · mi' },
+          ] as const).map((u, i) => (
+            <TouchableOpacity
+              key={u.id}
+              onPress={() => setUnits(u.id)}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row', alignItems: 'center', padding: 14,
+                borderTopWidth: i ? 1 : 0, borderTopColor: theme.border,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13.5, fontWeight: '600', color: theme.text }}>{u.label}</Text>
+                <Text style={{ fontSize: 11, color: theme.muted, marginTop: 1 }}>{u.sub}</Text>
+              </View>
+              {units === u.id && (
+                <View style={{
+                  width: 22, height: 22, borderRadius: 11,
+                  backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name="checkmark" size={12} color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ── Integrations sub-screen ────────────────────────────────────
+const INTEGRATIONS = [
+  { id: 1, name: 'Apple Health',   sub: 'Activité, sommeil, fréquence cardiaque', icon: 'heart-outline' as const,          tint: '#FF3B30', connected: true },
+  { id: 2, name: 'Apple Watch',    sub: 'Synchro auto · 47 séances importées',    icon: 'watch-outline' as const,          tint: '#1C1A17', connected: true },
+  { id: 3, name: 'Strava',         sub: 'Importer tes activités outdoor',         icon: 'bicycle-outline' as const,        tint: '#FC4C02', connected: false },
+  { id: 4, name: 'Garmin Connect', sub: 'Montres et capteurs Garmin',             icon: 'location-outline' as const,       tint: '#007AC1', connected: false },
+  { id: 5, name: 'MyFitnessPal',   sub: 'Synchro nutrition bidirectionnelle',     icon: 'nutrition-outline' as const,      tint: '#0072CE', connected: false },
+  { id: 6, name: 'Whoop',          sub: 'Récup, sommeil, charge',                 icon: 'pulse-outline' as const,         tint: '#3B3B3B', connected: false },
+];
+
+function IntegrationsSubScreen({ onBack }: { onBack: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <STHeader onBack={onBack} title="Intégrations" />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
+        {/* Info banner */}
+        <View style={{
+          padding: 14, borderRadius: 14, marginBottom: 16,
+          backgroundColor: '#2E7BF6' + '10',
+          borderWidth: 1, borderColor: '#2E7BF6' + '25',
+          flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+        }}>
+          <Ionicons name="information-circle-outline" size={16} color="#2E7BF6" style={{ marginTop: 1 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#2E7BF6', marginBottom: 2 }}>
+              Tes données restent à toi
+            </Text>
+            <Text style={{ fontSize: 11.5, color: theme.muted, lineHeight: 17 }}>
+              Connexions chiffrées · révocables à tout moment · jamais revendues.
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ gap: 10 }}>
+          {INTEGRATIONS.map((it) => (
+            <View key={it.id} style={{
+              padding: 14, borderRadius: 16,
+              backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border,
+              flexDirection: 'row', alignItems: 'center', gap: 12,
+            }}>
+              <View style={{
+                width: 40, height: 40, borderRadius: 11,
+                backgroundColor: it.tint + '18',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Ionicons name={it.icon} size={18} color={it.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 13.5, fontWeight: '700', color: theme.text }}>{it.name}</Text>
+                  {it.connected && (
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#2E9E5B' }} />
+                  )}
+                </View>
+                <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{it.sub}</Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => !it.connected && showAlert('Connexion', `La connexion ${it.name} sera disponible prochainement.`)}
+                style={{
+                  paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
+                  backgroundColor: it.connected ? theme.text + '10' : theme.text,
+                }}
+              >
+                <Text style={{
+                  fontSize: 11.5, fontWeight: '700',
+                  color: it.connected ? theme.text : '#fff',
+                }}>
+                  {it.connected ? 'Géré' : 'Connecter'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ── Main Settings Screen ───────────────────────────────────────
+type SubView = 'notifications' | 'appearance' | 'integrations' | null;
+
 export default function SettingsScreen() {
+  const theme = useThemeStore((s) => s.theme);
   const profile = useAuthStore((s) => s.profile);
   const user = useAuthStore((s) => s.user);
-  const refreshProfile = useAuthStore((s) => s.refreshProfile);
-  const theme = useThemeStore((s) => s.theme);
-  const { t, locale } = useTranslation();
-  const setLocale = useI18nStore((s) => s.setLocale);
-  const [name, setName] = useState(profile?.name ?? '');
-  const [age, setAge] = useState(profile?.age?.toString() ?? '');
-  const [weight, setWeight] = useState(profile?.weight_kg?.toString() ?? '');
-  const [height, setHeight] = useState(profile?.height_cm?.toString() ?? '');
-  const [goal, setGoal] = useState<FitnessGoal | null>(profile?.goal ?? null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const signOut = useAuthStore((s) => s.signOut);
+  const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
+  const installedPlugins = usePluginRegistry((s) => s.installedPlugins);
+  const [sub, setSub] = useState<SubView>(null);
 
-  const pickAndUploadAvatar = async () => {
-    if (!user) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-      base64: false,   // per D-19: base64 not needed
-    });
-    if (result.canceled || !result.assets?.[0]) return;
+  if (sub === 'notifications') return <NotifSubScreen onBack={() => setSub(null)} />;
+  if (sub === 'appearance')    return <AppearanceSubScreen onBack={() => setSub(null)} />;
+  if (sub === 'integrations')  return <IntegrationsSubScreen onBack={() => setSub(null)} />;
 
-    setIsUploadingAvatar(true);
-    try {
-      const asset = result.assets[0];
-      const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
-      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
-      const filePath = `${user.id}/avatar.${ext}`;
+  const initials = (profile?.name ?? user?.email ?? 'ZK').slice(0, 2).toUpperCase();
+  const displayName = profile?.name ?? user?.email ?? 'Utilisateur';
+  const email = user?.email ?? '';
 
-      // Step 1: get signed upload URL from backend (per D-18)
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error(t('nutrition.notAuth'));
-
-      const urlRes = await fetch(
-        `${apiUrl}/storage/upload-url?bucket=profile-photos&path=${filePath}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
-      const { upload_url } = await urlRes.json();
-
-      // Step 2: fetch blob from local URI (per D-20)
-      const blobRes = await fetch(asset.uri);
-      const blob = await blobRes.blob();
-
-      // Step 3: PUT blob directly to Supabase Storage (per D-20)
-      const putRes = await fetch(upload_url, {
-        method: 'PUT',
-        headers: { 'Content-Type': mimeType },
-        body: blob,
-      });
-      if (!putRes.ok) throw new Error('Upload failed');
-
-      // Step 4: get public URL from profile-photos bucket (per D-18)
-      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(filePath);
-      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
-      // Step 5: persist to user_profiles (per D-18)
-      await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
-      setAvatarUrl(publicUrl);
-      await refreshProfile();
-    } catch (err: any) {
-      showAlert(t('general.error'), err.message ?? t('profile.avatarUploadError'));
-    } finally {
-      setIsUploadingAvatar(false);
-    }
+  const handleSignOut = () => {
+    showAlert('Se déconnecter', 'Confirmes-tu la déconnexion ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Déconnecter', style: 'destructive', onPress: async () => {
+        try {
+          await signOut();
+          router.replace('/(auth)/login');
+        } catch {
+          showAlert('Erreur', 'La déconnexion a échoué. Réessaie.');
+        }
+      }},
+    ]);
   };
 
-  const fieldStyle = {
-    backgroundColor: theme.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: theme.text,
-    fontSize: 15,
-    marginBottom: 16,
-  } as const;
-
-  const handleSave = async () => {
-    if (!user) return;
-    setIsSaving(true);
-    const { error } = await supabase.from('user_profiles').update({
-      name: name.trim(),
-      age: age ? parseInt(age) : null,
-      weight_kg: weight ? parseFloat(weight) : null,
-      height_cm: height ? parseFloat(height) : null,
-      goal,
-    }).eq('id', user.id);
-
-    if (error) {
-      showAlert(t('general.error'), error.message);
-    } else {
-      await refreshProfile();
-      showAlert(t('profile.saved'), t('profile.savedDesc'));
-    }
-    setIsSaving(false);
+  const handleDeleteAccount = () => {
+    showAlert(
+      'Supprimer le compte',
+      'Cette action est irréversible. Toutes tes données seront effacées.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: () => {
+          showAlert('Contacte le support', 'Pour supprimer ton compte, contacte support@ziko.app');
+        }},
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 12 }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-          <Ionicons name="chevron-back" size={24} color="#7A7670" />
-        </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: theme.text }}>{t('profile.editProfile')}</Text>
-      </View>
+      <STHeader onBack={() => router.back()} title="Paramètres" />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 60 }}>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 100 }}>
-        {/* Avatar upload */}
-        <View style={{ alignItems: 'center', marginBottom: 24 }}>
-          <TouchableOpacity onPress={pickAndUploadAvatar} disabled={isUploadingAvatar}
-            style={{ position: 'relative' }}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.border }} />
-            ) : (
-              <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 32 }}>
-                  {profile?.name?.[0]?.toUpperCase() ?? '?'}
-                </Text>
-              </View>
-            )}
-            <View style={{
-              position: 'absolute', bottom: 0, right: 0,
-              width: 32, height: 32, borderRadius: 16,
-              backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center',
-              borderWidth: 3, borderColor: theme.background,
-            }}>
-              {isUploadingAvatar ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="camera" size={14} color="#fff" />
-              )}
-            </View>
-          </TouchableOpacity>
-          <Text style={{ color: theme.muted, fontSize: 12, marginTop: 8 }}>{t('profile.changePhoto')}</Text>
+        {/* Account card */}
+        <View style={{
+          padding: 14, borderRadius: 16, marginBottom: 20,
+          backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border,
+          flexDirection: 'row', alignItems: 'center', gap: 12,
+        }}>
+          <View style={{
+            width: 48, height: 48, borderRadius: 14,
+            backgroundColor: '#FF5C1A',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text style={{ fontWeight: '800', fontSize: 18, color: '#fff' }}>{initials}</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontSize: 15.5, fontWeight: '800', color: theme.text }} numberOfLines={1}>{displayName}</Text>
+            <Text style={{ fontSize: 11.5, color: theme.muted, marginTop: 2 }} numberOfLines={1}>{email}</Text>
+          </View>
+          <View style={{
+            paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999,
+            backgroundColor: '#FF5C1A',
+          }}>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#fff', letterSpacing: 0.4 }}>FREE</Text>
+          </View>
         </View>
 
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('profile.fullName')}</Text>
-        <TextInput value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#7A7670" style={fieldStyle} />
+        <STGroup title="Compte">
+          <STRow icon="person-outline" tint="#FF5C1A" label="Informations personnelles" sub="Nom, email, téléphone" onPress={() => showAlert('Bientôt', 'Cette section arrive dans la prochaine version.')} />
+          <STRow icon="flag-outline" tint="#2E7BF6" label="Objectif fitness" sub="Perte de poids, force, masse…" onPress={() => router.push('/(app)/profile/goal-edit' as any)} />
+          <STRow icon="lock-closed-outline" tint={theme.text} label="Mot de passe" sub="Modifier" onPress={() => router.push('/(auth)/forgot' as any)} />
+          <STRow icon="shield-checkmark-outline" tint="#2E7BF6" label="Confidentialité" sub="Profil public · Données partagées" onPress={() => showAlert('Confidentialité', 'Tes données sont chiffrées et ne sont jamais revendues.')} />
+          <STRow icon="trash-outline" tint="#E94B3C" label="Supprimer le compte" danger onPress={handleDeleteAccount} />
+        </STGroup>
 
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('profile.age')}</Text>
-        <TextInput value={age} onChangeText={setAge} placeholder="25" placeholderTextColor="#7A7670" keyboardType="number-pad" style={fieldStyle} />
+        <STGroup title="Abonnement">
+          <STRow icon="sparkles-outline" tint="#FF5C1A" label="Plan actuel" right="Free" onPress={() => router.push('/(app)/paywall' as any)} />
+          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right="Voir solde" onPress={() => router.push('/(app)/ai' as any)} />
+          <STRow icon="card-outline" tint={theme.text} label="Passer Premium" sub="9,99€/mois — annulable à tout moment" onPress={() => router.push('/(app)/paywall' as any)} />
+        </STGroup>
 
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('profile.weight')}</Text>
-        <TextInput value={weight} onChangeText={setWeight} placeholder="75" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
+        <STGroup title="Préférences">
+          <STRow icon="notifications-outline" tint="#7B5BD0" label="Notifications" sub="Push, sons, rappels" onPress={() => setSub('notifications')} />
+          <STRow icon="color-palette-outline" tint="#2E7BF6" label="Apparence" sub="Thème · Langue · Unités" onPress={() => setSub('appearance')} />
+          <STRow icon="link-outline" tint="#2E9E5B" label="Intégrations" right="2 actives" onPress={() => setSub('integrations')} />
+          <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right={`${enabledPlugins.length} / ${installedPlugins.length}`} onPress={() => router.push('/(app)/modules' as any)} />
+          <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => router.push('/(app)/referral' as any)} />
+        </STGroup>
 
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 6 }}>{t('profile.height')}</Text>
-        <TextInput value={height} onChangeText={setHeight} placeholder="175" placeholderTextColor="#7A7670" keyboardType="decimal-pad" style={fieldStyle} />
+        <STGroup title="Aide & infos">
+          <STRow icon="help-circle-outline" tint={theme.text} label="Centre d'aide" onPress={() => router.push('/(app)/help' as any)} />
+          <STRow icon="chatbubble-outline" tint="#2E7BF6" label="Contacter le support" onPress={() => showAlert('Support', 'Envoie un email à support@ziko.app')} />
+          <STRow icon="star-outline" tint="#E8A33A" label="Noter l'app" onPress={() => showAlert('Merci !', "Ton avis nous aide à améliorer l'app.")} />
+          <STRow icon="information-circle-outline" tint={theme.muted} label="À propos" right="v2.0.0" />
+          <STRow icon="document-text-outline" tint={theme.muted} label="Mentions légales" onPress={() => router.push('/(app)/legal' as any)} />
+        </STGroup>
 
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 10 }}>{t('profile.fitnessGoal')}</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
-          {GOALS.map((g) => (
-            <TouchableOpacity key={g.id} onPress={() => setGoal(g.id)}
-              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: goal === g.id ? theme.primary : theme.surface, borderWidth: 1, borderColor: goal === g.id ? theme.primary : theme.border }}>
-              <Text style={{ color: goal === g.id ? '#fff' : theme.muted, fontWeight: '500', fontSize: 14 }}>{t(g.labelKey)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={{ color: theme.muted, fontSize: 13, marginBottom: 10 }}>{t('profile.language')}</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 28 }}>
-          {(['fr', 'en'] as const).map((lang) => (
-            <TouchableOpacity key={lang} onPress={() => setLocale(lang)}
-              style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: locale === lang ? theme.primary : theme.surface, borderWidth: 1, borderColor: locale === lang ? theme.primary : theme.border, alignItems: 'center' }}>
-              <Text style={{ color: locale === lang ? '#fff' : theme.muted, fontWeight: '600', fontSize: 14 }}>
-                {lang === 'fr' ? '🇫🇷 Français' : '🇬🇧 English'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity onPress={handleSave} disabled={isSaving}
-          style={{ backgroundColor: isSaving ? '#5A52D5' : theme.primary, borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: isSaving ? 0.7 : 1 }}>
-          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{isSaving ? t('habits.saving') : t('profile.saveChanges')}</Text>
-        </TouchableOpacity>
-
-        {/* Bug Report Link */}
+        {/* Sign out */}
         <TouchableOpacity
-          onPress={() => showBugReport()}
+          onPress={handleSignOut}
+          activeOpacity={0.7}
           style={{
-            flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-            gap: 8, marginTop: 24, paddingVertical: 14, borderRadius: 12,
-            backgroundColor: '#EF444410', borderWidth: 1, borderColor: '#EF444430',
+            paddingVertical: 14, borderRadius: 14, alignItems: 'center',
+            borderWidth: 1, borderColor: theme.border,
+            backgroundColor: 'transparent', marginTop: 8,
           }}
         >
-          <Ionicons name="bug" size={18} color="#EF4444" />
-          <Text style={{ color: '#EF4444', fontWeight: '600', fontSize: 14 }}>
-            {t('bugReport.reportBug')}
-          </Text>
+          <Text style={{ fontWeight: '700', fontSize: 14, color: '#E94B3C' }}>Se déconnecter</Text>
         </TouchableOpacity>
+
+        <Text style={{ textAlign: 'center', fontSize: 10.5, color: theme.muted, marginTop: 16 }}>
+          Ziko · v2.0.0
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

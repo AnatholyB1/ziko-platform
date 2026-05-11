@@ -164,7 +164,7 @@ function StartModes({ activeProgram, theme }: { activeProgram: WorkoutProgram | 
       label: 'Coach IA',
       sub: 'Génère ton plan',
       color: theme.violet,
-      onPress: () => router.push('/(app)/(plugins)/ai-programs/dashboard' as any),
+      onPress: () => router.push('/(app)/workout/ai-generate' as any),
     },
   ];
 
@@ -411,6 +411,12 @@ export default function WorkoutProgramsScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
         <Text style={{ flex: 1, fontSize: 28, fontWeight: '800', color: theme.text }}>Au boulot.</Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/calendar' as any)}
+          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+        >
+          <Ionicons name="calendar-outline" size={18} color={theme.text} />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setShowCreate(true)}
           style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}

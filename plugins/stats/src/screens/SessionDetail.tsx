@@ -17,10 +17,10 @@ function formatDuration(seconds: number): string {
 }
 
 function rpeColor(rpe: number, theme: any): string {
-  if (rpe <= 3) return '#10B981';
-  if (rpe <= 6) return '#F59E0B';
+  if (rpe <= 3) return theme.success;
+  if (rpe <= 6) return theme.warn;
   if (rpe <= 8) return theme.primary;
-  return '#EF4444';
+  return theme.danger;
 }
 
 export default function SessionDetail({ supabase }: { supabase: any }) {

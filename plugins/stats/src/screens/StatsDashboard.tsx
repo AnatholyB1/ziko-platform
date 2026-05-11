@@ -379,7 +379,7 @@ function WorkoutTab({
           color="#2563EB"
         />
         <KPICard icon="time-outline" label="Durée moy." value={formatDuration(avgSessionDuration)} color="#7C3AED" />
-        <KPICard icon="flame-outline" label="RPE moy." value={avgRpe != null ? `${avgRpe}` : '—'} color="#EF4444" />
+        <KPICard icon="flame-outline" label="RPE moy." value={avgRpe != null ? `${avgRpe}` : '—'} color={theme.danger} />
       </View>
 
       {/* Volume Trend */}
@@ -534,7 +534,7 @@ function HabitsTab({ overview, timeline, performances, loading }: {
     <>
       {/* KPIs */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        <KPICard icon="checkmark-done-outline" label="Habitudes" value={`${overview.totalHabits}`} color="#10B981" />
+        <KPICard icon="checkmark-done-outline" label="Habitudes" value={`${overview.totalHabits}`} color={theme.success} />
         <KPICard icon="trending-up-outline" label="Taux moyen" value={`${overview.avgDailyCompletion}%`} color={theme.primary} />
         <KPICard icon="star-outline" label="Meilleur jour" value={overview.bestDay ? `${overview.bestDayRate}%` : '—'} color="#F59E0B" />
         <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.activeDays}`} color="#2563EB" />
@@ -627,9 +627,9 @@ function NutritionTab({ overview, timeline, mealDistribution, loading }: {
       {/* KPIs */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="restaurant-outline" label="Repas logués" value={`${overview.totalMeals}`} color={theme.primary} />
-        <KPICard icon="flame-outline" label="Cal/jour moy." value={`${overview.avgDailyCalories}`} color="#EF4444" />
+        <KPICard icon="flame-outline" label="Cal/jour moy." value={`${overview.avgDailyCalories}`} color={theme.danger} />
         <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color="#2563EB" />
-        <KPICard icon="nutrition-outline" label="Protéines/j" value={`${overview.avgProtein}g`} color="#10B981" />
+        <KPICard icon="nutrition-outline" label="Protéines/j" value={`${overview.avgProtein}g`} color={theme.success} />
       </View>
 
       {/* Calories Timeline */}
@@ -711,13 +711,13 @@ function NutritionTab({ overview, timeline, mealDistribution, loading }: {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{
                   width: 24, height: 24, borderRadius: 12,
-                  backgroundColor: '#10B98115', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: theme.success + '15', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#10B981' }}>{i + 1}</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.success }}>{i + 1}</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: theme.text }} numberOfLines={1}>{f.name}</Text>
               </View>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>{f.count}x</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: theme.success }}>{f.count}x</Text>
             </View>
           ))}
         </ChartCard>
@@ -726,7 +726,7 @@ function NutritionTab({ overview, timeline, mealDistribution, loading }: {
       {/* Macros Summary */}
       <ChartCard title="Moyenne quotidienne" icon="stats-chart">
         <View style={{ gap: 12 }}>
-          <MacroBar label="Protéines" value={overview.avgProtein} unit="g" color="#10B981" max={Math.max(overview.avgProtein, overview.avgCarbs, overview.avgFat)} />
+          <MacroBar label="Protéines" value={overview.avgProtein} unit="g" color={theme.success} max={Math.max(overview.avgProtein, overview.avgCarbs, overview.avgFat)} />
           <MacroBar label="Glucides" value={overview.avgCarbs} unit="g" color="#2563EB" max={Math.max(overview.avgProtein, overview.avgCarbs, overview.avgFat)} />
           <MacroBar label="Lipides" value={overview.avgFat} unit="g" color="#F59E0B" max={Math.max(overview.avgProtein, overview.avgCarbs, overview.avgFat)} />
         </View>
@@ -755,7 +755,7 @@ function GamificationTab({ overview, xpTimeline, xpBySource, loading }: {
         <KPICard icon="flash-outline" label="XP total" value={`${overview.totalXP}`} color={theme.primary} />
         <KPICard icon="shield-outline" label={`Niveau ${overview.currentLevel}`} value={overview.levelTitle} color="#7C3AED" />
         <KPICard icon="logo-bitcoin" label="Pièces" value={`${overview.totalCoins}`} color="#F59E0B" />
-        <KPICard icon="flame-outline" label="Streak" value={`${overview.currentStreak}j`} color="#EF4444" />
+        <KPICard icon="flame-outline" label="Streak" value={`${overview.currentStreak}j`} color={theme.danger} />
       </View>
 
       {/* XP Cumulative Timeline */}
@@ -849,7 +849,7 @@ function AITab({ overview, activity, loading }: {
         <KPICard icon="chatbubbles-outline" label="Conversations" value={`${overview.totalConversations}`} color="#2563EB" />
         <KPICard icon="chatbox-outline" label="Messages" value={`${overview.totalMessages}`} color={theme.primary} />
         <KPICard icon="swap-horizontal-outline" label="Msg/convo moy." value={`${overview.avgMessagesPerConvo}`} color="#7C3AED" />
-        <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.activeDays}`} color="#10B981" />
+        <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.activeDays}`} color={theme.success} />
       </View>
 
       {/* Activity Timeline */}
@@ -937,7 +937,7 @@ function CommunityTab({ overview, activity, loading }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="people-outline" label="Amis" value={`${overview.totalFriends}`} color="#2563EB" />
         <KPICard icon="chatbox-outline" label="Messages" value={`${overview.messagesSent}`} color={theme.primary} />
-        <KPICard icon="trophy-outline" label="Défis gagnés" value={`${overview.challengesWon}/${overview.challengesTotal}`} color="#10B981" />
+        <KPICard icon="trophy-outline" label="Défis gagnés" value={`${overview.challengesWon}/${overview.challengesTotal}`} color={theme.success} />
         <KPICard icon="gift-outline" label="XP offert" value={`${overview.xpGifted}`} color="#7C3AED" />
       </View>
 
@@ -962,8 +962,8 @@ function CommunityTab({ overview, activity, loading }: {
         <ChartCard title="Résultats des défis" icon="podium">
           <PieChart
             data={[
-              { name: 'Gagnés', population: overview.challengesWon || 0, color: '#10B981', legendFontColor: theme.muted, legendFontSize: 12 },
-              { name: 'Perdus', population: overview.challengesLost || 0, color: '#EF4444', legendFontColor: theme.muted, legendFontSize: 12 },
+              { name: 'Gagnés', population: overview.challengesWon || 0, color: theme.success, legendFontColor: theme.muted, legendFontSize: 12 },
+              { name: 'Perdus', population: overview.challengesLost || 0, color: theme.danger, legendFontColor: theme.muted, legendFontSize: 12 },
               ...(overview.challengesTied > 0 ? [{ name: 'Égalités', population: overview.challengesTied, color: '#F59E0B', legendFontColor: theme.muted, legendFontSize: 12 }] : []),
             ].filter(d => d.population > 0)}
             width={CHART_W} height={200} chartConfig={getChartConfig(theme)}
@@ -1028,7 +1028,7 @@ function SleepTab({ overview, timeline, loading }: {
         <KPICard icon="moon-outline" label="Nuits loguées" value={`${overview.totalLogs}`} color="#7C3AED" />
         <KPICard icon="time-outline" label="Durée moy." value={`${overview.avgDuration}h`} color="#2563EB" />
         <KPICard icon="star-outline" label="Qualité moy." value={`${overview.avgQuality}/5`} color="#F59E0B" />
-        <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color="#10B981" />
+        <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color={theme.success} />
       </View>
 
       {timeline.length > 1 && (
@@ -1088,7 +1088,7 @@ function StretchingTab({ overview, timeline, loading }: {
         <KPICard icon="body-outline" label="Sessions" value={`${overview.totalSessions}`} color={theme.primary} />
         <KPICard icon="time-outline" label="Durée totale" value={`${overview.totalDurationMin}min`} color="#2563EB" />
         <KPICard icon="timer-outline" label="Durée moy." value={`${overview.avgDurationMin}min`} color="#7C3AED" />
-        <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.daysTracked}`} color="#10B981" />
+        <KPICard icon="calendar-outline" label="Jours actifs" value={`${overview.daysTracked}`} color={theme.success} />
       </View>
 
       {timeline.length > 1 && (
@@ -1156,7 +1156,7 @@ function MeasurementsTab({ overview, timeline, loading }: {
     <>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="scale-outline" label="Poids actuel" value={overview.latestWeight != null ? `${overview.latestWeight}kg` : '—'} color={theme.primary} />
-        <KPICard icon="trending-up-outline" label="Évolution" value={overview.weightChange != null ? `${overview.weightChange > 0 ? '+' : ''}${overview.weightChange}kg` : '—'} color={overview.weightChange != null && overview.weightChange <= 0 ? '#10B981' : '#EF4444'} />
+        <KPICard icon="trending-up-outline" label="Évolution" value={overview.weightChange != null ? `${overview.weightChange > 0 ? '+' : ''}${overview.weightChange}kg` : '—'} color={overview.weightChange != null && overview.weightChange <= 0 ? theme.success : theme.danger} />
         <KPICard icon="fitness-outline" label="Body fat" value={overview.latestBodyFat != null ? `${overview.latestBodyFat}%` : '—'} color="#7C3AED" />
         <KPICard icon="calendar-outline" label="Entrées" value={`${overview.totalEntries}`} color="#2563EB" />
       </View>
@@ -1229,8 +1229,8 @@ function JournalTab({ overview, timeline, loading }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="journal-outline" label="Entrées" value={`${overview.totalEntries}`} color={theme.primary} />
         <KPICard icon="happy-outline" label="Humeur moy." value={`${overview.avgMood}/5`} color="#F59E0B" />
-        <KPICard icon="flash-outline" label="Énergie moy." value={`${overview.avgEnergy}/5`} color="#10B981" />
-        <KPICard icon="pulse-outline" label="Stress moy." value={`${overview.avgStress}/5`} color="#EF4444" />
+        <KPICard icon="flash-outline" label="Énergie moy." value={`${overview.avgEnergy}/5`} color={theme.success} />
+        <KPICard icon="pulse-outline" label="Stress moy." value={`${overview.avgStress}/5`} color={theme.danger} />
       </View>
 
       {timeline.length > 1 && (
@@ -1294,7 +1294,7 @@ function HydrationTab({ overview, timeline, loading }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="water-outline" label="Total" value={`${overview.totalLiters}L`} color="#06B6D4" />
         <KPICard icon="trending-up-outline" label="Moy./jour" value={`${overview.avgDailyMl}ml`} color="#2563EB" />
-        <KPICard icon="trophy-outline" label="Meilleur jour" value={`${overview.bestDayMl}ml`} color="#10B981" />
+        <KPICard icon="trophy-outline" label="Meilleur jour" value={`${overview.bestDayMl}ml`} color={theme.success} />
         <KPICard icon="calendar-outline" label="Jours trackés" value={`${overview.daysTracked}`} color="#7C3AED" />
       </View>
 
@@ -1353,7 +1353,7 @@ function CardioTab({ overview, timeline, loading }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         <KPICard icon="bicycle-outline" label="Sessions" value={`${overview.totalSessions}`} color={theme.primary} />
         <KPICard icon="map-outline" label="Distance" value={`${overview.totalDistanceKm}km`} color="#2563EB" />
-        <KPICard icon="flame-outline" label="Calories" value={`${overview.totalCalories}`} color="#EF4444" />
+        <KPICard icon="flame-outline" label="Calories" value={`${overview.totalCalories}`} color={theme.danger} />
         <KPICard icon="time-outline" label="Durée moy." value={`${overview.avgDurationMin}min`} color="#7C3AED" />
       </View>
 

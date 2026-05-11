@@ -1,153 +1,142 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
+  View, Text, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { showAlert, useThemeStore } from '@ziko/plugin-sdk';
-import { Image } from 'expo-image';
-import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MotiView } from 'moti';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
-import { Button, Input, spacing } from '@ziko/ui';
-import { useTranslation } from '@ziko/plugin-sdk';
 
 export default function LoginScreen() {
-  const { t } = useTranslation();
   const theme = useThemeStore((s) => s.theme);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const valid = email.length > 3 && password.length >= 4;
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      showAlert(t('general.error'), t('auth.fillAll'));
-      return;
-    }
+    if (!valid) return;
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       router.replace('/(app)');
     } catch (err: any) {
-      showAlert('Login failed', err.message ?? 'An error occurred');
+      showAlert('Connexion impossible', err.message ?? 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    if (error) showAlert('Error', error.message);
-  };
+  const fieldStyle = {
+    backgroundColor: theme.surface,
+    borderRadius: 12, borderWidth: 1, borderColor: theme.border,
+    paddingHorizontal: 14, paddingVertical: 14,
+    color: theme.text, fontSize: 14, flex: 1,
+  } as const;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: 24 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Logo + tagline */}
-          <MotiView
-            from={{ opacity: 0, translateY: -16 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 500 }}
-            style={{ marginTop: 48, marginBottom: 48 }}
-          >
-            <Image
-              source={require('../../assets/image/logo.png')}
-              style={{ width: 160, height: 50 }}
-              contentFit="contain"
-              transition={300}
-            />
-            <Text style={{ fontSize: 16, color: theme.muted, marginTop: 6 }}>
-              {t('auth.tagline')}
-            </Text>
-          </MotiView>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
 
-          <MotiView
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'timing', duration: 450, delay: 100 }}
-          >
-            <Text style={{ fontSize: 26, fontWeight: '700', color: theme.text, marginBottom: 28 }}>
-              {t('auth.welcomeBack')}
-            </Text>
-
-            <Input
-              label={t('auth.email')}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-
-            <Input
-              label={t('auth.password')}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              secureTextEntry
-              autoComplete="password"
-            />
-
-            <Button
-              title={isLoading ? t('general.loading') : t('auth.login')}
-              onPress={handleLogin}
-              loading={isLoading}
-              size="lg"
-              style={{ marginTop: 8, borderRadius: 14 }}
-            />
-
-            {/* Divider */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
-              <Text style={{ color: theme.muted, marginHorizontal: 12, fontSize: 13 }}>{t('general.or')}</Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: theme.border }} />
-            </View>
-
-            {/* Google */}
+          {/* Back */}
+          <View style={{ paddingTop: 8, paddingHorizontal: 16 }}>
             <TouchableOpacity
-              onPress={handleGoogleLogin}
+              onPress={() => router.back()}
               style={{
-                backgroundColor: theme.surface,
-                borderRadius: 14,
-                paddingVertical: 15,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: theme.border,
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 10,
+                width: 36, height: 36, borderRadius: 12,
+                backgroundColor: theme.text + '10',
+                alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Ionicons name="logo-google" size={18} color={theme.text} />
-              <Text style={{ color: theme.text, fontWeight: '500', fontSize: 15 }}>
-                Continuer avec Google
+              <Ionicons name="chevron-back" size={18} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Header */}
+          <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 18 }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', color: '#FF5C1A', marginBottom: 12 }}>
+              Bon retour
+            </Text>
+            <Text style={{ fontSize: 32, fontWeight: '800', color: theme.text, lineHeight: 34, letterSpacing: -0.5 }}>
+              Connecte-toi
+            </Text>
+            <Text style={{ fontSize: 13.5, color: theme.muted, marginTop: 8, lineHeight: 19 }}>
+              Reprends là où tu t'es arrêté.
+            </Text>
+          </View>
+
+          {/* Fields */}
+          <View style={{ paddingHorizontal: 24, gap: 14 }}>
+            {/* Email */}
+            <View>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted, marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Email</Text>
+              <TextInput
+                value={email} onChangeText={setEmail}
+                placeholder="toi@email.com" placeholderTextColor={theme.muted}
+                keyboardType="email-address" autoCapitalize="none" autoComplete="email"
+                style={fieldStyle}
+              />
+            </View>
+
+            {/* Password + show/hide */}
+            <View>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted, marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Mot de passe</Text>
+              <View style={{
+                flexDirection: 'row', alignItems: 'center',
+                backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.border,
+              }}>
+                <TextInput
+                  value={password} onChangeText={setPassword}
+                  placeholder="••••••••" placeholderTextColor={theme.muted}
+                  secureTextEntry={!showPw} autoComplete="password"
+                  style={{ ...fieldStyle, borderWidth: 0 }}
+                />
+                <TouchableOpacity onPress={() => setShowPw((s) => !s)} style={{ paddingHorizontal: 14 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted }}>{showPw ? 'Cacher' : 'Voir'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Forgot link */}
+            <View style={{ alignItems: 'flex-end' }}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/forgot' as any)}>
+                <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#FF5C1A' }}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={{ flex: 1 }} />
+
+          {/* CTA */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 24, paddingTop: 16, gap: 10 }}>
+            <TouchableOpacity
+              onPress={handleLogin}
+              disabled={!valid || isLoading}
+              style={{
+                paddingVertical: 14, borderRadius: 14,
+                backgroundColor: valid ? theme.text : theme.text + '30',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#fff' }}>
+                {isLoading ? 'Connexion…' : 'Se connecter'}
               </Text>
             </TouchableOpacity>
 
-            {/* Register link */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.xl }}>
-              <Text style={{ color: theme.muted }}>{t('auth.noAccount')} </Text>
-              <Link href="/(auth)/register" asChild>
-                <TouchableOpacity>
-                  <Text style={{ color: theme.primary, fontWeight: '600' }}>{t('auth.register')}</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </MotiView>
+            <Text style={{ textAlign: 'center', fontSize: 12.5, color: theme.muted }}>
+              {'Pas encore de compte ? '}
+              <Text onPress={() => router.push('/(auth)/register')} style={{ color: '#FF5C1A', fontWeight: '700' }}>
+                Créer
+              </Text>
+            </Text>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

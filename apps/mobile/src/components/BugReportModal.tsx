@@ -37,9 +37,9 @@ type Severity = 'low' | 'medium' | 'high' | 'critical';
 type Category = 'ui' | 'crash' | 'performance' | 'feature' | 'data' | 'other';
 
 const SEVERITIES: { id: Severity; icon: string; color: string }[] = [
-  { id: 'low', icon: 'arrow-down-circle', color: '#22C55E' },
-  { id: 'medium', icon: 'remove-circle', color: '#F59E0B' },
-  { id: 'high', icon: 'arrow-up-circle', color: '#F97316' },
+  { id: 'low', icon: 'arrow-down-circle', color: '#2E9E5B' },
+  { id: 'medium', icon: 'remove-circle', color: '#E8A33A' },
+  { id: 'high', icon: 'arrow-up-circle', color: '#FF5C1A' },
   { id: 'critical', icon: 'alert-circle', color: '#EF4444' },
 ];
 
@@ -185,9 +185,9 @@ export default function BugReportModal() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{
                     width: 36, height: 36, borderRadius: 18,
-                    backgroundColor: '#EF444415', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: theme.danger + '15', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Ionicons name="bug" size={18} color="#EF4444" />
+                    <Ionicons name="bug" size={18} color={theme.danger} />
                   </View>
                   <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text }}>
                     {t('bugReport.title')}
@@ -371,7 +371,7 @@ export default function BugReportModal() {
                   style={{
                     flex: step > 0 ? 1 : undefined, width: step === 0 ? '100%' : undefined,
                     paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-                    backgroundColor: canGoNext ? (step === 2 ? '#EF4444' : theme.primary) : theme.border,
+                    backgroundColor: canGoNext ? (step === 2 ? theme.danger : theme.primary) : theme.border,
                     flexDirection: 'row', justifyContent: 'center', gap: 8,
                   }}
                 >

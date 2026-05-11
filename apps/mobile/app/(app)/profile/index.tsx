@@ -13,10 +13,10 @@ import { useCreditStore } from '../../../src/stores/creditStore';
 
 // ── IdentityCard ─────────────────────────────────────────────
 function IdentityCard({
-  name, level, levelLabel, levelPct, streak, onEdit,
+  name, level, levelLabel, levelPct, streak, onEdit, onAvatarPress,
 }: {
   name: string; level: number; levelLabel: string;
-  levelPct: number; streak: number; onEdit: () => void;
+  levelPct: number; streak: number; onEdit: () => void; onAvatarPress: () => void;
 }) {
   const theme = usePluginThemeStore((s) => s.theme);
   const initials = name.slice(0, 2).toUpperCase();
@@ -30,16 +30,20 @@ function IdentityCard({
       </Svg>
       <View style={{ padding: 18 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <View style={{
-            width: 64, height: 64, borderRadius: 32,
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: theme.primary,
-            shadowColor: theme.primary,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.5, shadowRadius: 12,
-          }}>
+          <TouchableOpacity
+            onPress={onAvatarPress}
+            activeOpacity={0.8}
+            style={{
+              width: 64, height: 64, borderRadius: 32,
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: theme.primary,
+              shadowColor: theme.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.5, shadowRadius: 12,
+            }}
+          >
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 22 }}>{initials}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: theme.cardDarkText }}>{name}</Text>
             <Text style={{ fontSize: 11, color: 'rgba(255,250,246,.55)', marginTop: 1 }}>
@@ -198,7 +202,7 @@ function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps:
   return (
     <View style={{ gap: 8 }}>
       {prs.map((pr) => (
-        <View key={pr.exercise} style={{
+        <TouchableOpacity key={pr.exercise} onPress={() => router.push({ pathname: '/(app)/profile/lift-detail' as any, params: { lift: pr.exercise } })} activeOpacity={0.7} style={{
           backgroundColor: theme.surface, borderRadius: 16, padding: 12,
           flexDirection: 'row', alignItems: 'center', gap: 12,
           shadowColor: theme.cardDark, shadowOffset: { width: 0, height: 1 },
@@ -222,7 +226,7 @@ function PRsList({ prs }: { prs: Array<{ exercise: string; weight: number; reps:
               ↑ {pr.delta} kg
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -398,12 +402,15 @@ export default function ProfileScreen() {
 
   const settingsItems = [
     { icon: 'person-outline', label: 'Compte & profil', onPress: () => router.push('/(app)/profile/settings') },
+    { icon: 'watch-outline', label: 'Appareils connectés', sub: 'Apple Watch · Garmin', onPress: () => router.push('/(app)/profile/device' as any) },
     { icon: 'grid-outline', label: 'Gérer mes modules', onPress: () => router.push('/(app)/store') },
     ...(gamifEnabled ? [{ icon: 'cart-outline', label: 'Boutique', onPress: () => router.push('/(app)/(plugins)/gamification/shop' as any) }] : []),
     { icon: 'chatbubble-outline', label: 'Coach IA', onPress: () => router.push('/(app)/ai') },
-    { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
-    { icon: 'help-circle-outline', label: 'Aide & FAQ', onPress: () => {} },
-    { icon: 'document-text-outline', label: 'Mentions légales', onPress: () => {} },
+    { icon: 'notifications-outline', label: 'Notifications', onPress: () => router.push('/(app)/notifications' as any) },
+    { icon: 'help-circle-outline', label: 'Aide & FAQ', onPress: () => router.push('/(app)/help' as any) },
+    { icon: 'document-text-outline', label: 'Mentions légales', onPress: () => router.push('/(app)/legal' as any) },
+    { icon: 'trophy-outline', label: 'Progression & niveaux', onPress: () => router.push('/(app)/profile/progression' as any) },
+    { icon: 'gift-outline', label: 'Parrainer un ami', onPress: () => router.push('/(app)/referral' as any) },
     ...(theme.id !== 'default' ? [{ icon: 'color-palette-outline', label: 'Réinitialiser le thème', onPress: handleResetTheme }] : []),
   ] as Array<{ icon: string; label: string; sub?: string; badge?: string; onPress: () => void }>;
 
@@ -439,6 +446,7 @@ export default function ProfileScreen() {
             levelPct={levelPct}
             streak={streak}
             onEdit={() => router.push('/(app)/profile/settings')}
+            onAvatarPress={() => router.push('/(app)/profile/avatar' as any)}
           />
 
           {/* ── TotalsRow ────────────────────── */}

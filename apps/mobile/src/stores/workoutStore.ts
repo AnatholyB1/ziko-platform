@@ -28,8 +28,27 @@ interface ProgramExerciseInput {
   order_index: number;
 }
 
+export interface CompletedExercise {
+  name: string;
+  sets: Array<{ reps?: number | null; weight?: number | null }>;
+  isNewPR?: boolean;
+  bestSetLabel?: string;
+  totalVolume: number;
+  delta?: number;
+  bestWeight?: number;
+}
+
+export interface CompletedSession {
+  id: string;
+  highlight?: string;
+  durationSeconds: number;
+  avgHr?: number;
+  exercises: CompletedExercise[];
+}
+
 interface WorkoutState {
   currentSession: WorkoutSession | null;
+  lastCompletedSession: CompletedSession | null;
   currentWorkoutExercises: (ProgramExercise & { exercises?: Exercise })[];
   activeSets: ActiveSet[];
   restTimer: number | null;
@@ -40,6 +59,10 @@ interface WorkoutState {
   programs: WorkoutProgram[];
   activeProgram: WorkoutProgram | null;
   cycleConfig: { cycle_weeks: number; progression_type: 'increment' | 'percentage'; progression_value: number; current_cycle_week: number } | null;
+
+  setLastCompletedSession: (s: CompletedSession) => void;
+  clearLastCompletedSession: () => void;
+  saveSessionNotes: (id: string, notes: string) => void;
 
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   endSession: () => Promise<void>;
@@ -63,6 +86,7 @@ interface WorkoutState {
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   currentSession: null,
+  lastCompletedSession: null,
   currentWorkoutExercises: [],
   activeSets: [],
   restTimer: null,
@@ -73,6 +97,10 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   programs: [],
   activeProgram: null,
   cycleConfig: null,
+
+  setLastCompletedSession: (s) => set({ lastCompletedSession: s }),
+  clearLastCompletedSession: () => set({ lastCompletedSession: null }),
+  saveSessionNotes: (_id, _notes) => { /* persisted to Supabase in session.tsx before navigation */ },
 
   startSession: async (programWorkoutId, name) => {
     const user = useAuthStore.getState().user;

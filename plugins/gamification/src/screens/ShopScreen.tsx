@@ -153,7 +153,7 @@ export default function ShopScreen({ supabase, onEquip }: { supabase: any; onEqu
                   borderRadius: 16,
                   padding: 16,
                   borderWidth: 2,
-                  borderColor: equipped ? theme.primary : owned ? '#10B981' : theme.border,
+                  borderColor: equipped ? theme.primary : owned ? theme.success : theme.border,
                 }}
               >
                 {/* Visual preview based on category */}
@@ -193,11 +193,11 @@ export default function ShopScreen({ supabase, onEquip }: { supabase: any; onEqu
                     <Ionicons
                       name={levelOk ? 'lock-open' : 'lock-closed'}
                       size={12}
-                      color={levelOk ? '#10B981' : '#EF4444'}
+                      color={levelOk ? theme.success : theme.danger}
                     />
                     <Text style={{
                       fontSize: 11,
-                      color: levelOk ? '#10B981' : '#EF4444',
+                      color: levelOk ? theme.success : theme.danger,
                       fontWeight: '600',
                     }}>
                       Niv. {item.level_required}
@@ -215,7 +215,7 @@ export default function ShopScreen({ supabase, onEquip }: { supabase: any; onEqu
                     backgroundColor: equipped
                       ? theme.primary
                       : owned
-                        ? '#10B981'
+                        ? theme.success
                         : canAfford && levelOk
                           ? theme.text
                           : theme.border,

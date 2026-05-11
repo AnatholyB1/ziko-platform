@@ -229,7 +229,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
               </View>
             )}
             {friends.map((f) => (
-              <View key={f.id} style={{
+              <TouchableOpacity key={f.id} onPress={() => router.push(`/(app)/profile/${f.id}` as any)} style={{
                 flexDirection: 'row', alignItems: 'center', gap: 12,
                 backgroundColor: theme.surface, borderRadius: 14, padding: 14,
                 borderWidth: 1, borderColor: theme.border,
@@ -256,7 +256,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
                     <Ionicons name="stats-chart" size={16} color={theme.primary} />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
           </>
         )}
