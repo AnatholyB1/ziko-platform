@@ -130,7 +130,7 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
           <MiniKPI
             label="Δ"
             value={`${weightDelta >= 0 ? '+' : ''}${weightDelta}kg`}
-            color={weightDelta >= 0 ? '#10B981' : '#EF4444'}
+            color={weightDelta >= 0 ? theme.success : theme.danger}
           />
           <MiniKPI label="Vol. total" value={`${Math.round(totalVolume)}kg`} color="#2563EB" />
           <MiniKPI label="RPE" value={avgRpe != null ? `${avgRpe}` : '—'} color="#7C3AED" />
@@ -194,8 +194,8 @@ export default function ExerciseStats({ supabase }: { supabase: any }) {
               height={200}
               chartConfig={{
                 ...getChartBase(theme),
-                color: (o = 1) => `rgba(16, 185, 129, ${o})`,
-                propsForDots: { ...getChartBase(theme).propsForDots, stroke: '#10B981' },
+                color: (o = 1) => theme.success + Math.round(o * 255).toString(16).padStart(2, '0'),
+                propsForDots: { ...getChartBase(theme).propsForDots, stroke: theme.success },
               }}
               bezier
               style={{ borderRadius: 12 }}
