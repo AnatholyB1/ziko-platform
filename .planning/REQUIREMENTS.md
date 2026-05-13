@@ -2,7 +2,7 @@
 
 **Milestone:** v1.5 Coach Platform & CRM
 **Defined:** 2026-05-13
-**Status:** Defined (awaiting roadmap traceability)
+**Status:** Mapped — roadmap created 2026-05-13 (Phases 22–31, 76/76 REQ-IDs)
 
 This document lists the user-facing capabilities Ziko v1.5 must deliver. Each requirement is atomic, testable, and user-centric. REQ-IDs are stable identifiers used by the roadmap and verification gates.
 
@@ -118,11 +118,100 @@ This document lists the user-facing capabilities Ziko v1.5 must deliver. Each re
 
 ### Traceability
 
-This section is filled by the roadmapper. Each requirement is mapped to exactly one phase.
+Each v1.5 requirement is mapped to exactly one phase. Coverage: 76/76 ✓ (no orphans, no duplicates). Plan column populated by `/gsd-plan-phase` as phases are decomposed.
 
 | REQ-ID | Phase | Plan |
 |--------|-------|------|
-| _Populated by gsd-roadmapper after roadmap creation._ | | |
+| COACH-01 | Phase 24 — Coach Identity & Onboarding | TBD |
+| COACH-02 | Phase 24 — Coach Identity & Onboarding | TBD |
+| COACH-03 | Phase 24 — Coach Identity & Onboarding | TBD |
+| COACH-04 | Phase 24 — Coach Identity & Onboarding | TBD |
+| COACH-05 | Phase 24 — Coach Identity & Onboarding | TBD |
+| INVITE-01 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-02 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-03 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-04 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-05 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-06 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| INVITE-07 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| CLIENT-01 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-02 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-03 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-04 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-05 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-06 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-07 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-08 | Phase 26 — CRM Client Management | TBD |
+| PROG-01 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-02 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-03 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-04 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-05 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-06 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-07 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-08 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| PROG-09 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| IMPORT-01 | Phase 28 — AI File Imports | TBD |
+| IMPORT-02 | Phase 28 — AI File Imports | TBD |
+| IMPORT-03 | Phase 28 — AI File Imports | TBD |
+| IMPORT-04 | Phase 28 — AI File Imports | TBD |
+| IMPORT-05 | Phase 28 — AI File Imports | TBD |
+| IMPORT-06 | Phase 28 — AI File Imports | TBD |
+| IMPORT-07 | Phase 28 — AI File Imports | TBD |
+| IMPORT-08 | Phase 28 — AI File Imports | TBD |
+| IMPORT-09 | Phase 28 — AI File Imports | TBD |
+| IMPORT-10 | Phase 28 — AI File Imports | TBD |
+| AIC-01 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-02 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-03 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-04 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-05 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-06 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-07 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-08 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-09 | Phase 29 — AI Coach Orchestrator | TBD |
+| AIC-10 | Phase 29 — AI Coach Orchestrator | TBD |
+| STRAVA-01 | Phase 30 — Strava Integration | TBD |
+| STRAVA-02 | Phase 30 — Strava Integration | TBD |
+| STRAVA-03 | Phase 30 — Strava Integration | TBD |
+| STRAVA-04 | Phase 30 — Strava Integration | TBD |
+| STRAVA-05 | Phase 30 — Strava Integration | TBD |
+| STRAVA-06 | Phase 30 — Strava Integration | TBD |
+| STRAVA-07 | Phase 30 — Strava Integration | TBD |
+| MOBILE-01 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| MOBILE-02 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| MOBILE-03 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| MOBILE-04 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| MOBILE-05 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
+| MOBILE-06 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
+| MKT-01 | Phase 31 — Public Marketing `/coachs` | TBD |
+| MKT-02 | Phase 31 — Public Marketing `/coachs` | TBD |
+| MKT-03 | Phase 31 — Public Marketing `/coachs` | TBD |
+| MKT-04 | Phase 31 — Public Marketing `/coachs` | TBD |
+| MKT-05 | Phase 31 — Public Marketing `/coachs` | TBD |
+| MKT-06 | Phase 31 — Public Marketing `/coachs` | TBD |
+| ARCH-01 | Phase 24 — Coach Identity & Onboarding | TBD |
+| ARCH-02 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
+| ARCH-03 | Phase 24 — Coach Identity & Onboarding | TBD |
+| ARCH-04 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
+| ARCH-05 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
+| ARCH-06 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
+| ARCH-07 | Phase 22 — Schema Foundation & RLS Keystone | TBD |
+| ARCH-08 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
+
+**Coverage check:**
+- COACH (5) → Phase 24
+- INVITE (7) → Phase 25
+- CLIENT (8) → Phase 26
+- PROG (9) → Phase 27
+- IMPORT (10) → Phase 28
+- AIC (10) → Phase 29
+- STRAVA (7) → Phase 30
+- MOBILE (6) → Phases 25 (MOBILE-01, 05) + 27 (MOBILE-02, 03, 04, 06) — split because MOBILE-01/05 only need the link primitive (Phase 25), while MOBILE-02/03/04/06 require an assigned program (Phase 27)
+- MKT (6) → Phase 31
+- ARCH (8) → Phases 22 (ARCH-07 — RLS keystone) + 23 (ARCH-02, 04, 05, 06, 08 — web/repo tooling) + 24 (ARCH-01, 03 — backend module scaffolding lands when first module is built)
+
+**Total: 76/76 mapped, no orphans, no duplicates.** Phase 22 has 1 requirement (the RLS keystone is intentionally a single foundational ARCH item — the rest of Phase 22's work is infrastructure setup that does not surface as a user-observable REQ-ID but is captured by Phase 22 success criteria #1–5).
 
 ---
 
@@ -161,4 +250,4 @@ This section is filled by the roadmapper. Each requirement is mapped to exactly 
 
 ---
 
-*Last updated: 2026-05-13 — v1.5 milestone requirements defined*
+*Last updated: 2026-05-13 — v1.5 milestone requirements defined + traceability mapped to Phases 22–31*

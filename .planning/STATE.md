@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: defining_requirements
+status: ready_to_plan
 stopped_at: null
 last_updated: "2026-05-13T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 10
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — defining requirements
+**Current focus:** v1.5 Coach Platform & CRM — Phase 22 (Schema Foundation & RLS Keystone)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 22 — Schema Foundation & RLS Keystone
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-13 — Milestone v1.5 Coach Platform & CRM started
+Status: Roadmap approved, ready to plan Phase 22
+Last activity: 2026-05-13 — v1.5 roadmap created (Phases 22–31, 76 REQ-IDs mapped)
 
-Progress: [░░░░░░░░░░] 0% (v1.5 milestone — 0 phases planned yet)
+Progress: [░░░░░░░░░░] 0% (v1.5 milestone — 0/10 phases complete)
 
 ## Performance Metrics
 
@@ -68,6 +68,8 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [v1.5 Scoping]: Coach programs = extended `workout_programs` table (`created_by_coach_id`, `assigned_to_user_id`, `is_template`, `weeks_data JSONB`) — reuses existing mobile program views
 - [v1.5 Scoping]: Self-serve coach onboarding with light KYC — no manual validation bottleneck in v1.5
 - [v1.5 Scoping]: AI coach orchestrator tools = analyze_client + generate_coaching_program + monitor_client_alerts — credit-gated via v1.4 system
+- [v1.5 Roadmap]: 10 phases (22–31) with 3 parallelizable lanes — backend identity→clients→programs→imports→ai (sequential); Strava (parallel after schema); marketing landing (parallel after onboarding URL stable)
+- [v1.5 Roadmap]: Phase 22 (schema + `is_coach_of()` SECURITY DEFINER function) is the keystone — every cross-user RLS policy and every coach module depends on it
 
 ### Pending Todos
 
@@ -75,9 +77,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- AI import quality on noisy/varied real-world files (screenshots, scanned PDFs) needs validation before shipping — define fallback strategy (manual edit, multiple-shot, Sonnet escalation)
-- Strava OAuth requires Strava app registration + webhook endpoint validation — must be requested early in the milestone (Strava review delays are common)
-- Bounded contexts architecture decision must be applied from phase 1 — refactoring mid-milestone is expensive
+- **[Open decision, Phase 23 blocker]** `apps/web/` Turborepo onboarding vs dual-repo with published `coach-sdk` NPM — Phase 23 must spike the integration decision with documented rollback path. Currently the Next.js web app lives in a SEPARATE repo at `c:/ziko-web` (NOT in this monorepo).
+- **[Open decision, Phase 23 blocker]** Vercel Pro tier confirmation — mandatory before Phase 28 (Hobby's 10s timeout kills AI imports; need `maxDuration=60`).
+- **[Open decision, Phase 28]** AI import per-page credit pricing — target €0.05/import within €0.75/user/month freemium; calibration TBD.
+- AI import quality on noisy/varied real-world files (screenshots, scanned PDFs) needs validation before shipping Phase 28 — define fallback strategy (manual edit, multiple-shot, Sonnet escalation).
+- Strava OAuth requires Strava app registration + webhook endpoint validation — must be requested early in Phase 30 (Strava review delays are common).
+- Bounded contexts architecture decision must be applied from Phase 24 — refactoring mid-milestone is expensive.
+- **[Phase 22 risk, HIGH]** `is_coach_of()` recursion / revocation bypass — a bug locks coaches out OR leaks data across coaches. Unit-test before any RLS policy uses it; run the 4-case smoke test on every migration after Phase 22.
 
 ## Session Continuity
 
