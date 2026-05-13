@@ -1,259 +1,336 @@
-# Project Research Summary
+# Research Summary — v1.5 Coach Platform & CRM
 
-**Project:** Ziko Platform — v1.4 AI Credit System & Monetization
-**Domain:** Gamified AI credit/quota system for a freemium fitness mobile app
-**Researched:** 2026-04-05
-**Confidence:** HIGH
+**Researched:** 2026-05-13
+**Confidence:** HIGH (Stack/Architecture), MEDIUM-HIGH (Features), HIGH (Pitfalls)
+
+---
 
 ## Executive Summary
 
-Ziko v1.4 introduces a cost-control layer over the existing Claude Sonnet orchestrator by adding a dual-currency gamification system: cosmetic coins (existing, unlimited) and a new functional AI credit currency (capped, earned by activity). The product pattern is well-established — Duolingo Hearts, Habitica Gold, and Workout Quest XP all follow the same earn-by-doing loop — but the specific combination of activity-gated AI access applied to a fitness app is novel. The recommended approach is a Supabase-native credit ledger with an atomic PostgreSQL RPC for deduction, activity-based earning through existing tool executor hooks, and Haiku as the vision model to cut per-scan costs by approximately 70%. Zero new npm packages are required; all capability exists in the current stack.
+v1.5 transforms Ziko from a single-tenant athlete app into a two-sided platform: a coach-facing CRM on the Next.js web app (`apps/web/(coach)/`) reading client data via cross-user RLS, plus athlete-side Strava OAuth and AI file imports. The architectural keystone is `coach_client_links` + a `SECURITY DEFINER` SQL function `is_coach_of(coach, client)` that extends every existing data table's RLS with an `OR is_coach_of(auth.uid(), user_id)` clause — coach reads, never writes. Everything else is additive: 6 new tables (migrations 034–037), one `role` column on `user_profiles`, four extensions on `workout_programs`, six bounded-context Hono modules (`coach/{identity,clients,programs,invitations,imports,ai}`), three new AI tools, and Strava as a separate `integrations/strava/` module.
 
-The highest-impact architectural decision is how credit deduction is implemented: it must be a single atomic `SECURITY DEFINER` PostgreSQL function with `SELECT ... FOR UPDATE` row locking. Application-layer check-then-deduct patterns will produce negative balances under concurrent serverless invocations — Vercel Fluid Compute (default since early 2025) allows a single function instance to handle multiple concurrent requests, multiplying this risk. A companion `ai_credit_transactions` ledger table with a `UNIQUE` constraint on `(user_id, source, idempotency_key)` eliminates the reward double-crediting risk from mobile retries. Daily earn caps must use a lazy date-keyed reset (no cron) to avoid Vercel's at-least-once cron delivery behavior.
+Biggest insights: (1) **bounded-contexts pay off only if enforced** — service-only cross-module imports + ESLint guards are mandatory or v1.6 ERP refactor will be painful; (2) **AI file imports are interactive, not batch** — preview-then-commit, two-pass extraction (raw transcribe → Zod-structured), per-page credit pricing, async upload path because Vercel max function duration is 60s on Pro; (3) **CSV is dead, Claude native PDF/vision is the import substrate** — `unpdf`/`exceljs`/`mammoth` are fallbacks only, no `pdf-parse`/SheetJS; (4) **the web app moves into the Turborepo** as `apps/web/` (currently external) — this is Phase 0 risk and the most coupled decision in the milestone.
 
-The most time-sensitive risk is a hard breaking change: `claude-3-haiku-20240307` retires April 19, 2026 — less than two weeks from the start of this milestone. Any existing reference to that model ID will start producing API failures on that date. This grep-and-replace must happen in the first deliverable of Phase 1, before any other work. The second key risk is Haiku food-scan quality on degraded real-world photos; a Sonnet fallback path must be designed and tested before Haiku is shipped to production.
+Top three risks: **RLS recursion / revocation-bypass in `is_coach_of()`** (catastrophic if buggy, low if reviewed — every cross-user policy depends on it); **AI tool data leakage** (service-role client inside tool = full RLS bypass; tool output PII persisted in `ai_messages` survives revocation); **Strava rate-limit ban + webhook idempotency** (200/15min app-wide ceiling, at-least-once webhook delivery doubles `cardio_sessions` without UNIQUE constraint).
 
-## Key Findings
+Build order: 10 phases, three parallelizable lanes (web onboarding ∥ backend identity, Strava ∥ coach modules, marketing landing after onboarding URL stable).
 
-### Recommended Stack
+---
 
-The stack requires zero new npm packages. The existing `@ai-sdk/anthropic ^3.0.58` accepts any Anthropic model ID string — swapping to `claude-haiku-4-5-20251001` for vision is a one-constant change. The Vercel AI SDK v6 `generateText` and `streamText` functions already expose `result.usage.inputTokens` / `result.usage.outputTokens` for cost telemetry via `onFinish`. The existing `@upstash/redis ^1.37.0` supports `pipeline()`, `incr()`, and `expire()` for rate limiting but must NOT serve as the credit balance store — credits require a durable audit trail which only Supabase provides. Redis remains purely for request-rate abuse prevention; the credit system runs on Supabase.
+## Stack Additions
 
-**Core technologies (new configuration only):**
-- `@ai-sdk/anthropic ^3.0.58`: vision scan model — swap to `claude-haiku-4-5-20251001`; 70% cost reduction per scan
-- `ai ^6.0.116` (Vercel AI SDK): cost telemetry — `result.usage` + `onFinish` → Supabase `ai_cost_log`
-- Supabase PostgreSQL: credit balance and transaction ledger — single source of truth; not Redis
-- Upstash Redis: rate limiting only (existing role, unchanged) — runs before credit gate
-- Hono v4 middleware: two new functions (`creditCheck`, `creditDeduct`) wrapping AI routes
+**No new mobile packages.** Strava and file imports reuse `expo-web-browser`, `expo-linking`, `expo-document-picker` already installed.
 
-**New SQL schema (1 migration, 2 tables + 1 RPC):**
-- `user_ai_credits` — one row per user: `ai_credits INT DEFAULT 5`, `daily_credits_earned INT`, `daily_reset_date DATE`
-- `ai_credit_transactions` — ledger: `amount INT`, `type ('earn'|'deduct')`, `source TEXT`
-- `deduct_ai_credits(user_id, cost)` — `SECURITY DEFINER` RPC with `FOR UPDATE` row lock
+### Backend (`backend/api/`) — 4 new packages
 
-### Expected Features
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `unpdf` | `^1.6.2` | PDF page-count validation + fallback text extraction (serverless-safe, no `canvas` deps). **Primary path is native Claude PDF parsing, not unpdf.** |
+| `exceljs` | `^4.4.0` | Streaming `.xlsx`/`.xls` → JSON rows (6× lower memory than SheetJS in 512MB Vercel functions, MIT) |
+| `mammoth` | `^1.12.0` | `.docx` → clean text via `extractRawText({buffer})` — skip `convertToHtml` (adds CSS noise) |
+| `nanoid` | `^5.0.0` | 6-char invitation codes via `customAlphabet('23456789ABCDEFGHJKMNPQRSTUVWXYZ')`. **Verify ESM/CJS** against backend `package.json` `"type"` before installing — may need v4 if CJS. |
 
-**Must have — table stakes (v1.4):**
-- Visible credit balance in UI — users expect to see remaining credits before acting; without this, 402 errors appear to be bugs
-- Daily base allocation — 1 free vision scan + 1 free AI chat/day; 1 program/month; without any free base, free users see zero AI value and churn
-- Per-action cost disclosure — show "1 credit" next to each AI button before consumption; surprises cause churn
-- Credit exhaustion bottom sheet — 402 response must show WHY and HOW to earn more, not a raw error
-- Activity-to-credit earn (6 triggers) — habit, nutrition, measurement, stretching, cardio each award +1 credit (cardio = +2); 2 bonus credit daily cap total from activity
-- Idempotent earn ledger — `ai_credit_transactions` with unique constraint on source record UUID prevents double-award on mobile retry
-- `user_tier` column (`free` | `premium`) — credit gate skips for premium; 5-minute migration now avoids a breaking schema change when IAP eventually ships
-- Haiku vision migration — immediate 70% cost reduction per scan; independent of credit system, can ship first
+**Strava: no SDK.** Direct `fetch` + Zod-typed wrappers in `backend/api/src/integrations/strava/service.ts`. Strava's surface is 6 endpoints; available SDKs are unmaintained.
 
-**Should have — differentiators (v1.4):**
-- Credit earn toast on activity save — "+1 AI credit" inline with post-save confirmation (Habitica XP pop-up pattern); immediate positive reinforcement
-- In-context credit nudge — "Ask AI (2 credits left)" label inline with AI buttons, not a blocking modal; lower friction than Duolingo Hearts
-- Daily earn progress display — "2 more credits available today — log a stretch session to earn"; gives users agency
-- "Fast scan" framing for Haiku — positions cost optimization as a user benefit (speed), not a model downgrade
+### Web (`apps/web/`) — 4 new packages (workspace currently external, must be onboarded in Phase 0)
 
-**Defer (v2+):**
-- In-app purchases (IAP) — RevenueCat + StoreKit/Google Play Billing; 30% platform cut, 4-6 week integration, RGPD purchase compliance
-- Premium subscription tier — needs pricing strategy, cancellation flow, recurring billing compliance
-- Streak earn multiplier — requires dedicated streak table, timezone-aware day boundaries, missed-day grace logic
-- Credit usage history screen — add when support tickets about balance appear
-- Referral credits and credit gifting — abuse vector complexity exceeds v1.4 scope
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `@supabase/ssr` | `^0.5.x` | Server-side auth for App Router. **Use this, NOT** deprecated `@supabase/auth-helpers-nextjs`, **NOT** raw `@supabase/supabase-js` (no cookie access). |
+| `@tanstack/react-table` | `^8.21.3` | Headless CRM table (full Tailwind v4 + Ziko-token control, ~14kb gz vs AG Grid's ~200kb, MIT no Enterprise gate) |
+| `@tanstack/react-virtual` | `^3.10.x` | Row virtualization for >200-client coaches (lazy-loaded only on clients-list) |
+| `react-dropzone` | `^14.2.x` | Drag-drop upload UX for AI imports — just the primitive, not a full upload manager |
+| `lucide-react` (conditional) | `^0.460.x` | Icons — **verify what v1.0 landing uses first**; do NOT add a second icon set if `@heroicons/react` already present |
 
-**Explicit anti-features (never implement):**
-- Credit rollover — causes unpredictable API cost spikes from accumulated balances; break cost projection model
-- Coins-to-credits bridge — decouples coins from cosmetic purpose; creates arbitrage loops that inflate AI cost
-- Retroactive credit award for past activity — one-time welcome bonus (5 credits via migration) for existing users is the correct substitute
-- Hard paywall (zero free AI) — kills trial experience and virality; research confirms "selective free access creates conviction to upgrade"
-- Energy-style gates on activity logging — never gate the core fitness retention mechanic itself
+### Existing infrastructure reused (no new deps)
 
-### Architecture Approach
+- Vercel AI SDK v6 (`ai ^6.0.116` + `@ai-sdk/anthropic ^3.0.58`) — `generateObject` + Zod for all import parsing
+- `@upstash/redis ^1.37.0` + `@upstash/ratelimit ^2.0.8` — rate limits on redemption + Strava queue
+- Supabase Storage signed-URL pattern from v1.3 — new bucket `import-uploads`, path-prefix RLS `(storage.foldername(name))[1] = auth.uid()::text`
+- v1.4 dual-table credit system (`user_ai_credits` + `ai_credit_transactions`) + `creditCheck`/`creditDeduct` middleware — 3 new credit classes: `import_pdf`, `import_excel_word`, `import_image`
+- `@supabase/supabase-js ^2.50.0` — no version bump; RLS policies on existing tables get one-line OR extensions
+- AI tool registry pattern (`backend/api/src/tools/registry.ts`) — 3 new coach tools register identically to the 30+ existing plugin tools
 
-The credit system integrates into the existing Hono middleware chain at the API layer only — no credit checks in RLS policies (per-row function execution destroys performance). Three new backend files (`middleware/credits.ts`, `lib/creditService.ts`, `routes/credits.ts`) and one new migration (`026_ai_credits.sql`) carry all new logic. Existing tool executors gain a fire-and-forget `creditService.earnCredits()` call after each successful write. The mobile app gains a new `creditStore.ts` (Zustand) and UI updates to the AI chat header, nutrition vision screen, and gamification dashboard.
+### Explicit NOT-additions (anti-deps)
 
-**Major components:**
-1. `src/middleware/credits.ts` — `creditCheck(cost)` blocks before handler if balance is 0; `creditDeduct(cost)` writes deduction after handler only if status < 400
-2. `src/lib/creditService.ts` — `deductCredits` via Supabase RPC (atomic), `earnCredits` with lazy daily-reset cap, `getBalance` with missing-row upsert; single source of truth for all credit math
-3. `src/routes/credits.ts` — `GET /credits/balance`, `GET /credits/history`, `POST /credits/earn` (covers direct-Supabase mobile writes that bypass tool executors)
-4. `supabase/migrations/026_ai_credits.sql` — `user_ai_credits` + `ai_credit_transactions` + RLS + `deduct_ai_credits` RPC function with `FOR UPDATE` lock
-5. `apps/mobile/src/stores/creditStore.ts` — Zustand; fetches `/credits/balance` on mount and screen focus
+- ❌ Any CSV parser (`papaparse`, `csv-parse`) — AI imports replace CSV per PROJECT.md
+- ❌ `@supabase/auth-helpers-nextjs` — deprecated, replaced by `@supabase/ssr`
+- ❌ Strava SDK (`strava-v3`, etc.) — unmaintained, 6 endpoints don't need a wrapper
+- ❌ AG Grid (any tier) — bundle + license + Tailwind theming friction
+- ❌ `pdf-parse`, `pdfjs-dist` raw — pull `canvas` native deps, break Vercel cold starts
+- ❌ SheetJS CE (`xlsx`) — in-memory only, OOM risk; streaming requires SheetJS Pro
+- ❌ `tesseract.js`, `sharp`, `jimp` — Claude vision handles OCR + image processing natively
+- ❌ LangChain / LlamaIndex / direct `@anthropic-ai/sdk` — AI SDK v6 already covers it
+- ❌ Materialized views — bypass RLS at read time (Pitfall 1.5)
+- ❌ `bullmq`, `pg-boss`, Inngest — no background queue needed; `waitUntil` + polling cover the AI import async path
 
-**Middleware chain after changes (AI routes):**
+### Shared package
+
+`packages/coach-sdk/` (NEW) — Zod schemas (`ImportedProgramSchema`, `CoachClientLinkSchema`, etc.) shared between Hono backend, Next.js web, and mobile. Mirrors the `plugin-sdk` pattern.
+
+---
+
+## Feature Categorization
+
+### Client Management (Phase 5 of build order)
+
+**Table stakes (MUST ship):** client list with search + last-active indicator; tabbed client detail (profile + program + sessions + measurements + nutrition + habits + sleep + cardio, all read-only); coach-private notes (`coach_client_notes` — separate table); client revoke from mobile (immediate effect via `revoked_at`).
+
+**Differentiators (cheap):** unified "executive summary" card (compliance %, last workout, latest measurement, mood trend); roster filters by signal ("missed last 2 sessions"); custom tags per client.
+
+**Anti-features:** ❌ coach editing of athlete journals/nutrition/sleep (breaks trust + GDPR) ❌ granular per-domain permissions (deferred to v1.7) ❌ per-client custom-field builder ❌ bulk-message broadcast.
+
+### Programs (Phase 6)
+
+**Table stakes:** program templates (multi-week, sessions, exercises with sets/reps/RPE/rest); template library with search; one-click assign-to-client → forked copy (`template_source_id`); week-by-week structure (`weeks_data JSONB`); edit-assigned-without-touching-template; exercise picker from existing 1000+ Ziko library + free-text fallback.
+
+**Differentiators:** folder organization for templates (Hevy Coach pattern, coaches love this); 5–10 expert-curated launch templates (PPL, 5/3/1, Hyrox prep, body-recomp); AI program generation; per-exercise RPE/RIR; right-click duplicate.
+
+**Anti-features:** ❌ real-time collaborative editing (overkill for solo coaches) ❌ algorithmic auto-deload (paternalistic) ❌ in-program video upload (storage + moderation) ❌ marketplace (v2.0+).
+
+### AI Imports (Phase 7)
+
+**Table stakes:** PDF / image / Excel / Word upload; structured preview-then-commit (NEVER auto-commit); athlete flow (own data) + coach flow (template); credit-gated via v1.4 system.
+
+**Differentiators:** multi-page PDF (full 12-week programs); .docx support (underserved by competitors); confidence score per field with low-confidence flagging; re-upload-to-diff.
+
+**Anti-features:** ❌ Garmin `.fit` import (deferred) ❌ Google Sheets API (deferred) ❌ CSV (deleted) ❌ Strava bulk-export (OAuth covers ongoing) ❌ OCR of handwritten programs (high failure, frustrating UX).
+
+### AI Coach Tools (Phase 8)
+
+**Table stakes:** 3 tools — `analyze_client(client_id)`, `generate_coaching_program(client_id, goal, weeks, ...)`, `monitor_client_alerts(client_id?)`; web chat UI reusing `/ai/chat/stream` SSE; auto-inject viewed-client context.
+
+**Differentiators:** proactive weekly digest ("Monday morning briefing"); inline "Adapt this program for X" on a template page; auto-flag concerning patterns ("Sophie's sleep dropped 30% + missed 2 sessions").
+
+**Anti-features:** ❌ AI directly messages clients on coach's behalf (liability) ❌ full autopilot ❌ voice-cloned coach replies ❌ AI medical advice (hard refuse in system prompt).
+
+### Invitations (Phase 4)
+
+**Table stakes:** 6-char alphanumeric code (server-generated, retry-on-conflict in PG); expires_at NOT NULL DEFAULT now()+14d; mobile redemption screen; auto-create `coach_client_links` on accept; coach signup self-serve with `role=coach`; light async KYC (non-blocking).
+
+**Differentiators:** invitation link (deep-link `ziko-app.com/invite/ABC123`); QR code (in-gym scenario); athlete sees coach profile preview before accepting; welcome auto-message.
+
+**Anti-features:** ❌ email blast invites (spam-adjacent) ❌ multi-coach per athlete (v2.0) ❌ coach re-invite without consent on revoke ❌ hard-KYC blocking signup.
+
+### Mobile Athlete UX — "Mon coach" (Phase 4)
+
+**Table stakes:** empty state with code input; linked state with coach card (name, photo, certs); active program viewer (today's session preview); coach contact CTA (mailto in v1.5 — messaging is v1.6); revoke button in settings with 2-step confirmation; "Programme prescrit par Sophie" read-only badge.
+
+**Differentiators:** compliance widget ("75% this week"); coach's last note visible; sync indicator ("Synced with Sophie's view").
+
+**Anti-features:** ❌ athlete editing prescribed program ❌ showing coach-private notes to athlete ❌ push for every coach action.
+
+### Public Marketing `/coachs` (Phase 10)
+
+**Table stakes:** FR/EN above-the-fold; "Rejoindre la bêta privée" CTA (NO pricing); 3-4 feature blocks; FAQ (free during beta? clients pay? GDPR?); legal footer; existing `next-intl` setup.
+
+**Differentiators:** 60s muted auto-play demo video; "Built by athletes, for coaches" founder note; honest comparison table vs Trainerize/TrueCoach.
+
+**Anti-features:** ❌ testimonials (no real coaches yet — don't fake) ❌ pricing page (deferred) ❌ schedule-a-demo form (friction) ❌ chat widget.
+
+---
+
+## Bounded Contexts Architecture
+
+Six backend modules under `backend/api/src/coach/` mirror six web route groups under `apps/web/src/app/(coach)/`. Module boundary rule: **each module owns its tables, routes, types, and AI tools; cross-module reads go through a single `service.ts` index — never direct table reads from another module's code.** Enforce with ESLint `no-restricted-imports`: only `coach/<m>/service` importable from outside, `coach/<m>/db` and `coach/<m>/internal/*` blocked.
+
 ```
-logger → cors → secureHeaders → ipRateLimiter
-  → authMiddleware → aiChatLimiter → zValidator → creditCheck → handler → creditDeduct
+coach/identity     ← root, no deps. Owns: coach_profiles, user_profiles.role
+   ↑
+coach/invitations  ← depends: identity (coach-role gate), clients (calls createLink on redeem)
+   ↑                Owns: coach_invitations + redeem RPC
+coach/clients      ← depends: identity. Owns: coach_client_links + is_coach_of() function
+   ↑                Provides: isCoachOf(), getClientAggregate(), getLinkedClients()
+coach/programs     ← depends: identity, clients (validate link on assign)
+   ↑                Owns: workout_programs extensions (no new table)
+coach/imports      ← depends: programs (commit path), clients (mode=coach_for_client), credits, storage
+                    Owns: ai_imports
+coach/ai           ← depends: clients (link verify + reads), programs (generation write path)
+                    No own tables. Registers 3 tools in tools/registry.ts. Extends /ai/chat/stream.
 ```
 
-**Hard dependency sequence for build order:**
-Migration → creditService → credits middleware → routes/credits → app.ts mount → routes/ai modifications → tool executor modifications → mobile creditStore → mobile UI
+**Cross-module communication: direct service-layer imports within the same Hono process.** No internal HTTP, no event bus. Hono runs in a single Vercel function — cross-module calls become typed function calls. Web → backend is always HTTPS to Hono with Supabase JWT (no direct DB writes from `apps/web`).
 
-### Critical Pitfalls
+**Strava is NOT a coach module.** Lives at `backend/api/src/integrations/strava/` because it's athlete-facing; placing it under `coach/` would mis-bind it.
 
-1. **Race condition on credit deduction (concurrent serverless)** — use a `SECURITY DEFINER` PostgreSQL RPC with `SELECT ... FOR UPDATE` and a relative `UPDATE balance = balance - cost`; never check-then-decrement in application code. Add `CHECK (balance >= 0)` as a last-resort database constraint. Under Vercel Fluid Compute, two simultaneous requests on the same instance share module-level state — making application-layer guards meaningless.
+### ERP Migration Promises (v1.6+)
 
-2. **Activity reward double-crediting on mobile retry** — `ai_credit_transactions` must have a `UNIQUE (user_id, source, idempotency_key)` constraint where the idempotency key is the source record UUID. Use `INSERT ... ON CONFLICT DO NOTHING` so retries are silently skipped. Stigg documented this as "one of the hardest problems" in usage pipelines.
+| Surface | Stability promise |
+|---------|-------------------|
+| `coach_client_links` table shape | Frozen — every future ERP module joins this. Column additions allowed; removals forbidden. |
+| `is_coach_of(coach, client)` function signature | Frozen — every cross-user RLS policy depends on it. |
+| `user_profiles.role` enum (`client`/`coach`/`both`) | Permanent. New roles (admin, etc.) require a separate column. |
+| Tool registry `AITool` + executor shape | Frozen — 30+ existing tools depend on it. |
+| `coach-sdk` `ImportedProgramSchema` Zod | Versioned with semver, v1.x additive only, `__v` field persisted in `ai_imports.parsed_json`. |
 
-3. **Deprecated Haiku model ID — hard breaking change April 19, 2026** — `claude-3-haiku-20240307` retires in under two weeks. Grep the entire codebase for this string as the very first task of Phase 1. Zero results required before any deploy.
-
-4. **RLS credit check per row (catastrophic query performance)** — never embed credit balance lookups in RLS policies. RLS on credit tables must only enforce ownership using `(SELECT auth.uid()) = user_id` (sub-select form, not bare `auth.uid()` — the sub-select allows per-statement caching for up to 99.99% improvement per Supabase benchmarks).
-
-5. **Token counting inaccuracy causing cost budget drift** — Vercel AI SDK v6 has documented token normalization inaccuracies (GitHub issue #9921); prompt cache write costs are absent from `usage` totals. Reconcile weekly against the Anthropic usage API during the first month. Use `messages.countTokens` for pre-launch calibration before freezing `CREDIT_COSTS` constants.
-
-6. **Haiku vision quality regression on real-world photos** — build a Sonnet fallback path triggered by structured-output parse failure. Run a 50-photo blind test with degraded images (blurry, dark, off-angle, non-Latin packaging) before shipping Haiku-only to production.
-
-7. **Rate limiter and credit gate confusion** — return distinct HTTP codes (429 for rate limit, 402 for credit exhaustion) with distinct mobile UI flows. The Redis rate limiter is an abuse threshold (high count, short window); the credit system is a business rule (daily quota). These serve different purposes and must never be conflated.
-
-## Implications for Roadmap
-
-### Phase 1: Database Foundation + Deprecated Model Fix
-
-**Rationale:** Everything else in this milestone is blocked on the schema existing. The `deduct_ai_credits` RPC must be implemented correctly here — changing it later risks production incidents with negative balances. The deprecated Haiku model ID (`claude-3-haiku-20240307`) is a time-bomb that must be defused in the first commit — it breaks on April 19, 2026, which is a fixed calendar date, not a priority. Token cost calibration also belongs here because `CREDIT_COSTS` constants in Phase 2 must be based on real measurements, not estimates.
-
-**Delivers:**
-- Migration `026_ai_credits.sql`: `user_ai_credits`, `ai_credit_transactions`, RLS policies using `(SELECT auth.uid())` sub-select form, `deduct_ai_credits` RPC with `FOR UPDATE` lock and `CHECK (balance >= 0)` constraint, one-time insert of 5 welcome credits for all existing `auth.users`
-- `user_tier TEXT DEFAULT 'free'` column on `user_profiles`
-- Model constant replacement: `claude-haiku-4-5-20251001` replaces every occurrence of `claude-3-haiku-20240307` in the codebase
-- Token cost calibration: run `messages.countTokens` with actual system prompt and representative user messages; document measured token counts for `CREDIT_COSTS` sizing
-
-**Addresses features:** Credit balance table (prerequisite for all gating), `user_tier` (premium-ready), existing-user welcome bonus
-
-**Avoids pitfalls:** Race condition (RPC with FOR UPDATE), double-crediting (UNIQUE constraint on transactions table), deprecated model ID (immediate grep-and-replace), RLS per-row performance (sub-select auth.uid() pattern from day one)
-
-**Research flag:** Standard patterns — RLS conventions are identical to the 21 existing migrations. The RPC pattern is documented in PostgreSQL and Supabase official sources. Token calibration requires running actual API calls but no additional research. No `/gsd:research-phase` needed.
+Future `coach/billing` (v1.6) and `coach/scheduling` (v1.6) are pure additions — no v1.5 schema changes. Future `coach/messaging` (deferred) adds tables that FK to `coach_client_links`.
 
 ---
 
-### Phase 2: Credit Service + Middleware
+## Data Model
 
-**Rationale:** `creditService.ts` is pure logic with no HTTP surface — it can be built and unit-tested against the migration without touching any routes. Once the service exists, the middleware factory (`withCredits`) is a thin wrapper. Both files are the dependency root for all subsequent backend phases. `CREDIT_COSTS` constants are sized from the Phase 1 calibration measurements.
+### New tables (migrations 034 → 037, split for blast-radius control)
 
-**Delivers:**
-- `src/lib/creditService.ts`: `getBalance` (with missing-row upsert for new users), `deductCredits` (via Supabase RPC), `earnCredits` (with lazy daily-reset cap check), `CREDIT_COSTS`, `EARN_AMOUNTS`, `DAILY_EARN_CAP` constants
-- `src/middleware/credits.ts`: `creditCheck(cost)` and `creditDeduct(cost)` factory returning a Hono middleware pair; deduct only fires on status < 400
+**Migration 034 — `coach_role_and_profile.sql`**
+- `user_profiles.role TEXT NOT NULL DEFAULT 'client' CHECK (role IN ('client','coach','both'))` — partial index `WHERE role <> 'client'`.
+- `coach_profiles (user_id PK FK auth.users, display_name, bio, specialties TEXT[], website, kyc_status enum, kyc_data JSONB, timestamps)` + `updated_at` trigger + RLS.
 
-**Addresses features:** Per-action credit gate (backend middleware), daily earn cap enforcement, lazy reset (no cron dependency)
+**Migration 035 — `coach_links_and_invitations.sql`**
+- `coach_invitations (id, coach_id, code TEXT UNIQUE CHECK '^[A-Z2-9]{6}$', expires_at NOT NULL, max_uses INT DEFAULT 1, used_count INT DEFAULT 0, created_at)` + indexes on `(coach_id, created_at DESC)` and `code`.
+- `coach_client_links (id, coach_id, client_id, status enum 'active'|'revoked', invited_via FK coach_invitations, created_at, revoked_at, CHECK coach_id <> client_id)` — partial UNIQUE index on `(coach_id, client_id) WHERE status='active'`.
+- `is_coach_of(p_coach UUID, p_client UUID) RETURNS BOOLEAN` — `SECURITY DEFINER STABLE SET search_path = public`. `REVOKE FROM PUBLIC; GRANT EXECUTE TO authenticated`.
+- `redeem_invitation_code(p_code, p_client_id)` — SECURITY DEFINER, atomic SELECT FOR UPDATE on the invitation, INSERT link, UPDATE used_count++.
+- RLS rewrite on every cross-user-readable table (habits, habit_logs, workout_sessions, session_sets, body_measurements, nutrition_logs, sleep_logs, cardio_sessions, hydration_logs, journal_entries, stretching_logs): **split into separate `FOR SELECT` (owner OR `is_coach_of`) and `FOR ALL` (owner only).** Never widen existing FOR ALL.
 
-**Avoids pitfalls:** Deducting before AI call succeeds (deduct runs after handler returns), blocking activity log on credit earn (fire-and-forget with `.catch()` logging), cron reliability (lazy reset checks `daily_reset_date` at earn time)
+**Migration 036 — `coach_programs_and_imports.sql`**
+- `workout_programs` extensions: `created_by_coach_id FK auth.users SET NULL`, `assigned_to_user_id FK auth.users CASCADE`, `is_template BOOLEAN DEFAULT FALSE`, `weeks_data JSONB`, `template_source_id FK self SET NULL` + indexes.
+- `ai_imports (id, user_id, mode enum, target_client_id, source_storage_path, source_mime, status enum, parsed_json JSONB, committed_program_id FK workout_programs SET NULL, error_message, credit_cost, timestamps)`.
 
-**Research flag:** Standard patterns — Hono middleware factory matches existing `rateLimiter.ts`. No `/gsd:research-phase` needed.
+**Migration 037 — `strava_integration.sql`**
+- `strava_accounts (user_id PK, athlete_id BIGINT UNIQUE, access_token, refresh_token, expires_at, scope, last_sync_at, last_cursor_id, timestamps)` + own-RLS.
+- `strava_webhook_events (id BIGSERIAL, athlete_id, object_type, object_id, aspect_type, event_time, processed BOOLEAN DEFAULT FALSE, processed_at, payload JSONB, created_at)` — no RLS, service-role only.
+- `cardio_sessions` extensions: `external_strava_id BIGINT`, `external_source TEXT CHECK ('strava')` + partial UNIQUE index for idempotent UPSERT.
 
----
+### Critical SECURITY DEFINER function
 
-### Phase 3: Backend Routes + AI Route Integration + Haiku Vision
-
-**Rationale:** With `creditService.ts` and middleware ready, the credits router and AI route modifications can proceed in parallel. The Haiku vision model switch is a low-risk one-constant change delivering immediate cost savings independent of credit gating. The `POST /credits/earn` endpoint must be built here to handle direct-Supabase mobile writes that bypass tool executors. Cost telemetry (`onFinish` → `ai_cost_log`) ships here, enabling weekly Anthropic billing reconciliation.
-
-**Delivers:**
-- `src/routes/credits.ts`: `GET /credits/balance`, `GET /credits/history`, `POST /credits/earn`
-- `app.ts`: mount `creditsRouter` at `/credits`
-- `src/routes/ai.ts` modifications: `...withCredits(cost)` on `/chat`, `/chat/stream`, `/tools/execute`; `POST /ai/scan` endpoint using `claude-haiku-4-5-20251001` with `generateText`; `onFinish` cost telemetry logging to `ai_cost_log`
-- Distinct error response shapes: `{ error: 'rate_limited', retry_after: 60 }` (429) vs `{ error: 'insufficient_credits', balance: 0, resets_at: '...' }` (402)
-
-**Addresses features:** Haiku vision migration (70% cost reduction), per-action credit gate live on all AI endpoints, cost telemetry for budget monitoring
-
-**Avoids pitfalls:** Rate limiter / credit double-gate confusion (distinct 429 vs 402 shapes defined explicitly), token counting inaccuracy (telemetry enables weekly Anthropic API reconciliation), deducting on failed AI call (creditDeduct checks status)
-
-**Research flag:** The `POST /ai/scan` Haiku vision endpoint requires a quality verification step before shipping to production. Run the 50-photo blind test with degraded images and define the Sonnet fallback trigger (Zod parse failure on `ScanResult` schema). This is a validation task, not a research question — the approach is clear but the specific schema and threshold need a decision during phase planning.
-
----
-
-### Phase 4: Activity Earn Hooks
-
-**Rationale:** Tool executor modifications are all additive fire-and-forget calls — the lowest-risk changes in the milestone. They depend only on `creditService.earnCredits` existing (Phase 2). The `POST /credits/earn` endpoint from Phase 3 covers the direct-Supabase mobile path. This phase wires all five activity earn triggers and verifies idempotency end-to-end.
-
-**Delivers:**
-- `tools/habits.ts`, `tools/nutrition.ts`, `tools/measurements.ts`, `tools/stretching.ts`, `tools/cardio.ts`: fire-and-forget `creditService.earnCredits(userId, source)` after successful Supabase write in each tool executor
-- End-to-end idempotency verification: mobile retry simulation confirms `UNIQUE (user_id, source, idempotency_key)` constraint fires and `ON CONFLICT DO NOTHING` skips the duplicate
-- Audit of all 17 plugin screens to identify which ones use direct Supabase writes (vs AI tool calls) and must call `POST /credits/earn` from the mobile side
-
-**Addresses features:** Activity-to-credit earn (6 triggers), idempotent earn ledger, daily earn cap enforcement validated end-to-end
-
-**Avoids pitfalls:** Activity reward double-crediting (UNIQUE constraint + ON CONFLICT DO NOTHING), blocking activity log on credit earn (fire-and-forget with error logging)
-
-**Research flag:** Standard patterns — fire-and-forget is already used in `ai.ts` for `updateConversationTitle`. The plugin screen audit is a discovery task (which screens write directly to Supabase), not a research question. No `/gsd:research-phase` needed.
+```sql
+CREATE OR REPLACE FUNCTION public.is_coach_of(p_coach UUID, p_client UUID)
+RETURNS BOOLEAN
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.coach_client_links
+    WHERE coach_id = p_coach AND client_id = p_client
+      AND status = 'active' AND revoked_at IS NULL
+  );
+$$;
+REVOKE ALL ON FUNCTION public.is_coach_of(UUID, UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_coach_of(UUID, UUID) TO authenticated;
+```
 
 ---
 
-### Phase 5: Mobile UI — Credit Display + Exhaustion UX
+## Critical Data Flows
 
-**Rationale:** Mobile work is blocked until the backend is deployed and `/credits/balance` is accessible. This phase is entirely UI additions — new `creditStore.ts` plus UI changes in three locations. The credit exhaustion bottom sheet is the highest-priority component because a 402 without specific UI looks like a service outage, not a quota limit.
+### AI File Import (async + poll)
+1. `POST /coach/imports/upload-url` → role+link check, insert `ai_imports`, return signed Storage URL (5-min TTL, path-prefix RLS).
+2. Client `PUT (binary) → signed_url` (direct to Storage, bypasses Vercel 4.5MB).
+3. `POST /coach/imports/:id/parse` → `creditCheck`, `status='parsing'`, fetch file → Claude `generateObject(ImportedProgramSchema)` (PDF native; Excel via `exceljs`; Word via `mammoth`; image via Haiku). Validate Zod. `creditDeduct` on success. `status='preview_ready'`.
+4. Client polls `GET /coach/imports/:id` every 2s — **mandatory async** even if usually fast.
+5. `POST /coach/imports/:id/commit` → writes to `workout_programs`, `status='committed'`.
 
-**Delivers:**
-- `apps/mobile/src/stores/creditStore.ts`: Zustand store; `GET /credits/balance` on mount and screen focus; exposes `balance`, `dailyEarned`, `dailyCap`, `resetsAt`
-- AI chat screen: balance display in header ("X credits left"), "Using 1 credit..." loading state, 402 → credit exhaustion bottom sheet with earn actions list and "Resets in X hours" countdown
-- Nutrition vision scan screen: "Fast scan" label, credit indicator, same 402 bottom sheet
-- `plugins/gamification/src/screens/GamificationDashboard.tsx`: dual balance card — coins (coin icon, cosmetic) and AI credits (lightning bolt icon, functional); distinct iconography required
-- Per-plugin credit earn toast: "+1 AI credit" in post-save success confirmation for habits, nutrition, cardio, measurements, stretching
+**Critical:** `maxDuration=60` on `/parse`. Vercel Pro mandatory. Lifecycle cron cleans `import-uploads/*` after 30d.
 
-**Addresses features:** Visible balance widget, credit exhaustion CTA with recovery path, credit earn toast (immediate positive reinforcement), in-context credit nudge, "Fast scan" framing, strict coin/credit visual separation
+### Strava OAuth + Sync
+1. Mobile: `WebBrowser.openAuthSessionAsync(strava oauth URL, redirect ziko://strava/callback, scope read+activity:read_all)`.
+2. Mobile POSTs `code` → backend exchanges, upserts `strava_accounts`, registers webhook subscription once, backfills 30d throttled.
+3. Activity event → `POST /webhooks/strava` validates `subscription_id`, inserts `strava_webhook_events (processed=false)`, **returns 200 in <2s**.
+4. Cron `*/5 * * * *` processes with `FOR UPDATE SKIP LOCKED LIMIT 50`, single-flight token refresh, UPSERT `cardio_sessions ON CONFLICT (external_strava_id)`.
+5. Daily reconcile cron `0 3 * * *` catches missed webhooks.
 
-**Avoids pitfalls:** Generic error for credit exhaustion (specific 402 UI), no balance visible before acting, coins and AI credits visually undifferentiated
+### Invitation Redemption
+1. Coach `POST /coach/invitations { expires_in_days: 14 }` → 6-char `[A-Z2-9]` retry-on-UNIQUE.
+2. Coach shares peer-to-peer.
+3. Client mobile `POST /coach/invitations/redeem { code }` (rate-limited, constant-time).
+4. SECURITY DEFINER `redeem_invitation_code` with `FOR UPDATE`, INSERT `coach_client_links ON CONFLICT DO NOTHING`, increment used_count.
 
-**Research flag:** Standard patterns — Zustand store matches existing `authStore.ts`, `aiStore.ts` patterns. The 402 error handling path should be tested across all AI surfaces (chat, vision, tool execute) on both iOS and Android before shipping. No `/gsd:research-phase` needed.
+### Coach AI Tool Execution
+1. `POST /ai/chat/stream` with coach JWT → existing middleware chain.
+2. `fetchUserContext(userId)` detects `role='coach'` → expand tool set + system prompt addendum with linked clients.
+3. Claude calls `analyze_client({ client_id })` → `coach/ai/tools.analyze_client(userId, params, userToken)`:
+   - **Defense in depth:** `isCoachOf()` first → throw clean 4xx if false.
+   - Supabase client uses **user's JWT**, not service role.
+   - Returns structured JSON.
+4. Persist to `ai_tool_audit` table.
+5. SSE chunks to client.
 
 ---
 
-### Phase Ordering Rationale
+## Phase Build Order (Suggested)
 
-- **Schema first and atomic RPC required before any gating code:** The `deduct_ai_credits` RPC with `FOR UPDATE` is the correctness guarantee for the entire system. It cannot be retrofitted safely after application-layer credit checks are in production.
-- **Service before routes:** `creditService.ts` has no HTTP dependency and establishes a single source of truth for credit math before any route or tool executor references it.
-- **Backend before mobile:** `creditStore.ts` depends on `/credits/balance` being deployed. Mobile phases cannot start until the backend is shipped (or behind a feature flag).
-- **Earn hooks late:** Tool executor modifications are the lowest-risk, most additive changes. Deferring them reduces scope creep risk if early phases surface unexpected complexity.
-- **Deprecated model fix is Phase 1 regardless of priority:** The April 19, 2026 deprecation date makes this a time-sensitive correctness fix, not an optimization.
+| # | Phase | Rationale | Parallel with |
+|---|-------|-----------|---------------|
+| **1** | **Schema foundation (migrations 034–036)** | Every module depends on tables + `is_coach_of()`. Smoke tests per table. | — |
+| **2** | **`apps/web/` Turborepo onboarding + auth bootstrap** | `@supabase/ssr`, `(coach)` segment, layered auth, Pro tier, `maxDuration=60`. | Phase 3 backend |
+| **3** | **`coach/identity` module + signup** | Backend skeleton + ESLint boundaries, `POST /signup` promotes role, web `(coach)/onboarding`. | Phase 2 web |
+| **4** | **`coach/invitations` + `coach/clients` link primitives + mobile "Mon coach" minimal** | Codes + redemption RPC + mobile redemption + read-only coach card. | — |
+| **5** | **`coach/clients` aggregate + web CRM list/detail** | `getClientAggregate`, TanStack Table, `force-dynamic`, tabbed read-only views. | — |
+| **6** | **`coach/programs` templates + assignments** | `workout_programs` extensions, fork-on-assign. | — |
+| **7** | **`coach/imports` AI file imports** | Storage bucket, upload+parse+commit, two-pass extraction, preview-then-commit UI, async polling. | — |
+| **8** | **`coach/ai` orchestrator tools + observability** | 3 tools, `ai_tool_audit`, web chat UI, dashboards. | — |
+| **9** | **Strava OAuth + sync (migration 037)** | OAuth + webhook + crons + mobile button. | Parallel with Phases 3–8 after Phase 1 |
+| **10** | **Public landing `/coachs` FR/EN** | `(marketing)/coachs` + signup CTA → onboarding. | Parallel with Phases 4–9 once Phase 3 stable |
 
-### Research Flags
+### Research flags
+- **Needs research:** Phase 1 (RLS/`is_coach_of` validation), Phase 2 (Turborepo onboarding spike), Phase 7 (AI import prompts + credit calibration).
+- **Standard patterns, skip research:** Phases 3, 4, 5, 6, 8, 9, 10.
 
-Phases needing deeper validation or decisions during execution:
-- **Phase 1 (token cost calibration):** `CREDIT_COSTS` constants must be sized from `messages.countTokens` API measurements using the actual system prompt, not from SDK `usage` estimates. Run this calibration before Phase 2 freezes the constants. The AI SDK v6 `usage` object has documented inaccuracies for cache write costs.
-- **Phase 3 (Haiku vision quality):** Define the `ScanResult` Zod schema and Sonnet fallback trigger before the vision endpoint ships to production. The approach is clear; the threshold is an open decision. Run the 50-photo blind test with degraded images as a go/no-go gate for Haiku-only mode.
-- **Phase 4 (plugin screen audit):** Identify which of the 17 plugin screens write directly to Supabase (bypassing tool executors) before implementing earn hooks. These screens must call `POST /credits/earn` from the mobile side after a successful local write.
+---
 
-Phases with standard, well-documented patterns (skip `/gsd:research-phase`):
-- **Phase 1 (migration):** RLS and schema patterns identical to the 21 existing Supabase migrations. `SECURITY DEFINER` RPC pattern documented in official PostgreSQL and Supabase sources.
-- **Phase 2 (service + middleware):** Hono middleware factory matches `rateLimiter.ts` exactly. `creditService.ts` is pure TypeScript logic with no novel integration.
-- **Phase 4 (tool hooks):** Fire-and-forget pattern already used in `ai.ts` for `updateConversationTitle`.
-- **Phase 5 (mobile UI):** Zustand store matches `authStore.ts`, `workoutStore.ts`, `aiStore.ts`. Bottom sheet pattern matches existing `showAlert` from plugin-sdk.
+## Top Risks & Mitigations
 
-## Confidence Assessment
+| # | Risk | Phase | Severity | Mitigation |
+|---|------|-------|----------|------------|
+| 1 | **`is_coach_of()` recursion / revocation bypass** | 1 | HIGH | SECURITY DEFINER + STABLE + `revoked_at IS NULL` + direct-self-read policy on `coach_client_links`; exhaustive unit tests. |
+| 2 | **AI tool uses service-role → full RLS bypass** | 8 | HIGH | Tools accept per-request user-JWT Supabase client; CI grep ban `SERVICE_ROLE` in `coach/`. |
+| 3 | **AI imports — prompt injection + hallucination** | 7 | HIGH | Tool-less parsing call, two-pass extraction, Zod bounds, `weight_source` enum, mandatory preview. |
+| 4 | **Vercel timeout on large PDFs** | 7 | HIGH | Pro tier; `maxDuration=60`; async Storage + polling; credits post-success only. |
+| 5 | **Strava rate-limit ban + webhook double-create** | 9 | HIGH | Upstash token-bucket 90/15min; UNIQUE `(user_id, external_strava_id)`; 200 in <2s + cron with `FOR UPDATE SKIP LOCKED`. |
+| 6 | **Wrong cookie helper / middleware-only auth** | 2 | HIGH | `@supabase/ssr` only; layered auth (middleware refresh + layout `getUser()` + Server Action re-check); ESLint ban. |
+| 7 | **Coach data cache leak across coaches** | 5 | HIGH | `force-dynamic` + `revalidate=0` + `cache: 'no-store'`; E2E test coach-A vs coach-B. |
+| 8 | **Tool output PII persisted in `ai_messages` survives revocation** | 8 | HIGH | Separate `ai_tool_outputs` table with own RLS keyed to caller+target; revocation cleanup nulls revoked rows. |
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Zero new packages. All capability verified against existing `package.json`. Haiku model ID and pricing confirmed via Anthropic API docs and Helicone. AI SDK v6 `usage` shape confirmed via official ai-sdk.dev reference. |
-| Features | HIGH | Cross-verified against Duolingo, Habitica, Workout Quest live systems, game design literature, and RevenueCat freemium research. Anti-features backed by documented failures (OpenRouter quota UX, Duolingo Hearts 2024 controversy). |
-| Architecture | HIGH | All integration points verified from actual source files in this repo (`app.ts`, `routes/ai.ts`, `tools/registry.ts`, `middleware/rateLimiter.ts`, `supabase/migrations/007_gamification_schema.sql`). Direct-Supabase mobile write path gap identified and addressed via `POST /credits/earn`. |
-| Pitfalls | HIGH | Critical pitfalls sourced from official docs (Supabase RLS performance, Vercel Cron, Vercel Fluid Compute) and authoritative post-mortems (Stigg engineering blog, Vercel AI SDK GitHub issue #9921, EnterpriseDB PostgreSQL anti-patterns). Deprecated model ID retirement date confirmed from Anthropic official docs. |
+### Secondary (MEDIUM) risks
+- Cross-user RLS performance — benchmark on 1000-coach × 50-client × 30d seed before launch.
+- Brute-force invitation redemption — Upstash 5/15min IP + 10/hr user + constant-time.
+- Service-role key leak to client bundle — never in `apps/web/.env*`; CI grep build output.
+- Cron at-least-once delivery — `pg_try_advisory_lock` + `ON CONFLICT DO NOTHING`.
+- GDPR retention after revocation — `source_client_id` tag + redaction prompt + email summary.
+- Monorepo bundling RN deps into web — strict `transpilePackages` allowlist + ESLint.
+- Web/mobile role desync — role lives ONLY in `user_profiles.role`; mobile reads from `/me` with 60s cache.
 
-**Overall confidence:** HIGH
+---
 
-### Gaps to Address
+## Open Questions / Decisions Needed Before Roadmap
 
-- **Token cost calibration:** `CREDIT_COSTS` constants should be validated against actual `messages.countTokens` API calls with the real system prompt before Phase 2 hard-codes them. The AI SDK v6 `usage` object has documented inaccuracies for prompt cache write costs (GitHub issue #9921). Action: run calibration in Phase 1 before freezing constants.
-- **Haiku fallback trigger threshold:** Research recommends a Sonnet fallback when Haiku output fails structured-output validation, but the exact `ScanResult` Zod schema and confidence threshold are not yet defined. Action: define the schema and fallback condition during Phase 3 planning before the vision endpoint ships.
-- **Direct-Supabase mobile write path completeness:** Plugin screens write to Supabase directly without going through tool executors, bypassing earn hooks. `POST /credits/earn` covers this, but each of the 17 plugin log screens must be audited to identify which ones use direct writes. Action: complete this audit at the start of Phase 4.
-- **Welcome bonus for existing users:** Adding `user_ai_credits` with `DEFAULT 5` handles new users, but existing `auth.users` have no row yet. Action: include a one-time bulk insert in `026_ai_credits.sql` to create a row with `ai_credits = 5` for all existing users, sourced via a subquery on `auth.users`.
+1. **Turborepo onboarding of `apps/web/`** — pull external `ziko-app.com` repo in as `apps/web/` (recommended) OR keep dual-repo with published `coach-sdk` NPM package? **Phase 2 blocker.**
+2. **Vercel Pro tier confirmation** — mandatory (Hobby 10s timeout kills imports).
+3. **AI import credit cost calibration** — target €0.05/import within €0.75/user/month freemium. Per-page pricing model?
+4. **GDPR retention on revocation** — `workout_programs.assigned_to_user_id ON DELETE CASCADE` vs `SET NULL`? Product/legal call.
+5. **Icon library on web** — verify `lucide-react` vs `@heroicons/react` in existing v1.0 landing.
+6. **`nanoid` ESM vs CJS** — v5 is ESM-only; verify `package.json "type"` before installing.
+7. **Coach KYC blocking vs non-blocking** — non-blocking per PROJECT.md; admin back-office deferred to v1.6.
+8. **AI tool audit table** — recommend new in v1.5 Phase 8 (mandatory for incident response), not deferred.
+9. **Strava webhook callback URL** — unguessable UUID path; persist in `strava_subscriptions` metadata.
+
+---
+
+## Watch Out For
+
+- **`is_coach_of()` is the keystone.** A bug locks coaches out OR leaks data across coaches. Unit-test before any policy uses it. Every RLS migration after Phase 1 runs the 4-case smoke test.
+- **Never widen an existing `FOR ALL` policy.** Add NEW `FOR SELECT` for coach reads. Coach is read-only in v1.5.
+- **AI document parser is tool-less and identity-less.** No system prompt with user info, no tools, no orchestrator context. Prompt injection in uploads cannot escalate beyond text-out.
+- **AI imports MUST be async-by-design.** Polling from day one. Don't optimize fast-path and break slow-path.
+- **`@supabase/ssr` not `@supabase/supabase-js` in Server Components.** Centralize in `lib/supabase/{server,client}.ts`, ESLint-ban raw imports.
+- **Cache is the enemy on coach pages.** `force-dynamic` + `revalidate=0` + `cache: 'no-store'` everywhere.
+- **Strava webhook returns 200 in <2s.** Process in cron, not in handler.
+
+---
 
 ## Sources
 
-### Primary (HIGH confidence)
-- [Anthropic API Docs: Models Overview](https://platform.claude.com/docs/en/about-claude/models/overview) — `claude-haiku-4-5-20251001` model ID, deprecation date for `claude-3-haiku-20240307` (April 19, 2026)
-- [Anthropic API Docs: Vision](https://platform.claude.com/docs/en/build-with-claude/vision) — image input formats, multimodal support
-- [AI SDK Docs: generateText Reference](https://ai-sdk.dev/docs/reference/ai-sdk-core/generate-text) — `result.usage` shape, `onFinish` callback
-- [AI SDK Docs: Anthropic Provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic) — model switching pattern, multimodal support
-- [Upstash Redis JS SDK](https://github.com/upstash/redis-js) — `pipeline()`, `exec()`, `incr()`, `expire()` API
-- [Supabase RLS Performance and Best Practices](https://supabase.com/docs/guides/troubleshooting/rls-performance-and-best-practices-Z5Jjwv) — per-row subquery cost, `(SELECT auth.uid())` caching showing up to 99.99% improvement
-- [Vercel Cron Jobs documentation](https://vercel.com/docs/cron-jobs) — at-least-once delivery, no timely guarantee, idempotency requirement
-- [Vercel Fluid Compute](https://vercel.com/docs/fluid-compute) — concurrent requests on same instance, module-level state sharing risk introduced early 2025
-- [EnterpriseDB: PostgreSQL Anti-Patterns Read-Modify-Write Cycles](https://www.enterprisedb.com/blog/postgresql-anti-patterns-read-modify-write-cycles) — `FOR UPDATE` pattern, relative vs. absolute update
-- [Vercel AI SDK GitHub issue #9921](https://github.com/vercel/ai/issues/9921) — token usage normalization inaccuracies; cache write costs missing from `usage` totals
-- Source files verified directly: `backend/api/src/app.ts`, `middleware/rateLimiter.ts`, `middleware/auth.ts`, `routes/ai.ts`, `tools/registry.ts`, `tools/db.ts`, `supabase/migrations/007_gamification_schema.sql`, `.planning/PROJECT.md`
+### Stack
+- unpdf vs pdf-parse vs pdf.js (PkgPulse 2026), Claude PDF Support docs, AI SDK 6 / Anthropic Provider, SheetJS vs ExcelJS (PkgPulse 2026), mammoth.js GitHub, Strava Authentication / Rate Limits / Webhooks, TanStack Table Docs, @supabase/ssr (npm), Supabase SSR Next.js Auth, nanoid + collision calculator.
 
-### Secondary (MEDIUM confidence)
-- [Helicone Pricing: claude-haiku-4-5-20251001](https://www.helicone.ai/llm-cost/provider/anthropic/model/claude-haiku-4-5-20251001) — $1.00/$5.00 per 1M tokens confirmed (pricing subject to change)
-- [Trophy.so: Why Duolingo's Energy System Works](https://trophy.so/blog/why-duolingos-energy-system-works-and-when-to-copy-it) — earn-by-doing mechanics analysis
-- [RevenueCat: AI Subscription App Pricing](https://www.revenuecat.com/blog/growth/ai-subscription-app-pricing/) — "selective free access creates conviction to upgrade"
-- Stigg engineering blog: "We've built AI Credits. And it was harder than we expected." — idempotency as hardest problem in usage pipelines (at-least-once delivery)
-- [Flexprice: Credit-Based Billing for AI Applications](https://flexprice.io/blog/how-to-implement-credit-based-billing-for-ai-applications) — double-charging, optimistic locking, idempotency keys
-- [OpenRouter Daily Quota UX Failure Analysis](https://www.oreateai.com/blog/indepth-analysis-of-openrouters-free-policy-adjustments-daily-quota-changes-and-response-strategies/) — UTC midnight reset failure mode documentation
+### Features
+- Hevy Coach vs Trainerize / TrueCoach, 12REPS/TrueCoach/Everfit/MyPTHub/Trainerize 2026 comparison, Trainerize Master Workout Library + AI Workout Builder, Hevy Coach Features, Everfit, FitFloww CRM, FitBudd CRM.
 
-### Tertiary (LOW confidence — validate during execution)
-- Cost projections (€0.40–$0.75/user/month at free tier) — based on published Anthropic pricing and estimated token counts; actual costs will vary ±30% with real prompts. Validate against Anthropic usage API weekly after launch.
+### Architecture
+- `backend/api/src/app.ts`, `tools/registry.ts`, migrations 001/026/032/033, `.planning/PROJECT.md`, `.planning/research/v1.4/ARCHITECTURE.md`, `CLAUDE.md`.
+
+### Pitfalls
+- Supabase RLS Performance Best Practices, Next.js Caching docs, Next.js Server Actions Security, Vercel Function Limits / Cron Jobs / Fluid Compute, Anthropic Prompt Injection, OWASP LLM01, v1.4 PITFALLS.md.
 
 ---
-*Research completed: 2026-04-05*
-*Ready for roadmap: yes*
+*Research synthesis for: v1.5 Coach Platform & CRM — Ziko Platform*
+*Synthesized: 2026-05-13*

@@ -1,228 +1,296 @@
-# Feature Research
+# Features Research — v1.5 Coach Platform & CRM
 
-**Domain:** Gamified AI credit system & freemium monetization for fitness mobile app
-**Researched:** 2026-04-05
-**Confidence:** HIGH (cross-verified across game design literature, live app analysis, AI pricing guides, and competitor systems)
+**Researched:** 2026-05-13
+**Mode:** Ecosystem
+**Confidence:** MEDIUM-HIGH (multiple credible sources cross-referenced)
+
+## Overview
+
+The fitness-coach SaaS landscape is dominated by 5-7 mature players (Trainerize/ABC, TrueCoach, Hevy Coach, Everfit, My PT Hub, FitSW, Virtuagym) plus a long tail of niche tools. Common pain points across all platforms: bloat (Trainerize), weak strength-training UX (TrueCoach), thin nutrition (Hevy), and poor data interoperability between athlete-tracked data and coach-prescribed plans. Ziko's positioning advantage for v1.5 is unique: it already owns a rich athlete-side data graph (18 plugins covering nutrition, sleep, journal, cardio, measurements, hydration, etc.) — most competitors only see what the athlete logs in *their* app. The opportunity is to make Ziko the "read-everything coach CRM" rather than "yet another program-assignment tool."
+
+## Reference Platforms Studied
+
+| Platform | Strength | Weakness | Key innovation to borrow |
+|---|---|---|---|
+| **ABC Trainerize** | All-in-one (programs + nutrition + messaging + payments + branded app), 2,900+ exercise library, AI Workout Builder, 60+ pre-built Master Programs | Bloated UI, endless submenus, slow day-to-day workflow, expensive | Master Workout Library + drag-drop program builder + content-library templates |
+| **TrueCoach** | Clean focused workflow, thorough client profile, multi-week program builder, strong video form-check culture | Weak nutrition, weak business mgmt, less flexible workout builder | Thorough client profile + video form-check culture |
+| **Hevy Coach** | Streamlined UX, drag-drop folders for plans, superior strength-logging (inherits Hevy app DNA), high-quality exercise library | Thin nutrition/scheduling/business features | Folder organization for plans + lift-data first-class |
+| **Everfit** | Onboarding automation, messaging at scale, AutoFlow scheduled content delivery | Generic UX, less strength-specific | AutoFlow scheduled content + automated onboarding workflows |
+| **My PT Hub** | Strong client-form library, customizable onboarding, package-based program auto-assignment | UI dated | Auto-assign programs via packages |
+| **FitSW** | Lead-capture forms, free tier, simple | Limited polish | Public lead-capture form + invite link |
+| **Virtuagym** | Gym-focused, scheduling-heavy | Heavy for solo coaches | — (not directly relevant) |
+| **HubFit** | AutoFlow content drip + scheduled checkpoints | Newer, less mature | Scheduled content delivery |
+
+Common across all: 6-12 character invite codes OR email-based invite links; PDF *export* of programs is universal but PDF *import* is essentially absent — this is a real differentiator opening for Ziko.
+
+## Client Management
+
+### Table Stakes (MUST ship in v1.5)
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Client list with search | Paginated list, search by name/email, sort by last activity | S | role column, coach_client_links |
+| Client detail unified view | Single page showing profile + active program + recent sessions + measurements + nutrition + habits + sleep + cardio | M | All existing plugin tables, RLS join policy |
+| Last-active indicator | Visible "active 2h ago" / "inactive 7d" status — coaches scan rosters by this | S | Last activity computed from any plugin log |
+| Client notes (coach-private) | Free-text notes only the coach sees per client (injuries, preferences, history) | S | New `coach_client_notes` table |
+| Read-only data access | Coach reads athlete's plugin data via RLS join; clearly labeled "read-only" in UI | M | RLS policy on coach_client_links |
+| Revoke link | Athlete can revoke coach access at any time from mobile; immediate effect | S | UPDATE coach_client_links.revoked_at |
+
+### Differentiators (cheap, ship if possible in v1.5)
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Unified athlete dashboard | Single "executive summary" card per client: compliance %, last workout, latest measurement, mood trend — competitors only show workouts | M | Aggregation queries across plugins |
+| Roster filters by signal | "Show clients who missed last 2 sessions" / "clients with declining mood" — actionable triage | M | Filter queries on existing tables |
+| Tags per client | Custom tags (e.g. "powerlifter", "weight-loss", "post-injury") for grouping | S | New tag column or join table |
+
+### Anti-features (DO NOT build in v1.5)
+
+| Anti-feature | Why avoid |
+|---|---|
+| Coach-side editing of athlete journals/nutrition/sleep logs | Breaks trust + RGPD complexity. Read-only is the contract. |
+| Granular per-domain permissions (nutrition-only, training-only) | Adds UI complexity for 1% benefit. Already explicitly deferred. |
+| Per-client custom fields builder | Trainerize ships this and coaches barely use it; ship 1-2 useful fixed fields instead. |
+| Bulk-message broadcast to all clients | Looks spammy; competitors who built this regret it. Use individual coach actions. |
+
+## Program Assignment & Templates
+
+### Table Stakes
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Program templates | Coach builds reusable program (multi-week, multi-session, exercises with sets/reps/RPE/rest) | L | workout_programs extended schema |
+| Template library per coach | List of saved templates with search/folder | S | is_template flag |
+| Assign template to client | One-click assign → creates client-specific copy linked to original | M | assigned_to_user_id, copy semantics |
+| Week-by-week structure | Standard fitness mental model: Week 1 → Day 1 (Push) / Day 2 (Pull) / etc. | M | weeks_data JSONB |
+| Edit assigned program | Coach can adjust assigned program without affecting template (Trainerize-style detachment) | M | Snapshot pattern |
+| Exercise picker | Use existing Ziko exercise library (already 1000+ in seed.sql) + free-text fallback | S | exercises table |
+
+### Differentiators
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Folder organization | Drag-drop folders for templates (Hevy Coach pattern — coaches love this) | M | parent_folder_id on workout_programs |
+| Pre-built Ziko templates | 5-10 expert-curated programs at launch (PPL, 5/3/1, Hyrox prep, body-recomp 12-week) | M (content work) | Template seeding |
+| AI program generation for coaches | Coach prompts: "12-week hypertrophy program for intermediate, 4 days/week" → AI fills the template | L | AI tool, generateObject + Zod |
+| Per-exercise RPE/RIR targets | Already supported in athlete app — extend to coach prescriptions | S | program_exercises.target_rpe |
+| Program duplication | Right-click "Duplicate" on any template — coaches iterate by copy not by edit | S | INSERT...SELECT |
+
+### Anti-features
+
+| Anti-feature | Why avoid |
+|---|---|
+| Real-time collaborative editing | Google-Docs-style multi-cursor on programs is overkill for solo coaches. |
+| Periodization auto-deload algorithm | Coaches want CONTROL over deload weeks. Algorithmic "we know better" is paternalistic. |
+| In-program video upload from coach | Storage cost + moderation burden. Link to existing exercise videos instead. |
+| Marketplace to sell/buy programs between coaches | Out of scope for v1.5; competitive moat for v2.0+. |
+
+## AI File Imports
+
+### Table Stakes
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Upload PDF | Drop a coaching PDF (most common format coaches store programs in) → AI parses | L | Storage signed URL, Claude PDF support |
+| Upload image / screenshot | iPhone screenshot of a program in Notes / Excel → AI vision parses | L | Haiku vision (already migrated) |
+| Upload Excel (.xlsx) | The 2nd most common format coaches use — convert to text → Claude parses | L | xlsx → text pipeline |
+| Structured preview before commit | "Here's what I extracted — confirm before saving" with editable fields | M | generateObject + Zod schema |
+| Athlete flow (import own data) | Athlete imports a coach-given PDF into their own programs | L | Same pipeline, different ownership |
+| Coach flow (import template) | Coach imports a PDF program into their template library | L | Same pipeline, is_template=true |
+| Credit-gated | Uses existing v1.4 credit system; expensive operations get higher cost | S | creditDeduct middleware |
+
+### Differentiators
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Multi-page PDF program parsing | Full 12-week program in one PDF → AI extracts all weeks + sessions correctly | L | Claude PDF native |
+| Word .docx import | Coaches often use Word — less common but underserved by competitors | M | docx → text pipeline |
+| Confidence score per parsed field | "Bench Press 4x8 @ RPE 8 (HIGH confidence)" — flag low-confidence rows for review | M | Claude structured output with confidence |
+| Re-upload to re-parse | Coach tweaks PDF, re-uploads, Ziko diffs against existing template | L | Diffing logic |
+
+### Anti-features
+
+| Anti-feature | Why avoid |
+|---|---|
+| Garmin .fit file import | Already explicitly deferred. Wearables sync covers daily summary. |
+| Google Sheets API OAuth | Explicitly deferred. Excel upload covers 95% of the need. |
+| CSV format with rigid schema | Already explicitly out-of-scope. AI parsing replaces this. |
+| Strava bulk-export import | Strava OAuth (in v1.5) handles ongoing sync. Historical bulk-import is a 1-time edge case. |
+| OCR of handwritten programs | High failure rate, frustrating UX. Tell coaches: "Please type it or photograph a typed program." |
+
+## AI Coach Features
+
+### Table Stakes
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| `analyze_client` tool | Coach asks "How is Sophie doing this month?" → AI summarizes compliance, trends, red flags | M | Existing user context pattern, extended to read-other-user via coach link |
+| `generate_coaching_program` tool | Coach prompts for a program → AI returns structured weeks_data JSONB | L | Existing ai_programs_generate, adapted for coach context |
+| `monitor_client_alerts` tool | "Which clients need attention?" → list of clients with declining metrics | M | Aggregation queries |
+| Web chat UI for coach | ChatGPT-style sidebar/panel in `/coach/clients`; SSE streaming reused from mobile | M | Existing `/ai/chat/stream` |
+| Context awareness | When coach is viewing a client, AI auto-injects that client's data into context | M | Conversation plugin_context JSONB |
+
+### Differentiators
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Proactive weekly digest | AI generates "Monday morning briefing" per coach: who needs attention, who's PR'd, who's struggling | L | Vercel cron, batched analyses |
+| "Adapt this program for X" inline | On a template page, right-click "Adapt for hypertrophy" or "Make it 3-day instead of 5" | M | Existing generation tool, prompted differently |
+| Auto-flag concerning patterns | "Sophie's sleep dropped 30% this week AND she missed 2 sessions" — surface in coach inbox | L | Threshold rules + AI summarization |
+
+### Anti-features
+
+| Anti-feature | Why avoid |
+|---|---|
+| AI directly messages clients on coach's behalf | Liability + trust erosion. Coach must approve/send. |
+| Full autopilot ("AI runs my coaching business") | Coaches lose value-add → unsubscribe. Position AI as assistant not replacement. |
+| Voice-cloned coach replies | Uncanny valley + ethical landmine. Skip. |
+| AI medical advice (injury rehab, nutrition for medical conditions) | Liability nightmare. Hard refuse in system prompt. |
+
+## Invitation & Onboarding
+
+### Table Stakes
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Coach generates 6-char invite code | Random alphanumeric, expires in N days, one-time-use OR multi-use toggle | S | invitations table |
+| Athlete enters code in mobile app | New screen in mobile under settings or profile: "Link a coach" | S | Mobile UI + API endpoint |
+| Auto-create `coach_client_link` on accept | Athlete sees "Link with Coach Sophie?" confirmation, accept → link created | S | API endpoint |
+| Coach signup self-serve | Standalone signup flow on /coachs → role=coach on user_profiles | M | Auth flow, role column |
+| Light KYC | Coach uploads photo ID OR certification doc → stored, manual review later (not blocking signup) | M | Storage bucket, kyc_documents table |
+| Pending → active state | Coach can use platform immediately but is marked "unverified" in UI | S | KYC status enum |
+
+### Differentiators
+
+| Feature | Description | Complexity | Depends on |
+|---|---|---|---|
+| Invitation link (not just code) | Click `ziko-app.com/invite/ABC123` → deep-link into mobile app | M | Universal links / app links |
+| QR code for invite | Coach shows QR in person (in-gym scenario) — common with Hevy Coach | S | QR generator |
+| Athlete sees coach profile preview | Before accepting, athlete sees coach name + photo + certs to build trust | S | Public coach profile page |
+| Welcome auto-message on link | Coach sets a template "welcome message" shown to athlete on link creation | S | coach_settings JSONB |
+
+### Anti-features
+
+| Anti-feature | Why avoid |
+|---|---|
+| Invite via email blast | Spam-adjacent. Codes/links shared peer-to-peer feel cleaner. |
+| Multi-coach per athlete (athlete linked to 3 coaches at once) | Adds enormous schema complexity for 0.1% use case. Defer to v2.0. |
+| Coach can re-invite without athlete consent on revoke | Athlete revoke is final until they re-initiate. Trust matters. |
+| Hard-KYC blocking signup | Defeats self-serve. A posteriori moderation is the right call per PROJECT.md. |
+
+## Mobile Athlete UX ("Mon coach" screen)
+
+### Table Stakes
+
+- **Empty state** — "Vous n'avez pas encore de coach. Entrez un code d'invitation." with prominent input field.
+- **Linked state** — Coach name, photo, certs displayed; "Active program" card with current week + today's session preview.
+- **Program viewer** — Tap today's session → full exercise list with sets/reps/RPE matching what coach assigned; tap exercise → demo video (existing).
+- **Coach contact** — "Send message to coach" CTA (placeholder for v1.6 messaging; in v1.5 it can open mailto: or be disabled).
+- **Revoke link button** — Buried in settings (not primary action), with 2-step confirmation: "Are you sure? Your coach will lose access to your data."
+- **Read-only badge** — "Programme prescrit par Sophie" clearly visible so athlete knows this is from coach, not AI-generated or self-built.
+
+### Differentiators
+
+- **Compliance widget** — "You're at 75% adherence this week 🔥" — coaching the athlete on staying consistent.
+- **Coach's last note visible** — If coach left a note like "great work last week, push harder on Wednesday", show it.
+- **Sync indicator** — "Your data is synced with Sophie's coach view" — transparency builds trust.
+
+### Anti-features
+
+- **DO NOT** let athlete edit the prescribed program — read-only, period.
+- **DO NOT** show athlete-side notes back to athlete that coach wrote privately — those are coach-private.
+- **DO NOT** push notifications for every coach action — opt-in, throttled.
+
+## Public Marketing /coachs
+
+### Table Stakes (conversion-critical)
+
+| Element | Why needed | Complexity |
+|---|---|---|
+| Above-the-fold value prop | "Le CRM tout-en-un pour coachs sportifs" + sub-headline + screenshot of coach dashboard | S |
+| Primary CTA | "Rejoindre la bêta privée" / "Join private beta" — explicit beta framing per PROJECT.md (no pricing yet) | S |
+| FR/EN i18n | Already required by site convention | S |
+| 3-4 feature blocks | Client CRM · Programmes IA · Import PDF · Suivi temps réel — short, with screenshots | S |
+| FAQ section | "C'est gratuit pendant la bêta ?" / "Mes clients ont-ils besoin de payer ?" / "RGPD ?" | S |
+| Legal footer | Already required across site (mentions légales, CGU, privacy) | S |
+
+### Differentiators (cheap wins)
+
+- **Live demo video** (60s loop, muted, auto-play) — competitors all do this
+- **"Built by athletes, for coaches"** — humanize via founder note
+- **Comparison table** — "Ziko vs Trainerize vs TrueCoach" with honest tradeoffs (this is bold but works)
+
+### Anti-features
+
+- **Testimonials** — explicitly deferred (no real coaches yet). Don't fake them.
+- **Pricing page** — explicitly deferred (free beta). Avoid the question entirely.
+- **"Schedule a demo" form** — adds friction for solo trainers. Self-serve signup CTA is better.
+- **Heavy chatbot/intercom widget** — slow page load, low conversion for B2B SaaS in 2026.
+
+## v1.6+ Deferrals
+
+Explicit non-goals for v1.5 (already documented in PROJECT.md, restated here for roadmap clarity):
+
+| Feature | Reason deferred | Target |
+|---|---|---|
+| Real-time messaging coach↔client | Building messaging is its own 3-week milestone (push notifications, threading, attachments, moderation) | v1.6 |
+| Mobile coach views (Expo) | Coach workflow is desktop-first; dense tables work poorly in RN | v1.7+ |
+| Coach billing / subscription mgmt | Beta is free; payment infra is its own milestone (Stripe, invoices, VAT) | v1.8 |
+| Coach scheduling / calendar | Needs OAuth Google Calendar + booking flow — separate scope | v1.8 |
+| Coach hours tracking + accounting | ERP territory; comes after billing | v2.0 |
+| Granular per-domain permissions | Full-access RLS join is sufficient for v1.5 trust model | v1.7 |
+| Bulk-message broadcast | Anti-pattern; messaging itself comes first | v1.7+ |
+| Marketplace (coaches sell programs) | Network-effect feature; needs critical mass first | v2.0+ |
+| Multi-coach per athlete | Edge case; schema complexity disproportionate | v2.0+ |
+| Garmin .fit / Google Sheets imports | AI file import + Strava OAuth cover the 80% | v1.7+ |
+
+## Coach UX Expectations
+
+1. **Fast roster scanning** — Coaches open the app to triage 30 clients in 5 minutes. Anything requiring more than 2 clicks per client is friction. Last-active + compliance% must be visible without opening detail.
+2. **Template-first mental model** — Coaches think in reusable blocks ("my hypertrophy 12-week", "my Hyrox 8-week") and assign copies. Forcing them to build per-client from scratch is a deal-breaker.
+3. **Detachment after assignment** — When a coach edits an assigned program for one client, they expect the template to stay unchanged. This is non-obvious but universally expected.
+4. **Trust in read-only data** — Coaches want to see EVERYTHING the athlete logged, unfiltered, with timestamps. Aggregations are nice but raw access matters more than competitors realize.
+5. **Workflow over features** — Coaches will tolerate fewer features (Hevy) over more features (Trainerize) if daily workflow is smooth. "How long does my Monday morning client review take?" is the real KPI.
+6. **AI as assistant, not replacement** — Coaches see themselves as the expert; AI should propose, they dispose. Auto-applied AI changes erode their value-add.
+7. **Mobile is for athlete, desktop is for coach** — Coaches build on desktop, check on mobile rarely. Stop pretending coach mobile-first matters in v1.5.
+
+## Client/Athlete UX Expectations
+
+1. **Single source of truth** — Athletes don't want to log workouts twice (once for self, once for coach). The coach must see exactly what the athlete already logs in Ziko — no duplicate effort.
+2. **Clear "this is from my coach" labeling** — Athletes need to distinguish AI suggestions from coach prescriptions. Authority hierarchy: coach > athlete > AI.
+3. **Privacy reassurance** — "What does my coach see?" must be answerable in one tap. A clear "data shared with coach" indicator builds trust.
+4. **Easy revoke** — If the coaching relationship ends, athletes want a no-drama exit. Revoke link, done. Don't require explanation.
+5. **Visible coach acknowledgment** — Athletes want to feel SEEN. "Sophie viewed your session yesterday" / "Sophie added a note" — even silent indicators boost retention.
+6. **Demo videos for prescribed exercises** — Athletes don't want to guess form on a coach-prescribed exercise. Existing Ziko exercise library + video coverage is a strength.
+7. **No surprise account changes** — Coach should not be able to modify athlete's profile, weight, goals, etc. Athletes own their data; coach observes + prescribes.
 
 ---
 
-## Feature Landscape
+## Confidence Notes
 
-### Table Stakes (Users Expect These)
-
-Features users assume exist. Missing these = product feels incomplete or untrustworthy.
-
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Visible credit balance in UI | Every gated system shows remaining credits; users need to know what they have before acting | LOW | Header or profile widget; reads from `ai_credits` balance |
-| Daily base allocation (free quota) | Users expect a guaranteed baseline — "zero free uses" = immediate rejection | LOW | 1 free vision scan + 1 free AI chat/day; 1 program/month; soft-reset via cron or lazy-eval |
-| Clear per-action cost disclosure | Must show cost before consumption ("1 credit") — surprises cause churn | LOW | In-screen label near each AI action button |
-| Credit exhaustion state with CTA | When credits hit zero, show WHY and HOW to earn more — not a raw error | MEDIUM | Bottom sheet: balance display + earn actions list |
-| Activity-to-credit earn (fitness logging) | Fitness gamification standard: logging activity yields rewards (Habitica, Workout Quest, BetterPoints) | MEDIUM | Hook into existing plugin log events (workout, habit, meal, stretching, cardio, measurements) |
-| Hard separation of cosmetic coins vs AI credits | Dual currency is industry norm (Duolingo Hearts + Gems, Habitica Gold + Gems); merging them creates confusion about scarcity | MEDIUM | `coins` = existing shop currency (unlimited earn); `ai_credits` = new capped functional currency |
-| Monthly quota for expensive actions | Heavy AI features (program gen) are expected to have monthly not daily limits — precedent from ChatGPT, Perplexity, Notion AI | LOW | Separate monthly counter for `ai_programs_generate` tool only |
-| Model cost transparency (Haiku migration) | If vision scan silently degrades in quality, users notice and complain — but if it's presented as "Fast scan", framing matters | LOW | Label update in nutrition vision screen; output quality difference is negligible for food recognition |
-| Idempotent earn (no double-award) | Tapping "save workout" twice should not award 2 credits — users expect fairness | MEDIUM | `ai_credit_log` table with unique constraint on `(user_id, source_type, date)` |
-| user_tier field (premium-ready) | Even if IAP is not live, the infrastructure must not require a schema migration when premium launches | LOW | `user_tier TEXT DEFAULT 'free'` on `user_profiles`; credit gate skips for `premium` |
-
-### Differentiators (Competitive Advantage)
-
-Features that set the product apart. Not required, but valuable.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Activity-gated AI (earn by doing) | Applying activity-earn mechanics specifically to AI access is novel in fitness apps; incentivizes consistent logging as a side effect of the credit system | MEDIUM | Triggers on 6 activity types; 2 bonus credits/day cap across all activity types combined |
-| Credit earn toast on activity save | After logging a workout, show "+1 AI credit" in the success confirmation — immediate positive reinforcement, like Habitica's XP pop-up | LOW | Extend existing post-save toast/snackbar in each plugin; no new infrastructure |
-| In-context credit nudge (not interstitial) | Show credit count inline with AI buttons rather than a blocking modal — lower friction than Duolingo Hearts, better UX per Trophy.so analysis | LOW | UI label only — "Ask AI (2 credits left)" next to each AI button |
-| Streak-safe earn cap with progress display | "2 more credits available today — log a stretch session to earn" gives users agency; Fitbit and MyFitnessPal use this progress widget pattern | LOW | Daily earn progress bar in credit widget; computed from `ai_credit_log` count for today |
-| Haiku vision with "Fast scan" framing | Reframe cost optimization as a user benefit — Claude Haiku is faster; positioning as "Fast scan" rather than "cheaper model" preserves perceived quality | LOW | Label change in nutrition vision screen |
-| Usage transparency log | Let users see what consumed their credits: "AI Chat — 1 credit — 14:32" — builds trust that system is fair; rare among fitness apps | MEDIUM | `ai_credit_log` screen in profile or settings; reads existing log table |
-| Premium tier architecture (no migration later) | Implementing `user_tier` now means upgrading a user to premium is a single column update — no schema changes when IAP eventually lands | LOW | Set via Supabase dashboard manually for early testers; IAP wires to same column in v2 |
-
-### Anti-Features (Commonly Requested, Often Problematic)
-
-Features that seem good but create problems.
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Credit rollover (unused credits carry forward) | Users feel cheated when unused credits expire | Rollover causes balance accumulation — users save up then burst-use, creating unpredictable API cost spikes; breaks cost projection model | No rollover; communicate "use it or lose it" upfront with a daily countdown; the base quota resets daily so loss is always small |
-| In-app purchase credits (IAP) | Obvious monetization lever; users expect to be able to pay for more | Requires RevenueCat or native StoreKit/Google Play Billing integration (3-8 week effort), 30% platform cut, RGPD compliance for purchases, App Store review for IAP features — disproportionate for v1.4 | Defer IAP to premium subscription milestone (v2+); this milestone only implements earn-by-activity |
-| Coins-to-credits bridge (top-up via cosmetic currency) | Seems clever — users with excess coins could "buy" AI credits | Decouples coins from their cosmetic purpose; users grind coins specifically for AI credits, inflating AI cost and defeating the scarcity design; creates arbitrage loops | Keep currencies strictly separated: coins = cosmetic shop only, AI credits = activity-gated only |
-| Retroactive credit award for past activity | Existing users expect credit for workouts they logged before the system launched | Creates a one-time DB migration risk (how far back?), sets precedent for credit disputes ("my habit from 2025 counted?"), and could award large balances to inactive users | Grant a one-time welcome bonus (e.g., 5 credits) at feature launch for all existing users via migration; no retroactive per-activity awards |
-| Hard paywall (zero free AI access) | Simplest cost control model | Zero free uses = no trial, no virality, immediate rejection; research (RevenueCat 2025) shows "selective free access creates conviction to upgrade" — without it, free users see no product value | Always maintain a daily free base (1 scan, 1 chat) regardless of activity; gating is on bonus credits, not the base |
-| UTC-midnight quota reset | Engineering convenience | Users in non-UTC timezones get unpredictable day boundaries — a Paris user hitting limit at 11:45pm CET loses their next day's quota in 15 minutes; this is the exact failure mode seen in Google AI Pro / OpenRouter complaints in 2025 | Reset at midnight user local time (store timezone on `user_profiles`) OR use a 24h rolling window keyed from first use that calendar day |
-| Energy-style gates on activity logging | Duolingo-style limits on core app actions | Logging activity IS the core retention mechanic — gating it with any credits would collapse the fitness app's value loop; users would stop logging rather than earn credits | Only gate AI-powered features (chat, vision scan, program gen); NEVER gate activity logging itself |
-| Unlimited earn (no daily credit cap) | More earn options = more engagement | Without a daily earn cap, a user could log 20 activities in one day and accumulate 20 AI credits — destroying the cost control model; a single power user could spike API spend to 40x the target | Hard cap: 2 bonus credits per day maximum regardless of number of activities logged |
-
----
-
-## Feature Dependencies
-
-```
-[Daily base credit allocation]
-    └──requires──> [ai_credits balance (column or table on user_profiles)]
-                       └──requires──> [DB migration]
-
-[Activity-to-credit earn]
-    └──requires──> [Credit balance system]
-    └──requires──> [Plugin log event hooks (workout, habit, meal, stretching, cardio, measurements)]
-    └──requires──> [ai_credit_log table — idempotency key: (user_id, source_type, date)]
-
-[Per-action credit gate (backend middleware)]
-    └──requires──> [Credit balance system]
-    └──requires──> [Backend middleware wrapping AI routes]
-    └──enhances──> [Existing Upstash Redis rate limiter (v1.3) — second independent defense layer]
-
-[Credit exhaustion CTA UI]
-    └──requires──> [Per-action credit gate — to receive 402 response]
-    └──requires──> [Earn activity list (static config of what earns credits)]
-
-[Credit earn toast on activity save]
-    └──requires──> [Activity-to-credit earn]
-    └──requires──> [Post-save hook in each plugin]
-
-[Usage history screen]
-    └──requires──> [ai_credit_log table]
-    └──independent of credit gate]
-
-[Premium tier skip-gate]
-    └──requires──> [Per-action credit gate middleware]
-    └──requires──> [user_tier column on user_profiles]
-
-[Haiku vision migration]
-    └──requires──> [Model config change in nutrition vision route]
-    └──INDEPENDENT of credit system — can ship in same phase without coordination]
-
-[Streak earn multiplier — DEFERRED]
-    └──requires──> [Activity-to-credit earn]
-    └──requires──> [Streak tracking (separate table or computed from habit_logs daily)]
-    └──DEFERRED to v2 — complexity exceeds v1.4 scope]
-```
-
-### Dependency Notes
-
-- **Activity-to-credit earn requires idempotency:** Each plugin log action must award at most one credit event per day per `(user_id, source_type)` pair. The `ai_credit_log` table with a unique constraint on `(user_id, source_type, credit_date)` enforces this without application-level locking. Application logic also enforces the 2 bonus credits/day total cap.
-- **Credit gate middleware builds on existing auth, not rate limiter:** The v1.3 Upstash Redis rate limiter is per-request. The credit gate is a Supabase DB transaction (deduct + check atomically). They run independently and both apply — rate limiter fires first (Redis), credit gate second (Supabase).
-- **Haiku migration is independently shippable:** Swapping Claude vision calls to the Haiku model in the nutrition vision route is a one-line model config change. It reduces cost from ~€0.01 to ~€0.003/scan immediately without waiting for credit infrastructure.
-- **user_tier conflicts with IAP complexity:** Adding `user_tier DEFAULT 'free'` now is a 5-minute migration. Wiring IAP to flip it to `premium` is a separate v2 effort. Both coexist — the column can be set via Supabase dashboard for internal testers before IAP is built.
-
----
-
-## MVP Definition
-
-### Launch With (v1.4)
-
-Minimum set to control API cost, reward engagement, and not break the existing experience.
-
-- [ ] **ai_credits balance** — new column or dedicated `user_ai_credits` table; tracks per-user balance — why essential: without a tracked balance, no gating is possible
-- [ ] **Daily base allocation** — 1 free vision scan + 1 free AI chat/day; 1 free program gen/month — why essential: without a base, free users see zero AI value and churn immediately
-- [ ] **Per-action credit gate (backend middleware)** — deducts credit before calling Anthropic; returns 402 if balance = 0 — why essential: this is the primary cost control mechanism
-- [ ] **Activity-to-credit earn (6 triggers)** — workout, habit log, meal log, measurement, stretching, cardio each award +1 credit (max 2 bonus/day total) — why essential: engagement flywheel that offsets API cost with user behavior
-- [ ] **ai_credit_log table** — idempotency + audit trail — why essential: prevents double-award bugs; foundation for transparency and debugging
-- [ ] **Credit exhaustion UI** — bottom sheet on 402 with earn actions list and balance — why essential: without this, 402 is an opaque error that feels like a bug
-- [ ] **Visible balance widget** — header or profile screen showing credit count — why essential: users must see their balance to trust the system and plan usage
-- [ ] **Haiku vision migration** — swap nutrition vision route to claude-haiku model — why essential: immediate 70% cost reduction per scan, independent of credit system
-- [ ] **user_tier column** — `free` | `premium`; credit gate skips for premium users — why essential: future-proofs upgrade path at zero migration cost now
-
-### Add After Validation (v1.x)
-
-Features to add once core credit system is working and cost projections are confirmed against the €0.75/user/month target.
-
-- [ ] **Credit usage history screen** — list of earn + spend events with timestamps — trigger: when users ask "where did my credits go?" or support tickets about balance
-- [ ] **Low balance push notification** — "You have 1 credit left — log a workout to earn more" — trigger: when push notification infrastructure is instrumented (Expo Notifications)
-- [ ] **Per-plugin earn differentiation** — some activities worth more credits than others — trigger: when activity data shows which log types drive DAU most
-- [ ] **Earn actions discovery screen** — dedicated "How to earn credits" list — trigger: if credit exhaustion CTA bottom sheet is not enough to educate users
-
-### Future Consideration (v2+)
-
-Features to defer until product-market fit and cost projections are validated.
-
-- [ ] **In-app purchases (IAP)** — RevenueCat + StoreKit / Google Play Billing for credit top-up packs or premium subscription — defer: 30% platform cut, complex review, RGPD purchase compliance, 4-6 week integration
-- [ ] **Premium subscription tier** — unlimited AI credits, unlocks all plugins — defer: needs pricing strategy, paywall copy, cancellation flow, RGPD compliance for recurring billing
-- [ ] **Streak earn multiplier** — 7-day activity streak = 2x credit earn rate — defer: requires dedicated streak tracking table, timezone-aware day boundaries, missed-day grace logic
-- [ ] **Referral credits** — invite a friend, both earn bonus credits — defer: requires referral attribution infrastructure (deep links, tracking), significant complexity
-- [ ] **Credit gifting** — send credits to a friend — defer: abuse vector, requires community plugin maturity, major complexity
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Credit balance + daily base allocation | HIGH | LOW | P1 |
-| Per-action credit gate (backend middleware) | HIGH | MEDIUM | P1 |
-| Activity-to-credit earn (6 triggers) | HIGH | MEDIUM | P1 |
-| Haiku vision migration | HIGH (cost impact) | LOW | P1 |
-| ai_credit_log (idempotency + history) | HIGH | LOW | P1 |
-| Credit exhaustion UI (402 handling) | HIGH | LOW | P1 |
-| Visible balance widget | HIGH | LOW | P1 |
-| user_tier column (premium-ready) | MEDIUM | LOW | P1 |
-| Credit usage history screen | MEDIUM | MEDIUM | P2 |
-| Low balance push notification | MEDIUM | LOW | P2 |
-| Earn actions discovery screen | LOW | LOW | P2 |
-| Streak earn multiplier | MEDIUM | HIGH | P3 |
-| IAP credit top-up | LOW (v1.4) / HIGH (v2) | HIGH | P3 |
-| Premium subscription tier | HIGH (long-term revenue) | HIGH | P3 |
-
-**Priority key:**
-- P1: Must have for v1.4 launch
-- P2: Add after cost validation (v1.4.x)
-- P3: Future milestone (v2+)
-
----
-
-## Competitor Feature Analysis
-
-| Feature | Duolingo | Habitica | Workout Quest | Ziko v1.4 Approach |
-|---------|----------|----------|--------------|-------------------|
-| Dual currency | Hearts (functional gate) + Gems (IAP premium) | Gold (earn by activity) + Gems (IAP) | Coins (cosmetic) only | Coins (cosmetic, existing, unlimited) + AI Credits (functional, new, capped) |
-| Activity-based earn | Practice exercises to earn Hearts | Complete habits/dailies to earn Gold + XP | Complete workouts = XP + loot | Log any of 6 fitness activities = +1 AI credit |
-| Daily earn cap | 5 Hearts max (functional ceiling) | No cap on Gold earn | No cap | 2 bonus credits/day from activity regardless of number of logs |
-| Free base quota | 5 Hearts/session (not daily allocation) | All features free | Unlimited free | 1 vision scan + 1 AI chat/day free; 1 program/month |
-| Premium removes gate | Super Duolingo = unlimited Hearts | No equivalent | Not applicable | `user_tier = premium` = no credit check |
-| IAP for credits | Gems purchasable via App Store | Gems purchasable | Not applicable | Deferred to v2 |
-| Exhaustion state UX | "Out of hearts — practice or wait" (controversial, removed practice option 2024) | Credits never run out | Not applicable | Bottom sheet: balance + earn action list (no practice-to-earn removal risk) |
-| Currency exchange | None (Hearts not convertible) | None | None | None (strict separation — anti-pattern avoided) |
-| Model cost optimization | Not applicable | Not applicable | Not applicable | Haiku for vision (70% cost reduction); Sonnet for chat |
-
----
-
-## Existing System Dependencies (Ziko-Specific)
-
-This milestone is additive — no existing behavior is torn out.
-
-| Existing System | v1.4 Integration |
-|----------------|----------------|
-| `gamification` plugin (`user_xp`, `shop_items`, `user_inventory`) | Coins remain untouched; AI credits do NOT use these tables — strict separation |
-| Upstash Redis rate limiting (v1.3) | Rate limiter still applies as first defense; credit gate is a separate Supabase-level check as second defense |
-| `POST /ai/chat/stream` + `POST /ai/chat` | Credit middleware wraps these routes — deduct before forwarding to Anthropic; middleware runs after `authMiddleware` for user ID |
-| Nutrition vision/photo route | Model config change (Haiku) + credit deduction added; signed URL flow from v1.3 Storage unchanged |
-| `ai_programs_generate` tool (`backend/api/src/tools/`) | Monthly counter added alongside daily credit system; counted separately |
-| Plugin post-save handlers (habits, nutrition, workout, cardio, stretching, measurements) | Each emits credit-earn event after successful DB insert; idempotency enforced by `ai_credit_log` unique constraint |
-| `user_profiles` table | Add `user_tier TEXT DEFAULT 'free'` column; `ai_credits` balance stored in `user_ai_credits` table or as column on `user_profiles` |
-| Supabase JWT auth middleware (v1.3) | Credit gate middleware depends on `c.get('auth').userId` being set — same requirement as rate limiter; order: auth → rate limit → credit check |
-
----
+- **HIGH confidence**: Competitor feature inventories (Trainerize, TrueCoach, Hevy Coach) — multiple direct sources including help center docs and comparison articles.
+- **MEDIUM confidence**: Specific UX preferences ("coaches prefer folders") — drawn from comparison reviews and user-forum extracts, not direct user research with Ziko's audience.
+- **LOW confidence flagged**: PDF import landscape (essentially unaddressed by competitors per searches) — opportunity is real but adoption pattern unproven.
 
 ## Sources
 
-- [Duolingo Hearts System — Duolingo Wiki](https://duolingo.fandom.com/wiki/Hearts)
-- [Why Duolingo's Energy System Works — Trophy.so](https://trophy.so/blog/why-duolingos-energy-system-works-and-when-to-copy-it)
-- [Fitness App Gamification Examples 2025 — Trophy.so](https://www.trophy.so/blog/fitness-gamification-examples)
-- [Types of Game Currencies in Mobile Free-to-Play — Game Developer](https://www.gamedeveloper.com/business/types-of-game-currencies-in-mobile-free-to-play)
-- [Token-Based Pricing Patterns for AI Apps — Afternoon.co](https://www.afternoon.co/blog/token-based-pricing-guide)
-- [How to Build a Sustainable AI Subscription App Pricing Model — RevenueCat](https://www.revenuecat.com/blog/growth/ai-subscription-app-pricing/)
-- [Microtransactions: How Freemium Apps Monetize in 2025 — TyrAds](https://tyrads.com/microtransaction/)
-- [Mobile Gaming Currencies — Happy Gamer](https://happygamer.com/amp/mobile-gaming-currencies-from-freemium-models-to-pay-to-win-debates-133241/)
-- [Gamification in Health and Fitness Apps — Plotline](https://www.plotline.so/blog/gamification-in-health-and-fitness-apps)
-- [Dual Currency System Advantages — Quora](https://www.quora.com/What-are-the-advantages-of-using-a-dual-currency-system-in-freemium-mobile-games)
-- [Multi-Reward Strategies for Mobile Apps — AppSamurai](https://appsamurai.com/blog/multi-reward-strategies/)
-- [OpenRouter Daily Quota UX Failure Analysis — Oreate AI](https://www.oreateai.com/blog/indepth-analysis-of-openrouters-free-policy-adjustments-daily-quota-changes-and-response-strategies/d450d1aa56b67882c0100e68510fac55)
-- [Google AI Pro Weekly Quota Lockouts — AI Productivity](https://aiproductivity.ai/news/google-ai-pro-weekly-quota-caps-lockouts/)
-- [Gamification in Fitness Apps — Nudge](https://www.nudgenow.com/blogs/gamify-your-fitness-apps)
-- [Top Gamified Fitness Apps 2025 — Online Tech Tips](https://www.online-tech-tips.com/best-gamified-fitness-apps/)
-
----
-
-*Feature research for: Gamified AI credit system & freemium monetization (Ziko Platform v1.4)*
-*Researched: 2026-04-05*
+- [Hevy Coach vs Trainerize comparison](https://hevycoach.com/compare/trainerize/)
+- [Hevy Coach vs TrueCoach comparison](https://hevycoach.com/compare/truecoach/)
+- [Trainerize vs TrueCoach — Trainerfu](https://www.trainerfu.com/blog/trainerize-vs-truecoach/)
+- [12REPS/TrueCoach/Everfit/MyPTHub/Trainerize comparison 2026](https://ptwill.com/blog/12reps-vs-truecoach-vs-everfit-vs-mypthub-vs-trainerize-which-fitness-app-is-actually-worth-your-money-in-2026/)
+- [Trainerize Master Workout Library docs](https://help.trainerize.com/hc/en-us/articles/360035118052-Master-Workout-Library-Overview)
+- [Trainerize AI Workout Builder](https://resources.trainerize.com/ai-workout-builder)
+- [Trainerize Workout Templates](https://help.trainerize.com/hc/en-us/articles/208688896-How-do-I-use-Workout-Templates-)
+- [FitFloww CRM feature list](https://fitflowwcrm.com/best-crm-personal-trainers-2026)
+- [FitBudd CRM feature analysis](https://www.fitbudd.com/post/best-crm-software-for-fitness-coaches)
+- [Capsule CRM for trainers 2026](https://capsulecrm.com/blog/crm-for-personal-trainers/)
+- [Trainerize Client Onboarding ideas forum](https://ideas.trainerize.com/forums/167887-coach-trainer-abc-trainerize/suggestions/49101635-client-onboarding-flow-automated)
+- [Trainerize onboarding guide 2026](https://www.trainerize.com/blog/the-ultimate-guide-to-onboarding-new-fitness-clients/)
+- [Hevy Coach client app features](https://hevycoach.com/features/personal-trainer-app/)
+- [Everfit platform](https://everfit.io/)
+- [Best AI personal trainer apps 2026 — Ray](https://www.rayfit.com/blog/2026/02/best-ai-personal-trainer-app/)
+- [WorkoutGen AI generator](https://workoutgen.app/)
+- [Australian Institute of Fitness — coaching tech trends](https://fitness.edu.au/the-fitness-zone/leveraging-technology-the-best-apps-and-tools-for-personal-trainers/)
+- [Virtuagym — best personal trainer apps 2026](https://business.virtuagym.com/blog/best-personal-trainer-app/)
+- [Landingi — fitness landing page examples](https://landingi.com/landing-page/fitness-examples/)
+- [Unbounce — 12 fitness landing pages](https://unbounce.com/landing-page-examples/fitness/)
