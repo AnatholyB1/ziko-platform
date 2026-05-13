@@ -26,8 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 
 Phase: 22 — Schema Foundation & RLS Keystone
 Plan: —
-Status: Roadmap approved, ready to plan Phase 22
-Last activity: 2026-05-13 — v1.5 roadmap created (Phases 22–31, 76 REQ-IDs mapped)
+Status: Context gathered, ready to plan Phase 22
+Last activity: 2026-05-13 — Phase 22 context gathered (4 gray areas, 16 decisions captured in 22-CONTEXT.md)
+Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-CONTEXT.md
 
 Progress: [░░░░░░░░░░] 0% (v1.5 milestone — 0/10 phases complete)
 
