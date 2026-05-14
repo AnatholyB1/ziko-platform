@@ -4,13 +4,13 @@ milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: ready_to_execute
 stopped_at: null
-last_updated: "2026-05-14T09:20:00.000Z"
+last_updated: "2026-05-14T11:35:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -25,31 +25,31 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 22 — Schema Foundation & RLS Keystone
-Plan: 4 plans (waves 0–3), 1 complete
-Status: Wave 0 complete — vitest scaffolding + RLS test fixtures + CI workflow shipped. Ready for Wave 1 DDL.
-Last activity: 2026-05-14 — Plan 22-01 (Wave 0) executed: vitest@^3 installed in backend/api, fixtures.ts (createTestUser/getAdminClient/cleanupTestUsers) green against live project, .github/workflows/test-rls.yml gating future migrations.
-Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-02-PLAN.md
+Plan: 4 plans (waves 0–3), 2 complete
+Status: Wave 1 complete — migration 034 (user_profiles.role + coach_profiles) applied to slkobhavpwsubnsmuhya via Supabase MCP apply_migration; 15/15 RLS tests green (4 fixtures + 5 role + 6 coach_profiles). Ready for Wave 2 (migration 035 — coach_invitations, coach_client_links, is_coach_of()).
+Last activity: 2026-05-14 — Plan 22-02 (Wave 1) executed on branch gsd/phase-22-schema-foundation-rls-keystone: ALTER TABLE user_profiles ADD COLUMN role (PG11+ fast path), CREATE TABLE coach_profiles (10 cols from D-05) with owner-only RLS, trigger reusing handle_updated_at(). RED → feat (DDL apply) → GREEN gate sequence respected. Three commits: be5c2c3 (RED), 175ca99 (migration), 37a1f88 (GREEN spec).
+Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-03-PLAN.md
 
-Progress: [█░░░░░░░░░] 10% (v1.5 milestone — 0/10 phases complete; 1/4 plans in Phase 22)
+Progress: [██░░░░░░░░] 20% (v1.5 milestone — 0/10 phases complete; 2/4 plans in Phase 22)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0 (v1.5)
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 2 (v1.5)
+- Average duration: 8.4m
+- Total execution time: ~17m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 22 | 1 | 9m | 9m |
+| 22 | 2 | 17m | 8.4m |
 
 **Recent Trend:**
 
-- Last 5 plans: 22-01 (9m, 3 tasks, 8 files)
-- Trend: baseline
+- Last 5 plans: 22-01 (9m, 3 tasks, 8 files), 22-02 (8.4m, 2 tasks, 3 files)
+- Trend: stable — TDD RED/GREEN gates respected; tool-availability checkpoint resolved by orchestrator (Option C, MCP apply)
 
 *Updated after each plan completion*
 
@@ -74,6 +74,10 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 22-01]: Add `--passWithNoTests` to vitest scripts so empty suites exit 0 (Vitest v3 default is exit-1 on empty discovery)
 - [Phase 22-01]: Pin `@vitest/coverage-v8` to ^3 (npm latest is v4 which conflicts with vitest@^3 peer)
 - [Phase 22-01]: Service-role key spatially confined to `backend/api/test/` — CI guard greps `src/` and fails build on any reference (ARCH-03 pre-enforcement)
+- [Phase 22-02]: Migration 034 applied via Supabase MCP `apply_migration` (per D-16) — orchestrator-applied as Option C resolution of Wave 1 tool-availability checkpoint; counts as MCP-apply, no waiver
+- [Phase 22-02]: `SET LOCAL lock_timeout = '5s'` included at top of migration 034 (matches pattern planned for 035; cheap to add now, future-proofs deploys)
+- [Phase 22-02]: Trigger pattern reuses `public.handle_updated_at()` from migration 001 verbatim — no `SET search_path` added (T-22-09 disposition: accept; hardening is Phase 23+ scope)
+- [Phase 22-02]: Used `IF NOT EXISTS` on ADD COLUMN and CREATE TABLE so migration is re-runnable for rollback/retry (defensive, no behavior change)
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T09:20:00.000Z
-Stopped at: Completed 22-01-PLAN.md (Wave 0)
-Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-02-PLAN.md
+Last session: 2026-05-14T11:35:00.000Z
+Stopped at: Completed 22-02-PLAN.md (Wave 1) — migration 034 live, 15/15 RLS tests green
+Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-03-PLAN.md
