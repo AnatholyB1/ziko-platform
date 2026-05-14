@@ -1,0 +1,102 @@
+{
+  "Header": {
+    "logo": "Ziko",
+    "cta": "Download the app",
+    "localeFR": "FR",
+    "localeEN": "EN"
+  },
+  "Home": {
+    "hero": {
+      "badge": "🔥 AI Coach · 17 plugins · iOS & Android",
+      "headline1": "Train.",
+      "headline2": "Progress.",
+      "headline3": "Repeat.",
+      "subline": "17 plugins, one app. AI coaching, nutrition tracking, GPS running and much more.",
+      "ctaAppStore": "Download on the App Store",
+      "ctaPlayStore": "Get it on Google Play"
+    },
+    "howItWorks": {
+      "heading": "How it works",
+      "step1": {
+        "title": "Download",
+        "description": "Install Ziko in 30 seconds, available on iOS and Android."
+      },
+      "step2": {
+        "title": "Customize",
+        "description": "Choose your plugins, configure your AI coach to match your training style."
+      },
+      "step3": {
+        "title": "Progress",
+        "description": "Track your data, get personalized recommendations and beat your records."
+      }
+    },
+    "aiCoach": {
+      "badge": "Powered by Claude Sonnet",
+      "heading": "An AI coach that truly gets you",
+      "description": "Ask questions, set goals, request a program. Your AI coach analyzes your habits, nutrition and performance to give you real-time personalized advice.",
+      "cta": "Discover the AI coach",
+      "userMessage": "I struggle to stay consistent — how can you help?",
+      "aiMessage": "Let's start with 3 simple habits this week. I'll send you a daily reminder and adjust based on your results. 💪"
+    },
+    "showcase": {
+      "heading": "17 plugins, one app",
+      "categoryAll": "All",
+      "categoryTraining": "Training",
+      "categoryHealth": "Health",
+      "categoryNutrition": "Nutrition",
+      "categoryCoaching": "Coaching & AI",
+      "categoryCommunity": "Community"
+    },
+    "pricing": {
+      "popularBadge": "Most popular",
+      "heading": "Free forever",
+      "price": "$0",
+      "priceUnit": "/month",
+      "valueProp1": "No subscription, no hidden fees",
+      "valueProp2": "AI coaching included in the app",
+      "valueProp3": "17 plugins available from day one",
+      "cta": "Download for free",
+      "priceNote": "7-day free trial · Cancel anytime"
+    }
+  },
+  "Plugins": {
+    "timer": "Build Tabata, HIIT, EMOM and Hyrox sessions with customizable timers and exercise tracking.",
+    "cardio": "Record your runs and rides with live GPS tracking, pace, distance and elevation.",
+    "ai-programs": "Generate complete workout programs tailored to your goals with AI.",
+    "rpe": "Calculate your estimated 1RM and fine-tune session intensity using the RPE scale.",
+    "stretching": "Access stretching and mobility routines tailored to your recovery needs.",
+    "sleep": "Track your sleep quality and get a daily recovery score.",
+    "measurements": "Log your body measurements and visualize your progress over time.",
+    "hydration": "Track your daily water intake and hit your hydration goals.",
+    "wearables": "Sync Apple Health or Health Connect to centralize all your health data.",
+    "nutrition": "Log your meals, track your macros and calculate your caloric needs with the TDEE calculator.",
+    "supplements": "Browse the supplement catalog and compare prices across brands in real time.",
+    "habits": "Build daily habits, track your goals and stay consistent with AI coaching.",
+    "persona": "Customize your AI coach's style for guidance that fits your personality.",
+    "journal": "Log your mood, energy and stress levels for a complete mental well-being snapshot.",
+    "gamification": "Earn XP, level up and unlock rewards by reaching your fitness goals.",
+    "stats": "Analyze your performance with detailed charts and statistics on your progress.",
+    "community": "Join challenges, follow friends and climb community leaderboards."
+  },
+  "Metadata": {
+    "homeTitle": "Ziko — All-in-one fitness app",
+    "homeDescription": "AI coaching, nutrition tracking, GPS running, 17 plugins. Download Ziko for free.",
+    "ogImageAlt": "Ziko — All-in-one fitness app",
+    "legalTitle": "Legal notice",
+    "legalDescription": "Legal notice for Ziko, a mobile fitness application.",
+    "privacyTitle": "Privacy policy",
+    "privacyDescription": "How Ziko collects and processes your personal data.",
+    "cguTitle": "Terms of use",
+    "cguDescription": "Terms of use for the Ziko application.",
+    "deleteTitle": "Delete my account",
+    "deleteDescription": "Request deletion of your Ziko account.",
+    "appScreenshotAlt": "Ziko app screenshot"
+  },
+  "Footer": {
+    "copyright": "© 2026 Ziko. All rights reserved.",
+    "legal": "Legal notice",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "deleteAccount": "Delete my account"
+  }
+}

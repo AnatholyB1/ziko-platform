@@ -1,0 +1,102 @@
+{
+  "Header": {
+    "logo": "Ziko",
+    "cta": "Télécharger l'app",
+    "localeFR": "FR",
+    "localeEN": "EN"
+  },
+  "Home": {
+    "hero": {
+      "badge": "🔥 Coach IA · 17 plugins · iOS & Android",
+      "headline1": "Entraîne-toi.",
+      "headline2": "Progresse.",
+      "headline3": "Recommence.",
+      "subline": "17 plugins, un seul abonnement. Coaching IA, suivi nutrition, GPS running et bien plus.",
+      "ctaAppStore": "Télécharger sur l'App Store",
+      "ctaPlayStore": "Disponible sur Google Play"
+    },
+    "howItWorks": {
+      "heading": "Comment ça marche",
+      "step1": {
+        "title": "Télécharge",
+        "description": "Installe Ziko en 30 secondes, disponible sur iOS et Android."
+      },
+      "step2": {
+        "title": "Personnalise",
+        "description": "Choisis tes plugins, configure ton coach IA selon ton style d'entraînement."
+      },
+      "step3": {
+        "title": "Progresse",
+        "description": "Suis tes données, reçois des recommandations et bats tes records."
+      }
+    },
+    "aiCoach": {
+      "badge": "Propulsé par Claude Sonnet",
+      "heading": "Ton coach IA qui te comprend vraiment",
+      "description": "Pose tes questions, fixe tes objectifs, demande un programme. Le coach IA analyse tes habitudes, ta nutrition et tes performances pour te donner des conseils personnalisés en temps réel.",
+      "cta": "Découvrir le coach IA",
+      "userMessage": "J'ai du mal à rester régulier, comment m'aider ?",
+      "aiMessage": "Commençons par 3 habitudes simples cette semaine. Je vais t'envoyer un rappel chaque jour et ajuster selon tes résultats. 💪"
+    },
+    "showcase": {
+      "heading": "17 plugins, une seule app",
+      "categoryAll": "Tous",
+      "categoryTraining": "Entraînement",
+      "categoryHealth": "Santé",
+      "categoryNutrition": "Nutrition",
+      "categoryCoaching": "Coaching & IA",
+      "categoryCommunity": "Communauté"
+    },
+    "pricing": {
+      "popularBadge": "Le plus populaire",
+      "heading": "Gratuit pour toujours",
+      "price": "0€",
+      "priceUnit": "/mois",
+      "valueProp1": "Pas d'abonnement, pas de surprise",
+      "valueProp2": "Coaching IA inclus dans l'app",
+      "valueProp3": "17 plugins disponibles dès le téléchargement",
+      "cta": "Télécharger gratuitement",
+      "priceNote": "Essai gratuit 7 jours · Annulation à tout moment"
+    }
+  },
+  "Plugins": {
+    "timer": "Créez des séances Tabata, HIIT, EMOM et Hyrox avec des timers personnalisables et un suivi d'exercices.",
+    "cardio": "Enregistrez vos courses et sorties vélo avec suivi GPS en direct, allure, distance et dénivelé.",
+    "ai-programs": "Générez des programmes d'entraînement complets adaptés à vos objectifs grâce à l'IA.",
+    "rpe": "Calculez votre 1RM estimé et ajustez l'intensité de vos séances avec l'échelle RPE.",
+    "stretching": "Accédez à des routines de stretching et mobilité adaptées à votre récupération.",
+    "sleep": "Suivez la qualité de votre sommeil et obtenez un score de récupération journalier.",
+    "measurements": "Enregistrez vos mesures corporelles et visualisez votre progression dans le temps.",
+    "hydration": "Suivez votre consommation d'eau quotidienne et atteignez vos objectifs d'hydratation.",
+    "wearables": "Synchronisez Apple Health ou Health Connect pour centraliser toutes vos données santé.",
+    "nutrition": "Tracez vos repas, suivez vos macros et calculez vos besoins caloriques avec le calculateur TDEE.",
+    "supplements": "Explorez le catalogue de compléments et comparez les prix entre les marques en temps réel.",
+    "habits": "Créez des habitudes quotidiennes, suivez vos objectifs et restez régulier grâce au coaching IA.",
+    "persona": "Personnalisez le style de coaching de votre IA pour un accompagnement adapté à votre personnalité.",
+    "journal": "Notez votre humeur, énergie et stress pour un suivi complet de votre bien-être mental.",
+    "gamification": "Gagnez de l'XP, montez de niveau et débloquez des récompenses en atteignant vos objectifs.",
+    "stats": "Analysez vos performances avec des graphiques et des statistiques détaillées sur vos progrès.",
+    "community": "Rejoignez des défis, suivez vos amis et grimpez dans les classements de la communauté."
+  },
+  "Metadata": {
+    "homeTitle": "Ziko — L'appli fitness tout-en-un",
+    "homeDescription": "Coaching IA, suivi nutrition, GPS running, 17 plugins. Téléchargez Ziko gratuitement.",
+    "ogImageAlt": "Ziko — Application fitness tout-en-un",
+    "legalTitle": "Mentions légales",
+    "legalDescription": "Mentions légales de Ziko, application fitness mobile.",
+    "privacyTitle": "Politique de confidentialité",
+    "privacyDescription": "Comment Ziko collecte et traite vos données personnelles.",
+    "cguTitle": "CGU",
+    "cguDescription": "Conditions générales d'utilisation de l'application Ziko.",
+    "deleteTitle": "Supprimer mon compte",
+    "deleteDescription": "Demander la suppression de votre compte Ziko.",
+    "appScreenshotAlt": "Capture d'écran de l'application Ziko"
+  },
+  "Footer": {
+    "copyright": "© 2026 Ziko. Tous droits réservés.",
+    "legal": "Mentions légales",
+    "privacy": "Politique de confidentialité",
+    "terms": "CGU",
+    "deleteAccount": "Supprimer mon compte"
+  }
+}
