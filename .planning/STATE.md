@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: phase_22_verified_ready_for_phase_23
-stopped_at: null
-last_updated: "2026-05-14T12:18:00.000Z"
+status: phase_23_context_gathered
+stopped_at: "Phase 23 context gathered — ready for /gsd-plan-phase 23"
+last_updated: "2026-05-14T13:30:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 1
@@ -20,9 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 22 **VERIFIED (PASS)** — ready for Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) planning
+**Current focus:** v1.5 Coach Platform & CRM — Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) **context gathered 2026-05-14** — ready for `/gsd-plan-phase 23`
 
 ## Current Position
+
+Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
+Plan: TBD — context just gathered, no plans yet
+Status: **Phase 23 CONTEXT GATHERED (2026-05-14).** 23-CONTEXT.md committed (commit 47ce88a). 16 decisions locked across 4 gray areas (Spike + integration / coach-sdk packaging / @supabase/ssr + i18n + ESLint / thin slice + Vercel + tests) plus D-17 icon library auto-resolved by audit. User picked recommended option on all 16 questions (same pattern as Phase 22, 32/32 recommended across both phases). Closes Open Architectural Decisions #1 (apps/web onboarding spike), #2 (Vercel Pro confirmation), and #6 (icon library) from ROADMAP.md. Resume file: `.planning/phases/23-web-turborepo-onboarding-auth-bootstrap/23-CONTEXT.md`. Next step: `/gsd-plan-phase 23`.
+
+---
+
+## Previous Phase (verified)
 
 Phase: 22 — Schema Foundation & RLS Keystone
 Plan: 4 plans (waves 0–3), **4/4 complete**
