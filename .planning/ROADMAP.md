@@ -76,7 +76,7 @@ Five phases implemented a gamified AI credit system — atomic PostgreSQL credit
 
 Ten phases transform Ziko from a single-tenant athlete app into a two-sided platform: a coach-facing CRM on the Next.js web app reading client data via cross-user RLS, athlete-side Strava OAuth, and AI file imports replacing CSV. Three parallelizable lanes: (a) backend identity → invitations → clients → programs → imports → AI; (b) Strava integration (after schema); (c) public marketing landing (after onboarding URL stable). The architectural keystone is `coach_client_links` + a `SECURITY DEFINER` SQL function `is_coach_of(coach, client)` extending every existing table's RLS with `OR is_coach_of(auth.uid(), user_id)` — coach reads, never writes.
 
-- [ ] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables
+- [~] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables — **4/4 plans executed, ready for verification (2026-05-14)**
 - [ ] **Phase 23: Web Turborepo Onboarding & Auth Bootstrap** — Resolve `apps/web/` vs `c:/ziko-web` decision, `@supabase/ssr` layered auth, `(coach)` segment scaffolding, `packages/coach-sdk` shared Zod schemas, Vercel Pro + `maxDuration=60`
 - [ ] **Phase 24: Coach Identity & Onboarding** — `coach/identity` module, self-serve coach signup, profile + KYC, ESLint module boundaries, CI no-service-role guard
 - [ ] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` link primitives, 6-char codes, mobile redemption screen, revoke flow
@@ -102,10 +102,10 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   4. Migration 036 lands `workout_programs` extensions (`created_by_coach_id`, `assigned_to_user_id`, `is_template`, `weeks_data JSONB`, `template_source_id`) and the `ai_imports` table.
   5. A 4-case smoke test passes: coach can read linked client, coach cannot read unlinked client, revoked link blocks read immediately, expired link is treated as revoked.
 **Plans**: 4 plans
-- [ ] 22-01-PLAN.md — Test infrastructure (Vitest install, fixtures, CI workflow) — Wave 0
-- [ ] 22-02-PLAN.md — Migration 034: user_profiles.role + coach_profiles + RLS — Wave 1
-- [ ] 22-03-PLAN.md — Migration 035: invitations, links, is_coach_of(), redeem RPC, 11 SELECT policies (keystone) — Wave 2
-- [ ] 22-04-PLAN.md — Migration 036: workout_programs extensions + ai_imports — Wave 3
+- [x] 22-01-PLAN.md — Test infrastructure (Vitest install, fixtures, CI workflow) — Wave 0
+- [x] 22-02-PLAN.md — Migration 034: user_profiles.role + coach_profiles + RLS — Wave 1
+- [x] 22-03-PLAN.md — Migration 035: invitations, links, is_coach_of(), redeem RPC, 11 SELECT policies (keystone) — Wave 2
+- [x] 22-04-PLAN.md — Migration 036: workout_programs extensions + ai_imports — Wave 3
 
 ### Phase 23: Web Turborepo Onboarding & Auth Bootstrap
 **Goal**: A `(coach)` segment under `apps/web/` is reachable with cookie-based Supabase auth, `force-dynamic`, and the shared `coach-sdk` Zod package installed.
@@ -268,7 +268,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 19. Backend Routes + AI Integration | v1.4 | 3/3 | Complete | 2026-04-05 |
 | 20. Activity Earn Hooks | v1.4 | 2/2 | Complete | 2026-04-09 |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 2/2 | Complete | 2026-04-09 |
-| 22. Schema Foundation & RLS Keystone | v1.5 | 0/4 | Not started | — |
+| 22. Schema Foundation & RLS Keystone | v1.5 | 4/4 | Ready for verification | 2026-05-14 (executed) |
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 0/0 | Not started | — |
 | 24. Coach Identity & Onboarding | v1.5 | 0/0 | Not started | — |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 0/0 | Not started | — |
@@ -283,3 +283,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
 *Updated: 2026-04-29 — v1.4 archived: Systeme de Credits IA & Monetisation (Phases 17–21)*
 *Updated: 2026-05-13 — v1.5 Coach Platform & CRM roadmap drafted (Phases 22–31)*
+*Updated: 2026-05-14 — Phase 22 (Schema Foundation & RLS Keystone) execution complete: 4/4 plans, 3 migrations live on slkobhavpwsubnsmuhya (034/035/036), 47/47 RLS tests green. Ready for `/gsd-verify-phase`.*

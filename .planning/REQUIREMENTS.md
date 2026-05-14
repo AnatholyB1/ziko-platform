@@ -113,7 +113,7 @@ This document lists the user-facing capabilities Ziko v1.5 must deliver. Each re
 - [ ] **ARCH-04**: A `packages/coach-sdk` package provides shared Zod schemas (`ImportedProgramSchema`, `CoachClientLinkSchema`, `CoachProfileSchema`) consumed by backend, web, and mobile.
 - [ ] **ARCH-05**: The Next.js web app exists at `apps/web/` in the Turborepo (onboarded in Phase 2) with `@supabase/ssr` for cookie-based auth and layered auth (middleware refresh + layout `getUser()` + Server Action re-check).
 - [ ] **ARCH-06**: All `(coach)` web pages enforce `dynamic = 'force-dynamic'`, `revalidate = 0`, and `cache: 'no-store'` on all Supabase reads to prevent cross-coach cache leakage.
-- [ ] **ARCH-07**: The `is_coach_of(coach UUID, client UUID)` SECURITY DEFINER STABLE SQL function is the sole pattern for cross-user RLS reads; every coach-readable table gets a separate `FOR SELECT` policy (owner OR is_coach_of), preserving the existing `FOR ALL` (owner only) write policy.
+- [x] **ARCH-07**: The `is_coach_of(coach UUID, client UUID)` SECURITY DEFINER STABLE SQL function is the sole pattern for cross-user RLS reads; every coach-readable table gets a separate `FOR SELECT` policy (owner OR is_coach_of), preserving the existing `FOR ALL` (owner only) write policy. *(Delivered by Phase 22-03 — migration 035 ships `is_coach_of` SECURITY DEFINER STABLE + 11 `<table>_coach_read` FOR SELECT policies; existing `<table>_own` FOR ALL policies untouched. Verified by 10 coach-rls tests + 8 redeem-rpc tests, all green.)*
 - [ ] **ARCH-08**: Vercel Pro tier is enabled for the `apps/web/` and backend deployments; `/coach/imports/:id/parse` route has `maxDuration = 60` explicit.
 
 ### Traceability
@@ -196,7 +196,7 @@ Each v1.5 requirement is mapped to exactly one phase. Coverage: 76/76 ✓ (no or
 | ARCH-04 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
 | ARCH-05 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
 | ARCH-06 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
-| ARCH-07 | Phase 22 — Schema Foundation & RLS Keystone | TBD |
+| ARCH-07 | Phase 22 — Schema Foundation & RLS Keystone | 22-03 (delivered 2026-05-14) |
 | ARCH-08 | Phase 23 — Web Turborepo Onboarding & Auth Bootstrap | TBD |
 
 **Coverage check:**
@@ -251,3 +251,4 @@ Each v1.5 requirement is mapped to exactly one phase. Coverage: 76/76 ✓ (no or
 ---
 
 *Last updated: 2026-05-13 — v1.5 milestone requirements defined + traceability mapped to Phases 22–31*
+*Updated: 2026-05-14 — Phase 22 execution complete: ARCH-07 marked delivered by Plan 22-03 (migration 035, 47/47 RLS tests green). 1/76 requirements complete.*
