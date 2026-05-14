@@ -4,13 +4,13 @@ milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: ready_to_execute
 stopped_at: null
-last_updated: "2026-05-14T00:00:00.000Z"
+last_updated: "2026-05-14T09:20:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 22 — Schema Foundation & RLS Keystone
-Plan: 4 plans (waves 0–3), 0 complete
-Status: Plans approved by checker, ready to execute Phase 22
-Last activity: 2026-05-14 — Phase 22 plans created (4 plans, 4 waves) and verified by gsd-plan-checker. Research (22-RESEARCH.md) and validation strategy (22-VALIDATION.md, nyquist_compliant: true) committed.
-Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-01-PLAN.md
+Plan: 4 plans (waves 0–3), 1 complete
+Status: Wave 0 complete — vitest scaffolding + RLS test fixtures + CI workflow shipped. Ready for Wave 1 DDL.
+Last activity: 2026-05-14 — Plan 22-01 (Wave 0) executed: vitest@^3 installed in backend/api, fixtures.ts (createTestUser/getAdminClient/cleanupTestUsers) green against live project, .github/workflows/test-rls.yml gating future migrations.
+Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-02-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (v1.5 milestone — 0/10 phases complete)
+Progress: [█░░░░░░░░░] 10% (v1.5 milestone — 0/10 phases complete; 1/4 plans in Phase 22)
 
 ## Performance Metrics
 
@@ -44,12 +44,12 @@ Progress: [░░░░░░░░░░] 0% (v1.5 milestone — 0/10 phases co
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 22 | 1 | 9m | 9m |
 
 **Recent Trend:**
 
-- Last 5 plans: —
-- Trend: —
+- Last 5 plans: 22-01 (9m, 3 tasks, 8 files)
+- Trend: baseline
 
 *Updated after each plan completion*
 
@@ -71,6 +71,9 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [v1.5 Scoping]: AI coach orchestrator tools = analyze_client + generate_coaching_program + monitor_client_alerts — credit-gated via v1.4 system
 - [v1.5 Roadmap]: 10 phases (22–31) with 3 parallelizable lanes — backend identity→clients→programs→imports→ai (sequential); Strava (parallel after schema); marketing landing (parallel after onboarding URL stable)
 - [v1.5 Roadmap]: Phase 22 (schema + `is_coach_of()` SECURITY DEFINER function) is the keystone — every cross-user RLS policy and every coach module depends on it
+- [Phase 22-01]: Add `--passWithNoTests` to vitest scripts so empty suites exit 0 (Vitest v3 default is exit-1 on empty discovery)
+- [Phase 22-01]: Pin `@vitest/coverage-v8` to ^3 (npm latest is v4 which conflicts with vitest@^3 peer)
+- [Phase 22-01]: Service-role key spatially confined to `backend/api/test/` — CI guard greps `src/` and fails build on any reference (ARCH-03 pre-enforcement)
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-13T00:00:00.000Z
-Stopped at: null
-Resume file: None
+Last session: 2026-05-14T09:20:00.000Z
+Stopped at: Completed 22-01-PLAN.md (Wave 0)
+Resume file: .planning/phases/22-schema-foundation-rls-keystone/22-02-PLAN.md
