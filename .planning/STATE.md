@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: ready_for_verification
+status: phase_22_verified_ready_for_phase_23
 stopped_at: null
-last_updated: "2026-05-14T12:15:00.000Z"
+last_updated: "2026-05-14T12:18:00.000Z"
 progress:
   total_phases: 10
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
   completed_plans: 4
-  percent: 100
+  percent: 10
 ---
 
 # Project State
@@ -20,17 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 22 (Schema Foundation & RLS Keystone) — **execution complete, ready for phase verifier**
+**Current focus:** v1.5 Coach Platform & CRM — Phase 22 **VERIFIED (PASS)** — ready for Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) planning
 
 ## Current Position
 
 Phase: 22 — Schema Foundation & RLS Keystone
 Plan: 4 plans (waves 0–3), **4/4 complete**
-Status: **Phase 22 execution complete.** Migration 036 (workout_programs extensions + ai_imports) applied to `slkobhavpwsubnsmuhya` via Supabase MCP apply_migration. All 5 ROADMAP success criteria closed: (1) Vitest foundation + service-role-confined fixtures, (2) user_profiles.role + coach_profiles, (3) coach_invitations + coach_client_links + is_coach_of + redeem_invitation_code + 11 cross-user policies, (4) workout_programs 5 extension columns + ai_imports + owner-only RLS, (5) full RLS envelope green end-to-end (47/47 tests across 7 files). Constant-time variance re-measured 4.68 ms (well within 20 ms CI ceiling). All 14 STRIDE threats covered (9 by test, 2 by config, 1 accepted with rationale, 2 deferred-with-flag to downstream plans). Ready for `/gsd-verify-phase`.
+Status: **Phase 22 VERIFIED (PASS, 2026-05-14).** Verification report: .planning/phases/22-schema-foundation-rls-keystone/22-VERIFICATION.md. 7/7 truths verified, 47/47 tests pass, all 14 STRIDE threats covered, constraint compliance clean. Original execution context: Migration 036 (workout_programs extensions + ai_imports) applied to `slkobhavpwsubnsmuhya` via Supabase MCP apply_migration. All 5 ROADMAP success criteria closed: (1) Vitest foundation + service-role-confined fixtures, (2) user_profiles.role + coach_profiles, (3) coach_invitations + coach_client_links + is_coach_of + redeem_invitation_code + 11 cross-user policies, (4) workout_programs 5 extension columns + ai_imports + owner-only RLS, (5) full RLS envelope green end-to-end (47/47 tests across 7 files). Constant-time variance re-measured 4.68 ms (well within 20 ms CI ceiling). All 14 STRIDE threats covered (9 by test, 2 by config, 1 accepted with rationale, 2 deferred-with-flag to downstream plans). Ready for `/gsd-verify-phase`.
 Last activity: 2026-05-14 — Plan 22-04 (Wave 3, final) executed on branch gsd/phase-22-schema-foundation-rls-keystone: migration 036 = the final keystone surface. workout_programs gains 5 columns (created_by_coach_id, assigned_to_user_id, template_source_id all FK ON DELETE SET NULL per D-12; is_template DEFAULT FALSE; weeks_data JSONB without DB CHECK per D-11) plus 3 partial indexes for Phase 27 hot paths. ai_imports table per D-09 (16 columns, 4 CHECK whitelists for mime_type/size_bytes/mode/status, self-FK re_upload_source_id, committed_program_id FK SET NULL, user_id FK CASCADE, updated_at trigger, single ai_imports_own FOR ALL policy per D-10 — coach CANNOT read athlete imports even when linked). RED → MCP apply → GREEN gate respected with RED-first ordering. Three commits on this plan: ba29e7c (RED specs), 6b0d3ec (migration SQL), final docs commit.
-Resume file: none — phase execution complete; next step is `/gsd-verify-phase 22-schema-foundation-rls-keystone`.
+Resume file: none — phase verified. Next step: begin Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) context-gathering.
 
-Progress: [████░░░░░░] 40% (v1.5 milestone — 0/10 phases verified-complete; Phase 22 = 4/4 plans executed, ready_for_verification)
+Progress: [█░░░░░░░░░] 10% (v1.5 milestone — 1/10 phases verified; Phase 22 VERIFIED PASS 2026-05-14)
 
 ## Performance Metrics
 
