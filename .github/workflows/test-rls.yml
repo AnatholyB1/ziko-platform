@@ -1,0 +1,60 @@
+# RLS Suite — Phase 22 Wave 0 gate.
+#
+# Per .planning/phases/22-schema-foundation-rls-keystone/22-VALIDATION.md,
+# every PR that touches Supabase migrations OR the RLS test scaffold must
+# pass this workflow. Until repo secrets SUPABASE_TEST_URL,
+# SUPABASE_TEST_PUBLISHABLE_KEY, and SUPABASE_TEST_SERVICE_ROLE_KEY are
+# configured, the run will fail-skip — that is acceptable while no DDL
+# ships in Wave 0.
+name: RLS Suite
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'backend/api/test/rls/**'
+      - 'backend/api/vitest.config.ts'
+      - 'backend/api/package.json'
+      - '.github/workflows/test-rls.yml'
+  workflow_dispatch:
+
+jobs:
+  rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_TEST_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install backend deps
+        working-directory: backend/api
+        run: npm ci
+
+      - name: Write .env.test
+        working-directory: backend/api
+        run: |
+          cat > .env.test <<EOF
+          SUPABASE_URL=${SUPABASE_URL}
+          SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+          SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          EOF
+
+      - name: Run RLS suite
+        working-directory: backend/api
+        run: npm run test:rls -- --run
+
+      - name: Guard — no service-role references under src/
+        run: |
+          if grep -rE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]role' backend/api/src/ ; then
+            echo "::error::service-role reference detected under backend/api/src/. ARCH-03 violation."
+            exit 1
+          fi
