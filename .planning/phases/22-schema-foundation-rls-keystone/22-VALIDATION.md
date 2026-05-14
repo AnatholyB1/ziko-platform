@@ -1,8 +1,8 @@
 ---
 phase: 22
 slug: schema-foundation-rls-keystone
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-14
 ---
@@ -52,7 +52,7 @@ created: 2026-05-14
 | 22-03-05 | 03 | 2 | ARCH-07 | T-22-05 (privilege escalation) | Coach INSERT/UPDATE/DELETE on cross-user tables BLOCKED | integration | `npm run --prefix backend/api test -- backend/api/test/rls/coach-rls.spec.ts -t "coach cannot write" --run` | ❌ W0 | ⬜ pending |
 | 22-03-06 | 03 | 2 | ARCH-07 | — | Partial UNIQUE `(coach_id, client_id) WHERE revoked_at IS NULL` enforced | integration | `npm run --prefix backend/api test -- backend/api/test/rls/coach-rls.spec.ts -t "partial unique" --run` | ❌ W0 | ⬜ pending |
 | 22-03-07 | 03 | 2 | ARCH-07 | — | `is_coach_of(NULL, NULL)` returns FALSE (no crash) | integration | `npm run --prefix backend/api test -- backend/api/test/rls/coach-rls.spec.ts -t "null safety" --run` | ❌ W0 | ⬜ pending |
-| 22-03-08 | 03 | 2 | ARCH-07 | T-22-06 (timing leak) | `redeem_invitation_code` returns within timing variance ≤ 10ms across all error codes | integration | `npm run --prefix backend/api test -- backend/api/test/rls/redeem-rpc.spec.ts -t "constant time" --run` | ❌ W0 | ⬜ pending |
+| 22-03-08 | 03 | 2 | ARCH-07 | T-22-06 (timing leak) | `redeem_invitation_code` returns within timing variance < 20ms p95 across all error codes (CI-jitter tolerance; research suggests ~10ms typical, Upstash rate limit is primary defense in Phase 25) | integration | `npm run --prefix backend/api test -- backend/api/test/rls/redeem-rpc.spec.ts -t "constant time" --run` | ❌ W0 | ⬜ pending |
 | 22-03-09 | 03 | 2 | ARCH-07 | T-22-07 (self-link) | `redeem_invitation_code` rejects coach redeeming their own code (SELF_INVITATION) | integration | `npm run --prefix backend/api test -- backend/api/test/rls/redeem-rpc.spec.ts -t "self invitation" --run` | ❌ W0 | ⬜ pending |
 | 22-04-01 | 04 | 3 | ARCH-07 | — | `workout_programs` extension FKs ON DELETE SET NULL: deleting coach preserves rows | integration | `npm run --prefix backend/api test -- backend/api/test/rls/workout-programs.spec.ts --run` | ❌ W0 | ⬜ pending |
 | 22-04-02 | 04 | 3 | ARCH-07 | — | `ai_imports` owner-only RLS enforced (coach cannot read athlete's import) | integration | `npm run --prefix backend/api test -- backend/api/test/rls/ai-imports.spec.ts --run` | ❌ W0 | ⬜ pending |

@@ -101,7 +101,11 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. Every cross-user-readable athlete table (habits, habit_logs, workout_sessions, session_sets, body_measurements, nutrition_logs, sleep_logs, cardio_sessions, hydration_logs, journal_entries, stretching_logs) has a separate `FOR SELECT` policy (owner OR `is_coach_of`) while the existing `FOR ALL` (owner only) write policy is unchanged.
   4. Migration 036 lands `workout_programs` extensions (`created_by_coach_id`, `assigned_to_user_id`, `is_template`, `weeks_data JSONB`, `template_source_id`) and the `ai_imports` table.
   5. A 4-case smoke test passes: coach can read linked client, coach cannot read unlinked client, revoked link blocks read immediately, expired link is treated as revoked.
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 22-01-PLAN.md — Test infrastructure (Vitest install, fixtures, CI workflow) — Wave 0
+- [ ] 22-02-PLAN.md — Migration 034: user_profiles.role + coach_profiles + RLS — Wave 1
+- [ ] 22-03-PLAN.md — Migration 035: invitations, links, is_coach_of(), redeem RPC, 11 SELECT policies (keystone) — Wave 2
+- [ ] 22-04-PLAN.md — Migration 036: workout_programs extensions + ai_imports — Wave 3
 
 ### Phase 23: Web Turborepo Onboarding & Auth Bootstrap
 **Goal**: A `(coach)` segment under `apps/web/` is reachable with cookie-based Supabase auth, `force-dynamic`, and the shared `coach-sdk` Zod package installed.
@@ -264,7 +268,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 19. Backend Routes + AI Integration | v1.4 | 3/3 | Complete | 2026-04-05 |
 | 20. Activity Earn Hooks | v1.4 | 2/2 | Complete | 2026-04-09 |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 2/2 | Complete | 2026-04-09 |
-| 22. Schema Foundation & RLS Keystone | v1.5 | 0/0 | Not started | — |
+| 22. Schema Foundation & RLS Keystone | v1.5 | 0/4 | Not started | — |
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 0/0 | Not started | — |
 | 24. Coach Identity & Onboarding | v1.5 | 0/0 | Not started | — |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 0/0 | Not started | — |
