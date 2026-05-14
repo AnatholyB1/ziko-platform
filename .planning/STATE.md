@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 22-04-PLAN.md (Wave 3, final) — migration 036 live, 47/47 RLS tests green, Phase 22 envelope CLOSED, ready for `/gsd-verify-phase`
-last_updated: "2026-05-14T20:19:53.341Z"
+stopped_at: Completed 23-01-PLAN.md (Phase 23 Wave 0) — root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed. Ready for Wave 1 spike (Plan 23-02).
+last_updated: "2026-05-14T20:56:17Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 13
-  completed_plans: 4
-  percent: 31
+  total_plans: 22
+  completed_plans: 5
+  percent: 22
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: TBD — context just gathered, no plans yet
-Status: Ready to execute
+Plan: Wave 0 (23-01) complete; ready for Wave 1 (23-02 spike)
+Status: Executing — 1/9 plans complete
 
 ---
 
@@ -39,26 +39,27 @@ Status: **Phase 22 VERIFIED (PASS, 2026-05-14).** Verification report: .planning
 Last activity: 2026-05-14
 Resume file: none — phase verified. Next step: begin Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) context-gathering.
 
-Progress: [█░░░░░░░░░] 10% (v1.5 milestone — 1/10 phases verified; Phase 22 VERIFIED PASS 2026-05-14)
+Progress: [██░░░░░░░░] 22% (v1.5 milestone — 1/10 phases verified, Phase 23 Wave 0/7 complete; 5/22 plans done)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4 (v1.5)
-- Average duration: 12.0m
-- Total execution time: ~59m
+- Total plans completed: 5 (v1.5)
+- Average duration: 10.4m
+- Total execution time: ~63m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 22 | 4 | 59m | 12.0m |
+| 23 | 1 | 4m  | 4.0m   |
 
 **Recent Trend:**
 
-- Last 5 plans: 22-01 (9m, 3 tasks, 8 files), 22-02 (8.4m, 2 tasks, 3 files), 22-03 (29.6m, 2 tasks, 3 files), 22-04 (12m, 2 tasks, 3 files)
-- Trend: stable — RED → MCP apply → GREEN gate respected on all 3 DDL plans; same tool-availability checkpoint pattern as 22-02/22-03 resolved by orchestrator (Option C, MCP apply). Plan 22-04 ran RED-first (textbook ordering) where 22-03 ran migration-first; both equivalent under the gate intent.
+- Last 5 plans: 22-02 (8.4m, 2 tasks, 3 files), 22-03 (29.6m, 2 tasks, 3 files), 22-04 (12m, 2 tasks, 3 files), 23-01 (4m, 2 tasks, 3 files)
+- Trend: 23-01 fastest plan in v1.5 — Wave 0 pre-flight is intentionally tiny (one dep removal + one tag + one doc). Inline branch-name correction (Rule 3 deviation) was the only non-mechanical step.
 
 *Updated after each plan completion*
 
@@ -98,6 +99,8 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 22-04]: ai_imports.credit_transaction_id ships FK-less per D-09 footnote — column type (UUID NULL) is correct; FK to ai_credit_transactions(id) is wired in Phase 28 to avoid a cross-cycle dependency
 - [Phase 22-04]: ai_imports.re_upload_source_id self-FK uses ON DELETE SET NULL (not CASCADE) — re-upload audit chains survive deletion of an earlier import; the audit trail breaks gracefully rather than vanishes
 - [Phase 22-04]: T-22-13 (athlete forges created_by_coach_id) is explicitly deferred to Phase 27 — Phase 22 grants the column surface but the existing own_programs FOR ALL policy lets the program owner set any UUID. Phase 27 plan-checker must verify created_by_coach_id against an active coach_client_links row in the service layer before persisting
+- [Phase 23-01]: `react-native-worklets` removed from root `package.json` (Wave 0 pre-flight) — only pinned in `apps/mobile/package.json` going forward. Eliminates RESEARCH Pitfall 2 hoisting risk before Wave 1 c:/ziko-web subtree merge.
+- [Phase 23-01]: Tag `pre-web-onboarding` (sha f02aff5e) pushed to origin BEFORE any subtree merge — one-command rollback path is live. `23-ROLLBACK.md` references the actual current branch `gsd/phase-22-schema-foundation-rls-keystone` (config.json branching_strategy "none") rather than the plan-template assumption phase-23 branch (Rule 3 deviation).
 
 ### Pending Todos
 
@@ -117,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T12:15:00.000Z
-Stopped at: Completed 22-04-PLAN.md (Wave 3, final) — migration 036 live, 47/47 RLS tests green, Phase 22 envelope CLOSED, ready for `/gsd-verify-phase`
-Resume file: none — phase execution complete; next step is `/gsd-verify-phase 22-schema-foundation-rls-keystone`
+Last session: 2026-05-14T20:56:17Z
+Stopped at: Completed 23-01-PLAN.md (Phase 23 Wave 0) — root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed. Ready for Wave 1 spike (Plan 23-02).
+Resume file: none — next step is `/gsd-execute-phase 23 --plan 02` (Wave 1 subtree-merge spike with triple-green gate)
