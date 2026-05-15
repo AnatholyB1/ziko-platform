@@ -21,7 +21,7 @@ export function OnboardingWizard() {
 
   useEffect(() => {
     const supabase = createClientSupabase();
-    supabase.auth.getSession().then((result) => {
+    supabase.auth.getSession().then((result: { data: { session: { user: { id: string }; access_token: string } | null } }) => {
       const session = result.data.session;
       if (!session) {
         // D-06: step 1 requires auth — redirect to login with ?next= for resume
@@ -39,8 +39,8 @@ export function OnboardingWizard() {
         .select('role')
         .eq('id', session.user.id)
         .single()
-        .then((profileResult) => {
-          const p = profileResult.data as { role: string } | null;
+        .then((profileResult: { data: { role: string } | null }) => {
+          const p = profileResult.data;
           if (p?.role === 'coach' || p?.role === 'both') {
             if (step === 1) router.push('/coach/dashboard');
           }
