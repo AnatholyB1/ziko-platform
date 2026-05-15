@@ -1,7 +1,7 @@
 ---
 phase: 24
 slug: coach-identity-onboarding
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-15
