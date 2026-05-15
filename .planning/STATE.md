@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: "23-08 Task 2 CHECKPOINT — human-action required: Vercel dashboard cutover (connect ziko-web project to ziko-platform repo, Root Directory=apps/web, Pro tier), set env vars on Production+Preview scopes, create Supabase test user, run 5 curl smoke checks, commit 23-VERIFICATION.md. Task 1 done (apps/web/.env.example committed 1491cf7, branch pushed)."
-last_updated: "2026-05-15T11:25:00Z"
+stopped_at: Phase 23 complete, ready to discuss Phase 24 (2026-05-15)
+last_updated: "2026-05-15T13:00:00.000Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
-  completed_phases: 1
-  total_plans: 13
-  completed_plans: 11
-  percent: 85
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 12
+  percent: 20
 ---
 
 # Project State
@@ -21,25 +21,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) **context gathered 2026-05-14** — ready for `/gsd-plan-phase 23`
+**Current focus:** v1.5 Coach Platform & CRM — Phase 24 (Coach Identity & Onboarding) — ready for `/gsd-discuss-phase 24`
 
 ## Current Position
 
-Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 5 (23-06) complete; ready for Wave 5 cont. (23-07)
-Status: Executing — 6/9 plans complete
+Phase: 24 — Coach Identity & Onboarding
+Plan: Not started
+Status: Ready to discuss — Phase 23 complete (2026-05-15)
 
 ---
 
-## Previous Phase (verified)
+## Previous Phase (complete)
 
-Phase: 22 — Schema Foundation & RLS Keystone
-Plan: 4 plans (waves 0–3), **4/4 complete**
-Status: **Phase 22 VERIFIED (PASS, 2026-05-14).** Verification report: .planning/phases/22-schema-foundation-rls-keystone/22-VERIFICATION.md. 7/7 truths verified, 47/47 tests pass, all 14 STRIDE threats covered, constraint compliance clean. Original execution context: Migration 036 (workout_programs extensions + ai_imports) applied to `slkobhavpwsubnsmuhya` via Supabase MCP apply_migration. All 5 ROADMAP success criteria closed: (1) Vitest foundation + service-role-confined fixtures, (2) user_profiles.role + coach_profiles, (3) coach_invitations + coach_client_links + is_coach_of + redeem_invitation_code + 11 cross-user policies, (4) workout_programs 5 extension columns + ai_imports + owner-only RLS, (5) full RLS envelope green end-to-end (47/47 tests across 7 files). Constant-time variance re-measured 4.68 ms (well within 20 ms CI ceiling). All 14 STRIDE threats covered (9 by test, 2 by config, 1 accepted with rationale, 2 deferred-with-flag to downstream plans). Ready for `/gsd-verify-phase`.
-Last activity: 2026-05-14
-Resume file: none — phase verified. Next step: begin Phase 23 (Web Turborepo Onboarding & Auth Bootstrap) context-gathering.
+Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
+Plan: 8 plans (waves 0–8), **8/8 complete** (02b fallback not needed)
+Status: **Phase 23 COMPLETE (2026-05-15).** UAT: 7/7 passed, 0 issues. Deliverables: (1) apps/web in monorepo via git subtree merge with full c:/ziko-web history, (2) @supabase/ssr@0.10.3 dual-store cookie auth + server-only guard + updateSession, (3) (coach) route group scaffold with TOCTOU-safe Server Action + force-dynamic, (4) packages/coach-sdk Zod schemas with zod ^4.0.0 peer + external tsup, (5) Vercel ziko-web project Pro tier provisioned + live SC1/SC3 verified, (6) CI: turbo pipeline + ESLint D-11 ban + no-service-role-in-coach guard + publish-coach-sdk placeholder.
+Last activity: 2026-05-15
+Resume file: None
 
-Progress: [██░░░░░░░░] 22% (v1.5 milestone — 1/10 phases verified, Phase 23 Wave 0/7 complete; 5/22 plans done)
+Phase 22: **Phase 22 VERIFIED (PASS, 2026-05-14).** Verification report: .planning/phases/22-schema-foundation-rls-keystone/22-VERIFICATION.md. 7/7 truths verified, 47/47 tests pass, all 14 STRIDE threats covered.
+
+Progress: [████░░░░░░] 20% (v1.5 milestone — 2/10 phases complete; 12/~40 plans done)
 
 ## Performance Metrics
 
@@ -142,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T11:10:00Z
-Stopped at: Completed 23-07-PLAN.md (Phase 23 Wave 6) — Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24), CI extended with 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance. Ready for Wave 7 (Plan 23-08).
-Resume file: none — next step is `/gsd-execute-phase 23 --plan 08`
+Last session: 2026-05-15T13:00:00.000Z
+Stopped at: Phase 23 complete, ready to plan Phase 24 (Coach Identity & Onboarding)
+Resume file: None

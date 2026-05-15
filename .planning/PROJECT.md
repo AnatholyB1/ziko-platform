@@ -180,6 +180,10 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | Lazy daily-reset (date-keyed check at earn time) | No cron dependency — avoids Vercel at-least-once cron delivery causing double-resets | v1.4 Phase 18 ✓ |
 | POST /earn always returns HTTP 200 { credited: boolean } | Mobile client must never crash on earn failure; 4xx would require error handling in fire-and-forget context | v1.4 Phase 20 ✓ |
 | AIBridge 402 body slice extended 200→500 chars | earned_today array with ≥1 source exceeds 200 chars; truncation caused silent JSON.parse failure and no exhaustion sheet | v1.4 Phase 21 ✓ |
+| Monorepo path: apps/web in ziko-platform via git subtree (no --squash) | Preserves full c:/ziko-web history; dual-repo fallback 23-02b not needed; D-01/D-02 triple-green PASS | v1.5 Phase 23 ✓ |
+| @supabase/ssr dual-store cookie pattern (request + response) | Fresh tokens must propagate to downstream Server Components; stale JWT on locale redirects causes auth loops | v1.5 Phase 23 ✓ |
+| coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup | Prevents zod-instance drift across workspace; CJS bundle 3.6 KB (zod not inlined); T-23-03-02 mitigated | v1.5 Phase 23 ✓ |
+| (coach) route group with hard-coded redirect('/fr/login') | No searchParams.next interpolation prevents open-redirect (T-23-06-01 Tampering); Server Action independently re-calls getUser() for TOCTOU defense | v1.5 Phase 23 ✓ |
 
 ## Evolution
 
@@ -199,4 +203,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 — v1.5 milestone started: Coach Platform & CRM*
+*Last updated: 2026-05-15 — Phase 23 complete: Web Turborepo Onboarding & Auth Bootstrap*
