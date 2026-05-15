@@ -5,6 +5,8 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-05-15
+revised: 2026-05-15
+revision_reason: checker-fixes — typography weights/sizes, spacing 4px floor, copywriting nouns, accessibility labels
 ---
 
 # Phase 24 — UI Design Contract
@@ -70,20 +72,26 @@ Exceptions:
 
 Tailwind v4 utility classes. No custom font loaded — inherits system font. Exact px values for precision; use Tailwind's `text-*` scale equivalents where available.
 
+**Declared type scale: 4 sizes, 2 weights maximum.**
+
 | Role | Size | Weight | Line Height | Tailwind class |
 |------|------|--------|-------------|----------------|
 | Body | 16px | 400 (normal) | 1.5 | `text-base font-normal leading-relaxed` |
 | Label / Small | 14px | 400 (normal) | 1.5 | `text-sm font-normal leading-relaxed` |
 | Heading | 20px | 700 (bold) | 1.2 | `text-xl font-bold leading-tight` |
-| Display | 28px | 900 (black) | 1.15 | `text-3xl font-black leading-none` |
+| Display | 28px | 700 (bold) | 1.15 | `text-3xl font-bold leading-none` |
 
-Additional rules:
-- Wizard step title: 20px / bold / leading-tight (Heading role)
-- Sidebar nav item label: 14px / 500 (medium) — exception to 2-weight rule; Tailwind `font-medium` is already used in the existing codebase for nav items (observed in `Header.tsx`)
-- Form input value: 16px / 400 / 1.5 (Body role)
-- Form label: 14px / 500 / 1.4 — above each input, Tailwind `text-sm font-medium`
-- Status chip / badge text: 12px / 700 / 1 — `text-xs font-bold`
-- Error message: 14px / 400 / 1.4 — `text-sm text-red-600` (see Color section)
+**Two weights only: `font-normal` (400) and `font-bold` (700). No `font-medium` (500) or `font-black` (900) anywhere in Phase 24.**
+
+Additional rules (all within the 4-size, 2-weight contract):
+- Wizard step title: 20px / bold / leading-tight (Heading role) — `text-xl font-bold`
+- Sidebar nav item label: 14px / 400 / 1.5 (Label/Small role) — `text-sm font-normal`
+- Active sidebar nav item label: 14px / 700 (Label/Small bold) — `text-sm font-bold`
+- Form input value: 16px / 400 / 1.5 (Body role) — `text-base font-normal`
+- Form label: 14px / 700 / 1.4 (Label/Small bold, above each input) — `text-sm font-bold`
+- Status chip / badge text: 14px / 700 / 1 (Label/Small bold) — `text-sm font-bold`
+- Error message: 14px / 400 / 1.4 — `text-sm font-normal text-red-600` (see Color section)
+- Logo wordmark: 28px / 700 (Display role) — `text-3xl font-bold text-primary`
 
 ---
 
@@ -102,7 +110,7 @@ Source: `apps/web/src/app/globals.css` — `@theme` tokens. All existing web com
 | Destructive | `#DC2626` | (Tailwind red-600) | `text-red-600` / `bg-red-600` | Destructive actions only (no equivalent CSS token — use Tailwind red-600 directly) |
 
 **Accent `#FF5C1A` is reserved ONLY for:**
-1. Primary CTA button background (`bg-primary text-white`) — "Commencer", "Enregistrer", "Continuer"
+1. Primary CTA button background (`bg-primary text-white`) — "Commencer l'inscription", "Enregistrer", "Continuer la configuration"
 2. Active sidebar nav item left border stripe (4px solid) + active label text (`text-primary`)
 3. Wizard progress bar fill
 4. KYC status chip — `verified` state only (`bg-primary/10 text-primary border border-primary/20`)
@@ -126,9 +134,11 @@ Source: `apps/web/src/app/globals.css` — `@theme` tokens. All existing web com
 
 Sidebar nav items that are "Bientôt" (disabled):
 - Label: `text-muted` (no hover change)
-- Badge: `"Bientôt"` inline — `text-xs text-muted bg-border rounded-full px-2 py-0.5`
+- Badge: `"Bientôt"` inline — `text-sm font-bold text-muted bg-border rounded-full px-2 py-1`
 - Cursor: `cursor-default` (no pointer)
 - No left accent stripe
+
+Note: `py-1` = 4px vertical padding (minimum multiple of 4). `py-0.5` (2px) is not permitted.
 
 ---
 
@@ -140,7 +150,7 @@ Sidebar nav items that are "Bientôt" (disabled):
 - Background: `bg-background` (`#F7F6F3`)
 - Login card: centered, `max-w-sm w-full`, `bg-white rounded-2xl p-8 shadow-sm border border-border`
 - Card shadow: `shadow-opacity: 0.08, radius: 12, elevation: 3` — matches the reference mockup memory note
-- Logo above card: `text-2xl font-black text-primary mb-8 text-center`
+- Logo above card: `text-3xl font-bold text-primary mb-8 text-center`
 - Form gap: `gap-4` (16px between field groups)
 - Submit button: full-width `w-full`, 44px height minimum, `bg-primary text-white rounded-lg font-bold text-sm`
 
@@ -151,7 +161,7 @@ Sidebar nav items that are "Bientôt" (disabled):
 - Progress bar: full-width 4px track (`bg-border`) with filled portion (`bg-primary`), 32px margin-bottom; no step numbers
 - Step card: `bg-white rounded-2xl p-8 border border-border shadow-sm`
 - Step title (Heading role): `text-xl font-bold text-text mb-2`
-- Step subtitle: `text-sm text-muted mb-6`
+- Step subtitle: `text-sm font-normal text-muted mb-6`
 - CTA buttons row: `flex gap-3 mt-8 justify-end` — primary CTA right, "Passer" (skip) secondary left
 - Framer Motion step transition: slide left/right — `x: ±40px, opacity: 0→1, duration: 0.25s, ease: easeOut`
 
@@ -159,12 +169,12 @@ Sidebar nav items that are "Bientôt" (disabled):
 
 - Sidebar width: 240px fixed, left-pinned, full-height `h-screen sticky top-0`
 - Background: `bg-white border-r border-border`
-- Logo area: 56px height, `px-4 flex items-center`, `text-xl font-black text-primary`
+- Logo area: 56px height, `px-4 flex items-center`, `text-3xl font-bold text-primary`
 - Nav section: `flex flex-col gap-1 px-2 py-4`
 - Nav item height: 44px, `flex items-center gap-3 px-3 rounded-lg text-sm`
-- Active nav item: `text-primary font-medium bg-primary/5 border-l-4 border-primary rounded-l-none` (left stripe pattern)
-- Inactive nav item: `text-text hover:bg-background transition-colors`
-- Disabled nav item: `text-muted cursor-default` + "Bientôt" badge
+- Active nav item: `text-primary font-bold bg-primary/5 border-l-4 border-primary rounded-l-none` (left stripe pattern)
+- Inactive nav item: `text-text font-normal hover:bg-background transition-colors`
+- Disabled nav item: `text-muted font-normal cursor-default` + "Bientôt" badge
 - React-icons icon size: 20px (`size={20}`)
 - Main content area: `flex-1 overflow-auto bg-background p-8`
 
@@ -173,7 +183,7 @@ Sidebar nav items that are "Bientôt" (disabled):
 - Welcome card: `bg-white rounded-2xl p-6 border border-border shadow-sm` — `shadowOpacity: 0.08, radius: 12, elevation: 3`
 - Coach name display: Heading role (`text-xl font-bold text-text`)
 - KYC chip: inline next to name, `ml-3`
-- Phase 25 teaser CTA "Inviter un client →": `text-sm text-muted` static text (not a button in Phase 24)
+- Phase 25 teaser CTA "Inviter un client →": `text-sm font-normal text-muted` static text (not a button in Phase 24)
 
 ### Settings Page
 
@@ -183,7 +193,7 @@ Sidebar nav items that are "Bientôt" (disabled):
 - Form: `flex flex-col gap-4`
 - Textarea (bio): `min-h-[120px]` (5 lines)
 - Specialties tag input: flex-wrap row of chips + text input at end
-- Specialty chip: `bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full border border-primary/20 flex items-center gap-1`
+- Specialty chip: `bg-primary/10 text-primary text-sm font-bold px-3 py-1 rounded-full border border-primary/20 flex items-center gap-1`
 - Specialty remove button (×): `text-primary/60 hover:text-primary ml-1`
 - KYC doc row: 48px height, `flex items-center justify-between gap-3 py-2 border-b border-border last:border-0`
 
@@ -194,14 +204,14 @@ Sidebar nav items that are "Bientôt" (disabled):
 ### Text Input
 
 ```
-bg-white border border-border rounded-lg px-3 h-11 w-full text-base text-text
+bg-white border border-border rounded-lg px-3 h-11 w-full text-base font-normal text-text
 focus:outline-none focus:border-text transition-colors placeholder:text-muted
 ```
 
 ### Textarea
 
 ```
-bg-white border border-border rounded-lg px-3 py-3 w-full text-base text-text
+bg-white border border-border rounded-lg px-3 py-3 w-full text-base font-normal text-text
 focus:outline-none focus:border-text transition-colors placeholder:text-muted resize-none
 ```
 
@@ -211,18 +221,18 @@ focus:outline-none focus:border-text transition-colors placeholder:text-muted re
 border-red-400 (replaces border-border)
 ```
 
-Error message below input: `text-sm text-red-600 mt-1`
+Error message below input: `text-sm font-normal text-red-600 mt-1`
 
 ### File Upload Button
 
 ```
 inline-flex items-center gap-2 h-11 px-4 bg-white border border-border rounded-lg
-text-sm text-text font-medium hover:bg-background transition-colors cursor-pointer
+text-sm font-normal text-text hover:bg-background transition-colors cursor-pointer
 ```
 
 After file selected — filename pill:
 ```
-inline-flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-text
+inline-flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1 text-sm font-normal text-text
 ```
 Remove (×) button: `text-muted hover:text-red-600 ml-1 transition-colors`
 
@@ -236,7 +246,7 @@ hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-al
 ### Secondary / Ghost Button (Skip)
 
 ```
-h-11 px-4 text-sm font-medium text-muted hover:text-text transition-colors
+h-11 px-4 text-sm font-normal text-muted hover:text-text transition-colors
 ```
 
 ---
@@ -280,7 +290,7 @@ All primary copy ships in **French** first (`/fr/` locale). English keys added i
 | Step 1 heading | "Activez votre rôle coach" | `Onboarding.step1Heading` |
 | Step 1 body (new user) | "Votre compte Ziko sera configuré comme coach." | `Onboarding.step1BodyNew` |
 | Step 1 body (existing athlete) | "Votre compte athlète reste actif — vous ajoutez le rôle coach." | `Onboarding.step1BodyBoth` |
-| Step 1 CTA | "Commencer" | `Onboarding.step1Cta` |
+| Step 1 CTA | "Commencer l'inscription" | `Onboarding.step1Cta` |
 | Step 2 heading | "Votre profil coach" | `Onboarding.step2Heading` |
 | Step 2 subtitle | "Ces informations seront visibles par vos futurs clients." | `Onboarding.step2Subtitle` |
 | Display name label | "Nom affiché" | `Onboarding.displayNameLabel` |
@@ -292,14 +302,14 @@ All primary copy ships in **French** first (`/fr/` locale). English keys added i
 | Website label | "Site web (optionnel)" | `Onboarding.websiteLabel` |
 | Photo label | "Photo de profil (optionnel)" | `Onboarding.photoLabel` |
 | Photo CTA | "Choisir une photo" | `Onboarding.photoCta` |
-| Step 2 CTA | "Continuer" | `Onboarding.step2Cta` |
+| Step 2 CTA | "Continuer la configuration" | `Onboarding.step2Cta` |
 | Step 3 heading | "Vérification (optionnel)" | `Onboarding.step3Heading` |
 | Step 3 subtitle | "Ajoutez vos certifications pour renforcer la confiance de vos clients. Vous pouvez passer cette étape." | `Onboarding.step3Subtitle` |
 | KYC — certification button | "Ajouter une certification" | `Onboarding.kycCertificationCta` |
 | KYC — ID document button | "Ajouter une pièce d'identité" | `Onboarding.kycIdDocumentCta` |
 | KYC — other button | "Ajouter un autre document" | `Onboarding.kycOtherCta` |
 | Step 3 skip | "Passer cette étape" | `Onboarding.step3Skip` |
-| Step 3 CTA (docs uploaded) | "Terminer" | `Onboarding.step3Cta` |
+| Step 3 CTA (docs uploaded) | "Terminer la configuration" | `Onboarding.step3Cta` |
 | Dashboard welcome | "Bonjour, {displayName} 👋" | `Dashboard.welcome` |
 | Dashboard subtitle | "Votre espace coach est prêt." | `Dashboard.subtitle` |
 | Phase 25 teaser | "Inviter un client → (bientôt disponible)" | `Dashboard.inviteTeaser` |
@@ -323,7 +333,7 @@ All primary copy ships in **French** first (`/fr/` locale). English keys added i
 
 | Screen | Empty State |
 |--------|------------|
-| KYC doc list (no docs yet) | "Aucun document ajouté. Les documents sont optionnels mais renforcent votre profil." — `text-sm text-muted text-center py-4` |
+| KYC doc list (no docs yet) | "Aucun document ajouté. Les documents sont optionnels mais renforcent votre profil." — `text-sm font-normal text-muted text-center py-4` |
 | Specialties (no tags) | Placeholder text on input only (no empty state UI needed) |
 
 ### Destructive Actions
@@ -339,7 +349,7 @@ No destructive actions ship in Phase 24. Role promotion is additive. Document re
 Decision (from Claude's Discretion): Use **URL search params** (`?step=2`) for wizard step state.
 - Rationale: resumable on browser refresh, works with browser back button, safe to expose step number.
 - Implementation: `useSearchParams` + `useRouter().push` for step navigation.
-- Step validation before advance: Step 1 requires auth check (redirect if unauthenticated). Step 2 requires `display_name` non-empty before enabling "Continuer".
+- Step validation before advance: Step 1 requires auth check (redirect if unauthenticated). Step 2 requires `display_name` non-empty before enabling "Continuer la configuration".
 
 ### Form Validation
 
@@ -412,6 +422,8 @@ No third-party component registries in use for this phase. All components are be
 - File upload trigger: `<label>` wrapping hidden `<input type="file">` (not a `<button>` triggering `click()` on a hidden input — avoids focus management issues).
 - Status chips: include visually-hidden status label if color is the only differentiator.
 - Error messages: `role="alert"` on the form-level error container; field-level errors use `aria-describedby`.
+- Specialty chip remove button (×): `aria-label="Retirer {specialty}"` — interpolate the tag label so screen reader announces which tag is removed.
+- KYC doc row remove button (×): `aria-label="Supprimer le document"` — identifies the destructive intent without requiring sighted context.
 
 ---
 
@@ -430,4 +442,5 @@ No third-party component registries in use for this phase. All components are be
 
 *Phase: 24-coach-identity-onboarding*
 *UI-SPEC generated: 2026-05-15*
+*UI-SPEC revised: 2026-05-15 — checker fix pass*
 *Sources: 24-CONTEXT.md (13 decisions), REQUIREMENTS.md (COACH-01–05), apps/web/src/app/globals.css, apps/web/src/components/layout/Header.tsx + Footer.tsx, packages/coach-sdk/src/schemas/coach-profile.ts, apps/web/package.json*
