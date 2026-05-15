@@ -121,7 +121,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [x] 23-01-PLAN.md — Wave 0: Pre-flight cleanup + rollback tag — completed 2026-05-14
 - [x] 23-02-PLAN.md — Wave 1: Spike — subtree merge c:/ziko-web → apps/web + triple-green gate — completed 2026-05-15 (PASS)
 - [ ] 23-02b-PLAN.md — Wave 1b (CONTINGENT on 23-02 FAIL): Dual-repo fallback per D-04 (reset, publish coach-sdk to GH Packages, c:/ziko-web .npmrc)
-- [ ] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS)
+- [x] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS) — completed 2026-05-15
 - [ ] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware
 - [ ] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12)
 - [ ] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice
@@ -278,7 +278,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 20. Activity Earn Hooks | v1.4 | 2/2 | Complete | 2026-04-09 |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 2/2 | Complete | 2026-04-09 |
 | 22. Schema Foundation & RLS Keystone | v1.5 | 4/4 | Ready for verification | 2026-05-14 (executed) |
-| 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 1/9 | In progress (Wave 0 complete) | — |
+| 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 3/9 | In progress (Wave 2 complete) | — |
 | 24. Coach Identity & Onboarding | v1.5 | 0/0 | Not started | — |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 0/0 | Not started | — |
 | 26. CRM Client Management | v1.5 | 0/0 | Not started | — |
@@ -294,3 +294,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-13 — v1.5 Coach Platform & CRM roadmap drafted (Phases 22–31)*
 *Updated: 2026-05-14 — Phase 22 (Schema Foundation & RLS Keystone) execution complete: 4/4 plans, 3 migrations live on slkobhavpwsubnsmuhya (034/035/036), 47/47 RLS tests green. Ready for `/gsd-verify-phase`.*
 *Updated: 2026-05-14 — Phase 23 Wave 0 complete: Plan 23-01 (root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed). Ready for Wave 1 spike (Plan 23-02).*
+*Updated: 2026-05-15 — Phase 23 Wave 2 complete: Plan 23-03 packages/coach-sdk — ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema built, tsup dual ESM+CJS, 4/4 Vitest tests green, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr).*

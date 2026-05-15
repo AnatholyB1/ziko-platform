@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-02-PLAN.md (Phase 23 Wave 1 spike) — apps/web subtree-merged from c:/ziko-web (history preserved), @next/bundle-analyzer wired, D-02 triple-green PASS confirmed, monorepo path active. Ready for Wave 2 (Plan 23-03 packages/coach-sdk).
-last_updated: "2026-05-15T00:05:00Z"
+stopped_at: Completed 23-03-PLAN.md (Phase 23 Wave 2) — packages/coach-sdk workspace created with ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema, tsup dual ESM+CJS build, 4/4 Vitest tests passing, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr middleware).
+last_updated: "2026-05-15T10:37:00Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 1 (23-02) complete; ready for Wave 2 (23-03 packages/coach-sdk)
-Status: Executing — 2/9 plans complete
+Plan: Wave 2 (23-03) complete; ready for Wave 3 (23-04 @supabase/ssr middleware)
+Status: Executing — 3/9 plans complete
 
 ---
 
@@ -54,7 +54,7 @@ Progress: [██░░░░░░░░] 22% (v1.5 milestone — 1/10 phases v
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 22 | 4 | 59m | 12.0m |
-| 23 | 1 | 4m  | 4.0m   |
+| 23 | 3 | 24m | 8.0m  |
 
 **Recent Trend:**
 
@@ -104,6 +104,9 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-02]: Monorepo path confirmed (D-01/D-02 PASS) — apps/web lives in ziko-platform via history-preserving git subtree merge (no --squash). Dual-repo fallback 23-02b NOT executed.
 - [Phase 23-02]: @next/bundle-analyzer v16 dropped generateStatsFile/statsFilename — use analyzerMode: 'json' instead; still emits machine-readable artifact for D-02 RN-leak grep.
 - [Phase 23-02]: react@19.2.6 / react-dom@19.2.4 mismatch resolved — root package.json overrides updated to react@19.2.6; react-dom added as explicit root dep to clear peer conflict with react-native.
+- [Phase 23-03]: tsup outExtension required for .mjs ESM output — tsup default ESM emits .js; added `outExtension({ format })` to force .mjs for ESM matching the exports map in package.json.
+- [Phase 23-03]: Zod v4 strict RFC 4122 UUID validation — test UUIDs must have valid version bits (1-8) and variant bits ([89abAB]); all-zeros test UUIDs like 00000000-0000-0000-0000-000000000001 are invalid in Zod v4.
+- [Phase 23-03]: coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup — prevents zod-instance drift across workspace; CJS bundle is 3.6 KB (zod not inlined). T-23-03-02 mitigated.
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T00:05:00Z
-Stopped at: Completed 23-02-PLAN.md (Phase 23 Wave 1 spike) — apps/web subtree-merged from c:/ziko-web (history preserved), @next/bundle-analyzer wired, D-02 triple-green PASS confirmed, monorepo path active. Ready for Wave 2 (Plan 23-03 packages/coach-sdk).
-Resume file: none — next step is `/gsd-execute-phase 23 --plan 02` (Wave 1 subtree-merge spike with triple-green gate)
+Last session: 2026-05-15T10:37:00Z
+Stopped at: Completed 23-03-PLAN.md (Phase 23 Wave 2) — packages/coach-sdk workspace created with ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema (migration 034/035/036 mirror), tsup dual ESM+CJS+dts build, 4/4 Vitest tests passing, apps/web wired as workspace dep. Ready for Wave 3 (Plan 23-04 @supabase/ssr middleware).
+Resume file: none — next step is `/gsd-execute-phase 23 --plan 03` → 04
