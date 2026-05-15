@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-01-PLAN.md (Phase 23 Wave 0) — root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed. Ready for Wave 1 spike (Plan 23-02).
-last_updated: "2026-05-14T20:56:17Z"
-last_activity: 2026-05-14
+stopped_at: Completed 23-02-PLAN.md (Phase 23 Wave 1 spike) — apps/web subtree-merged from c:/ziko-web (history preserved), @next/bundle-analyzer wired, D-02 triple-green PASS confirmed, monorepo path active. Ready for Wave 2 (Plan 23-03 packages/coach-sdk).
+last_updated: "2026-05-15T00:05:00Z"
+last_activity: 2026-05-15
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 22
-  completed_plans: 5
-  percent: 22
+  total_plans: 13
+  completed_plans: 7
+  percent: 53
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 0 (23-01) complete; ready for Wave 1 (23-02 spike)
-Status: Executing — 1/9 plans complete
+Plan: Wave 1 (23-02) complete; ready for Wave 2 (23-03 packages/coach-sdk)
+Status: Executing — 2/9 plans complete
 
 ---
 
@@ -101,6 +101,9 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 22-04]: T-22-13 (athlete forges created_by_coach_id) is explicitly deferred to Phase 27 — Phase 22 grants the column surface but the existing own_programs FOR ALL policy lets the program owner set any UUID. Phase 27 plan-checker must verify created_by_coach_id against an active coach_client_links row in the service layer before persisting
 - [Phase 23-01]: `react-native-worklets` removed from root `package.json` (Wave 0 pre-flight) — only pinned in `apps/mobile/package.json` going forward. Eliminates RESEARCH Pitfall 2 hoisting risk before Wave 1 c:/ziko-web subtree merge.
 - [Phase 23-01]: Tag `pre-web-onboarding` (sha f02aff5e) pushed to origin BEFORE any subtree merge — one-command rollback path is live. `23-ROLLBACK.md` references the actual current branch `gsd/phase-22-schema-foundation-rls-keystone` (config.json branching_strategy "none") rather than the plan-template assumption phase-23 branch (Rule 3 deviation).
+- [Phase 23-02]: Monorepo path confirmed (D-01/D-02 PASS) — apps/web lives in ziko-platform via history-preserving git subtree merge (no --squash). Dual-repo fallback 23-02b NOT executed.
+- [Phase 23-02]: @next/bundle-analyzer v16 dropped generateStatsFile/statsFilename — use analyzerMode: 'json' instead; still emits machine-readable artifact for D-02 RN-leak grep.
+- [Phase 23-02]: react@19.2.6 / react-dom@19.2.4 mismatch resolved — root package.json overrides updated to react@19.2.6; react-dom added as explicit root dep to clear peer conflict with react-native.
 
 ### Pending Todos
 
@@ -108,7 +111,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- **[Open decision, Phase 23 blocker]** `apps/web/` Turborepo onboarding vs dual-repo with published `coach-sdk` NPM — Phase 23 must spike the integration decision with documented rollback path. Currently the Next.js web app lives in a SEPARATE repo at `c:/ziko-web` (NOT in this monorepo).
+- **[Phase 23-02 RESOLVED]** `apps/web/` Turborepo onboarding vs dual-repo — RESOLVED: monorepo path active. D-02 triple-green PASS confirmed. apps/web/ is now in ziko-platform with full c:/ziko-web history.
 - **[Open decision, Phase 23 blocker]** Vercel Pro tier confirmation — mandatory before Phase 28 (Hobby's 10s timeout kills AI imports; need `maxDuration=60`).
 - **[Open decision, Phase 28]** AI import per-page credit pricing — target €0.05/import within €0.75/user/month freemium; calibration TBD.
 - AI import quality on noisy/varied real-world files (screenshots, scanned PDFs) needs validation before shipping Phase 28 — define fallback strategy (manual edit, multiple-shot, Sonnet escalation).
@@ -120,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-14T20:56:17Z
-Stopped at: Completed 23-01-PLAN.md (Phase 23 Wave 0) — root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed. Ready for Wave 1 spike (Plan 23-02).
+Last session: 2026-05-15T00:05:00Z
+Stopped at: Completed 23-02-PLAN.md (Phase 23 Wave 1 spike) — apps/web subtree-merged from c:/ziko-web (history preserved), @next/bundle-analyzer wired, D-02 triple-green PASS confirmed, monorepo path active. Ready for Wave 2 (Plan 23-03 packages/coach-sdk).
 Resume file: none — next step is `/gsd-execute-phase 23 --plan 02` (Wave 1 subtree-merge spike with triple-green gate)

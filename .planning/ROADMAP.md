@@ -119,7 +119,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   5. Vercel Pro tier is confirmed enabled for both `apps/web/` and backend deployments; `/coach/imports/:id/parse` declares `maxDuration = 60`; all `(coach)` routes use `dynamic = 'force-dynamic'`, `revalidate = 0`, and `cache: 'no-store'`.
 **Plans**: 8 plans
 - [x] 23-01-PLAN.md — Wave 0: Pre-flight cleanup + rollback tag — completed 2026-05-14
-- [ ] 23-02-PLAN.md — Wave 1: Spike — subtree merge c:/ziko-web → apps/web + triple-green gate
+- [x] 23-02-PLAN.md — Wave 1: Spike — subtree merge c:/ziko-web → apps/web + triple-green gate — completed 2026-05-15 (PASS)
 - [ ] 23-02b-PLAN.md — Wave 1b (CONTINGENT on 23-02 FAIL): Dual-repo fallback per D-04 (reset, publish coach-sdk to GH Packages, c:/ziko-web .npmrc)
 - [ ] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS)
 - [ ] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware
