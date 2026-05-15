@@ -1,9 +1,9 @@
 ---
 status: complete
 phase: 23-web-turborepo-onboarding-auth-bootstrap
-source: [23-01-SUMMARY.md, 23-VALIDATION.md]
+source: [23-01-SUMMARY.md, 23-02-SUMMARY.md, 23-03-SUMMARY.md, 23-04-SUMMARY.md, 23-05-SUMMARY.md, 23-06-SUMMARY.md, 23-07-SUMMARY.md, 23-08-SUMMARY.md]
 started: 2026-05-15T00:00:00Z
-updated: 2026-05-15T00:01:00Z
+updated: 2026-05-15T12:36:00Z
 ---
 
 ## Current Test
@@ -50,14 +50,22 @@ note: |
   - mobile chat.tsx TS2769: last touched in 36e87b0, long before Phase 23
   Phase 23 introduced zero new type errors.
 
+### 7. Vercel ziko-web project provisioned + live smoke test
+expected: |
+  Vercel dashboard shows ziko-web project connected to ziko-platform repo
+  (Root Directory = apps/web, Pro tier). Five curl checks pass on the
+  preview deploy URL: SC1 → 307 redirect, SC3 → pro-confirmed after ~30s.
+result: pass
+note: manually verified by user — SC1 (307 unauth redirect) and SC3 (pro-confirmed) confirmed OK.
+
 ## Summary
 
-total: 6
-passed: 6
+total: 7
+passed: 7
 issues: 0
 pending: 0
 skipped: 0
 
 ## Gaps
 
-[none]
+[none yet]
