@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: [main]
 
 jobs:
   quality:
@@ -84,3 +86,86 @@ jobs:
           supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # ─── Job 1: type-check + lint + unit tests ───────────────────────
+  verify:
+    name: type-check / lint / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install
+      - name: Type-check
+        run: npx turbo run type-check
+      - name: Lint
+        run: npx turbo run lint
+      - name: Test
+        run: npx turbo run test
+
+  # ─── Job 2: no SERVICE_ROLE under coach/ (ARCH-02, D-12 second layer) ─
+  no-service-role-in-coach:
+    name: Verify no SERVICE_ROLE under coach/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Grep guard
+        run: |
+          # Phase 23 ships the rule; Phase 24 creates backend/api/src/coach/
+          if [ -d backend/api/src/coach ]; then
+            if grep -r 'SERVICE_ROLE' backend/api/src/coach/; then
+              echo "FAIL: SERVICE_ROLE reference found under backend/api/src/coach/"
+              exit 1
+            fi
+          fi
+          echo "PASS: no SERVICE_ROLE under coach/ (or directory does not exist yet)"
+
+  # ─── Job 3: bundle hygiene (D-02 step 3) ──────────────────────────
+  bundle-hygiene:
+    name: Verify no react-native in web bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install
+      - name: Build with analyzer
+        run: ANALYZE=true npx turbo run build --filter=web
+      - name: Assert RN-clean bundle
+        run: |
+          if grep -E '"name":\s*"[^"]*react-native(?!-web)' apps/web/.next/analyze/stats.json; then
+            echo "FAIL: react-native leaked into web bundle"
+            exit 1
+          fi
+          echo "PASS: web bundle is RN-clean"
+
+  # ─── Job 4: Zod version drift check (D-08 safety) ─────────────────
+  zod-drift:
+    name: coach-sdk zod resolves to root zod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm install
+      - name: Verify zod is hoisted, not duplicated
+        run: |
+          ROOT_ZOD=$(node -e "console.log(require.resolve('zod'))")
+          SDK_ZOD=$(node -e "console.log(require.resolve('zod', { paths: ['packages/coach-sdk'] }))")
+          if [ "$ROOT_ZOD" != "$SDK_ZOD" ]; then
+            echo "FAIL: coach-sdk resolves a different zod than root"
+            echo "  ROOT: $ROOT_ZOD"
+            echo "  SDK:  $SDK_ZOD"
+            exit 1
+          fi
+          echo "PASS: zod resolves to single instance ($ROOT_ZOD)"
