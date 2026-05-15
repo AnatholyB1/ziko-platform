@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports'] as const;
+const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports', 'coach-kyc'] as const;
 type AllowedBucket = typeof ALLOWED_BUCKETS[number];
 
 // ── User-facing storage router (requires JWT auth) ────────
