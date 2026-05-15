@@ -139,7 +139,13 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach can upload optional KYC documents (certifications, ID) without being blocked from coach features; `kyc_status` stays `pending` and is visible in their settings.
   4. A `role='both'` user signs in once and reaches both the athlete app (mobile) and the coach CRM (web) with the same account.
   5. `backend/api/src/coach/identity/` exists as a bounded module with `service.ts` as the only public entry; CI verifies no `SERVICE_ROLE` reference anywhere under `coach/`.
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 24-01-PLAN.md — Housekeeping + storage bucket migration + Wave 0 test stub
+- [ ] 24-02-PLAN.md — Backend bounded module (coach/identity/ types, db, service) + integration tests
+- [ ] 24-03-PLAN.md — Coach layout chrome (sidebar) + /fr/login page + loginAction
+- [ ] 24-04-PLAN.md — Shared coach components + Server Actions (promoteRole, saveProfile, saveKyc)
+- [ ] 24-05-PLAN.md — Pages assembly (onboarding wizard, dashboard, settings) + i18n keys
+- [ ] 24-06-PLAN.md — Full verification (automated suite + manual smoke all 5 surfaces)
 **UI hint**: yes
 
 ### Phase 25: Invitations & Mobile "Mon coach" Minimal
