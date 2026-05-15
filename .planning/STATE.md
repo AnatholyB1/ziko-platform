@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-07-PLAN.md (Phase 23 Wave 6) — Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24), CI extended with 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance.
-last_updated: "2026-05-15T11:10:00Z"
+stopped_at: "23-08 Task 2 CHECKPOINT — human-action required: Vercel dashboard cutover (connect ziko-web project to ziko-platform repo, Root Directory=apps/web, Pro tier), set env vars on Production+Preview scopes, create Supabase test user, run 5 curl smoke checks, commit 23-VERIFICATION.md. Task 1 done (apps/web/.env.example committed 1491cf7, branch pushed)."
+last_updated: "2026-05-15T11:25:00Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
