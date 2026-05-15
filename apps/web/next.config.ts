@@ -5,11 +5,10 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const analyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
-  // Emit JSON artifacts for CI grep (in addition to HTML)
+  // v16 dropped generateStatsFile/statsFilename. Use 'json' mode to emit a
+  // machine-readable artifact for the D-02 step 3 RN-leak grep.
   openAnalyzer: false,
-  analyzerMode: 'static',
-  generateStatsFile: true,
-  statsFilename: 'stats.json',
+  analyzerMode: 'json',
 });
 
 const nextConfig = {};
