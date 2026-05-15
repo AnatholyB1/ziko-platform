@@ -98,5 +98,66 @@
     "privacy": "Politique de confidentialité",
     "terms": "CGU",
     "deleteAccount": "Supprimer mon compte"
+  },
+  "Login": {
+    "title": "Bienvenue",
+    "subtitle": "Connectez-vous à votre espace coach.",
+    "emailLabel": "Adresse email",
+    "passwordLabel": "Mot de passe",
+    "submitButton": "Se connecter",
+    "errorInvalid": "Email ou mot de passe incorrect. Veuillez réessayer.",
+    "errorServer": "Une erreur est survenue. Réessayez dans quelques instants."
+  },
+  "Onboarding": {
+    "title": "Devenir coach Ziko",
+    "step1Heading": "Activez votre rôle coach",
+    "step1BodyNew": "Votre compte Ziko sera configuré comme coach.",
+    "step1BodyBoth": "Votre compte athlète reste actif — vous ajoutez le rôle coach.",
+    "step1Cta": "Commencer l'inscription",
+    "step2Heading": "Votre profil coach",
+    "step2Subtitle": "Ces informations seront visibles par vos futurs clients.",
+    "displayNameLabel": "Nom affiché",
+    "displayNamePlaceholder": "Prénom Nom ou nom de votre structure",
+    "bioLabel": "Bio (optionnel)",
+    "bioPlaceholder": "Décrivez votre approche, vos spécialités…",
+    "specialtiesLabel": "Spécialités (optionnel)",
+    "specialtiesPlaceholder": "Ex : Hyrox, perte de poids, remise en forme…",
+    "websiteLabel": "Site web (optionnel)",
+    "photoLabel": "Photo de profil (optionnel)",
+    "photoCta": "Choisir une photo",
+    "step2Cta": "Continuer la configuration",
+    "step3Heading": "Vérification (optionnel)",
+    "step3Subtitle": "Ajoutez vos certifications pour renforcer la confiance de vos clients. Vous pouvez passer cette étape.",
+    "kycCertificationCta": "Ajouter une certification",
+    "kycIdDocumentCta": "Ajouter une pièce d'identité",
+    "kycOtherCta": "Ajouter un autre document",
+    "step3Skip": "Passer cette étape",
+    "step3Cta": "Terminer la configuration"
+  },
+  "Dashboard": {
+    "welcome": "Bonjour, {displayName} 👋",
+    "subtitle": "Votre espace coach est prêt.",
+    "inviteTeaser": "Inviter un client → (bientôt disponible)"
+  },
+  "Settings": {
+    "title": "Paramètres du profil",
+    "profileSection": "Informations du profil",
+    "kycSection": "Documents de vérification",
+    "saveCta": "Enregistrer les modifications",
+    "saveSuccess": "Profil mis à jour.",
+    "saveError": "Impossible de sauvegarder. Réessayez."
+  },
+  "KycStatus": {
+    "pending": "En attente",
+    "submitted": "Documents soumis",
+    "verified": "Vérifié",
+    "rejected": "Rejeté"
+  },
+  "Upload": {
+    "errorSize": "Fichier trop volumineux (max 5 Mo).",
+    "errorFormat": "Format non accepté. PDF, JPEG, PNG ou WebP uniquement.",
+    "errorMaxDocs": "Maximum 3 documents. Supprimez-en un pour ajouter un autre.",
+    "success": "Document ajouté.",
+    "error": "Échec du transfert. Réessayez."
   }
 }

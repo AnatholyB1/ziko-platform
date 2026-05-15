@@ -98,5 +98,66 @@
     "privacy": "Privacy policy",
     "terms": "Terms of use",
     "deleteAccount": "Delete my account"
+  },
+  "Login": {
+    "title": "Welcome",
+    "subtitle": "Sign in to your coach workspace.",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "submitButton": "Sign in",
+    "errorInvalid": "Incorrect email or password. Please try again.",
+    "errorServer": "An error occurred. Please try again in a moment."
+  },
+  "Onboarding": {
+    "title": "Become a Ziko coach",
+    "step1Heading": "Activate your coach role",
+    "step1BodyNew": "Your Ziko account will be set up as a coach.",
+    "step1BodyBoth": "Your athlete account stays active — you are adding the coach role.",
+    "step1Cta": "Start registration",
+    "step2Heading": "Your coach profile",
+    "step2Subtitle": "This information will be visible to your future clients.",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "First Last or your business name",
+    "bioLabel": "Bio (optional)",
+    "bioPlaceholder": "Describe your approach, your specialties…",
+    "specialtiesLabel": "Specialties (optional)",
+    "specialtiesPlaceholder": "E.g. Hyrox, weight loss, fitness…",
+    "websiteLabel": "Website (optional)",
+    "photoLabel": "Profile photo (optional)",
+    "photoCta": "Choose a photo",
+    "step2Cta": "Continue setup",
+    "step3Heading": "Verification (optional)",
+    "step3Subtitle": "Add your certifications to build client trust. You can skip this step.",
+    "kycCertificationCta": "Add a certification",
+    "kycIdDocumentCta": "Add an ID document",
+    "kycOtherCta": "Add another document",
+    "step3Skip": "Skip this step",
+    "step3Cta": "Complete setup"
+  },
+  "Dashboard": {
+    "welcome": "Hello, {displayName} 👋",
+    "subtitle": "Your coach workspace is ready.",
+    "inviteTeaser": "Invite a client → (coming soon)"
+  },
+  "Settings": {
+    "title": "Profile settings",
+    "profileSection": "Profile information",
+    "kycSection": "Verification documents",
+    "saveCta": "Save changes",
+    "saveSuccess": "Profile updated.",
+    "saveError": "Could not save. Please try again."
+  },
+  "KycStatus": {
+    "pending": "Pending",
+    "submitted": "Documents submitted",
+    "verified": "Verified",
+    "rejected": "Rejected"
+  },
+  "Upload": {
+    "errorSize": "File too large (max 5 MB).",
+    "errorFormat": "Format not accepted. PDF, JPEG, PNG or WebP only.",
+    "errorMaxDocs": "Maximum 3 documents. Remove one to add another.",
+    "success": "Document added.",
+    "error": "Upload failed. Please try again."
   }
 }
