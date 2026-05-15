@@ -18,7 +18,12 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Step 3: non-coach paths (landing, legal, /) → next-intl handles locale.
-  return intlMiddleware(request);
+  // Merge Supabase refreshed session cookies into the intl response.
+  const intlResponse = intlMiddleware(request);
+  supaResponse.cookies.getAll().forEach((cookie) => {
+    intlResponse.cookies.set(cookie);
+  });
+  return intlResponse;
 }
 
 export const config = {
