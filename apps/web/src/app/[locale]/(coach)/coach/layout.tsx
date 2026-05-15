@@ -1,25 +1,37 @@
-// PHASE 23 SMOKE — DELETE IN PHASE 24 (real layout ships in Phase 24 with login/dashboard chrome)
-// ARCH-05 layer 2: Server Component layout guard.
-// ARCH-06: force-dynamic + revalidate = 0 — no shared cache between requests.
+// ARCH-06: force-dynamic + revalidate=0 on all (coach) routes
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { CoachSidebar } from '@/components/coach/CoachSidebar';
 
-export default async function CoachLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // Hard-coded redirect target — no searchParams.next interpolation (avoids open-redirect Tampering threat).
-    // Phase 24 ships the real /fr/login UI; Phase 23 placeholder 404s.
+    // ARCH-05 layer 2: server-side auth guard. No open-redirect — fixed target.
     redirect('/fr/login');
   }
 
-  return <>{children}</>;
+  // D-03: non-coach user gets redirected to onboarding
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || !['coach', 'both'].includes(profile.role)) {
+    redirect('/coach/onboarding');
+  }
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <CoachSidebar />
+      <main className="flex-1 overflow-auto p-8">
+        {children}
+      </main>
+    </div>
+  );
 }
