@@ -122,7 +122,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [x] 23-02-PLAN.md — Wave 1: Spike — subtree merge c:/ziko-web → apps/web + triple-green gate — completed 2026-05-15 (PASS)
 - [ ] 23-02b-PLAN.md — Wave 1b (CONTINGENT on 23-02 FAIL): Dual-repo fallback per D-04 (reset, publish coach-sdk to GH Packages, c:/ziko-web .npmrc)
 - [x] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS) — completed 2026-05-15
-- [ ] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware
+- [x] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware — completed 2026-05-15
 - [ ] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12)
 - [ ] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice
 - [ ] 23-07-PLAN.md — Wave 6: Vercel topology + Pro-tier probes + CI workflow + GHA release insurance
@@ -295,3 +295,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-14 — Phase 22 (Schema Foundation & RLS Keystone) execution complete: 4/4 plans, 3 migrations live on slkobhavpwsubnsmuhya (034/035/036), 47/47 RLS tests green. Ready for `/gsd-verify-phase`.*
 *Updated: 2026-05-14 — Phase 23 Wave 0 complete: Plan 23-01 (root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed). Ready for Wave 1 spike (Plan 23-02).*
 *Updated: 2026-05-15 — Phase 23 Wave 2 complete: Plan 23-03 packages/coach-sdk — ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema built, tsup dual ESM+CJS, 4/4 Vitest tests green, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr).*
+*Updated: 2026-05-15 — Phase 23 Wave 3 complete: Plan 23-04 @supabase/ssr@0.10.3 installed, 3 factories (client/server/middleware), apps/web/middleware.ts replaced with Supabase-first + next-intl composition, 3/3 vitest tests green. ARCH-05 layer 1 operational. Ready for Wave 4 (Plan 23-05 ESLint).*

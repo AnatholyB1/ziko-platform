@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-03-PLAN.md (Phase 23 Wave 2) — packages/coach-sdk workspace created with ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema, tsup dual ESM+CJS build, 4/4 Vitest tests passing, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr middleware).
-last_updated: "2026-05-15T10:37:00Z"
+stopped_at: Completed 23-04-PLAN.md (Phase 23 Wave 3) — @supabase/ssr@0.10.3 installed, 3 new factories (client/server/middleware) created, apps/web/middleware.ts replaced with Supabase-first + next-intl composition, 3/3 vitest tests green. Ready for Wave 4 (Plan 23-05 ESLint/TypeScript config).
+last_updated: "2026-05-15T10:46:04Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 13
-  completed_plans: 7
-  percent: 53
+  completed_plans: 8
+  percent: 61
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 2 (23-03) complete; ready for Wave 3 (23-04 @supabase/ssr middleware)
-Status: Executing — 3/9 plans complete
+Plan: Wave 3 (23-04) complete; ready for Wave 4 (23-05 ESLint/TypeScript config)
+Status: Executing — 4/9 plans complete
 
 ---
 
@@ -107,6 +107,11 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-03]: tsup outExtension required for .mjs ESM output — tsup default ESM emits .js; added `outExtension({ format })` to force .mjs for ESM matching the exports map in package.json.
 - [Phase 23-03]: Zod v4 strict RFC 4122 UUID validation — test UUIDs must have valid version bits (1-8) and variant bits ([89abAB]); all-zeros test UUIDs like 00000000-0000-0000-0000-000000000001 are invalid in Zod v4.
 - [Phase 23-03]: coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup — prevents zod-instance drift across workspace; CJS bundle is 3.6 KB (zod not inlined). T-23-03-02 mitigated.
+- [Phase 23-04]: @supabase/ssr@0.10.3 installed in apps/web; 3 factories (client/server/middleware) created verbatim from Context7 pattern. Legacy admin.ts preserved unchanged.
+- [Phase 23-04]: server.ts line 1 is `import 'server-only';` — build-time client-bundle guard (T-23-04-03 mitigated).
+- [Phase 23-04]: updateSession has NO try/catch around auth.getUser() — avoids silently swallowing refresh failures (T-23-04-04 mitigated).
+- [Phase 23-04]: Dual-store cookie pattern: request.cookies.set() AND response.cookies.set() — propagates fresh tokens to downstream Server Components (T-23-04-02 mitigated).
+- [Phase 23-04]: Middleware composition order: Supabase first, next-intl second — prevents stale JWT on locale redirects (D-10, T-23-04-01 mitigated).
 
 ### Pending Todos
 
@@ -126,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T10:37:00Z
+Last session: 2026-05-15T10:46:04Z
 Stopped at: Completed 23-03-PLAN.md (Phase 23 Wave 2) — packages/coach-sdk workspace created with ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema (migration 034/035/036 mirror), tsup dual ESM+CJS+dts build, 4/4 Vitest tests passing, apps/web wired as workspace dep. Ready for Wave 3 (Plan 23-04 @supabase/ssr middleware).
 Resume file: none — next step is `/gsd-execute-phase 23 --plan 03` → 04
