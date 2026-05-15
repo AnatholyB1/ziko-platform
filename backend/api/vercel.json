@@ -12,5 +12,6 @@
       "path": "/storage/cron/cleanup",
       "schedule": "0 4 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."
 }
