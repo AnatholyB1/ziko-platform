@@ -45,17 +45,38 @@ export async function upsertProfile(
     ? 'submitted'
     : undefined;
 
-  const payload: Record<string, unknown> = {
-    user_id: userId,
+  const updates: Record<string, unknown> = {
     ...fields,
     ...(kycStatus ? { kyc_status: kycStatus } : {}),
   };
 
-  const { data, error } = await db
+  // Check if profile already exists — use UPDATE for partial patches, upsert for creates
+  const { data: existing } = await db
     .from('coach_profiles')
-    .upsert(payload, { onConflict: 'user_id' })
-    .select()
-    .single();
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  let data: Record<string, unknown> | null;
+  let error: { message: string } | null;
+
+  if (existing) {
+    // Row exists — UPDATE only the provided fields (preserves NOT NULL columns)
+    ({ data, error } = await db
+      .from('coach_profiles')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single());
+  } else {
+    // No row yet — full INSERT via upsert (display_name must be present in fields)
+    const payload: Record<string, unknown> = { user_id: userId, ...updates };
+    ({ data, error } = await db
+      .from('coach_profiles')
+      .upsert(payload, { onConflict: 'user_id' })
+      .select()
+      .single());
+  }
 
   if (error) throw new Error(error.message);
   return data;
