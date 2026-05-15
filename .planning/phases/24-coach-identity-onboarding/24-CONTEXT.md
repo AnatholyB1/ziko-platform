@@ -125,7 +125,7 @@ the boundary:
 - **D-12 — Profile photo in onboarding Step 2, stored in `coach-kyc` bucket.** Optional.
   Path: `{user_id}/photo.{ext}`. Max 5 MB. Accepted formats: JPEG, PNG, WebP.
   Signed URL pattern from v1.3 (direct upload to Supabase Storage, bypasses Vercel 4.5 MB
-  limit). `coach_profiles.photo_url` set to the public CDN URL after upload.
+  limit). `coach_profiles.photo_url` stores the storage path (e.g. {userId}/photo.jpg); a signed download URL is generated server-side on each render — there is no public CDN URL since the bucket is private.
 
 - **D-13 — KYC upload UX: button per doc type, native file picker.** No drag-drop (mobile
   browser compat issues, feature is low-traffic). Each doc type (certification, id_document,
