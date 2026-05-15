@@ -10,6 +10,7 @@ import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
 import { creditsRouter } from './routes/credits.js';
 import { storageRouter, storageCleanupRouter } from './routes/storage.js';
+import { identityRouter } from './coach/identity/service.js';
 const app = new Hono();
 
 // Global middleware
@@ -50,6 +51,7 @@ app.route('/pantry', pantryRecipesRouter);
 app.route('/credits', creditsRouter);
 app.route('/storage', storageRouter);
 app.route('/storage', storageCleanupRouter);
+app.route('/coach/identity', identityRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
