@@ -123,7 +123,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [ ] 23-02b-PLAN.md — Wave 1b (CONTINGENT on 23-02 FAIL): Dual-repo fallback per D-04 (reset, publish coach-sdk to GH Packages, c:/ziko-web .npmrc)
 - [x] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS) — completed 2026-05-15
 - [x] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware — completed 2026-05-15
-- [ ] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12)
+- [x] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12) — completed 2026-05-15
 - [ ] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice
 - [ ] 23-07-PLAN.md — Wave 6: Vercel topology + Pro-tier probes + CI workflow + GHA release insurance
 - [ ] 23-08-PLAN.md — Wave 7: Vercel cutover + smoke deploy + 23-VERIFICATION.md

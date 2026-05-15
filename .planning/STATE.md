@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-04-PLAN.md (Phase 23 Wave 3) — @supabase/ssr@0.10.3 installed, 3 new factories (client/server/middleware) created, apps/web/middleware.ts replaced with Supabase-first + next-intl composition, 3/3 vitest tests green. Ready for Wave 4 (Plan 23-05 ESLint/TypeScript config).
-last_updated: "2026-05-15T10:46:04Z"
+stopped_at: Completed 23-05-PLAN.md (Phase 23 Wave 4) — ESLint D-11 ban (@supabase/supabase-js + auth-helpers-nextjs, error severity, ARCH-05) + D-12 cross-module patterns (coach/*/db/**, coach/*/internal/**, forward-looking ARCH-02) layered on eslint.config.mjs. Allowlist: admin.ts + tests + service.ts. lint green. Ready for Wave 5 (Plan 23-07).
+last_updated: "2026-05-15T10:55:00Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 13
-  completed_plans: 8
-  percent: 61
+  completed_plans: 9
+  percent: 69
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 3 (23-04) complete; ready for Wave 4 (23-05 ESLint/TypeScript config)
-Status: Executing — 4/9 plans complete
+Plan: Wave 4 (23-05) complete; ready for Wave 5 (23-07)
+Status: Executing — 5/9 plans complete
 
 ---
 
@@ -112,6 +112,9 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-04]: updateSession has NO try/catch around auth.getUser() — avoids silently swallowing refresh failures (T-23-04-04 mitigated).
 - [Phase 23-04]: Dual-store cookie pattern: request.cookies.set() AND response.cookies.set() — propagates fresh tokens to downstream Server Components (T-23-04-02 mitigated).
 - [Phase 23-04]: Middleware composition order: Supabase first, next-intl second — prevents stale JWT on locale redirects (D-10, T-23-04-01 mitigated).
+- [Phase 23-05]: D-11 ban uses error severity (not warn) — violations block CI, not just warn
+- [Phase 23-05]: scripts/**/*.js override added for @typescript-eslint/no-require-imports — CJS Node.js utility scripts need require(); pre-existing issue was blocking lint exit 0
+- [Phase 23-05]: D-12 patterns ship now as forward-looking no-ops — ESLint silently ignores patterns matching no files; activates automatically when Phase 24 creates coach/<module>/db/ folders
 
 ### Pending Todos
 
@@ -131,6 +134,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T10:46:04Z
-Stopped at: Completed 23-03-PLAN.md (Phase 23 Wave 2) — packages/coach-sdk workspace created with ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema (migration 034/035/036 mirror), tsup dual ESM+CJS+dts build, 4/4 Vitest tests passing, apps/web wired as workspace dep. Ready for Wave 3 (Plan 23-04 @supabase/ssr middleware).
-Resume file: none — next step is `/gsd-execute-phase 23 --plan 03` → 04
+Last session: 2026-05-15T10:55:00Z
+Stopped at: Completed 23-05-PLAN.md (Phase 23 Wave 4) — ESLint D-11 + D-12 no-restricted-imports rules layered on apps/web/eslint.config.mjs. D-11 bans @supabase/supabase-js + @supabase/auth-helpers-nextjs (error severity, ARCH-05). D-12 bans coach/*/db/** + coach/*/internal/** (forward-looking, ARCH-02). Allowlist: admin.ts + tests + service.ts. Lint green. Ready for Wave 5 (Plan 23-07).
+Resume file: none — next step is `/gsd-execute-phase 23 --plan 07`
