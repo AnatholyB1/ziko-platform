@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && turbo run build --filter=web",
+  "buildCommand": "cd ../.. && turbo run build --filter=ziko-web",
   "installCommand": "cd ../.. && npm install",
   "outputDirectory": ".next",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."
