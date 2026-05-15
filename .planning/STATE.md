@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-06-PLAN.md (Phase 23 Wave 5) — (coach) route group layout guard (ARCH-05 layer 2, getUser() redirect to /fr/login) + _smoke page/action/SmokeButton (ARCH-05 layer 3 Server Action re-check). force-dynamic + revalidate=0 (ARCH-06). All 4 files tagged DELETE IN PHASE 24. type-check green.
-last_updated: "2026-05-15T11:00:00Z"
+stopped_at: Completed 23-07-PLAN.md (Phase 23 Wave 6) — Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24), CI extended with 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance.
+last_updated: "2026-05-15T11:10:00Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 13
-  completed_plans: 10
-  percent: 77
+  completed_plans: 11
+  percent: 85
 ---
 
 # Project State
@@ -119,6 +119,10 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-06]: Hard-coded redirect('/fr/login') in layout — no searchParams.next interpolation (T-23-06-01 Tampering mitigated)
 - [Phase 23-06]: Server Action smokeReCheck() independently re-calls getUser() — TOCTOU defense, ARCH-05 layer 3 (T-23-06-02 mitigated)
 - [Phase 23-06]: force-dynamic + revalidate=0 on both layout.tsx and page.tsx — no shared RSC cache between users (T-23-06-03, ARCH-06 mitigated)
+- [Phase 23-07]: Vercel ignoreCommand uses git diff --quiet HEAD^ HEAD -- . in both web and backend vercel.json for per-project skip optimization
+- [Phase 23-07]: _debug probes gated by DEBUG_LIMITS=on — 404 on production, 30s sleep confirms Pro tier; both tagged DELETE IN PHASE 24 per ARCH-08
+- [Phase 23-07]: CI no-service-role-in-coach job guards with [ -d backend/api/src/coach ] — passes in Phase 23 before coach/ dir exists (ARCH-02 pre-enforcement)
+- [Phase 23-07]: publish-coach-sdk.yml ships as no-op on monorepo path (vars.PUBLISH_COACH_SDK unset); activates only on D-04 dual-repo fallback
 
 ### Pending Todos
 
@@ -138,6 +142,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T10:55:00Z
-Stopped at: Completed 23-05-PLAN.md (Phase 23 Wave 4) — ESLint D-11 + D-12 no-restricted-imports rules layered on apps/web/eslint.config.mjs. D-11 bans @supabase/supabase-js + @supabase/auth-helpers-nextjs (error severity, ARCH-05). D-12 bans coach/*/db/** + coach/*/internal/** (forward-looking, ARCH-02). Allowlist: admin.ts + tests + service.ts. Lint green. Ready for Wave 5 (Plan 23-07).
-Resume file: none — next step is `/gsd-execute-phase 23 --plan 07`
+Last session: 2026-05-15T11:10:00Z
+Stopped at: Completed 23-07-PLAN.md (Phase 23 Wave 6) — Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24), CI extended with 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance. Ready for Wave 7 (Plan 23-08).
+Resume file: none — next step is `/gsd-execute-phase 23 --plan 08`

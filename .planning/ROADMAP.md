@@ -124,8 +124,8 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [x] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS) — completed 2026-05-15
 - [x] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware — completed 2026-05-15
 - [x] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12) — completed 2026-05-15
-- [ ] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice
-- [ ] 23-07-PLAN.md — Wave 6: Vercel topology + Pro-tier probes + CI workflow + GHA release insurance
+- [x] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice — completed 2026-05-15
+- [x] 23-07-PLAN.md — Wave 6: Vercel topology + Pro-tier probes + CI workflow + GHA release insurance — completed 2026-05-15
 - [ ] 23-08-PLAN.md — Wave 7: Vercel cutover + smoke deploy + 23-VERIFICATION.md
 **UI hint**: yes
 
@@ -296,3 +296,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-14 — Phase 23 Wave 0 complete: Plan 23-01 (root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed). Ready for Wave 1 spike (Plan 23-02).*
 *Updated: 2026-05-15 — Phase 23 Wave 2 complete: Plan 23-03 packages/coach-sdk — ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema built, tsup dual ESM+CJS, 4/4 Vitest tests green, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr).*
 *Updated: 2026-05-15 — Phase 23 Wave 3 complete: Plan 23-04 @supabase/ssr@0.10.3 installed, 3 factories (client/server/middleware), apps/web/middleware.ts replaced with Supabase-first + next-intl composition, 3/3 vitest tests green. ARCH-05 layer 1 operational. Ready for Wave 4 (Plan 23-05 ESLint).*
+*Updated: 2026-05-15 — Phase 23 Wave 6 complete: Plan 23-07 Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24, ARCH-08), CI 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance. 7/8 plans done. Ready for Wave 7 (Plan 23-08 Vercel cutover + smoke deploy).*
