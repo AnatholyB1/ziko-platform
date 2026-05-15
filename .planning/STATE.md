@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Completed 23-05-PLAN.md (Phase 23 Wave 4) — ESLint D-11 ban (@supabase/supabase-js + auth-helpers-nextjs, error severity, ARCH-05) + D-12 cross-module patterns (coach/*/db/**, coach/*/internal/**, forward-looking ARCH-02) layered on eslint.config.mjs. Allowlist: admin.ts + tests + service.ts. lint green. Ready for Wave 5 (Plan 23-07).
-last_updated: "2026-05-15T10:55:00Z"
+stopped_at: Completed 23-06-PLAN.md (Phase 23 Wave 5) — (coach) route group layout guard (ARCH-05 layer 2, getUser() redirect to /fr/login) + _smoke page/action/SmokeButton (ARCH-05 layer 3 Server Action re-check). force-dynamic + revalidate=0 (ARCH-06). All 4 files tagged DELETE IN PHASE 24. type-check green.
+last_updated: "2026-05-15T11:00:00Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 13
-  completed_plans: 9
-  percent: 69
+  completed_plans: 10
+  percent: 77
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: Wave 4 (23-05) complete; ready for Wave 5 (23-07)
-Status: Executing — 5/9 plans complete
+Plan: Wave 5 (23-06) complete; ready for Wave 5 cont. (23-07)
+Status: Executing — 6/9 plans complete
 
 ---
 
@@ -115,6 +115,10 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-05]: D-11 ban uses error severity (not warn) — violations block CI, not just warn
 - [Phase 23-05]: scripts/**/*.js override added for @typescript-eslint/no-require-imports — CJS Node.js utility scripts need require(); pre-existing issue was blocking lint exit 0
 - [Phase 23-05]: D-12 patterns ship now as forward-looking no-ops — ESLint silently ignores patterns matching no files; activates automatically when Phase 24 creates coach/<module>/db/ folders
+- [Phase 23-06]: (coach) route group uses [locale]/(coach)/coach/ path — URL /fr/coach/_smoke matches middleware regex /^\/(fr|en)\/coach(\/|$)/ AND route group separates layout scope
+- [Phase 23-06]: Hard-coded redirect('/fr/login') in layout — no searchParams.next interpolation (T-23-06-01 Tampering mitigated)
+- [Phase 23-06]: Server Action smokeReCheck() independently re-calls getUser() — TOCTOU defense, ARCH-05 layer 3 (T-23-06-02 mitigated)
+- [Phase 23-06]: force-dynamic + revalidate=0 on both layout.tsx and page.tsx — no shared RSC cache between users (T-23-06-03, ARCH-06 mitigated)
 
 ### Pending Todos
 
