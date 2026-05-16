@@ -2,8 +2,6 @@ import { Inter } from 'next/font/google';
 import { setRequestLocale } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { routing } from '@/i18n/routing';
-import { Footer } from '@/components/layout/Footer';
-import { Header } from '@/components/layout/Header';
 import '../globals.css';
 
 const inter = Inter({
@@ -27,11 +25,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <NextIntlClientProvider>
       <div className={`${inter.className} bg-background text-text min-h-screen flex flex-col`}>
-        <Header />
-        <div className="flex-1">
-          {children}
-        </div>
-        <Footer />
+        {children}
       </div>
     </NextIntlClientProvider>
   );
