@@ -328,25 +328,42 @@ router.post('/vision/nutrition', creditCheck('scan'), creditDeduct('scan'), asyn
   const auth = c.get('auth');
   const userId = auth.userId;
 
-  const { image, meal_context } = await c.req.json<{
-    image: string; // base64 encoded image
+  const body = await c.req.json<{
+    storage_path?: string; // path in scan-photos bucket (new flow)
+    image?: string;        // base64 encoded image (legacy)
     meal_context?: string;
   }>();
+  const { storage_path, meal_context } = body;
 
-  if (!image) return c.json({ error: 'image (base64) is required' }, 400);
-
-  // Validate base64 size (max ~10MB raw)
-  if (image.length > 14_000_000) {
-    return c.json({ error: 'Image too large (max 10MB)' }, 413);
-  }
-
-  // Detect media type from base64 header or default to jpeg
   let mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' = 'image/jpeg';
-  let base64Data = image;
-  const dataUrlMatch = image.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
-  if (dataUrlMatch) {
-    mediaType = dataUrlMatch[1] as typeof mediaType;
-    base64Data = image.slice(dataUrlMatch[0].length);
+  let base64Data: string;
+
+  if (storage_path) {
+    // New flow: download from Supabase Storage → base64
+    const { data, error } = await supabase.storage
+      .from('scan-photos')
+      .download(storage_path);
+    if (error || !data) {
+      return c.json({ error: 'Failed to fetch image from storage' }, 400);
+    }
+    const arrayBuffer = await data.arrayBuffer();
+    base64Data = Buffer.from(arrayBuffer).toString('base64');
+    // Infer media type from path extension
+    if (storage_path.endsWith('.png')) mediaType = 'image/png';
+    else if (storage_path.endsWith('.webp')) mediaType = 'image/webp';
+  } else if (body.image) {
+    // Legacy flow: raw base64
+    if (body.image.length > 14_000_000) {
+      return c.json({ error: 'Image too large (max 10MB)' }, 413);
+    }
+    base64Data = body.image;
+    const dataUrlMatch = body.image.match(/^data:(image\/(jpeg|png|webp|gif));base64,/);
+    if (dataUrlMatch) {
+      mediaType = dataUrlMatch[1] as typeof mediaType;
+      base64Data = body.image.slice(dataUrlMatch[0].length);
+    }
+  } else {
+    return c.json({ error: 'storage_path or image (base64) is required' }, 400);
   }
 
   const prompt = `Analyze this food image and estimate the nutritional content.

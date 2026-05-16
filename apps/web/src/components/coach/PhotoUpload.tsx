@@ -40,7 +40,7 @@ export function PhotoUpload({
       const ext = file.name.split('.').pop() ?? 'jpg';
       const path = `${userId}/photo.${ext}`;
       const urlRes = await fetch(
-        `${apiUrl}/storage/upload-url?bucket=coach-kyc&path=${path}`,
+        `/api/storage/upload-url?bucket=coach-kyc&path=${path}`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!urlRes.ok) throw new Error('Upload URL request failed');
@@ -75,6 +75,7 @@ export function PhotoUpload({
             alt="Photo de profil"
             width={96}
             height={96}
+            unoptimized
             className="object-cover w-full h-full"
           />
         ) : (

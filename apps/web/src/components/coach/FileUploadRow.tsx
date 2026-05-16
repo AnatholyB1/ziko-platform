@@ -49,7 +49,7 @@ export function FileUploadRow({
     try {
       const filename = `${docType}-${Date.now()}-${file.name}`;
       const urlRes = await fetch(
-        `${apiUrl}/storage/upload-url?bucket=coach-kyc&path=${userId}/${filename}`,
+        `/api/storage/upload-url?bucket=coach-kyc&path=${userId}/${filename}`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!urlRes.ok) throw new Error('Upload URL failed');

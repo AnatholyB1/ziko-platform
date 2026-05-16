@@ -140,7 +140,16 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ### Pending Todos
 
-None yet.
+- [ ] **UAT T1** — Android : photo scan nutrition fonctionne même si manipulateAsync crash (fallback URI originale)
+- [ ] **UAT T2** — Timer workout : chrono correct après 5 min en background
+- [ ] **UAT T3** — Rest timer : valeur correcte au retour du background, son joué si expiré
+- [ ] **UAT T4** — Séance workout restaurée après forcer-fermeture de l'app
+- [ ] **UAT T5** — Long-press aliment nutrition → déplacer vers autre repas OK
+- [ ] **UAT T6** — Upload photo de profil (galerie + caméra) → affiché dans IdentityCard
+- [ ] **UAT T7** — Preset couleur avatar persisté après Enregistrer
+- [ ] **UAT T8** — Retirer photo de profil → retour aux initiales
+- [ ] **FIX** — Contrat `/ai/vision/nutrition` cassé : backend attend `{ image: base64 }` mais frontend envoie `{ storage_path }` → mettre à jour `backend/api/src/routes/ai.ts` pour lire l'image depuis Supabase Storage
+- [ ] **MIGRATION** — Appliquer migration `038_avatar_color.sql` sur Supabase prod (`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS avatar_color TEXT`)
 
 ### Blockers/Concerns
 

@@ -15,7 +15,22 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
-// Alias workspace packages to their source so Metro can bundle them directly
+// Force React singletons to always resolve from apps/mobile/node_modules.
+// extraNodeModules is a fallback only — resolveRequest truly overrides Metro resolution.
+// Prevents root node_modules/react@19.2.6 (web) from leaking into the mobile bundle.
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'react' || moduleName === 'react-native') {
+    // Resolve as if the import originated from metro.config.js (apps/mobile/)
+    // so Metro walks up to apps/mobile/node_modules first.
+    return context.resolveRequest(
+      { ...context, originModulePath: __filename },
+      moduleName,
+      platform
+    );
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 config.resolver.extraNodeModules = {
   '@ziko/plugin-sdk':       path.resolve(monorepoRoot, 'packages/plugin-sdk/src'),
   '@ziko/ai-client':        path.resolve(monorepoRoot, 'packages/ai-client/src'),
