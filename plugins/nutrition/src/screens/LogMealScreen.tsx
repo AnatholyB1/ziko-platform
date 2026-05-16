@@ -183,15 +183,22 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     // Resize to max 1568px — Anthropic rejects images > 8000px per dimension
-    const resized = await ImageManipulator.manipulateAsync(
-      asset.uri,
-      [{ resize: { width: Math.min(asset.width ?? 1568, 1568) } }],
-      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-    );
-    setScanImage(resized.uri);
+    // Fallback to original URI if native module is incompatible (Fixes ZIKO-MOBILE-2)
+    let imageUri = asset.uri;
+    try {
+      const resized = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: Math.min(asset.width ?? 1568, 1568) } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      imageUri = resized.uri;
+    } catch (e) {
+      console.warn('[Nutrition] Image resize failed, using original:', e);
+    }
+    setScanImage(imageUri);
     setScanResults(null);
     setScanDescription('');
-    analyzeImage(resized.uri);
+    analyzeImage(imageUri);
   };
 
   const analyzeImage = async (uri: string) => {
