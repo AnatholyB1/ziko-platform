@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,13 +13,23 @@ import { useCreditStore } from '../../../src/stores/creditStore';
 
 // ── IdentityCard ─────────────────────────────────────────────
 function IdentityCard({
-  name, level, levelLabel, levelPct, streak, onEdit, onAvatarPress,
+  name, level, levelLabel, levelPct, streak, avatarUrl, avatarColor, onEdit, onAvatarPress,
 }: {
   name: string; level: number; levelLabel: string;
-  levelPct: number; streak: number; onEdit: () => void; onAvatarPress: () => void;
+  levelPct: number; streak: number;
+  avatarUrl: string | null; avatarColor: string | null;
+  onEdit: () => void; onAvatarPress: () => void;
 }) {
   const theme = usePluginThemeStore((s) => s.theme);
-  const initials = name.slice(0, 2).toUpperCase();
+  const initials = name.split(' ').map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'AT';
+  const bgColor = avatarColor
+    ? ({
+        orange: '#FF5C1A', blue: '#2E7BF6', green: '#2E9E5B', violet: '#7B5BD0',
+        red: '#E94B3C', pink: '#E91E63', amber: '#E8A33A', teal: '#2EC4B6',
+        dark: '#1C1A17', gray: '#6B6963', indigo: '#4338CA', rose: '#F43F5E',
+      }[avatarColor] ?? theme.primary)
+    : theme.primary;
+
   return (
     <View style={{
       backgroundColor: theme.cardDark, borderRadius: 20,
@@ -36,13 +46,22 @@ function IdentityCard({
             style={{
               width: 64, height: 64, borderRadius: 32,
               alignItems: 'center', justifyContent: 'center',
-              backgroundColor: theme.primary,
-              shadowColor: theme.primary,
+              backgroundColor: bgColor,
+              shadowColor: bgColor,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.5, shadowRadius: 12,
+              overflow: 'hidden',
             }}
           >
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 22 }}>{initials}</Text>
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={{ width: 64, height: 64, borderRadius: 32 }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 22 }}>{initials}</Text>
+            )}
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: theme.cardDarkText }}>{name}</Text>
@@ -445,6 +464,8 @@ export default function ProfileScreen() {
             levelLabel={levelLabel}
             levelPct={levelPct}
             streak={streak}
+            avatarUrl={profile?.avatar_url ?? null}
+            avatarColor={profile?.avatar_color ?? null}
             onEdit={() => router.push('/(app)/profile/settings')}
             onAvatarPress={() => router.push('/(app)/profile/avatar' as any)}
           />

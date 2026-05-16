@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramExercise } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
+
+const SESSION_KEY = 'workout:activeSession';
 
 interface ActiveSet {
   exerciseId: string;
@@ -64,6 +67,7 @@ interface WorkoutState {
   clearLastCompletedSession: () => void;
   saveSessionNotes: (id: string, notes: string) => void;
 
+  restoreSession: () => Promise<void>;
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   endSession: () => Promise<void>;
   addSet: (set: Omit<ActiveSet, 'completed'>) => void;
@@ -101,6 +105,29 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   setLastCompletedSession: (s) => set({ lastCompletedSession: s }),
   clearLastCompletedSession: () => set({ lastCompletedSession: null }),
   saveSessionNotes: (_id, _notes) => { /* persisted to Supabase in session.tsx before navigation */ },
+
+  // Restore an in-progress session after app restart (fix #19)
+  restoreSession: async () => {
+    try {
+      const raw = await AsyncStorage.getItem(SESSION_KEY);
+      if (!raw) return;
+      const session = JSON.parse(raw) as WorkoutSession;
+      // Validate the session still exists and is not ended
+      const { data } = await supabase
+        .from('workout_sessions')
+        .select('*')
+        .eq('id', session.id)
+        .is('ended_at', null)
+        .single();
+      if (data) {
+        set({ currentSession: data as WorkoutSession });
+      } else {
+        await AsyncStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      await AsyncStorage.removeItem(SESSION_KEY);
+    }
+  },
 
   startSession: async (programWorkoutId, name) => {
     const user = useAuthStore.getState().user;
@@ -158,7 +185,9 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .single();
 
     if (!error && data) {
-      set({ currentSession: data as WorkoutSession, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
+      const session = data as WorkoutSession;
+      set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
+      AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session)).catch(() => {});
     }
   },
 
@@ -182,6 +211,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       }
     });
 
+    AsyncStorage.removeItem(SESSION_KEY).catch(() => {});
     set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },
 

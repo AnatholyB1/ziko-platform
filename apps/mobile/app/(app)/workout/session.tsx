@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions, Vibration, Modal,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Dimensions, Vibration, Modal, AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -297,6 +297,12 @@ export default function WorkoutSessionScreen() {
   const [restTimer, setRestTimer] = useState(0);
   const [restTimerMax, setRestTimerMax] = useState(0);
   const restRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
+  // ── Background correction refs (fix #18 — timer stops in background) ──
+  const sessionStartRef = useRef(Date.now());
+  const restEndRef = useRef<number | null>(null);
+  const elapsedRef = useRef(0);
+  const restTimerRef = useRef(0);
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [showRPEModal, setShowRPEModal] = useState(false);
 
@@ -360,6 +366,36 @@ export default function WorkoutSessionScreen() {
     }
     return () => clearInterval(restRef.current);
   }, [restTimer > 0]);
+
+  // Keep refs in sync for AppState handler
+  useEffect(() => { elapsedRef.current = elapsed; }, [elapsed]);
+  useEffect(() => { restTimerRef.current = restTimer; }, [restTimer]);
+
+  // Correct timers when app returns from background (fix #18)
+  useEffect(() => {
+    sessionStartRef.current = Date.now() - elapsed * 1000;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background' || state === 'inactive') {
+        sessionStartRef.current = Date.now() - elapsedRef.current * 1000;
+        restEndRef.current = restTimerRef.current > 0
+          ? Date.now() + restTimerRef.current * 1000
+          : null;
+      } else if (state === 'active') {
+        const newElapsed = Math.round((Date.now() - sessionStartRef.current) / 1000);
+        setElapsed(newElapsed);
+        if (restEndRef.current !== null) {
+          const remaining = Math.max(0, Math.round((restEndRef.current - Date.now()) / 1000));
+          setRestTimer(remaining);
+          if (remaining === 0) {
+            playSound('complete');
+            Vibration.vibrate([0, 400, 200, 400]);
+            restEndRef.current = null;
+          }
+        }
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   // ── Initialize tracked sets from program ───────────────
   useEffect(() => {

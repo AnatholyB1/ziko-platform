@@ -104,6 +104,7 @@ export interface UserProfile {
   goal: FitnessGoal | null;
   units: 'metric' | 'imperial';
   avatar_url: string | null;
+  avatar_color: string | null;
   onboarding_done: boolean;
 }
 

@@ -66,6 +66,21 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
     ]);
   };
 
+  const moveMeal = (id: string, currentType: MealType) => {
+    const others = MEAL_TYPES.filter((m) => m !== currentType);
+    showAlert(t('nutrition.moveEntry') ?? 'Déplacer vers', '', [
+      { text: t('general.cancel'), style: 'cancel' },
+      ...others.map((mt) => ({
+        text: `${MEAL_ICONS[mt]} ${tMeal(mt)}`,
+        onPress: async () => {
+          await supabase.from('nutrition_logs').update({ meal_type: mt }).eq('id', id);
+          await loadLogs();
+        },
+      })),
+      { text: `🗑 ${t('general.remove')}`, style: 'destructive' as const, onPress: () => deleteLog(id) },
+    ]);
+  };
+
   const onRefresh = async () => { setRefreshing(true); await loadLogs(); setRefreshing(false); };
 
   const totals = todayLogs.reduce(
@@ -294,7 +309,7 @@ export default function NutritionDashboard({ supabase }: { supabase: any }) {
               <Text style={{ color: theme.muted, fontSize: 13, paddingLeft: 4 }}>{t('nutrition.nothingLogged')}</Text>
             ) : (
               mealGroups[mealType].map((log) => (
-                <TouchableOpacity key={log.id} onLongPress={() => deleteLog(log.id)}
+                <TouchableOpacity key={log.id} onLongPress={() => moveMeal(log.id, log.meal_type as MealType)}
                   style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14 }}>{log.food_name}</Text>
