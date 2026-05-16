@@ -1,6 +1,7 @@
 'use client';
 import { useActionState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { loginAction, type LoginState } from '@/actions/login';
 import { motion } from 'framer-motion';
 import { fadeUp, ctaHover, ctaTap } from '@/lib/motion';
@@ -10,16 +11,18 @@ const initialState: LoginState = { status: 'idle', message: '' };
 export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const locale = useLocale();
   const next = searchParams.get('next');
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   // Handle success redirect client-side — redirect() in Server Actions used with useActionState
   // throws internally and gets caught, preventing navigation (RESEARCH Pitfall 6).
+  // Prepend locale prefix because loginAction returns locale-less paths (e.g. /coach/dashboard).
   useEffect(() => {
     if (state.status === 'success' && state.redirectTo) {
-      router.push(state.redirectTo);
+      router.push(`/${locale}${state.redirectTo}`);
     }
-  }, [state, router]);
+  }, [state, router, locale]);
 
   return (
     <motion.div
