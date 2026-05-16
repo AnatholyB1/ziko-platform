@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: executing
-stopped_at: Phase 23 complete, ready to discuss Phase 24 (2026-05-15)
-last_updated: "2026-05-15T13:00:00.000Z"
-last_activity: 2026-05-15
+stopped_at: Phase 24 complete, ready to discuss Phase 25 (2026-05-16)
+last_updated: "2026-05-16T10:00:00.000Z"
+last_activity: 2026-05-16
 progress:
   total_phases: 10
-  completed_phases: 2
-  total_plans: 12
-  completed_plans: 12
-  percent: 20
+  completed_phases: 3
+  total_plans: 18
+  completed_plans: 18
+  percent: 30
 ---
 
 # Project State
@@ -21,17 +21,29 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 24 (Coach Identity & Onboarding) — ready for `/gsd-discuss-phase 24`
+**Current focus:** v1.5 Coach Platform & CRM — Phase 25 (Invitations & Mobile "Mon coach" Minimal) — ready for `/gsd-discuss-phase 25`
 
 ## Current Position
 
-Phase: 24 — Coach Identity & Onboarding
+Phase: 25 — Invitations & Mobile "Mon coach" Minimal
 Plan: Not started
-Status: Ready to discuss — Phase 23 complete (2026-05-15)
+Status: Ready to discuss — Phase 24 complete (2026-05-16)
 
 ---
 
 ## Previous Phase (complete)
+
+Phase: 24 — Coach Identity & Onboarding
+Plan: 6 plans + GAP, **7/7 complete** (2026-05-16)
+Status: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
+Last activity: 2026-05-16
+Resume file: None
+
+Phase 23: **Phase 23 COMPLETE (2026-05-15).** 8/8 plans. Monorepo path (git subtree merge), @supabase/ssr dual-store auth, (coach) route group, packages/coach-sdk Zod schemas, Vercel Pro, CI/CD pipeline.
+
+Phase 22: **Phase 22 VERIFIED (PASS, 2026-05-14).** 4/4 plans. Migrations 034–036, is_coach_of() function, 11 cross-user RLS policies, 47/47 tests pass.
+
+---
 
 Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
 Plan: 8 plans (waves 0–8), **8/8 complete** (02b fallback not needed)
@@ -144,6 +156,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-15T13:00:00.000Z
-Stopped at: Phase 23 complete, ready to plan Phase 24 (Coach Identity & Onboarding)
+Last session: 2026-05-16T10:00:00.000Z
+Stopped at: Phase 24 complete, ready to discuss Phase 25 (Invitations & Mobile "Mon coach" Minimal)
 Resume file: None

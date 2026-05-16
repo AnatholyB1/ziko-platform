@@ -184,6 +184,9 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | @supabase/ssr dual-store cookie pattern (request + response) | Fresh tokens must propagate to downstream Server Components; stale JWT on locale redirects causes auth loops | v1.5 Phase 23 ✓ |
 | coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup | Prevents zod-instance drift across workspace; CJS bundle 3.6 KB (zod not inlined); T-23-03-02 mitigated | v1.5 Phase 23 ✓ |
 | (coach) route group with hard-coded redirect('/fr/login') | No searchParams.next interpolation prevents open-redirect (T-23-06-01 Tampering); Server Action independently re-calls getUser() for TOCTOU defense | v1.5 Phase 23 ✓ |
+| NEXT_PUBLIC_API_URL must be set in apps/web | Missing env var caused "Failed to fetch" on /storage/upload-url — component fell back to localhost:3000 (unreachable in production). Added to apps/web/.env. | v1.5 Phase 24 ✓ |
+| Marketing pages isolated in (marketing) route group | locale root layout rendered sticky `<Header />` unconditionally — coach pages inherited it, causing CoachSidebar to slide behind. Moving marketing pages to `[locale]/(marketing)/layout.tsx` strips Header/Footer from all coach routes cleanly. | v1.5 Phase 24 ✓ |
+| loginAction uses `getLocale()` + `/${locale}/` prefix on all redirects | loginAction returned hardcoded locale-less paths ('/coach/onboarding') causing 404 in next-intl; all redirects now prefixed dynamically. | v1.5 Phase 24 ✓ |
 
 ## Evolution
 
@@ -203,4 +206,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-15 — Phase 23 complete: Web Turborepo Onboarding & Auth Bootstrap*
+*Last updated: 2026-05-16 — Phase 24 complete: Coach Identity & Onboarding*
