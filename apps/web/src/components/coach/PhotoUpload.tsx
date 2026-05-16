@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
+import { createClientSupabase } from '@/lib/supabase/client';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -42,13 +43,17 @@ export function PhotoUpload({
         `${apiUrl}/storage/upload-url?bucket=coach-kyc&path=${path}`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
-      if (!urlRes.ok) throw new Error();
-      const { upload_url } = await urlRes.json() as { upload_url: string };
-      const putRes = await fetch(upload_url, { method: 'PUT', body: file });
-      if (!putRes.ok) throw new Error();
+      if (!urlRes.ok) throw new Error('Upload URL request failed');
+      const { path: uploadPath, token } = await urlRes.json() as { upload_url: string; path: string; token: string };
+      const supabase = createClientSupabase();
+      const { error: uploadError } = await supabase.storage
+        .from('coach-kyc')
+        .uploadToSignedUrl(uploadPath, token, file);
+      if (uploadError) throw uploadError;
       // Store PATH (not signed URL) — see RESEARCH Pitfall 7
-      onUploaded(path);
-    } catch {
+      onUploaded(uploadPath);
+    } catch (err) {
+      console.error('[PhotoUpload] upload failed:', err);
       setError('Échec du transfert. Réessayez.');
       setPreview(null);
     } finally {

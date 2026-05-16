@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { createClientSupabase } from '@/lib/supabase/client';
 
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -52,9 +53,12 @@ export function FileUploadRow({
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!urlRes.ok) throw new Error('Upload URL failed');
-      const { upload_url, path } = await urlRes.json() as { upload_url: string; path: string };
-      const putRes = await fetch(upload_url, { method: 'PUT', body: file });
-      if (!putRes.ok) throw new Error('Upload failed');
+      const { path, token } = await urlRes.json() as { upload_url: string; path: string; token: string };
+      const supabase = createClientSupabase();
+      const { error: uploadError } = await supabase.storage
+        .from('coach-kyc')
+        .uploadToSignedUrl(path, token, file);
+      if (uploadError) throw uploadError;
       // Store path (not signed URL) — Pitfall 7: signed URLs expire
       onUploaded({
         type: docType,
@@ -62,7 +66,8 @@ export function FileUploadRow({
         uploaded_at: new Date().toISOString(),
         filename: file.name,
       });
-    } catch {
+    } catch (err) {
+      console.error('[FileUploadRow] upload failed:', err);
       setError('Échec du transfert. Réessayez.');
     } finally {
       setUploading(false);
