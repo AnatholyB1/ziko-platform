@@ -91,6 +91,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   // Barcode tab state
   const [permission, requestPermission] = useCameraPermissions();
   const scannedRef = useRef(false);
+  const scanScrollRef = useRef<ScrollView>(null);
   const [barcodeProduct, setBarcodeProduct] = useState<FoodProduct | null>(null);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
   const [barcodeScannedCode, setBarcodeScannedCode] = useState('');
@@ -195,11 +196,18 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     } catch (e) {
       console.warn('[Nutrition] Image resize failed, using original:', e);
     }
-    setScanImage(imageUri);
     setScanResults(null);
     setScanDescription('');
-    analyzeImage(imageUri);
+    setScanImage(imageUri); // set last so useEffect triggers after image is visible
   };
+
+  // Trigger analysis after scanImage is painted on screen (rAF waits for actual paint)
+  useEffect(() => {
+    if (!scanImage) return;
+    const raf = requestAnimationFrame(() => analyzeImage(scanImage));
+    return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanImage]);
 
   const analyzeImage = async (uri: string) => {
     setAnalyzing(true);
@@ -261,6 +269,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       const data = await res.json();
       setScanResults(data.foods ?? []);
       setScanDescription(data.description ?? '');
+      setTimeout(() => scanScrollRef.current?.scrollTo({ y: 300, animated: true }), 100);
     } catch (e: any) {
       showAlert(t('general.error'), e.message || 'Network error');
     }
@@ -430,7 +439,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
             )}
           </View>
         ) : tab === 'scan' ? (
-          <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView ref={scanScrollRef} style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 100 }}>
             {!scanImage ? (
               <View style={{ alignItems: 'center', paddingTop: 40 }}>
                 <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>

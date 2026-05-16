@@ -340,7 +340,14 @@ router.post('/vision/nutrition', creditCheck('scan'), creditDeduct('scan'), asyn
 
   if (storage_path) {
     // New flow: download from Supabase Storage → base64
-    const { data, error } = await supabase.storage
+    // Use user's Bearer token so scan_photos_read RLS (auth.uid() = folder) passes
+    const userToken = c.req.header('Authorization')?.replace('Bearer ', '') ?? '';
+    const userSupabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { global: { headers: { Authorization: `Bearer ${userToken}` } }, auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const { data, error } = await userSupabase.storage
       .from('scan-photos')
       .download(storage_path);
     if (error || !data) {

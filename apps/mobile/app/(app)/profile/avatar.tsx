@@ -77,13 +77,15 @@ export default function AvatarUploadScreen() {
       // fallback to original if manipulator fails (Android compat)
     }
 
-    const response = await fetch(finalUri);
-    const blob = await response.blob();
     const path = `${user.id}/avatar.jpg`;
+
+    // FormData approach — fetch(localUri).blob() fails on Android physical devices
+    const formData = new FormData();
+    formData.append('file', { uri: finalUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
 
     const { error } = await supabase.storage
       .from('avatars')
-      .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      .upload(path, formData, { upsert: true, contentType: 'image/jpeg' });
 
     if (error) {
       console.warn('[Avatar] Storage upload error:', error.message);
