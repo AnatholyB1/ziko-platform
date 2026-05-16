@@ -201,11 +201,14 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     setScanImage(imageUri); // set last so useEffect triggers after image is visible
   };
 
-  // Trigger analysis after scanImage is painted on screen (rAF waits for actual paint)
+  // Trigger analysis after scanImage is committed to native — rAF fires before native paint on RN,
+  // so use setTimeout to give the bridge time to render the Image before the spinner appears.
+  // Also scroll to top to ensure the image is visible (ScrollView may retain old scroll position).
   useEffect(() => {
     if (!scanImage) return;
-    const raf = requestAnimationFrame(() => analyzeImage(scanImage));
-    return () => cancelAnimationFrame(raf);
+    scanScrollRef.current?.scrollTo({ y: 0, animated: false });
+    const timer = setTimeout(() => analyzeImage(scanImage), 500);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanImage]);
 
