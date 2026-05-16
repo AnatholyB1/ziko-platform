@@ -2,13 +2,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import { redirect } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { WelcomeCard } from '@/components/coach/WelcomeCard';
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/fr/login');
+  const [{ data: { user } }, locale] = await Promise.all([supabase.auth.getUser(), getLocale()]);
+  if (!user) redirect(`/${locale}/login`);
 
   const { data: profile } = await supabase
     .from('coach_profiles')

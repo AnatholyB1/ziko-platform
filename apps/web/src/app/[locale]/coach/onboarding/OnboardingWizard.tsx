@@ -1,5 +1,6 @@
 'use client';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { createClientSupabase } from '@/lib/supabase/client';
 import { WizardProgress } from '@/components/coach/WizardProgress';
@@ -12,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 export function OnboardingWizard() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const locale = useLocale();
   const step = Math.min(3, Math.max(1, parseInt(searchParams.get('step') ?? '1', 10)));
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function OnboardingWizard() {
       const session = result.data.session;
       if (!session) {
         // D-06: step 1 requires auth — redirect to login with ?next= for resume
-        router.push('/fr/login?next=/coach/onboarding');
+        router.push(`/${locale}/login?next=/coach/onboarding`);
         setAuthChecked(true);
         return;
       }
@@ -42,7 +44,7 @@ export function OnboardingWizard() {
         .then((profileResult: { data: { role: string } | null }) => {
           const p = profileResult.data;
           if (p?.role === 'coach' || p?.role === 'both') {
-            if (step === 1) router.push('/coach/dashboard');
+            if (step === 1) router.push(`/${locale}/coach/dashboard`);
           }
           setCurrentRole(p?.role ?? 'client');
         });
@@ -53,7 +55,7 @@ export function OnboardingWizard() {
   if (!authChecked) return <div className="text-sm font-normal text-muted text-center py-8">Chargement…</div>;
   if (!userId || !jwt) return null; // redirect in progress
 
-  const goToStep = (n: number) => router.push(`/coach/onboarding?step=${n}`);
+  const goToStep = (n: number) => router.push(`/${locale}/coach/onboarding?step=${n}`);
 
   return (
     <div className="max-w-lg w-full mx-auto py-12 px-4">
@@ -79,8 +81,8 @@ export function OnboardingWizard() {
           userId={userId}
           apiUrl={API_URL}
           jwt={jwt}
-          onSuccess={() => router.push('/coach/dashboard')}
-          onSkip={() => router.push('/coach/dashboard')}
+          onSuccess={() => router.push(`/${locale}/coach/dashboard`)}
+          onSkip={() => router.push(`/${locale}/coach/dashboard`)}
         />
       )}
     </div>
