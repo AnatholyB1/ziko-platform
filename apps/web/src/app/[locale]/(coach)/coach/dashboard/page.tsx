@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   const kycStatus = profile?.kyc_status ?? 'pending';
 
   return (
-    <div className="max-w-2xl">
+    <div className="flex flex-col gap-8">
       <WelcomeCard displayName={displayName} kycStatus={kycStatus} />
     </div>
   );
