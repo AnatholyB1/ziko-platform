@@ -2,7 +2,7 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import type { CoachPreviewPayload } from '@ziko/coach-sdk';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 type PreviewResult =
   | { ok: true; preview: CoachPreviewPayload }
@@ -14,6 +14,9 @@ type RedeemResult =
 
 async function getBearer(): Promise<string | null> {
   const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  // getSession() after getUser() succeeds is safe — session is now refreshed in memory
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
 }
@@ -29,7 +32,8 @@ export async function previewCodeAction(code: string): Promise<PreviewResult> {
       body: JSON.stringify({ code }),
       cache: 'no-store',
     });
-  } catch {
+  } catch (e) {
+    console.error('[redeem/actions] previewCodeAction fetch failed:', e);
     return { ok: false, error_code: 'NETWORK' };
   }
   if (res.status === 429) return { ok: false, error_code: 'RATE_LIMITED' };
@@ -49,7 +53,8 @@ export async function redeemCodeAction(code: string): Promise<RedeemResult> {
       body: JSON.stringify({ code }),
       cache: 'no-store',
     });
-  } catch {
+  } catch (e) {
+    console.error('[redeem/actions] redeemCodeAction fetch failed:', e);
     return { ok: false, error_code: 'NETWORK' };
   }
   if (res.status === 429) return { ok: false, error_code: 'RATE_LIMITED' };
@@ -70,7 +75,8 @@ export async function revokeLinkAction(id: string): Promise<{ ok: boolean }> {
       cache: 'no-store',
     });
     return { ok: res.ok };
-  } catch {
+  } catch (e) {
+    console.error('[redeem/actions] revokeLinkAction fetch failed:', e);
     return { ok: false };
   }
 }
@@ -87,8 +93,11 @@ export async function fetchActiveLinkAction(): Promise<{
       cache: 'no-store',
     });
     if (!res.ok) return { link: null, preview: null };
-    return res.json();
-  } catch {
+    const body = await res.json().catch(() => null);
+    if (!body) return { link: null, preview: null };
+    return { link: body.link ?? null, preview: body.preview ?? null };
+  } catch (e) {
+    console.error('[redeem/actions] fetchActiveLinkAction fetch failed:', e);
     return { link: null, preview: null };
   }
 }
