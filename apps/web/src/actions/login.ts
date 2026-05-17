@@ -23,9 +23,9 @@ const NEXT_PARAM_ALLOWLIST = [
 //   '/r/aaaaaa' (lowercase)
 //   '/r/ABCDEF7' (7 chars)
 //   '/r/../admin' (path traversal)
-const REDEEM_DEEPLINK_RE = /^\/r\/[A-Z2-9]{6}$/;
+export const REDEEM_DEEPLINK_RE = /^\/r\/[A-Z2-9]{6}$/;
 
-function safeNext(next: string | null): string {
+export function safeNext(next: string | null): string {
   if (!next) return '/coach/dashboard';
   if (NEXT_PARAM_ALLOWLIST.includes(next as typeof NEXT_PARAM_ALLOWLIST[number])) return next;
   if (REDEEM_DEEPLINK_RE.test(next)) return next;
