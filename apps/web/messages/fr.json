@@ -145,6 +145,8 @@
     "profileSection": "Informations du profil",
     "kycSection": "Documents de vérification",
     "saveCta": "Enregistrer les modifications",
+    "saving": "Enregistrement…",
+    "loading": "Chargement…",
     "saveSuccess": "Profil mis à jour.",
     "saveError": "Impossible de sauvegarder. Réessayez."
   },

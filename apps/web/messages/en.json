@@ -145,6 +145,8 @@
     "profileSection": "Profile information",
     "kycSection": "Verification documents",
     "saveCta": "Save changes",
+    "saving": "Saving…",
+    "loading": "Loading…",
     "saveSuccess": "Profile updated.",
     "saveError": "Could not save. Please try again."
   },
