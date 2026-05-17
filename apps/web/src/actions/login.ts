@@ -14,12 +14,21 @@ const NEXT_PARAM_ALLOWLIST = [
   '/coach/onboarding',
   '/coach/dashboard',
   '/coach/settings',
+  '/redeem',
 ] as const;
 
+// Phase 25 — dynamic short deep-link: /r/<6 chars from [A-Z2-9]>
+// Anchored ^ and $ + exact DB CHECK alphabet — rejects:
+//   'https://evil.com/r/AAAAAA' (no leading /)
+//   '/r/aaaaaa' (lowercase)
+//   '/r/ABCDEF7' (7 chars)
+//   '/r/../admin' (path traversal)
+const REDEEM_DEEPLINK_RE = /^\/r\/[A-Z2-9]{6}$/;
+
 function safeNext(next: string | null): string {
-  if (next && NEXT_PARAM_ALLOWLIST.includes(next as typeof NEXT_PARAM_ALLOWLIST[number])) {
-    return next;
-  }
+  if (!next) return '/coach/dashboard';
+  if (NEXT_PARAM_ALLOWLIST.includes(next as typeof NEXT_PARAM_ALLOWLIST[number])) return next;
+  if (REDEEM_DEEPLINK_RE.test(next)) return next;
   return '/coach/dashboard';
 }
 
