@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-17T17:50:00Z",
+  "phase": "25",
+  "phase_name": "invitations-mobile-mon-coach-minimal",
+  "phase_dir": ".planning/phases/25-invitations-mobile-mon-coach-minimal",
+  "plan": 8,
+  "task": 8,
+  "total_tasks": 8,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "25-01 DB migrations: coach_invitations + coach_client_links", "status": "done"},
+    {"id": 2, "name": "25-02 Backend API: preview/redeem/revoke routes", "status": "done"},
+    {"id": 3, "name": "25-03 Web: InvitationCodeCard + invitations page", "status": "done"},
+    {"id": 4, "name": "25-04 Web: /redeem RedeemStateMachine (States A/B/C)", "status": "done"},
+    {"id": 5, "name": "25-05 Web: /r/[code] deep-link handler", "status": "done"},
+    {"id": 6, "name": "25-06 Security: safeNext open-redirect prevention", "status": "done"},
+    {"id": 7, "name": "25-07a Mobile: Mon Coach tab (State A empty)", "status": "done"},
+    {"id": 8, "name": "25-07b Mobile: Mon Coach tab (State B/C preview+revoke)", "status": "done"}
+  ],
+  "remaining_tasks": [
+    {"id": 9, "name": "Fix focus trap in revoke modal (gaps-only)", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Run /gsd-execute-phase 25 --gaps-only to fix focus trap in revoke modal", "context": "Tab escapes modal after last focusable element instead of wrapping back to input", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "login.ts: removed export from REDEEM_DEEPLINK_RE and safeNext", "rationale": "use server files only allow async function exports; neither was imported externally", "phase": "25"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "/gsd-execute-phase 25 --gaps-only — fix focus trap in revoke modal (minor, 1 gap)",
+  "context_notes": "Phase 25 fully executed. UAT ran this session via automated browser verification. One minor gap: Tab focus trap in RevokeModal doesn't wrap. Build error in login.ts was found and fixed mid-UAT."
+}
