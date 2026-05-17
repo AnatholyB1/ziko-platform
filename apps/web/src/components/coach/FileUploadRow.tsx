@@ -6,7 +6,7 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export interface UploadedDoc {
-  type: 'certification' | 'id_document' | 'other';
+  type: 'certification' | 'id_recto' | 'id_verso' | 'other';
   url: string;
   uploaded_at: string;
   filename?: string;
@@ -22,7 +22,7 @@ export function FileUploadRow({
   uploaded,
   onRemove,
 }: {
-  docType: 'certification' | 'id_document' | 'other';
+  docType: 'certification' | 'id_recto' | 'id_verso' | 'other';
   label: string;
   userId: string;
   apiUrl: string;

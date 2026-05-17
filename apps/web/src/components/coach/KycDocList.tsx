@@ -4,7 +4,8 @@ import { FileUploadRow, type UploadedDoc } from './FileUploadRow';
 
 const DOC_TYPES: Array<{ type: UploadedDoc['type']; label: string }> = [
   { type: 'certification', label: 'Ajouter une certification' },
-  { type: 'id_document', label: "Ajouter une pièce d'identité" },
+  { type: 'id_recto', label: "Carte d'identité — recto" },
+  { type: 'id_verso', label: "Carte d'identité — verso" },
   { type: 'other', label: 'Ajouter un autre document' },
 ];
 
@@ -28,7 +29,7 @@ export function KycDocList({
     onChange(newDocs);
   };
 
-  const isAtMax = docs.length >= 3;
+  const isAtMax = docs.length >= 4;
 
   return (
     <div className="flex flex-col gap-2">

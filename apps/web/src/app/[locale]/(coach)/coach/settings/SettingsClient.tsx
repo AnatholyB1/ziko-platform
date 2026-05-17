@@ -29,6 +29,9 @@ export function SettingsClient({
 
   const [profileState, profileAction, profilePending] = useActionState(saveProfile, profileInitial);
   const [kycState, kycAction, kycPending] = useActionState(saveKyc, kycInitial);
+  const [kycDocs, setKycDocs] = useState(
+    (initialProfile?.kyc_docs as Parameters<typeof KycDocList>[0]['initial']) ?? []
+  );
 
   if (!jwt) return <div className="text-sm font-normal text-muted">Chargement…</div>;
 
@@ -79,12 +82,13 @@ export function SettingsClient({
           <KycStatusChip status={(initialProfile?.kyc_status as string) ?? 'pending'} />
         </div>
         <form action={kycAction}>
+          <input type="hidden" name="kyc_docs" value={JSON.stringify(kycDocs)} />
           <KycDocList
             userId={userId}
             apiUrl={API_URL}
             jwt={jwt}
-            initial={(initialProfile?.kyc_docs as Parameters<typeof KycDocList>[0]['initial']) ?? []}
-            onChange={() => {}}
+            initial={kycDocs}
+            onChange={setKycDocs}
           />
           {kycState.status !== 'idle' && (
             <p
