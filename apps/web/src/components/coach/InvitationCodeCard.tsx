@@ -39,7 +39,7 @@ export function InvitationCodeCard({
   return (
     <div className="bg-white rounded-2xl px-10 py-8 border border-border shadow-sm">
       <div className="text-xs font-semibold text-muted uppercase tracking-wide">
-        {t('table.code')}
+        {t('cardLabel')}
       </div>
       <div className="text-4xl font-bold font-mono tabular-nums text-text tracking-widest mt-2">
         {code}

@@ -43,7 +43,7 @@ export function InvitationsTable({
 
       {visibleRows.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-xl font-bold text-text">{t('emptyHeading')}</div>
+          <div className="text-base font-semibold text-text">{t('emptyHeading')}</div>
           <div className="text-sm text-muted mt-2 max-w-md mx-auto">{t('emptyBody')}</div>
         </div>
       ) : (
@@ -69,7 +69,7 @@ export function InvitationsTable({
                 </td>
                 <td className="py-3 px-4">
                   <span
-                    className={`inline-flex items-center text-xs font-bold rounded-full px-3 py-1 border ${STATUS_CHIP[r.status]}`}
+                    className={`inline-flex items-center text-xs font-semibold rounded-full px-3 py-1 border ${STATUS_CHIP[r.status]}`}
                   >
                     {t(`status.${r.status}`)}
                   </span>

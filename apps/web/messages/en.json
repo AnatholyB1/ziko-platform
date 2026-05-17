@@ -166,6 +166,7 @@
   "CoachInvitations": {
     "title": "Invitations",
     "generateCta": "Generate a code",
+    "cardLabel": "Invitation code",
     "panelSubmit": "Generate",
     "copyCode": "Copy code",
     "copyLink": "Copy link",
