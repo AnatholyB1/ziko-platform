@@ -27,6 +27,7 @@ export function RevokeConfirmModal({
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -36,7 +37,20 @@ export function RevokeConfirmModal({
     }
     firstFieldRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Escape') { onCancel(); return; }
+      if (e.key === 'Tab') {
+        const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+          'input, button:not([disabled])'
+        );
+        if (!focusable || focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -56,7 +70,7 @@ export function RevokeConfirmModal({
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-border shadow-lg">
+      <div ref={dialogRef} className="bg-white rounded-2xl p-8 max-w-md w-full border border-border shadow-lg">
         <h2 id="revoke-modal-title" className="text-xl font-bold text-text">
           {title}
         </h2>
