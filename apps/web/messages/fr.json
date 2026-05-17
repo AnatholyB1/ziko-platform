@@ -159,5 +159,88 @@
     "errorMaxDocs": "Maximum 3 documents. Supprimez-en un pour ajouter un autre.",
     "success": "Document ajouté.",
     "error": "Échec du transfert. Réessayez."
+  },
+  "CoachInvitations": {
+    "title": "Invitations",
+    "generateCta": "Générer un code",
+    "panelSubmit": "Générer",
+    "copyCode": "Copier le code",
+    "copyLink": "Copier le lien",
+    "expiration": {
+      "7d": "7j",
+      "14d": "14j",
+      "30d": "30j",
+      "never": "Sans expiration"
+    },
+    "expiresOn": "Expire le {date}",
+    "noExpiry": "Sans expiration",
+    "filter": {
+      "active": "Actives",
+      "all": "Toutes"
+    },
+    "table": {
+      "code": "Code",
+      "createdAt": "Créé le",
+      "expiresAt": "Expire le",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Actif",
+      "used": "Utilisé",
+      "expired": "Expiré",
+      "revoked": "Révoqué"
+    },
+    "revokeCta": "Révoquer",
+    "noRevoke": "—",
+    "revokeModal": {
+      "title": "Révoquer cette invitation ?",
+      "body": "Ce code sera immédiatement désactivé et ne pourra plus être utilisé par aucun athlète.",
+      "confirmLabel": "Tapez \"COACH\" pour confirmer",
+      "confirmCta": "Révoquer",
+      "cancel": "Annuler"
+    },
+    "emptyHeading": "Aucun code généré",
+    "emptyBody": "Générez votre premier code d'invitation et partagez-le avec un athlète.",
+    "shareUrlBase": "https://ziko-app.com/r/"
+  },
+  "CoachRedeem": {
+    "stateA": {
+      "heading": "Rejoignez votre coach",
+      "body": "Entrez le code de 6 caractères fourni par votre coach.",
+      "submit": "Valider",
+      "inputLabel": "Code d'invitation",
+      "inputPlaceholder": "XXXXXX"
+    },
+    "stateB": {
+      "back": "← Entrer un autre code",
+      "link": "Lier mon compte",
+      "cancel": "Annuler"
+    },
+    "stateC": {
+      "banner": "Vous êtes lié à {displayName} depuis le {date}",
+      "revoke": "Retirer ce coach"
+    },
+    "kyc": {
+      "verified": "Vérifié",
+      "pending": "En attente"
+    },
+    "bioMore": "Voir plus",
+    "bioLess": "Voir moins",
+    "successToast": "Vous êtes maintenant lié à {displayName}.",
+    "revokeModal": {
+      "title": "Retirer ce coach ?",
+      "body": "{displayName} perdra immédiatement l'accès en lecture à vos données.",
+      "confirmLabel": "Tapez \"COACH\" pour confirmer",
+      "confirmCta": "Retirer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "invalidOrExpired": "Ce code n'est pas valide ou a expiré.",
+      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes."
+    }
+  },
+  "Sidebar": {
+    "invitations": "Invitations"
   }
 }

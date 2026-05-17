@@ -159,5 +159,88 @@
     "errorMaxDocs": "Maximum 3 documents. Remove one to add another.",
     "success": "Document added.",
     "error": "Upload failed. Please try again."
+  },
+  "CoachInvitations": {
+    "title": "Invitations",
+    "generateCta": "Generate a code",
+    "panelSubmit": "Generate",
+    "copyCode": "Copy code",
+    "copyLink": "Copy link",
+    "expiration": {
+      "7d": "7d",
+      "14d": "14d",
+      "30d": "30d",
+      "never": "No expiry"
+    },
+    "expiresOn": "Expires {date}",
+    "noExpiry": "No expiry",
+    "filter": {
+      "active": "Active",
+      "all": "All"
+    },
+    "table": {
+      "code": "Code",
+      "createdAt": "Created",
+      "expiresAt": "Expires",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "used": "Used",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "revokeCta": "Revoke",
+    "noRevoke": "—",
+    "revokeModal": {
+      "title": "Revoke this invitation?",
+      "body": "This code will be deactivated immediately and can no longer be used by any athlete.",
+      "confirmLabel": "Type \"COACH\" to confirm",
+      "confirmCta": "Revoke",
+      "cancel": "Cancel"
+    },
+    "emptyHeading": "No codes generated",
+    "emptyBody": "Generate your first invitation code and share it with an athlete.",
+    "shareUrlBase": "https://ziko-app.com/r/"
+  },
+  "CoachRedeem": {
+    "stateA": {
+      "heading": "Join your coach",
+      "body": "Enter the 6-character code from your coach.",
+      "submit": "Submit",
+      "inputLabel": "Invitation code",
+      "inputPlaceholder": "XXXXXX"
+    },
+    "stateB": {
+      "back": "← Enter another code",
+      "link": "Link my account",
+      "cancel": "Cancel"
+    },
+    "stateC": {
+      "banner": "You are linked to {displayName} since {date}",
+      "revoke": "Remove this coach"
+    },
+    "kyc": {
+      "verified": "Verified",
+      "pending": "Pending"
+    },
+    "bioMore": "Read more",
+    "bioLess": "Read less",
+    "successToast": "You are now linked to {displayName}.",
+    "revokeModal": {
+      "title": "Remove this coach?",
+      "body": "{displayName} will immediately lose read access to your data.",
+      "confirmLabel": "Type \"COACH\" to confirm",
+      "confirmCta": "Remove",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "invalidOrExpired": "This code is invalid or has expired.",
+      "rateLimited": "Too many attempts. Try again in a few minutes."
+    }
+  },
+  "Sidebar": {
+    "invitations": "Invitations"
   }
 }
