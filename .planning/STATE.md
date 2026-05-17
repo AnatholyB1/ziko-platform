@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: in_progress
-stopped_at: Phase 25 planned — 8 plans across 4 waves, ready to execute
-last_updated: "2026-05-17T13:00:00.000Z"
+status: ready
+stopped_at: null
+last_updated: "2026-05-17T20:00:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 10
-  completed_phases: 2
+  completed_phases: 4
   total_plans: 28
-  completed_plans: 19
-  percent: 68
+  completed_plans: 28
+  percent: 100
 ---
 
 # Project State
@@ -21,23 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 25 (Invitations & Mobile "Mon coach" Minimal — web-only loop per D-01 + Phase 24 refonte folded in) — ready for `/gsd-execute-phase 25`
+**Current focus:** v1.5 Coach Platform & CRM — Phase 26 (CRM Client Management) — ready for `/gsd-discuss-phase 26`
 
 ## Current Position
 
-Phase: 25 — Invitations & Mobile "Mon coach" Minimal
-Plan: 8 plans (25-01 → 25-07b) in 4 waves, all verified by plan-checker (iteration 2/3 PASSED)
-Status: Ready to execute — `/gsd-execute-phase 25`
+Phase: 26 — CRM Client Management
+Plan: Not yet planned
+Status: Ready to plan — `/gsd-discuss-phase 26`
 
 ---
 
 ## Previous Phase (complete)
 
-Phase: 24 — Coach Identity & Onboarding
-Plan: 6 plans + GAP, **7/7 complete** (2026-05-16)
-Status: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
+Phase: 25 — Invitations & Mobile "Mon coach" Minimal
+Plan: 8 plans, **8/8 complete** (2026-05-17)
+Status: **Phase 25 COMPLETE (2026-05-17).** UAT: 4 pass, 2 blocked-infra, focus trap gap fixed. Deliverables: (1) migration 040 peek_invitation SECURITY DEFINER function, (2) coach/invitations bounded module (generate/list/revoke, nanoid 6-char codes), (3) coach/clients bounded module (preview/redeem/revoke, serial rate-limit 5/15min IP + 10/hr user, constant-time INVALID_OR_EXPIRED envelope), (4) web /coach/invitations page + InvitationCodeCard + InvitationsTable + GeneratePanel + RevokeConfirmModal (focus trap), (5) web /redeem + /r/[code] RedeemStateMachine (States A/B/C) + CoachPreviewCard + safeNext open-redirect prevention, (6) Phase 24 refonte pixel-perfect (login, onboarding 3-step, dashboard, settings), (7) 33 green backend tests + 19 safe-next tests.
+Last activity: 2026-05-17
+
+Phase 24: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
 Last activity: 2026-05-16
-Resume file: .planning/phases/25-invitations-mobile-mon-coach-minimal/25-UI-SPEC.md
+Resume file: None
 
 Phase 23: **Phase 23 COMPLETE (2026-05-15).** 8/8 plans. Monorepo path (git subtree merge), @supabase/ssr dual-store auth, (coach) route group, packages/coach-sdk Zod schemas, Vercel Pro, CI/CD pipeline.
 
@@ -165,6 +168,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-17T08:29:53.983Z
-Stopped at: Phase 25 UI-SPEC approved
+Last session: 2026-05-17T20:00:00.000Z
+Stopped at: Phase 25 complete — ready for Phase 26
 Resume file: None
