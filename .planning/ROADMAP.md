@@ -79,7 +79,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [x] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables — **4/4 plans complete (2026-05-14)**
 - [x] **Phase 23: Web Turborepo Onboarding & Auth Bootstrap** — Monorepo path (git subtree merge), `@supabase/ssr` dual-store auth, `(coach)` route group scaffold, `packages/coach-sdk` Zod schemas, Vercel Pro provisioned, CI/CD pipeline — **8/8 plans complete (2026-05-15)**
 - [x] **Phase 24: Coach Identity & Onboarding** — `coach/identity` bounded module, self-serve 3-step coach signup (role promotion → profile → KYC), coach-kyc storage bucket, `CoachSidebar` layout, dashboard + settings pages, login page, GAP fixes (locale redirects, NEXT_PUBLIC_API_URL, marketing header) — **6/6 plans complete (2026-05-16)**
-- [ ] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` bounded modules, 6-char codes, web redemption state machine (/redeem + /r/[code]), rate-limited preview/redeem/revoke loop — **gaps: redeem flow broken + visual inaccuracies vs mockups**
+- [x] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` bounded modules, 6-char codes, web redemption state machine (/redeem + /r/[code]), rate-limited preview/redeem/revoke loop — **9/9 plans complete (2026-05-17)**
 - [ ] **Phase 26: CRM Client Management** — `/coach/clients` list + detail with TanStack Table, tabbed read-only client data, executive summary, tags, private notes, multi-client comparison
 - [ ] **Phase 27: Coaching Programs & Mobile "Mon coach" Full** — Program templates, folders, assignments (fork-on-assign), seed templates, mobile prescribed-program badge + compliance widget + contact CTA
 - [ ] **Phase 28: AI File Imports** — Upload/parse/preview/commit flow for PDF/image/Excel/Word, athlete + coach modes, multi-page PDFs, re-upload diff, async polling
@@ -168,6 +168,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   - [x] 25-07a-PLAN.md — Refonte Phase 24 (1/2) — login + 3-step onboarding wizard (pixel-perfect to Ziko+Onboarding.html)
   - [x] 25-07b-PLAN.md — Refonte Phase 24 (2/2) — coach dashboard + settings (pixel-perfect to Ziko+Onboarding.html)
   - [x] 25-08-PLAN.md — Gap closure: redeem flow JWT fix (getUser() first, API_URL fallback, error logging, pending CTAs)
+  - [x] 25-09-PLAN.md — UI pixel-perfect audit: 4 class-string deviations fixed (RevokeConfirmModal input, InvitationsTable chips/empty-state, InvitationCodeCard label)
 **Canonical mockups:** `.planning/mockups/Ziko-Onboarding.html` (Phase 24 surfaces) + `.planning/mockups/Ziko-Screens.html` (Phase 25 surfaces) - pixel-perfect match required.
 **Phase 24 refonte (folded into Phase 25):** login + onboarding wizard + dashboard + settings re-delivered pixel-perfect to canonical Phase 24 mockup. Tracked in plans 25-07a (login + onboarding) and 25-07b (dashboard + settings).
 **UI hint**: yes
