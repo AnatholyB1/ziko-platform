@@ -89,7 +89,7 @@ export function RevokeConfirmModal({
           onChange={(e) => setInput(e.target.value)}
           placeholder={CONFIRM_TOKEN}
           autoComplete="off"
-          className="mt-2 w-full h-12 rounded-xl border border-border bg-white px-4 text-base text-text focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm font-normal text-text focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
