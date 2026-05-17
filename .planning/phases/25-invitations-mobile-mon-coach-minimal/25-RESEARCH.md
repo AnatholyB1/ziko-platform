@@ -797,16 +797,18 @@ The `/redeem` page is the same skeleton without `params.code` (it starts in Stat
 | A7 | `peek_invitation` SQL function (proposed in Pattern §peek_invitation) inherits the keystone's constant-time properties | Q2 + Code Examples | Needs validation: planner should add a timing test analogous to whatever exists for `redeem_invitation_code` in `test/rls/redeem-rpc.spec.ts` |
 | A8 | next-intl `messages/{fr,en}.json` files won't hit a build limit when new namespaces are added | Pattern 6 | Both files are 163 lines today; adding ~100 lines is trivial. No risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 ### Q1 — UPSTASH composition: serial vs parallel; single Redis client reuse?
 
+RESOLVED:
 **Answer:** Serial, fail-fast on IP first, then user bucket. Reuse the existing `redis` singleton from `backend/api/src/lib/redis.ts` (do NOT instantiate a new `Redis()`). The two `Ratelimit` instances live as module-level constants in the limiter middleware closure (cheap to construct, identifies-as-singleton in practice).
 
 Production-ready snippet shown in §Pattern 3 above. Confidence: HIGH (mirrors existing pattern in `backend/api/src/middleware/rateLimiter.ts` lines 59-83 + 1-10).
 
 ### Q2 — Peek vs dry-run for `/coach/clients/links/preview`?
 
+RESOLVED:
 **Recommendation: Option A — new `peek_invitation(code TEXT)` SQL function in migration 038.**
 
 Why:
@@ -818,6 +820,7 @@ Implementation in Code Examples §`peek_invitation` above. Confidence: HIGH.
 
 ### Q3 — nanoid CJS retry pattern?
 
+RESOLVED:
 **Reality check:** CONTEXT.md D-08 says "use nanoid v4 (CJS-compatible) if needed". This is **incorrect** — nanoid v4 is *also* ESM-only (latest 4.0.2, all releases tagged `"type": "module"`). The only nanoid version line that ships dual CJS+ESM is **v3.3.x** (latest 3.3.12; ships `index.cjs` alongside an ESM `exports` field).
 
 The backend's `backend/api/package.json` has no `"type": "module"`. Its tsconfig is `module: NodeNext`. This means:
@@ -842,6 +845,7 @@ Confidence: HIGH (verified against npm registry, 2026-05-17). Planner should rec
 
 ### Q4 — Constant-time error envelope wire format?
 
+RESOLVED:
 **Decision: HTTP 200 + `{ ok: false, error_code: 'INVALID_OR_EXPIRED' }`** for all redemption failures. 429 + same body shape (Retry-After header allowed) for rate-limit failures. 401 only for missing JWT.
 
 Wire-format spec:
@@ -881,28 +885,34 @@ Confidence: HIGH.
 
 ### Q5 — next-intl namespace pattern (where to register)?
 
+RESOLVED:
 **Answer:** Add new top-level keys directly to `apps/web/messages/fr.json` and `apps/web/messages/en.json`. No additional registration required — `apps/web/src/i18n/request.ts` lazy-imports the entire locale file. Recommended namespaces: `CoachInvitations`, `CoachRedeem`, plus a `Sidebar` namespace for the new "Invitations" nav label (or extend an existing one if Phase 24 introduced it — researcher did not find a `Sidebar` namespace in current `fr.json`, so it's new).
 
 Full namespace tree shown in §Pattern 6 above. Confidence: HIGH (verified pattern via Footer/Header/marketing pages).
 
 ### Q6 — safeNext allowlist extension?
 
+RESOLVED:
 **Answer:** Current allowlist is an `as const` literal-tuple of exact strings (NOT a regex). Add `/redeem` to the tuple; for `/r/[code]` add a single anchored regex check. See §Pattern 7 above for the exact patch. Confidence: HIGH (file read & analyzed).
 
 ### Q7 — Hono router mount point?
 
+RESOLVED:
 **Answer:** `backend/api/src/app.ts` line 54. The pattern is `app.route('/coach/identity', identityRouter);` — extend with two new lines for `invitationsRouter` and `clientsRouter`. Imports go at the top alongside line 13. See §Pattern 9. Confidence: HIGH.
 
 ### Q8 — Sidebar nav structure?
 
+RESOLVED:
 **Answer:** `apps/web/src/components/coach/CoachSidebar.tsx` exports `NAV_ITEMS: { label, href, icon, disabled }[]`. Insert a new entry at index 2 (after `Clients`). Researcher's file read did NOT find a pre-existing disabled "Invitations" placeholder (CONTEXT.md hints at one from Phase 24 D-09 — discrepancy flagged). See §Pattern 8 for exact patch. Confidence: HIGH for file shape; MEDIUM for placeholder-vs-insert (planner verify).
 
 ### Q9 — Validation Architecture (highest-value validation points)?
 
+RESOLVED:
 See dedicated section below.
 
 ### Q10 — Project skill / convention checks?
 
+RESOLVED:
 **Answer:** Read CLAUDE.md fully. Relevant rules for Phase 25:
 - **Light sport theme, no dark mode** — UI-SPEC already encodes this; CTA orange `#FF5C1A`, background `#F7F6F3`. ✓
 - **Mockup-first / exact-match** (user MEMORY rule) — UI-SPEC.md serves as the mockup contract; the executor must match it pixel-for-pixel.

@@ -149,16 +149,26 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 **UI hint**: yes
 
 ### Phase 25: Invitations & Mobile "Mon coach" Minimal
-**Goal**: A coach can issue an invitation code and an athlete can redeem it from mobile to create a revocable coach↔client link.
+**Goal**: A coach can issue an invitation code and an athlete can redeem it FROM WEB to create a revocable coach↔client link. (Mobile "Mon coach" plugin deferred to v1.6 seed per 25-CONTEXT.md D-01 — see .planning/seeds/SEED-002-mobile-mon-coach-plugin.md.)
 **Depends on**: Phase 24
-**Requirements**: INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05, INVITE-06, INVITE-07, MOBILE-01, MOBILE-05
+**Requirements**: INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05, INVITE-06, INVITE-07 (MOBILE-01 + MOBILE-05 deferred to v1.6 seed)
 **Success Criteria** (what must be TRUE):
-  1. A coach can generate a 6-character `[A-Z2-9]` invitation code from the coach dashboard, set its expiration (default 14 days), see it in a list with status (active/used/expired/revoked), and revoke any active code.
-  2. An athlete sees a "Mon coach" screen in the mobile app: when unlinked, an empty state with a code-entry input; entering a valid code creates a `coach_client_links` row with `status='active'`.
-  3. Before confirming, the athlete sees a preview of the coach (display name, bio, specialties, photo); expired or already-used codes return a clear error and do not create a link.
-  4. Code redemption is rate-limited (5 attempts/15min per IP, 10/hour per user) with constant-time error responses regardless of failure reason.
-  5. The athlete can revoke the coach link from mobile settings in a 2-step confirmation; the coach loses read access immediately (RLS check on next read returns nothing).
-**Plans**: TBD
+  1. A coach can generate a 6-character `[A-Z2-9]` invitation code from `/coach/invitations`, set its expiration (preset chips 7d/14d-default/30d/Never), see it in a list with status (active/used/expired/revoked), and revoke any active code.
+  2. An athlete sees a state-aware web surface at `/redeem` (manual entry) or `/r/[code]` (deep-link): when unlinked, code-entry input; entering a valid code transitions to a preview state; valid redemption creates a `coach_client_links` row.
+  3. Before confirming, the athlete sees a preview of the coach (display name, bio, specialties, signed-URL photo, KYC badge); expired or already-used codes return a single constant-time error (no per-cause leak) and do not create a link.
+  4. Code redemption is rate-limited (5 attempts/15min per IP, 10/hour per user) with constant-time wire envelope regardless of failure reason; serial IP+user composition via Upstash sliding window.
+  5. The athlete can revoke the coach link from `/redeem` (state C) via a typed-confirmation modal ("Tapez COACH"); the coach loses read access immediately (RLS check on next read returns nothing).
+**Plans**: 8 plans
+  - [ ] 25-01-PLAN.md — Foundation (peek_invitation migration 040, nanoid@^3.3.11, coach-sdk schemas, i18n stubs)
+  - [ ] 25-02-PLAN.md — Backend coach/invitations bounded module (generate/list/revoke)
+  - [ ] 25-03-PLAN.md — Backend coach/clients bounded module (links/me, preview, redeem, revoke) + composed rate limiter + constant-time envelope
+  - [ ] 25-04-PLAN.md — Web (coach) /coach/invitations page + components + Server Actions + sidebar nav INSERT
+  - [ ] 25-05-PLAN.md — Web (athlete) /redeem + /r/[code] state machine + CoachPreviewCard + safeNext extension
+  - [ ] 25-06-PLAN.md — Validation (backend unit + integration + rate-limit + timing + safeNext tests)
+  - [ ] 25-07a-PLAN.md — Refonte Phase 24 (1/2) — login + 3-step onboarding wizard (pixel-perfect to Ziko+Onboarding.html)
+  - [ ] 25-07b-PLAN.md — Refonte Phase 24 (2/2) — coach dashboard + settings (pixel-perfect to Ziko+Onboarding.html)
+**Canonical mockups:** `.planning/mockups/Ziko-Onboarding.html` (Phase 24 surfaces) + `.planning/mockups/Ziko-Screens.html` (Phase 25 surfaces) - pixel-perfect match required.
+**Phase 24 refonte (folded into Phase 25):** login + onboarding wizard + dashboard + settings re-delivered pixel-perfect to canonical Phase 24 mockup. Tracked in plans 25-07a (login + onboarding) and 25-07b (dashboard + settings).
 **UI hint**: yes
 
 ### Phase 26: CRM Client Management
