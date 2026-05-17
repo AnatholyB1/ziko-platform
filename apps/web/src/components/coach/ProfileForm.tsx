@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { SpecialtyTagInput } from './SpecialtyTagInput';
 import { PhotoUpload } from './PhotoUpload';
 
@@ -24,6 +25,7 @@ export function ProfileForm({
   jwt: string;
   onChange?: (data: ProfileFormData) => void;
 }) {
+  const t = useTranslations('Onboarding');
   const [display_name, setDisplayName] = useState(initial.display_name ?? '');
   const [bio, setBio] = useState(initial.bio ?? '');
   const [specialties, setSpecialties] = useState<string[]>(initial.specialties ?? []);
@@ -35,7 +37,7 @@ export function ProfileForm({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <PhotoUpload
         userId={userId}
         apiUrl={apiUrl}
@@ -46,13 +48,13 @@ export function ProfileForm({
           notify({ photo_url: p });
         }}
       />
-      {/* Hidden inputs carry values into the Server Action FormData */}
+      {/* Hidden inputs carry values into the parent's Server Action FormData */}
       <input type="hidden" name="photo_url" value={photo_url ?? ''} />
       <input type="hidden" name="specialties" value={JSON.stringify(specialties)} />
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="display_name" className="text-sm font-bold text-text">
-          Nom affiché
+          {t('displayNameLabel')}
         </label>
         <input
           id="display_name"
@@ -65,14 +67,14 @@ export function ProfileForm({
             setDisplayName(e.target.value);
             notify({ display_name: e.target.value });
           }}
-          placeholder="Prénom Nom ou nom de votre structure"
+          placeholder={t('displayNamePlaceholder')}
           className="bg-white border border-border rounded-lg px-3 h-11 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="bio" className="text-sm font-bold text-text">
-          Bio (optionnel)
+          {t('bioLabel')}
         </label>
         <textarea
           id="bio"
@@ -84,13 +86,13 @@ export function ProfileForm({
             setBio(e.target.value);
             notify({ bio: e.target.value });
           }}
-          placeholder="Décrivez votre approche, vos spécialités…"
+          placeholder={t('bioPlaceholder')}
           className="bg-white border border-border rounded-lg px-3 py-3 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted resize-none min-h-[120px]"
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-bold text-text">Spécialités (optionnel)</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-bold text-text">{t('specialtiesLabel')}</label>
         <SpecialtyTagInput
           value={specialties}
           onChange={(tags) => {
@@ -100,9 +102,9 @@ export function ProfileForm({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="website" className="text-sm font-bold text-text">
-          Site web (optionnel)
+          {t('websiteLabel')}
         </label>
         <input
           id="website"
