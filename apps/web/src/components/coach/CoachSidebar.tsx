@@ -2,6 +2,7 @@
 import {
   IoGridOutline,
   IoPeopleOutline,
+  IoMailOutline,
   IoBarChartOutline,
   IoSparklesOutline,
   IoSettingsOutline,
@@ -11,6 +12,7 @@ import { NavItem } from './NavItem';
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/fr/coach/dashboard', icon: IoGridOutline, disabled: false },
   { label: 'Clients', href: '/fr/coach/clients', icon: IoPeopleOutline, disabled: true },
+  { label: 'Invitations', href: '/fr/coach/invitations', icon: IoMailOutline, disabled: false },
   { label: 'Programmes', href: '/fr/coach/programs', icon: IoBarChartOutline, disabled: true },
   { label: 'IA', href: '/fr/coach/ai', icon: IoSparklesOutline, disabled: true },
   { label: 'Paramètres', href: '/fr/coach/settings', icon: IoSettingsOutline, disabled: false },
