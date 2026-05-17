@@ -51,6 +51,9 @@ export function RedeemStateMachine({
       if (res.ok) {
         setState({ kind: 'B', code, preview: res.preview, error: null });
       } else {
+        if (res.error_code === 'NETWORK') {
+          console.warn('[RedeemStateMachine] Network error during preview — check API_URL and JWT');
+        }
         setState({ kind: 'A', code, error: res.error_code === 'RATE_LIMITED' ? 'rateLimited' : 'invalidOrExpired' });
       }
     });
@@ -66,6 +69,9 @@ export function RedeemStateMachine({
         setTimeout(() => setToast(null), 4000);
         setState({ kind: 'C', linkId: res.link.id, preview: res.preview, createdAt: res.link.created_at });
       } else {
+        if (res.error_code === 'NETWORK') {
+          console.warn('[RedeemStateMachine] Network error during redeem — check API_URL and JWT');
+        }
         setState({ kind: 'A', code: '', error: res.error_code === 'RATE_LIMITED' ? 'rateLimited' : 'invalidOrExpired' });
       }
     });
@@ -103,7 +109,7 @@ export function RedeemStateMachine({
           onClick={() => runPreview(state.code)}
           className="mt-4 bg-primary text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {t('stateA.submit')}
+          {pending ? '…' : t('stateA.submit')}
         </button>
         {state.error && (
           <p id={errorId} className="text-sm text-red-600 mt-3 text-center" role="alert">
@@ -135,7 +141,7 @@ export function RedeemStateMachine({
             onClick={runRedeem}
             className="bg-primary text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {t('stateB.link')}
+            {pending ? '…' : t('stateB.link')}
           </button>
           <button
             type="button"
