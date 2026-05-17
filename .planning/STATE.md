@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: ready
+status: executing
 stopped_at: null
-last_updated: "2026-05-17T20:00:00.000Z"
+last_updated: "2026-05-17T20:10:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 10
-  completed_phases: 4
+  completed_phases: 3
   total_plans: 28
   completed_plans: 28
-  percent: 100
+  percent: 96
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 26 (CRM Client Management) — ready for `/gsd-discuss-phase 26`
+**Current focus:** v1.5 Coach Platform & CRM — Phase 25 gaps — redeem flow broken + visual inaccuracies on 95% of pages vs mockups
 
 ## Current Position
 
-Phase: 26 — CRM Client Management
-Plan: Not yet planned
-Status: Ready to plan — `/gsd-discuss-phase 26`
+Phase: 25 — Invitations & Mobile "Mon coach" Minimal
+Plan: 8/8 plans executed; 2 gaps remaining (redeem code broken, UI vs mockup inaccuracies)
+Status: Gap closure needed — `/gsd-plan-phase 25 --gaps`
 
 ---
 

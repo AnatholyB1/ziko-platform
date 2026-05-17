@@ -1,8 +1,8 @@
 ---
 phase: 25-invitations-mobile-mon-coach-minimal
 verified: 2026-05-17T00:00:00Z
-status: passed
-score: 7/7 INVITE requirements verified; human UAT complete (4 pass, 2 blocked-infra, focus trap fixed)
+status: gaps_found
+score: 7/7 INVITE requirements verified (automated); 2 critical gaps found in human UAT: redeem flow broken + visual inaccuracies on 95% of pages vs canonical mockups
 overrides_applied: 0
 re_verification: null
 human_verification:
@@ -166,7 +166,13 @@ See `human_verification:` array in frontmatter. Seven items total:
 
 ### Gaps Summary
 
-No code-level gaps. All 7 INVITE requirements (INVITE-01 through INVITE-07) are satisfied by:
+**GAP-1 (CRITICAL): Redeem flow broken**
+- The `/redeem` and `/r/[code]` flow does not work end-to-end in the browser. The code redemption does not complete successfully. Root cause unknown — requires investigation of `RedeemStateMachine`, Server Actions, and backend `/coach/clients` routes.
+
+**GAP-2 (CRITICAL): Visual inaccuracies on ~95% of pages vs canonical mockups**
+- Most coach and athlete-facing pages do not match `.planning/mockups/Ziko-Screens.html` and `.planning/mockups/Ziko-Onboarding.html`. Spacing, typography, colors, component layouts, and interactive states diverge from the mockup on the majority of surfaces. A systematic page-by-page audit and fix pass is required.
+
+These two gaps must be resolved before phase 25 can be marked complete. All 7 INVITE requirements (INVITE-01 through INVITE-07) are satisfied by:
 - A live database function (`peek_invitation`, migration 040)
 - Two complete bounded backend modules (`coach/invitations` + `coach/clients`) with serial rate limiting, constant-time error collapse, and idempotent revoke
 - Two complete web route trees (`/coach/invitations` for coach side; `/redeem` + `/r/[code]` for athlete side) with state machine, coach preview card, typed-confirmation modals

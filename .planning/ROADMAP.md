@@ -79,7 +79,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
 - [x] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables — **4/4 plans complete (2026-05-14)**
 - [x] **Phase 23: Web Turborepo Onboarding & Auth Bootstrap** — Monorepo path (git subtree merge), `@supabase/ssr` dual-store auth, `(coach)` route group scaffold, `packages/coach-sdk` Zod schemas, Vercel Pro provisioned, CI/CD pipeline — **8/8 plans complete (2026-05-15)**
 - [x] **Phase 24: Coach Identity & Onboarding** — `coach/identity` bounded module, self-serve 3-step coach signup (role promotion → profile → KYC), coach-kyc storage bucket, `CoachSidebar` layout, dashboard + settings pages, login page, GAP fixes (locale redirects, NEXT_PUBLIC_API_URL, marketing header) — **6/6 plans complete (2026-05-16)**
-- [x] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` bounded modules, 6-char codes, web redemption state machine (/redeem + /r/[code]), rate-limited preview/redeem/revoke loop, Phase 24 refonte pixel-perfect, focus trap fix — **8/8 plans complete (2026-05-17)**
+- [ ] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` bounded modules, 6-char codes, web redemption state machine (/redeem + /r/[code]), rate-limited preview/redeem/revoke loop — **gaps: redeem flow broken + visual inaccuracies vs mockups**
 - [ ] **Phase 26: CRM Client Management** — `/coach/clients` list + detail with TanStack Table, tabbed read-only client data, executive summary, tags, private notes, multi-client comparison
 - [ ] **Phase 27: Coaching Programs & Mobile "Mon coach" Full** — Program templates, folders, assignments (fork-on-assign), seed templates, mobile prescribed-program badge + compliance widget + contact CTA
 - [ ] **Phase 28: AI File Imports** — Upload/parse/preview/commit flow for PDF/image/Excel/Word, athlete + coach modes, multi-page PDFs, re-upload diff, async polling
@@ -296,7 +296,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 22. Schema Foundation & RLS Keystone | v1.5 | 4/4 | Complete | 2026-05-14 |
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 8/8 | Complete | 2026-05-15 |
 | 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
-| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Complete | 2026-05-17 |
+| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Gaps | — |
 | 26. CRM Client Management | v1.5 | 0/0 | Not started | — |
 | 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
 | 28. AI File Imports | v1.5 | 0/0 | Not started | — |
