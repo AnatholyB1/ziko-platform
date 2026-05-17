@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: Plan 25-09 complete — pixel-perfect UI audit done; Phase 25 fully complete
+status: Phase 25 COMPLETE (verified 2026-05-17) — ready for Phase 26
 stopped_at: null
-last_updated: "2026-05-17T20:28:46Z"
+last_updated: "2026-05-17T21:45:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 10
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 30
-  completed_plans: 28
-  percent: 93
+  completed_plans: 30
+  percent: 100
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-13)
 
 **Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 25 gaps — redeem flow broken + visual inaccuracies on 95% of pages vs mockups
+**Current focus:** v1.5 Coach Platform & CRM — Phase 26: CRM Client Management
 
 ## Current Position
 
-Phase: 25 — Invitations & Mobile "Mon coach" Minimal
-Plan: 25-08 complete (gap-closure); redeem flow JWT fix applied
-Status: Gap closure needed — `/gsd-plan-phase 25 --gaps`
+Phase: 26 — CRM Client Management
+Plan: 0/? plans executed
+Status: Ready — `/gsd-discuss-phase 26` or `/gsd-plan-phase 26`
 
 ---
 
 ## Previous Phase (complete)
 
 Phase: 25 — Invitations & Mobile "Mon coach" Minimal
-Plan: 8 plans, **8/8 complete** (2026-05-17)
-Status: **Phase 25 COMPLETE (2026-05-17).** UAT: 4 pass, 2 blocked-infra, focus trap gap fixed. Deliverables: (1) migration 040 peek_invitation SECURITY DEFINER function, (2) coach/invitations bounded module (generate/list/revoke, nanoid 6-char codes), (3) coach/clients bounded module (preview/redeem/revoke, serial rate-limit 5/15min IP + 10/hr user, constant-time INVALID_OR_EXPIRED envelope), (4) web /coach/invitations page + InvitationCodeCard + InvitationsTable + GeneratePanel + RevokeConfirmModal (focus trap), (5) web /redeem + /r/[code] RedeemStateMachine (States A/B/C) + CoachPreviewCard + safeNext open-redirect prevention, (6) Phase 24 refonte pixel-perfect (login, onboarding 3-step, dashboard, settings), (7) 33 green backend tests + 19 safe-next tests.
+Plan: 10 plans, **10/10 complete** (2026-05-17) — including 2 gap-closure plans (25-08, 25-09)
+Status: **Phase 25 COMPLETE + VERIFIED (2026-05-17).** 9/9 must-haves verified. Gap closure: (1) redeem Server Actions JWT fixed — getUser() replaces getSession(), API_URL fallback chain, console.error in all catch blocks, res.json() guard; (2) pixel-perfect UI audit — 4 deviations fixed (InvitationCodeCard label, InvitationsTable chip font-weight + empty-state heading, RevokeConfirmModal confirm input). Focus trap preserved. All INVITE-01–07 satisfied.
 Last activity: 2026-05-17
 
 Phase 24: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
