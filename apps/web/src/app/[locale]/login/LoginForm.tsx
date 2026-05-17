@@ -1,7 +1,7 @@
 'use client';
 import { useActionState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { loginAction, type LoginState } from '@/actions/login';
 import { motion } from 'framer-motion';
 import { fadeUp, ctaHover, ctaTap } from '@/lib/motion';
@@ -12,12 +12,10 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('Login');
   const next = searchParams.get('next');
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
-  // Handle success redirect client-side — redirect() in Server Actions used with useActionState
-  // throws internally and gets caught, preventing navigation (RESEARCH Pitfall 6).
-  // Prepend locale prefix because loginAction returns locale-less paths (e.g. /coach/dashboard).
   useEffect(() => {
     if (state.status === 'success' && state.redirectTo) {
       router.push(`/${locale}${state.redirectTo}`);
@@ -29,17 +27,21 @@ export function LoginForm() {
       variants={fadeUp}
       initial="hidden"
       animate="visible"
-      className="max-w-sm w-full bg-white rounded-2xl p-8 shadow-sm border border-border"
+      className="max-w-sm w-full bg-white rounded-2xl px-10 py-10 shadow-sm border border-border"
     >
-      <p className="text-3xl font-bold text-primary mb-8 text-center">ZIKO</p>
-      <h1 className="text-xl font-bold text-text mb-1">Bienvenue</h1>
-      <p className="text-sm font-normal text-muted mb-6">Connectez-vous à votre espace coach.</p>
+      <p className="text-4xl font-bold text-primary mb-10 text-center tracking-widest">
+        ZIKO
+      </p>
+      <h1 className="text-xl font-bold text-text mb-1">{t('title')}</h1>
+      <p className="text-sm font-normal text-muted mb-8">{t('subtitle')}</p>
 
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-5">
         {next && <input type="hidden" name="next" value={next} />}
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-sm font-bold text-text">Adresse email</label>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-sm font-bold text-text">
+            {t('emailLabel')}
+          </label>
           <input
             id="email"
             name="email"
@@ -51,8 +53,10 @@ export function LoginForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-bold text-text">Mot de passe</label>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-sm font-bold text-text">
+            {t('passwordLabel')}
+          </label>
           <input
             id="password"
             name="password"
@@ -64,7 +68,7 @@ export function LoginForm() {
         </div>
 
         {state.status === 'error' && (
-          <p role="alert" className="text-sm font-normal text-red-600 mt-1">
+          <p role="alert" className="text-sm font-normal text-red-600 -mt-2">
             {state.message}
           </p>
         )}
@@ -74,9 +78,9 @@ export function LoginForm() {
           disabled={pending}
           whileHover={ctaHover}
           whileTap={ctaTap}
-          className="h-11 px-6 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full mt-2"
+          className="h-11 px-6 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full mt-2"
         >
-          {pending ? 'Connexion…' : 'Se connecter'}
+          {pending ? `${t('submitButton')}…` : t('submitButton')}
         </motion.button>
       </form>
     </motion.div>

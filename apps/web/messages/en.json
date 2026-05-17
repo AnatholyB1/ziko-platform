@@ -110,6 +110,7 @@
   },
   "Onboarding": {
     "title": "Become a Ziko coach",
+    "progressLabel": "Step {current} of {total}",
     "step1Heading": "Activate your coach role",
     "step1BodyNew": "Your Ziko account will be set up as a coach.",
     "step1BodyBoth": "Your athlete account stays active — you are adding the coach role.",
