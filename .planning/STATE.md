@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 status: completed
-stopped_at: context exhaustion at 90% (2026-05-17)
-last_updated: "2026-05-17T00:00:33.931Z"
+stopped_at: Phase 25 context gathered
+last_updated: "2026-05-17T07:24:20.251Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 10
@@ -37,7 +37,7 @@ Phase: 24 — Coach Identity & Onboarding
 Plan: 6 plans + GAP, **7/7 complete** (2026-05-16)
 Status: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
 Last activity: 2026-05-16
-Resume file: None
+Resume file: .planning/phases/25-invitations-mobile-mon-coach-minimal/25-CONTEXT.md
 
 Phase 23: **Phase 23 COMPLETE (2026-05-15).** 8/8 plans. Monorepo path (git subtree merge), @supabase/ssr dual-store auth, (coach) route group, packages/coach-sdk Zod schemas, Vercel Pro, CI/CD pipeline.
 
@@ -165,6 +165,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-17T00:00:33.921Z
-Stopped at: context exhaustion at 90% (2026-05-17)
+Last session: 2026-05-17T07:24:20.245Z
+Stopped at: Phase 25 context gathered
 Resume file: None
