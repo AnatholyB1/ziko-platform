@@ -3,7 +3,7 @@ status: complete
 phase: 25-invitations-mobile-mon-coach-minimal
 source: [25-VERIFICATION.md]
 started: 2026-05-17T16:00:33Z
-updated: 2026-05-17T17:45:00Z
+updated: 2026-05-17T20:00:00Z
 ---
 
 ## Current Test
@@ -82,8 +82,8 @@ notes: |
 ## Summary
 
 total: 7
-passed: 4
-issues: 1
+passed: 5
+issues: 0
 pending: 0
 skipped: 0
 blocked: 2
@@ -91,11 +91,11 @@ blocked: 2
 ## Gaps
 
 - truth: "Tab cycle stays inside revoke modal (focus trap)"
-  status: failed
-  reason: "User reported: Tab escapes modal — INPUT → Annuler → Révoquer → NEXTJS-PORTAL → BODY. Does not wrap back to INPUT. Escape and initial focus work correctly."
+  status: resolved
+  reason: "Fixed in commit fix(25): added Tab key handler on window keydown that queries focusable elements (input, button:not([disabled])) inside dialogRef and wraps first↔last on Tab/Shift+Tab."
   severity: minor
   test: 4
-  root_cause: ""
-  artifacts: []
+  root_cause: "Missing Tab key interception — only Escape was handled in onKey listener."
+  artifacts: [apps/web/src/components/coach/RevokeConfirmModal.tsx]
   missing: []
   debug_session: ""

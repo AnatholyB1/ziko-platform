@@ -1,8 +1,8 @@
 ---
 phase: 25-invitations-mobile-mon-coach-minimal
 verified: 2026-05-17T00:00:00Z
-status: human_needed
-score: 7/7 INVITE requirements verified (automated); 2 surface families pending human visual UAT
+status: passed
+score: 7/7 INVITE requirements verified; human UAT complete (4 pass, 2 blocked-infra, focus trap fixed)
 overrides_applied: 0
 re_verification: null
 human_verification:
