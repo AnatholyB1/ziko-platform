@@ -31,8 +31,8 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-background">
       <CoachSidebar />
-      <main className="flex-1 overflow-auto p-8">
-        {children}
+      <main className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-3xl px-8 py-10">{children}</div>
       </main>
     </div>
   );
