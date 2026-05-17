@@ -167,6 +167,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   - [x] 25-06-PLAN.md — Validation (backend unit + integration + rate-limit + timing + safeNext tests)
   - [x] 25-07a-PLAN.md — Refonte Phase 24 (1/2) — login + 3-step onboarding wizard (pixel-perfect to Ziko+Onboarding.html)
   - [x] 25-07b-PLAN.md — Refonte Phase 24 (2/2) — coach dashboard + settings (pixel-perfect to Ziko+Onboarding.html)
+  - [x] 25-08-PLAN.md — Gap closure: redeem flow JWT fix (getUser() first, API_URL fallback, error logging, pending CTAs)
 **Canonical mockups:** `.planning/mockups/Ziko-Onboarding.html` (Phase 24 surfaces) + `.planning/mockups/Ziko-Screens.html` (Phase 25 surfaces) - pixel-perfect match required.
 **Phase 24 refonte (folded into Phase 25):** login + onboarding wizard + dashboard + settings re-delivered pixel-perfect to canonical Phase 24 mockup. Tracked in plans 25-07a (login + onboarding) and 25-07b (dashboard + settings).
 **UI hint**: yes

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: executing
+status: Plan 25-08 complete — gap-closure redeem flow fixed; check if 25-09 still needed
 stopped_at: null
-last_updated: "2026-05-17T20:10:00.000Z"
+last_updated: "2026-05-17T21:05:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 10
   completed_phases: 3
-  total_plans: 28
-  completed_plans: 28
-  percent: 96
+  total_plans: 30
+  completed_plans: 27
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 25 — Invitations & Mobile "Mon coach" Minimal
-Plan: 8/8 plans executed; 2 gaps remaining (redeem code broken, UI vs mockup inaccuracies)
+Plan: 25-08 complete (gap-closure); redeem flow JWT fix applied
 Status: Gap closure needed — `/gsd-plan-phase 25 --gaps`
 
 ---
@@ -168,6 +168,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-17T20:00:00.000Z
-Stopped at: Phase 25 complete — ready for Phase 26
+Last session: 2026-05-17T21:05:00.000Z
+Stopped at: Completed 25-08-PLAN.md (redeem flow gap closure)
 Resume file: None
