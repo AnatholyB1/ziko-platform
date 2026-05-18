@@ -306,7 +306,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 8/8 | Complete | 2026-05-15 |
 | 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Gaps | — |
-| 26. CRM Client Management | v1.5 | 0/0 | Not started | — |
+| 26. CRM Client Management | v1.5 | 2/7 | In progress | 2026-05-18 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
 | 28. AI File Imports | v1.5 | 0/0 | Not started | — |
 | 29. AI Coach Orchestrator | v1.5 | 0/0 | Not started | — |
@@ -317,6 +317,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
 *Updated: 2026-04-29 — v1.4 archived: Systeme de Credits IA & Monetisation (Phases 17–21)*
 *Updated: 2026-05-13 — v1.5 Coach Platform & CRM roadmap drafted (Phases 22–31)*
+*Updated: 2026-05-18 — Phase 26 plan 02 complete: migration 041 applied, coach/clients module extended (CLIENT-01/05/06/08)*
 *Updated: 2026-05-14 — Phase 22 (Schema Foundation & RLS Keystone) execution complete: 4/4 plans, 3 migrations live on slkobhavpwsubnsmuhya (034/035/036), 47/47 RLS tests green. Ready for `/gsd-verify-phase`.*
 *Updated: 2026-05-14 — Phase 23 Wave 0 complete: Plan 23-01 (root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed). Ready for Wave 1 spike (Plan 23-02).*
 *Updated: 2026-05-15 — Phase 23 Wave 2 complete: Plan 23-03 packages/coach-sdk — ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema built, tsup dual ESM+CJS, 4/4 Vitest tests green, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr).*
