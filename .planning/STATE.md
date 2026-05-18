@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: Phase 25 COMPLETE (verified 2026-05-17) — ready for Phase 26
+status: Phase 26 in progress — Wave 2 (26-03) next
 stopped_at: null
-last_updated: "2026-05-17T21:45:00.000Z"
-last_activity: 2026-05-17
+last_updated: "2026-05-18T11:30:00.000Z"
+last_activity: 2026-05-18
 progress:
   total_phases: 10
   completed_phases: 4
-  total_plans: 30
-  completed_plans: 30
-  percent: 100
+  total_plans: 37
+  completed_plans: 31
+  percent: 84
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 
 Phase: 26 — CRM Client Management
 Plan: 2/7 plans executed
-Status: In progress — plan 02 complete (Wave 1: migration 041 + coach/clients module extension)
+Status: In progress — plans 01-02 complete (Wave 0-1), Wave 2 (26-03) next
 
 ---
 
@@ -75,8 +75,8 @@ Progress: [████░░░░░░] 20% (v1.5 milestone — 2/10 phases c
 
 **Recent Trend:**
 
-- Last 5 plans: 22-02 (8.4m, 2 tasks, 3 files), 22-03 (29.6m, 2 tasks, 3 files), 22-04 (12m, 2 tasks, 3 files), 23-01 (4m, 2 tasks, 3 files), 26-02 (24m, 2 tasks, 8 files)
-- Trend: 26-02 Wave 1 blocking plan — migration + TDD extension. Migration history desync required db query --linked workaround. Code constraint bug caught during GREEN phase.
+- Last 5 plans: 22-02 (8.4m, 2 tasks, 3 files), 22-03 (29.6m, 2 tasks, 3 files), 22-04 (12m, 2 tasks, 3 files), 23-01 (4m, 2 tasks, 3 files)
+- Trend: 23-01 fastest plan in v1.5 — Wave 0 pre-flight is intentionally tiny (one dep removal + one tag + one doc). Inline branch-name correction (Rule 3 deviation) was the only non-mechanical step.
 
 *Updated after each plan completion*
 
@@ -142,9 +142,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-07]: publish-coach-sdk.yml ships as no-op on monorepo path (vars.PUBLISH_COACH_SDK unset); activates only on D-04 dual-repo fallback
 - [Phase 26-01]: @tanstack/react-table pinned to ^8.21.3, recharts to ^3.8.1 per CONTEXT.md D-01/D-16; npm install from apps/web/ resolves to worktree root node_modules (npm workspace behavior)
 - [Phase 26-01]: 3 Zod schemas (ClientSummarySchema, CoachClientTagSchema, CoachClientNoteSchema) added to packages/coach-sdk; 8 Vitest it.todo stubs scaffold Wave 1 Nyquist enforcement
-- [Phase 26-02]: Migration 041 applied via `npx supabase db query --linked --file` — MCP apply_migration unavailable in executor tool set; CLI db push fails when migration history desynced from MCP-applied migrations; --linked flag uses Management API directly
-- [Phase 26-02]: Invitation codes in integration tests must use only [A-Z2-9]{6} — digits 0 and 1 excluded by coach_invitations_code_check constraint (discovered during GREEN phase, fixed codes RVCCH1→RVCCHX and ROSTR1→ROSTRX)
-- [Phase 26-02]: DELETE /links/:clientId registered before DELETE /links/:id in Hono router — Hono matches in registration order; coach handler authorizes via coach_id, athlete handler via client_id; both routes are safe independently but ordering resolves path ambiguity
 
 ### Pending Todos
 
@@ -173,6 +170,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-18T10:36:41Z
-Stopped at: Completed 26-02-PLAN.md (Wave 1: migration 041 + coach/clients module extension)
+Last session: 2026-05-18T09:00:42Z
+Stopped at: Completed 26-01-PLAN.md (Wave 0 pre-flight — deps + schemas + test stubs)
 Resume file: None
