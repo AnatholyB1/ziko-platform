@@ -506,12 +506,12 @@ export async function getClientSummary(
   const { data: habits } = await db
     .from('habits').select('id').eq('user_id', clientId);
   const { data: habitLogs } = await db
-    .from('habit_logs').select('date, completed')
+    .from('habit_logs').select('date, value')
     .eq('user_id', clientId).gte('date', sevenDaysAgoDate);
   let habitsPct: number | null = null;
   if (habits && habits.length > 0 && habitLogs) {
     const totalPossible = habits.length * 7;
-    const completed = habitLogs.filter((l: any) => l.completed).length;
+    const completed = habitLogs.filter((l: any) => l.value > 0).length;
     habitsPct = Math.round((completed / totalPossible) * 100);
   }
 
@@ -586,7 +586,7 @@ export async function getClientHabits(jwt: string, clientId: string) {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [{ data: habits, error: hErr }, { data: logs, error: lErr }] = await Promise.all([
     db.from('habits').select('id, name, type, target, emoji, color').eq('user_id', clientId).limit(30),
-    db.from('habit_logs').select('habit_id, date, value, count').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
+    db.from('habit_logs').select('habit_id, date, value').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
   ]);
   if (hErr) throw new Error(hErr.message);
   if (lErr) throw new Error(lErr.message);
@@ -621,7 +621,7 @@ export async function getClientCardio(jwt: string, clientId: string, limit = 30)
   const db = createUserClient(jwt);
   const { data, error } = await db
     .from('cardio_sessions')
-    .select('id, activity_type, duration_min, distance_km, calories_burned, pace, created_at')
+    .select('id, activity_type, duration_min, distance_km, calories_burned, avg_pace_sec_per_km, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
     .limit(limit);
