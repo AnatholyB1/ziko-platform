@@ -29,7 +29,12 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
   1. A spike document exists in `.planning/workstreams/milestone-mobile/phases/27-spike-mandatory-pattern/` comparing data-driven (`user_plugins.is_mandatory` column) vs registry-driven (`manifest.mandatory: true`) enforcement, with a recommended approach and rollback plan.
   2. The decision record identifies which code files must be touched for each approach and names the approach chosen (one wins, one is deferred).
   3. The "Désinstaller" button suppression behavior is confirmed to work end-to-end in a local test scenario for the chosen pattern.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 27-01-PLAN.md — Write SPIKE.md decision record (comparison table, chosen approach, rollback plan, files-to-touch)
+- [ ] 27-02-PLAN.md — Apply 3 minimal code changes: mandatory field in PluginManifest, PluginLoader pre-load, store trash button gate
+- [ ] 27-03-PLAN.md — End-to-end verification: TypeScript clean compile + human dev build confirmation
 
 ### Phase 28: UI Design — Mon coach Plugin
 **Goal**: A Figma design contract for the "Mon coach" plugin exists before any mobile screen is built, fixing the design-first gate.
@@ -82,7 +87,7 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Spike — Mandatory Plugin Pattern | 0/TBD | Not started | - |
+| 27. Spike — Mandatory Plugin Pattern | 0/3 | Not started | - |
 | 28. UI Design — Mon coach Plugin | 0/TBD | Not started | - |
 | 29. Plugin "Mon coach" — Full Implementation | 0/TBD | Not started | - |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
