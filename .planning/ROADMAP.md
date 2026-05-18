@@ -183,7 +183,14 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach sees an executive summary card at the top of the client detail (weekly compliance %, last workout date, latest measurement, 14-day mood trend).
   4. A coach can attach custom tags (`coach_client_tags`) and write versioned private notes (`coach_client_notes`) per client; both are coach-private and never visible to the client.
   5. A coach can select 3–5 clients and view a multi-client comparison chart for a common metric; a coach can revoke a coach↔client link from the dashboard with a 2-step confirmation that immediately removes read access while preserving client data.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 26-01-PLAN.md — Wave 0: Pre-flight (deps + 8 test stubs + coach-sdk schemas)
+- [ ] 26-02-PLAN.md — Wave 1: Migration 041 [BLOCKING] + backend roster/tags/notes/revoke routes
+- [ ] 26-03-PLAN.md — Wave 1: Backend summary/7 tab/compare routes
+- [ ] 26-04-PLAN.md — Wave 2: Web roster page (ClientsTable + CoachSidebar Clients enabled)
+- [ ] 26-05-PLAN.md — Wave 2: Web client detail layout + all 7 tab pages
+- [ ] 26-06-PLAN.md — Wave 3: ExecutiveSummaryCard + ClientNotesPanel + ClientTagInput
+- [ ] 26-07-PLAN.md — Wave 3: ComparisonChart + compare page + human checkpoint
 **UI hint**: yes
 
 ### Phase 27: Coaching Programs & Mobile "Mon coach" Full
