@@ -46,14 +46,14 @@ export async function getActiveLink(
   jwt: string,
   clientId: string,
 ): Promise<{
-  link: (LinkRow & { invitation_id: string | null }) | null;
+  link: LinkRow | null;
   preview: CoachPreviewPayload | null;
 }> {
   const db = createUserClient(jwt);
   const { data: linkRow, error: linkErr } = await db
     .from('coach_client_links')
     .select(
-      'id, coach_id, client_id, invitation_id, created_at, expires_at, revoked_at',
+      'id, coach_id, client_id, created_at',
     )
     .eq('client_id', clientId)
     .is('revoked_at', null)
@@ -65,7 +65,7 @@ export async function getActiveLink(
   if (linkErr) throw new Error(linkErr.message);
   if (!linkRow) return { link: null, preview: null };
 
-  // Fetch coach profile via RLS-aware read (coach_profiles publicly readable per Phase 24)
+  // Fetch coach profile — readable by all authenticated users via migration 042 policy.
   const { data: cp, error: cpErr } = await db
     .from('coach_profiles')
     .select('display_name, bio, specialties, photo_url, kyc_status')
@@ -81,7 +81,6 @@ export async function getActiveLink(
       id: linkRow.id,
       coach_id: linkRow.coach_id,
       client_id: linkRow.client_id,
-      invitation_id: linkRow.invitation_id,
       created_at: linkRow.created_at,
     },
     preview: cp
