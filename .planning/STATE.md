@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 26 — CRM Client Management
-Plan: 0/? plans executed
-Status: Ready — `/gsd-discuss-phase 26` or `/gsd-plan-phase 26`
+Plan: 1/7 plans executed
+Status: In progress — plan 01 complete (Wave 0 pre-flight)
 
 ---
 
@@ -140,6 +140,8 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 - [Phase 23-07]: _debug probes gated by DEBUG_LIMITS=on — 404 on production, 30s sleep confirms Pro tier; both tagged DELETE IN PHASE 24 per ARCH-08
 - [Phase 23-07]: CI no-service-role-in-coach job guards with [ -d backend/api/src/coach ] — passes in Phase 23 before coach/ dir exists (ARCH-02 pre-enforcement)
 - [Phase 23-07]: publish-coach-sdk.yml ships as no-op on monorepo path (vars.PUBLISH_COACH_SDK unset); activates only on D-04 dual-repo fallback
+- [Phase 26-01]: @tanstack/react-table pinned to ^8.21.3, recharts to ^3.8.1 per CONTEXT.md D-01/D-16; npm install from apps/web/ resolves to worktree root node_modules (npm workspace behavior)
+- [Phase 26-01]: 3 Zod schemas (ClientSummarySchema, CoachClientTagSchema, CoachClientNoteSchema) added to packages/coach-sdk; 8 Vitest it.todo stubs scaffold Wave 1 Nyquist enforcement
 
 ### Pending Todos
 
@@ -168,6 +170,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-17T20:28:46Z
-Stopped at: Completed 25-09-PLAN.md (pixel-perfect UI audit — Phase 25 fully complete)
+Last session: 2026-05-18T09:00:42Z
+Stopped at: Completed 26-01-PLAN.md (Wave 0 pre-flight — deps + schemas + test stubs)
 Resume file: None

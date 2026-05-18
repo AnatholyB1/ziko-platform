@@ -184,7 +184,7 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   4. A coach can attach custom tags (`coach_client_tags`) and write versioned private notes (`coach_client_notes`) per client; both are coach-private and never visible to the client.
   5. A coach can select 3–5 clients and view a multi-client comparison chart for a common metric; a coach can revoke a coach↔client link from the dashboard with a 2-step confirmation that immediately removes read access while preserving client data.
 **Plans**: 7 plans
-- [ ] 26-01-PLAN.md — Wave 0: Pre-flight (deps + 8 test stubs + coach-sdk schemas)
+- [x] 26-01-PLAN.md — Wave 0: Pre-flight (deps + 8 test stubs + coach-sdk schemas) — COMPLETE 2026-05-18
 - [ ] 26-02-PLAN.md — Wave 1: Migration 041 [BLOCKING] + backend roster/tags/notes/revoke routes
 - [ ] 26-03-PLAN.md — Wave 1: Backend summary/7 tab/compare routes
 - [ ] 26-04-PLAN.md — Wave 2: Web roster page (ClientsTable + CoachSidebar Clients enabled)
