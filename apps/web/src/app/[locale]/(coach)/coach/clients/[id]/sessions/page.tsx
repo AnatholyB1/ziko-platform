@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
-// TODO Plan 06: import { ExecutiveSummaryCard } from '@/components/coach/ExecutiveSummaryCard';
+import { ExecutiveSummaryCard } from '@/components/coach/ExecutiveSummaryCard';
 
 export default async function ClientSessionsPage({
   params,
@@ -19,6 +19,34 @@ export default async function ClientSessionsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect(`/${locale}/login`);
 
+  // Fetch executive summary via Hono API (aggregates computed in backend)
+  const { data: { session } } = await supabase.auth.getSession();
+  const jwt = session?.access_token ?? '';
+  let summary = {
+    sessions_this_week: 0,
+    habits_pct: null as number | null,
+    last_workout_at: null as string | null,
+    latest_weight_kg: null as number | null,
+    mood_delta: null as number | null,
+    mood_prev_avg: null as number | null,
+    mood_curr_avg: null as number | null,
+  };
+  if (jwt) {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+      const res = await fetch(`${apiUrl}/coach/clients/${clientId}/summary`, {
+        headers: { Authorization: `Bearer ${jwt}` },
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        summary = json.summary ?? summary;
+      }
+    } catch (err) {
+      console.error('[sessions/page] summary fetch error:', err);
+    }
+  }
+
   // Fetch sessions data — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
@@ -32,7 +60,7 @@ export default async function ClientSessionsPage({
 
   return (
     <div>
-      {/* TODO Plan 06: <ExecutiveSummaryCard clientId={clientId} /> */}
+      <ExecutiveSummaryCard summary={summary} />
       {!rows || rows.length === 0 ? (
         <p className="text-sm text-muted py-8 text-center">
           Aucune donnée disponible pour cette période.

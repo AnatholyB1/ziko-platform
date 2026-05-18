@@ -6,6 +6,7 @@ import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { ClientDetailHeader } from '@/components/coach/ClientDetailHeader';
 import { ClientTabStrip } from '@/components/coach/ClientTabStrip';
+import { ClientNotesPanel } from '@/components/coach/ClientNotesPanel';
 
 export default async function ClientDetailLayout({
   children,
@@ -33,6 +34,22 @@ export default async function ClientDetailLayout({
   // If profile is null (unlinked client or non-existent), redirect to clients list.
   if (!profile) redirect(`/${locale}/coach/clients`);
 
+  // Fetch coach's note and tags for this client (coach-private; RLS enforces coach_id = user.id)
+  const [{ data: noteData }, { data: tagsData }] = await Promise.all([
+    supabase
+      .from('coach_client_notes')
+      .select('content')
+      .eq('coach_id', user.id)
+      .eq('client_id', id)
+      .maybeSingle(),
+    supabase
+      .from('coach_client_tags')
+      .select('id, tag')
+      .eq('coach_id', user.id)
+      .eq('client_id', id)
+      .order('created_at', { ascending: true }),
+  ]);
+
   return (
     <div className="flex-1 bg-background min-h-screen">
       <div className="p-8 pb-0">
@@ -46,14 +63,21 @@ export default async function ClientDetailLayout({
           <ClientTabStrip id={id} locale={locale} />
         </div>
       </div>
-      {/* Flex layout: tab content (flex-1) + notes panel slot (w-72 on lg+) */}
+      {/* Flex layout: tab content (flex-1) + notes panel (w-72 on lg+) */}
       <div className="flex gap-6 p-8 pt-6">
         <div className="flex-1 min-w-0" id="tab-panel">
           {children}
         </div>
-        {/* ClientNotesPanel slot — will be added in Plan 06 as a separate Server Component import */}
-        {/* For now, a placeholder div maintains the layout */}
-        <div className="hidden lg:block w-72 shrink-0" id="notes-panel-slot" />
+        <div className="hidden lg:block w-72 shrink-0">
+          <div className="sticky top-8">
+            <ClientNotesPanel
+              clientId={id}
+              initialNote={noteData?.content ?? ''}
+              initialTags={(tagsData ?? []).map((t: any) => ({ id: t.id, tag: t.tag }))}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ''}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
