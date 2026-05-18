@@ -11,7 +11,7 @@ import { NavItem } from './NavItem';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/fr/coach/dashboard', icon: IoGridOutline, disabled: false },
-  { label: 'Clients', href: '/fr/coach/clients', icon: IoPeopleOutline, disabled: true },
+  { label: 'Clients', href: '/fr/coach/clients', icon: IoPeopleOutline, disabled: false },
   { label: 'Invitations', href: '/fr/coach/invitations', icon: IoMailOutline, disabled: false },
   { label: 'Programmes', href: '/fr/coach/programs', icon: IoBarChartOutline, disabled: true },
   { label: 'IA', href: '/fr/coach/ai', icon: IoSparklesOutline, disabled: true },
