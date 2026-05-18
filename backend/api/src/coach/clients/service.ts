@@ -19,6 +19,15 @@ import {
   getClientNote,
   upsertClientNote,
   revokeClientLinkByCoach,
+  getClientSummary,
+  getClientSessions,
+  getClientMeasurements,
+  getClientHabits,
+  getClientNutrition,
+  getClientSleep,
+  getClientCardio,
+  getClientJournal,
+  listCompareData,
 } from './db.js';
 
 const CODE_REGEX = /^[A-Z2-9]{6}$/;
@@ -232,6 +241,144 @@ clientsRouter.delete('/links/:id', async (c) => {
   try {
     await revokeLink(jwt, userId, id);
     return c.json({ ok: true });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /compare — multi-client comparison data (CLIENT-07, D-17)
+// CRITICAL: Registered BEFORE /:id/* to avoid Hono matching "compare" as an :id (T-26-03-03)
+clientsRouter.get('/compare', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const idsParam = c.req.query('ids') ?? '';
+  const metric = (c.req.query('metric') ?? 'weight') as 'weight' | 'sessions' | 'sleep' | 'mood';
+  const daysParam = parseInt(c.req.query('days') ?? '30', 10);
+  const days = ([30, 90, 365].includes(daysParam) ? daysParam : 30) as 30 | 90 | 365;
+
+  const clientIds = idsParam.split(',').filter(id => UUID_REGEX.test(id));
+  if (!clientIds.length) return c.json({ error: 'ids query param required (UUID list)' }, 400);
+  if (clientIds.length > 5) return c.json({ error: 'Maximum 5 clients per comparison' }, 400);
+  if (!['weight', 'sessions', 'sleep', 'mood'].includes(metric))
+    return c.json({ error: 'Invalid metric' }, 400);
+
+  try {
+    const data = await listCompareData(jwt, userId, clientIds, metric, days);
+    return c.json({ data });
+  } catch (err: any) {
+    console.error('[coach/clients] GET /compare error:', err.message);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/summary — executive summary aggregates (CLIENT-04)
+clientsRouter.get('/:id/summary', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const summary = await getClientSummary(jwt, userId, clientId);
+    return c.json({ summary });
+  } catch (err: any) {
+    console.error('[coach/clients] GET /:id/summary error:', err.message);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/sessions — sessions tab (CLIENT-03)
+clientsRouter.get('/:id/sessions', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const sessions = await getClientSessions(jwt, clientId);
+    return c.json({ sessions });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/measurements — measurements tab (CLIENT-03)
+clientsRouter.get('/:id/measurements', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const measurements = await getClientMeasurements(jwt, clientId);
+    return c.json({ measurements });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/habits — habits tab (CLIENT-03)
+clientsRouter.get('/:id/habits', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const result = await getClientHabits(jwt, clientId);
+    return c.json(result);
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/nutrition — nutrition tab (CLIENT-03)
+clientsRouter.get('/:id/nutrition', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const nutrition = await getClientNutrition(jwt, clientId);
+    return c.json({ nutrition });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/sleep — sleep tab (CLIENT-03)
+clientsRouter.get('/:id/sleep', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const sleep = await getClientSleep(jwt, clientId);
+    return c.json({ sleep });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/cardio — cardio tab (CLIENT-03)
+clientsRouter.get('/:id/cardio', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const cardio = await getClientCardio(jwt, clientId);
+    return c.json({ cardio });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/journal — journal tab (CLIENT-03)
+clientsRouter.get('/:id/journal', async (c) => {
+  const { userId: _userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const journal = await getClientJournal(jwt, clientId);
+    return c.json({ journal });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
