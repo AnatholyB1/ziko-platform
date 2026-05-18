@@ -45,10 +45,12 @@ All values are multiples of 4. Applied as inline style numeric values (React Nat
 | tab-clearance | 100 | paddingBottom on ScrollView contentContainerStyle |
 
 Exceptions:
-- Touch targets (CTA button, "Annuler" link, "Retirer ce coach"): minimum 44 height enforced
+- Touch targets (CTA button, "Retour à la saisie" link, "Retirer ce coach"): minimum 44 height enforced
 - Code input field height: 56 (14-base grid exception for comfortable thumb target)
 - Coach avatar: 72×72 (circle, not on 8-point grid — based on card layout requirement)
 - KYC badge icon: 16×16 with 4px gap to label text
+- `padding: 12` — 3×4, used for tight error message containers and modal text input (acceptable density exception)
+- `gap: 12` — 3×4, used for modal button row spacing (acceptable density exception)
 
 ---
 
@@ -58,15 +60,16 @@ All font sizes in React Native points. No `StyleSheet` — use inline `style` pr
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Display | 28 | 800 | 1.2 (≈34) | Screen title "Mon coach" |
+| Display | 28 | 700 | 1.2 (≈34) | Screen title "Mon coach" |
 | Heading | 20 | 700 | 1.2 (≈24) | Coach name in State B/C card |
 | Body | 16 | 400 | 1.5 (≈24) | Input placeholder, bio text, error messages |
-| Label | 14 | 600 | 1.4 (≈20) | CTA button label, specialty chips, metadata ("Lié depuis") |
-| Caption | 12 | 400 | 1.4 (≈17) | KYC badge label, muted subtitle |
+| Label | 14 | 400 | 1.4 (≈20) | CTA button label, specialty chips, metadata ("Lié depuis"), KYC badge label, muted subtitles |
 
 Rules:
-- Only 2 weights in primary use: 400 (regular) and 700 (bold). Weight 800 reserved for Display title only; weight 600 for Label only.
-- "Annuler" cancel link: 14px weight 400, color `#FF5C1A` (accent), not underlined.
+- Exactly 2 weights in use: 400 (regular) and 700 (bold). No other weights.
+- CTA button labels (submit, confirm) use size 16 weight 700 color `#FFFFFF`.
+- KYC badge, muted subtitles, chip text: size 14 weight 400 color `#6B6963` — visually distinguished from action labels by muted color alone.
+- "Retour à la saisie" cancel link: 14px weight 400, color `#FF5C1A` (accent), not underlined.
 
 ---
 
@@ -88,7 +91,7 @@ Rules:
 Accent (`#FF5C1A`) reserved for exactly these elements:
 1. Submit CTA button background (State A — enabled state only)
 2. "Lier mon compte" CTA button background (State B)
-3. "Annuler" cancel link text color (State B)
+3. "Retour à la saisie" cancel link text color (State B)
 4. RefreshControl tintColor
 
 Accent is NOT used on: chip backgrounds, input borders, the linked card in State C, or any body text.
@@ -124,10 +127,12 @@ Source: CLAUDE.md + REQUIREMENTS.md COACH-10. Used on all card containers. NOT a
 
 ### 2. State A — CodeEntryView
 
+**Primary focal point: code input field (24px/700 centered, orange focus border)**
+
 **Layout:** Centered column, padding 16 horizontal.
 
 Elements (top to bottom):
-1. Screen title — `Text` 28px weight 800 color `#1C1A17`: "Mon coach" (t key: `coach.screen_title`)
+1. Screen title — `Text` 28px weight 700 color `#1C1A17`: "Mon coach" (t key: `coach.screen_title`)
 2. Subtitle — `Text` 14px weight 400 color `#6B6963`: state-specific copy (t key: `coach.state_a.subtitle`)
 3. Code input field — `TextInput`:
    - `height: 56`, `borderRadius: 12`, `backgroundColor: '#FFFFFF'`
@@ -152,6 +157,8 @@ Elements (top to bottom):
 
 ### 3. State B — CoachPreviewCard
 
+**Primary focal point: coach avatar + display name row**
+
 **Layout:** Full-width card below screen title.
 
 Card container:
@@ -166,20 +173,22 @@ Card internals (top to bottom):
    - Avatar fallback: Ionicons `person-circle-outline` size 72 color `#6B6963`
    - Right column `marginLeft: 12`:
      - Coach name `Text` 20px weight 700 color `#1C1A17`
-     - KYC badge row (if `kyc_verified`): Ionicons `shield-checkmark` size 16 color `#16A34A` + `Text` 12px weight 400 color `#16A34A` "Certifié KYC" / "KYC Verified" — `flexDirection: 'row' alignItems: 'center' marginTop: 4`
-2. Specialties chips — `View flexDirection: 'row' flexWrap: 'wrap' gap: 6 marginTop: 12`:
-   - Each chip: `paddingHorizontal: 10 paddingVertical: 4 borderRadius: 20`
+     - KYC badge row (if `kyc_verified`): Ionicons `shield-checkmark` size 16 color `#16A34A` + `Text` 14px weight 400 color `#16A34A` "Certifié KYC" / "KYC Verified" — `flexDirection: 'row' alignItems: 'center' marginTop: 4`
+2. Specialties chips — `View flexDirection: 'row' flexWrap: 'wrap' gap: 8 marginTop: 12`:
+   - Each chip: `paddingHorizontal: 8 paddingVertical: 4 borderRadius: 20`
    - `backgroundColor: '#F7F6F3' borderWidth: 1 borderColor: '#E2E0DA'`
-   - `Text` 12px weight 400 color `#6B6963`
+   - `Text` 14px weight 400 color `#6B6963`
 3. Bio `Text` — `fontSize: 14, color: '#6B6963', lineHeight: 20, marginTop: 12`
 4. Divider — `View height: 1 backgroundColor: '#E2E0DA' marginTop: 16`
 5. CTA row `marginTop: 16 alignItems: 'center'`:
    - "Lier mon compte" button: full-width, `height: 52, borderRadius: 14, backgroundColor: '#FF5C1A'`
    - Label `Text` 16px weight 700 color `#FFFFFF`
-   - "Annuler" link — `TouchableOpacity marginTop: 12 alignItems: 'center'`:
+   - "Retour à la saisie" link — `TouchableOpacity marginTop: 12 alignItems: 'center'`:
      - `Text` 14px weight 400 color `#FF5C1A`
 
 ### 4. State C — LinkedCoachCard
+
+**Primary focal point: coach avatar + display name row; secondary anchor: "Lié depuis" metadata row**
 
 **Layout:** Same card container as State B (shadow, border, padding).
 
@@ -187,15 +196,15 @@ Card internals (top to bottom):
 1. Avatar row — identical to State B avatar row structure
 2. Specialties chips — identical to State B chips (read-only)
 3. "Lié depuis" metadata row — `View flexDirection: 'row' alignItems: 'center' marginTop: 12`:
-   - Ionicons `calendar-outline` size 16 color `#6B6963 marginRight: 6`
-   - `Text` 14px weight 600 color `#6B6963`: "Lié depuis [date]" / "Linked since [date]"
+   - Ionicons `calendar-outline` size 16 color `#6B6963 marginRight: 8`
+   - `Text` 14px weight 400 color `#6B6963`: "Lié depuis [date]" / "Linked since [date]"
    - Date formatted: `DD/MM/YYYY` (fr) / `MM/DD/YYYY` (en) using `date-fns/format`
 4. Divider — `View height: 1 backgroundColor: '#E2E0DA' marginTop: 16`
 5. "Retirer ce coach" — `TouchableOpacity marginTop: 16`:
    - `flexDirection: 'row' alignItems: 'center' justifyContent: 'center'`
-   - Ionicons `trash-outline` size 18 color `#DC2626 marginRight: 6`
-   - `Text` 14px weight 600 color `#DC2626`
-   - On press: `showAlert()` with typed confirmation modal (see Copywriting § Destructive)
+   - Ionicons `trash-outline` size 18 color `#DC2626 marginRight: 8`
+   - `Text` 14px weight 400 color `#DC2626`
+   - On press: open ConfirmRevocationModal (see below)
 
 ### 5. ConfirmRevocationModal (State C)
 
@@ -213,8 +222,8 @@ Modal container:
   - `autoCapitalize: 'characters' autoCorrect: false`
   - Focus: `borderColor: '#FF5C1A'`
 - Button row `flexDirection: 'row' gap: 12 marginTop: 20`:
-  - "Annuler" — `flex:1 height:48 borderRadius:12 borderWidth:1 borderColor:'#E2E0DA' alignItems:'center' justifyContent:'center'`
-    - `Text` 16px weight 600 color `#1C1A17`
+  - "Garder mon coach" — `flex:1 height:48 borderRadius:12 borderWidth:1 borderColor:'#E2E0DA' alignItems:'center' justifyContent:'center'`
+    - `Text` 16px weight 400 color `#1C1A17`
   - "Confirmer" — `flex:1 height:48 borderRadius:12`
     - Enabled (typed "COACH"): `backgroundColor: '#DC2626'`; label `Text` 16px weight 700 color `#FFFFFF`
     - Disabled: `backgroundColor: '#E2E0DA'`; label `Text` 16px weight 700 color `#6B6963`
@@ -223,7 +232,7 @@ Modal container:
 
 Visible only when `role === 'client' || role === 'both'` AND coach is linked.
 
-Section header `Text` 14px weight 600 color `#6B6963` uppercased: "MON COACH" / "MY COACH"
+Section header `Text` 14px weight 400 color `#6B6963` uppercased: "MON COACH" / "MY COACH"
 Row `TouchableOpacity flexDirection:'row' alignItems:'center' paddingVertical:14 paddingHorizontal:16`:
 - Ionicons `person-outline` size 20 color `#1C1A17 marginRight:12`
 - `Text` 16px weight 400 color `#1C1A17` flex:1 — coach display name
@@ -252,7 +261,7 @@ Row `TouchableOpacity flexDirection:'row' alignItems:'center' paddingVertical:14
 |-------|----------|
 | "Lier mon compte" tap | Call `POST /coach/clients/links` with code → on success transition to State C |
 | Loading state | CTA shows `ActivityIndicator` white, disabled |
-| "Annuler" tap | Clear input, reset error, return to State A (clear code from state) |
+| "Retour à la saisie" tap | Clear input, reset error, return to State A (clear code from state) |
 | API error on confirm | Show error via `showAlert(t('coach.error.link_failed'), t('coach.error.try_again'))` |
 
 ### Linked Coach (State C)
@@ -260,7 +269,7 @@ Row `TouchableOpacity flexDirection:'row' alignItems:'center' paddingVertical:14
 | Event | Behavior |
 |-------|----------|
 | "Retirer ce coach" tap | Open ConfirmRevocationModal |
-| Modal "Annuler" | Close modal, no action |
+| Modal "Garder mon coach" | Close modal, no action |
 | Modal input ≠ "COACH" | "Confirmer" button disabled |
 | Modal input === "COACH" | "Confirmer" button enabled (red) |
 | "Confirmer" tap | Call `DELETE /coach/clients/links/:id` → on success: close modal, transition to State A, clear local coach state |
@@ -297,7 +306,7 @@ Note: Error copy is CONSTANT — identical message for "code not found", "code e
 | Subtitle | `coach.state_b.subtitle` | Votre coach | Your coach |
 | KYC badge label | `coach.state_b.kyc_badge` | Certifié KYC | KYC Verified |
 | Confirm CTA | `coach.state_b.confirm` | Lier mon compte | Link my account |
-| Cancel link | `coach.state_b.cancel` | Annuler | Cancel |
+| Cancel link | `coach.state_b.cancel` | Retour à la saisie | Back to entry |
 | Linking loading | `coach.state_b.linking` | Liaison en cours… | Linking… |
 
 ### State C — Linked Coach
@@ -315,7 +324,7 @@ Note: Error copy is CONSTANT — identical message for "code not found", "code e
 | Modal title | `coach.revoke_modal.title` | Retirer ce coach ? | Remove this coach? |
 | Modal body | `coach.revoke_modal.body` | Cette action supprime le lien avec votre coach. Tapez COACH pour confirmer. | This will remove your coach link. Type COACH to confirm. |
 | Input placeholder | `coach.revoke_modal.placeholder` | COACH | COACH |
-| Cancel button | `coach.revoke_modal.cancel` | Annuler | Cancel |
+| Cancel button | `coach.revoke_modal.cancel` | Garder mon coach | Keep my coach |
 | Confirm button | `coach.revoke_modal.confirm` | Confirmer | Confirm |
 
 ### Error States (showAlert)
