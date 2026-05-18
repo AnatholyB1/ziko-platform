@@ -8,6 +8,21 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
 
+## Parallel Workstream: v1.6 Mobile v2 [milestone-mobile]
+
+**Goal:** Livrer le plugin "Mon coach" mobile (côté athlete) + combler le déficit de design UI des surfaces v1.5.
+
+**Target features:**
+- Plugin "Mon coach" — pre-installé, non-désinstallable, 3 états (no code / preview / linked), code A-Z2-9, révocation depuis settings. Zéro nouveau backend (réutilise routes Phase 25).
+- UI design catch-up — retro-design surfaces Phase 24 (coach onboarding, dashboard, settings, login) + audit mobiles sans `/gsd-ui-phase` + Figma + rework visuel.
+
+**Key constraints:**
+- Design-first obligatoire pour toute surface visuelle (`/gsd-ui-phase` avant `/gsd-execute-phase`)
+- Workstream isolé : parallèle à v1.5 Coach Platform, branch `milestone-mobile`
+- Zéro nouveau backend — l'intégralité des routes nécessaires est déjà livrée en Phase 25
+
+---
+
 ## Current Milestone: v1.5 Coach Platform & CRM
 
 **Goal:** Ship the first coach-facing milestone — a modular web CRM (bounded-contexts architecture preparing the future ERP) that lets a coach manage their clients, assign programs, import data via AI file parsing, and use a dedicated AI assistant — with a simple invitation link between coach and athlete.
