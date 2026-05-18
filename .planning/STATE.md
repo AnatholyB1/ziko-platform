@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: verifying
+status: executing
 stopped_at: null
 last_updated: "2026-05-18T19:00:00.000Z"
 last_activity: 2026-05-18
@@ -25,13 +25,18 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 
 ## Current Position
 
-Phase: 26 — CRM Client Management
-Plan: 7/7 plans executed
-Status: All plans complete — pending verification
+Phase: 27 — next phase
+Plan: 0 plans executed
+Status: Phase 26 COMPLETE + VERIFIED (2026-05-18)
 
 ---
 
 ## Previous Phase (complete)
+
+Phase: 26 — CRM Client Management
+Plan: 7 plans, **7/7 complete** (2026-05-18) — including 2 gap-closure rounds
+Status: **Phase 26 COMPLETE + VERIFIED (2026-05-18).** 31/31 must-haves verified. Gap closure: (1) db.ts schema column fixes — duration_minutes→started_at/ended_at, completed→value (habit_logs, 3 places), count removed (non-existent), calories→calories_burned, pace→avg_pace_sec_per_km; (2) clients-preview.spec.ts expired fixture offset 1s→60s (clock skew). Journal tab accepted in place of programs (intentional). Migrations 043/044 applied. 16/16 tests green.
+Last activity: 2026-05-18
 
 Phase: 25 — Invitations & Mobile "Mon coach" Minimal
 Plan: 10 plans, **10/10 complete** (2026-05-17) — including 2 gap-closure plans (25-08, 25-09)
