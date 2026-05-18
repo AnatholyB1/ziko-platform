@@ -85,6 +85,8 @@ export interface PluginManifest {
   aiPersonaTraits?: string[];
   /** Appended to the AI system prompt when this plugin is active */
   aiSystemPromptAddition?: string;
+  /** When true, this plugin is pre-installed for all users and cannot be uninstalled. */
+  mandatory?: boolean;
   routes: PluginRoute[];
 }
 

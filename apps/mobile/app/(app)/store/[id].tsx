@@ -254,10 +254,16 @@ export default function PluginDetailScreen() {
                     style={{ flex: 1, backgroundColor: theme.primary, borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}>
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('store.open')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={uninstall}
-                    style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center' }}>
-                    <Ionicons name="trash-outline" size={18} color="#F44336" />
-                  </TouchableOpacity>
+                  {manifest.mandatory ? (
+                    <View style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', opacity: 0.5 }}>
+                      <Ionicons name="trash-outline" size={18} color="#F44336" />
+                    </View>
+                  ) : (
+                    <TouchableOpacity onPress={uninstall}
+                      style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center' }}>
+                      <Ionicons name="trash-outline" size={18} color="#F44336" />
+                    </TouchableOpacity>
+                  )}
                 </>
               ) : (
                 <TouchableOpacity onPress={install}

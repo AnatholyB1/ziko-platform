@@ -68,6 +68,24 @@ export function PluginLoader({ children }: PluginLoaderProps) {
 
     async function loadInstalledPlugins() {
       if (!user) return;
+
+      // Pre-load mandatory plugins (bypass user_plugins DB)
+      for (const [pluginId, loader] of Object.entries(PLUGIN_LOADERS)) {
+        if (loadedRef.current.has(pluginId)) continue;
+        try {
+          const mod = await loader();
+          if (mod.default.mandatory === true) {
+            let manifest: PluginManifest = mod.default;
+            manifest = await applyPersonaDynamicPrompt(manifest, user.id);
+            registerPlugin(manifest);
+            aiBridge.registerPlugin(manifest);
+            loadedRef.current.add(pluginId);
+          }
+        } catch (err) {
+          console.warn(`[PluginLoader] Failed to load mandatory plugin "${pluginId}":`, err);
+        }
+      }
+
       const { data: userPlugins, error } = await supabase
         .from('user_plugins')
         .select('plugin_id, is_enabled')
