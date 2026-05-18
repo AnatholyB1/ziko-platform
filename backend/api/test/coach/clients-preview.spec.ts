@@ -71,7 +71,7 @@ beforeAll(async () => {
   codes.valid = await makeInv({}, 'VALID2');
   codes.revoked = await makeInv({ revoked_at: new Date().toISOString() }, 'REVOK2');
   codes.expired = await makeInv(
-    { expires_at: new Date(Date.now() - 1000).toISOString() },
+    { expires_at: new Date(Date.now() - 60_000).toISOString() },
     'EXPIR2',
   );
   codes.usedUp = await makeInv({ use_count: 1, max_uses: 1 }, 'USEDU2');

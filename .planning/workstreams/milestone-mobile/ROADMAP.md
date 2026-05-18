@@ -32,8 +32,8 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 **Plans**: 3 plans
 
 Plans:
-- [ ] 27-01-PLAN.md — Write SPIKE.md decision record (comparison table, chosen approach, rollback plan, files-to-touch)
-- [ ] 27-02-PLAN.md — Apply 3 minimal code changes: mandatory field in PluginManifest, PluginLoader pre-load, store trash button gate
+- [x] 27-01-PLAN.md — Write SPIKE.md decision record (comparison table, chosen approach, rollback plan, files-to-touch)
+- [x] 27-02-PLAN.md — Apply 3 minimal code changes: mandatory field in PluginManifest, PluginLoader pre-load, store trash button gate
 - [ ] 27-03-PLAN.md — End-to-end verification: TypeScript clean compile + human dev build confirmation
 
 ### Phase 28: UI Design — Mon coach Plugin
@@ -87,7 +87,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Spike — Mandatory Plugin Pattern | 0/3 | Planned | - |
+| 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress|  |
 | 28. UI Design — Mon coach Plugin | 0/TBD | Not started | - |
 | 29. Plugin "Mon coach" — Full Implementation | 0/TBD | Not started | - |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |

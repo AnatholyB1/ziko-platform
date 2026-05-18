@@ -1,4 +1,3 @@
-// ARCH-03: per-request JWT client — no admin keys.
 import { createClient } from '@supabase/supabase-js';
 import type {
   RedeemPayload,
@@ -15,6 +14,15 @@ import type {
 const COACH_PHOTO_BUCKET = 'coach-kyc';
 const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes per RESEARCH.md §Don't Hand-Roll
 
+// Service client for storage signing — coach-kyc bucket restricts reads to owner,
+// so signed URLs must be generated with the service key (server-side only).
+function createServiceClient() {
+  const key = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
+  return createClient(process.env.SUPABASE_URL!, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
 export function createUserClient(jwt: string) {
   return createClient(
     process.env.SUPABASE_URL!,
@@ -27,11 +35,11 @@ export function createUserClient(jwt: string) {
 }
 
 async function signCoachPhoto(
-  db: ReturnType<typeof createUserClient>,
+  _db: ReturnType<typeof createUserClient>,
   bucketPath: string | null,
 ): Promise<string | null> {
   if (!bucketPath) return null;
-  const { data, error } = await db.storage
+  const { data, error } = await createServiceClient().storage
     .from(COACH_PHOTO_BUCKET)
     .createSignedUrl(bucketPath, SIGNED_URL_TTL_SECONDS);
   if (error || !data?.signedUrl) {
@@ -108,7 +116,7 @@ export async function peekInvitation(
   const { data, error } = await db.rpc('peek_invitation', {
     code_input: payload.code,
   });
-  if (error) {
+if (error) {
     console.warn('[coach/clients] peek_invitation rpc error:', error.message);
     return { ok: false, error_code: 'INVALID_OR_EXPIRED', preview: null };
   }
@@ -330,14 +338,14 @@ export async function listCoachClients(
       .eq('user_id', clientId);
     const { data: habitLogs } = await db
       .from('habit_logs')
-      .select('date, completed')
+      .select('date, value')
       .eq('user_id', clientId)
       .gte('date', sevenDaysAgoDate);
 
     let habitsPct: number | null = null;
     if (habits && habits.length > 0 && habitLogs) {
       const totalPossible = habits.length * 7;
-      const completed = habitLogs.filter((l: any) => l.completed).length;
+      const completed = habitLogs.filter((l: any) => l.value > 0).length;
       habitsPct = Math.round((completed / totalPossible) * 100);
     }
 
@@ -553,7 +561,7 @@ export async function getClientSessions(jwt: string, clientId: string, limit = 3
   const db = createUserClient(jwt);
   const { data, error } = await db
     .from('workout_sessions')
-    .select('id, name, created_at, duration_minutes')
+    .select('id, name, created_at, started_at, ended_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -578,7 +586,7 @@ export async function getClientHabits(jwt: string, clientId: string) {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [{ data: habits, error: hErr }, { data: logs, error: lErr }] = await Promise.all([
     db.from('habits').select('id, name, type, target, emoji, color').eq('user_id', clientId).limit(30),
-    db.from('habit_logs').select('habit_id, date, completed, count').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
+    db.from('habit_logs').select('habit_id, date, value, count').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
   ]);
   if (hErr) throw new Error(hErr.message);
   if (lErr) throw new Error(lErr.message);
@@ -613,7 +621,7 @@ export async function getClientCardio(jwt: string, clientId: string, limit = 30)
   const db = createUserClient(jwt);
   const { data, error } = await db
     .from('cardio_sessions')
-    .select('id, activity_type, duration_min, distance_km, calories, pace, created_at')
+    .select('id, activity_type, duration_min, distance_km, calories_burned, pace, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
     .limit(limit);
