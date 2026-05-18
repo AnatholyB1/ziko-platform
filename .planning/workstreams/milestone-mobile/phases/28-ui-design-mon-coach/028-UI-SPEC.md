@@ -60,7 +60,7 @@ All font sizes in React Native points. No `StyleSheet` — use inline `style` pr
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Display | 28 | 700 | 1.2 (≈34) | Screen title "Mon coach" |
+| Display | 28 | 700 | 1.2 (≈34) | Screen title "Mon coach" + code input field |
 | Heading | 20 | 700 | 1.2 (≈24) | Coach name in State B/C card |
 | Body | 16 | 400 | 1.5 (≈24) | Input placeholder, bio text, error messages |
 | Label | 14 | 400 | 1.4 (≈20) | CTA button label, specialty chips, metadata ("Lié depuis"), KYC badge label, muted subtitles |
@@ -127,7 +127,7 @@ Source: CLAUDE.md + REQUIREMENTS.md COACH-10. Used on all card containers. NOT a
 
 ### 2. State A — CodeEntryView
 
-**Primary focal point: code input field (24px/700 centered, orange focus border)**
+**Primary focal point: code input field (28px/700 centered, orange focus border)**
 
 **Layout:** Centered column, padding 16 horizontal.
 
@@ -137,7 +137,7 @@ Elements (top to bottom):
 3. Code input field — `TextInput`:
    - `height: 56`, `borderRadius: 12`, `backgroundColor: '#FFFFFF'`
    - `borderWidth: 1`, `borderColor: '#E2E0DA'`
-   - `padding: 16`, `fontSize: 24`, `fontWeight: '700'`, `letterSpacing: 6`
+   - `padding: 16`, `fontSize: 28`, `fontWeight: '700'`, `letterSpacing: 6`
    - `color: '#1C1A17'`, `placeholderTextColor: '#6B6963'`
    - `textAlign: 'center'`, `autoCapitalize: 'characters'`, `maxLength: 6`
    - `keyboardType: 'default'`
