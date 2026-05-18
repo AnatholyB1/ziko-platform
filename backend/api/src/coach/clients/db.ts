@@ -9,6 +9,7 @@ import type {
   ClientRosterRow,
   ClientTag,
   ClientNote,
+  ClientSummary,
 } from './types.js';
 
 const COACH_PHOTO_BUCKET = 'coach-kyc';
@@ -453,4 +454,258 @@ export async function revokeClientLinkByCoach(
     .is('revoked_at', null);
   if (error) throw new Error(error.message);
   return { revoked_at: revokedAt };
+}
+
+// ----- GET /:id/summary — executive summary aggregates (CLIENT-04) -----
+export async function getClientSummary(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<ClientSummary> {
+  const db = createUserClient(jwt);
+  const now = new Date();
+
+  // Sessions this week
+  const weekStart = new Date(now);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(now.getDate() - now.getDay()); // Sunday start
+  const { data: weekSessions } = await db
+    .from('workout_sessions')
+    .select('id')
+    .eq('user_id', clientId)
+    .gte('created_at', weekStart.toISOString());
+
+  // Last workout
+  const { data: lastSession } = await db
+    .from('workout_sessions')
+    .select('created_at')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // Latest weight
+  const { data: latestMeasurement } = await db
+    .from('body_measurements')
+    .select('weight_kg, created_at')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // Habits % (7d avg)
+  const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    .toISOString().split('T')[0];
+  const { data: habits } = await db
+    .from('habits').select('id').eq('user_id', clientId);
+  const { data: habitLogs } = await db
+    .from('habit_logs').select('date, completed')
+    .eq('user_id', clientId).gte('date', sevenDaysAgoDate);
+  let habitsPct: number | null = null;
+  if (habits && habits.length > 0 && habitLogs) {
+    const totalPossible = habits.length * 7;
+    const completed = habitLogs.filter((l: any) => l.completed).length;
+    habitsPct = Math.round((completed / totalPossible) * 100);
+  }
+
+  // Mood trend: last 7d avg vs prev 7d avg (D-10)
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: moodRows } = await db
+    .from('journal_entries')
+    .select('mood, created_at')
+    .eq('user_id', clientId)
+    .gte('created_at', fourteenDaysAgo)
+    .order('created_at', { ascending: false });
+
+  let moodDelta: number | null = null;
+  let moodCurrAvg: number | null = null;
+  let moodPrevAvg: number | null = null;
+
+  if (moodRows && moodRows.length >= 6) {
+    const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const curr = moodRows.filter((r: any) => r.created_at >= cutoff).map((r: any) => Number(r.mood));
+    const prev = moodRows.filter((r: any) => r.created_at < cutoff).map((r: any) => Number(r.mood));
+    if (curr.length >= 3 && prev.length >= 3) {
+      moodCurrAvg = Math.round((curr.reduce((a: number, b: number) => a + b, 0) / curr.length) * 10) / 10;
+      moodPrevAvg = Math.round((prev.reduce((a: number, b: number) => a + b, 0) / prev.length) * 10) / 10;
+      moodDelta = Math.round((moodCurrAvg - moodPrevAvg) * 10) / 10;
+    }
+  }
+
+  // suppress unused coachId (defense-in-depth: RLS already filters via JWT)
+  void coachId;
+
+  return {
+    sessions_this_week: weekSessions?.length ?? 0,
+    habits_pct: habitsPct,
+    last_workout_at: lastSession?.created_at ?? null,
+    latest_weight_kg: latestMeasurement?.weight_kg ?? null,
+    mood_delta: moodDelta,
+    mood_prev_avg: moodPrevAvg,
+    mood_curr_avg: moodCurrAvg,
+  };
+}
+
+// ----- Tab data queries (CLIENT-03) — one function per tab -----
+// All use is_coach_of RLS auto-applied via the coach's JWT.
+// Each returns last `limit` rows DESC. Coach passes clientId from URL params.
+
+export async function getClientSessions(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('workout_sessions')
+    .select('id, name, created_at, duration_minutes')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getClientMeasurements(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('body_measurements')
+    .select('id, weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, hip_cm, created_at')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getClientHabits(jwt: string, clientId: string) {
+  const db = createUserClient(jwt);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const [{ data: habits, error: hErr }, { data: logs, error: lErr }] = await Promise.all([
+    db.from('habits').select('id, name, type, target, emoji, color').eq('user_id', clientId).limit(30),
+    db.from('habit_logs').select('habit_id, date, completed, count').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
+  ]);
+  if (hErr) throw new Error(hErr.message);
+  if (lErr) throw new Error(lErr.message);
+  return { habits: habits ?? [], logs: logs ?? [] };
+}
+
+export async function getClientNutrition(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('nutrition_logs')
+    .select('id, meal_type, food_name, calories, protein_g, carbs_g, fat_g, serving_g, date')
+    .eq('user_id', clientId)
+    .order('date', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getClientSleep(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('sleep_logs')
+    .select('id, bedtime, wake_time, duration_hours, quality, date')
+    .eq('user_id', clientId)
+    .order('date', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getClientCardio(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('cardio_sessions')
+    .select('id, activity_type, duration_min, distance_km, calories, pace, created_at')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getClientJournal(jwt: string, clientId: string, limit = 30) {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('journal_entries')
+    .select('id, mood, energy, stress, context, notes, created_at')
+    .eq('user_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+// ----- GET /compare — multi-client comparison data (CLIENT-07, D-17) -----
+// Returns: { clientId: [ { date: string, value: number } ][] }
+// Metric: 'weight' | 'sessions' | 'sleep' | 'mood'
+// Days: 30 | 90 | 365
+export async function listCompareData(
+  jwt: string,
+  coachId: string,
+  clientIds: string[],
+  metric: 'weight' | 'sessions' | 'sleep' | 'mood',
+  days: 30 | 90 | 365 = 30,
+): Promise<Record<string, Array<{ date: string; value: number }>>> {
+  if (!clientIds.length) return {};
+  const db = createUserClient(jwt);
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  // Validate that the calling coach is linked to all requested clients (D-15 defense-in-depth)
+  const { data: links } = await db
+    .from('coach_client_links')
+    .select('client_id')
+    .eq('coach_id', coachId)
+    .is('revoked_at', null)
+    .in('client_id', clientIds);
+  const linkedIds = new Set((links ?? []).map((l: any) => l.client_id as string));
+  const validClientIds = clientIds.filter(id => linkedIds.has(id));
+  if (!validClientIds.length) return {};
+
+  const result: Record<string, Array<{ date: string; value: number }>> = {};
+
+  for (const clientId of validClientIds) {
+    if (metric === 'weight') {
+      const { data } = await db
+        .from('body_measurements')
+        .select('created_at, weight_kg')
+        .eq('user_id', clientId)
+        .gte('created_at', since)
+        .order('created_at', { ascending: true });
+      result[clientId] = (data ?? []).map((r: any) => ({ date: r.created_at.split('T')[0], value: r.weight_kg }));
+    } else if (metric === 'sessions') {
+      const { data } = await db
+        .from('workout_sessions')
+        .select('created_at')
+        .eq('user_id', clientId)
+        .gte('created_at', since);
+      // Aggregate by week (Sunday start)
+      const weekMap: Record<string, number> = {};
+      for (const s of (data ?? [])) {
+        const d = new Date(s.created_at);
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - d.getDay()); // week start Sunday
+        const key = d.toISOString().split('T')[0];
+        weekMap[key] = (weekMap[key] ?? 0) + 1;
+      }
+      result[clientId] = Object.entries(weekMap).sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, value]) => ({ date, value }));
+    } else if (metric === 'sleep') {
+      const { data } = await db
+        .from('sleep_logs')
+        .select('date, duration_hours')
+        .eq('user_id', clientId)
+        .gte('date', since.split('T')[0])
+        .order('date', { ascending: true });
+      result[clientId] = (data ?? []).map((r: any) => ({ date: r.date, value: r.duration_hours }));
+    } else if (metric === 'mood') {
+      const { data } = await db
+        .from('journal_entries')
+        .select('created_at, mood')
+        .eq('user_id', clientId)
+        .gte('created_at', since)
+        .order('created_at', { ascending: true });
+      result[clientId] = (data ?? []).map((r: any) => ({ date: r.created_at.split('T')[0], value: r.mood }));
+    }
+  }
+
+  return result;
 }

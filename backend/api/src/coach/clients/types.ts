@@ -83,3 +83,14 @@ export type ClientNote = {
   content: string;
   updated_at: string;
 };
+
+// Phase 26 Plan 03 — executive summary aggregates (CLIENT-04, D-09/D-10/D-11)
+export type ClientSummary = {
+  sessions_this_week: number;       // count of workout_sessions since start of current week
+  habits_pct: number | null;        // avg daily habit completion % over last 7 days; null if no habits
+  last_workout_at: string | null;   // most recent workout_sessions.created_at; null if no sessions
+  latest_weight_kg: number | null;  // most recent body_measurements.weight_kg; null if no measurements
+  mood_delta: number | null;        // curr_7d_avg - prev_7d_avg; null if < 3 entries in either window
+  mood_curr_avg: number | null;     // avg mood of last 7 days; null if < 3 entries
+  mood_prev_avg: number | null;     // avg mood of prev 7 days; null if < 3 entries
+};
