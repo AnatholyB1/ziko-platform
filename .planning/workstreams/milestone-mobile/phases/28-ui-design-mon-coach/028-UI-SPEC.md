@@ -1,7 +1,7 @@
 ---
 phase: 28
 slug: ui-design-mon-coach
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-18
@@ -51,6 +51,9 @@ Exceptions:
 - KYC badge icon: 16×16 with 4px gap to label text
 - `padding: 12` — 3×4, used for tight error message containers and modal text input (acceptable density exception)
 - `gap: 12` — 3×4, used for modal button row spacing (acceptable density exception)
+- `marginTop: 12` — 3×4, used for intra-card element spacing (chips row, bio, "Lié depuis" row, cancel link) (acceptable density exception)
+- `marginLeft: 12` — 3×4, used for avatar right-column offset (acceptable density exception)
+- `marginRight: 12` — 3×4, used for icon-to-text gap in settings row (acceptable density exception)
 
 ---
 
@@ -221,7 +224,7 @@ Modal container:
 - `TextInput` — `height: 48 borderRadius: 10 borderWidth: 1 borderColor: '#E2E0DA' padding: 12 fontSize: 16`
   - `autoCapitalize: 'characters' autoCorrect: false`
   - Focus: `borderColor: '#FF5C1A'`
-- Button row `flexDirection: 'row' gap: 12 marginTop: 20`:
+- Button row `flexDirection: 'row' gap: 12 marginTop: 16`:
   - "Garder mon coach" — `flex:1 height:48 borderRadius:12 borderWidth:1 borderColor:'#E2E0DA' alignItems:'center' justifyContent:'center'`
     - `Text` 16px weight 400 color `#1C1A17`
   - "Confirmer" — `flex:1 height:48 borderRadius:12`
@@ -233,7 +236,7 @@ Modal container:
 Visible only when `role === 'client' || role === 'both'` AND coach is linked.
 
 Section header `Text` 14px weight 400 color `#6B6963` uppercased: "MON COACH" / "MY COACH"
-Row `TouchableOpacity flexDirection:'row' alignItems:'center' paddingVertical:14 paddingHorizontal:16`:
+Row `TouchableOpacity flexDirection:'row' alignItems:'center' paddingVertical:16 paddingHorizontal:16`:
 - Ionicons `person-outline` size 20 color `#1C1A17 marginRight:12`
 - `Text` 16px weight 400 color `#1C1A17` flex:1 — coach display name
 - Ionicons `chevron-forward` size 16 color `#6B6963`
@@ -369,11 +372,11 @@ No external registries. All components are custom inline-styled React Native pri
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: FLAG (non-blocking — "Confirmer" modal confirm button is single verb; all primary CTAs are specific)
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** APPROVED — 2026-05-18
