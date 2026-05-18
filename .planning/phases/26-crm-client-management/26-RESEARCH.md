@@ -768,17 +768,19 @@ Step 2.5: NOT APPLICABLE — Phase 26 is a new-feature phase, not a rename/refac
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`GET /coach/clients` query strategy: N+1 vs single RPC**
    - What we know: D-03 says all linked clients loaded in a single server fetch; coaches typically have <100 clients
    - What's unclear: Whether to use a PostgreSQL RPC for computing signal flags (last workout date, habit completion, mood avg) or N+1 per-client queries
    - Recommendation: For Phase 26, use a single Supabase RPC for the roster data to avoid N+1. The planner should create a task to write a `list_coach_clients_with_signals(coach_id)` SQL function. This is a MEDIUM-risk open item.
+   - **RESOLVED (Plan 26-02):** N+1 approach accepted for Phase 26 (coaches typically <100 clients, per D-03). Per-client loop implemented in `listCoachClients()` in `db.ts`. Single RPC deferred to post-v1.5 optimization.
 
 2. **`user_profiles` column for `display_name` and `photo_url` vs `coach_profiles`**
    - What we know: Athlete profiles are in `user_profiles` (migration 034); coach profiles are in `coach_profiles`. Athletes do NOT have `coach_profiles` rows.
    - What's unclear: What column name holds the athlete's display name and photo? `user_profiles.name`? `user_profiles.avatar_url`?
    - Recommendation: Planner must verify exact column names in `user_profiles` from migration 034 before writing the `listCoachClients` query.
+   - **RESOLVED (Plan 26-02):** Column names verified from migration 034: `user_profiles.name` (NOT `display_name`) and `user_profiles.avatar_url` (NOT `photo_url`).
 
 ---
 
