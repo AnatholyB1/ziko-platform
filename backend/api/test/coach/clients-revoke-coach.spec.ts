@@ -42,7 +42,7 @@ beforeAll(async () => {
   // Create an invitation and redeem it to establish a link
   const { data, error } = await adminClient
     .from('coach_invitations')
-    .insert({ coach_id: coach.id, code: 'RVCCH1', expires_at: fourteenDays() })
+    .insert({ coach_id: coach.id, code: 'RVCCHX', expires_at: fourteenDays() })
     .select()
     .single();
   if (error) throw new Error(`setup invite: ${error.message}`);

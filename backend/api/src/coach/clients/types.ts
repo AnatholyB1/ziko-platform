@@ -54,3 +54,32 @@ type RedeemRpcReturn =
   | { ok: false; error_code: DbErrorCode; link_id: null };
 
 export type { PeekRpcReturn, RedeemRpcReturn };
+
+// Phase 26 — coach-facing CRM types
+export type ClientRosterRow = {
+  id: string;            // user_profiles.id (client's UUID)
+  name: string | null;   // user_profiles.name
+  avatar_url: string | null; // user_profiles.avatar_url
+  last_active: string | null; // most recent workout_sessions.created_at
+  signal_missed: boolean; // no workout_sessions in last 14 days (D-02)
+  signal_stale: boolean;  // no body_measurements in last 28 days (D-02)
+  signal_mood: boolean;   // last-3 journal mood avg < prev-3 avg (D-02)
+  sessions_this_week: number; // count of workout_sessions since start of current week
+  habits_pct: number | null;  // avg daily habit completion % over last 7 days; null if no habits
+};
+
+export type ClientTag = {
+  id: string;
+  coach_id: string;
+  client_id: string;
+  tag: string;
+  created_at: string;
+};
+
+export type ClientNote = {
+  id: string;
+  coach_id: string;
+  client_id: string;
+  content: string;
+  updated_at: string;
+};

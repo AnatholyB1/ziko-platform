@@ -6,6 +6,9 @@ import type {
   LinkRow,
   PeekRpcReturn,
   RedeemRpcReturn,
+  ClientRosterRow,
+  ClientTag,
+  ClientNote,
 } from './types.js';
 
 const COACH_PHOTO_BUCKET = 'coach-kyc';
@@ -233,3 +236,221 @@ export async function revokeLink(
 
 // Unused-export guard for the helper (it's used internally only).
 export { signCoachPhoto as _signCoachPhoto };
+
+// ----- GET / — list all linked clients with signal flags (CLIENT-01, CLIENT-02) -----
+export async function listCoachClients(
+  jwt: string,
+  coachId: string,
+): Promise<ClientRosterRow[]> {
+  const db = createUserClient(jwt);
+
+  // Step 1: get all active client UUIDs for this coach
+  const { data: links, error: linkErr } = await db
+    .from('coach_client_links')
+    .select('client_id')
+    .eq('coach_id', coachId)
+    .is('revoked_at', null);
+  if (linkErr) throw new Error(linkErr.message);
+  if (!links || links.length === 0) return [];
+
+  const clientIds = links.map((l: any) => l.client_id as string);
+  const now = new Date();
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const twentyEightDaysAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString();
+  const weekStart = new Date(now);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(now.getDate() - now.getDay()); // Sunday start
+  const weekStartIso = weekStart.toISOString();
+
+  const rows: ClientRosterRow[] = [];
+
+  for (const clientId of clientIds) {
+    // Profile
+    const { data: profile } = await db
+      .from('user_profiles')
+      .select('id, name, avatar_url')
+      .eq('id', clientId)
+      .maybeSingle();
+
+    // Last active (latest workout session)
+    const { data: lastSession } = await db
+      .from('workout_sessions')
+      .select('created_at')
+      .eq('user_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Signal: missed sessions (no session in last 14 days)
+    const { data: recentSessions } = await db
+      .from('workout_sessions')
+      .select('id')
+      .eq('user_id', clientId)
+      .gte('created_at', fourteenDaysAgo)
+      .limit(1);
+
+    // Signal: stale measurements (no body_measurements in last 28 days)
+    const { data: recentMeasurements } = await db
+      .from('body_measurements')
+      .select('id')
+      .eq('user_id', clientId)
+      .gte('created_at', twentyEightDaysAgo)
+      .limit(1);
+
+    // Signal: mood declining (last-3 avg < prev-3 avg)
+    const { data: moodEntries } = await db
+      .from('journal_entries')
+      .select('mood')
+      .eq('user_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    let signalMood = false;
+    if (moodEntries && moodEntries.length >= 6) {
+      const last3 = moodEntries.slice(0, 3).map((e: any) => Number(e.mood));
+      const prev3 = moodEntries.slice(3, 6).map((e: any) => Number(e.mood));
+      const last3Avg = last3.reduce((a, b) => a + b, 0) / 3;
+      const prev3Avg = prev3.reduce((a, b) => a + b, 0) / 3;
+      signalMood = last3Avg < prev3Avg;
+    }
+
+    // Sessions this week
+    const { data: thisWeekSessions } = await db
+      .from('workout_sessions')
+      .select('id')
+      .eq('user_id', clientId)
+      .gte('created_at', weekStartIso);
+
+    // Habits % (7d avg)
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgoDate = sevenDaysAgo.toISOString().split('T')[0];
+    const { data: habits } = await db
+      .from('habits')
+      .select('id')
+      .eq('user_id', clientId);
+    const { data: habitLogs } = await db
+      .from('habit_logs')
+      .select('date, completed')
+      .eq('user_id', clientId)
+      .gte('date', sevenDaysAgoDate);
+
+    let habitsPct: number | null = null;
+    if (habits && habits.length > 0 && habitLogs) {
+      const totalPossible = habits.length * 7;
+      const completed = habitLogs.filter((l: any) => l.completed).length;
+      habitsPct = Math.round((completed / totalPossible) * 100);
+    }
+
+    rows.push({
+      id: clientId,
+      name: profile?.name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
+      last_active: lastSession?.created_at ?? null,
+      signal_missed: !recentSessions || recentSessions.length === 0,
+      signal_stale: !recentMeasurements || recentMeasurements.length === 0,
+      signal_mood: signalMood,
+      sessions_this_week: thisWeekSessions?.length ?? 0,
+      habits_pct: habitsPct,
+    });
+  }
+
+  return rows;
+}
+
+// ----- Tags CRUD (CLIENT-05) -----
+export async function listClientTags(jwt: string, coachId: string, clientId: string): Promise<ClientTag[]> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_client_tags')
+    .select('id, coach_id, client_id, tag, created_at')
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ClientTag[];
+}
+
+export async function createClientTag(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+  tag: string,
+): Promise<ClientTag> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_client_tags')
+    .insert({ coach_id: coachId, client_id: clientId, tag: tag.trim() })
+    .select('id, coach_id, client_id, tag, created_at')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as ClientTag;
+}
+
+export async function deleteClientTag(
+  jwt: string,
+  coachId: string,
+  tagId: string,
+): Promise<void> {
+  const db = createUserClient(jwt);
+  const { error } = await db
+    .from('coach_client_tags')
+    .delete()
+    .eq('id', tagId)
+    .eq('coach_id', coachId); // belt + suspenders; RLS also enforces
+  if (error) throw new Error(error.message);
+}
+
+// ----- Notes CRUD (CLIENT-06) -----
+export async function getClientNote(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<ClientNote | null> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_client_notes')
+    .select('id, coach_id, client_id, content, updated_at')
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as ClientNote) ?? null;
+}
+
+export async function upsertClientNote(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+  content: string,
+): Promise<ClientNote> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_client_notes')
+    .upsert(
+      { coach_id: coachId, client_id: clientId, content, updated_at: new Date().toISOString() },
+      { onConflict: 'coach_id,client_id' },
+    )
+    .select('id, coach_id, client_id, content, updated_at')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as ClientNote;
+}
+
+// ----- Coach-side revoke (CLIENT-08, D-20) -----
+// DIFFERENT from the Phase 25 athlete-revoke revokeLink(). This one checks coach_id = coachId.
+export async function revokeClientLinkByCoach(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<{ revoked_at: string }> {
+  const db = createUserClient(jwt);
+  const revokedAt = new Date().toISOString();
+  const { error } = await db
+    .from('coach_client_links')
+    .update({ revoked_at: revokedAt })
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .is('revoked_at', null);
+  if (error) throw new Error(error.message);
+  return { revoked_at: revokedAt };
+}
