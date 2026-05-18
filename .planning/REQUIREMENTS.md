@@ -32,11 +32,11 @@ This document lists the user-facing capabilities Ziko v1.5 must deliver. Each re
 
 - [x] **CLIENT-01**: A coach can see a paginated list of all linked clients on `/coach/clients` with name, photo, last-active timestamp, and quick filters.
 - [ ] **CLIENT-02**: A coach can search clients by name and apply roster filters by signal (missed last 2 sessions / measurements not updated >4 weeks / mood declining).
-- [ ] **CLIENT-03**: A coach can open a client detail page at `/coach/clients/[id]` showing tabs for sessions, measurements, habits, nutrition, sleep, cardio, journal — all read-only.
-- [ ] **CLIENT-04**: A coach sees an "executive summary" card at the top of the client detail (% weekly compliance, last workout date, latest measurement, mood trend over 14 days).
+- [x] **CLIENT-03**: A coach can open a client detail page at `/coach/clients/[id]` showing tabs for sessions, measurements, habits, nutrition, sleep, cardio, journal — all read-only.
+- [x] **CLIENT-04**: A coach sees an "executive summary" card at the top of the client detail (% weekly compliance, last workout date, latest measurement, mood trend over 14 days).
 - [x] **CLIENT-05**: A coach can attach custom text tags to a client (e.g. "Hyrox prep", "recovery phase") via a `coach_client_tags` table; tags are coach-private (never visible to client).
 - [x] **CLIENT-06**: A coach can write private notes per client in a dedicated editor (`coach_client_notes` table); notes are coach-private and version-tracked by `updated_at`.
-- [ ] **CLIENT-07**: A coach can select 3-5 linked clients and view a multi-client comparison chart for any common metric (body weight, 1RM on a lift, weekly volume, sleep hours).
+- [x] **CLIENT-07**: A coach can select 3-5 linked clients and view a multi-client comparison chart for any common metric (body weight, 1RM on a lift, weekly volume, sleep hours).
 - [x] **CLIENT-08**: A coach can revoke a coach↔client link from their dashboard with a 2-step confirmation; client retains all data but coach loses read access.
 
 ### Coaching Programs (PROG)
@@ -136,11 +136,11 @@ Each v1.5 requirement is mapped to exactly one phase. Coverage: 76/76 ✓ (no or
 | INVITE-07 | Phase 25 — Invitations & Mobile "Mon coach" Minimal | TBD |
 | CLIENT-01 | Phase 26 — CRM Client Management | 26-02 (listCoachClients + GET / route) |
 | CLIENT-02 | Phase 26 — CRM Client Management | TBD |
-| CLIENT-03 | Phase 26 — CRM Client Management | TBD |
-| CLIENT-04 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-03 | Phase 26 — CRM Client Management | 26-03 (7 tab db functions + /:id/[tab] routes) |
+| CLIENT-04 | Phase 26 — CRM Client Management | 26-03 (getClientSummary + GET /:id/summary route) |
 | CLIENT-05 | Phase 26 — CRM Client Management | 26-02 (coach_client_tags table + tags CRUD routes) |
 | CLIENT-06 | Phase 26 — CRM Client Management | 26-02 (coach_client_notes table + notes CRUD routes) |
-| CLIENT-07 | Phase 26 — CRM Client Management | TBD |
+| CLIENT-07 | Phase 26 — CRM Client Management | 26-03 (listCompareData + GET /compare route) |
 | CLIENT-08 | Phase 26 — CRM Client Management | 26-02 (revokeClientLinkByCoach + DELETE /links/:clientId route) |
 | PROG-01 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |
 | PROG-02 | Phase 27 — Coaching Programs & Mobile "Mon coach" Full | TBD |

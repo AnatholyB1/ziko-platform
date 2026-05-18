@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Coach Platform & CRM
-status: Phase 26 in progress — Wave 2 (26-03) next
+status: Phase 26 in progress — Wave 2 complete (26-03 done), Wave 3 (26-04) next
 stopped_at: null
-last_updated: "2026-05-18T11:30:00.000Z"
+last_updated: "2026-05-18T12:10:00.000Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 37
-  completed_plans: 31
-  percent: 84
+  completed_plans: 32
+  percent: 86
 ---
 
 # Project State
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-13)
 ## Current Position
 
 Phase: 26 — CRM Client Management
-Plan: 2/7 plans executed
-Status: In progress — plans 01-02 complete (Wave 0-1), Wave 2 (26-03) next
+Plan: 3/7 plans executed
+Status: In progress — plans 01-03 complete (Wave 0-1-2), Wave 3 (26-04) next
 
 ---
 
@@ -170,6 +170,6 @@ Recent decisions affecting current work (v1.5 milestone scoping):
 
 ## Session Continuity
 
-Last session: 2026-05-18T09:00:42Z
-Stopped at: Completed 26-01-PLAN.md (Wave 0 pre-flight — deps + schemas + test stubs)
+Last session: 2026-05-18T12:10:00Z
+Stopped at: Completed 26-03-PLAN.md (Wave 2 — summary/tabs/compare routes + 3 test specs upgraded)
 Resume file: None

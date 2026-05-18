@@ -185,8 +185,8 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   5. A coach can select 3–5 clients and view a multi-client comparison chart for a common metric; a coach can revoke a coach↔client link from the dashboard with a 2-step confirmation that immediately removes read access while preserving client data.
 **Plans**: 7 plans
 - [x] 26-01-PLAN.md — Wave 0: Pre-flight (deps + 8 test stubs + coach-sdk schemas) — COMPLETE 2026-05-18
-- [ ] 26-02-PLAN.md — Wave 1: Migration 041 [BLOCKING] + backend roster/tags/notes/revoke routes
-- [ ] 26-03-PLAN.md — Wave 1: Backend summary/7 tab/compare routes
+- [x] 26-02-PLAN.md — Wave 1: Migration 041 [BLOCKING] + backend roster/tags/notes/revoke routes — COMPLETE 2026-05-18
+- [x] 26-03-PLAN.md — Wave 2: Backend summary/7 tab/compare routes — COMPLETE 2026-05-18
 - [ ] 26-04-PLAN.md — Wave 2: Web roster page (ClientsTable + CoachSidebar Clients enabled)
 - [ ] 26-05-PLAN.md — Wave 2: Web client detail layout + all 7 tab pages
 - [ ] 26-06-PLAN.md — Wave 3: ExecutiveSummaryCard + ClientNotesPanel + ClientTagInput
@@ -306,7 +306,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 8/8 | Complete | 2026-05-15 |
 | 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Gaps | — |
-| 26. CRM Client Management | v1.5 | 2/7 | In progress | 2026-05-18 |
+| 26. CRM Client Management | v1.5 | 3/7 | In progress | 2026-05-18 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
 | 28. AI File Imports | v1.5 | 0/0 | Not started | — |
 | 29. AI Coach Orchestrator | v1.5 | 0/0 | Not started | — |
