@@ -87,7 +87,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Spike — Mandatory Plugin Pattern | 0/3 | Not started | - |
+| 27. Spike — Mandatory Plugin Pattern | 0/3 | Planned | - |
 | 28. UI Design — Mon coach Plugin | 0/TBD | Not started | - |
 | 29. Plugin "Mon coach" — Full Implementation | 0/TBD | Not started | - |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
