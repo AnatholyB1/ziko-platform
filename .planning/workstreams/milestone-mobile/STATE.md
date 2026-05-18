@@ -3,15 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Mobile v2
 status: executing
-stopped_at: Roadmap written, requirements traceability updated
-last_updated: "2026-05-18T19:00:00.400Z"
-last_activity: "2026-05-18 — Phase 27 planned (3 plans: SPIKE.md, code changes, verification)"
+last_updated: "2026-05-18T21:00:00.000Z"
+last_activity: "2026-05-18 — Phase 27 COMPLETE (registry-driven spike: SPIKE.md + 3 code changes + TypeScript verified)"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 20
 ---
 
 # Project State
@@ -26,20 +25,18 @@ See: .planning/workstreams/milestone-mobile/ROADMAP.md
 
 ## Current Position
 
-Phase: 27 of 31 (Spike — Mandatory Plugin Pattern)
-Plan: 3 plans (waves 1–3)
-Status: Ready to execute
-Last activity: 2026-05-18 — Phase 27 planned (3 plans: SPIKE.md, code changes, verification)
+Phase: 27 — **COMPLETE** (Spike — Mandatory Plugin Pattern)
+Next: Phase 28 — Mon coach Plugin UI Design (Figma, must precede Phase 29)
 
-Progress: [███████░░░] 67%
+Progress: [██░░░░░░░░] 20% (1/5 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 3
+- Average duration: ~6m
+- Total execution time: ~18m
 
 ## Accumulated Context
 
@@ -48,6 +45,8 @@ Progress: [███████░░░] 67%
 - Zero new backend: all routes needed by the Mon coach plugin already exist in Phase 25 (invitations, preview, revoke)
 - Design-first enforced: Phase 28 (Mon coach Figma) precedes Phase 29 (implementation); Phase 30 (web surfaces Figma) is independent and can run in parallel with 28/29
 - Phase 31 (AI tools) is optional scope — can be skipped without blocking milestone completion
+- [Phase 27]: Registry-driven mandatory plugin pattern: `mandatory?: boolean` in `PluginManifest` (packages/plugin-sdk/src/types.ts); PluginLoader pre-loads mandatory plugins unconditionally (apps/mobile/src/lib/PluginLoader.tsx); trash button grayed out in store/[id].tsx via JSX ternary
+- [Phase 27]: Visual verification of trash button deferred — store detail screen not connected; TypeScript clean compile accepted as spike proof per user decision
 
 ### Pending Todos
 
@@ -55,7 +54,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- COACH-05 spike must complete before Phase 29 — chosen pattern (data-driven vs registry-driven) shapes how PluginLoader.tsx, plugin settings UI, and the manifest are implemented
+- COACH-05 spike **RESOLVED** — registry-driven chosen: `mandatory?: boolean` in PluginManifest, PluginLoader pre-loads unconditionally, trash button gated in store/[id].tsx. Visual verification deferred (store detail screen not connected yet); TypeScript verification accepted as spike proof.
 
 ## Session Continuity
 
