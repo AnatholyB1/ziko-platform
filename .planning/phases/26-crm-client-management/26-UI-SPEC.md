@@ -1,10 +1,11 @@
 ---
 phase: 26
 slug: crm-client-management
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-18
+reviewed_at: 2026-05-18
 ---
 
 # Phase 26 — UI Design Contract: CRM Client Management
@@ -80,9 +81,9 @@ Four roles, two weights maximum. All sizes are in px / rem equivalents via Tailw
 | Display | `text-2xl font-bold` | 24px | 700 | 1.2 | Page headings, card titles (WelcomeCard pattern) |
 | Heading | `text-xl font-bold` | 20px | 700 | 1.2 | Modal titles, section headings, tab labels |
 | Body | `text-sm font-normal` | 14px | 400 | 1.5 | Table cells, muted labels, notes textarea, descriptions |
-| Label | `text-xs font-semibold tracking-wide uppercase` | 12px | 600 | 1.4 | Table header row, badge labels, filter chip selected state uses `font-semibold text-sm` |
+| Label | `text-xs font-bold tracking-wide uppercase` | 12px | 700 | 1.4 | Table header row, badge labels, filter chip selected state uses `font-bold text-sm` |
 
-**Weight rule:** Regular = 400 (`font-normal`), Bold = 700 (`font-bold`). Semibold 600 (`font-semibold`) is permitted only for table headers and selected filter chips — matches existing FilterChipGroup.
+**Weight rule:** Regular = 400 (`font-normal`), Bold = 700 (`font-bold`). Only two weights are used across the entire phase. Table headers and selected filter chips use `font-bold` (700) — they are already visually distinguished by `text-xs uppercase tracking-wide`, so the extra weight still provides clear hierarchy without a third weight.
 
 **Font stack:** system-ui (no custom web font). Light sport theme uses default system sans-serif.
 
@@ -194,6 +195,8 @@ CoachSidebar (w-60, sticky) | main (flex-1)
     ─ CompareButton (sticky, z-40, bottom-4 right-6, hidden when <2 selected)
 ```
 
+**Primary focal point:** ClientsTable — full-width, high information density, dominant element of the roster page.
+
 **Table columns (ordered):**
 1. Checkbox (w-10, `aria-label="Sélectionner"`)
 2. Client (avatar 32px circle + display_name + email) — min-w-[200px]
@@ -282,7 +285,7 @@ CoachSidebar (w-60, sticky) | main (flex-1)
   - `body`: `"[Prénom Nom] perdra l'accès à vos programmes assignés. Vous perdrez l'accès à leurs données."`
   - `confirmLabel`: `"Tapez COACH pour confirmer"`
   - `confirmCta`: `"Retirer"`
-  - `cancelLabel`: `"Annuler"`
+  - `cancelLabel`: `"Garder ce client"`
 - On confirm: `DELETE /coach/clients/links/:clientId`, router.refresh(), toast "Client retiré."
 
 ### Tab Navigation (D-06)
@@ -317,7 +320,7 @@ All strings below are the FR locale canonical values. EN translations follow sam
 | Revoke modal body | `[Prénom Nom] perdra l'accès à vos programmes assignés. Vous perdrez l'accès à leurs données.` |
 | Revoke confirm label | `Tapez COACH pour confirmer` |
 | Revoke confirm CTA | `Retirer` |
-| Revoke cancel | `Annuler` |
+| Revoke cancel | `Garder ce client` |
 | Revoke success toast | `Client retiré.` |
 | Notes save button | `Enregistrer les notes` |
 | Notes saved indicator | `Enregistré le [date] à [heure]` |
@@ -414,11 +417,11 @@ No third-party shadcn registries declared. Registry vetting gate: not applicable
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [ ] Dimension 1 Copywriting
+- [ ] Dimension 2 Visuals
+- [ ] Dimension 3 Color
+- [ ] Dimension 4 Typography
+- [ ] Dimension 5 Spacing
+- [ ] Dimension 6 Registry Safety
 
 **Approval:** pending
