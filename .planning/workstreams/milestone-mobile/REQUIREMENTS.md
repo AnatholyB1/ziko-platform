@@ -64,9 +64,23 @@
 
 | REQ-ID | Phase | Plan |
 |--------|-------|------|
-| COACH-01..COACH-05 | TBD | TBD |
-| COACH-06..COACH-10 | TBD | TBD |
-| COACH-11..COACH-13 | TBD | TBD |
-| COACH-14 | TBD | TBD |
-| COACH-15 | TBD | TBD |
-| UIDESIGN-01..UIDESIGN-05 | TBD | TBD |
+| COACH-01 | Phase 29 | TBD |
+| COACH-02 | Phase 29 | TBD |
+| COACH-03 | Phase 29 | TBD |
+| COACH-04 | Phase 29 | TBD |
+| COACH-05 | Phase 27 | TBD |
+| COACH-06 | Phase 29 | TBD |
+| COACH-07 | Phase 29 | TBD |
+| COACH-08 | Phase 29 | TBD |
+| COACH-09 | Phase 29 | TBD |
+| COACH-10 | Phase 28 | TBD |
+| COACH-11 | Phase 29 | TBD |
+| COACH-12 | Phase 29 | TBD |
+| COACH-13 | Phase 29 | TBD |
+| COACH-14 | Phase 29 | TBD |
+| COACH-15 | Phase 31 | TBD |
+| UIDESIGN-01 | Phase 30 | TBD |
+| UIDESIGN-02 | Phase 30 | TBD |
+| UIDESIGN-03 | Phase 30 | TBD |
+| UIDESIGN-04 | Phase 30 | TBD |
+| UIDESIGN-05 | Phase 30 | TBD |
