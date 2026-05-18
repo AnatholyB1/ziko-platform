@@ -26,3 +26,9 @@ export type {
   CoachLinkPreview,
   CoachLinkRedeem,
 } from './coach-link-preview.js';
+export { ClientSummarySchema } from './client-summary.js';
+export type { ClientSummary } from './client-summary.js';
+export { CoachClientTagSchema } from './client-tag.js';
+export type { CoachClientTag } from './client-tag.js';
+export { CoachClientNoteSchema } from './client-note.js';
+export type { CoachClientNote } from './client-note.js';
