@@ -699,22 +699,22 @@ RLS enforces that `client_id = auth.uid()` for athlete reads.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`coach.settings_section` i18n key needed**
    - What we know: The STGroup component expects a `title` string prop (not a translation key).
    - What's unclear: Should it be "MON COACH" (hardcoded FR) or use a translation key `coach.settings_section`?
-   - Recommendation: Add `coach.settings_section` key (`fr: 'MON COACH'`, `en: 'MY COACH'`) and use `t('coach.settings_section')`. Consistent with i18n-first approach.
+   - RESOLVED: Add `coach.settings_section` key (`fr: 'MON COACH'`, `en: 'MY COACH'`) and use `t('coach.settings_section')`. Consistent with i18n-first approach. Plans implement this decision.
 
 2. **`showInTabBar: false` route visibility**
    - What we know: All routes registered in the manifest are tab-visible based on `showInTabBar`.
    - What's unclear: If the coach plugin screen has `showInTabBar: false`, it won't appear in the tab bar — which is correct. But is it still navigable via `router.push`?
-   - Recommendation: Yes — Expo Router v4 routes are navigable regardless of tab bar visibility. `showInTabBar` only controls tab bar rendering, not route accessibility.
+   - RESOLVED: Yes — Expo Router v4 routes are navigable regardless of tab bar visibility. `showInTabBar` only controls tab bar rendering, not route accessibility. Plans use `showInTabBar: false`.
 
 3. **Pantry plugin in PLUGIN_LOADERS**
    - What we know: `pantry` is already in the `PLUGIN_LOADERS` map (line 27 of PluginLoader.tsx) but is NOT in the CLAUDE.md plugin catalog and not a Phase 29 concern.
    - What's unclear: Whether `coach` should be added before or after `pantry`.
-   - Recommendation: Add `coach` after `pantry` alphabetically — order does not affect behavior.
+   - RESOLVED: Add `coach` after `pantry` alphabetically — order does not affect behavior. Plans implement this.
 
 ---
 

@@ -11,7 +11,7 @@
 
 ### Scaffolding & Mandatory Pattern
 
-- [ ] **COACH-01**: The `plugins/coach/` directory exists with a complete manifest.ts (default export, `id: 'coach'`, `mandatory: true`, `showInTabBar: true`, Ionicons icon, fr+en metadata, `routes`, `aiTools`, `aiSkills`).
+- [ ] **COACH-01**: The `plugins/coach/` directory exists with a complete manifest.ts (default export, `id: 'coach'`, `mandatory: true`, `showInTabBar: false`, Ionicons icon, fr+en metadata, `routes`, `aiTools`, `aiSkills`).
 - [ ] **COACH-02**: The coach plugin is registered in `apps/mobile/src/lib/PluginLoader.tsx` static `PLUGIN_LOADERS` map.
 - [ ] **COACH-03**: The plugin is automatically installed (`user_plugins` record with `is_enabled: true`) for any user with `role = 'client' | 'both'` on first sign-in.
 - [ ] **COACH-04**: The "Désinstaller" button in the plugin settings UI is grayed out and non-interactive for the coach plugin; a tooltip explains it is mandatory.
