@@ -14,8 +14,9 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 ## Phases
 
 - [ ] **Phase 27: Spike — Mandatory Plugin Pattern** — Validate data-driven vs registry-driven mandatory enforcement before any code is written
-- [ ] **Phase 28: UI Design — Mon coach Plugin** — Figma design contract for all 3 states (State A / B / C) before screen implementation
+- [x] **Phase 28: UI Design — Mon coach Plugin** — Figma design contract for all 3 states (State A / B / C) before screen implementation
 - [ ] **Phase 29: Plugin "Mon coach" — Full Implementation** — Scaffold, mandatory enforcement, 3-state screen UX, revocation, i18n
+  > Design gate: Phase 28 complete 2026-05-18 — Phase 29 is unblocked.
 - [ ] **Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces** — Figma + UI-SPEC.md for onboarding, dashboard, settings, login + rework audit
 - [ ] **Phase 31: AI Tools — coach_get_link + coach_revoke_link** — Optional AI tools wired into backend registry
 
@@ -44,8 +45,13 @@ Plans:
   1. A Figma file is produced via `/gsd-ui-phase` covering all 3 screen states: State A (code entry), State B (coach preview card), State C (linked coach card with metadata).
   2. A `UI-SPEC.md` in `.planning/workstreams/milestone-mobile/phases/28-ui-design-mon-coach/` documents exact colors, shadow values (`shadowOpacity: 0.08, radius: 12, elevation: 3`), typography, component layout, and copy for each state.
   3. The design uses the light sport theme (`#FF5C1A` primary, `#F7F6F3` background, `#E2E0DA` border, `#1C1A17` text) and Ionicons icons throughout with no dark mode variants.
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
+
+Plans:
+- [x] 28-01-PLAN.md — UI-SPEC: Design Contract (retrospective, complete 2026-05-18)
+- [x] 28-02-PLAN.md — Figma Mockup Generation (complete 2026-05-19 — coach.jsx primary + Figma cloud bonus)
+- [x] 28-03-PLAN.md — Phase Verification & ROADMAP Update (complete 2026-05-19)
 
 ### Phase 29: Plugin "Mon coach" — Full Implementation
 **Goal**: The "Mon coach" plugin is live on mobile: pre-installed and non-removable for athletes, displaying 3 states driven by the Phase 25 backend, with fr+en strings.
@@ -57,8 +63,13 @@ Plans:
   3. After entering a valid code the athlete sees State B — a coach preview card showing photo, display name, specialties chips, bio, and KYC badge — and can either confirm ("Lier mon compte") or cancel.
   4. After confirming, the athlete sees State C — the coach card with "Lié depuis [date]" — and can tap "Retirer ce coach" from both the plugin screen and the Settings > Mon coach section; doing so opens a confirmation modal requiring the user to type "COACH" before the action fires, then calls `DELETE /coach/clients/links/:id` and returns to State A.
   5. Every user-facing string resolves via `useTranslation()` with a `coach.*` namespace; switching app locale shows correct French and English text for all states and error cases.
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+
+Plans:
+- [ ] 29-01-PLAN.md — Wave 0: UserProfile.role type fix + i18n keys + plugin scaffold (package.json, manifest, screens stub, route wrapper)
+- [ ] 29-02-PLAN.md — Wave 1: PluginLoader registration + auto-install for client-role athletes
+- [ ] 29-03-PLAN.md — Wave 1: CoachScreen full implementation (3 states, modal, stats queries)
+- [ ] 29-04-PLAN.md — Wave 2: Settings injection (MON COACH section) + store trash button tooltip
 
 ### Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces
 **Goal**: The four Phase 24 web surfaces that shipped without a design contract each have a Figma file + UI-SPEC.md, and a rework plan exists for any deviations.
@@ -87,9 +98,9 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress|  |
-| 28. UI Design — Mon coach Plugin | 0/TBD | Not started | - |
-| 29. Plugin "Mon coach" — Full Implementation | 0/TBD | Not started | - |
+| 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress | - |
+| 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
+| 29. Plugin "Mon coach" — Full Implementation | 0/4 | Planned | - |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
 | 31. AI Tools — coach_get_link + coach_revoke_link | 0/TBD | Not started | - |
 
