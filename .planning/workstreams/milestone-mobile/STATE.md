@@ -4,13 +4,13 @@ milestone: v1.6
 milestone_name: Mobile v2
 status: executing
 stopped_at: Roadmap written, requirements traceability updated
-last_updated: "2026-05-20T14:55:17.236Z"
+last_updated: "2026-05-20T22:24:56.925Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 3
   total_plans: 16
-  completed_plans: 11
-  percent: 60
+  completed_plans: 12
+  percent: 50
 ---
 
 # Project State
@@ -29,7 +29,7 @@ Phase: 29 — **COMPLETE** (Plugin "Mon coach" Full Implementation)
 Phase: 30 — **DROPPED** (UI Design Catch-Up — Phase 24 Web Surfaces) — out of scope, mobile-only workstream
 Phase: 31 — **COMPLETE** (AI Tools — coach_get_link + coach_revoke_link) — 2 plans executed; human end-to-end verification pending
 
-Progress: [███████░░░] 69%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -59,6 +59,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T14:55:17.209Z
+Last session: 2026-05-20T22:24:56.910Z
 Stopped at: Roadmap written, requirements traceability updated
 Resume file: None
