@@ -17,7 +17,7 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 - [x] **Phase 28: UI Design — Mon coach Plugin** — Figma design contract for all 3 states (State A / B / C) before screen implementation
 - [x] **Phase 29: Plugin "Mon coach" — Full Implementation** — Scaffold, mandatory enforcement, 3-state screen UX, revocation, i18n (completed 2026-05-20)
   > Design gate: Phase 28 complete 2026-05-18 — Phase 29 is unblocked.
-- [ ] **Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces** — Figma + UI-SPEC.md for onboarding, dashboard, settings, login + rework audit
+- [x] **Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces** — ~~N/A: web surfaces are out of scope for this mobile-only workstream. Dropped 2026-05-20.~~
 - [ ] **Phase 31: AI Tools — coach_get_link + coach_revoke_link** — Optional AI tools wired into backend registry
 
 ## Phase Details
@@ -72,21 +72,9 @@ Plans:
 - [x] 29-04-PLAN.md — Wave 2: Settings injection (MON COACH section) + store trash button tooltip
 
 ### Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces
-**Goal**: The four Phase 24 web surfaces that shipped without a design contract each have a Figma file + UI-SPEC.md, and a rework plan exists for any deviations.
-**Depends on**: Phase 27 (can run in parallel with Phase 28/29)
-**Requirements**: UIDESIGN-01, UIDESIGN-02, UIDESIGN-03, UIDESIGN-04, UIDESIGN-05
-**Success Criteria** (what must be TRUE):
-  1. Four Figma files exist (one per surface: `/coach/onboarding` wizard, `/coach/dashboard`, `/coach/settings`, `/fr/login`) each produced via `/gsd-ui-phase`, all using the Ziko light sport design tokens.
-  2. Each Figma file has a corresponding `UI-SPEC.md` specifying component structure, spacing, copy, and interaction states.
-  3. Each live surface is audited against its design contract via `/gsd-ui-review`; deviations are documented in a rework plan (zero deviations = rework plan states "no action required").
-**Plans**: 4 plans
-**UI hint**: yes
+**Status**: ~~DROPPED 2026-05-20~~ — Web surfaces are out of scope for this mobile-only workstream. UIDESIGN requirements belong to the web platform workstream, not milestone-mobile.
 
-Plans:
-- [ ] 30-01-PLAN.md — Login surface: mockup enumeration + UI-SPEC + rework plan (6 visual-only deviations)
-- [ ] 30-02-PLAN.md — Onboarding wizard surface: UI-SPEC + rework plan (3 structural + 4 visual + 1 copy deviations)
-- [ ] 30-03-PLAN.md — Dashboard surface: UI-SPEC + rework plan (1 structural CoachSidebar locale + 3 visual deviations)
-- [ ] 30-04-PLAN.md — Settings surface: UI-SPEC + rework plan (6 visual-only deviations incl. success color)
+Plans: N/A
 
 ### Phase 31: AI Tools — coach_get_link + coach_revoke_link
 **Goal**: The coach plugin exposes two AI tools that let the Claude orchestrator check and revoke the coach link on behalf of the athlete.
@@ -96,7 +84,11 @@ Plans:
   1. The plugin manifest declares `aiTools: [coach_get_link, coach_revoke_link]` with valid JSON Schema parameters; the tools appear in `GET /ai/tools` on the live backend.
   2. Asking the AI coach "Who is my coach?" triggers `coach_get_link` and returns the coach's display name and link date in the response.
   3. Asking the AI to "Retirer mon coach" triggers `coach_revoke_link`, which calls the existing `DELETE /coach/clients/links/:id` route, and the plugin screen returns to State A afterward.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 31-01-PLAN.md — Wave 1: Implement coach.ts tool functions (coach_get_link + coach_revoke_link)
+- [ ] 31-02-PLAN.md — Wave 2: Wire into registry.ts + update coach plugin manifest
 
 ---
 
@@ -107,8 +99,8 @@ Plans:
 | 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress | - |
 | 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
 | 29. Plugin "Mon coach" — Full Implementation | 4/4 | Complete   | 2026-05-20 |
-| 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/4 | Not started | - |
-| 31. AI Tools — coach_get_link + coach_revoke_link | 0/TBD | Not started | - |
+| 30. UI Design Catch-Up — Phase 24 Web Surfaces | N/A | Dropped (out of scope) | 2026-05-20 |
+| 31. AI Tools — coach_get_link + coach_revoke_link | 0/2 | Not started | - |
 
 ---
 
@@ -131,10 +123,10 @@ Plans:
 | COACH-13 | Phase 29 |
 | COACH-14 | Phase 29 |
 | COACH-15 | Phase 31 |
-| UIDESIGN-01 | Phase 30 |
-| UIDESIGN-02 | Phase 30 |
-| UIDESIGN-03 | Phase 30 |
-| UIDESIGN-04 | Phase 30 |
-| UIDESIGN-05 | Phase 30 |
+| UIDESIGN-01 | ~~Phase 30~~ — dropped (web scope) |
+| UIDESIGN-02 | ~~Phase 30~~ — dropped (web scope) |
+| UIDESIGN-03 | ~~Phase 30~~ — dropped (web scope) |
+| UIDESIGN-04 | ~~Phase 30~~ — dropped (web scope) |
+| UIDESIGN-05 | ~~Phase 30~~ — dropped (web scope) |
 
 **Coverage: 20/20 requirements mapped.**
