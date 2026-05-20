@@ -29,6 +29,7 @@
     "@ziko/ai-client": "*",
     "@ziko/plugin-community": "*",
     "@ziko/plugin-gamification": "*",
+    "@ziko/plugin-coach": "*",
     "@ziko/plugin-habits": "*",
     "@ziko/plugin-nutrition": "*",
     "@ziko/plugin-pantry": "*",
