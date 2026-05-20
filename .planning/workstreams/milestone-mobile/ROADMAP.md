@@ -15,7 +15,7 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 
 - [ ] **Phase 27: Spike — Mandatory Plugin Pattern** — Validate data-driven vs registry-driven mandatory enforcement before any code is written
 - [x] **Phase 28: UI Design — Mon coach Plugin** — Figma design contract for all 3 states (State A / B / C) before screen implementation
-- [ ] **Phase 29: Plugin "Mon coach" — Full Implementation** — Scaffold, mandatory enforcement, 3-state screen UX, revocation, i18n
+- [x] **Phase 29: Plugin "Mon coach" — Full Implementation** — Scaffold, mandatory enforcement, 3-state screen UX, revocation, i18n (completed 2026-05-20)
   > Design gate: Phase 28 complete 2026-05-18 — Phase 29 is unblocked.
 - [ ] **Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces** — Figma + UI-SPEC.md for onboarding, dashboard, settings, login + rework audit
 - [ ] **Phase 31: AI Tools — coach_get_link + coach_revoke_link** — Optional AI tools wired into backend registry
@@ -68,8 +68,8 @@ Plans:
 Plans:
 - [x] 29-01-PLAN.md — Wave 0: UserProfile.role type fix + i18n keys + plugin scaffold (package.json, manifest, screens stub, route wrapper)
 - [x] 29-02-PLAN.md — Wave 1: PluginLoader registration + auto-install for client-role athletes
-- [ ] 29-03-PLAN.md — Wave 1: CoachScreen full implementation (3 states, modal, stats queries)
-- [ ] 29-04-PLAN.md — Wave 2: Settings injection (MON COACH section) + store trash button tooltip
+- [x] 29-03-PLAN.md — Wave 1: CoachScreen full implementation (3 states, modal, stats queries)
+- [x] 29-04-PLAN.md — Wave 2: Settings injection (MON COACH section) + store trash button tooltip
 
 ### Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces
 **Goal**: The four Phase 24 web surfaces that shipped without a design contract each have a Figma file + UI-SPEC.md, and a rework plan exists for any deviations.
@@ -100,7 +100,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress | - |
 | 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
-| 29. Plugin "Mon coach" — Full Implementation | 2/4 | In Progress|  |
+| 29. Plugin "Mon coach" — Full Implementation | 4/4 | Complete   | 2026-05-20 |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
 | 31. AI Tools — coach_get_link + coach_revoke_link | 0/TBD | Not started | - |
 

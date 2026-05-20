@@ -14,21 +14,21 @@
 - [x] **COACH-01**: The `plugins/coach/` directory exists with a complete manifest.ts (default export, `id: 'coach'`, `mandatory: true`, `showInTabBar: false`, Ionicons icon, fr+en metadata, `routes`, `aiTools`, `aiSkills`).
 - [x] **COACH-02**: The coach plugin is registered in `apps/mobile/src/lib/PluginLoader.tsx` static `PLUGIN_LOADERS` map.
 - [x] **COACH-03**: The plugin is automatically installed (`user_plugins` record with `is_enabled: true`) for any user with `role = 'client' | 'both'` on first sign-in.
-- [ ] **COACH-04**: The "Désinstaller" button in the plugin settings UI is grayed out and non-interactive for the coach plugin; a tooltip explains it is mandatory.
+- [x] **COACH-04**: The "Désinstaller" button in the plugin settings UI is grayed out and non-interactive for the coach plugin; a tooltip explains it is mandatory.
 - [ ] **COACH-05**: A spike (`/gsd-spike`) validates the mandatory enforcement approach before implementation (data-driven `user_plugins.is_mandatory` vs registry-driven `manifest.mandatory: true`).
 
 ### Screen UX — 3 States
 
-- [ ] **COACH-06**: State A — when no coach is linked, the screen displays a single `<TextInput maxLength={6}>` with auto-uppercase, charset filter `[A-Z2-9]`, paste support, and a submit CTA enabled only when 6 valid characters are entered.
-- [ ] **COACH-07**: After entering a valid code, the screen shows State B — a coach preview card (photo, display_name, specialties chips, bio, KYC badge) with "Lier mon compte" CTA and "Annuler" link; preview data comes from `GET /coach/clients/links/preview?code=XXXXXX`.
-- [ ] **COACH-08**: After confirming, the screen shows State C — the coach card with link metadata ("Lié depuis [date]") and a "Retirer ce coach" action.
-- [ ] **COACH-09**: Error messages in State A use constant-time copy (same message regardless of whether the code exists or not) to prevent enumeration attacks.
+- [x] **COACH-06**: State A — when no coach is linked, the screen displays a single `<TextInput maxLength={6}>` with auto-uppercase, charset filter `[A-Z2-9]`, paste support, and a submit CTA enabled only when 6 valid characters are entered.
+- [x] **COACH-07**: After entering a valid code, the screen shows State B — a coach preview card (photo, display_name, specialties chips, bio, KYC badge) with "Lier mon compte" CTA and "Annuler" link; preview data comes from `GET /coach/clients/links/preview?code=XXXXXX`.
+- [x] **COACH-08**: After confirming, the screen shows State C — the coach card with link metadata ("Lié depuis [date]") and a "Retirer ce coach" action.
+- [x] **COACH-09**: Error messages in State A use constant-time copy (same message regardless of whether the code exists or not) to prevent enumeration attacks.
 - [ ] **COACH-10**: A Figma design contract (via `/gsd-ui-phase`) is produced before any screen implementation; the design uses light sport theme (`#FF5C1A` primary, `#F7F6F3` bg, cards with `shadowOpacity 0.08, radius 12, elevation 3`).
 
 ### Revocation from Settings
 
-- [ ] **COACH-11**: `apps/mobile/app/(app)/settings.tsx` includes a "Mon coach" section visible only when `role = 'client' | 'both'` and a coach is linked.
-- [ ] **COACH-12**: Tapping "Retirer ce coach" opens a typed-confirmation modal requiring the user to type "COACH" before the confirm button becomes active.
+- [x] **COACH-11**: `apps/mobile/app/(app)/settings.tsx` includes a "Mon coach" section visible only when `role = 'client' | 'both'` and a coach is linked.
+- [x] **COACH-12**: Tapping "Retirer ce coach" opens a typed-confirmation modal requiring the user to type "COACH" before the confirm button becomes active.
 - [x] **COACH-13**: On confirmation, the mobile app calls `DELETE /coach/clients/links/:id` (already shipped in Phase 25), clears local state, and returns the screen to State A.
 
 ### i18n
