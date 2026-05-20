@@ -79,8 +79,14 @@ Plans:
   1. Four Figma files exist (one per surface: `/coach/onboarding` wizard, `/coach/dashboard`, `/coach/settings`, `/fr/login`) each produced via `/gsd-ui-phase`, all using the Ziko light sport design tokens.
   2. Each Figma file has a corresponding `UI-SPEC.md` specifying component structure, spacing, copy, and interaction states.
   3. Each live surface is audited against its design contract via `/gsd-ui-review`; deviations are documented in a rework plan (zero deviations = rework plan states "no action required").
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 30-01-PLAN.md — Login surface: mockup enumeration + UI-SPEC + rework plan (6 visual-only deviations)
+- [ ] 30-02-PLAN.md — Onboarding wizard surface: UI-SPEC + rework plan (3 structural + 4 visual + 1 copy deviations)
+- [ ] 30-03-PLAN.md — Dashboard surface: UI-SPEC + rework plan (1 structural CoachSidebar locale + 3 visual deviations)
+- [ ] 30-04-PLAN.md — Settings surface: UI-SPEC + rework plan (6 visual-only deviations incl. success color)
 
 ### Phase 31: AI Tools — coach_get_link + coach_revoke_link
 **Goal**: The coach plugin exposes two AI tools that let the Claude orchestrator check and revoke the coach link on behalf of the athlete.
@@ -101,7 +107,7 @@ Plans:
 | 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress | - |
 | 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
 | 29. Plugin "Mon coach" — Full Implementation | 4/4 | Complete   | 2026-05-20 |
-| 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
+| 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/4 | Not started | - |
 | 31. AI Tools — coach_get_link + coach_revoke_link | 0/TBD | Not started | - |
 
 ---
