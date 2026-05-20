@@ -67,7 +67,7 @@ Plans:
 
 Plans:
 - [x] 29-01-PLAN.md — Wave 0: UserProfile.role type fix + i18n keys + plugin scaffold (package.json, manifest, screens stub, route wrapper)
-- [ ] 29-02-PLAN.md — Wave 1: PluginLoader registration + auto-install for client-role athletes
+- [x] 29-02-PLAN.md — Wave 1: PluginLoader registration + auto-install for client-role athletes
 - [ ] 29-03-PLAN.md — Wave 1: CoachScreen full implementation (3 states, modal, stats queries)
 - [ ] 29-04-PLAN.md — Wave 2: Settings injection (MON COACH section) + store trash button tooltip
 
@@ -100,7 +100,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 27. Spike — Mandatory Plugin Pattern | 2/3 | In Progress | - |
 | 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
-| 29. Plugin "Mon coach" — Full Implementation | 1/4 | In Progress|  |
+| 29. Plugin "Mon coach" — Full Implementation | 2/4 | In Progress|  |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | 0/TBD | Not started | - |
 | 31. AI Tools — coach_get_link + coach_revoke_link | 0/TBD | Not started | - |
 

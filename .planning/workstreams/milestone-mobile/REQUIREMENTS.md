@@ -11,9 +11,9 @@
 
 ### Scaffolding & Mandatory Pattern
 
-- [ ] **COACH-01**: The `plugins/coach/` directory exists with a complete manifest.ts (default export, `id: 'coach'`, `mandatory: true`, `showInTabBar: false`, Ionicons icon, fr+en metadata, `routes`, `aiTools`, `aiSkills`).
-- [ ] **COACH-02**: The coach plugin is registered in `apps/mobile/src/lib/PluginLoader.tsx` static `PLUGIN_LOADERS` map.
-- [ ] **COACH-03**: The plugin is automatically installed (`user_plugins` record with `is_enabled: true`) for any user with `role = 'client' | 'both'` on first sign-in.
+- [x] **COACH-01**: The `plugins/coach/` directory exists with a complete manifest.ts (default export, `id: 'coach'`, `mandatory: true`, `showInTabBar: false`, Ionicons icon, fr+en metadata, `routes`, `aiTools`, `aiSkills`).
+- [x] **COACH-02**: The coach plugin is registered in `apps/mobile/src/lib/PluginLoader.tsx` static `PLUGIN_LOADERS` map.
+- [x] **COACH-03**: The plugin is automatically installed (`user_plugins` record with `is_enabled: true`) for any user with `role = 'client' | 'both'` on first sign-in.
 - [ ] **COACH-04**: The "Désinstaller" button in the plugin settings UI is grayed out and non-interactive for the coach plugin; a tooltip explains it is mandatory.
 - [ ] **COACH-05**: A spike (`/gsd-spike`) validates the mandatory enforcement approach before implementation (data-driven `user_plugins.is_mandatory` vs registry-driven `manifest.mandatory: true`).
 
@@ -29,11 +29,11 @@
 
 - [ ] **COACH-11**: `apps/mobile/app/(app)/settings.tsx` includes a "Mon coach" section visible only when `role = 'client' | 'both'` and a coach is linked.
 - [ ] **COACH-12**: Tapping "Retirer ce coach" opens a typed-confirmation modal requiring the user to type "COACH" before the confirm button becomes active.
-- [ ] **COACH-13**: On confirmation, the mobile app calls `DELETE /coach/clients/links/:id` (already shipped in Phase 25), clears local state, and returns the screen to State A.
+- [x] **COACH-13**: On confirmation, the mobile app calls `DELETE /coach/clients/links/:id` (already shipped in Phase 25), clears local state, and returns the screen to State A.
 
 ### i18n
 
-- [ ] **COACH-14**: All user-facing strings use `useTranslation()` from `@ziko/plugin-sdk` with a new `coach.*` key namespace; both `fr` and `en` translation files are complete.
+- [x] **COACH-14**: All user-facing strings use `useTranslation()` from `@ziko/plugin-sdk` with a new `coach.*` key namespace; both `fr` and `en` translation files are complete.
 
 ### AI Tools (Optional)
 
