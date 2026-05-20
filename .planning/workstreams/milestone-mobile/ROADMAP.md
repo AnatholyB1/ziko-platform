@@ -13,12 +13,12 @@ Design-first is enforced: Phases 28 (Mon coach Figma) and 30 (web surfaces Figma
 
 ## Phases
 
-- [ ] **Phase 27: Spike — Mandatory Plugin Pattern** — Validate data-driven vs registry-driven mandatory enforcement before any code is written
+- [x] **Phase 27: Spike — Mandatory Plugin Pattern** — Validate data-driven vs registry-driven mandatory enforcement before any code is written (completed 2026-05-18 — registry-driven chosen, TypeScript clean compile verified)
 - [x] **Phase 28: UI Design — Mon coach Plugin** — Figma design contract for all 3 states (State A / B / C) before screen implementation
 - [x] **Phase 29: Plugin "Mon coach" — Full Implementation** — Scaffold, mandatory enforcement, 3-state screen UX, revocation, i18n (completed 2026-05-20)
   > Design gate: Phase 28 complete 2026-05-18 — Phase 29 is unblocked.
 - [x] **Phase 30: UI Design Catch-Up — Phase 24 Web Surfaces** — ~~N/A: web surfaces are out of scope for this mobile-only workstream. Dropped 2026-05-20.~~
-- [ ] **Phase 31: AI Tools — coach_get_link + coach_revoke_link** — Optional AI tools wired into backend registry
+- [x] **Phase 31: AI Tools — coach_get_link + coach_revoke_link** — Optional AI tools wired into backend registry (completed 2026-05-20; end-to-end test pending)
 
 ## Phase Details
 
@@ -89,10 +89,10 @@ Plans: N/A
 Plans:
 
 Wave 1:
-- [ ] 31-01-PLAN.md — Implement `coach.ts`: `coach_get_link` + `coach_revoke_link` tool functions
+- [x] 31-01-PLAN.md — Implement `coach.ts`: `coach_get_link` + `coach_revoke_link` tool functions
 
 Wave 2 *(blocked on Wave 1 completion)*:
-- [ ] 31-02-PLAN.md — Wire into registry.ts (import + executors map + allToolSchemas) + update `plugins/coach/src/manifest.ts` (aiTools + aiSystemPromptAddition)
+- [x] 31-02-PLAN.md — Wire into registry.ts (import + executors map + allToolSchemas) + update `plugins/coach/src/manifest.ts` (aiTools + aiSystemPromptAddition)
 
 Cross-cutting constraints:
 - userToken (JWT) is mandatory for both tool functions — confirmed gate and no_active_link guard required
