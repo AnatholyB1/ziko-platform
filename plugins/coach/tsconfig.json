@@ -5,5 +5,5 @@
     "rootDir": "../..",
     "jsx": "react-native"
   },
-  "include": ["src"]
+  "include": ["src", "../../apps/mobile/src/stores/authStore.ts", "../../apps/mobile/src/lib/supabase.ts"]
 }
