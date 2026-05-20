@@ -1,28 +1,34 @@
 -- ============================================================
 -- 046 — Coaching Program Seed Templates (Phase 27, Plan 03)
 --
--- Sentinel UUID strategy (D-09 from 27-CONTEXT.md):
---   user_id = '00000000-0000-0000-0000-000000000001' is a system-owned
---   sentinel that does NOT correspond to any real auth.users row.
---   This migration executes in the Supabase migration context (superuser
---   privilege) which bypasses the FK constraint check against auth.users.
+-- user_id = NULL for system seed templates (user_id column made
+--   nullable in this migration). The FK constraint against auth.users
+--   cannot be bypassed via the Supabase MCP apply_migration path, so
+--   the sentinel UUID strategy was replaced with NULL user_id.
 --   The workout_programs_coach_read RLS policy (migration 045) explicitly
 --   allows any authenticated user to read rows where
 --   is_template = TRUE AND created_by_coach_id IS NULL — so these seed
---   rows are visible to coaches and athletes without needing the sentinel
---   UUID to exist in auth.users at query time.
+--   rows are visible to coaches and athletes. NULL user_id + existing RLS
+--   policies prevent modification by regular users, making this approach
+--   semantically cleaner than a sentinel UUID.
 --
 -- Adds:
---   1. workout_programs.goal (TEXT NULL) — program fitness goal label
---   2. workout_programs.weeks_count (INTEGER NULL) — total program duration
---   3. 5 idempotent seed template INSERT statements
+--   1. ALTER TABLE workout_programs ALTER COLUMN user_id DROP NOT NULL
+--   2. workout_programs.goal (TEXT NULL) — program fitness goal label
+--   3. workout_programs.weeks_count (INTEGER NULL) — total program duration
+--   4. 5 idempotent seed template INSERT statements
 --      (ON CONFLICT (id) DO NOTHING — safe to re-run)
 -- ============================================================
 
 SET LOCAL lock_timeout = '5s';
 
 -- ───────────────────────────────────────────────────────────
--- 1. Add goal + weeks_count columns (not added in 045)
+-- 1. Make user_id nullable (required for system seed templates)
+-- ───────────────────────────────────────────────────────────
+ALTER TABLE public.workout_programs ALTER COLUMN user_id DROP NOT NULL;
+
+-- ───────────────────────────────────────────────────────────
+-- 2. Add goal + weeks_count columns (not added in 045)
 -- ───────────────────────────────────────────────────────────
 ALTER TABLE public.workout_programs
   ADD COLUMN IF NOT EXISTS goal         TEXT    NULL,
@@ -51,7 +57,7 @@ INSERT INTO public.workout_programs (
   start_date
 ) VALUES (
   'a1000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000001',
+  NULL,
   'PPL 6 semaines',
   'Programme Push/Pull/Legs sur 6 jours — idéal pour hypertrophie intermédiaire',
   'Prise de masse',
@@ -267,7 +273,7 @@ INSERT INTO public.workout_programs (
   start_date
 ) VALUES (
   'a1000000-0000-0000-0000-000000000002',
-  '00000000-0000-0000-0000-000000000001',
+  NULL,
   '5/3/1 Wendler 4 semaines',
   'Programme force basé sur 5/3/1 avec 4 mouvements fondamentaux',
   'Force',
@@ -468,7 +474,7 @@ INSERT INTO public.workout_programs (
   start_date
 ) VALUES (
   'a1000000-0000-0000-0000-000000000003',
-  '00000000-0000-0000-0000-000000000001',
+  NULL,
   'Hyrox Prep 8 semaines',
   'Préparation compétition Hyrox — endurance fonctionnelle + force',
   'Hyrox',
@@ -647,7 +653,7 @@ INSERT INTO public.workout_programs (
   start_date
 ) VALUES (
   'a1000000-0000-0000-0000-000000000004',
-  '00000000-0000-0000-0000-000000000001',
+  NULL,
   'Body Recomp 12 semaines',
   'Recomposition corporelle — perte de gras + maintien musculaire',
   'Reconditionnement',
@@ -874,7 +880,7 @@ INSERT INTO public.workout_programs (
   start_date
 ) VALUES (
   'a1000000-0000-0000-0000-000000000005',
-  '00000000-0000-0000-0000-000000000001',
+  NULL,
   'Débutant Full Body 8 semaines',
   'Programme pour débutants — 3 jours/semaine, mouvements fondamentaux',
   'Reconditionnement',
