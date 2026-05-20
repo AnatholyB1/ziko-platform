@@ -25,6 +25,7 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   supplements:   () => import('@ziko/plugin-supplements/manifest') as any,
   rpe:           () => import('@ziko/plugin-rpe/manifest') as any,
   pantry:        () => import('@ziko/plugin-pantry/manifest') as any,
+  coach:         () => import('@ziko/plugin-coach/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */
@@ -52,6 +53,28 @@ async function applyPersonaDynamicPrompt(manifest: PluginManifest, userId: strin
     console.warn('[PluginLoader] Failed to apply persona prompt:', e);
   }
   return manifest;
+}
+
+/** Auto-install the coach plugin for athletes (role 'client' or 'both') — idempotent */
+async function autoInstallCoachPlugin(userId: string): Promise<void> {
+  try {
+    const { data: profileRow } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+    const role = profileRow?.role ?? 'client';
+    if (role === 'client' || role === 'both') {
+      await supabase
+        .from('user_plugins')
+        .upsert(
+          { user_id: userId, plugin_id: 'coach', is_enabled: true },
+          { onConflict: 'user_id,plugin_id' }
+        );
+    }
+  } catch (err) {
+    console.warn('[PluginLoader] autoInstallCoachPlugin failed:', err);
+  }
 }
 
 interface PluginLoaderProps {
@@ -85,6 +108,8 @@ export function PluginLoader({ children }: PluginLoaderProps) {
           console.warn(`[PluginLoader] Failed to load mandatory plugin "${pluginId}":`, err);
         }
       }
+
+      await autoInstallCoachPlugin(user.id);
 
       const { data: userPlugins, error } = await supabase
         .from('user_plugins')
