@@ -716,3 +716,107 @@ export async function listCompareData(
 
   return result;
 }
+
+// ----- GET /:id/programs — programs assigned to a client by this coach (PROG-06) -----
+export async function getProgramsForClient(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<{ programs: any[] }> {
+  const db = createUserClient(jwt);
+
+  const { data: programs, error } = await db
+    .from('workout_programs')
+    .select('id, name, description, goal, weeks_count, is_template, created_by_coach_id, assigned_to_user_id, template_source_id, start_date, weeks_data')
+    .eq('assigned_to_user_id', clientId)
+    .eq('created_by_coach_id', coachId)
+    .order('start_date', { ascending: false, nullsFirst: false });
+
+  if (error) throw new Error(error.message);
+  if (!programs || programs.length === 0) return { programs: [] };
+
+  // Compute week_number_current for the ISO week (Monday 00:00 UTC)
+  const now = Date.now();
+  const enriched: any[] = [];
+
+  for (let i = 0; i < programs.length; i++) {
+    const prog = programs[i] as any;
+    let weekNumberCurrent: number | null = null;
+
+    if (prog.start_date) {
+      const raw = Math.floor((now - new Date(prog.start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+      weekNumberCurrent = Math.min(raw, prog.weeks_count as number);
+    }
+
+    // compliance_pct: only compute for the first (most recent / active) program
+    let compliancePct: number | null = null;
+    if (i === 0 && weekNumberCurrent !== null && prog.weeks_data) {
+      // Monday 00:00 UTC of the current ISO week
+      const nowDate = new Date();
+      const dayOfWeek = nowDate.getUTCDay(); // 0=Sun, 1=Mon, …
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const mondayMs = Date.UTC(
+        nowDate.getUTCFullYear(),
+        nowDate.getUTCMonth(),
+        nowDate.getUTCDate() - daysToMonday,
+      );
+      const mondayIso = new Date(mondayMs).toISOString();
+
+      // Count workout_sessions that reference this program and were logged this week
+      const { count: doneCount } = await db
+        .from('workout_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('source_program_id', prog.id)
+        .gte('created_at', mondayIso);
+
+      // Denominator: number of sessions planned in weeks_data for weekNumberCurrent
+      let denominator = 0;
+      try {
+        const weeksData: any[] = Array.isArray(prog.weeks_data) ? prog.weeks_data : JSON.parse(prog.weeks_data);
+        const weekEntry = weeksData.find((w: any) => w.week_number === weekNumberCurrent);
+        if (weekEntry && Array.isArray(weekEntry.sessions)) {
+          denominator = weekEntry.sessions.length;
+        }
+      } catch {
+        // weeks_data parse error — leave denominator 0
+      }
+
+      const done = doneCount ?? 0;
+      compliancePct = denominator > 0 ? Math.round((done / denominator) * 100) : null;
+    }
+
+    enriched.push({
+      ...prog,
+      week_number_current: weekNumberCurrent,
+      compliance_pct: i === 0 ? compliancePct : null,
+    });
+  }
+
+  return { programs: enriched };
+}
+
+// ----- PUT /:clientId/shared-note — update shared note on the coach↔client link (PROG-07, PROG-09) -----
+// IDOR guard: WHERE coach_id=coachId AND status='active' ensures coach can only update their own active link.
+export async function upsertSharedNote(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+  note: string,
+): Promise<{ updated: true }> {
+  const db = createUserClient(jwt);
+
+  const { data, error } = await db
+    .from('coach_client_links')
+    .update({ shared_note: note })
+    .eq('coach_id', coachId)
+    .eq('client_id', clientId)
+    .eq('status', 'active')
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error('No active coach_client_links row found for this coach-client pair (IDOR guard)');
+  }
+
+  return { updated: true };
+}

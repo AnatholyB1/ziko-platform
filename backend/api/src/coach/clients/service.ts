@@ -28,6 +28,8 @@ import {
   getClientCardio,
   getClientJournal,
   listCompareData,
+  getProgramsForClient,
+  upsertSharedNote,
 } from './db.js';
 
 const CODE_REGEX = /^[A-Z2-9]{6}$/;
@@ -380,6 +382,40 @@ clientsRouter.get('/:id/journal', async (c) => {
     const journal = await getClientJournal(jwt, clientId);
     return c.json({ journal });
   } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:id/programs — programs assigned to this client by the requesting coach (PROG-06)
+clientsRouter.get('/:id/programs', async (c) => {
+  const { userId: coachId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('id');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const result = await getProgramsForClient(jwt, coachId, clientId);
+    return c.json(result);
+  } catch (err: any) {
+    console.error('[coach/clients] GET /:id/programs error:', err.message);
+    return c.json({ error: 'Not found' }, 404);
+  }
+});
+
+// PUT /:clientId/shared-note — update shared_note on the coach↔client link (PROG-07, PROG-09)
+clientsRouter.put('/:clientId/shared-note', async (c) => {
+  const { userId: coachId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('clientId');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  let body: { note?: unknown };
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  if (typeof body.note !== 'string') return c.json({ error: 'note must be a string' }, 400);
+  if (body.note.length > 500) return c.json({ error: 'note exceeds 500 character limit' }, 400);
+  try {
+    const result = await upsertSharedNote(jwt, coachId, clientId, body.note);
+    return c.json(result);
+  } catch (err: any) {
+    console.error('[coach/clients] PUT /:clientId/shared-note error:', err.message);
     return c.json({ error: err.message }, 500);
   }
 });
