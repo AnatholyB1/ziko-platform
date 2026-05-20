@@ -108,6 +108,8 @@ export interface UserProfile {
   avatar_url: string | null;
   avatar_color: string | null;
   onboarding_done: boolean;
+  /** User role from migration 034. Defaults to 'client'. */
+  role?: 'client' | 'coach' | 'both';
 }
 
 // ── Workout Domain Types ──────────────────────────────────

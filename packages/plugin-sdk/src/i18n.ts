@@ -510,6 +510,7 @@ const fr: TranslationDict = {
   'store.permReadAi': 'Historique IA',
   'store.permNotifications': 'Notifications',
   'store.permCamera': 'Caméra',
+  'store.mandatory_tooltip': "Ce plugin est requis par l'application",
 
   // ── Community ──
   'community.title': 'Communauté',
@@ -802,6 +803,31 @@ const fr: TranslationDict = {
   'pantry.confirm_cta': 'Confirmer et logger',
   'pantry.confirm_error_title': 'Erreur',
   'pantry.confirm_error': 'Impossible d\'enregistrer. Vérifiez votre connexion.',
+
+  // ── Coach plugin ──
+  'coach.screen_title': 'Mon coach',
+  'coach.settings_section': 'MON COACH',
+  'coach.state_a.subtitle': 'Entrez le code de votre coach pour lier votre compte.',
+  'coach.state_a.placeholder': 'XXXXXX',
+  'coach.state_a.submit': 'Valider le code',
+  'coach.state_a.error': 'Code invalide ou expiré. Vérifiez avec votre coach.',
+  'coach.state_b.subtitle': 'Votre coach',
+  'coach.state_b.kyc_badge': 'Certifié KYC',
+  'coach.state_b.confirm': 'Lier mon compte',
+  'coach.state_b.cancel': 'Retour à la saisie',
+  'coach.state_b.linking': 'Liaison en cours…',
+  'coach.state_c.linked_since': 'Lié depuis {{date}}',
+  'coach.state_c.sessions_label': 'Séances',
+  'coach.state_c.progress_label': 'Progression',
+  'coach.state_c.revoke': 'Retirer ce coach',
+  'coach.revoke_modal.title': 'Retirer ce coach ?',
+  'coach.revoke_modal.body': 'Cette action supprime le lien avec votre coach. Tapez COACH pour confirmer.',
+  'coach.revoke_modal.placeholder': 'COACH',
+  'coach.revoke_modal.cancel': 'Garder mon coach',
+  'coach.revoke_modal.confirm': 'Confirmer',
+  'coach.error.link_failed': 'Impossible de lier le compte.',
+  'coach.error.revoke_failed': 'Impossible de retirer le coach.',
+  'coach.error.try_again': 'Veuillez réessayer.',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1308,6 +1334,7 @@ const en: TranslationDict = {
   'store.permReadAi': 'AI history',
   'store.permNotifications': 'Notifications',
   'store.permCamera': 'Camera',
+  'store.mandatory_tooltip': 'This plugin is required by the app',
 
   // ── Community ──
   'community.title': 'Community',
@@ -1600,6 +1627,31 @@ const en: TranslationDict = {
   'pantry.confirm_cta': 'Confirm & log meal',
   'pantry.confirm_error_title': 'Error',
   'pantry.confirm_error': 'Unable to save. Check your connection.',
+
+  // ── Coach plugin ──
+  'coach.screen_title': 'My coach',
+  'coach.settings_section': 'MY COACH',
+  'coach.state_a.subtitle': 'Enter your coach code to link your account.',
+  'coach.state_a.placeholder': 'XXXXXX',
+  'coach.state_a.submit': 'Validate code',
+  'coach.state_a.error': 'Invalid or expired code. Check with your coach.',
+  'coach.state_b.subtitle': 'Your coach',
+  'coach.state_b.kyc_badge': 'KYC Certified',
+  'coach.state_b.confirm': 'Link my account',
+  'coach.state_b.cancel': 'Back to entry',
+  'coach.state_b.linking': 'Linking…',
+  'coach.state_c.linked_since': 'Linked since {{date}}',
+  'coach.state_c.sessions_label': 'Sessions',
+  'coach.state_c.progress_label': 'Progress',
+  'coach.state_c.revoke': 'Remove this coach',
+  'coach.revoke_modal.title': 'Remove this coach?',
+  'coach.revoke_modal.body': 'This action removes the link with your coach. Type COACH to confirm.',
+  'coach.revoke_modal.placeholder': 'COACH',
+  'coach.revoke_modal.cancel': 'Keep my coach',
+  'coach.revoke_modal.confirm': 'Confirm',
+  'coach.error.link_failed': 'Unable to link account.',
+  'coach.error.revoke_failed': 'Unable to remove coach.',
+  'coach.error.try_again': 'Please try again.',
 };
 
 // ── All translations ─────────────────────────────────────
