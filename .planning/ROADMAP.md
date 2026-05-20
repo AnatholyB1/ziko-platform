@@ -203,7 +203,8 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach can assign a template to one or more linked clients in a single action; assignment creates a forked copy (`is_template=FALSE`, `assigned_to_user_id` set, `template_source_id` back-reference) and per-client edits never touch the source template.
   4. An athlete with an assigned program sees the coach card (name, photo, certifications) plus today's session preview in the "Mon coach" mobile screen; assigned sessions execute like any workout and log into `workout_sessions`.
   5. The mobile athlete sees a "Programme prescrit par [coach]" badge on prescribed sessions (read-only badge), a "75% this week" weekly compliance widget, the coach's latest shared note, and a "Contact coach" CTA that opens `mailto:` with the coach's signup email.
-**Plans**: 7 plans (Track A: Web ONLY)
+**Plans**: 8 plans (Track A: Web ONLY)
+- [ ] 27-00-PLAN.md — Wave 0: vitest smoke test stubs for backend/api (programs.spec.ts)
 - [ ] 27-01-PLAN.md — Wave 0: coach-sdk Zod schemas
 - [ ] 27-02-PLAN.md — Wave 1: Migration 045 core schema + [BLOCKING] supabase db push
 - [ ] 27-03-PLAN.md — Wave 1: Migration 046 seed templates + [BLOCKING] push
