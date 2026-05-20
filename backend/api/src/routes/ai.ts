@@ -140,6 +140,7 @@ router.get('/tools', (c) => c.json({ tools: allToolSchemas }));
 
 router.post('/tools/execute', async (c) => {
   const auth = c.get('auth');
+  const userToken = c.req.header('Authorization')?.replace('Bearer ', '');
   const { tool_name, parameters = {} } = await c.req.json<{
     tool_name: string;
     parameters?: Record<string, unknown>;
@@ -148,7 +149,7 @@ router.post('/tools/execute', async (c) => {
   const executor = getToolExecutor(tool_name);
   if (!executor) return c.json({ error: `Unknown tool: ${tool_name}` }, 404);
   try {
-    const result = await executor(parameters, auth.userId);
+    const result = await executor(parameters, auth.userId, userToken);
     return c.json({ tool_name, result });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

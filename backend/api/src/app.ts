@@ -13,6 +13,7 @@ import { storageRouter, storageCleanupRouter } from './routes/storage.js';
 import { identityRouter } from './coach/identity/service.js';
 import { invitationsRouter } from './coach/invitations/service.js';
 import { clientsRouter } from './coach/clients/service.js';
+import { programsRouter } from './coach/programs/service.js';
 const app = new Hono();
 
 // Global middleware
@@ -56,6 +57,7 @@ app.route('/storage', storageCleanupRouter);
 app.route('/coach/identity', identityRouter);
 app.route('/coach/invitations', invitationsRouter);
 app.route('/coach/clients', clientsRouter);
+app.route('/coach/programs', programsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
