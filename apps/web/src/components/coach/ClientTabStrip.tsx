@@ -10,6 +10,7 @@ const TABS = [
   { key: 'sleep', label: 'Sommeil' },
   { key: 'cardio', label: 'Cardio' },
   { key: 'journal', label: 'Journal' },
+  { key: 'programs', label: 'Programmes' },
 ];
 
 export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
