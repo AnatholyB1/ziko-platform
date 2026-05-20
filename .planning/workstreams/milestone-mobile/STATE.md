@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Mobile v2
 status: executing
-stopped_at: Roadmap written, requirements traceability updated
-last_updated: "2026-05-20T08:49:13.171Z"
+stopped_at: Phase 31 planned — ready to execute
+last_updated: "2026-05-20T18:30:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 8
-  percent: 20
+  completed_phases: 3
+  total_plans: 16
+  completed_plans: 13
+  percent: 60
 ---
 
 # Project State
@@ -21,12 +21,13 @@ See: .planning/PROJECT.md (updated 2026-05-18)
 See: .planning/workstreams/milestone-mobile/ROADMAP.md
 
 **Core value:** Plugin "Mon coach" mobile (athlete side) — 3-state invitation UX, mandatory enforcement, fr+en i18n — plus retroactive design contracts for Phase 24 web surfaces.  
-**Current focus:** Phase 27 — Spike (Mandatory Plugin Pattern)
+**Current focus:** Phase 31 — AI Tools (coach_get_link + coach_revoke_link)
 
 ## Current Position
 
-Phase: 28 — **COMPLETE** (UI Design — Mon coach Plugin)
-Next: Phase 29 — Plugin "Mon coach" Full Implementation (gate cleared)
+Phase: 29 — **COMPLETE** (Plugin "Mon coach" Full Implementation)
+Phase: 30 — **DROPPED** (UI Design Catch-Up — Phase 24 Web Surfaces) — out of scope, mobile-only workstream
+Phase: 31 — **PLANNED** (AI Tools — coach_get_link + coach_revoke_link) — 2 plans, 2 waves, ready to execute
 
 Progress: [████████░░] 80%
 
@@ -58,6 +59,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T08:49:13.156Z
+Last session: 2026-05-20T08:58:13.575Z
 Stopped at: Roadmap written, requirements traceability updated
 Resume file: None

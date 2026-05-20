@@ -87,8 +87,16 @@ Plans: N/A
 **Plans**: 2 plans
 
 Plans:
-- [ ] 31-01-PLAN.md — Wave 1: Implement coach.ts tool functions (coach_get_link + coach_revoke_link)
-- [ ] 31-02-PLAN.md — Wave 2: Wire into registry.ts + update coach plugin manifest
+
+Wave 1:
+- [ ] 31-01-PLAN.md — Implement `coach.ts`: `coach_get_link` + `coach_revoke_link` tool functions
+
+Wave 2 *(blocked on Wave 1 completion)*:
+- [ ] 31-02-PLAN.md — Wire into registry.ts (import + executors map + allToolSchemas) + update `plugins/coach/src/manifest.ts` (aiTools + aiSystemPromptAddition)
+
+Cross-cutting constraints:
+- userToken (JWT) is mandatory for both tool functions — confirmed gate and no_active_link guard required
+- COACH-15 requires all 3 success criteria verifiable end-to-end before phase close
 
 ---
 
@@ -100,7 +108,7 @@ Plans:
 | 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
 | 29. Plugin "Mon coach" — Full Implementation | 4/4 | Complete   | 2026-05-20 |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | N/A | Dropped (out of scope) | 2026-05-20 |
-| 31. AI Tools — coach_get_link + coach_revoke_link | 0/2 | Not started | - |
+| 31. AI Tools — coach_get_link + coach_revoke_link | 0/2 | Planned | - |
 
 ---
 
