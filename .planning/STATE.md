@@ -1,180 +1,63 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: Coach Platform & CRM
+milestone: v1.6
+milestone_name: milestone
 status: executing
-stopped_at: null
-last_updated: "2026-05-18T19:00:00.000Z"
-last_activity: 2026-05-18
+stopped_at: context exhaustion at 78% (2026-05-19)
+last_updated: "2026-05-19T07:25:02.146Z"
 progress:
   total_phases: 10
   completed_phases: 4
-  total_plans: 41
-  completed_plans: 40
-  percent: 50
+  total_plans: 37
+  completed_plans: 36
+  percent: 40
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-13)
+See: .planning/PROJECT.md (updated 2026-05-18)  
+See: .planning/workstreams/milestone-mobile/ROADMAP.md
 
-**Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
-**Current focus:** v1.5 Coach Platform & CRM — Phase 26: CRM Client Management
+**Core value:** Plugin "Mon coach" mobile (athlete side) — 3-state invitation UX, mandatory enforcement, fr+en i18n — plus retroactive design contracts for Phase 24 web surfaces.  
+**Current focus:** Phase 27 — Spike (Mandatory Plugin Pattern)
 
 ## Current Position
 
-Phase: 27 — next phase
-Plan: 0 plans executed
-Status: Phase 26 COMPLETE + VERIFIED (2026-05-18)
+Phase: 28 — **COMPLETE** (UI Design — Mon coach Plugin)
+Next: Phase 29 — Plugin "Mon coach" Full Implementation (gate cleared)
 
----
-
-## Previous Phase (complete)
-
-Phase: 26 — CRM Client Management
-Plan: 7 plans, **7/7 complete** (2026-05-18) — including 2 gap-closure rounds
-Status: **Phase 26 COMPLETE + VERIFIED (2026-05-18).** 31/31 must-haves verified. Gap closure: (1) db.ts schema column fixes — duration_minutes→started_at/ended_at, completed→value (habit_logs, 3 places), count removed (non-existent), calories→calories_burned, pace→avg_pace_sec_per_km; (2) clients-preview.spec.ts expired fixture offset 1s→60s (clock skew). Journal tab accepted in place of programs (intentional). Migrations 043/044 applied. 16/16 tests green.
-Last activity: 2026-05-18
-
-Phase: 25 — Invitations & Mobile "Mon coach" Minimal
-Plan: 10 plans, **10/10 complete** (2026-05-17) — including 2 gap-closure plans (25-08, 25-09)
-Status: **Phase 25 COMPLETE + VERIFIED (2026-05-17).** 9/9 must-haves verified. Gap closure: (1) redeem Server Actions JWT fixed — getUser() replaces getSession(), API_URL fallback chain, console.error in all catch blocks, res.json() guard; (2) pixel-perfect UI audit — 4 deviations fixed (InvitationCodeCard label, InvitationsTable chip font-weight + empty-state heading, RevokeConfirmModal confirm input). Focus trap preserved. All INVITE-01–07 satisfied.
-Last activity: 2026-05-17
-
-Phase 24: **Phase 24 COMPLETE (2026-05-16).** UAT: 10/10 passed. Deliverables: (1) migration 037 coach-kyc storage bucket + 3 RLS policies, (2) backend/api/src/coach/identity/ bounded module (service.ts/db.ts/types.ts + 4 Hono routes: PATCH role, POST/PATCH/GET profile), (3) CoachSidebar layout + /fr/login page + safeNext() allowlist, (4) OnboardingWizard 3-step (role→profile→KYC), dashboard + settings pages, (5) GAP fixes: locale-prefix on all redirects, NEXT_PUBLIC_API_URL in apps/web/.env, marketing pages moved to (marketing) route group.
-Last activity: 2026-05-16
-Resume file: None
-
-Phase 23: **Phase 23 COMPLETE (2026-05-15).** 8/8 plans. Monorepo path (git subtree merge), @supabase/ssr dual-store auth, (coach) route group, packages/coach-sdk Zod schemas, Vercel Pro, CI/CD pipeline.
-
-Phase 22: **Phase 22 VERIFIED (PASS, 2026-05-14).** 4/4 plans. Migrations 034–036, is_coach_of() function, 11 cross-user RLS policies, 47/47 tests pass.
-
----
-
-Phase: 23 — Web Turborepo Onboarding & Auth Bootstrap
-Plan: 8 plans (waves 0–8), **8/8 complete** (02b fallback not needed)
-Status: **Phase 23 COMPLETE (2026-05-15).** UAT: 7/7 passed, 0 issues. Deliverables: (1) apps/web in monorepo via git subtree merge with full c:/ziko-web history, (2) @supabase/ssr@0.10.3 dual-store cookie auth + server-only guard + updateSession, (3) (coach) route group scaffold with TOCTOU-safe Server Action + force-dynamic, (4) packages/coach-sdk Zod schemas with zod ^4.0.0 peer + external tsup, (5) Vercel ziko-web project Pro tier provisioned + live SC1/SC3 verified, (6) CI: turbo pipeline + ESLint D-11 ban + no-service-role-in-coach guard + publish-coach-sdk placeholder.
-Last activity: 2026-05-15
-Resume file: None
-
-Phase 22: **Phase 22 VERIFIED (PASS, 2026-05-14).** Verification report: .planning/phases/22-schema-foundation-rls-keystone/22-VERIFICATION.md. 7/7 truths verified, 47/47 tests pass, all 14 STRIDE threats covered.
-
-Progress: [████░░░░░░] 20% (v1.5 milestone — 2/10 phases complete; 12/~40 plans done)
+Progress: [████░░░░░░] 40% (2/5 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5 (v1.5)
-- Average duration: 10.4m
-- Total execution time: ~63m
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 22 | 4 | 59m | 12.0m |
-| 23 | 3 | 24m | 8.0m  |
-
-**Recent Trend:**
-
-- Last 5 plans: 22-02 (8.4m, 2 tasks, 3 files), 22-03 (29.6m, 2 tasks, 3 files), 22-04 (12m, 2 tasks, 3 files), 23-01 (4m, 2 tasks, 3 files)
-- Trend: 23-01 fastest plan in v1.5 — Wave 0 pre-flight is intentionally tiny (one dep removal + one tag + one doc). Inline branch-name correction (Rule 3 deviation) was the only non-mechanical step.
-
-*Updated after each plan completion*
+- Total plans completed: 3
+- Average duration: ~6m
+- Total execution time: ~18m
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work (v1.5 milestone scoping):
-
-- [v1.5 Scoping]: `role` column on `user_profiles` ('client' | 'coach' | 'both') — single auth, RLS by role, coach can also be athlete
-- [v1.5 Scoping]: Invitation = 6-character unique code (e.g. `ZK-4F2A9B`) generated by coach, entered in mobile app — offline-friendly, no SMTP dependency
-- [v1.5 Scoping]: Full-access permissions by default on linked client data — revocable via link removal; GDPR covered by revocation rather than per-domain opt-in (avoids complexity)
-- [v1.5 Scoping]: Bounded contexts architecture (`coach/identity`, `coach/clients`, `coach/programs`, `coach/invitations`, `coach/imports`, `coach/ai`) — prepares future ERP without refactoring
-- [v1.5 Scoping]: Web only for coach CRM on ziko-app.com — Expo unsuitable for dense table views; mobile coach role deferred to v1.7+
-- [v1.5 Scoping]: AI file imports replace CSV — Claude vision/document parsing → `generateObject` + Zod → preview/commit. Covers PDF, image, Excel, Word, screenshots. No stable format to maintain
-- [v1.5 Scoping]: Coach programs = extended `workout_programs` table (`created_by_coach_id`, `assigned_to_user_id`, `is_template`, `weeks_data JSONB`) — reuses existing mobile program views
-- [v1.5 Scoping]: Self-serve coach onboarding with light KYC — no manual validation bottleneck in v1.5
-- [v1.5 Scoping]: AI coach orchestrator tools = analyze_client + generate_coaching_program + monitor_client_alerts — credit-gated via v1.4 system
-- [v1.5 Roadmap]: 10 phases (22–31) with 3 parallelizable lanes — backend identity→clients→programs→imports→ai (sequential); Strava (parallel after schema); marketing landing (parallel after onboarding URL stable)
-- [v1.5 Roadmap]: Phase 22 (schema + `is_coach_of()` SECURITY DEFINER function) is the keystone — every cross-user RLS policy and every coach module depends on it
-- [Phase 22-01]: Add `--passWithNoTests` to vitest scripts so empty suites exit 0 (Vitest v3 default is exit-1 on empty discovery)
-- [Phase 22-01]: Pin `@vitest/coverage-v8` to ^3 (npm latest is v4 which conflicts with vitest@^3 peer)
-- [Phase 22-01]: Service-role key spatially confined to `backend/api/test/` — CI guard greps `src/` and fails build on any reference (ARCH-03 pre-enforcement)
-- [Phase 22-02]: Migration 034 applied via Supabase MCP `apply_migration` (per D-16) — orchestrator-applied as Option C resolution of Wave 1 tool-availability checkpoint; counts as MCP-apply, no waiver
-- [Phase 22-02]: `SET LOCAL lock_timeout = '5s'` included at top of migration 034 (matches pattern planned for 035; cheap to add now, future-proofs deploys)
-- [Phase 22-02]: Trigger pattern reuses `public.handle_updated_at()` from migration 001 verbatim — no `SET search_path` added (T-22-09 disposition: accept; hardening is Phase 23+ scope)
-- [Phase 22-02]: Used `IF NOT EXISTS` on ADD COLUMN and CREATE TABLE so migration is re-runnable for rollback/retry (defensive, no behavior change)
-- [Phase 22-03]: Migration 035 applied via Supabase MCP `apply_migration` by the orchestrator (Option C resolution, same pattern as 22-02) — counts as MCP-apply per D-16
-- [Phase 22-03]: Constant-time RPC test ceiling raised from research-target 10 ms p95 variance to 20 ms to absorb CI jitter — measured variance 4.52 ms is well inside both bounds
-- [Phase 22-03]: session_sets coach-read policy uses the same EXISTS-over-workout_sessions parent-chain shape as the existing own_session_sets policy (no new column on session_sets)
-- [Phase 22-03]: pg_policies introspection test gracefully skips when PostgREST does not expose pg_catalog — presence already asserted at SQL level + behaviorally via 4 functional tests
-- [Phase 22-03]: Companion non-unique index `idx_coach_client_links_pair_active` retained alongside the partial UNIQUE — intentional duplicate-by-shape leaves a clear knob for Phase 23+ teardown if size becomes a concern
-- [Phase 22-04]: Migration 036 applied via Supabase MCP `apply_migration` by the orchestrator (Option C, third time — same pattern as 22-02/22-03) — counts as MCP-apply per D-16
-- [Phase 22-04]: All 3 workout_programs extension FKs use ON DELETE SET NULL per D-12 (Open Decision #4) — preserves coach-authored content after athlete deletion, awaiting Phase 26+ GDPR review
-- [Phase 22-04]: weeks_data JSONB ships WITHOUT a DB CHECK per D-11 — Zod validation is Phase 23 coach-sdk territory; ARCH-03 (Phase 24, no service-role under coach/) is the spatial defense against direct SQL writes. T-22-11 is the only threat with an "accept" disposition in the entire Phase 22 register
-- [Phase 22-04]: ai_imports.credit_transaction_id ships FK-less per D-09 footnote — column type (UUID NULL) is correct; FK to ai_credit_transactions(id) is wired in Phase 28 to avoid a cross-cycle dependency
-- [Phase 22-04]: ai_imports.re_upload_source_id self-FK uses ON DELETE SET NULL (not CASCADE) — re-upload audit chains survive deletion of an earlier import; the audit trail breaks gracefully rather than vanishes
-- [Phase 22-04]: T-22-13 (athlete forges created_by_coach_id) is explicitly deferred to Phase 27 — Phase 22 grants the column surface but the existing own_programs FOR ALL policy lets the program owner set any UUID. Phase 27 plan-checker must verify created_by_coach_id against an active coach_client_links row in the service layer before persisting
-- [Phase 23-01]: `react-native-worklets` removed from root `package.json` (Wave 0 pre-flight) — only pinned in `apps/mobile/package.json` going forward. Eliminates RESEARCH Pitfall 2 hoisting risk before Wave 1 c:/ziko-web subtree merge.
-- [Phase 23-01]: Tag `pre-web-onboarding` (sha f02aff5e) pushed to origin BEFORE any subtree merge — one-command rollback path is live. `23-ROLLBACK.md` references the actual current branch `gsd/phase-22-schema-foundation-rls-keystone` (config.json branching_strategy "none") rather than the plan-template assumption phase-23 branch (Rule 3 deviation).
-- [Phase 23-02]: Monorepo path confirmed (D-01/D-02 PASS) — apps/web lives in ziko-platform via history-preserving git subtree merge (no --squash). Dual-repo fallback 23-02b NOT executed.
-- [Phase 23-02]: @next/bundle-analyzer v16 dropped generateStatsFile/statsFilename — use analyzerMode: 'json' instead; still emits machine-readable artifact for D-02 RN-leak grep.
-- [Phase 23-02]: react@19.2.6 / react-dom@19.2.4 mismatch resolved — root package.json overrides updated to react@19.2.6; react-dom added as explicit root dep to clear peer conflict with react-native.
-- [Phase 23-03]: tsup outExtension required for .mjs ESM output — tsup default ESM emits .js; added `outExtension({ format })` to force .mjs for ESM matching the exports map in package.json.
-- [Phase 23-03]: Zod v4 strict RFC 4122 UUID validation — test UUIDs must have valid version bits (1-8) and variant bits ([89abAB]); all-zeros test UUIDs like 00000000-0000-0000-0000-000000000001 are invalid in Zod v4.
-- [Phase 23-03]: coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup — prevents zod-instance drift across workspace; CJS bundle is 3.6 KB (zod not inlined). T-23-03-02 mitigated.
-- [Phase 23-04]: @supabase/ssr@0.10.3 installed in apps/web; 3 factories (client/server/middleware) created verbatim from Context7 pattern. Legacy admin.ts preserved unchanged.
-- [Phase 23-04]: server.ts line 1 is `import 'server-only';` — build-time client-bundle guard (T-23-04-03 mitigated).
-- [Phase 23-04]: updateSession has NO try/catch around auth.getUser() — avoids silently swallowing refresh failures (T-23-04-04 mitigated).
-- [Phase 23-04]: Dual-store cookie pattern: request.cookies.set() AND response.cookies.set() — propagates fresh tokens to downstream Server Components (T-23-04-02 mitigated).
-- [Phase 23-04]: Middleware composition order: Supabase first, next-intl second — prevents stale JWT on locale redirects (D-10, T-23-04-01 mitigated).
-- [Phase 23-05]: D-11 ban uses error severity (not warn) — violations block CI, not just warn
-- [Phase 23-05]: scripts/**/*.js override added for @typescript-eslint/no-require-imports — CJS Node.js utility scripts need require(); pre-existing issue was blocking lint exit 0
-- [Phase 23-05]: D-12 patterns ship now as forward-looking no-ops — ESLint silently ignores patterns matching no files; activates automatically when Phase 24 creates coach/<module>/db/ folders
-- [Phase 23-06]: (coach) route group uses [locale]/(coach)/coach/ path — URL /fr/coach/_smoke matches middleware regex /^\/(fr|en)\/coach(\/|$)/ AND route group separates layout scope
-- [Phase 23-06]: Hard-coded redirect('/fr/login') in layout — no searchParams.next interpolation (T-23-06-01 Tampering mitigated)
-- [Phase 23-06]: Server Action smokeReCheck() independently re-calls getUser() — TOCTOU defense, ARCH-05 layer 3 (T-23-06-02 mitigated)
-- [Phase 23-06]: force-dynamic + revalidate=0 on both layout.tsx and page.tsx — no shared RSC cache between users (T-23-06-03, ARCH-06 mitigated)
-- [Phase 23-07]: Vercel ignoreCommand uses git diff --quiet HEAD^ HEAD -- . in both web and backend vercel.json for per-project skip optimization
-- [Phase 23-07]: _debug probes gated by DEBUG_LIMITS=on — 404 on production, 30s sleep confirms Pro tier; both tagged DELETE IN PHASE 24 per ARCH-08
-- [Phase 23-07]: CI no-service-role-in-coach job guards with [ -d backend/api/src/coach ] — passes in Phase 23 before coach/ dir exists (ARCH-02 pre-enforcement)
-- [Phase 23-07]: publish-coach-sdk.yml ships as no-op on monorepo path (vars.PUBLISH_COACH_SDK unset); activates only on D-04 dual-repo fallback
-- [Phase 26-01]: @tanstack/react-table pinned to ^8.21.3, recharts to ^3.8.1 per CONTEXT.md D-01/D-16; npm install from apps/web/ resolves to worktree root node_modules (npm workspace behavior)
-- [Phase 26-01]: 3 Zod schemas (ClientSummarySchema, CoachClientTagSchema, CoachClientNoteSchema) added to packages/coach-sdk; 8 Vitest it.todo stubs scaffold Wave 1 Nyquist enforcement
+- Zero new backend: all routes needed by the Mon coach plugin already exist in Phase 25 (invitations, preview, revoke)
+- Design-first enforced: Phase 28 (Mon coach Figma) precedes Phase 29 (implementation); Phase 30 (web surfaces Figma) is independent and can run in parallel with 28/29
+- Phase 31 (AI tools) is optional scope — can be skipped without blocking milestone completion
+- [Phase 27]: Registry-driven mandatory plugin pattern: `mandatory?: boolean` in `PluginManifest` (packages/plugin-sdk/src/types.ts); PluginLoader pre-loads mandatory plugins unconditionally (apps/mobile/src/lib/PluginLoader.tsx); trash button grayed out in store/[id].tsx via JSX ternary
+- [Phase 27]: Visual verification of trash button deferred — store detail screen not connected; TypeScript clean compile accepted as spike proof per user decision
 
 ### Pending Todos
 
-- [ ] **UAT T1** — Android : photo scan nutrition fonctionne même si manipulateAsync crash (fallback URI originale)
-- [ ] **UAT T2** — Timer workout : chrono correct après 5 min en background
-- [ ] **UAT T3** — Rest timer : valeur correcte au retour du background, son joué si expiré
-- [ ] **UAT T4** — Séance workout restaurée après forcer-fermeture de l'app
-- [ ] **UAT T5** — Long-press aliment nutrition → déplacer vers autre repas OK
-- [ ] **UAT T6** — Upload photo de profil (galerie + caméra) → affiché dans IdentityCard
-- [ ] **UAT T7** — Preset couleur avatar persisté après Enregistrer
-- [ ] **UAT T8** — Retirer photo de profil → retour aux initiales
-- [ ] **FIX** — Contrat `/ai/vision/nutrition` cassé : backend attend `{ image: base64 }` mais frontend envoie `{ storage_path }` → mettre à jour `backend/api/src/routes/ai.ts` pour lire l'image depuis Supabase Storage
-- [ ] **MIGRATION** — Appliquer migration `038_avatar_color.sql` sur Supabase prod (`ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS avatar_color TEXT`)
+None yet.
 
 ### Blockers/Concerns
 
-- **[Phase 23-02 RESOLVED]** `apps/web/` Turborepo onboarding vs dual-repo — RESOLVED: monorepo path active. D-02 triple-green PASS confirmed. apps/web/ is now in ziko-platform with full c:/ziko-web history.
-- **[Open decision, Phase 23 blocker]** Vercel Pro tier confirmation — mandatory before Phase 28 (Hobby's 10s timeout kills AI imports; need `maxDuration=60`).
-- **[Open decision, Phase 28]** AI import per-page credit pricing — target €0.05/import within €0.75/user/month freemium; calibration TBD.
-- AI import quality on noisy/varied real-world files (screenshots, scanned PDFs) needs validation before shipping Phase 28 — define fallback strategy (manual edit, multiple-shot, Sonnet escalation).
-- Strava OAuth requires Strava app registration + webhook endpoint validation — must be requested early in Phase 30 (Strava review delays are common).
-- Bounded contexts architecture decision must be applied from Phase 24 — refactoring mid-milestone is expensive.
-- **[Phase 22 risk, RESOLVED]** `is_coach_of()` recursion / revocation bypass — Mitigated by Plan 22-03 with STABLE SECURITY DEFINER + inline EXISTS predicate; live revocation tested with immediate effect; cross-coach isolation tested; all 9 cross-user STRIDE threats (T-22-02 through T-22-10) have named mitigations and named tests.
-- **[Phase 22 risk, ACCEPTED]** T-22-11 (malformed weeks_data) — deliberate trade-off per D-11. Coach-sdk Zod validation (Phase 23) is the only check on JSON shape. ARCH-03 (Phase 24) bans service-role under coach/ as spatial defense. Phase 27 planner is on notice.
-- **[Phase 22 risk, DEFERRED-WITH-FLAG]** T-22-13 (athlete forges `created_by_coach_id` they never linked to) — Phase 22 grants the column surface but does not gate writes against `coach_client_links`. Phase 27 service layer must validate; explicit flag in 22-04-SUMMARY threat register.
+- COACH-05 spike **RESOLVED** — registry-driven chosen: `mandatory?: boolean` in PluginManifest, PluginLoader pre-loads unconditionally, trash button gated in store/[id].tsx. Visual verification deferred (store detail screen not connected yet); TypeScript verification accepted as spike proof.
 
 ## Session Continuity
 
-Last session: 2026-05-18T18:29:28.354Z
-Stopped at: context exhaustion at 75% (2026-05-18)
+Last session: 2026-05-19T07:25:02.139Z
+Stopped at: context exhaustion at 78% (2026-05-19)
 Resume file: None
