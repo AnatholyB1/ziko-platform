@@ -203,7 +203,14 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach can assign a template to one or more linked clients in a single action; assignment creates a forked copy (`is_template=FALSE`, `assigned_to_user_id` set, `template_source_id` back-reference) and per-client edits never touch the source template.
   4. An athlete with an assigned program sees the coach card (name, photo, certifications) plus today's session preview in the "Mon coach" mobile screen; assigned sessions execute like any workout and log into `workout_sessions`.
   5. The mobile athlete sees a "Programme prescrit par [coach]" badge on prescribed sessions (read-only badge), a "75% this week" weekly compliance widget, the coach's latest shared note, and a "Contact coach" CTA that opens `mailto:` with the coach's signup email.
-**Plans**: TBD
+**Plans**: 7 plans (Track A: Web ONLY)
+- [ ] 27-01-PLAN.md — Wave 0: coach-sdk Zod schemas
+- [ ] 27-02-PLAN.md — Wave 1: Migration 045 core schema + [BLOCKING] supabase db push
+- [ ] 27-03-PLAN.md — Wave 1: Migration 046 seed templates + [BLOCKING] push
+- [ ] 27-04-PLAN.md — Wave 2: Backend programsRouter (9 routes + exercise search)
+- [ ] 27-05-PLAN.md — Wave 2: Backend clients extensions (programs tab + shared-note)
+- [ ] 27-06-PLAN.md — Wave 3: Web programs list (A1) + new program form (A2) + CoachSidebar flip
+- [ ] 27-07-PLAN.md — Wave 3: Program editor (A3) + AssignmentModal (A4) + Programs tab (A5)
 **UI hint**: yes
 
 ### Phase 28: AI File Imports
@@ -305,8 +312,8 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 22. Schema Foundation & RLS Keystone | v1.5 | 4/4 | Complete | 2026-05-14 |
 | 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 8/8 | Complete | 2026-05-15 |
 | 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
-| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Gaps | — |
-| 26. CRM Client Management | v1.5 | 3/7 | In progress | 2026-05-18 |
+| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Complete | 2026-05-17 |
+| 26. CRM Client Management | v1.5 | 7/7 | Complete | 2026-05-18 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
 | 28. AI File Imports | v1.5 | 0/0 | Not started | — |
 | 29. AI Coach Orchestrator | v1.5 | 0/0 | Not started | — |
@@ -324,3 +331,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-15 — Phase 23 Wave 6 complete: Plan 23-07 Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24, ARCH-08), CI 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance. 7/8 plans done. Ready for Wave 7 (Plan 23-08 Vercel cutover + smoke deploy).*
 *Updated: 2026-05-16 — Phase 24 (Coach Identity & Onboarding) complete: 6/6 plans + GAP fixes, 10/10 UAT pass. coach/identity bounded module, 3-step onboarding wizard, KYC storage bucket (migration 037), CoachSidebar layout, dashboard + settings pages. GAP fixes: locale prefix on all redirects, NEXT_PUBLIC_API_URL added to apps/web, marketing pages isolated in (marketing) route group. Ready for Phase 25 (Invitations & Mobile "Mon coach" Minimal).*
 *Updated: 2026-05-17 — Phase 25 (Invitations & Mobile "Mon coach" Minimal) complete: 8/8 plans + focus trap gap fix. coach/invitations + coach/clients bounded modules, 6-char nanoid codes, web-only redeem state machine (/redeem + /r/[code]), serial rate-limit (5/15min IP + 10/hr user), constant-time INVALID_OR_EXPIRED envelope, typed-confirmation revoke (COACH token), Phase 24 refonte pixel-perfect to canonical mockups, RevokeConfirmModal focus trap fixed. Ready for Phase 26 (CRM Client Management).*
+*Updated: 2026-05-18 — Phase 26 (CRM Client Management) complete: 7/7 plans + 2 gap-closure rounds. @tanstack/react-table, recharts, migration 041 (coach_client_tags/notes), full backend roster/summary/tabs/compare routes, ClientsTable + signal chips, 7-tab client detail, ExecutiveSummaryCard + NotesPanel + TagInput, ComparisonChart. 31/31 must-haves verified, 16/16 tests green. Ready for Phase 27 (Coaching Programs & Mobile "Mon coach" Full).*
