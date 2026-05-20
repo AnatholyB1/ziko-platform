@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Mobile v2
 status: executing
-stopped_at: Phase 31 executed — pending human end-to-end verification
-last_updated: "2026-05-20T19:00:00.000Z"
+stopped_at: Roadmap written, requirements traceability updated
+last_updated: "2026-05-20T14:55:17.236Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 3
   total_plans: 16
-  completed_plans: 15
-  percent: 80
+  completed_plans: 11
+  percent: 60
 ---
 
 # Project State
@@ -29,7 +29,7 @@ Phase: 29 — **COMPLETE** (Plugin "Mon coach" Full Implementation)
 Phase: 30 — **DROPPED** (UI Design Catch-Up — Phase 24 Web Surfaces) — out of scope, mobile-only workstream
 Phase: 31 — **COMPLETE** (AI Tools — coach_get_link + coach_revoke_link) — 2 plans executed; human end-to-end verification pending
 
-Progress: [████████░░] 80%
+Progress: [███████░░░] 69%
 
 ## Performance Metrics
 
@@ -59,6 +59,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T08:58:13.575Z
+Last session: 2026-05-20T14:55:17.209Z
 Stopped at: Roadmap written, requirements traceability updated
 Resume file: None
