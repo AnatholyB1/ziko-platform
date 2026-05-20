@@ -5,8 +5,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert, usePluginRegistry } from '@ziko/plugin-sdk';
+import { useQuery } from '@tanstack/react-query';
+import { useThemeStore, showAlert, usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { supabase } from '../../../src/lib/supabase';
 
 // ── Shared chrome ──────────────────────────────────────────────
 function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
@@ -305,6 +307,24 @@ export default function SettingsScreen() {
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const installedPlugins = usePluginRegistry((s) => s.installedPlugins);
   const [sub, setSub] = useState<SubView>(null);
+  const { t } = useTranslation();
+  const role = profile?.role ?? 'client';
+  const { data: coachData } = useQuery({
+    queryKey: ['coach-link-settings', profile?.id],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+      if (!token) return null;
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/coach/clients/links/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!(role === 'client' || role === 'both') && !!profile?.id,
+    staleTime: 30_000,
+  });
+  const linkedCoachName = coachData?.preview?.display_name ?? null;
 
   if (sub === 'notifications') return <NotifSubScreen onBack={() => setSub(null)} />;
   if (sub === 'appearance')    return <AppearanceSubScreen onBack={() => setSub(null)} />;
@@ -392,6 +412,17 @@ export default function SettingsScreen() {
           <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right={`${enabledPlugins.length} / ${installedPlugins.length}`} onPress={() => router.push('/(app)/modules' as any)} />
           <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => router.push('/(app)/referral' as any)} />
         </STGroup>
+
+        {(role === 'client' || role === 'both') && linkedCoachName && (
+          <STGroup title={t('coach.settings_section')}>
+            <STRow
+              icon="person-outline"
+              tint="#FF5C1A"
+              label={linkedCoachName}
+              onPress={() => router.push('/(plugins)/coach/dashboard' as any)}
+            />
+          </STGroup>
+        )}
 
         <STGroup title="Aide & infos">
           <STRow icon="help-circle-outline" tint={theme.text} label="Centre d'aide" onPress={() => router.push('/(app)/help' as any)} />
