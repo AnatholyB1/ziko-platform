@@ -255,9 +255,12 @@ export default function PluginDetailScreen() {
                     <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>{t('store.open')}</Text>
                   </TouchableOpacity>
                   {manifest.mandatory ? (
-                    <View style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', opacity: 0.5 }}>
+                    <TouchableOpacity
+                      onLongPress={() => showAlert(t('store.mandatory_tooltip'), '')}
+                      style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center', opacity: 0.5 }}
+                    >
                       <Ionicons name="trash-outline" size={18} color="#F44336" />
-                    </View>
+                    </TouchableOpacity>
                   ) : (
                     <TouchableOpacity onPress={uninstall}
                       style={{ backgroundColor: '#F4F3F0', borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: 'center' }}>
