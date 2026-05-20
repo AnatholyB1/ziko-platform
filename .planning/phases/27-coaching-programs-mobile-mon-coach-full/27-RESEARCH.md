@@ -657,22 +657,19 @@ export type ProgramExercise = z.infer<typeof ProgramExerciseSchema>;
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Seed template `user_id` strategy**
-   - What we know: `user_id NOT NULL` constraint exists; seed templates need `created_by_coach_id = NULL`
-   - What's unclear: Should the migration (a) insert with a service-role sentinel UUID, (b) relax the NOT NULL constraint for templates, or (c) use a trigger to auto-assign a system user?
-   - Recommendation: Use option (a) — create a system user UUID in the migration itself using `auth.users` insert (requires service role in migration) OR defer seed templates to a separate manual step. The planner should pick one approach and document it.
+1. **Seed template `user_id` strategy** — RESOLVED: plan 27-03 uses sentinel UUID `00000000-0000-0000-0000-000000000001` (option A per revision); migration 045 also relaxes NOT NULL with CHECK constraint as backstop
+   - What we knew: `user_id NOT NULL` constraint exists; seed templates need `created_by_coach_id = NULL`
+   - Resolution: Sentinel UUID approach — a fixed system user UUID is inserted by plan 27-03's migration. The CHECK constraint in migration 045 provides a DB-level guard ensuring `user_id = '00000000-0000-0000-0000-000000000001'` is only allowed when `is_template=TRUE AND created_by_coach_id IS NULL`.
 
-2. **`GET /coach/programs` — seed template visibility filtering**
-   - What we know: Seed templates have `created_by_coach_id = NULL`; each coach should see their own templates + all seed templates
-   - What's unclear: Should the list endpoint filter `WHERE created_by_coach_id = coachId OR (is_template=TRUE AND created_by_coach_id IS NULL)`? Or rely on RLS alone?
-   - Recommendation: Apply the filter in the query (defense-in-depth), not just RLS.
+2. **`GET /coach/programs` — seed template visibility filtering** — RESOLVED: plan 27-02 adds `workout_programs_coach_read` SELECT policy with OR clause for `is_template=TRUE AND created_by_coach_id IS NULL`
+   - What we knew: Seed templates have `created_by_coach_id = NULL`; each coach should see their own templates + all seed templates
+   - Resolution: Both the RLS policy (defense-in-depth) and the listPrograms DB query in plan 27-04 apply `WHERE (created_by_coach_id = coachId AND is_template = TRUE) OR (is_template = TRUE AND created_by_coach_id IS NULL)`.
 
-3. **`/coach/programs/[id]/assign` — page vs modal**
-   - What we know: UI-SPEC defines it as a modal (Screen A4); it is triggered from the program editor page
-   - What's unclear: Does this need its own `page.tsx` route or is it a client component modal rendered within `[id]/page.tsx`?
-   - Recommendation: Client-component modal within `[id]/page.tsx`. No separate route needed. The `[id]/assign/` directory in the proposed structure above is a false lead — the assign modal is a 'use client' component, not a separate page.
+3. **`/coach/programs/[id]/assign` — page vs modal** — RESOLVED: plan 27-07 implements as `AssignmentModal.tsx` client component on editor page; no separate route
+   - What we knew: UI-SPEC defines it as a modal (Screen A4); it is triggered from the program editor page
+   - Resolution: `AssignmentModal.tsx` is a 'use client' component rendered within `programs/[id]/page.tsx`. The `[id]/assign/` directory approach was ruled out — no separate route exists.
 
 ---
 
@@ -696,30 +693,30 @@ No missing dependencies with no fallback. All Track A dependencies are already i
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | None detected in apps/web or backend/api (no jest.config or vitest.config found) |
-| Config file | None — Wave 0 must address |
-| Quick run command | TBD — no existing test commands in package.json |
-| Full suite command | TBD |
+| Framework | vitest ^3.2.4 (verified in backend/api/package.json — already installed) |
+| Config file | backend/api/vitest.config.ts — include: ['test/**/*.{spec,test}.ts'], setupFiles: ['./test/setup.ts'] |
+| Quick run command | `npm test` in backend/api/ (uses `vitest run --passWithNoTests`) |
+| Full suite command | `npm test` in backend/api/ |
 
-Note: The project does not currently have a test infrastructure for the backend or web packages. Based on nyquist_validation being enabled, the planner should include a Wave 0 task to set up at minimum a smoke test for the new API routes.
+Note: vitest is already installed and configured in backend/api. Plan 27-00 creates the programs test stub file at test/coach/programs.spec.ts following the existing test/coach/ pattern.
 
 ### Phase Requirements → Test Map
 
 | Req ID | Behavior | Test Type | Notes |
 |--------|----------|-----------|-------|
-| PROG-01 | POST /coach/programs creates template with is_template=TRUE | Integration | Backend route test |
+| PROG-01 | POST /coach/programs creates template with is_template=TRUE | Integration | Stub in 27-00; implement body in Wave 2 after 27-04 |
 | PROG-02 | weeks_data JSONB validates against ProgramWeekSchema | Unit | Zod schema test in coach-sdk |
 | PROG-03 | GET /exercises?q= returns filtered results | Integration | Backend route test |
 | PROG-04 | POST /coach/programs/folders creates folder | Integration | Backend route test |
 | PROG-05 | POST /coach/programs/:id/duplicate creates copy | Integration | Backend route test |
-| PROG-06 | POST /coach/programs/:id/assign creates fork per client | Integration | Backend route test |
+| PROG-06 | POST /coach/programs/:id/assign creates fork per client | Integration | Stub in 27-00; implement body in Wave 2 after 27-04 |
 | PROG-07 | PUT /coach/programs/:id edits assigned program not template | Integration | Backend route test |
-| PROG-08 | Seed templates visible in GET /coach/programs | Integration | Backend route test |
+| PROG-08 | Seed templates visible in GET /coach/programs | Integration | Stub in 27-00; implement body in Wave 2 after 27-04 |
 | PROG-09 | workout_sessions with source_program_id filterable by week | Integration | Backend route test |
 
-### Wave 0 Gaps
-- [ ] No test infrastructure in `backend/api/` — need vitest setup if tests are planned
-- [ ] `packages/coach-sdk` has no test files — Zod schema unit tests would be trivial to add
+### Wave 0 Status
+- [x] Test infrastructure in `backend/api/` — vitest already installed; plan 27-00 creates programs spec stub
+- [ ] `packages/coach-sdk` has no test files — Zod schema unit tests would be trivial to add (deferred)
 
 ---
 
