@@ -11,6 +11,7 @@ import * as CardioTools from './cardio.js';
 import * as WearablesTools from './wearables.js';
 import * as PantryTools from './pantry.js';
 import * as NavigationTools from './navigation.js';
+import * as CoachTools from './coach.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -169,6 +170,8 @@ const executors: Record<string, ToolExecutor['execute']> = {
   pantry_update_item: PantryTools.pantry_update_item,
   pantry_log_recipe_cooked: PantryTools.pantry_log_recipe_cooked,
   app_navigate: NavigationTools.app_navigate,
+  coach_get_link: CoachTools.coach_get_link,
+  coach_revoke_link: CoachTools.coach_revoke_link,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -545,6 +548,30 @@ const navigationToolSchemas: AITool[] = [
   },
 ];
 
+const coachToolSchemas: AITool[] = [
+  {
+    name: 'coach_get_link',
+    description:
+      "Check the athlete's current coach link status. Returns coach name, link date, KYC verification status, and specialties when linked. Returns { linked: false } with instructions when no coach is linked.",
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'coach_revoke_link',
+    description:
+      "Unlink the athlete's current coach. IMPORTANT: Always ask the user for explicit confirmation before calling this tool with confirmed: true. This action is irreversible.",
+    parameters: {
+      type: 'object',
+      properties: {
+        confirmed: {
+          type: 'boolean',
+          description: 'Must be true — set only after the user has explicitly agreed to unlink their coach',
+        },
+      },
+      required: ['confirmed'],
+    },
+  },
+];
+
 export const allToolSchemas: AITool[] = [
   ...habitsToolSchemas,
   ...nutritionToolSchemas,
@@ -559,6 +586,7 @@ export const allToolSchemas: AITool[] = [
   ...wearablesToolSchemas,
   ...pantryToolSchemas,
   ...navigationToolSchemas,
+  ...coachToolSchemas,
 ];
 
 export function getToolExecutor(name: string): ToolExecutor['execute'] | undefined {
