@@ -15,6 +15,18 @@ requirements:
 
 # Phase 28 — UI Design: Mon coach Plugin
 
+## Verification
+
+| Criterion | Status | Evidence |
+|-----------|--------|----------|
+| SC1: Design mockup covering 3 states | PASS | `coach.jsx` (primary) + Figma cloud `iFPAXWrRLsl3OkUtYUifqW` (bonus) — 5 frames confirmed |
+| SC2: UI-SPEC.md approved | PASS | `grep "status: approved" 028-UI-SPEC.md` — line 4 match |
+| SC3: Light sport theme + Ionicons | PASS | Checker sign-off in UI-SPEC — all 6 dimensions passed 2026-05-18 |
+
+**Phase 28: VERIFIED COMPLETE — 2026-05-19**
+
+---
+
 ## Goal
 
 A complete visual design contract for the "Mon coach" plugin exists before any mobile screen is built, fixing the design-first gate.
@@ -25,6 +37,7 @@ A complete visual design contract for the "Mon coach" plugin exists before any m
 |----------|------|--------|
 | UI-SPEC.md (design contract) | `.planning/workstreams/milestone-mobile/phases/28-ui-design-mon-coach/028-UI-SPEC.md` | APPROVED 2026-05-18 |
 | Claude Design mockup | `C:\Users\Anatholy\Downloads\ziko\coach.jsx` | ✓ DONE 2026-05-18 |
+| Figma cloud file | https://www.figma.com/design/iFPAXWrRLsl3OkUtYUifqW | ✓ DONE 2026-05-19 (bonus) |
 | Checker sign-off | `/gsd-ui-check 28` all 6 dimensions | Pending |
 
 ## Success Criteria (updated from discuss-phase)
@@ -56,7 +69,7 @@ Phase 29 is unblocked when ALL three are true:
 | Plan | Objective | Status |
 |------|-----------|--------|
 | 28-01-PLAN.md | UI-SPEC: Design Contract | Complete (retrospective) |
-| 28-02-PLAN.md | Figma Mockup Generation | **Superseded** — replaced by `coach.jsx` Claude Design mockup (2026-05-18 discuss decision) |
+| 28-02-PLAN.md | Figma Mockup Generation | **Complete 2026-05-19** — coach.jsx (primary) + Figma cloud file (bonus, 5 frames with Higgsfield coach portrait) |
 | 28-03-PLAN.md | Phase Verification & ROADMAP Update | Pending |
 
 ## Claude Design Mockup

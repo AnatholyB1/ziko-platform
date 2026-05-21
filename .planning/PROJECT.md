@@ -8,18 +8,22 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
 
-## Parallel Workstream: v1.6 Mobile v2 [milestone-mobile]
+<details>
+<summary>✅ v1.6 Mobile v2 [milestone-mobile] — SHIPPED 2026-05-21</summary>
 
-**Goal:** Livrer le plugin "Mon coach" mobile (côté athlete) + combler le déficit de design UI des surfaces v1.5.
+**Goal:** Livrer le plugin "Mon coach" mobile (côté athlete).
 
-**Target features:**
-- Plugin "Mon coach" — pre-installé, non-désinstallable, 3 états (no code / preview / linked), code A-Z2-9, révocation depuis settings. Zéro nouveau backend (réutilise routes Phase 25).
-- UI design catch-up — retro-design surfaces Phase 24 (coach onboarding, dashboard, settings, login) + audit mobiles sans `/gsd-ui-phase` + Figma + rework visuel.
+**What shipped:**
+- `manifest.mandatory: true` field in `PluginManifest` type; PluginLoader pre-load bypass; mandatory trash gate in plugin store (migration 047 adds coach to `plugins_registry`)
+- Plugin "Mon coach" — pre-installed, non-removable for athletes; 3-state UX: State A (code entry `[A-Z2-9]`, 6-char), State B (coach preview card from `GET /preview`), State C (linked + revocation)
+- Typed "COACH" confirmation modal for revocation from both plugin screen and Settings > Mon coach
+- 22 fr+en i18n keys across all states, error cases, and modals
+- AI tools `coach_get_link` + `coach_revoke_link` wired into backend tool registry
+- UI design contract: Figma + UI-SPEC.md for all 3 states in light sport theme
 
-**Key constraints:**
-- Design-first obligatoire pour toute surface visuelle (`/gsd-ui-phase` avant `/gsd-execute-phase`)
-- Workstream isolé : parallèle à v1.5 Coach Platform, branch `milestone-mobile`
-- Zéro nouveau backend — l'intégralité des routes nécessaires est déjà livrée en Phase 25
+**Archive:** `.planning/milestones/v1.6-ROADMAP.md` · `.planning/milestones/v1.6-REQUIREMENTS.md`
+
+</details>
 
 ---
 
@@ -165,7 +169,7 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 
 ## Context
 
-- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure)
+- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.6 (Mon coach plugin mobile — 2026-05-21)
 - **Mobile app state**: 18 plugins, 26 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
 - **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup, centralized model config (`backend/api/src/config/models.ts`)
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
@@ -221,4 +225,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 — Phase 24 complete: Coach Identity & Onboarding*
+*Last updated: 2026-05-21 — v1.6 Mobile v2 shipped: Mon coach plugin (milestone-mobile)*
