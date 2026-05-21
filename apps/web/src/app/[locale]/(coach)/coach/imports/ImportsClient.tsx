@@ -265,9 +265,9 @@ export function ImportsClient({ imports, locale, accessToken }: ImportsClientPro
         }
 
         const createJson = await createRes.json();
-        const importId: string = createJson.import?.id ?? createJson.id;
+        const importId: string = createJson.import_id ?? createJson.import?.id ?? createJson.id;
         const signedUploadUrl: string =
-          createJson.import?.signed_upload_url ?? createJson.signed_upload_url;
+          createJson.signed_upload_url ?? createJson.import?.signed_upload_url;
 
         // Step 2: PUT file blob to signed URL (bypasses Vercel 4.5 MB limit)
         const putRes = await fetch(signedUploadUrl, {
