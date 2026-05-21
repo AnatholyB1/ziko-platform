@@ -224,7 +224,17 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. The preview UI shows extracted weeks/sessions/exercises with confidence scores per field; fields below 70% confidence are highlighted yellow; every field is editable before commit; multi-page PDFs (up to 30 pages, e.g. 12-week programs) are reassembled into a single structured program.
   4. An athlete commits in "athlete mode" creating a usable `workout_programs` row owned by them; a coach commits in "coach template mode" creating a template (`is_template=TRUE`) ready to assign.
   5. The import flow is async — the client polls `GET /coach/imports/:id` every 2s and handles parse durations up to 60s without blocking; re-uploading a new version of a previously imported file shows a diff (new/changed/removed weeks/sessions/exercises) before commit.
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — Pre-flight: deps + migration 048 + schema push + test stubs
+- [ ] 28-02-PLAN.md — Credits extension + parse submodule (pdf/excel/word/claude)
+- [ ] 28-03-PLAN.md — Backend bounded module types.ts + db.ts
+- [ ] 28-04-PLAN.md — Backend service.ts (6 routes) + app.ts mount
+- [ ] 28-05-PLAN.md — Web: imports list page + CoachSidebar entry
+- [ ] 28-06-PLAN.md — Web: parse preview/editor page (/coach/imports/[id])
+- [ ] 28-07-PLAN.md — Mobile: ImportFileScreen + manifest + route wrapper
+- [ ] 28-08-PLAN.md — Verification: full test suite + smoke test
 **UI hint**: yes
 
 ### Phase 29: AI Coach Orchestrator
