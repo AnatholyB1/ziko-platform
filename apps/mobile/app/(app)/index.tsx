@@ -11,9 +11,16 @@ import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
-import type { ProgramExercise } from '@ziko/plugin-sdk';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
 import { ErrorScreen } from '../../src/components/ErrorScreen';
+import { Skeleton } from '@ziko/ui';
+import {
+  useActiveAIProgram,
+  useWeeklySessions,
+  useRecentSessions,
+  useProfile,
+  parseWorkoutFrequency,
+} from '../../src/hooks/useHomeData';
 
 // Cross-plugin stores (optional, fail gracefully)
 let useSleepStore: any = null;
@@ -135,65 +142,139 @@ function FormeDuJour({
   );
 }
 
-// ── MissionCard ───────────────────────────────────────────────────────────────
-function MissionCard({
-  programName, workoutName, exercises, onStart,
+// ── MissionCardContent ────────────────────────────────────────────────────────
+// Renders loading/empty/populated states — receives pre-computed data
+function MissionCardContent({
+  isLoading,
+  activeProgram,
 }: {
-  programName: string;
-  workoutName: string;
-  exercises: Array<{ name: string; detail: string }>;
-  onStart: () => void;
+  isLoading: boolean;
+  activeProgram: any | null;
 }) {
   const theme = useThemeStore((s) => s.theme);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, padding: 18 }}>
+        <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '40%', marginBottom: 10 }} />
+        <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '75%', marginBottom: 8 }} />
+        <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '55%' }} />
+      </View>
+    );
+  }
+
+  // Empty state
+  if (!activeProgram) {
+    return (
+      <View style={{
+        backgroundColor: '#1C1A17', borderRadius: 12, padding: 18,
+        alignItems: 'center', overflow: 'hidden', position: 'relative',
+      }}>
+        <Svg width="100%" height={180} style={{ position: 'absolute', top: 0, left: 0 }}>
+          <Circle cx={300} cy={-20} r={160} fill="#FF5C1A" opacity={0.14} />
+        </Svg>
+        <View style={{
+          width: 56, height: 56, borderRadius: 14, backgroundColor: 'rgba(255,92,26,0.15)',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Ionicons name="barbell-outline" size={28} color="#FF8E5A" />
+        </View>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#FFFAF6', marginTop: 14 }}>
+          Aucun programme actif
+        </Text>
+        <Text style={{
+          fontSize: 13, color: 'rgba(255,250,246,0.60)', marginTop: 6,
+          textAlign: 'center', lineHeight: 18,
+        }}>
+          Génère un programme sur mesure avec l'IA Ziko en quelques secondes.
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/(plugins)/ai-programs/dashboard' as any)}
+          activeOpacity={0.8}
+          style={{
+            marginTop: 16, paddingHorizontal: 20, paddingVertical: 12,
+            borderRadius: 9999, backgroundColor: '#FF5C1A',
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' }}>
+            Créer un programme IA
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Populated state — parse program_data defensively
+  const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? [];
+  const todaySession = sessions[0] ?? null;
+  const exercises: any[] = todaySession?.exercises ?? todaySession?.sets ?? [];
+  const sessionName: string = todaySession?.name ?? todaySession?.title ?? activeProgram?.goal ?? 'Séance du jour';
+  const programName: string = activeProgram?.goal ?? 'Programme IA';
+  const duration: number = todaySession?.duration_minutes ?? todaySession?.duration ?? 45;
+
   return (
-    <View style={{
-      backgroundColor: theme.cardDark, borderRadius: 20, overflow: 'hidden', position: 'relative',
-    }}>
+    <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
       <Svg width="100%" height={180} style={{ position: 'absolute', top: 0, left: 0 }}>
         <Circle cx={300} cy={-20} r={160} fill="#FF5C1A" opacity={0.14} />
       </Svg>
       <View style={{ padding: 18 }}>
-        <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: 'rgba(255,250,246,0.6)' }}>
+        <Text style={{
+          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 0.10 * 11, color: 'rgba(255,250,246,0.65)',
+        }}>
           Mission du jour
         </Text>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: theme.cardDarkText, marginTop: 6, lineHeight: 26 }}>
-          {workoutName}
+        <Text style={{
+          fontSize: 22, fontWeight: '800', lineHeight: 22 * 1.1,
+          color: '#FFFAF6', marginTop: 6, maxWidth: '85%',
+        }}>
+          {sessionName}
         </Text>
-        <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.55)', marginTop: 4 }}>
-          {programName} · {exercises.length} exercices
+        <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.60)', marginTop: 4 }}>
+          {programName} · {exercises.length} exos · ~{duration} min
         </Text>
         <View style={{ gap: 6, marginTop: 14, marginBottom: 14 }}>
-          {exercises.slice(0, 3).map((e, i) => (
+          {exercises.slice(0, 3).map((e: any, i: number) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{
-                width: 18, height: 18, borderRadius: 5, backgroundColor: 'rgba(255,92,26,0.18)',
+                width: 18, height: 18, borderRadius: 5,
+                backgroundColor: 'rgba(255,92,26,0.18)',
                 alignItems: 'center', justifyContent: 'center',
               }}>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFB287' }}>{i + 1}</Text>
               </View>
-              <Text style={{ flex: 1, color: 'rgba(255,250,246,0.9)', fontSize: 12.5 }}>{e.name}</Text>
-              <Text style={{ color: 'rgba(255,250,246,0.5)', fontSize: 11 }}>{e.detail}</Text>
+              <Text style={{ flex: 1, color: 'rgba(255,250,246,0.92)', fontSize: 12 }}>
+                {e.name ?? e.exercise_name ?? 'Exercice'}
+              </Text>
+              <Text style={{ color: 'rgba(255,250,246,0.55)', fontSize: 11 }}>
+                {e.scheme ?? e.sets != null ? `${e.sets ?? ''}×${e.reps ?? ''}` : ''}
+              </Text>
             </View>
           ))}
           {exercises.length > 3 && (
-            <Text style={{ fontSize: 11, color: 'rgba(255,250,246,0.45)', paddingLeft: 26 }}>
+            <Text style={{ fontSize: 11, color: 'rgba(255,250,246,0.50)', paddingLeft: 26, marginTop: 2 }}>
               +{exercises.length - 3} autres exercices
             </Text>
           )}
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity onPress={onStart} activeOpacity={0.8} style={{
-            flex: 1, backgroundColor: theme.primary, borderRadius: 14,
-            paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}>
-            <Ionicons name="play" size={14} color="#fff" />
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/workout' as any)}
+            activeOpacity={0.8}
+            style={{
+              flex: 1, backgroundColor: '#FF5C1A', borderRadius: 10, height: 48,
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            <Ionicons name="play-outline" size={14} color="#fff" />
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Allez, c'est parti !</Text>
           </TouchableOpacity>
           <TouchableOpacity activeOpacity={0.7} style={{
-            backgroundColor: 'rgba(255,250,246,0.1)', borderRadius: 14,
-            paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center',
+            width: 48, height: 48, backgroundColor: 'rgba(255,250,246,0.10)',
+            borderRadius: 10, alignItems: 'center', justifyContent: 'center',
           }}>
-            <Ionicons name="chevron-down" size={16} color={theme.cardDarkText} />
+            <Ionicons name="chevron-down-outline" size={16} color="#FFFAF6" />
           </TouchableOpacity>
         </View>
       </View>
@@ -314,8 +395,8 @@ function QuickLogRow({
   );
 }
 
-// ── WeekStrip ─────────────────────────────────────────────────────────────────
-function WeekStrip({
+// ── HomeWeekStrip ─────────────────────────────────────────────────────────────
+function HomeWeekStrip({
   weeklyCount, weeklyGoal, sessionDates,
 }: { weeklyCount: number; weeklyGoal: number; sessionDates: Set<string> }) {
   const theme = useThemeStore((s) => s.theme);
@@ -328,39 +409,39 @@ function WeekStrip({
     const date = addDays(monday, i);
     const key = format(date, 'yyyy-MM-dd');
     const isToday = differenceInCalendarDays(date, today) === 0;
-    const done = sessionDates.has(key);
+    const done = sessionDates.has(key) && differenceInCalendarDays(date, today) <= 0;
     return { label: DAY_LABELS[i], num: format(date, 'd'), isToday, done };
   });
 
   return (
     <View style={{
       backgroundColor: theme.surface, borderRadius: 20, padding: 14,
-      shadowColor: theme.cardDark, shadowOffset: { width: 0, height: 2 },
+      shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
     }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
         <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>
-          Semaine · <Text style={{ color: theme.primary }}>{weeklyCount}/{weeklyGoal}</Text>
+          Semaine · <Text style={{ color: '#FF5C1A', fontSize: 12, fontWeight: '700' }}>{weeklyCount}/{weeklyGoal}</Text>
         </Text>
         {weeklyGoal - weeklyCount > 0 && (
-          <Text style={{ fontSize: 11, color: theme.muted }}>+{weeklyGoal - weeklyCount} pour l'objectif</Text>
+          <Text style={{ fontSize: 11, color: '#6B6963' }}>+{weeklyGoal - weeklyCount} pour atteindre l'objectif</Text>
         )}
       </View>
       <View style={{ flexDirection: 'row', gap: 5 }}>
         {days.map((d, i) => {
           let bg = 'transparent';
-          let textColor = theme.muted;
-          let borderStyle: object = { borderWidth: 1, borderColor: theme.border };
-          if (d.done) { bg = theme.success; textColor = '#fff'; borderStyle = {}; }
-          else if (d.isToday) { bg = theme.cardDark; textColor = '#fff'; borderStyle = {}; }
+          let textColor = '#6B6963';
+          let borderStyle: object = { borderWidth: 1, borderColor: '#E2E0DA' };
+          if (d.done) { bg = '#22C55E'; textColor = '#fff'; borderStyle = {}; }
+          else if (d.isToday) { bg = '#1C1A17'; textColor = '#fff'; borderStyle = {}; }
           return (
             <View key={i} style={[{
               flex: 1, aspectRatio: 1, borderRadius: 10, backgroundColor: bg,
               alignItems: 'center', justifyContent: 'center',
             }, borderStyle]}>
-              <Text style={{ fontSize: 9, fontWeight: '700', color: textColor, opacity: 0.7 }}>{d.label}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: textColor, opacity: 0.75 }}>{d.label}</Text>
               {d.done ? (
-                <Ionicons name="checkmark" size={12} color="#fff" style={{ marginTop: 2 }} />
+                <Ionicons name="checkmark-outline" size={12} color="#fff" style={{ marginTop: 2 }} />
               ) : (
                 <Text style={{ fontSize: 13, fontWeight: '800', color: textColor, marginTop: 2 }}>{d.num}</Text>
               )}
@@ -430,11 +511,10 @@ function PluginsDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
 // ── DashboardScreen ───────────────────────────────────────────────────────────
 export default function DashboardScreen() {
-  const { t, tExercise } = useTranslation();
+  const { t } = useTranslation();
   const profile = useAuthStore((s) => s.profile);
-  const recentSessions = useWorkoutStore((s) => s.recentSessions);
+  const recentSessionsStore = useWorkoutStore((s) => s.recentSessions);
   const loadRecentSessions = useWorkoutStore((s) => s.loadRecentSessions);
-  const activeProgram = useWorkoutStore((s) => s.activeProgram);
   const loadPrograms = useWorkoutStore((s) => s.loadPrograms);
   const startSession = useWorkoutStore((s) => s.startSession);
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
@@ -445,6 +525,12 @@ export default function DashboardScreen() {
   const [quickSheet, setQuickSheet] = React.useState<null | 'water' | 'mood' | 'weight'>(null);
   const [showSearch, setShowSearch] = React.useState(false);
   const [loadError, setLoadError] = React.useState(false);
+
+  // ── TanStack Query hooks (plan 33-03) ─────────────────────────────────────
+  const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
+  const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
+  const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
+  const { data: homeProfile } = useProfile();
 
   // Cross-plugin: wellness data
   const sleepLogs: any[] = useSleepStore ? useSleepStore((s: any) => s.logs) : EMPTY;
@@ -493,8 +579,8 @@ export default function DashboardScreen() {
   };
 
   const streak = React.useMemo(() => {
-    if (!recentSessions.length) return 0;
-    const uniqueDays = new Set(recentSessions.map((s) => format(new Date(s.started_at), 'yyyy-MM-dd')));
+    if (!recentSessionsStore.length) return 0;
+    const uniqueDays = new Set(recentSessionsStore.map((s) => format(new Date(s.started_at), 'yyyy-MM-dd')));
     let current = 0;
     let date = startOfDay(new Date());
     while (uniqueDays.has(format(date, 'yyyy-MM-dd'))) {
@@ -502,15 +588,14 @@ export default function DashboardScreen() {
       date = new Date(date.getTime() - 86400000);
     }
     return current;
-  }, [recentSessions]);
+  }, [recentSessionsStore]);
 
-  const todaySession = recentSessions.find(
-    (s) => differenceInCalendarDays(new Date(), new Date(s.started_at)) === 0,
-  );
-  const weeklyCount = recentSessions.filter(
-    (s) => differenceInCalendarDays(new Date(), new Date(s.started_at)) < 7,
-  ).length;
-  const weeklyGoal = 4;
+  // WeekStrip data — derived from useWeeklySessions
+  const weeklySessionDates = React.useMemo(() => {
+    return new Set(weeklySessions.map((s) => s.started_at.split('T')[0]));
+  }, [weeklySessions]);
+  const weeklyGoal = parseWorkoutFrequency(homeProfile?.workout_frequency);
+  const weeklyCount = weeklySessions.length;
 
   const greeting = React.useMemo(() => {
     const h = new Date().getHours();
@@ -518,41 +603,6 @@ export default function DashboardScreen() {
     if (h < 18) return t('greeting.afternoon');
     return t('greeting.evening');
   }, []);
-
-  // Today's workout from active program
-  const jsToDb = (jsDay: number) => (jsDay === 0 ? 7 : jsDay);
-  const todayDbDay = jsToDb(getDay(new Date()));
-  const todaysWorkout = React.useMemo(() => {
-    if (!activeProgram?.program_workouts) return null;
-    return activeProgram.program_workouts.find((w) => w.day_of_week === todayDbDay) ?? null;
-  }, [activeProgram, todayDbDay]);
-
-  const formatExerciseDetail = (pe: ProgramExercise) => {
-    const parts: string[] = [];
-    if (pe.sets) parts.push(`${pe.sets}×`);
-    if (pe.reps) parts.push(`${pe.reps}`);
-    else if (pe.reps_min && pe.reps_max) parts.push(`${pe.reps_min}-${pe.reps_max}`);
-    else if (pe.duration_seconds) parts.push(`${pe.duration_seconds}s`);
-    if (pe.weight_kg) parts.push(`@ ${pe.weight_kg}kg`);
-    return parts.join(' ');
-  };
-
-  const missionExercises = React.useMemo(() => {
-    if (!todaysWorkout?.program_exercises) return [];
-    return todaysWorkout.program_exercises
-      .sort((a, b) => a.order_index - b.order_index)
-      .map((pe) => ({ name: tExercise(pe.exercises?.name ?? 'Exercise'), detail: formatExerciseDetail(pe) }));
-  }, [todaysWorkout]);
-
-  const sessionDates = React.useMemo(() => {
-    return new Set(recentSessions.map((s) => format(new Date(s.started_at), 'yyyy-MM-dd')));
-  }, [recentSessions]);
-
-  const handleStartWorkout = async (workout: typeof todaysWorkout) => {
-    if (!workout) return;
-    await startSession(workout.id, workout.name);
-    router.push('/(app)/workout/session');
-  };
 
   if (loadError) {
     return (
@@ -625,32 +675,9 @@ export default function DashboardScreen() {
         </View>
 
         {/* ── MissionCard ────────────────────────────────── */}
-        {activeProgram && todaysWorkout ? (
-          <View style={{ marginBottom: 12 }}>
-            <MissionCard
-              programName={activeProgram.name}
-              workoutName={todaysWorkout.name}
-              exercises={missionExercises}
-              onStart={() => handleStartWorkout(todaysWorkout)}
-            />
-          </View>
-        ) : (
-          <TouchableOpacity
-            onPress={() => router.push('/(app)/workout')}
-            style={{
-              backgroundColor: theme.surface, borderRadius: 20, padding: 18,
-              borderWidth: 1, borderColor: theme.border, marginBottom: 12,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-            }}
-          >
-            <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>Créer un programme</Text>
-              <Text style={{ color: theme.muted, fontSize: 12 }}>Démarre ton premier plan d'entraînement</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-          </TouchableOpacity>
-        )}
+        <View style={{ marginBottom: 12 }}>
+          <MissionCardContent isLoading={programLoading} activeProgram={activeProgram ?? null} />
+        </View>
 
         {/* ── AICoachInline ──────────────────────────────── */}
         <View style={{ marginBottom: 20 }}>
@@ -658,7 +685,12 @@ export default function DashboardScreen() {
         </View>
 
         {/* ── QuickLogRow ────────────────────────────────── */}
-        <Text style={{ color: theme.text, fontWeight: '700', fontSize: 13, marginBottom: 8 }}>Quick log</Text>
+        <Text style={{
+          fontSize: 11, fontWeight: '700', letterSpacing: 0.66,
+          textTransform: 'uppercase', color: '#6B6963', marginBottom: 10,
+        }}>
+          Quick log
+        </Text>
         <View style={{ marginBottom: 20 }}>
           <QuickLogRow
             onLogWater={() => setQuickSheet('water')}
@@ -668,47 +700,112 @@ export default function DashboardScreen() {
           />
         </View>
 
-        {/* ── WeekStrip ──────────────────────────────────── */}
+        {/* ── Cette semaine (HomeWeekStrip) ──────────────── */}
+        <Text style={{
+          fontSize: 11, fontWeight: '700', letterSpacing: 0.66,
+          textTransform: 'uppercase', color: '#6B6963', marginBottom: 10,
+        }}>
+          Cette semaine
+        </Text>
         <View style={{ marginBottom: 20 }}>
-          <WeekStrip weeklyCount={weeklyCount} weeklyGoal={weeklyGoal} sessionDates={sessionDates} />
+          {weekLoading ? (
+            <View style={{
+              backgroundColor: theme.surface, borderRadius: 20, padding: 14,
+              shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Skeleton width={120} height={14} borderRadius={6} />
+                <Skeleton width={80} height={12} borderRadius={6} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 5 }}>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Skeleton key={i} width={undefined} height={40} borderRadius={10} style={{ flex: 1 }} />
+                ))}
+              </View>
+            </View>
+          ) : (
+            <HomeWeekStrip
+              weeklyCount={weeklyCount}
+              weeklyGoal={weeklyGoal}
+              sessionDates={weeklySessionDates}
+            />
+          )}
         </View>
 
-        {/* ── Recent ─────────────────────────────────────── */}
-        {recentSessions.length > 0 && (
-          <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 13 }}>Récent</Text>
-              <TouchableOpacity onPress={() => router.push('/(app)/workout/history')}>
-                <Text style={{ color: theme.primary, fontSize: 12, fontWeight: '600' }}>Tout voir</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={{ gap: 8, marginBottom: 20 }}>
-              {recentSessions.slice(0, 3).map((session) => (
-                <View key={session.id} style={{
-                  backgroundColor: theme.surface, borderRadius: 14, padding: 12,
+        {/* ── Récent ─────────────────────────────────────── */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <Text style={{
+            fontSize: 11, fontWeight: '700', letterSpacing: 0.66,
+            textTransform: 'uppercase', color: '#6B6963',
+          }}>
+            Récent
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/(app)/workout/history' as any)}>
+            <Text style={{ color: '#FF5C1A', fontSize: 11, fontWeight: '600' }}>Tout voir</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ gap: 8, marginBottom: 20 }}>
+          {recentLoading ? (
+            <>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={{
+                  backgroundColor: theme.surface, borderRadius: 12, padding: 12,
                   borderWidth: 1, borderColor: theme.border,
                   flexDirection: 'row', alignItems: 'center', gap: 12,
                 }}>
-                  <View style={{
-                    width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: theme.primary + '18',
-                  }}>
-                    <Ionicons name="barbell-outline" size={16} color={theme.primary} />
+                  <Skeleton width={36} height={36} borderRadius={10} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton width="70%" height={13} borderRadius={6} />
+                    <Skeleton width="50%" height={11} borderRadius={6} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 13 }}>{session.name ?? 'Workout'}</Text>
-                    <Text style={{ color: theme.muted, fontSize: 11 }}>{format(new Date(session.started_at), 'EEE, d MMM')}</Text>
-                  </View>
-                  {session.total_volume_kg != null && (
-                    <Text style={{ color: theme.success, fontWeight: '700', fontSize: 13 }}>
-                      {session.total_volume_kg.toLocaleString()} kg
-                    </Text>
-                  )}
+                  <Skeleton width={48} height={13} borderRadius={6} />
                 </View>
               ))}
+            </>
+          ) : recentSessions.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+              <Ionicons name="barbell-outline" size={40} color="#6B6963" />
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1C1A17', marginTop: 10 }}>
+                Aucune séance récente
+              </Text>
+              <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 4, textAlign: 'center' }}>
+                Lance ta première séance via l'onglet Séance.
+              </Text>
             </View>
-          </>
-        )}
+          ) : (
+            recentSessions.map((session) => (
+              <View key={session.id} style={{
+                backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
+                borderWidth: 1, borderColor: '#E2E0DA',
+                shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+              }}>
+                <View style={{
+                  width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'rgba(255,92,26,0.12)',
+                }}>
+                  <Ionicons name="barbell-outline" size={16} color="#FF5C1A" />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: '#1C1A17', fontWeight: '700', fontSize: 13 }}>
+                    {session.name ?? 'Workout'}
+                  </Text>
+                  <Text style={{ color: '#6B6963', fontSize: 11 }}>
+                    {format(new Date(session.started_at), 'd MMM')} · {Math.round((session.duration_seconds ?? 0) / 60)} min
+                  </Text>
+                </View>
+                <Text style={{ color: '#22C55E', fontWeight: '800', fontSize: 13 }}>
+                  {session.total_volume_kg
+                    ? session.total_volume_kg.toLocaleString('fr-FR') + ' kg'
+                    : '—'}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
 
         {/* ── Tous mes outils ────────────────────────────── */}
         <TouchableOpacity
