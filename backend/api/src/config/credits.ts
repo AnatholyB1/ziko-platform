@@ -21,6 +21,7 @@ export type CreditAction = keyof typeof CREDIT_COSTS;
 export const DAILY_QUOTAS = {
   chat: { base: 1, bonus: 2 },
   scan: { base: 1, bonus: 2 },
+  import: { base: 999, bonus: 0 }, // no free-quota gate for imports — cost is paid via costOverride
 } as const;
 
 // Monthly free quota per action (D-10)
