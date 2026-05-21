@@ -105,7 +105,7 @@ Cross-cutting constraints:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 27. Spike — Mandatory Plugin Pattern | 3/3 | Complete   | 2026-05-20 |
-| 28. UI Design — Mon coach Plugin | 3/3 | Complete | 2026-05-19 |
+| 28. UI Design — Mon coach Plugin | 2/3 | In Progress|  |
 | 29. Plugin "Mon coach" — Full Implementation | 4/4 | Complete   | 2026-05-20 |
 | 30. UI Design Catch-Up — Phase 24 Web Surfaces | N/A | Dropped (out of scope) | 2026-05-20 |
 | 31. AI Tools — coach_get_link + coach_revoke_link | 0/2 | Planned | - |
