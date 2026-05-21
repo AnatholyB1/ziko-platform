@@ -177,6 +177,19 @@ export default function AIProgramsDashboard({ supabase }: { supabase: any }) {
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Générer un programme</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/(plugins)/ai-programs/import' as any)}
+          style={{
+            backgroundColor: theme.surface, borderRadius: 14, padding: 16,
+            alignItems: 'center', marginTop: 12, flexDirection: 'row',
+            justifyContent: 'center', gap: 8,
+            borderWidth: 1, borderColor: theme.border,
+          }}
+        >
+          <Ionicons name="cloud-upload-outline" size={20} color={theme.primary} />
+          <Text style={{ color: theme.primary, fontSize: 16, fontWeight: '700' }}>Importer un fichier</Text>
+        </TouchableOpacity>
+
         {programs.length > 0 ? (
           <>
             <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 12 }}>
