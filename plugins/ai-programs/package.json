@@ -8,7 +8,8 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/AIProgramsDashboard": "./src/screens/AIProgramsDashboard.tsx",
-    "./screens/GenerateProgram": "./src/screens/GenerateProgram.tsx"
+    "./screens/GenerateProgram": "./src/screens/GenerateProgram.tsx",
+    "./screens/ImportFileScreen": "./src/screens/ImportFileScreen.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
