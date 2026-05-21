@@ -19,3 +19,7 @@ export { SubTabs } from './components/SubTabs';
 export { PluginHeader } from './components/PluginHeader';
 export { WeekStrip } from './components/WeekStrip';
 export * from './design-system';
+export { BugFab, useBugStore, showBugReport } from './components/BugFab';
+export { BugSheet } from './components/BugSheet';
+export { PaywallScreen } from './components/PaywallScreen';
+export { RechargeSheet } from './components/RechargeSheet';
