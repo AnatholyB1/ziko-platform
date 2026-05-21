@@ -13,3 +13,9 @@ export {
   radius,
   typography,
 } from './components';
+export { FormRing } from './components/FormRing';
+export { AISuggestion } from './components/AISuggestion';
+export { SubTabs } from './components/SubTabs';
+export { PluginHeader } from './components/PluginHeader';
+export { WeekStrip } from './components/WeekStrip';
+export * from './design-system';
