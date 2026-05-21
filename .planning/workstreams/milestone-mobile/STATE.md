@@ -1,63 +1,82 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: Mobile v2
-status: complete
-stopped_at: Milestone v1.6 archived — all phases complete, GAP-01 fixed, artifacts written.
-last_updated: "2026-05-21T00:00:00.000Z"
+milestone: v1.7
+milestone_name: Mobile UX v2
+status: planning
+last_updated: "2026-05-21T13:15:39.978Z"
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 3
   total_plans: 16
   completed_plans: 12
-  percent: 100
+  percent: 50
 ---
 
-# Project State
+# Project State — v1.7 Mobile UX v2
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-18)  
-See: .planning/workstreams/milestone-mobile/ROADMAP.md
+See: .planning/PROJECT.md (updated 2026-05-21)  
+See: .planning/workstreams/milestone-mobile/ROADMAP-v1.7.md  
+See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
-**Core value:** Plugin "Mon coach" mobile (athlete side) — 3-state invitation UX, mandatory enforcement, fr+en i18n.  
-**Current focus:** Milestone close — fix GAP-01 then /gsd:complete-milestone, OR proceed with known gap
+**Core value:** Full visual redesign of the Ziko mobile app matching 24 canonical mockup files. Design + real data connections done together per screen. Active workout session excluded.
 
 ## Current Position
 
-Phase: 27 — **COMPLETE** (Spike — Mandatory Plugin Pattern)
-Phase: 28 — **COMPLETE** (UI Design — Mon coach Plugin)
-Phase: 29 — **COMPLETE** (Plugin "Mon coach" Full Implementation)
-Phase: 30 — **DROPPED** (UI Design Catch-Up — Phase 24 Web Surfaces) — out of scope, mobile-only workstream
-Phase: 31 — **COMPLETE** (AI Tools — coach_get_link + coach_revoke_link) — code done; e2e test pending
+Phase: **32 — Design System Foundation** (next to plan + execute)
 
-**Milestone audit:** `.planning/workstreams/milestone-mobile/v1.6-MILESTONE-AUDIT.md`  
-**Audit status:** `gaps_found` — 1 blocker, 4 warnings, 0 VERIFICATION.md files
-
-Progress: [█████████░] 83%
+Progress: [████████░░] 75%
 
 ## Accumulated Context
 
-### Decisions
+### Key Decisions
 
-- Zero new backend: all routes needed by the Mon coach plugin already exist in Phase 25 (invitations, preview, revoke)
-- Design-first enforced: Phase 28 (Mon coach Figma) precedes Phase 29 (implementation); Phase 30 (web surfaces Figma) dropped (out of scope)
-- Phase 31 (AI tools) is optional scope — implemented but e2e test pending
-- [Phase 27]: Registry-driven mandatory plugin pattern: `mandatory?: boolean` in `PluginManifest` (packages/plugin-sdk/src/types.ts); PluginLoader pre-loads mandatory plugins unconditionally (apps/mobile/src/lib/PluginLoader.tsx); trash button grayed out in store/[id].tsx via JSX ternary
-- [Phase 27]: Visual verification of trash button deferred — accepted as TypeScript-only proof per user decision
+- Active workout session (`workout-active.jsx`) is the ONLY exclusion from the redesign
+- Design + data connections handled together per screen (not two separate passes)
+- 3-tab nav (Accueil/Séance/Profil) — PluginsDrawer replaces any separate plugin tab
+- New shared components go in `packages/ui/`: FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip
+- AICoachInline uses rule-based tips (not AI chat) — saves credits for real coaching
+- Phase numbering continues from v1.6: phases 32–41
+- 24 mockup files analyzed: all fixture data inventoried, all new components identified
+
+### Fixture Inventory (to be replaced)
+
+- `home.jsx`: PROFILE, STREAK, TODAY, FORME, RECENT, ALL_PLUGINS
+- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED
+- `plugins-2.jsx`: STATS, SLEEP_DATA, GAMIFICATION, PANTRY, RECIPE data
+- `coach.jsx`: COACH_DATA
+- `workout-data.jsx`: SESSION_DATA
+- `workout-program-ai.jsx`: PROGRAM_DETAIL, HISTORY_DETAIL
+- `workout-rest-summary.jsx`: SUMMARY_DATA
+
+### New Components Required (Phase 32)
+
+- FormRing (4-segment SVG wellness ring)
+- AISuggestion (standardized inline AI tip card)
+- SubTabs (segmented tab bar, 2–4 tabs)
+- PluginHeader (back chevron + title + optional right)
+- WeekStrip (7-day date grid with completion dots)
+- BugFab + BugSheet (global floating bug report)
+- PaywallScreen + RechargeSheet (monetization modals)
+- PluginsDrawer (18-plugin bottom grid drawer)
 
 ### Pending Todos
 
-- **GAP-01 (FIXED):** migration `047_coach_plugin_registry.sql` applied — coach row now in `plugins_registry` with `"mandatory":true`. Store flow 6 (mandatory trash gate) now testable.
-- **REQUIREMENTS.md doc bugs:** COACH-01, COACH-05, COACH-10, COACH-15 boxes unchecked but code complete — update at milestone close.
-- **E2E test COACH-15:** Human verification of GET /ai/tools + POST /ai/tools/execute for coach_get_link + coach_revoke_link still pending.
+- [x] Run `/gsd:plan-phase 32` to start Design System Foundation ← DONE 2026-05-21
+- [ ] Run `/gsd:execute-phase 32` to implement Design System Foundation
 
 ### Blockers/Concerns
 
-- ~~**COACH-04 BLOCKER**~~ — **RESOLVED** via migration 047.
+None.
 
 ## Session Continuity
 
-Last session: 2026-05-21
-Stopped at: GAP-01 fixed. Coach plugin inserted into plugins_registry (migration 047). COACH-04 unblocked.
-Resume with: `/gsd:complete-milestone --ws milestone-mobile`
+Last session: 2026-05-21T13:15:39.958Z
+Resume: `/gsd:execute-phase 32`
+
+---
+
+## Archive — v1.6 Mobile v2 (SHIPPED 2026-05-21)
+
+Phases 27–31 complete. See `.planning/workstreams/milestone-mobile/v1.6-MILESTONE-AUDIT.md`.
