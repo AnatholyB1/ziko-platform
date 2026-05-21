@@ -23,3 +23,4 @@ export { BugFab, useBugStore, showBugReport } from './components/BugFab';
 export { BugSheet } from './components/BugSheet';
 export { PaywallScreen } from './components/PaywallScreen';
 export { RechargeSheet } from './components/RechargeSheet';
+export { PluginsDrawer } from './components/PluginsDrawer';

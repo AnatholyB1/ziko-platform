@@ -12,7 +12,7 @@ import { PluginLoader } from '../src/lib/PluginLoader';
 import { useThemeStore } from '../src/stores/themeStore';
 import { supabase } from '../src/lib/supabase';
 import CustomAlert from '../src/components/CustomAlert';
-import BugReportModal from '../src/components/BugReportModal';
+import { BugFab, BugSheet } from '@ziko/ui';
 import CreditEarnToast from '../src/components/CreditEarnToast';
 import CreditExhaustionSheet from '../src/components/CreditExhaustionSheet';
 import ErrorBoundary from '../src/components/ErrorBoundary';
@@ -118,7 +118,8 @@ function RootLayout() {
                 <Stack.Screen name="(app)" options={{ headerShown: false }} />
               </Stack>
               <CustomAlert />
-              <BugReportModal />
+              <BugFab />
+              <BugSheet supabase={supabase} apiUrl={process.env.EXPO_PUBLIC_API_URL ?? ''} />
               <CreditEarnToast />
               <CreditExhaustionSheet />
             </PluginLoader>
