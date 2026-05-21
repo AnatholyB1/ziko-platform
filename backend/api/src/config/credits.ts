@@ -4,10 +4,13 @@
 // When costs change, update ONE file. (D-08, D-09, D-10)
 
 // Per-action credit costs deducted on each AI call (D-08, D-09)
+// 'import' cost is 0 as a sentinel — actual cost is always passed via costOverride
+// at runtime (Math.min(page_count, 10) for PDFs, 1 for other formats). Phase 28 D-01/D-02.
 export const CREDIT_COSTS = {
   chat: 4,
   scan: 3,
   program: 4,
+  import: 0,
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;
