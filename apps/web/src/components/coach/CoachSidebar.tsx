@@ -4,6 +4,7 @@ import {
   IoPeopleOutline,
   IoMailOutline,
   IoBarChartOutline,
+  IoCloudUploadOutline,
   IoSparklesOutline,
   IoSettingsOutline,
 } from 'react-icons/io5';
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { label: 'Clients', href: '/fr/coach/clients', icon: IoPeopleOutline, disabled: false },
   { label: 'Invitations', href: '/fr/coach/invitations', icon: IoMailOutline, disabled: false },
   { label: 'Programmes', href: '/fr/coach/programs', icon: IoBarChartOutline, disabled: false },
+  { label: 'Imports', href: '/fr/coach/imports', icon: IoCloudUploadOutline, disabled: false },
   { label: 'IA', href: '/fr/coach/ai', icon: IoSparklesOutline, disabled: true },
   { label: 'Paramètres', href: '/fr/coach/settings', icon: IoSettingsOutline, disabled: false },
 ];
