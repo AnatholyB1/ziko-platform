@@ -251,7 +251,7 @@ export function ImportsClient({ imports, locale, accessToken }: ImportsClientPro
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            original_filename: file.name,
+            filename: file.name,
             mime_type: file.type,
             size_bytes: file.size,
             mode: 'coach_template',
