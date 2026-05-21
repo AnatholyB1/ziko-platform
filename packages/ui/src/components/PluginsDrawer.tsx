@@ -14,11 +14,13 @@ interface PluginsDrawerProps {
   visible: boolean;
   onClose: () => void;
   onNavigate: (path: string) => void;
+  installedPluginIds?: string[];
 }
 
-export function PluginsDrawer({ visible, onClose, onNavigate }: PluginsDrawerProps) {
+export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds }: PluginsDrawerProps) {
   const manifests = usePluginRegistry((s) => s.manifests);
-  const installedPlugins = usePluginRegistry((s) => s.installedPlugins);
+  const registryPlugins = usePluginRegistry((s) => s.installedPlugins);
+  const pluginIds = installedPluginIds ?? registryPlugins;
   const theme = useThemeStore((s) => s.theme);
 
   return (
@@ -73,7 +75,7 @@ export function PluginsDrawer({ visible, onClose, onNavigate }: PluginsDrawerPro
                 paddingTop: 16,
               }}
             >
-              {installedPlugins.map((id) => {
+              {pluginIds.map((id) => {
                 const manifest = manifests[id];
                 if (!manifest) return null;
                 const color = PLUGIN_COLORS[id] ?? theme.primary;
