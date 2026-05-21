@@ -35,7 +35,7 @@ export default async function ImportsPage() {
   } = await supabase.auth.getSession();
   const jwt = session?.access_token ?? '';
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
   let imports: ImportRow[] = [];
 
@@ -61,7 +61,6 @@ export default async function ImportsPage() {
         imports={imports}
         locale={locale}
         accessToken={jwt}
-        apiUrl={apiUrl}
       />
     </div>
   );

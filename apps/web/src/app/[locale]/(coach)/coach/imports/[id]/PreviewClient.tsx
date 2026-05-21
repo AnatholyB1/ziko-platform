@@ -501,10 +501,10 @@ interface PreviewClientProps {
   importRow: ImportRow;
   locale: string;
   accessToken: string;
-  apiUrl: string;
+
 }
 
-export function PreviewClient({ importRow, locale, accessToken, apiUrl }: PreviewClientProps) {
+export function PreviewClient({ importRow, locale, accessToken }: PreviewClientProps) {
   const router = useRouter();
   const [data, setData] = useState<ImportRow>(importRow);
   const [editedProgram, setEditedProgram] = useState<ParsedProgram | null>(() => {
@@ -532,7 +532,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
     if (pollingRef.current) return;
     pollingRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`${apiUrl}/coach/imports/${data.id}`, {
+        const res = await fetch(`/api/coach/imports/${data.id}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
           cache: 'no-store',
         });
@@ -550,7 +550,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
         // network error — keep polling
       }
     }, 2000);
-  }, [apiUrl, accessToken, data.id]);
+  }, [accessToken, data.id]);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
@@ -731,7 +731,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
     if (!editedProgram) return;
     setCommitLoading(true);
     try {
-      const res = await fetch(`${apiUrl}/coach/imports/${data.id}/commit`, {
+      const res = await fetch(`/api/coach/imports/${data.id}/commit`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -755,7 +755,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
   // ── Retry parse ─────────────────────────────────────────────────────────
   async function handleRetry() {
     try {
-      const res = await fetch(`${apiUrl}/coach/imports/${data.id}/parse`, {
+      const res = await fetch(`/api/coach/imports/${data.id}/parse`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -772,7 +772,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
   async function handleReuploadFile(file: File) {
     try {
       // Get signed URL for new import
-      const createRes = await fetch(`${apiUrl}/coach/imports`, {
+      const createRes = await fetch(`/api/coach/imports`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -797,7 +797,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
       if (!uploadRes.ok) return;
 
       // Mark as uploaded
-      await fetch(`${apiUrl}/coach/imports/${newImport.id}/status`, {
+      await fetch(`/api/coach/imports/${newImport.id}/status`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -807,7 +807,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
       });
 
       // Trigger parse
-      const parseRes = await fetch(`${apiUrl}/coach/imports/${newImport.id}/parse`, {
+      const parseRes = await fetch(`/api/coach/imports/${newImport.id}/parse`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
       });
@@ -815,7 +815,7 @@ export function PreviewClient({ importRow, locale, accessToken, apiUrl }: Previe
 
       // Poll until ready, then enter diff mode
       const pollInterval = setInterval(async () => {
-        const pollRes = await fetch(`${apiUrl}/coach/imports/${newImport.id}`, {
+        const pollRes = await fetch(`/api/coach/imports/${newImport.id}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
           cache: 'no-store',
         });

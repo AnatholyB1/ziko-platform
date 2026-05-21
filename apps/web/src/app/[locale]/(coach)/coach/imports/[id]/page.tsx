@@ -40,7 +40,7 @@ export default async function ImportPreviewPage({ params }: PageProps) {
   } = await supabase.auth.getSession();
   const jwt = session?.access_token ?? '';
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const apiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
   let importRow: ImportRow | null = null;
 
@@ -76,7 +76,6 @@ export default async function ImportPreviewPage({ params }: PageProps) {
         importRow={importRow}
         locale={locale}
         accessToken={jwt}
-        apiUrl={apiUrl}
       />
     </div>
   );

@@ -18,7 +18,6 @@ interface ImportsClientProps {
   imports: ImportRow[];
   locale: string;
   accessToken: string;
-  apiUrl: string;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -167,7 +166,7 @@ function FileIcon({ mime }: { mime: string }) {
 
 // ── main component ────────────────────────────────────────────────────────────
 
-export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsClientProps) {
+export function ImportsClient({ imports, locale, accessToken }: ImportsClientProps) {
   const router = useRouter();
   const [localImports, setLocalImports] = useState<ImportRow[]>(imports);
   const [uploading, setUploading] = useState(false);
@@ -204,7 +203,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
       const updates = await Promise.all(
         parsingIds.map(async (id) => {
           try {
-            const res = await fetch(`${apiUrl}/coach/imports/${id}`, {
+            const res = await fetch(`/api/coach/imports/${id}`, {
               headers: { Authorization: `Bearer ${accessToken}` },
               cache: 'no-store',
             });
@@ -229,7 +228,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [localImports, apiUrl, accessToken]);
+  }, [localImports, accessToken]);
 
   // ── upload handler ──────────────────────────────────────────────────────────
 
@@ -245,7 +244,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
 
       try {
         // Step 1: Create import record + get signed URL
-        const createRes = await fetch(`${apiUrl}/coach/imports`, {
+        const createRes = await fetch(`/api/coach/imports`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -283,7 +282,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
         }
 
         // Step 3: Notify backend upload is complete
-        await fetch(`${apiUrl}/coach/imports/${importId}/status`, {
+        await fetch(`/api/coach/imports/${importId}/status`, {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -293,7 +292,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
         });
 
         // Step 4: Trigger parse
-        await fetch(`${apiUrl}/coach/imports/${importId}/parse`, {
+        await fetch(`/api/coach/imports/${importId}/parse`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -322,7 +321,7 @@ export function ImportsClient({ imports, locale, accessToken, apiUrl }: ImportsC
         setUploading(false);
       }
     },
-    [apiUrl, accessToken]
+    [accessToken]
   );
 
   // ── drag handlers ───────────────────────────────────────────────────────────
