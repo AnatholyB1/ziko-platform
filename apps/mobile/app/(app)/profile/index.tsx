@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Image,
+  View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
@@ -170,9 +171,77 @@ function PRStatsTab({
 // ── PRProgressTab ────────────────────────────────────────────────
 function PRProgressTab({
   measurements,
+  userId,
 }: {
   measurements: Array<{ id: string; photo_url: string | null; created_at: string; weight_kg: number | null }>;
+  userId: string;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleAddPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showAlert('Permission refusée', "Autorise l'accès à la galerie dans les Réglages.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setUploading(true);
+    try {
+      const uri = result.assets[0].uri;
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileName = `${userId}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
+      const photoUrl = urlData.publicUrl;
+      const { error: insertError } = await supabase.from('body_measurements').insert({
+        user_id: userId,
+        photo_url: photoUrl,
+        measured_at: new Date().toISOString(),
+      });
+      if (insertError) throw insertError;
+      queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
+    } catch (err: any) {
+      showAlert('Erreur', err.message ?? "L'upload a échoué. Réessaie.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = (photoUrl: string, id: string) => {
+    showAlert(
+      'Supprimer cette photo ?',
+      'La photo sera définitivement supprimée.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            // Extraire le path du storage depuis l'URL publique
+            // URL format: .../storage/v1/object/public/profile-photos/{userId}/{timestamp}.jpg
+            const urlParts = photoUrl.split('/profile-photos/');
+            if (urlParts.length > 1) {
+              await supabase.storage.from('profile-photos').remove([urlParts[1]]);
+            }
+            await supabase.from('body_measurements').delete().eq('id', id);
+            queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={{ gap: 12 }}>
       {/* Header line */}
@@ -197,8 +266,15 @@ function PRProgressTab({
         )}
 
         {measurements.map((item, index) => (
-          <View
+          <TouchableOpacity
             key={item.id}
+            onLongPress={() => {
+              if (item.photo_url) {
+                handleDeletePhoto(item.photo_url, item.id);
+              }
+            }}
+            delayLongPress={500}
+            activeOpacity={0.9}
             style={{
               width: '48%',
               aspectRatio: 4 / 5,
@@ -210,7 +286,7 @@ function PRProgressTab({
             {item.photo_url ? (
               <Image
                 source={{ uri: item.photo_url }}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                style={{ width: '100%', height: '100%', borderRadius: 16 }}
                 resizeMode="cover"
               />
             ) : null}
@@ -238,12 +314,13 @@ function PRProgressTab({
                 {`Sem. ${index + 1}`}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
 
         {/* Ajouter dashed card */}
         <TouchableOpacity
-          onPress={() => router.push('/(app)/profile/avatar' as any)}
+          onPress={handleAddPhoto}
+          disabled={uploading}
           style={{
             width: '48%',
             aspectRatio: 1 / 1.1,
@@ -259,10 +336,16 @@ function PRProgressTab({
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="camera-outline" size={22} color={colors.muted} />
-          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted }}>
-            Ajouter
-          </Text>
+          {uploading ? (
+            <ActivityIndicator size="small" color={colors.muted} />
+          ) : (
+            <>
+              <Ionicons name="camera-outline" size={22} color={colors.muted} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted }}>
+                Ajouter
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -963,7 +1046,7 @@ export default function ProfileScreen() {
                 />
               )}
               {activeTab === 'progress' && (
-                <PRProgressTab measurements={measurementsData ?? []} />
+                <PRProgressTab measurements={measurementsData ?? []} userId={userId ?? ''} />
               )}
               {activeTab === 'badges' && (
                 <PRBadgesTab badges={badgesData ?? []} />
