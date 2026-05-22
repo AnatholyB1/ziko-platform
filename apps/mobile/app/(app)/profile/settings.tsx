@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -37,6 +37,7 @@ function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
 // ── Notifications sub-screen ───────────────────────────────────
 function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string }) {
   const theme = useThemeStore((s) => s.theme);
+  const [isLoading, setIsLoading] = useState(true);
   const [s, setS] = useState({
     sessionsReminder: true, hydration: true, streakAlert: true, coach: true,
     achievements: true, social: true, marketing: false,
@@ -50,6 +51,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
       .then(({ data }) => {
         const prefs = (data as any)?.settings?.notif_prefs;
         if (prefs) setS((prev) => ({ ...prev, ...prefs }));
+        setIsLoading(false);
       });
   }, [userId]);
 
@@ -70,6 +72,17 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
       });
     }, 500);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+        <STHeader onBack={onBack} title="Notifications" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="small" color="#FF5C1A" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -105,6 +118,7 @@ const THEMES = [
 function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: string }) {
   const theme = useThemeStore((s) => s.theme);
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+  const [activeTheme, setActiveTheme] = useState<string>('light');
 
   useEffect(() => {
     if (!userId) return;
@@ -112,8 +126,23 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
       .then(({ data }) => {
         const a = (data as any)?.settings?.appearance;
         if (a?.units_preference) setUnits(a.units_preference);
+        if (a?.theme) setActiveTheme(a.theme);
       });
   }, [userId]);
+
+  const handleThemeSelect = async (themeId: string) => {
+    setActiveTheme(themeId);
+    const { data: existing } = await supabase
+      .from('user_profiles')
+      .select('settings')
+      .eq('id', userId)
+      .single();
+    const current = (existing as any)?.settings ?? {};
+    supabase.from('user_profiles').upsert({
+      id: userId,
+      settings: { ...current, appearance: { ...(current.appearance ?? {}), theme: themeId } },
+    });
+  };
 
   const handleUnitSelect = async (id: 'metric' | 'imperial') => {
     setUnits(id);
@@ -140,16 +169,17 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
         }}>THÈME</Text>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
           {THEMES.map((t) => {
-            const active = t.id === 'light';
+            const isActive = t.id === activeTheme;
             const isLocked = t.id !== 'light';
             const card = (
               <TouchableOpacity
                 key={t.id}
                 activeOpacity={isLocked ? 1 : 0.7}
+                onPress={() => { if (!isLocked) handleThemeSelect(t.id); }}
                 style={{
                   flex: 1, borderRadius: 12, overflow: 'hidden',
-                  borderWidth: active ? 2 : 1,
-                  borderColor: active ? '#FF5C1A' : '#E2E0DA',
+                  borderWidth: isActive ? 2 : 1,
+                  borderColor: isActive ? '#FF5C1A' : '#E2E0DA',
                 }}
               >
                 <View style={{ height: 70, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -157,7 +187,7 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
                 </View>
                 <Text style={{
                   textAlign: 'center', paddingVertical: 8, fontSize: 12, fontWeight: '700',
-                  color: active ? '#FF5C1A' : '#1C1A17',
+                  color: isActive ? '#FF5C1A' : '#1C1A17',
                 }}>{t.label}</Text>
               </TouchableOpacity>
             );
@@ -306,9 +336,17 @@ function IntegrationsSubScreen({ onBack }: { onBack: () => void }) {
                   activeOpacity={0.7}
                   onPress={() => {
                     if (isConnected) {
-                      showAlert('Intégration', `Gérer ${it.name} bientôt disponible.`);
+                      showAlert('Intégration active', `${it.name} est connecté. Gestion avancée bientôt disponible.`);
+                    } else if (it.id === 'apple_health') {
+                      if (Platform.OS === 'ios') {
+                        Linking.openURL('App-Prefs:Privacy&path=HEALTH').catch(() =>
+                          showAlert('Impossible', 'Ouvre Réglages > Confidentialité > Santé pour autoriser Ziko.')
+                        );
+                      } else {
+                        showAlert('Android Health Connect', 'La connexion Health Connect sera disponible dans la prochaine mise à jour.');
+                      }
                     } else {
-                      showAlert('Connexion', `La connexion ${it.name} sera disponible prochainement.`);
+                      showAlert(`${it.name}`, 'Cette intégration sera disponible dans une prochaine mise à jour. Reste connecté !');
                     }
                   }}
                   style={{
@@ -346,6 +384,19 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const role = profile?.role ?? 'client';
   const userId = user?.id ?? '';
+  const tier = (profile as any)?.settings?.subscription_tier ?? 'free';
+
+  const { data: connectedCount = 0 } = useQuery({
+    queryKey: ['integrations-count', userId],
+    queryFn: async () => {
+      const { data } = await supabase.from('health_sync_log')
+        .select('platform').eq('user_id', userId!);
+      const seen = new Set((data ?? []).map((r: any) => r.platform));
+      return seen.size;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: coachData } = useQuery({
     queryKey: ['coach-link-settings', userId],
@@ -425,16 +476,18 @@ export default function SettingsScreen() {
           </View>
           <View style={{
             paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999,
-            backgroundColor: '#FF5C1A',
+            backgroundColor: tier === 'premium' ? '#FF5C1A' : 'rgba(28,26,23,0.12)',
           }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#fff', letterSpacing: 0.6, textTransform: 'uppercase' }}>PREMIUM</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: tier === 'premium' ? '#fff' : theme.text, letterSpacing: 0.6, textTransform: 'uppercase' }}>
+              {tier === 'premium' ? 'PREMIUM' : 'FREE'}
+            </Text>
           </View>
         </View>
 
         <STGroup title="Compte">
           <STRow icon="person-outline" tint="#FF5C1A" label="Informations personnelles" sub="Nom, email, téléphone" onPress={() => showAlert('Bientôt', 'Cette section arrive dans la prochaine version.')} />
-          <STRow icon="lock-closed-outline" tint="#1C1A17" label="Mot de passe" sub="Modifier" onPress={() => router.push('/(auth)/forgot' as any)} />
-          <STRow icon="shield-checkmark-outline" tint="#3B82F6" label="Confidentialité" sub="Profil public · Données partagées" onPress={() => showAlert('Confidentialité', 'Tes données sont chiffrées et ne sont jamais revendues.')} />
+          <STRow icon="lock-closed-outline" tint="#1C1A17" label="Mot de passe" sub="Modifier" onPress={() => router.push('/(app)/profile/security' as any)} />
+          <STRow icon="shield-checkmark-outline" tint="#3B82F6" label="Confidentialité" sub="Profil public · Données partagées" onPress={() => router.push('/(app)/profile/security' as any)} />
           <STRow icon="trash-outline" tint="#E94B3C" label="Supprimer le compte" danger onPress={handleDeleteAccount} />
         </STGroup>
 
@@ -448,9 +501,23 @@ export default function SettingsScreen() {
         <STGroup title="Préférences">
           <STRow icon="notifications-outline" tint="#8B5CF6" label="Notifications" sub="Push, email, sons" onPress={() => setSub('notifications')} />
           <STRow icon="color-palette-outline" tint="#3B82F6" label="Apparence" sub="Thème · Langue · Unités" onPress={() => setSub('appearance')} />
-          <STRow icon="link-outline" tint="#22C55E" label="Intégrations" right="2 actives" onPress={() => setSub('integrations')} />
+          <STRow icon="link-outline" tint="#22C55E" label="Intégrations" right={connectedCount > 0 ? `${connectedCount} active${connectedCount > 1 ? 's' : ''}` : 'Aucune'} onPress={() => setSub('integrations')} />
           <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right={`${enabledPlugins.length} / ${installedPlugins.length}`} onPress={() => router.push('/(app)/modules' as any)} />
-          <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => router.push('/(app)/referral' as any)} />
+          <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => {
+            const code = userId.slice(0, 8).toUpperCase();
+            showAlert(
+              'Ton code de parrainage',
+              `Code : ${code}\n\nPartage ce code avec tes amis pour qu'ils rejoignent Ziko !`,
+              [
+                { text: 'Partager', onPress: () => {
+                  Share.share({
+                    message: `Rejoins-moi sur Ziko avec mon code ${code} et commence ton voyage fitness ! https://ziko-app.com`,
+                  });
+                }},
+                { text: 'Fermer', style: 'cancel' },
+              ]
+            );
+          }} />
         </STGroup>
 
         {(role === 'client' || role === 'both') && linkedCoachName && (
@@ -466,11 +533,18 @@ export default function SettingsScreen() {
         )}
 
         <STGroup title="Aide & infos">
-          <STRow icon="help-circle-outline" tint="#1C1A17" label="Centre d'aide" onPress={() => router.push('/(app)/help' as any)} />
+          <STRow icon="help-circle-outline" tint="#1C1A17" label="Centre d'aide" onPress={() => router.push('/(app)/profile/help' as any)} />
           <STRow icon="chatbubble-outline" tint="#3B82F6" label="Contacter le support" onPress={() => showAlert('Support', 'Envoie un email à support@ziko.app')} />
-          <STRow icon="star-outline" tint="#E8A33A" label="Noter l'app" onPress={() => showAlert('Merci !', "Ton avis nous aide à améliorer l'app.")} />
+          <STRow icon="star-outline" tint="#E8A33A" label="Noter l'app" onPress={() => {
+            const url = Platform.OS === 'ios'
+              ? 'https://apps.apple.com/app/id6744155867' // TODO: remplacer par l'ID App Store réel
+              : 'https://play.google.com/store/apps/details?id=com.ziko.mobile';
+            Linking.openURL(url).catch(() =>
+              showAlert('Impossible', "Impossible d'ouvrir le store. Cherche 'Ziko fitness' manuellement.")
+            );
+          }} />
           <STRow icon="information-circle-outline" tint="#6B6963" label="À propos" right="v2.4.1" />
-          <STRow icon="document-text-outline" tint="#6B6963" label="Mentions légales" onPress={() => router.push('/(app)/legal' as any)} />
+          <STRow icon="document-text-outline" tint="#6B6963" label="Mentions légales" onPress={() => router.push('/(app)/profile/legal' as any)} />
         </STGroup>
 
         {/* Se déconnecter */}
