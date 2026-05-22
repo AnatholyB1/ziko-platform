@@ -285,6 +285,19 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 36: Web Performance Optimization
+**Goal**: Eliminate redundant auth DB round-trips on every coach page navigation by introducing React cache() deduplication and selective ISR.
+**Depends on**: Phase 26 (coach layout and page structure established)
+**Requirements**: PERF-01, PERF-02, PERF-03, PERF-04
+**Success Criteria** (what must be TRUE):
+  1. A single request through the (coach) route segment triggers exactly ONE `supabase.auth.getUser()` DB call, regardless of how many server components (layout + page + nested layouts) participate in the render.
+  2. No `supabase.auth.getUser()` call exists directly in any (coach) route file — all auth resolution goes through `getCachedCoachUser()` from `@/lib/coach/auth`.
+  3. The settings page uses `revalidate = 60` ISR (coach profile data changes rarely); all client data pages keep `force-dynamic` (live athlete data).
+  4. TypeScript compilation passes with zero errors after all refactors.
+**Plans**: 2 plans
+- [ ] 36-01-PLAN.md — Wave 1: Create @/lib/coach/auth with getCachedCoachUser + getCachedAlertCount; refactor coach layout
+- [ ] 36-02-PLAN.md — Wave 2: Refactor all coach route pages to use getCachedCoachUser(); apply ISR to settings
+
 ---
 
 ## Open Architectural Decisions (surfaced for Phase 22–23)
@@ -340,6 +353,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 29. AI Coach Orchestrator | v1.5 | 0/6 | In progress | — |
 | 30. Strava Integration | v1.5 | 0/0 | Not started | — |
 | 31. Public Marketing `/coachs` | v1.5 | 0/0 | Not started | — |
+| 36. Web Performance Optimization | v1.5 | 0/2 | Planned | — |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
@@ -354,3 +368,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-17 — Phase 25 (Invitations & Mobile "Mon coach" Minimal) complete: 8/8 plans + focus trap gap fix. coach/invitations + coach/clients bounded modules, 6-char nanoid codes, web-only redeem state machine (/redeem + /r/[code]), serial rate-limit (5/15min IP + 10/hr user), constant-time INVALID_OR_EXPIRED envelope, typed-confirmation revoke (COACH token), Phase 24 refonte pixel-perfect to canonical mockups, RevokeConfirmModal focus trap fixed. Ready for Phase 26 (CRM Client Management).*
 *Updated: 2026-05-18 — Phase 26 (CRM Client Management) complete: 7/7 plans + 2 gap-closure rounds. @tanstack/react-table, recharts, migration 041 (coach_client_tags/notes), full backend roster/summary/tabs/compare routes, ClientsTable + signal chips, 7-tab client detail, ExecutiveSummaryCard + NotesPanel + TagInput, ComparisonChart. 31/31 must-haves verified, 16/16 tests green. Ready for Phase 27 (Coaching Programs & Mobile "Mon coach" Full).*
 *Updated: 2026-05-22 — Phase 29 (AI Coach Orchestrator) planned: 6 plans in 6 waves. Migration 050 (coach_alerts + ai_tool_audit), coach/ai/ bounded module, /coach/ai SSE chat UI, alerts panel, AdaptWithAIButton, weekly digest via Resend + React Email.*
+*Updated: 2026-05-22 — Phase 36 (Web Performance Optimization) planned: 2 plans in 2 waves. React cache() auth deduplication via getCachedCoachUser(), revalidate=60 ISR for settings, force-dynamic preserved on all client data pages.*
