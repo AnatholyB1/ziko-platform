@@ -1,18 +1,396 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
+  View, Text, ScrollView, TouchableOpacity, Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { ProfileHero } from '@ziko/ui';
+import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+
+// ── Design tokens ────────────────────────────────────────────────
+const colors = {
+  bg: '#F7F6F3', surface: '#FFFFFF', border: '#E2E0DA', primary: '#FF5C1A',
+  text: '#1C1A17', muted: '#6B6963', success: '#22C55E', danger: '#E94B3C', warn: '#E8A33A',
+};
+const shadow = {
+  card: {
+    shadowColor: '#1C1A17',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+};
 
 // ── fmtN helper ─────────────────────────────────────────────────
 const fmtN = (n: number) =>
   n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + 'k' : String(n);
+
+// ── Static badge fallback data ──────────────────────────────────
+const STATIC_BADGES = [
+  { id: 'regulier',   name: 'Régulier',    icon: 'flame-outline',    tint: '#E94B3C', date: 'JAN 2025' },
+  { id: 'force',      name: 'Force x2',    icon: 'barbell-outline',  tint: '#FF5C1A', date: 'FÉV 2025' },
+  { id: '100seances', name: '100 séances', icon: 'trophy-outline',   tint: '#E8A33A', date: 'MAR 2025' },
+  { id: 'hydro',      name: 'Hydro pro',   icon: 'water-outline',    tint: '#3B82F6', date: 'AVR 2025' },
+  { id: 'leve-tot',   name: 'Lève-tôt',   icon: 'sunny-outline',    tint: '#F0B96B', date: 'AVR 2025' },
+  { id: 'amis',       name: '+50 amis',    icon: 'people-outline',   tint: '#8B5CF6', date: 'MAI 2025' },
+];
+const LOCKED_COUNT = 3;
+
+// ── Gallery fallback colors ─────────────────────────────────────
+const GALLERY_COLORS = ['#3a342b', '#4a3a2a', '#5a3a25', '#6a3a20'];
+
+// ── PRStatsTab ───────────────────────────────────────────────────
+function PRStatsTab({
+  stats,
+  prRows,
+}: {
+  stats: { sessions: number; streak: number; prs: number; weeks: number };
+  prRows: Array<{ exercise: string; date: string; weight: number; delta: number }>;
+}) {
+  return (
+    <View style={{ gap: 12 }}>
+      {/* 2x2 stat grid */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ width: '48%' }}>
+          <PRStatCard icon="barbell-outline" tint="#FF5C1A" value={stats.sessions} label="Séances totales" />
+        </View>
+        <View style={{ width: '48%' }}>
+          <PRStatCard icon="flame-outline" tint="#E94B3C" value={stats.streak} label="Jours d'affilée" />
+        </View>
+        <View style={{ width: '48%' }}>
+          <PRStatCard icon="trophy-outline" tint="#E8A33A" value={stats.prs} label="PR battus" />
+        </View>
+        <View style={{ width: '48%' }}>
+          <PRStatCard icon="flash-outline" tint="#22C55E" value={stats.weeks} label="Semaines actives" />
+        </View>
+      </View>
+
+      {/* PR récents card */}
+      <View
+        style={{
+          padding: 16,
+          borderRadius: 12,
+          backgroundColor: colors.surface,
+          ...shadow.card,
+        }}
+      >
+        {/* Header */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+            PR récents
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/profile/progression' as any)}
+            style={{
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 999,
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>
+              Tout voir
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* PR rows */}
+        {prRows.length === 0 ? (
+          <Text
+            style={{
+              color: colors.muted,
+              textAlign: 'center',
+              paddingVertical: 16,
+              fontSize: 13,
+            }}
+          >
+            Aucun record pour l'instant
+          </Text>
+        ) : (
+          prRows.map((pr, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                paddingVertical: 6,
+              }}
+            >
+              {/* Icon */}
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  backgroundColor: 'rgba(255,92,26,0.12)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="trophy-outline" size={14} color={colors.primary} />
+              </View>
+              {/* Text block */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+                  {pr.exercise}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>{pr.date}</Text>
+              </View>
+              {/* Right block */}
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+                  {pr.weight} kg
+                </Text>
+                {pr.delta > 0 ? (
+                  <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
+                    +{pr.delta} kg
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ── PRProgressTab ────────────────────────────────────────────────
+function PRProgressTab({
+  measurements,
+}: {
+  measurements: Array<{ id: string; photo_url: string | null; created_at: string; weight_kg: number | null }>;
+}) {
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Header line */}
+      <Text style={{ fontSize: 12, color: colors.muted, paddingHorizontal: 4 }}>
+        {measurements.length} photos · classées par date
+      </Text>
+
+      {/* 2-column photo grid */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {measurements.length === 0 && (
+          <Text
+            style={{
+              width: '100%',
+              fontSize: 12,
+              color: colors.muted,
+              paddingHorizontal: 4,
+              marginBottom: 4,
+            }}
+          >
+            Aucune photo pour l'instant
+          </Text>
+        )}
+
+        {measurements.map((item, index) => (
+          <View
+            key={item.id}
+            style={{
+              width: '48%',
+              aspectRatio: 4 / 5,
+              borderRadius: 16,
+              overflow: 'hidden',
+              backgroundColor: GALLERY_COLORS[index % GALLERY_COLORS.length],
+            }}
+          >
+            {item.photo_url ? (
+              <Image
+                source={{ uri: item.photo_url }}
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                resizeMode="cover"
+              />
+            ) : null}
+            {/* Label pill */}
+            <View
+              style={{
+                position: 'absolute',
+                left: 8,
+                bottom: 8,
+                paddingVertical: 4,
+                paddingHorizontal: 8,
+                borderRadius: 999,
+                backgroundColor: 'rgba(0,0,0,0.42)',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {`Sem. ${index + 1}`}
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        {/* Ajouter dashed card */}
+        <TouchableOpacity
+          onPress={() => router.push('/(app)/profile/avatar' as any)}
+          style={{
+            width: '48%',
+            aspectRatio: 1 / 1.1,
+            borderRadius: 16,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderStyle: 'dashed',
+            borderColor: colors.border,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="camera-outline" size={22} color={colors.muted} />
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.muted }}>
+            Ajouter
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ── PRBadgesTab ──────────────────────────────────────────────────
+function PRBadgesTab({
+  badges,
+}: {
+  badges: Array<{ id: string | number; name?: string; icon?: string; tint?: string; unlocked_at?: string }>;
+}) {
+  const earnedBadges = badges.length === 0 ? STATIC_BADGES : badges;
+
+  return (
+    <View style={{ gap: 12 }}>
+      {/* Header row */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          paddingHorizontal: 4,
+        }}
+      >
+        <Text style={{ fontSize: 12, color: colors.muted }}>
+          {earnedBadges.length} obtenus · {LOCKED_COUNT} à débloquer
+        </Text>
+        <TouchableOpacity style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999 }} activeOpacity={0.7}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>Tout voir</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3-column badge grid */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {earnedBadges.map((b: any) => (
+          <View
+            key={String(b.id)}
+            style={{
+              width: '30%',
+              padding: 12,
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: colors.surface,
+              borderRadius: 12,
+              ...shadow.card,
+            }}
+          >
+            {/* Icon container */}
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: (b.tint ?? '#FF5C1A') + '24',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons
+                name={(b.icon ?? 'trophy-outline') as any}
+                size={20}
+                color={b.tint ?? '#FF5C1A'}
+              />
+            </View>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '700',
+                lineHeight: 14,
+                textAlign: 'center',
+                color: colors.text,
+              }}
+            >
+              {b.name ?? ''}
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.muted,
+                letterSpacing: 0.6,
+                textTransform: 'uppercase',
+                fontWeight: '700',
+              }}
+            >
+              {b.date ?? (b.unlocked_at ? new Date(b.unlocked_at).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).toUpperCase() : '')}
+            </Text>
+          </View>
+        ))}
+
+        {/* Locked badge placeholders */}
+        {Array.from({ length: LOCKED_COUNT }).map((_, i) => (
+          <View
+            key={`locked-${i}`}
+            style={{
+              width: '30%',
+              padding: 12,
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              borderStyle: 'dashed',
+              borderColor: colors.border,
+              borderRadius: 12,
+            }}
+          >
+            {/* Icon container */}
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: 'rgba(28,26,23,0.04)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="lock-closed-outline" size={18} color={colors.muted} />
+            </View>
+            <Text style={{ fontSize: 12, color: colors.muted }}>Verrouillé</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 // ── ProfileScreen ────────────────────────────────────────────────
 export default function ProfileScreen() {
@@ -23,11 +401,16 @@ export default function ProfileScreen() {
 
   const userId = user?.id ?? null;
 
-  // ── TanStack Query ─────────────────────────────────────────────
+  // ── TanStack Query: profile data (extended to include streak + prs) ─
   const { data, isLoading } = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
-      const [profileRes, sessionsRes, followersRes, followingRes] = await Promise.all([
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const sixtyDaysAgoStr = sixtyDaysAgo.toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+
+      const [profileRes, sessionsRes, followersRes, followingRes, habitLogsRes, prCountRes, prRowsRes] = await Promise.all([
         supabase
           .from('user_profiles')
           .select('name, goal, avatar_color, avatar_url, bio, handle')
@@ -45,9 +428,28 @@ export default function ProfileScreen() {
           .from('friendships')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId!),
+        supabase
+          .from('habit_logs')
+          .select('date')
+          .eq('user_id', userId!)
+          .eq('completed', true)
+          .gte('date', sixtyDaysAgoStr)
+          .order('date', { ascending: false }),
+        supabase
+          .from('session_sets')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId!)
+          .eq('is_pr', true),
+        supabase
+          .from('session_sets')
+          .select('exercise_id, weight_kg, performed_at, exercises(name)')
+          .eq('user_id', userId!)
+          .order('weight_kg', { ascending: false }),
       ]);
 
       const sessions = sessionsRes.data?.length ?? 0;
+
+      // Weeks: count distinct week numbers from workout sessions
       const weeks = (() => {
         const dates = (sessionsRes.data ?? []).map((s: any) => new Date(s.started_at));
         const weekStrs = new Set(
@@ -56,12 +458,89 @@ export default function ProfileScreen() {
         return weekStrs.size;
       })();
 
+      // Streak: consecutive days backward from today using habit_logs
+      const streak = (() => {
+        const logDates = (habitLogsRes.data ?? []).map((l: any) => l.date as string);
+        const uniqueDates = [...new Set(logDates)].sort().reverse();
+        let count = 0;
+        let current = today;
+        for (const d of uniqueDates) {
+          if (d === current) {
+            count++;
+            const prev = new Date(current);
+            prev.setDate(prev.getDate() - 1);
+            current = prev.toISOString().split('T')[0];
+          } else {
+            break;
+          }
+        }
+        return count;
+      })();
+
+      // PRs: count from session_sets is_pr=true (fallback: 0 if column doesn't exist)
+      const prs = prCountRes.error ? 0 : (prCountRes.count ?? 0);
+
+      // PR rows: top 3 distinct exercises by max weight
+      const prRows = (() => {
+        const rows = prRowsRes.data ?? [];
+        const exerciseMap = new Map<string, { exercise: string; weight: number; date: string }>();
+        for (const row of rows as any[]) {
+          const exerciseId = row.exercise_id;
+          const exerciseName = row.exercises?.name ?? exerciseId ?? 'Exercice';
+          const weight = row.weight_kg ?? 0;
+          const date = row.performed_at
+            ? new Date(row.performed_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+            : '';
+          if (!exerciseMap.has(exerciseId) || exerciseMap.get(exerciseId)!.weight < weight) {
+            exerciseMap.set(exerciseId, { exercise: exerciseName, weight, date });
+          }
+        }
+        return [...exerciseMap.values()]
+          .sort((a, b) => b.weight - a.weight)
+          .slice(0, 3)
+          .map((r) => ({ ...r, delta: 0 }));
+      })();
+
       return {
         profile: profileRes.data,
-        stats: { sessions, weeks, streak: 0, prs: 0 },
+        stats: { sessions, weeks, streak, prs },
         followers: followersRes.count ?? 0,
         following: followingRes.count ?? 0,
+        prRows,
       };
+    },
+    enabled: !!userId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // ── TanStack Query: measurements (gallery photos) ───────────────
+  const { data: measurementsData } = useQuery({
+    queryKey: ['measurements', userId],
+    queryFn: async () => {
+      const { data: mdata } = await supabase
+        .from('body_measurements')
+        .select('id, photo_url, created_at, weight_kg')
+        .eq('user_id', userId!)
+        .not('photo_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      return (mdata ?? []) as Array<{ id: string; photo_url: string | null; created_at: string; weight_kg: number | null }>;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── TanStack Query: badges ──────────────────────────────────────
+  const { data: badgesData } = useQuery({
+    queryKey: ['badges', userId],
+    queryFn: async () => {
+      const { data: gdata, error } = await supabase
+        .from('user_gamification')
+        .select('badges')
+        .eq('user_id', userId!)
+        .maybeSingle();
+      if (error || !gdata) return [];
+      return ((gdata as any).badges as any[]) ?? [];
     },
     enabled: !!userId,
     staleTime: 10 * 60 * 1000,
@@ -85,7 +564,7 @@ export default function ProfileScreen() {
   // ── Skeleton ────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
         <View style={{ height: 160, backgroundColor: '#E2E0DA', opacity: 0.5 }} />
         <View style={{ paddingHorizontal: 16, marginTop: -44 }}>
           <View
@@ -128,7 +607,7 @@ export default function ProfileScreen() {
 
   // ── Main layout ─────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView bounces={false} contentContainerStyle={{ paddingBottom: 0 }}>
         {/* Hero */}
         <ProfileHero
@@ -157,7 +636,7 @@ export default function ProfileScreen() {
                 borderRadius: 24,
                 backgroundColor: avatarColor,
                 borderWidth: 4,
-                borderColor: '#F7F6F3',
+                borderColor: colors.bg,
                 alignItems: 'center',
                 justifyContent: 'center',
                 shadowColor: '#000',
@@ -181,7 +660,7 @@ export default function ProfileScreen() {
                   paddingHorizontal: 12,
                   borderRadius: 999,
                   borderWidth: 1,
-                  borderColor: '#E2E0DA',
+                  borderColor: colors.border,
                   backgroundColor: 'transparent',
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -190,8 +669,8 @@ export default function ProfileScreen() {
                 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="create-outline" size={12} color="#1C1A17" />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: '#1C1A17' }}>
+                <Ionicons name="create-outline" size={12} color={colors.text} />
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>
                   Modifier
                 </Text>
               </TouchableOpacity>
@@ -212,7 +691,7 @@ export default function ProfileScreen() {
                 fontSize: 22,
                 fontWeight: '700',
                 lineHeight: 24,
-                color: '#1C1A17',
+                color: colors.text,
               }}
             >
               {profileName}
@@ -220,7 +699,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Handle */}
-          <Text style={{ fontSize: 12, color: '#6B6963', marginBottom: 8 }}>
+          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 8 }}>
             {handle}
           </Text>
 
@@ -231,7 +710,7 @@ export default function ProfileScreen() {
                 fontSize: 14,
                 fontWeight: '400',
                 lineHeight: 20,
-                color: '#1C1A17',
+                color: colors.text,
                 marginBottom: 12,
               }}
             >
@@ -259,7 +738,7 @@ export default function ProfileScreen() {
                 width: 28,
                 height: 28,
                 borderRadius: 8,
-                backgroundColor: '#FF5C1A',
+                backgroundColor: colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -271,7 +750,7 @@ export default function ProfileScreen() {
                 style={{
                   fontSize: 12,
                   fontWeight: '700',
-                  color: '#FF5C1A',
+                  color: colors.primary,
                   letterSpacing: 1,
                   textTransform: 'uppercase',
                 }}
@@ -279,7 +758,7 @@ export default function ProfileScreen() {
                 OBJECTIF
               </Text>
               <Text
-                style={{ fontSize: 12, fontWeight: '700', color: '#1C1A17', marginTop: 1 }}
+                style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginTop: 1 }}
               >
                 {data?.profile?.goal ?? 'Ajoute ton objectif'}
               </Text>
@@ -297,13 +776,13 @@ export default function ProfileScreen() {
             }}
           >
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1C1A17' }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
                 {fmtN(data?.followers ?? 0)}
               </Text>
               <Text
                 style={{
                   fontSize: 12,
-                  color: '#6B6963',
+                  color: colors.muted,
                   marginTop: 2,
                   fontWeight: '700',
                   letterSpacing: 0.6,
@@ -315,17 +794,17 @@ export default function ProfileScreen() {
             </View>
 
             <View
-              style={{ width: 1, backgroundColor: '#E2E0DA', alignSelf: 'stretch' }}
+              style={{ width: 1, backgroundColor: colors.border, alignSelf: 'stretch' }}
             />
 
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1C1A17' }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
                 {fmtN(data?.following ?? 0)}
               </Text>
               <Text
                 style={{
                   fontSize: 12,
-                  color: '#6B6963',
+                  color: colors.muted,
                   marginTop: 2,
                   fontWeight: '700',
                   letterSpacing: 0.6,
@@ -337,17 +816,17 @@ export default function ProfileScreen() {
             </View>
 
             <View
-              style={{ width: 1, backgroundColor: '#E2E0DA', alignSelf: 'stretch' }}
+              style={{ width: 1, backgroundColor: colors.border, alignSelf: 'stretch' }}
             />
 
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1C1A17' }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
                 {fmtN(data?.stats.weeks ?? 0)}
               </Text>
               <Text
                 style={{
                   fontSize: 12,
-                  color: '#6B6963',
+                  color: colors.muted,
                   marginTop: 2,
                   fontWeight: '700',
                   letterSpacing: 0.6,
@@ -363,12 +842,12 @@ export default function ProfileScreen() {
         {/* Tab bar */}
         <View
           style={{
-            backgroundColor: '#F7F6F3',
+            backgroundColor: colors.bg,
             paddingHorizontal: 16,
             paddingTop: 8,
             paddingBottom: 4,
             borderBottomWidth: 1,
-            borderBottomColor: '#E2E0DA',
+            borderBottomColor: colors.border,
             flexDirection: 'row',
           }}
         >
@@ -389,14 +868,14 @@ export default function ProfileScreen() {
                 alignItems: 'center',
                 borderBottomWidth: 2,
                 borderBottomColor:
-                  activeTab === tab.key ? '#FF5C1A' : 'transparent',
+                  activeTab === tab.key ? colors.primary : 'transparent',
               }}
             >
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: '700',
-                  color: activeTab === tab.key ? '#1C1A17' : '#6B6963',
+                  color: activeTab === tab.key ? colors.text : colors.muted,
                 }}
               >
                 {tab.label}
@@ -413,22 +892,18 @@ export default function ProfileScreen() {
               style={{
                 padding: 32,
                 paddingHorizontal: 24,
-                backgroundColor: '#FFFFFF',
+                backgroundColor: colors.surface,
                 borderRadius: 16,
                 alignItems: 'center',
-                shadowColor: '#1C1A17',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                elevation: 3,
+                ...shadow.card,
               }}
             >
-              <Ionicons name="stats-chart-outline" size={40} color="#6B6963" />
+              <Ionicons name="stats-chart-outline" size={40} color={colors.muted} />
               <Text
                 style={{
                   fontSize: 18,
                   fontWeight: '700',
-                  color: '#1C1A17',
+                  color: colors.text,
                   marginTop: 12,
                   textAlign: 'center',
                 }}
@@ -438,7 +913,7 @@ export default function ProfileScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  color: '#6B6963',
+                  color: colors.muted,
                   lineHeight: 20,
                   textAlign: 'center',
                   marginTop: 8,
@@ -455,7 +930,7 @@ export default function ProfileScreen() {
                   }
                 }}
                 style={{
-                  backgroundColor: '#FF5C1A',
+                  backgroundColor: colors.primary,
                   borderRadius: 12,
                   paddingVertical: 12,
                   paddingHorizontal: 20,
@@ -469,8 +944,21 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            /* Tabs placeholder — wired in plan 35-02 */
-            <View />
+            /* Real tab content */
+            <>
+              {activeTab === 'stats' && (
+                <PRStatsTab
+                  stats={data!.stats}
+                  prRows={data?.prRows ?? []}
+                />
+              )}
+              {activeTab === 'progress' && (
+                <PRProgressTab measurements={measurementsData ?? []} />
+              )}
+              {activeTab === 'badges' && (
+                <PRBadgesTab badges={badgesData ?? []} />
+              )}
+            </>
           )}
         </View>
       </ScrollView>
