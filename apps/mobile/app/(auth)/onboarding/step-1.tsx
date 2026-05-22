@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore } from '@ziko/plugin-sdk';
 
 export default function OnboardingStep1() {
@@ -12,21 +13,31 @@ export default function OnboardingStep1() {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1, paddingHorizontal: 22, justifyContent: 'center' }}>
-          {/* Icon */}
-          <View style={{
-            width: 76, height: 76, borderRadius: 22,
-            backgroundColor: '#FF5C1A',
-            alignItems: 'center', justifyContent: 'center',
-            marginBottom: 28,
-          }}>
+          {/* Gradient icon badge */}
+          <LinearGradient
+            colors={['#FF5C1A', '#FF8E5A']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: 76, height: 76, borderRadius: 22,
+              shadowColor: 'rgba(255,92,26,0.55)',
+              shadowOffset: { width: 0, height: 8 },
+              shadowRadius: 20,
+              shadowOpacity: 1,
+              elevation: 8,
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: 28,
+            }}
+          >
             <Ionicons name="flash" size={36} color="#fff" />
-          </View>
+          </LinearGradient>
 
           <Text style={{
             fontSize: 40, fontWeight: '800', color: theme.text,
-            lineHeight: 42, letterSpacing: -1, marginBottom: 14,
+            lineHeight: 42, letterSpacing: -1.2, marginBottom: 14,
           }}>
-            {'Bienvenue\nsur Ziko.'}
+            {'Bienvenue\nsur Ziko'}
+            <Text style={{ color: '#FF5C1A' }}>.</Text>
           </Text>
           <Text style={{ fontSize: 15, color: theme.muted, lineHeight: 22, maxWidth: 320, marginBottom: 28 }}>
             Ton coach perso, tes séances, ta nutrition, tes records — tout au même endroit.
@@ -42,7 +53,7 @@ export default function OnboardingStep1() {
               <View key={b.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{
                   width: 30, height: 30, borderRadius: 9,
-                  backgroundColor: '#FF5C1A' + '20', alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'rgba(255,92,26,0.12)', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <Ionicons name={b.icon} size={15} color="#FF5C1A" />
                 </View>
