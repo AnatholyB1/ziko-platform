@@ -28,20 +28,14 @@ export default async function DashboardPage() {
       .limit(10),
   ]);
 
+  void session; // session fetched for sidebar badge count only
   const displayName = profile?.display_name ?? user.email ?? 'Coach';
   const kycStatus = profile?.kyc_status ?? 'pending';
-  const accessToken = session?.access_token ?? '';
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
   return (
     <div className="flex flex-col gap-8">
       <WelcomeCard displayName={displayName} kycStatus={kycStatus} />
-      <AlertsPanel
-        initialAlerts={alerts ?? []}
-        coachId={user.id}
-        accessToken={accessToken}
-        apiUrl={apiUrl}
-      />
+      <AlertsPanel initialAlerts={alerts ?? []} />
     </div>
   );
 }

@@ -46,11 +46,9 @@ function formatTimestamp(iso: string): string {
 interface AlertCardProps {
   alert: CoachAlert;
   onDismiss: (id: string) => void;
-  apiUrl: string;
-  accessToken: string;
 }
 
-export function AlertCard({ alert, onDismiss, apiUrl, accessToken }: AlertCardProps) {
+export function AlertCard({ alert, onDismiss }: AlertCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const dotColor = SEVERITY_COLORS[alert.severity];
@@ -61,9 +59,8 @@ export function AlertCard({ alert, onDismiss, apiUrl, accessToken }: AlertCardPr
   function handleDismiss(e: React.MouseEvent) {
     e.stopPropagation();
     // Fire-and-forget PATCH to mark as read
-    fetch(`${apiUrl}/coach/ai/alerts/${alert.id}/read`, {
+    fetch(`/api/coach/ai/alerts/${alert.id}/read`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${accessToken}` },
     }).catch(() => {
       // Intentional: fire-and-forget
     });

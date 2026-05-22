@@ -3,20 +3,13 @@
 import { useState, useEffect } from 'react';
 import { IoFlashOutline } from 'react-icons/io5';
 
-interface CreditWidgetProps {
-  accessToken: string;
-  apiUrl: string;
-}
-
-export function CreditWidget({ accessToken, apiUrl }: CreditWidgetProps) {
+export function CreditWidget() {
   const [credits, setCredits] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchCredits() {
       try {
-        const res = await fetch(`${apiUrl}/credits/balance`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const res = await fetch('/api/credits/balance');
         if (res.ok) {
           const data = await res.json();
           setCredits(typeof data.balance === 'number' ? data.balance : null);
@@ -26,7 +19,7 @@ export function CreditWidget({ accessToken, apiUrl }: CreditWidgetProps) {
       }
     }
     fetchCredits();
-  }, [apiUrl, accessToken]);
+  }, []);
 
   const isZero = credits === 0;
   const isLow = credits !== null && credits > 0 && credits <= 10;

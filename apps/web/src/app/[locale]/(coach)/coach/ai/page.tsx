@@ -24,24 +24,7 @@ export default async function AIPage() {
     .limit(1)
     .maybeSingle();
 
-  // Get access token
-  const { data: { session } } = await supabase.auth.getSession();
-  const accessToken = session?.access_token ?? '';
-
-  // Fetch unread alert count (used in Plan 04 sidebar update)
-  const { count: unreadAlertCount } = await supabase
-    .from('coach_alerts')
-    .select('id', { count: 'exact', head: true })
-    .eq('coach_id', user.id)
-    .eq('is_read', false);
-
-  void unreadAlertCount; // will be used in Plan 04
-
   return (
-    <AIChatClient
-      accessToken={accessToken}
-      apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ''}
-      initialConversationId={lastConvo?.id ?? null}
-    />
+    <AIChatClient initialConversationId={lastConvo?.id ?? null} />
   );
 }

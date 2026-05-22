@@ -26,8 +26,6 @@ export interface Message {
 }
 
 interface AIChatClientProps {
-  accessToken: string;
-  apiUrl: string;
   initialConversationId: string | null;
 }
 
@@ -45,7 +43,7 @@ function genId() {
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
-export function AIChatClient({ accessToken, apiUrl, initialConversationId }: AIChatClientProps) {
+export function AIChatClient({ initialConversationId }: AIChatClientProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -135,12 +133,9 @@ export function AIChatClient({ accessToken, apiUrl, initialConversationId }: AIC
     }, 0);
 
     try {
-      const res = await fetch(`${apiUrl}/coach/ai/chat/stream`, {
+      const res = await fetch('/api/coach/ai/chat/stream', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: userMessage }],
           conversation_id: conversationId,
@@ -200,7 +195,7 @@ export function AIChatClient({ accessToken, apiUrl, initialConversationId }: AIC
       setError('Erreur de connexion. Réessayez dans un instant.');
       setIsStreaming(false);
     }
-  }, [apiUrl, accessToken, conversationId]);
+  }, [conversationId]);
 
   const handleRetry = useCallback(() => {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
@@ -224,7 +219,7 @@ export function AIChatClient({ accessToken, apiUrl, initialConversationId }: AIC
           <span className="text-lg font-semibold text-[#1C1A17]">IA Coach</span>
           <span className="text-sm text-[#6B6963]"> — Votre assistant coaching</span>
         </div>
-        <CreditWidget accessToken={accessToken} apiUrl={apiUrl} />
+        <CreditWidget />
       </div>
 
       {/* Messages area */}

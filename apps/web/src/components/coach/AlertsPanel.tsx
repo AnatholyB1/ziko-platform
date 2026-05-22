@@ -7,12 +7,9 @@ import type { CoachAlert } from './AlertCard';
 
 interface AlertsPanelProps {
   initialAlerts: CoachAlert[];
-  coachId: string;
-  accessToken: string;
-  apiUrl: string;
 }
 
-export function AlertsPanel({ initialAlerts, coachId: _coachId, accessToken, apiUrl }: AlertsPanelProps) {
+export function AlertsPanel({ initialAlerts }: AlertsPanelProps) {
   const [alerts, setAlerts] = useState<CoachAlert[]>(initialAlerts);
   const [showAll, setShowAll] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -56,9 +53,8 @@ export function AlertsPanel({ initialAlerts, coachId: _coachId, accessToken, api
 
   function handleMarkAllRead() {
     // Fire-and-forget POST to mark all read
-    fetch(`${apiUrl}/coach/ai/alerts/read-all`, {
+    fetch('/api/coach/ai/alerts/read-all', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${accessToken}` },
     }).catch(() => {
       // Intentional: fire-and-forget
     });
@@ -107,8 +103,6 @@ export function AlertsPanel({ initialAlerts, coachId: _coachId, accessToken, api
             key={alert.id}
             alert={alert}
             onDismiss={handleDismiss}
-            apiUrl={apiUrl}
-            accessToken={accessToken}
           />
         ))}
       </div>
