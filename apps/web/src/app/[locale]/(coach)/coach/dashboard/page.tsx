@@ -1,16 +1,14 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { WelcomeCard } from '@/components/coach/WelcomeCard';
 import { AlertsPanel } from '@/components/coach/AlertsPanel';
 
 export default async function DashboardPage() {
+  const { user } = await getCachedCoachUser();
   const supabase = await createServerSupabase();
-  const [{ data: { user } }, locale] = await Promise.all([supabase.auth.getUser(), getLocale()]);
-  if (!user) redirect(`/${locale}/login`);
 
   const [{ data: profile }, { data: { session } }, { data: alerts }] = await Promise.all([
     supabase

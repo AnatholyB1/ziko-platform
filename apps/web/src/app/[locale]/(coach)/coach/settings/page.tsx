@@ -1,19 +1,16 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60;
 
-import { redirect } from 'next/navigation';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { SettingsClient } from './SettingsClient';
 
 export default async function SettingsPage() {
-  const supabase = await createServerSupabase();
-  const [{ data: { user } }, locale, t] = await Promise.all([
-    supabase.auth.getUser(),
-    getLocale(),
+  const { user } = await getCachedCoachUser();
+  const [t, supabase] = await Promise.all([
     getTranslations('Settings'),
+    createServerSupabase(),
   ]);
-  if (!user) redirect(`/${locale}/login`);
 
   const { data: profile } = await supabase
     .from('coach_profiles')

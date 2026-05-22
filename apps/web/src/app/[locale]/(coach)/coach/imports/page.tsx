@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ImportsClient } from './ImportsClient';
 
 export interface ImportRow {
@@ -22,13 +22,8 @@ export interface ImportRow {
 }
 
 export default async function ImportsPage() {
-  const locale = await getLocale();
-  const supabase = await createServerSupabase();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  const [locale, supabase] = await Promise.all([getLocale(), createServerSupabase()]);
+  await getCachedCoachUser();
 
   const {
     data: { session },

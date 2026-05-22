@@ -1,18 +1,17 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ClientsTable } from '@/components/coach/ClientsTable';
 
 export default async function ClientsPage() {
-  const locale = await getLocale();
+  const [locale] = await Promise.all([
+    getLocale(),
+    getCachedCoachUser(), // deduplicates auth — layout already called this
+  ]);
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
 
   // Get the session JWT to pass to the Hono API
   const {

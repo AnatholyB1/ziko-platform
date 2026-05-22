@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ComparisonChart } from '@/components/coach/ComparisonChart';
 import { CompareControls } from '@/components/coach/CompareControls';
 
@@ -47,12 +48,8 @@ export default async function ComparePage({
   const { ids: idsParam = '', metric: metricParam = 'weight', days: daysParam = '30' } =
     await searchParams;
 
-  const locale = await getLocale();
-  const supabase = await createServerSupabase();
-
-  // Auth check
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  const [locale, supabase] = await Promise.all([getLocale(), createServerSupabase()]);
+  await getCachedCoachUser();
 
   // Validate metric against allowlist (T-26-07-02)
   const metric: MetricType = (VALID_METRICS as string[]).includes(metricParam)

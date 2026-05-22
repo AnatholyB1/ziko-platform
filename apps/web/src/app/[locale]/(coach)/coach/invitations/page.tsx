@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { redirect } from 'next/navigation';
-import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { fetchInvitationsAction } from './actions';
 import { InvitationsClient } from './InvitationsClient';
 
@@ -13,13 +12,7 @@ export default async function CoachInvitationsPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/${locale}/login?next=/coach/invitations`);
-  }
+  await getCachedCoachUser();
   const t = await getTranslations({ locale, namespace: 'CoachInvitations' });
   const initialRows = await fetchInvitationsAction('all');
 

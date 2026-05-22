@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { PreviewClient } from './PreviewClient';
 
 export interface ImportRow {
@@ -29,11 +30,7 @@ export default async function ImportPreviewPage({ params }: PageProps) {
   const { locale, id } = await params;
 
   const supabase = await createServerSupabase();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  await getCachedCoachUser();
 
   const {
     data: { session },
@@ -71,12 +68,10 @@ export default async function ImportPreviewPage({ params }: PageProps) {
   }
 
   return (
-    <div className="flex-1 p-8 bg-background min-h-screen">
-      <PreviewClient
-        importRow={importRow}
-        locale={locale}
-        accessToken={jwt}
-      />
-    </div>
+    <PreviewClient
+      importRow={importRow}
+      locale={locale}
+      accessToken={jwt}
+    />
   );
 }

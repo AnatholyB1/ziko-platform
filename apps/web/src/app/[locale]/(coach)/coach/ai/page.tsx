@@ -1,18 +1,13 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { AIChatClient } from './AIChatClient';
 
 export default async function AIPage() {
+  const { user } = await getCachedCoachUser();
   const supabase = await createServerSupabase();
-  const [{ data: { user } }, locale] = await Promise.all([
-    supabase.auth.getUser(),
-    getLocale(),
-  ]);
-  if (!user) redirect(`/${locale}/login`);
 
   // Fetch last coach conversation
   const { data: lastConvo } = await supabase

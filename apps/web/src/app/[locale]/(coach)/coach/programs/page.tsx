@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ProgramsClient } from './ProgramsClient';
 
 export interface ProgramRow {
@@ -22,13 +22,8 @@ export interface FolderRow {
 }
 
 export default async function ProgramsPage() {
-  const locale = await getLocale();
-  const supabase = await createServerSupabase();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  const [locale, supabase] = await Promise.all([getLocale(), createServerSupabase()]);
+  await getCachedCoachUser();
 
   const {
     data: { session },
@@ -68,7 +63,13 @@ export default async function ProgramsPage() {
 
   return (
     <div className="flex-1 p-8 bg-background min-h-screen">
-      <ProgramsClient programs={programs} folders={folders} locale={locale} />
+      <ProgramsClient
+        programs={programs}
+        folders={folders}
+        locale={locale}
+        accessToken={jwt}
+        apiUrl={apiUrl}
+      />
     </div>
   );
 }
