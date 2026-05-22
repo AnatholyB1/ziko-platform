@@ -222,82 +222,110 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
 }
 
 // ── Integrations sub-screen ────────────────────────────────────
-const INTEGRATIONS = [
-  { id: 1, name: 'Apple Health',   sub: 'Activité, sommeil, fréquence cardiaque', icon: 'heart-outline' as const,          tint: '#FF3B30', connected: true },
-  { id: 2, name: 'Apple Watch',    sub: 'Synchro auto · 47 séances importées',    icon: 'watch-outline' as const,          tint: '#1C1A17', connected: true },
-  { id: 3, name: 'Strava',         sub: 'Importer tes activités outdoor',         icon: 'flash-outline' as const,          tint: '#FC4C02', connected: false },
-  { id: 4, name: 'Garmin Connect', sub: 'Montres et capteurs Garmin',             icon: 'watch-outline' as const,          tint: '#1C1A17', connected: false },
-  { id: 5, name: 'MyFitnessPal',   sub: 'Synchro nutrition bidirectionnelle',     icon: 'nutrition-outline' as const,      tint: '#0072CE', connected: false },
-  { id: 6, name: 'Whoop',          sub: 'Récup, sommeil, charge',                 icon: 'pulse-outline' as const,         tint: '#3B3B3B', connected: false },
+const INTEGRATIONS_LIST = [
+  { id: 'apple_health', name: 'Apple Health',   sub: 'Activité, sommeil, fréquence cardiaque', icon: 'heart-outline' as const,     tint: '#FF3B30' },
+  { id: 'apple_watch',  name: 'Apple Watch',    sub: 'Synchro auto · 47 séances importées',   icon: 'watch-outline' as const,     tint: '#1C1A17' },
+  { id: 'strava',       name: 'Strava',          sub: 'Importer tes activités outdoor',        icon: 'flash-outline' as const,     tint: '#FC4C02' },
+  { id: 'garmin',       name: 'Garmin Connect', sub: 'Montres et capteurs Garmin',             icon: 'watch-outline' as const,     tint: '#1C1A17' },
+  { id: 'myfitnesspal', name: 'MyFitnessPal',   sub: 'Synchro nutrition bidirectionnelle',    icon: 'nutrition-outline' as const, tint: '#0072CE' },
+  { id: 'whoop',        name: 'Whoop',           sub: 'Récup, sommeil, charge',                icon: 'pulse-outline' as const,     tint: '#3B3B3B' },
 ];
 
 function IntegrationsSubScreen({ onBack }: { onBack: () => void }) {
   const theme = useThemeStore((s) => s.theme);
+  const userId = useAuthStore((s) => s.user?.id);
+
+  const { data: connectedPlatforms = [] } = useQuery({
+    queryKey: ['integrations', userId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('health_sync_log')
+        .select('platform, synced_at')
+        .eq('user_id', userId!)
+        .order('synced_at', { ascending: false });
+      const seen = new Set<string>();
+      return (data ?? []).filter((r: any) => {
+        if (seen.has(r.platform)) return false;
+        seen.add(r.platform);
+        return true;
+      }).map((r: any) => r.platform as string);
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <STHeader onBack={onBack} title="Intégrations" />
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
-        {/* Info banner */}
+        {/* Info card */}
         <View style={{
-          padding: 14, borderRadius: 12, marginBottom: 16,
-          backgroundColor: 'rgba(59,130,246,0.06)',
-          borderWidth: 1, borderColor: 'rgba(59,130,246,0.18)',
-          flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+          padding: 16, borderRadius: 12, marginBottom: 16,
+          backgroundColor: 'rgba(46,123,246,0.06)',
+          borderWidth: 1, borderColor: 'rgba(46,123,246,0.18)',
         }}>
-          <Ionicons name="information-circle-outline" size={14} color="#3B82F6" style={{ marginTop: 1 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#3B82F6', marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <Ionicons name="information-circle-outline" size={14} color="#2E7BF6" />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#2E7BF6' }}>
               Tes données restent à toi
             </Text>
-            <Text style={{ fontSize: 12, color: theme.muted, lineHeight: 17 }}>
-              Connexions chiffrées · révocables à tout moment · jamais revendues.
-            </Text>
           </View>
+          <Text style={{ fontSize: 12, color: theme.muted, lineHeight: 17 }}>
+            Connexions chiffrées · révocables à tout moment · jamais revendues.
+          </Text>
         </View>
 
         <View style={{ gap: 8 }}>
-          {INTEGRATIONS.map((it) => (
-            <View key={it.id} style={{
-              padding: 16, borderRadius: 12,
-              backgroundColor: theme.surface,
-              shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-            }}>
-              <View style={{
-                width: 40, height: 40, borderRadius: 12,
-                backgroundColor: it.tint + '24',
-                alignItems: 'center', justifyContent: 'center',
+          {INTEGRATIONS_LIST.map((it) => {
+            const isConnected = connectedPlatforms.includes(it.id);
+            return (
+              <View key={it.id} style={{
+                padding: 16, borderRadius: 12,
+                backgroundColor: theme.surface,
+                shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.08, shadowRadius: 8, elevation: 3,
+                flexDirection: 'row', alignItems: 'center', gap: 12,
               }}>
-                <Ionicons name={it.icon} size={17} color={it.tint} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{it.name}</Text>
-                  {it.connected && (
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
-                  )}
-                </View>
-                <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{it.sub}</Text>
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => !it.connected && showAlert('Connexion', `La connexion ${it.name} sera disponible prochainement.`)}
-                style={{
-                  paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-                  backgroundColor: it.connected ? 'rgba(28,26,23,0.07)' : '#1C1A17',
-                }}
-              >
-                <Text style={{
-                  fontSize: 12, fontWeight: '700',
-                  color: it.connected ? '#1C1A17' : '#fff',
+                <View style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  backgroundColor: it.tint + '24',
+                  alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {it.connected ? 'Géré' : 'Connecter'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+                  <Ionicons name={it.icon} size={17} color={it.tint} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{it.name}</Text>
+                    {isConnected && (
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2, lineHeight: 18 }}>{it.sub}</Text>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (isConnected) {
+                      showAlert('Intégration', `Gérer ${it.name} bientôt disponible.`);
+                    } else {
+                      showAlert('Connexion', `La connexion ${it.name} sera disponible prochainement.`);
+                    }
+                  }}
+                  style={{
+                    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+                    backgroundColor: isConnected ? 'rgba(28,26,23,0.07)' : '#1C1A17',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 12, fontWeight: '700',
+                    color: isConnected ? theme.text : '#fff',
+                  }}>
+                    {isConnected ? 'Géré' : 'Connecter'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -320,7 +348,7 @@ export default function SettingsScreen() {
   const userId = user?.id ?? '';
 
   const { data: coachData } = useQuery({
-    queryKey: ['coach-link-settings', profile?.id],
+    queryKey: ['coach-link-settings', userId],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
@@ -331,7 +359,7 @@ export default function SettingsScreen() {
       if (!res.ok) return null;
       return res.json();
     },
-    enabled: !!(role === 'client' || role === 'both') && !!profile?.id,
+    enabled: !!(role === 'client' || role === 'both') && !!userId,
     staleTime: 30_000,
   });
   const linkedCoachName = coachData?.preview?.display_name ?? null;
@@ -431,6 +459,7 @@ export default function SettingsScreen() {
               icon="person-outline"
               tint="#FF5C1A"
               label={linkedCoachName}
+              sub="Gérer"
               onPress={() => router.push('/(plugins)/coach/dashboard' as any)}
             />
           </STGroup>
