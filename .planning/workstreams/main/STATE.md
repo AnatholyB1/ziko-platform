@@ -8,10 +8,10 @@ status: executing
 last_updated: "2026-05-22T12:30:00Z"
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 58
-  completed_plans: 57
-  percent: 84
+  completed_plans: 58
+  percent: 90
 ---
 
 # Project State — v1.5 Coach Platform & CRM
@@ -42,7 +42,7 @@ Progress: [████████▓░] 84%
 | 26. CRM Client Management | ✅ Complete | 7/7 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | ✅ Complete (gaps 10/13) | 8/8 |
 | 28. AI File Imports | ✅ Complete — approved 2026-05-21 | 8/8 |
-| 29. AI Coach Orchestrator | 🔄 In Progress — 5/6 plans done | 5/6 |
+| 29. AI Coach Orchestrator | ✅ Complete — approved 2026-05-22 | 6/6 |
 | 30. Strava Integration | ⬜ Not started | — |
 | 31. Public Marketing `/coachs` | ⬜ Not started | — |
 
