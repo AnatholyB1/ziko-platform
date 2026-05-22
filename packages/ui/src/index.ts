@@ -28,3 +28,4 @@ export { STRow } from './components/STRow';
 export { STGroup } from './components/STGroup';
 export { STToggle } from './components/STToggle';
 export { PRStatCard } from './components/PRStatCard';
+export { ProfileHero } from './components/ProfileHero';
