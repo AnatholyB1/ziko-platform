@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: milestone
-status: executing
-stopped_at: context exhaustion at 75% (2026-05-21)
-last_updated: "2026-05-21T19:23:48.395Z"
+milestone: v1.5
+milestone_name: Coach Platform & CRM
+status: unknown
+stopped_at: context exhaustion at 76% (2026-05-22)
+last_updated: "2026-05-22T09:40:11.205Z"
 progress:
   total_phases: 10
   completed_phases: 6
@@ -13,7 +13,7 @@ progress:
   percent: 60
 ---
 
-# Project State
+# Project State — DEPRECATED ROOT FILE
 
 ## Project Reference
 
@@ -58,6 +58,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-21T19:23:48.387Z
-Stopped at: context exhaustion at 75% (2026-05-21)
+Last session: 2026-05-22T09:40:11.198Z
+Stopped at: context exhaustion at 76% (2026-05-22)
 Resume file: None
