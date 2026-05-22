@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { STGroup, STRow } from '@ziko/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 
@@ -45,6 +46,7 @@ export default function SecurityScreen() {
   const theme = useThemeStore((s) => s.theme);
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
+  const queryClient = useQueryClient();
 
   // Password state
   const [newPwd, setNewPwd] = useState('');
@@ -64,18 +66,17 @@ export default function SecurityScreen() {
     if (!userId) return;
     supabase
       .from('user_profiles')
-      .select('settings')
+      .select('settings, is_public')
       .eq('id', userId)
       .single()
       .then(({ data }) => {
         const prefs = (data as any)?.settings?.privacy;
-        if (prefs) {
-          setPrivacy({
-            is_public: prefs.is_public ?? true,
-            show_stats: prefs.show_stats ?? true,
-            show_activities: prefs.show_activities ?? true,
-          });
-        }
+        // is_public: direct column takes priority; fallback to settings JSONB for migration smoothness
+        setPrivacy({
+          is_public: (data as any)?.is_public ?? prefs?.is_public ?? true,
+          show_stats: prefs?.show_stats ?? true,
+          show_activities: prefs?.show_activities ?? true,
+        });
       });
   }, [userId]);
 
@@ -106,19 +107,30 @@ export default function SecurityScreen() {
   const updatePrivacy = (key: keyof PrivacyState) => async (value: boolean) => {
     const next = { ...privacy, [key]: value };
     setPrivacy(next);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const { data: existing } = await supabase
-        .from('user_profiles')
-        .select('settings')
-        .eq('id', userId)
-        .single();
-      const current = (existing as any)?.settings ?? {};
-      supabase.from('user_profiles').upsert({
-        id: userId,
-        settings: { ...current, privacy: next },
-      });
-    }, 500);
+
+    if (key === 'is_public') {
+      // is_public: write directly to the dedicated column (migration 051)
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        await supabase.from('user_profiles').upsert({ id: userId, is_public: value });
+        queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      }, 500);
+    } else {
+      // show_stats / show_activities: remain in settings JSONB (no dedicated columns)
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        const { data: existing } = await supabase
+          .from('user_profiles')
+          .select('settings')
+          .eq('id', userId)
+          .single();
+        const current = (existing as any)?.settings ?? {};
+        supabase.from('user_profiles').upsert({
+          id: userId,
+          settings: { ...current, privacy: next },
+        });
+      }, 500);
+    }
   };
 
   const cardStyle = {
