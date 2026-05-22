@@ -384,7 +384,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const role = profile?.role ?? 'client';
   const userId = user?.id ?? '';
-  const tier = (profile as any)?.settings?.subscription_tier ?? 'free';
+  const tier = (profile as any)?.subscription_tier ?? 'free';
 
   const { data: connectedCount = 0 } = useQuery({
     queryKey: ['integrations-count', userId],
@@ -485,7 +485,7 @@ export default function SettingsScreen() {
         </View>
 
         <STGroup title="Compte">
-          <STRow icon="person-outline" tint="#FF5C1A" label="Informations personnelles" sub="Nom, email, téléphone" onPress={() => showAlert('Bientôt', 'Cette section arrive dans la prochaine version.')} />
+          <STRow icon="person-outline" tint="#FF5C1A" label="Informations personnelles" sub="Nom, email, téléphone" onPress={() => router.push('/(app)/profile/edit' as any)} />
           <STRow icon="lock-closed-outline" tint="#1C1A17" label="Mot de passe" sub="Modifier" onPress={() => router.push('/(app)/profile/security' as any)} />
           <STRow icon="shield-checkmark-outline" tint="#3B82F6" label="Confidentialité" sub="Profil public · Données partagées" onPress={() => router.push('/(app)/profile/security' as any)} />
           <STRow icon="trash-outline" tint="#E94B3C" label="Supprimer le compte" danger onPress={handleDeleteAccount} />
