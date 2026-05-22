@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator,
 } from 'react-native';
@@ -10,6 +10,16 @@ import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+
+// ── Badge type ───────────────────────────────────────────────────
+type BadgeItem = {
+  slug: string;
+  name: string;
+  icon: string;  // emoji
+  tier: number;
+  earned: boolean;
+  earned_at: string | null;
+};
 
 // ── Design tokens ────────────────────────────────────────────────
 const colors = {
@@ -352,13 +362,18 @@ function PRProgressTab({
   );
 }
 
+// ── Tier tint colors ─────────────────────────────────────────────
+const TIER_TINT: Record<number, string> = {
+  1: '#E8A33A', // bronze
+  2: '#9CA3AF', // silver
+  3: '#FFD700', // gold
+};
+const getTierTint = (tier: number) => TIER_TINT[tier] ?? '#FF5C1A';
+
 // ── PRBadgesTab ──────────────────────────────────────────────────
-function PRBadgesTab({
-  badges,
-}: {
-  badges: Array<{ id: string | number; name?: string; icon?: string; tint?: string; unlocked_at?: string }>;
-}) {
-  const earnedBadges = badges.length === 0 ? STATIC_BADGES : badges;
+function PRBadgesTab({ badges }: { badges: BadgeItem[] }) {
+  const earnedBadges = badges.filter((b) => b.earned);
+  const unearnedBadges = badges.filter((b) => !b.earned);
 
   return (
     <View style={{ gap: 12 }}>
@@ -372,7 +387,7 @@ function PRBadgesTab({
         }}
       >
         <Text style={{ fontSize: 12, color: colors.muted }}>
-          {earnedBadges.length} obtenus · {LOCKED_COUNT} à débloquer
+          {earnedBadges.length} obtenus · {unearnedBadges.length} à débloquer
         </Text>
         <TouchableOpacity style={{ paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999 }} activeOpacity={0.7}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: colors.text }}>Tout voir</Text>
@@ -381,95 +396,120 @@ function PRBadgesTab({
 
       {/* 3-column badge grid */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {earnedBadges.map((b: any) => (
-          <View
-            key={String(b.id)}
-            style={{
-              width: '30%',
-              padding: 12,
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              backgroundColor: colors.surface,
-              borderRadius: 12,
-              ...shadow.card,
-            }}
-          >
-            {/* Icon container */}
+        {/* Earned badges — full color */}
+        {earnedBadges.map((b) => {
+          const tint = getTierTint(b.tier);
+          return (
             <View
+              key={b.slug}
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: (b.tint ?? '#FF5C1A') + '24',
+                width: '30%',
+                padding: 12,
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 4,
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                ...shadow.card,
               }}
             >
-              <Ionicons
-                name={(b.icon ?? 'trophy-outline') as any}
-                size={20}
-                color={b.tint ?? '#FF5C1A'}
-              />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: tint + '24',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 22 }}>{b.icon}</Text>
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  lineHeight: 14,
+                  textAlign: 'center',
+                  color: colors.text,
+                }}
+                numberOfLines={2}
+              >
+                {b.name}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: colors.muted,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  fontWeight: '700',
+                }}
+              >
+                {b.earned_at
+                  ? new Date(b.earned_at).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).toUpperCase()
+                  : ''}
+              </Text>
             </View>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '700',
-                lineHeight: 14,
-                textAlign: 'center',
-                color: colors.text,
-              }}
-            >
-              {b.name ?? ''}
-            </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.muted,
-                letterSpacing: 0.6,
-                textTransform: 'uppercase',
-                fontWeight: '700',
-              }}
-            >
-              {b.date ?? (b.unlocked_at ? new Date(b.unlocked_at).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).toUpperCase() : '')}
-            </Text>
-          </View>
-        ))}
+          );
+        })}
 
-        {/* Locked badge placeholders */}
-        {Array.from({ length: LOCKED_COUNT }).map((_, i) => (
-          <View
-            key={`locked-${i}`}
-            style={{
-              width: '30%',
-              padding: 12,
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              backgroundColor: 'transparent',
-              borderWidth: 1.5,
-              borderStyle: 'dashed',
-              borderColor: colors.border,
-              borderRadius: 12,
-            }}
-          >
-            {/* Icon container */}
+        {/* Unearned badges — greyed out at opacity 0.4 */}
+        {unearnedBadges.map((b) => {
+          const tint = getTierTint(b.tier);
+          return (
             <View
+              key={b.slug}
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: 'rgba(28,26,23,0.04)',
+                width: '30%',
+                padding: 12,
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 4,
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                opacity: 0.4,
+                ...shadow.card,
               }}
             >
-              <Ionicons name="lock-closed-outline" size={18} color={colors.muted} />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: tint + '24',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="lock-closed-outline" size={18} color={colors.muted} />
+              </View>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  lineHeight: 14,
+                  textAlign: 'center',
+                  color: colors.text,
+                }}
+                numberOfLines={2}
+              >
+                {b.name}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: colors.muted,
+                  letterSpacing: 0.6,
+                  textTransform: 'uppercase',
+                  fontWeight: '700',
+                }}
+              >
+                Verrouillé
+              </Text>
             </View>
-            <Text style={{ fontSize: 12, color: colors.muted }}>Verrouillé</Text>
-          </View>
-        ))}
+          );
+        })}
       </View>
     </View>
   );
@@ -480,6 +520,7 @@ export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const theme = useThemeStore((s) => s.theme);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'badges'>('stats');
 
   const userId = user?.id ?? null;
@@ -613,21 +654,46 @@ export default function ProfileScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // ── TanStack Query: badges ──────────────────────────────────────
-  const { data: badgesData } = useQuery({
+  // ── TanStack Query: badges (user_badges JOIN badge_definitions) ─
+  const { data: badgesData } = useQuery<BadgeItem[]>({
     queryKey: ['badges', userId],
     queryFn: async () => {
-      const { data: gdata, error } = await supabase
-        .from('user_gamification')
-        .select('badges')
-        .eq('user_id', userId!)
-        .maybeSingle();
-      if (error || !gdata) return [];
-      return ((gdata as any).badges as any[]) ?? [];
+      const [allBadgesRes, earnedRes] = await Promise.all([
+        supabase.from('badge_definitions').select('slug, name, icon, tier'),
+        supabase.from('user_badges').select('badge_slug, earned_at').eq('user_id', userId!),
+      ]);
+      if (allBadgesRes.error || !allBadgesRes.data) return [];
+      const earnedSlugs = new Set<string>((earnedRes.data ?? []).map((e) => e.badge_slug));
+      const earnedMap = new Map<string, string>(
+        (earnedRes.data ?? []).map((e) => [e.badge_slug, e.earned_at]),
+      );
+      const items: BadgeItem[] = allBadgesRes.data.map((b) => ({
+        slug: b.slug,
+        name: b.name,
+        icon: b.icon,
+        tier: b.tier,
+        earned: earnedSlugs.has(b.slug),
+        earned_at: earnedMap.get(b.slug) ?? null,
+      }));
+      // Sort: earned first, then by tier DESC
+      return items.sort((a, b) => {
+        if (a.earned !== b.earned) return a.earned ? -1 : 1;
+        return b.tier - a.tier;
+      });
     },
     enabled: !!userId,
     staleTime: 10 * 60 * 1000,
   });
+
+  // ── Fire-and-forget: check_and_award_badges after profile loads ─
+  const sessionCount = data?.stats?.sessions;
+  useEffect(() => {
+    if (userId && sessionCount !== undefined) {
+      supabase
+        .rpc('check_and_award_badges', { p_user_id: userId })
+        .then(() => queryClient.invalidateQueries({ queryKey: ['badges', userId] }));
+    }
+  }, [sessionCount, userId]);
 
   // ── Derived values ─────────────────────────────────────────────
   const avatarColor = data?.profile?.avatar_color ?? '#FF5C1A';
