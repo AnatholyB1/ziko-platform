@@ -1,0 +1,23 @@
+{
+  "name": "@ziko/email",
+  "version": "0.1.0",
+  "private": false,
+  "description": "React Email templates for Ziko platform (weekly coaching digest).",
+  "type": "module",
+  "main": "src/templates/WeeklyDigest.tsx",
+  "exports": {
+    "./src/templates/WeeklyDigest.js": {
+      "types": "./src/templates/WeeklyDigest.tsx",
+      "default": "./src/templates/WeeklyDigest.tsx"
+    }
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@react-email/components": "^1.0.12"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
