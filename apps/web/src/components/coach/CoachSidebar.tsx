@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: 'Invitations', href: '/fr/coach/invitations', icon: IoMailOutline, disabled: false },
   { label: 'Programmes', href: '/fr/coach/programs', icon: IoBarChartOutline, disabled: false },
   { label: 'Imports', href: '/fr/coach/imports', icon: IoCloudUploadOutline, disabled: false },
-  { label: 'IA', href: '/fr/coach/ai', icon: IoSparklesOutline, disabled: true },
+  { label: 'IA', href: '/fr/coach/ai', icon: IoSparklesOutline, disabled: false },
   { label: 'Paramètres', href: '/fr/coach/settings', icon: IoSettingsOutline, disabled: false },
 ];
 
