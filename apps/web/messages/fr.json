@@ -246,5 +246,100 @@
   },
   "Sidebar": {
     "invitations": "Invitations"
+  },
+  "coachs": {
+    "meta": {
+      "title": "Ziko — La CRM coaching à l'IA",
+      "description": "Gérez vos clients fitness avec l'IA. CRM coach + app athlète intégrée. Bêta privée gratuite."
+    },
+    "hero": {
+      "badge": "Bêta privée · 100% gratuit",
+      "headline": "La CRM coaching à l'IA",
+      "subtitle": "Gérez vos clients, analysez leurs données en temps réel, et générez des programmes avec l'IA. Gratuit en bêta privée — le futur ERP des coachs fitness.",
+      "cta": "Rejoindre la bêta privée",
+      "ctaNote": "Aucune carte bancaire requise"
+    },
+    "video": {
+      "heading": "Découvrez Ziko en action",
+      "caption": "Démo bientôt disponible"
+    },
+    "features": {
+      "heading": "Tout ce dont un coach a besoin",
+      "subheading": "Un CRM IA construit pour les professionnels du fitness.",
+      "crm": {
+        "title": "CRM Client intelligent",
+        "body": "Consultez le roster complet de vos clients. Accédez à leurs données en lecture seule — séances, mesures corporelles, sommeil, nutrition, RPE, habitudes et cardio — tout en un seul endroit.",
+        "bullet1": "Historique complet des séances et séries",
+        "bullet2": "Données de sommeil, nutrition, et cardio automatiques",
+        "bullet3": "Mesures corporelles et progression visuelle"
+      },
+      "ai": {
+        "title": "Analyse IA intégrée",
+        "body": "Interrogez l'IA sur n'importe quel client — analysez ses performances, générez un programme personnalisé, ou identifiez les clients à risque de décrochage.",
+        "bullet1": "Analyse client en langage naturel",
+        "bullet2": "Génération de programme multi-semaines",
+        "bullet3": "Alertes clients à risque automatiques"
+      },
+      "programs": {
+        "title": "Programmes de coaching",
+        "body": "Créez des templates multi-semaines, assignez-les à vos clients liés, et suivez la compliance hebdomadaire en temps réel depuis votre tableau de bord.",
+        "bullet1": "Templates réutilisables à travers tous vos clients",
+        "bullet2": "Assignation directe depuis le CRM",
+        "bullet3": "Suivi de compliance hebdomadaire"
+      },
+      "erp": {
+        "tag": "Roadmap",
+        "title": "Du CRM à l'ERP coaching",
+        "body": "Ziko est né CRM IA. La suite : agenda, facturation, gestion d'entreprise. Construit pour évoluer avec votre activité de coaching.",
+        "bullet1": "Agenda et planification de séances",
+        "bullet2": "Facturation et gestion des paiements",
+        "bullet3": "Gestion d'entreprise complète"
+      }
+    },
+    "comparison": {
+      "heading": "Pourquoi choisir Ziko ?",
+      "subheading": "Une comparaison honnête.",
+      "feature1Label": "Outils IA natifs",
+      "feature2Label": "Profondeur des données client",
+      "feature3Label": "App mobile athlète intégrée",
+      "zikoFeature1": "Analyse client + génération de programme",
+      "zikoFeature2": "Sommeil, nutrition, RPE, cardio, habitudes — automatiques",
+      "zikoFeature3": "Complète, incluse gratuitement",
+      "trainerizeFeature1": "",
+      "trainerizeFeature2": "Saisie manuelle",
+      "trainerizeFeature3": "Basique",
+      "truecoachFeature1": "",
+      "truecoachFeature2": "Saisie manuelle",
+      "truecoachFeature3": "Limitée",
+      "footnote": "* Données au 2026-05-22. Comparaison basée sur les fonctionnalités publiquement documentées."
+    },
+    "founder": {
+      "heading": "Notre mission",
+      "quote": "«Construit par des athlètes, pour les coachs.»",
+      "story": "Nous avons vécu le manque d'outils adaptés — à la fois comme athlètes et comme coachs. Ziko est la plateforme que nous aurions voulu avoir.",
+      "name": "Fondateur, Ziko",
+      "title": "Athlète & entrepreneur"
+    },
+    "faq": {
+      "heading": "Questions fréquentes",
+      "q1": "Quelles données mes clients doivent-ils partager ?",
+      "a1": "Vos clients téléchargent l'app Ziko gratuite et créent un compte. En acceptant votre invitation, vous accédez à leurs données en lecture seule : séances, mesures, sommeil, nutrition, RPE, habitudes et cardio. Aucun partage manuel requis — tout se synchronise automatiquement.",
+      "q2": "Est-ce vraiment gratuit ?",
+      "a2": "Oui. Ziko est 100% gratuit pendant la bêta privée. Aucune carte bancaire requise. Nous vous préviendrons avant tout changement de modèle tarifaire.",
+      "q3": "Sur quelles plateformes fonctionne l'app athlète ?",
+      "a3": "L'app Ziko pour athlètes est disponible sur iOS (iPhone) et Android. Le CRM coach est une application web qui fonctionne sur tout navigateur moderne.",
+      "q4": "Combien de clients puis-je gérer ?",
+      "a4": "Sans limite pendant la bêta privée. Nous évaluerons les limites selon les retours des coachs avant le lancement public.",
+      "q5": "Mes clients voient-ils mes données de coach ?",
+      "a5": "Non. L'accès est unidirectionnel : vous voyez les données de vos clients liés, mais vos clients n'ont pas accès à votre espace coach. Le lien est révocable à tout moment par le client.",
+      "q6": "Comment lier un client à mon espace coach ?",
+      "a6": "Depuis votre tableau de bord, générez un code d'invitation à 6 caractères. Votre client le saisit dans l'app Ziko > \"Mon coach\". La liaison est instantanée."
+    },
+    "cta": {
+      "heading": "Rejoignez les premiers coachs sur Ziko.",
+      "subheading": "Bêta privée ouverte — 100% gratuit, sans engagement.",
+      "button": "Rejoindre la bêta privée",
+      "note": "Aucune carte bancaire requise"
+    }
   }
 }
