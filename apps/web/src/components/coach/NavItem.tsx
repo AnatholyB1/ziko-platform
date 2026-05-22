@@ -8,9 +8,10 @@ export interface NavItemProps {
   href: string;
   icon: IconType;
   disabled?: boolean;
+  badgeCount?: number;
 }
 
-export function NavItem({ label, href, icon: Icon, disabled = false }: NavItemProps) {
+export function NavItem({ label, href, icon: Icon, disabled = false, badgeCount }: NavItemProps) {
   const pathname = usePathname();
   const isActive = !disabled && pathname.startsWith(href);
 
@@ -34,11 +35,18 @@ export function NavItem({ label, href, icon: Icon, disabled = false }: NavItemPr
       href={href}
       className={
         isActive
-          ? 'h-11 flex items-center gap-3 px-3 rounded-lg text-sm text-primary font-bold bg-primary/5 border-l-4 border-primary rounded-l-none'
-          : 'h-11 flex items-center gap-3 px-3 rounded-lg text-sm text-text font-normal hover:bg-background transition-colors'
+          ? 'h-11 flex items-center gap-3 px-3 rounded-lg text-sm text-primary font-bold bg-primary/5 border-l-4 border-primary rounded-l-none relative'
+          : 'h-11 flex items-center gap-3 px-3 rounded-lg text-sm text-text font-normal hover:bg-background transition-colors relative'
       }
     >
-      <Icon size={20} />
+      <span className="relative shrink-0">
+        <Icon size={20} />
+        {badgeCount && badgeCount > 0 ? (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-semibold rounded-full flex items-center justify-center leading-none">
+            {badgeCount > 99 ? '99+' : badgeCount}
+          </span>
+        ) : null}
+      </span>
       <span>{label}</span>
     </Link>
   );

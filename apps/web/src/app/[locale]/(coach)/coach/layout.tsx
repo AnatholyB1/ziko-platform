@@ -28,9 +28,17 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     redirect(`/${locale}/coach/onboarding`);
   }
 
+  // Fetch unread alert count for sidebar badge (fire-and-forget on error)
+  const { count: unreadAlertCount } = await supabase
+    .from('coach_alerts')
+    .select('id', { count: 'exact', head: true })
+    .eq('coach_id', user.id)
+    .eq('is_read', false)
+    .then((r) => ({ count: r.count ?? 0 }));
+
   return (
     <div className="flex min-h-screen bg-background">
-      <CoachSidebar />
+      <CoachSidebar unreadAlertCount={unreadAlertCount} />
       <main className="flex-1 overflow-auto">
         <div className="mx-auto max-w-3xl px-8 py-10">{children}</div>
       </main>
