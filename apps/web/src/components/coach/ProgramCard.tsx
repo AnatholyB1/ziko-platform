@@ -5,6 +5,7 @@ import {
   IoEllipsisHorizontal,
   IoLockClosedOutline,
 } from 'react-icons/io5';
+import { AdaptWithAIButton } from './AdaptWithAIButton';
 
 export interface ProgramCardProps {
   id: string;
@@ -16,10 +17,12 @@ export interface ProgramCardProps {
   is_template: boolean;
   created_by_coach_id: string | null;
   isSeed: boolean;
+  locale?: string;
   onEdit: (id: string) => void;
   onDuplicate: (id: string) => void;
   onAssign: (id: string) => void;
   onDelete: (id: string) => void;
+  onAdaptWithAI?: (id: string, name: string) => void;
 }
 
 const DELETE_TOKEN = 'SUPPRIMER';
@@ -30,7 +33,9 @@ export function ProgramCard({
   goal,
   weeks_count,
   folderName,
+  is_template,
   isSeed,
+  locale = 'fr',
   onEdit,
   onDuplicate,
   onAssign,
@@ -152,6 +157,21 @@ export function ProgramCard({
                 >
                   Dupliquer
                 </button>
+                {is_template && (
+                  <div
+                    className="px-4 py-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <AdaptWithAIButton
+                      programId={id}
+                      programName={name}
+                      locale={locale}
+                    />
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={(e) => {

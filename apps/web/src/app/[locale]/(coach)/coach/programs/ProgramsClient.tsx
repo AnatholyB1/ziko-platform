@@ -6,15 +6,19 @@ import {
   IoFolderOutline,
 } from 'react-icons/io5';
 import { ProgramCard } from '@/components/coach/ProgramCard';
+// AdaptWithAIButton is rendered inside ProgramCard for is_template programs (imported by ProgramCard)
+import { AdaptWithAIButton as _AdaptWithAIButton } from '@/components/coach/AdaptWithAIButton';
 import type { ProgramRow, FolderRow } from './page';
 
 interface ProgramsClientProps {
   programs: ProgramRow[];
   folders: FolderRow[];
   locale: string;
+  accessToken: string;
+  apiUrl: string;
 }
 
-export function ProgramsClient({ programs, folders, locale }: ProgramsClientProps) {
+export function ProgramsClient({ programs, folders, locale, accessToken, apiUrl }: ProgramsClientProps) {
   const router = useRouter();
   const [activeFolderId, setActiveFolderId] = useState<string | null | 'all' | 'none'>('all');
 
@@ -38,18 +42,37 @@ export function ProgramsClient({ programs, folders, locale }: ProgramsClientProp
     router.push(`/${locale}/coach/programs/${id}/edit`);
   }
 
-  function handleDuplicate(id: string) {
-    // TODO(27-07): duplicate action via POST /coach/programs/:id/duplicate
-    console.log('duplicate', id);
+  async function handleDuplicate(id: string) {
+    try {
+      const res = await fetch(`${apiUrl}/coach/programs/${id}/duplicate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) router.refresh();
+    } catch (err) {
+      console.error('[ProgramsClient] duplicate error:', err);
+    }
   }
 
   function handleAssign(id: string) {
     router.push(`/${locale}/coach/programs/${id}/assign`);
   }
 
-  function handleDelete(id: string) {
-    // TODO(27-07): delete action via DELETE /coach/programs/:id
-    console.log('delete', id);
+  function handleAdaptWithAI(id: string, _name: string) {
+    router.push(`/${locale}/coach/ai?template=${id}`);
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm('Supprimer ce programme ? Cette action est irréversible.')) return;
+    try {
+      const res = await fetch(`${apiUrl}/coach/programs/${id}?confirmed=true`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) router.refresh();
+    } catch (err) {
+      console.error('[ProgramsClient] delete error:', err);
+    }
   }
 
   return (
@@ -160,10 +183,12 @@ export function ProgramsClient({ programs, folders, locale }: ProgramsClientProp
                     is_template={p.is_template}
                     created_by_coach_id={p.created_by_coach_id}
                     isSeed={false}
+                    locale={locale}
                     onEdit={handleEdit}
                     onDuplicate={handleDuplicate}
                     onAssign={handleAssign}
                     onDelete={handleDelete}
+                    onAdaptWithAI={handleAdaptWithAI}
                   />
                 ))}
               </div>
@@ -197,6 +222,7 @@ export function ProgramsClient({ programs, folders, locale }: ProgramsClientProp
                     is_template={p.is_template}
                     created_by_coach_id={p.created_by_coach_id}
                     isSeed={true}
+                    locale={locale}
                     onEdit={() => {}}
                     onDuplicate={() => {}}
                     onAssign={handleAssign}
