@@ -15,6 +15,7 @@ import { invitationsRouter } from './coach/invitations/service.js';
 import { clientsRouter } from './coach/clients/service.js';
 import { programsRouter } from './coach/programs/service.js';
 import { importsRouter } from './coach/imports/service.js';
+import { coachAiRouter } from './coach/ai/service.js';
 const app = new Hono();
 
 // Global middleware
@@ -60,6 +61,7 @@ app.route('/coach/invitations', invitationsRouter);
 app.route('/coach/clients', clientsRouter);
 app.route('/coach/programs', programsRouter);
 app.route('/coach/imports', importsRouter);
+app.route('/coach/ai', coachAiRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

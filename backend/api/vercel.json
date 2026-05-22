@@ -11,6 +11,10 @@
     {
       "path": "/storage/cron/cleanup",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/coach/ai/monitor-cron",
+      "schedule": "0 7 * * *"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."

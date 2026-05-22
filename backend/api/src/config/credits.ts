@@ -11,9 +11,20 @@ export const CREDIT_COSTS = {
   scan: 3,
   program: 4,
   import: 0,
+  coach_chat: 4, // same cost as athlete chat (AIC-10)
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;
+
+// Per-tool cost classes for coach AI tools (AIC-10).
+// These are informational — the per-chat credit gate covers the full conversation.
+export const COACH_TOOL_COSTS = {
+  analyze_client: 2,
+  generate_coaching_program: 3,
+  monitor_client_alerts: 1,
+} as const;
+
+export type CoachToolName = keyof typeof COACH_TOOL_COSTS;
 
 // Daily free quota per action:
 //   base  = granted each day without any activity (daily_base grant)
