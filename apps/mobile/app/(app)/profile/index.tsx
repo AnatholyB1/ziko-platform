@@ -548,6 +548,7 @@ export default function ProfileScreen() {
 
   // ── Derived values ─────────────────────────────────────────────
   const avatarColor = data?.profile?.avatar_color ?? '#FF5C1A';
+  const avatarUrl = data?.profile?.avatar_url ?? null;
   const profileName = data?.profile?.name ?? 'Athlète';
   const initials = profileName
     .split(' ')
@@ -639,6 +640,7 @@ export default function ProfileScreen() {
                 borderColor: colors.bg,
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden',
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 8 },
                 shadowOpacity: 0.35,
@@ -646,15 +648,23 @@ export default function ProfileScreen() {
                 elevation: 8,
               }}
             >
-              <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFFFFF' }}>
-                {initials}
-              </Text>
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: 84, height: 84, borderRadius: 24 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFFFFF' }}>
+                  {initials}
+                </Text>
+              )}
             </View>
 
             {/* Right side — Modifier button */}
             <View style={{ flex: 1, paddingBottom: 8 }}>
               <TouchableOpacity
-                onPress={() => router.push('/(app)/profile/settings' as any)}
+                onPress={() => router.push('/(app)/profile/edit' as any)}
                 style={{
                   paddingVertical: 8,
                   paddingHorizontal: 12,
