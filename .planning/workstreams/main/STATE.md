@@ -43,7 +43,7 @@ Progress: [████████▓░] 84%
 | 27. Coaching Programs & Mobile "Mon coach" Full | ✅ Complete (gaps 10/13) | 8/8 |
 | 28. AI File Imports | ✅ Complete — approved 2026-05-21 | 8/8 |
 | 29. AI Coach Orchestrator | ✅ Complete — approved 2026-05-22 | 6/6 |
-| 30. Strava Integration | ⬜ Not started | — |
+| 30. Strava Integration | ⏭️ Skipped — out of scope | — |
 | 31. Public Marketing `/coachs` | ⬜ Not started | — |
 
 ---
