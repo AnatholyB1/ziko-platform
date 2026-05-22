@@ -247,7 +247,14 @@ Plans:
   3. `monitor_client_alerts` flags concerning patterns (missed sessions, sleep drop, declining mood, RPE inflation) and a background job runs it every 24h per coach, surfacing results in a coach inbox with optional push notification.
   4. A coach can click "Adapt this program for [client X]" on any template page and the AI chat opens pre-filled with the template + client context; every Monday morning, a coach receives a weekly digest (email + in-app notification) summarizing key points across all linked clients.
   5. Every coach AI tool invocation is logged to `ai_tool_audit` (timestamp, coach_id, tool_name, target_client_id, args_hash, result_status, conversation_id); coach AI usage is credit-gated by the v1.4 credit system with per-tool cost classes visible to the coach.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 29-01-PLAN.md — Wave 1: Migration 050 (coach_alerts + ai_tool_audit) + [BLOCKING] supabase db push
+- [ ] 29-02-PLAN.md — Wave 2: Backend coach/ai/ bounded module (types, context, db, tools, service) + credits.ts + app.ts + vercel.json
+- [ ] 29-03-PLAN.md — Wave 3: Web /coach/ai page + AIChatClient + MessageBubble + ChatInputBar + CreditWidget + ToolResultCard
+- [ ] 29-04-PLAN.md — Wave 4: AlertsPanel + AlertCard + CoachSidebar update + dashboard update + AdaptWithAIButton + ProgramsClient update
+- [ ] 29-05-PLAN.md — Wave 5: packages/email (WeeklyDigest React Email template) + Resend integration in monitor-cron
+- [ ] 29-06-PLAN.md — Wave 6: Verification (TypeScript + 10 grep gates + human smoke test)
 **UI hint**: yes
 
 ### Phase 30: Strava Integration
@@ -327,7 +334,7 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 26. CRM Client Management | v1.5 | 7/7 | Complete | 2026-05-18 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
 | 28. AI File Imports | v1.5 | 0/0 | Not started | — |
-| 29. AI Coach Orchestrator | v1.5 | 0/0 | Not started | — |
+| 29. AI Coach Orchestrator | v1.5 | 0/6 | In progress | — |
 | 30. Strava Integration | v1.5 | 0/0 | Not started | — |
 | 31. Public Marketing `/coachs` | v1.5 | 0/0 | Not started | — |
 
@@ -343,3 +350,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-16 — Phase 24 (Coach Identity & Onboarding) complete: 6/6 plans + GAP fixes, 10/10 UAT pass. coach/identity bounded module, 3-step onboarding wizard, KYC storage bucket (migration 037), CoachSidebar layout, dashboard + settings pages. GAP fixes: locale prefix on all redirects, NEXT_PUBLIC_API_URL added to apps/web, marketing pages isolated in (marketing) route group. Ready for Phase 25 (Invitations & Mobile "Mon coach" Minimal).*
 *Updated: 2026-05-17 — Phase 25 (Invitations & Mobile "Mon coach" Minimal) complete: 8/8 plans + focus trap gap fix. coach/invitations + coach/clients bounded modules, 6-char nanoid codes, web-only redeem state machine (/redeem + /r/[code]), serial rate-limit (5/15min IP + 10/hr user), constant-time INVALID_OR_EXPIRED envelope, typed-confirmation revoke (COACH token), Phase 24 refonte pixel-perfect to canonical mockups, RevokeConfirmModal focus trap fixed. Ready for Phase 26 (CRM Client Management).*
 *Updated: 2026-05-18 — Phase 26 (CRM Client Management) complete: 7/7 plans + 2 gap-closure rounds. @tanstack/react-table, recharts, migration 041 (coach_client_tags/notes), full backend roster/summary/tabs/compare routes, ClientsTable + signal chips, 7-tab client detail, ExecutiveSummaryCard + NotesPanel + TagInput, ComparisonChart. 31/31 must-haves verified, 16/16 tests green. Ready for Phase 27 (Coaching Programs & Mobile "Mon coach" Full).*
+*Updated: 2026-05-22 — Phase 29 (AI Coach Orchestrator) planned: 6 plans in 6 waves. Migration 050 (coach_alerts + ai_tool_audit), coach/ai/ bounded module, /coach/ai SSE chat UI, alerts panel, AdaptWithAIButton, weekly digest via Resend + React Email.*
