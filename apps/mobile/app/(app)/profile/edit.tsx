@@ -95,6 +95,7 @@ export default function EditProfileScreen() {
   // ── State ──────────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [handle, setHandle] = useState('');
   const [goal, setGoal] = useState<GoalId | ''>('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarColor, setAvatarColor] = useState('#FF5C1A');
@@ -107,6 +108,7 @@ export default function EditProfileScreen() {
     if (profile) {
       setName((profile as any).name ?? '');
       setBio((profile as any).settings?.bio ?? (profile as any).bio ?? '');
+      setHandle((profile as any).handle ?? '');
       setGoal(((profile as any).goal as GoalId) ?? '');
       setAvatarUrl((profile as any).avatar_url ?? null);
       setAvatarColor((profile as any).avatar_color ?? '#FF5C1A');
@@ -209,20 +211,12 @@ export default function EditProfileScreen() {
     if (!userId) return;
     setSaving(true);
     try {
-      // Charger settings existants
-      const { data: existing } = await supabase
-        .from('user_profiles')
-        .select('settings')
-        .eq('id', userId)
-        .single();
-
-      const existingSettings = (existing as any)?.settings ?? {};
-
       const { error } = await supabase.from('user_profiles').upsert({
         id: userId,
         name: name.trim(),
         goal: goal || null,
-        settings: { ...existingSettings, bio: bio.trim() },
+        bio: bio.trim(),
+        handle: handle.trim() || null,
       });
 
       if (error) {
@@ -391,6 +385,41 @@ export default function EditProfileScreen() {
                 paddingTop: 4,
                 minHeight: 60,
                 textAlignVertical: 'top',
+              }}
+            />
+          </View>
+
+          {/* Pseudo */}
+          <View
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '700',
+                color: colors.muted,
+                textTransform: 'uppercase',
+                letterSpacing: 0.6,
+                marginBottom: 4,
+              }}
+            >
+              Pseudo
+            </Text>
+            <TextInput
+              value={handle}
+              onChangeText={setHandle}
+              placeholder="@tonpseudo"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              style={{
+                fontSize: 14,
+                color: colors.text,
+                paddingTop: 4,
               }}
             />
           </View>
