@@ -6,6 +6,8 @@ import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { streamText, tool, jsonSchema, stepCountIs } from 'ai';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import { render } from '@react-email/components';
 import { authMiddleware } from '../../middleware/auth.js';
 import { creditCheck, creditDeduct } from '../../middleware/creditGate.js';
 import { AGENT_MODEL } from '../../config/models.js';
@@ -21,6 +23,8 @@ import {
 import { createUserClient } from '../clients/db.js';
 import { appendMessages } from '../../context/conversation.js';
 import type { CoachContext } from './types.js';
+import { WeeklyDigest } from '@ziko/email/src/templates/WeeklyDigest.js';
+import type { AlertClient } from '@ziko/email/src/templates/WeeklyDigest.js';
 
 // ─── Service client for token logging ─────────────────────────────────────────
 const supabase = createClient(
@@ -109,6 +113,83 @@ function buildCoachSDKTools(coachId: string, jwt: string) {
   );
 }
 
+// ─── Weekly digest helpers ────────────────────────────────────────────────────
+
+/** Returns a human-readable week range string, e.g. "19 au 25 mai 2026". */
+function getWeekLabel(): string {
+  const now = new Date();
+  // Monday of this week
+  const dayOfWeek = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() + diffToMon);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+
+  const months = [
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+  ];
+
+  const monDay = monday.getUTCDate();
+  const sunDay = sunday.getUTCDate();
+  const monMonth = months[monday.getUTCMonth()];
+  const sunMonth = months[sunday.getUTCMonth()];
+  const year = sunday.getUTCFullYear();
+
+  if (monday.getUTCMonth() === sunday.getUTCMonth()) {
+    return `${monDay} au ${sunDay} ${sunMonth} ${year}`;
+  }
+  return `${monDay} ${monMonth} au ${sunDay} ${sunMonth} ${year}`;
+}
+
+/**
+ * Sends the weekly digest email for a single coach.
+ * Skips silently (no throw) when RESEND_API_KEY is not configured.
+ * T-29-17: Monday-only trigger enforced by caller; graceful skip here covers missing key.
+ */
+async function sendWeeklyDigest(params: {
+  coachEmail: string;
+  coachName: string;
+  alertClients: AlertClient[];
+  okClientNames: string[];
+  dashboardUrl: string;
+  weekLabel: string;
+}): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.log('[WeeklyDigest] RESEND_API_KEY not set — skipping email for', params.coachEmail);
+    return;
+  }
+
+  const { coachEmail, coachName, alertClients, okClientNames, dashboardUrl, weekLabel } = params;
+  const alertCount = alertClients.length;
+
+  const subject =
+    alertCount > 0
+      ? `Votre résumé hebdomadaire — ${alertCount} clients à surveiller`
+      : 'Votre résumé hebdomadaire — Tous vos clients sont au top !';
+
+  // Render React Email template to HTML string (T-29-18: requires jsx:react-jsx in tsconfig)
+  const htmlBody = await render(
+    WeeklyDigest({ coachName, weekLabel, alertClients, okClientNames, dashboardUrl }),
+  );
+
+  const resend = new Resend(resendKey);
+  const { error } = await resend.emails.send({
+    from: 'Ziko Coach <coach@ziko-app.com>',
+    to: coachEmail,
+    subject,
+    html: htmlBody,
+  });
+
+  if (error) {
+    console.error('[WeeklyDigest] Resend error for', coachEmail, error);
+  } else {
+    console.log('[WeeklyDigest] Sent to', coachEmail, '—', subject);
+  }
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 const router = new Hono();
@@ -132,12 +213,20 @@ router.post('/monitor-cron', async (c) => {
       try {
         // Cron has no user JWT — use service-key supabase client for all queries.
         // insertAlerts also uses service client internally.
-        // Fetch linked clients via service client directly
-        const { data: links } = await supabase
-          .from('coach_client_links')
-          .select('client_id')
-          .eq('coach_id', coachId)
-          .is('revoked_at', null);
+        // Fetch linked clients and coach profile in parallel via service client
+        const [{ data: links }, { data: coachProfile }] = await Promise.all([
+          supabase
+            .from('coach_client_links')
+            .select('client_id')
+            .eq('coach_id', coachId)
+            .is('revoked_at', null),
+          supabase
+            .from('coach_profiles')
+            .select('display_name')
+            .eq('id', coachId)
+            .single(),
+        ]);
+        const coachDisplayName = (coachProfile as any)?.display_name ?? 'Coach';
 
         const clientIds = (links ?? []).map((l: any) => l.client_id as string);
         const now = new Date();
@@ -218,9 +307,73 @@ router.post('/monitor-cron', async (c) => {
         }
 
         // Monday weekly digest path (D-09): check server-side day
-        if (new Date().getUTCDay() === 1) {
-          // Plan 05 implements the Resend email send — stub here
-          console.log(`[MonitorCron] Monday weekly digest stub for coach ${coachId} — ${newAlerts.length} alerts this week`);
+        const isMonday = new Date().getUTCDay() === 1;
+        if (isMonday) {
+          try {
+            // Fetch coach email from auth.users via service client
+            // T-29-16: email sent only to the coach's own registered email — never to client
+            const { data: userRow } = await supabase.auth.admin.getUserById(coachId);
+            const coachEmail = userRow?.user?.email;
+            if (!coachEmail) {
+              console.warn(`[WeeklyDigest] No email found for coach ${coachId} — skipping`);
+            } else {
+              // Fetch week's alerts for this coach from coach_alerts (created this week)
+              const weekStart = new Date();
+              weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay() + 1); // Monday
+              weekStart.setUTCHours(0, 0, 0, 0);
+
+              const { data: weekAlerts } = await supabase
+                .from('coach_alerts')
+                .select('client_id, severity, summary')
+                .eq('coach_id', coachId)
+                .gte('created_at', weekStart.toISOString());
+
+              // Build alertClients list — map client_id to name if possible
+              const alertClientsForEmail: AlertClient[] = [];
+              const clientIdToName: Record<string, string> = {};
+              for (const link of (links ?? [])) {
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('id, name')
+                  .eq('id', (link as any).client_id)
+                  .single();
+                if (profile) {
+                  clientIdToName[(link as any).client_id] = (profile as any).name ?? (link as any).client_id;
+                }
+              }
+
+              for (const alert of (weekAlerts ?? [])) {
+                const a = alert as any;
+                alertClientsForEmail.push({
+                  name: clientIdToName[a.client_id] ?? a.client_id,
+                  severity: a.severity as AlertClient['severity'],
+                  summary: a.summary,
+                  clientId: a.client_id,
+                });
+              }
+
+              // Clients with no alerts this week
+              const alertedClientIds = new Set(alertClientsForEmail.map((a) => a.clientId));
+              const okClientNames = (links ?? [])
+                .map((l: any) => l.client_id as string)
+                .filter((id: string) => !alertedClientIds.has(id))
+                .map((id: string) => clientIdToName[id] ?? id);
+
+              const dashboardUrl = `${process.env.APP_ORIGIN ?? 'https://ziko-app.com'}/fr/coach/dashboard`;
+
+              await sendWeeklyDigest({
+                coachEmail,
+                coachName: coachDisplayName, // fetched from coach_profiles at cron loop start
+                alertClients: alertClientsForEmail,
+                okClientNames,
+                dashboardUrl,
+                weekLabel: getWeekLabel(),
+              });
+            }
+          } catch (digestErr) {
+            // Weekly digest failure must not abort the rest of the cron (T-29-17 DoS mitigation)
+            console.error(`[WeeklyDigest] error for coach ${coachId}:`, digestErr);
+          }
         }
 
       } catch (coachErr) {
