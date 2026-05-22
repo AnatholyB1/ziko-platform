@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ClientDetailHeader } from '@/components/coach/ClientDetailHeader';
 import { ClientTabStrip } from '@/components/coach/ClientTabStrip';
 import { ClientNotesPanel } from '@/components/coach/ClientNotesPanel';
@@ -16,12 +17,11 @@ export default async function ClientDetailLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const locale = await getLocale();
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  const [{ user }, locale, supabase] = await Promise.all([
+    getCachedCoachUser(),
+    getLocale(),
+    createServerSupabase(),
+  ]);
 
   // Fetch client profile for header display.
   // is_coach_of RLS: if coach is NOT linked to this client, this returns null.

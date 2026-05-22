@@ -1,9 +1,8 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 
 export default async function ClientMeasurementsPage({
   params,
@@ -11,12 +10,8 @@ export default async function ClientMeasurementsPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id: clientId } = await params;
-  const locale = await getLocale();
+  await getCachedCoachUser();
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
 
   // Fetch measurements data — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)

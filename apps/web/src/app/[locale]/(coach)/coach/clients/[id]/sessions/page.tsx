@@ -1,9 +1,8 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ExecutiveSummaryCard } from '@/components/coach/ExecutiveSummaryCard';
 
 export default async function ClientSessionsPage({
@@ -12,12 +11,8 @@ export default async function ClientSessionsPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id: clientId } = await params;
-  const locale = await getLocale();
+  await getCachedCoachUser();
   const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
 
   // Fetch executive summary via Hono API (aggregates computed in backend)
   const { data: { session } } = await supabase.auth.getSession();
