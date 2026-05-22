@@ -267,7 +267,10 @@ Plans:
   3. New Strava activities arrive via webhook (handler returns 200 in <2s, processing in a `*/5 * * * *` cron with `FOR UPDATE SKIP LOCKED`); on initial connection, a 30-day backfill runs throttled by Upstash (max 90 req/15min).
   4. A daily reconciliation cron (03:00 UTC) catches missed webhook deliveries since `last_sync_at`; Strava deauthorization marks the row deauthorized and the mobile app surfaces a "Reconnect" CTA.
   5. An athlete can disconnect Strava from mobile settings; tokens are cleared and the webhook subscription is unsubscribed.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 31-01-PLAN.md — OG image + i18n keys (fr/en) + SSG page shell — Wave 1
+- [ ] 31-02-PLAN.md — CoachsHero + CoachsVideoPlaceholder + CoachsFeatureBlocks — Wave 2
+- [ ] 31-03-PLAN.md — CoachsComparisonTable + CoachsFounderSection + CoachsFAQ + CoachsCtaFooter — Wave 2 (parallel)
 **UI hint**: yes
 
 ### Phase 31: Public Marketing `/coachs`
