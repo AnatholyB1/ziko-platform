@@ -2,39 +2,17 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { redirect } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
-import { createServerSupabase } from '@/lib/supabase/server';
+import { getCachedCoachUser, getCachedAlertCount } from '@/lib/coach/auth';
 import { CoachSidebar } from '@/components/coach/CoachSidebar';
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createServerSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  const locale = await getLocale();
+  const [{ user }, unreadAlertCount] = await Promise.all([
+    getCachedCoachUser(),
+    getCachedAlertCount(),
+  ]);
 
-  if (!user) {
-    // ARCH-05 layer 2: server-side auth guard. No open-redirect — fixed target.
-    redirect(`/${locale}/login`);
-  }
-
-  // D-03: non-coach user gets redirected to onboarding
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || !['coach', 'both'].includes(profile.role)) {
-    redirect(`/${locale}/coach/onboarding`);
-  }
-
-  // Fetch unread alert count for sidebar badge (fire-and-forget on error)
-  const { count: unreadAlertCount } = await supabase
-    .from('coach_alerts')
-    .select('id', { count: 'exact', head: true })
-    .eq('coach_id', user.id)
-    .eq('is_read', false)
-    .then((r) => ({ count: r.count ?? 0 }));
+  // user is guaranteed non-null here — getCachedCoachUser redirects if not authed/coach
+  void user;
 
   return (
     <div className="flex min-h-screen bg-background">
