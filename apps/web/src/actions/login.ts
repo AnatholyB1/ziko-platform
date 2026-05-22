@@ -3,34 +3,13 @@
 import { headers } from 'next/headers';
 import { ratelimit } from '@/lib/ratelimit';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { safeNext } from '@/lib/safe-next';
 
 export type LoginState = {
   status: 'idle' | 'success' | 'error';
   message: string;
   redirectTo?: string;
 };
-
-const NEXT_PARAM_ALLOWLIST = [
-  '/coach/onboarding',
-  '/coach/dashboard',
-  '/coach/settings',
-  '/redeem',
-] as const;
-
-// Phase 25 — dynamic short deep-link: /r/<6 chars from [A-Z2-9]>
-// Anchored ^ and $ + exact DB CHECK alphabet — rejects:
-//   'https://evil.com/r/AAAAAA' (no leading /)
-//   '/r/aaaaaa' (lowercase)
-//   '/r/ABCDEF7' (7 chars)
-//   '/r/../admin' (path traversal)
-const REDEEM_DEEPLINK_RE = /^\/r\/[A-Z2-9]{6}$/;
-
-export function safeNext(next: string | null): string {
-  if (!next) return '/coach/dashboard';
-  if (NEXT_PARAM_ALLOWLIST.includes(next as typeof NEXT_PARAM_ALLOWLIST[number])) return next;
-  if (REDEEM_DEEPLINK_RE.test(next)) return next;
-  return '/coach/dashboard';
-}
 
 export async function loginAction(
   prevState: LoginState,

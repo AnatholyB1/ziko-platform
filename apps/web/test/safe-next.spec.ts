@@ -3,20 +3,7 @@
 // modules so the 'use server' file can be imported in a node test environment.
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('next/headers', () => ({
-  headers: vi.fn(async () => new Map<string, string>()),
-}));
-vi.mock('../src/lib/ratelimit', () => ({
-  ratelimit: { limit: vi.fn(async () => ({ success: true })) },
-}));
-vi.mock('../src/lib/supabase/server', () => ({
-  createServerSupabase: vi.fn(async () => ({
-    auth: { signInWithPassword: vi.fn() },
-    from: vi.fn(),
-  })),
-}));
-
-const { safeNext } = await import('../src/actions/login');
+const { safeNext } = await import('../src/lib/safe-next');
 
 const DEFAULT = '/coach/dashboard';
 
