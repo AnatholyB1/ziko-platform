@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Share, Modal,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -567,21 +567,13 @@ export default function SettingsScreen() {
           <STRow icon="color-palette-outline" tint="#3B82F6" label="Apparence" sub="Thème · Langue · Unités" onPress={() => setSub('appearance')} />
           <STRow icon="link-outline" tint="#22C55E" label="Intégrations" right={connectedCount > 0 ? `${connectedCount} active${connectedCount > 1 ? 's' : ''}` : 'Aucune'} onPress={() => setSub('integrations')} />
           <STRow icon="layers-outline" tint="#FF5C1A" label="Modules activés" right={`${enabledPlugins.length} / ${installedPlugins.length}`} onPress={() => router.push('/(app)/modules' as any)} />
-          <STRow icon="gift-outline" tint="#E8A33A" label="Parrainage" sub="Code promo · Inviter un ami" onPress={() => {
-            const code = userId.slice(0, 8).toUpperCase();
-            showAlert(
-              'Ton code de parrainage',
-              `Code : ${code}\n\nPartage ce code avec tes amis pour qu'ils rejoignent Ziko !`,
-              [
-                { text: 'Partager', onPress: () => {
-                  Share.share({
-                    message: `Rejoins-moi sur Ziko avec mon code ${code} et commence ton voyage fitness ! https://ziko-app.com`,
-                  });
-                }},
-                { text: 'Fermer', style: 'cancel' },
-              ]
-            );
-          }} />
+          <STRow
+            icon="gift-outline"
+            tint="#E8A33A"
+            label="Parrainage"
+            sub="Code promo · Inviter un ami"
+            onPress={() => router.push('/(app)/profile/referral' as any)}
+          />
         </STGroup>
 
         {(role === 'client' || role === 'both') && linkedCoachName && (
