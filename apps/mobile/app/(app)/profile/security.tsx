@@ -119,16 +119,16 @@ export default function SecurityScreen() {
       // show_stats / show_activities: remain in settings JSONB (no dedicated columns)
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
-        const { data: existing } = await supabase
+        const { data: fresh } = await supabase
           .from('user_profiles')
           .select('settings')
           .eq('id', userId)
           .single();
-        const current = (existing as any)?.settings ?? {};
-        supabase.from('user_profiles').upsert({
-          id: userId,
-          settings: { ...current, privacy: next },
-        });
+        const current = (fresh as any)?.settings ?? {};
+        await supabase.from('user_profiles').update({
+          settings: { ...current, privacy: { ...current.privacy, [key]: value } },
+        }).eq('id', userId);
+        queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       }, 500);
     }
   };

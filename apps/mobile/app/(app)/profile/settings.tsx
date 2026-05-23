@@ -60,17 +60,14 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     setS(next);
     clearTimeout(saveRef.current);
     saveRef.current = setTimeout(async () => {
-      const { data: existing } = await supabase
-        .from('user_profiles')
-        .select('settings')
-        .eq('id', userId)
-        .single();
-      const current = (existing as any)?.settings ?? {};
-      supabase.from('user_profiles').upsert({
+      const { data: fresh } = await supabase
+        .from('user_profiles').select('settings').eq('id', userId).single();
+      const current = (fresh as any)?.settings ?? {};
+      await supabase.from('user_profiles').upsert({
         id: userId,
         settings: { ...current, notif_prefs: next },
       });
-    }, 500);
+    }, 600);
   };
 
   if (isLoading) {

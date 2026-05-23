@@ -162,6 +162,8 @@ export default function EditProfileScreen() {
 
       setAvatarUrl(publicUrl);
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
+      queryClient.invalidateQueries({ queryKey: ['badges', userId] });
     } catch (err: any) {
       showAlert('Erreur', err?.message ?? 'Impossible de télécharger la photo.');
     } finally {
@@ -225,6 +227,8 @@ export default function EditProfileScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
+      queryClient.invalidateQueries({ queryKey: ['badges', userId] });
       router.back();
     } catch (err: any) {
       showAlert('Erreur', err?.message ?? 'Impossible de sauvegarder les modifications.');
