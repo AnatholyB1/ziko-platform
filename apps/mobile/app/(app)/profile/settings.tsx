@@ -410,6 +410,22 @@ export default function SettingsScreen() {
     enabled: !!(role === 'client' || role === 'both') && !!userId,
     staleTime: 30_000,
   });
+
+  const { data: credits } = useQuery({
+    queryKey: ['credits-balance', userId],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+      if (!token) return null;
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/credits/balance`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json() as Promise<{ ai_credits: number; daily_cap: number }>;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
   const linkedCoachName = coachData?.preview?.display_name ?? null;
 
   if (sub === 'notifications') return <NotifSubScreen onBack={() => setSub(null)} userId={userId} />;
@@ -490,7 +506,7 @@ export default function SettingsScreen() {
 
         <STGroup title="Abonnement">
           <STRow icon="sparkles-outline" tint="#FF5C1A" label="Plan actuel" right="Premium · 9,99€/mois" onPress={() => router.push('/(app)/paywall' as any)} />
-          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right="47 / 100" onPress={() => router.push('/(app)/ai')} />
+          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right={credits ? `${credits.ai_credits} / ${credits.daily_cap}` : '—'} onPress={() => router.push('/(app)/ai')} />
           <STRow icon="card-outline" tint="#1C1A17" label="Moyen de paiement" sub="Visa •• 4242" onPress={() => showAlert('Paiement', 'Gestion des paiements bientôt disponible.')} />
           <STRow icon="receipt-outline" tint="#6B6963" label="Historique facturation" onPress={() => showAlert('Facturation', 'Historique bientôt disponible.')} />
         </STGroup>
