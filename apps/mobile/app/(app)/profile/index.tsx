@@ -205,24 +205,31 @@ function PRProgressTab({
     setUploading(true);
     try {
       const uri = result.assets[0].uri;
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      const formData = new FormData();
+      formData.append('file', { uri, name: `${Date.now()}.jpg`, type: 'image/jpeg' } as any);
       const fileName = `${userId}/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')
-        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+        .upload(fileName, formData, { contentType: 'multipart/form-data', upsert: false });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
       const photoUrl = urlData.publicUrl;
       const { error: insertError } = await supabase.from('body_measurements').insert({
         user_id: userId,
         photo_url: photoUrl,
-        measured_at: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0],
       });
       if (insertError) throw insertError;
       queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
     } catch (err: any) {
-      showAlert('Erreur', err.message ?? "L'upload a échoué. Réessaie.");
+      const msg = err.message ?? '';
+      if (msg.includes('storage') || msg.includes('upload')) {
+        showAlert('Erreur upload', "Impossible d'envoyer la photo. Vérifie ta connexion.");
+      } else if (msg.includes('body_measurements') || msg.includes('column')) {
+        showAlert('Erreur base de données', 'La photo a été uploadée mais non sauvegardée.');
+      } else {
+        showAlert('Erreur', msg || "L'upload a échoué. Réessaie.");
+      }
     } finally {
       setUploading(false);
     }
