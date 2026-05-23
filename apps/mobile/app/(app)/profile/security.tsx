@@ -86,20 +86,26 @@ export default function SecurityScreen() {
   const canSavePwd = newPwd.length >= 8 && confirmPwd.length > 0 && newPwd === confirmPwd;
 
   // Save password
-  const handleSavePassword = async () => {
-    if (!canSavePwd) {
-      showAlert('Erreur', 'Les mots de passe ne correspondent pas');
+  const savePassword = async () => {
+    if (!newPwd || newPwd.length < 8) {
+      showAlert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      showAlert('Erreur', 'Les mots de passe ne correspondent pas.');
       return;
     }
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: newPwd });
-    setSaving(false);
-    if (error) {
-      showAlert('Erreur', error.message);
-    } else {
-      showAlert('Succès', 'Mot de passe modifié avec succès.');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPwd });
+      if (error) throw error;
       setNewPwd('');
       setConfirmPwd('');
+      showAlert('Succès', 'Mot de passe modifié.');
+    } catch (err: any) {
+      showAlert('Erreur', err.message ?? 'Impossible de modifier le mot de passe.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -198,6 +204,13 @@ export default function SecurityScreen() {
             />
           </View>
 
+          {/* Min-length hint */}
+          {newPwd.length > 0 && newPwd.length < 8 && (
+            <Text style={{ fontSize: 11, color: '#E94B3C', marginTop: 4, marginHorizontal: 52 }}>
+              Minimum 8 caractères ({newPwd.length}/8)
+            </Text>
+          )}
+
           {/* Séparateur */}
           <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: 12 }} />
 
@@ -237,7 +250,7 @@ export default function SecurityScreen() {
 
         {/* Bouton Enregistrer */}
         <TouchableOpacity
-          onPress={handleSavePassword}
+          onPress={savePassword}
           disabled={!canSavePwd || saving}
           activeOpacity={0.8}
           style={{
