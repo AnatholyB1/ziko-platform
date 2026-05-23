@@ -59,7 +59,7 @@ export default function SecurityScreen() {
     show_stats: true,
     show_activities: true,
   });
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Load privacy prefs on mount
   useEffect(() => {

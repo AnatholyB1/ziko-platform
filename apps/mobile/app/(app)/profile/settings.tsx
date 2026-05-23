@@ -44,7 +44,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     achievements: true, social: true, marketing: false,
     sound: true, haptics: true,
   });
-  const saveRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!userId) return;
