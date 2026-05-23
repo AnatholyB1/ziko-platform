@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Share,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Share, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,6 +10,7 @@ import { useThemeStore, showAlert, usePluginRegistry, useTranslation } from '@zi
 import { STGroup, STRow, STToggle } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { useUserPrefsStore } from '../../../src/stores/userPrefsStore';
 
 // ── Shared chrome ──────────────────────────────────────────────
 function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
@@ -106,102 +107,135 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
 }
 
 // ── Appearance sub-screen ──────────────────────────────────────
-const THEMES = [
-  { id: 'light', label: 'Clair', bg: '#F6F4EF', fg: '#1C1A17' },
-  { id: 'dark',  label: 'Sombre', bg: '#1C1A17', fg: '#FFFAF6' },
-  { id: 'auto',  label: 'Auto', bg: '#888', fg: '#fff' },
+const LANGUAGES = [
+  { id: 'fr' as const, label: 'Français' },
+  { id: 'en' as const, label: 'English' },
 ];
+
+const REGIONS = [
+  { id: 'FR', label: 'France' },
+  { id: 'BE', label: 'Belgique' },
+  { id: 'CH', label: 'Suisse' },
+  { id: 'CA', label: 'Canada' },
+  { id: 'US', label: 'États-Unis' },
+];
+
+type PickerItem = { id: string; label: string };
+
+function InlinePicker({
+  visible,
+  items,
+  selectedId,
+  onSelect,
+  onClose,
+  theme,
+}: {
+  visible: boolean;
+  items: PickerItem[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+  theme: any;
+}) {
+  if (!visible) return null;
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <View style={{
+          backgroundColor: theme.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+          paddingBottom: 32, paddingTop: 8,
+        }}>
+          <View style={{
+            width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E0DA',
+            alignSelf: 'center', marginBottom: 16,
+          }} />
+          {items.map((item, i) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => { onSelect(item.id); onClose(); }}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 14, paddingHorizontal: 20,
+                borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#E2E0DA',
+              }}
+            >
+              <Text style={{ fontSize: 16, color: theme.text, fontWeight: item.id === selectedId ? '700' : '400' }}>
+                {item.label}
+              </Text>
+              {item.id === selectedId && (
+                <Ionicons name="checkmark" size={18} color="#FF5C1A" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
 
 function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: string }) {
   const theme = useThemeStore((s) => s.theme);
-  const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
-  const [activeTheme, setActiveTheme] = useState<string>('light');
+  const { units, language, region, setPrefs } = useUserPrefsStore();
+  const [langPickerVisible, setLangPickerVisible] = useState(false);
+  const [regionPickerVisible, setRegionPickerVisible] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from('user_profiles').select('settings').eq('id', userId).single()
+    supabase.from('user_profiles').select('units, language, region').eq('id', userId).single()
       .then(({ data }) => {
-        const a = (data as any)?.settings?.appearance;
-        if (a?.units_preference) setUnits(a.units_preference);
-        if (a?.theme) setActiveTheme(a.theme);
+        if (data) {
+          setPrefs({
+            units: (data as any).units ?? 'metric',
+            language: (data as any).language ?? 'fr',
+            region: (data as any).region ?? 'FR',
+          });
+        }
       });
   }, [userId]);
 
-  const handleThemeSelect = async (themeId: string) => {
-    setActiveTheme(themeId);
-    const { data: existing } = await supabase
-      .from('user_profiles')
-      .select('settings')
-      .eq('id', userId)
-      .single();
-    const current = (existing as any)?.settings ?? {};
-    supabase.from('user_profiles').upsert({
-      id: userId,
-      settings: { ...current, appearance: { ...(current.appearance ?? {}), theme: themeId } },
-    });
+  const handleLanguageSelect = async (id: 'fr' | 'en') => {
+    setPrefs({ language: id });
+    await supabase.from('user_profiles').update({ language: id }).eq('id', userId);
+  };
+
+  const handleRegionSelect = async (id: string) => {
+    setPrefs({ region: id });
+    await supabase.from('user_profiles').update({ region: id }).eq('id', userId);
   };
 
   const handleUnitSelect = async (id: 'metric' | 'imperial') => {
-    setUnits(id);
-    const { data: existing } = await supabase
-      .from('user_profiles')
-      .select('settings')
-      .eq('id', userId)
-      .single();
-    const current = (existing as any)?.settings ?? {};
-    supabase.from('user_profiles').upsert({
-      id: userId,
-      settings: { ...current, appearance: { ...(current.appearance ?? {}), units_preference: id } },
-    });
+    setPrefs({ units: id });
+    await supabase.from('user_profiles').update({ units: id }).eq('id', userId);
   };
+
+  const langLabel = LANGUAGES.find((l) => l.id === language)?.label ?? 'Français';
+  const regionLabel = REGIONS.find((r) => r.id === region)?.label ?? region;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <STHeader onBack={onBack} title="Apparence" />
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
-        {/* Theme section */}
-        <Text style={{
-          fontSize: 12, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase',
-          color: theme.muted, paddingHorizontal: 4, paddingBottom: 8, paddingTop: 4,
-        }}>THÈME</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-          {THEMES.map((t) => {
-            const isActive = t.id === activeTheme;
-            const isLocked = t.id !== 'light';
-            const card = (
-              <TouchableOpacity
-                key={t.id}
-                activeOpacity={isLocked ? 1 : 0.7}
-                onPress={() => { if (!isLocked) handleThemeSelect(t.id); }}
-                style={{
-                  flex: 1, borderRadius: 12, overflow: 'hidden',
-                  borderWidth: isActive ? 2 : 1,
-                  borderColor: isActive ? '#FF5C1A' : '#E2E0DA',
-                }}
-              >
-                <View style={{ height: 70, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontWeight: '700', fontSize: 18, color: t.fg }}>Aa</Text>
-                </View>
-                <Text style={{
-                  textAlign: 'center', paddingVertical: 8, fontSize: 12, fontWeight: '700',
-                  color: isActive ? '#FF5C1A' : '#1C1A17',
-                }}>{t.label}</Text>
-              </TouchableOpacity>
-            );
-            if (isLocked) {
-              return (
-                <View key={t.id} style={{ flex: 1, opacity: 0.5 }} pointerEvents="none">
-                  {card}
-                </View>
-              );
-            }
-            return card;
-          })}
-        </View>
 
         <STGroup title="Langue & région">
-          <STRow icon="globe-outline" tint="#3B82F6" label="Langue" right="Français" />
-          <STRow icon="flag-outline" tint="#FF5C1A" label="Région" right="France" />
+          <STRow
+            icon="globe-outline"
+            tint="#3B82F6"
+            label="Langue"
+            right={langLabel}
+            onPress={() => setLangPickerVisible(true)}
+          />
+          <STRow
+            icon="flag-outline"
+            tint="#FF5C1A"
+            label="Région"
+            right={regionLabel}
+            onPress={() => setRegionPickerVisible(true)}
+          />
         </STGroup>
 
         {/* Units section */}
@@ -244,6 +278,23 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
           ))}
         </View>
       </ScrollView>
+
+      <InlinePicker
+        visible={langPickerVisible}
+        items={LANGUAGES}
+        selectedId={language}
+        onSelect={(id) => handleLanguageSelect(id as 'fr' | 'en')}
+        onClose={() => setLangPickerVisible(false)}
+        theme={theme}
+      />
+      <InlinePicker
+        visible={regionPickerVisible}
+        items={REGIONS}
+        selectedId={region}
+        onSelect={handleRegionSelect}
+        onClose={() => setRegionPickerVisible(false)}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }

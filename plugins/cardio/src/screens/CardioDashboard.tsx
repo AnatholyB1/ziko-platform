@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS, formatPace } from '../store';
 import type { CardioSession } from '../store';
+import { useUnits } from '../../../../apps/mobile/src/hooks/useUnits';
 
 // Cross-plugin: measurements for weight display
 let useMeasurementsStore: any = null;
@@ -72,7 +73,7 @@ function WeeklyChart({ sessions, theme }: { sessions: CardioSession[]; theme: an
 }
 
 // Personal Records
-function PersonalRecords({ sessions, theme }: { sessions: CardioSession[]; theme: any }) {
+function PersonalRecords({ sessions, theme, distanceLabel, convertDistance }: { sessions: CardioSession[]; theme: any; distanceLabel: string; convertDistance: (km: number) => number }) {
   if (sessions.length === 0) return null;
 
   const runSessions = sessions.filter((s) => s.activity_type === 'running' && s.distance_km);
@@ -86,10 +87,10 @@ function PersonalRecords({ sessions, theme }: { sessions: CardioSession[]; theme
   const totalAllTime = sessions.reduce((s, c) => s + (c.distance_km ?? 0), 0);
 
   const records = [
-    ...(bestRunDist ? [{ label: 'Sortie course', value: `${bestRunDist.toFixed(1)} km`, icon: '🏃' }] : []),
+    ...(bestRunDist ? [{ label: 'Sortie course', value: `${convertDistance(bestRunDist).toFixed(1)} ${distanceLabel}`, icon: '🏃' }] : []),
     ...(bestRunPace ? [{ label: 'Meilleure allure', value: formatPace(bestRunPace), icon: '⚡' }] : []),
-    ...(bestCycleDist ? [{ label: 'Sortie vélo', value: `${bestCycleDist.toFixed(1)} km`, icon: '🚴' }] : []),
-    { label: 'Total all time', value: `${totalAllTime.toFixed(0)} km`, icon: '🌍' },
+    ...(bestCycleDist ? [{ label: 'Sortie vélo', value: `${convertDistance(bestCycleDist).toFixed(1)} ${distanceLabel}`, icon: '🚴' }] : []),
+    { label: 'Total all time', value: `${convertDistance(totalAllTime).toFixed(0)} ${distanceLabel}`, icon: '🌍' },
   ];
 
   if (records.length === 0) return null;
@@ -120,7 +121,7 @@ function PersonalRecords({ sessions, theme }: { sessions: CardioSession[]; theme
 }
 
 // Session card — Strava-like
-function SessionCard({ session, theme, onPress }: { session: CardioSession; theme: any; onPress: () => void }) {
+function SessionCard({ session, theme, onPress, distanceLabel, convertDistance }: { session: CardioSession; theme: any; onPress: () => void; distanceLabel: string; convertDistance: (km: number) => number }) {
   const activity = ACTIVITY_LABELS[session.activity_type] ?? ACTIVITY_LABELS.other;
   const date = new Date(session.date);
 
@@ -167,7 +168,7 @@ function SessionCard({ session, theme, onPress }: { session: CardioSession; them
           {session.distance_km != null && (
             <View>
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 22 }}>
-                {session.distance_km.toFixed(2)}<Text style={{ fontSize: 14, fontWeight: '400', color: theme.muted }}> km</Text>
+                {convertDistance(session.distance_km).toFixed(2)}<Text style={{ fontSize: 14, fontWeight: '400', color: theme.muted }}> {distanceLabel}</Text>
               </Text>
               <Text style={{ color: theme.muted, fontSize: 11 }}>Distance</Text>
             </View>
@@ -207,6 +208,7 @@ function SessionCard({ session, theme, onPress }: { session: CardioSession; them
 export default function CardioDashboard({ supabase }: { supabase: any }) {
   const { sessions, setSessions, loading, setLoading, getTotalDistance, getTotalDuration, getSessionCount } = useCardioStore();
   const theme = useThemeStore((s) => s.theme);
+  const { distanceLabel, convertDistance, weightLabel, convertWeight } = useUnits();
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -266,7 +268,7 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
           <View>
             <Text style={{ color: theme.text, fontSize: 28, fontWeight: '900' }}>Cardio</Text>
             <Text style={{ color: theme.muted, fontSize: 14, marginTop: 2 }}>
-              {totalDist7.toFixed(1)} km · {sessionCount7} sorties cette semaine
+              {convertDistance(totalDist7).toFixed(1)} {distanceLabel} · {sessionCount7} sorties cette semaine
             </Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -295,8 +297,8 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
         {/* Quick stats */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
           <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
-            <Text style={{ color: '#FF5722', fontWeight: '800', fontSize: 20 }}>{totalDist7.toFixed(1)}</Text>
-            <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>km / 7j</Text>
+            <Text style={{ color: '#FF5722', fontWeight: '800', fontSize: 20 }}>{convertDistance(totalDist7).toFixed(1)}</Text>
+            <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>{distanceLabel} / 7j</Text>
           </View>
           <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
             <Text style={{ color: '#2196F3', fontWeight: '800', fontSize: 20 }}>{formatDuration(totalDur7)}</Text>
@@ -312,7 +314,7 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
         <WeeklyChart sessions={sessions} theme={theme} />
 
         {/* Personal records */}
-        <PersonalRecords sessions={sessions} theme={theme} />
+        <PersonalRecords sessions={sessions} theme={theme} distanceLabel={distanceLabel} convertDistance={convertDistance} />
 
         {/* Cross-plugin: weight */}
         {useMeasurementsStore && (() => {
@@ -329,7 +331,7 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
             >
               <Ionicons name="scale-outline" size={24} color="#FF9800" />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: '700' }}>{latest.weight_kg} kg</Text>
+                <Text style={{ color: theme.text, fontWeight: '700' }}>{convertWeight(latest.weight_kg)} {weightLabel}</Text>
                 <Text style={{ color: theme.muted, fontSize: 12 }}>Poids actuel · Voir mesures</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={theme.muted} />
@@ -376,6 +378,8 @@ export default function CardioDashboard({ supabase }: { supabase: any }) {
                   session={s}
                   theme={theme}
                   onPress={() => router.push({ pathname: '/(plugins)/cardio/[id]' as any, params: { id: s.id } })}
+                  distanceLabel={distanceLabel}
+                  convertDistance={convertDistance}
                 />
               ))}
             </View>

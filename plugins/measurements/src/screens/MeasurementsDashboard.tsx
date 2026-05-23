@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { useMeasurementsStore } from '../store';
+import { useUnits } from '../../../../apps/mobile/src/hooks/useUnits';
 
 // Cross-plugin: nutrition for calorie info
 let useNutritionStore: any = null;
@@ -33,6 +34,7 @@ function StatCard({ label, value, unit, diff, theme }: { label: string; value: n
 export default function MeasurementsDashboard({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const { entries, setEntries, isLoading, setIsLoading, getLatest, getProgress } = useMeasurementsStore();
+  const { weightLabel, convertWeight } = useUnits();
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -83,7 +85,7 @@ export default function MeasurementsDashboard({ supabase }: { supabase: any }) {
               Dernière mesure — {latest.date}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-              <StatCard label="Poids" value={latest.weight_kg} unit="kg" diff={getProgress('weight_kg').diff} theme={theme} />
+              <StatCard label="Poids" value={latest.weight_kg != null ? convertWeight(latest.weight_kg) : null} unit={weightLabel} diff={getProgress('weight_kg').diff} theme={theme} />
               <StatCard label="Graisse" value={latest.body_fat_pct} unit="%" diff={getProgress('body_fat_pct').diff} theme={theme} />
               <StatCard label="Taille" value={latest.waist_cm} unit="cm" diff={getProgress('waist_cm').diff} theme={theme} />
               <StatCard label="Poitrine" value={latest.chest_cm} unit="cm" diff={getProgress('chest_cm').diff} theme={theme} />
@@ -111,7 +113,7 @@ export default function MeasurementsDashboard({ supabase }: { supabase: any }) {
               }}>
                 <Text style={{ color: theme.text, fontWeight: '600' }}>{e.date}</Text>
                 <Text style={{ color: theme.muted }}>
-                  {e.weight_kg ? `${e.weight_kg}kg` : ''} {e.body_fat_pct ? `· ${e.body_fat_pct}%` : ''}
+                  {e.weight_kg ? `${convertWeight(e.weight_kg)}${weightLabel}` : ''} {e.body_fat_pct ? `· ${e.body_fat_pct}%` : ''}
                 </Text>
               </View>
             ))}

@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { useUnits } from '../../../src/hooks/useUnits';
 
 // ── Badge type ───────────────────────────────────────────────────
 type BadgeItem = {
@@ -62,6 +63,7 @@ function PRStatsTab({
   stats: { sessions: number; streak: number; prs: number; weeks: number };
   prRows: Array<{ exercise: string; date: string; weight: number; delta: number }>;
 }) {
+  const { weightLabel, convertWeight } = useUnits();
   return (
     <View style={{ gap: 12 }}>
       {/* 2x2 stat grid */}
@@ -162,11 +164,11 @@ function PRStatsTab({
               {/* Right block */}
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
-                  {pr.weight} kg
+                  {convertWeight(pr.weight)} {weightLabel}
                 </Text>
                 {pr.delta > 0 ? (
                   <Text style={{ fontSize: 12, color: colors.success, fontWeight: '700' }}>
-                    +{pr.delta} kg
+                    +{convertWeight(pr.delta)} {weightLabel}
                   </Text>
                 ) : null}
               </View>

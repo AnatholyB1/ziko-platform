@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useThemeStore } from '../../src/stores/themeStore';
+import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
 import { useTranslation } from '@ziko/plugin-sdk';
+import { supabase } from '../../src/lib/supabase';
 
 export default function AppLayout() {
   const { t } = useTranslation();
@@ -12,6 +14,25 @@ export default function AppLayout() {
   const profile = useAuthStore((s) => s.profile);
   const insets = useSafeAreaInsets();
   const theme = useThemeStore((s) => s.theme);
+  const userId = useAuthStore((s) => s.user?.id);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('user_profiles')
+      .select('units, language, region')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          useUserPrefsStore.getState().setPrefs({
+            units: (data as any).units ?? 'metric',
+            language: (data as any).language ?? 'fr',
+            region: (data as any).region ?? 'FR',
+          });
+        }
+      });
+  }, [userId]);
 
   if (!session) return <Redirect href="/(auth)/login" />;
   if (!profile?.onboarding_done) return <Redirect href="/(auth)/onboarding/step-1" />;
