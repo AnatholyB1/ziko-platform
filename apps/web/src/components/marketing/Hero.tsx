@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { fadeIn, fadeUp, ctaHover, ctaTap } from '@/lib/motion'
 import { IoChevronDownOutline } from 'react-icons/io5'
 
@@ -25,6 +25,7 @@ const containerVariants = {
 
 export function Hero() {
   const t = useTranslations('Home')
+  const prefersReducedMotion = useReducedMotion()
   const ref = useRef<HTMLElement>(null)
   const { scrollY } = useScroll()
 
@@ -44,32 +45,32 @@ export function Hero() {
         <div className="flex flex-col md:flex-row md:items-center gap-12">
           {/* Left column */}
           <div className="flex flex-col gap-6 justify-center md:w-3/5 z-10">
-            <motion.div variants={fadeIn} initial="hidden" animate="visible">
+            <motion.div variants={fadeIn} initial={prefersReducedMotion ? false : "hidden"} animate="visible">
               <span className="inline-flex self-start bg-primary/10 text-primary text-xs font-bold px-4 py-2 rounded-full border border-primary/20">
                 {t('hero.badge')}
               </span>
             </motion.div>
 
-            <motion.div
+            <motion.h1
               variants={containerVariants}
-              initial="hidden"
+              initial={prefersReducedMotion ? false : "hidden"}
               animate="visible"
-              className="flex flex-col gap-1"
+              className="flex flex-col gap-1 text-5xl md:text-7xl font-black text-text leading-none tracking-tight"
             >
               {headlines.map((line, i) => (
-                <motion.h1
+                <motion.span
                   key={i}
                   variants={wordVariants}
-                  className="text-5xl md:text-7xl font-black text-text leading-none tracking-tight"
+                  className="block"
                 >
                   {line}
-                </motion.h1>
+                </motion.span>
               ))}
-            </motion.div>
+            </motion.h1>
 
             <motion.p
               variants={fadeUp}
-              initial="hidden"
+              initial={prefersReducedMotion ? false : "hidden"}
               animate="visible"
               transition={{ delay: 0.6 }}
               className="text-lg text-muted leading-relaxed max-w-md"
@@ -79,7 +80,7 @@ export function Hero() {
 
             <motion.div
               variants={fadeUp}
-              initial="hidden"
+              initial={prefersReducedMotion ? false : "hidden"}
               animate="visible"
               transition={{ delay: 0.75 }}
               className="flex flex-wrap gap-4"
@@ -91,7 +92,6 @@ export function Hero() {
                 whileHover={ctaHover}
                 whileTap={ctaTap}
                 className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm inline-block"
-                style={{ boxShadow: '0 4px 20px rgba(255,92,26,0.3)' }}
               >
                 {t('hero.ctaAppStore')}
               </motion.a>
@@ -111,22 +111,32 @@ export function Hero() {
           {/* Right column — phone + orb */}
           <div className="flex justify-center items-center md:w-2/5 relative">
             <motion.div
-              style={{ y: orbY }}
-              className="absolute w-72 h-72 rounded-full bg-primary/15 blur-3xl"
+              style={prefersReducedMotion ? { willChange: 'transform' } : { y: orbY, willChange: 'transform' }}
+              className="absolute w-80 h-80"
               aria-hidden
-            />
+            >
+              <svg width="100%" height="100%" viewBox="0 0 320 320" fill="none">
+                <defs>
+                  <radialGradient id="hero-orb" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#FF5C1A" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#FF5C1A" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <ellipse cx="160" cy="160" rx="160" ry="160" fill="url(#hero-orb)" />
+              </svg>
+            </motion.div>
             <motion.div
-              initial={{ opacity: 0, x: 80, rotateY: 8 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, x: 80, rotateY: 8 }}
               animate={{ opacity: 1, x: 0, rotateY: 0 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              style={{ y: phoneY }}
+              style={prefersReducedMotion ? {} : { y: phoneY }}
             >
               <div
                 style={{
                   width: 220,
                   height: 440,
                   borderRadius: 32,
-                  border: '3px solid #1C1A17',
+                  border: '3px solid var(--color-text)',
                   boxShadow: '0 32px 80px rgba(0,0,0,0.22)',
                   position: 'relative',
                   overflow: 'hidden',
@@ -135,7 +145,7 @@ export function Hero() {
                 <div style={{ width: '100%', height: '100%', borderRadius: 30, position: 'relative', overflow: 'hidden' }}>
                   <Image
                     src="/screen.jpg"
-                    alt="Ziko app"
+                    alt="Capture d'écran de l'application Ziko — tableau de bord fitness"
                     fill
                     style={{ objectFit: 'cover' }}
                     priority
@@ -146,7 +156,7 @@ export function Hero() {
                   style={{
                     position: 'absolute', top: 8, left: '50%',
                     transform: 'translateX(-50%)', width: 80, height: 20,
-                    borderRadius: 12, background: '#1C1A17', zIndex: 10,
+                    borderRadius: 12, background: 'var(--color-text)', zIndex: 10,
                   }}
                 />
               </div>
@@ -159,12 +169,16 @@ export function Hero() {
         style={{ opacity: indicatorOpacity }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-        >
+        {prefersReducedMotion ? (
           <IoChevronDownOutline className="text-muted" size={24} />
-        </motion.div>
+        ) : (
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <IoChevronDownOutline className="text-muted" size={24} />
+          </motion.div>
+        )}
       </motion.div>
     </section>
   )

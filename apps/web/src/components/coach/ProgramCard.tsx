@@ -7,6 +7,39 @@ import {
 } from 'react-icons/io5';
 import { AdaptWithAIButton } from './AdaptWithAIButton';
 
+function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    if (!active || !containerRef.current) return;
+    const container = containerRef.current;
+    const focusableSelectors = [
+      'a[href]', 'button:not([disabled])', 'textarea:not([disabled])',
+      'input:not([disabled])', 'select:not([disabled])', '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const getFocusable = () => Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors));
+
+    // Focus first focusable element
+    const firstFocusable = getFocusable()[0];
+    firstFocusable?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [active, containerRef]);
+}
+
 export interface ProgramCardProps {
   id: string;
   name: string;
@@ -47,7 +80,11 @@ export function ProgramCard({
   const [deleteInput, setDeleteInput] = useState('');
   const [deleting, setDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const deleteInputRef = useRef<HTMLInputElement>(null);
+  const deleteModalRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(deleteOpen, deleteModalRef as React.RefObject<HTMLElement>);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -61,11 +98,10 @@ export function ProgramCard({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
-  // Focus delete input when modal opens
+  // Reset input when modal opens
   useEffect(() => {
     if (deleteOpen) {
       setDeleteInput('');
-      setTimeout(() => deleteInputRef.current?.focus(), 50);
     }
   }, [deleteOpen]);
 
@@ -73,7 +109,10 @@ export function ProgramCard({
   useEffect(() => {
     if (!deleteOpen) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setDeleteOpen(false);
+      if (e.key === 'Escape') {
+        setDeleteOpen(false);
+        setTimeout(() => menuButtonRef.current?.focus(), 0);
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -90,19 +129,17 @@ export function ProgramCard({
   return (
     <>
       {/* Card */}
-      <div
-        role="button"
-        aria-label={`Ouvrir le programme ${name}`}
-        tabIndex={0}
-        onClick={() => router.push(`/fr/coach/programs/${id}`)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') router.push(`/fr/coach/programs/${id}`);
-        }}
-        className="bg-white border border-border rounded-2xl p-4 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
-      >
+      <article className="bg-white border border-border rounded-2xl p-4 flex items-center justify-between hover:shadow-md transition-shadow group">
         {/* Left: info */}
         <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-sm font-bold text-text truncate">{name}</span>
+          <button
+            type="button"
+            onClick={() => router.push(`/${locale}/coach/programs/${id}`)}
+            className="text-sm font-bold text-text hover:text-primary text-left truncate focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+            aria-label={`Ouvrir le programme ${name}`}
+          >
+            {name}
+          </button>
           <span className="text-xs text-muted">{meta}</span>
           {folderName && (
             <span className="inline-flex self-start mt-1 text-xs font-normal text-muted bg-background border border-border rounded-full px-2 py-0.5">
@@ -113,15 +150,20 @@ export function ProgramCard({
 
         {/* Right: own template = context menu ; seed = lock */}
         {isSeed ? (
-          <div className="relative flex items-center ml-4 shrink-0">
+          <div
+            className="relative flex items-center ml-4 shrink-0"
+            tabIndex={0}
+            aria-label="Utiliser ce template"
+          >
             <IoLockClosedOutline className="text-muted text-lg" />
-            <span className="absolute right-6 top-1/2 -translate-y-1/2 hidden group-hover:flex whitespace-nowrap bg-text text-white text-xs font-normal rounded-lg px-3 py-1.5 shadow-md pointer-events-none z-10">
+            <span className="absolute right-6 top-1/2 -translate-y-1/2 hidden group-hover:flex group-focus:flex whitespace-nowrap bg-text text-white text-xs font-normal rounded-lg px-3 py-1.5 shadow-md pointer-events-none z-10">
               Utiliser ce template
             </span>
           </div>
         ) : (
           <div className="relative ml-4 shrink-0" ref={menuRef}>
             <button
+              ref={menuButtonRef}
               type="button"
               aria-label={`Options pour ${name}`}
               onClick={(e) => {
@@ -190,7 +232,7 @@ export function ProgramCard({
                     setMenuOpen(false);
                     setDeleteOpen(true);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm font-normal text-red-600 hover:bg-red-50 cursor-pointer"
+                  className="w-full text-left px-4 py-2 text-sm font-normal text-danger hover:bg-danger/10 cursor-pointer"
                 >
                   Supprimer
                 </button>
@@ -198,7 +240,7 @@ export function ProgramCard({
             )}
           </div>
         )}
-      </div>
+      </article>
 
       {/* Delete confirmation modal */}
       {deleteOpen && (
@@ -211,7 +253,7 @@ export function ProgramCard({
             if (e.target === e.currentTarget) setDeleteOpen(false);
           }}
         >
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full border border-border shadow-lg">
+          <div ref={deleteModalRef} className="bg-white rounded-2xl p-8 max-w-md w-full border border-border shadow-lg">
             <h2 id="delete-program-title" className="text-xl font-bold text-text">
               Supprimer le programme
             </h2>
@@ -238,7 +280,10 @@ export function ProgramCard({
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setDeleteOpen(false)}
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setTimeout(() => menuButtonRef.current?.focus(), 0);
+                }}
                 className="border border-border bg-white text-text rounded-xl px-6 py-3 text-sm font-normal hover:bg-background transition-colors"
               >
                 Annuler
@@ -251,11 +296,12 @@ export function ProgramCard({
                   try {
                     onDelete(id);
                     setDeleteOpen(false);
+                    setTimeout(() => menuButtonRef.current?.focus(), 0);
                   } finally {
                     setDeleting(false);
                   }
                 }}
-                className="bg-red-600 text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="bg-danger text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-danger disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Supprimer définitivement
               </button>

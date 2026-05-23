@@ -17,31 +17,32 @@ export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="flex gap-1 border-b border-border"
-      role="tablist"
-      aria-label="Données client"
-    >
-      {TABS.map((tab) => {
-        const href = `/${locale}/coach/clients/${id}/${tab.key}`;
-        const isActive = pathname.endsWith(`/${tab.key}`);
-        return (
-          <Link
-            key={tab.key}
-            href={href}
-            role="tab"
-            aria-selected={isActive}
-            aria-controls={`tab-panel-${tab.key}`}
-            className={`px-4 py-3 text-sm font-normal transition-colors border-b-2 ${
-              isActive
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-muted hover:text-text hover:border-border'
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="Données client">
+      <div className="relative">
+        <div
+          className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none flex-nowrap"
+        >
+        {TABS.map((tab) => {
+          const href = `/${locale}/coach/clients/${id}/${tab.key}`;
+          const isActive = pathname.endsWith(`/${tab.key}`);
+          return (
+            <Link
+              key={tab.key}
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+              className={`px-4 py-3 text-sm font-normal transition-colors border-b-2 ${
+                isActive
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-muted hover:text-text hover:border-border'
+              }`}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+        </div>
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#F7F6F3] to-transparent" />
+      </div>
     </nav>
   );
 }

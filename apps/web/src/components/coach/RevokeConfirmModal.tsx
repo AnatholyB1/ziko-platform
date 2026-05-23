@@ -1,6 +1,39 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 
+function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement>) {
+  useEffect(() => {
+    if (!active || !containerRef.current) return;
+    const container = containerRef.current;
+    const focusableSelectors = [
+      'a[href]', 'button:not([disabled])', 'textarea:not([disabled])',
+      'input:not([disabled])', 'select:not([disabled])', '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const getFocusable = () => Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors));
+
+    // Focus first focusable element
+    const firstFocusable = getFocusable()[0];
+    firstFocusable?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [active, containerRef]);
+}
+
 // Case-sensitive exact match token required to enable destructive action.
 // Same token used by coach (D-13) and athlete (D-18) sides.
 const CONFIRM_TOKEN = 'COACH';
@@ -29,28 +62,17 @@ export function RevokeConfirmModal({
   const firstFieldRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
+  useFocusTrap(open, dialogRef as React.RefObject<HTMLElement>);
+
+  // Reset state and handle Escape key
   useEffect(() => {
     if (!open) {
       setInput('');
       setSubmitting(false);
       return;
     }
-    firstFieldRef.current?.focus();
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') { onCancel(); return; }
-      if (e.key === 'Tab') {
-        const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-          'input, button:not([disabled])'
-        );
-        if (!focusable || focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-        } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-        }
-      }
+      if (e.key === 'Escape') { onCancel(); }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -111,7 +133,7 @@ export function RevokeConfirmModal({
                 setSubmitting(false);
               }
             }}
-            className="bg-red-600 text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="bg-danger text-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-danger-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {confirmCta}
           </button>

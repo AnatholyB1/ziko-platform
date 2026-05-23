@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import gsap from 'gsap';
-import { IoSendOutline, IoSparklesOutline } from 'react-icons/io5';
+import { IoSendOutline } from 'react-icons/io5';
 
 interface ChatInputBarProps {
   value: string;
@@ -36,13 +36,12 @@ export function ChatInputBar({ value, onChange, onSubmit, disabled }: ChatInputB
   }
 
   return (
-    <div
-      className="fixed bottom-0 bg-white border-t border-[#E2E0DA] px-6 py-4"
-      style={{ left: '240px', right: 0 }}
-    >
+    <div className="fixed bottom-0 left-0 lg:left-60 right-0 bg-white border-t border-border px-6 py-4">
       <div className="flex items-end gap-2">
+        <label htmlFor="chat-input" className="sr-only">Message à l'IA Coach</label>
         <textarea
-          className="flex-1 bg-[#F7F6F3] border border-[#E2E0DA] rounded-lg px-4 py-2 text-sm text-[#1C1A17] placeholder:text-[#6B6963] focus:outline-none focus:ring-2 focus:ring-[#FF5C1A]/20 focus:border-[#FF5C1A] resize-none min-h-[44px] max-h-[120px]"
+          id="chat-input"
+          className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none min-h-[44px] max-h-[120px]"
           placeholder="Posez une question à votre IA Coach..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -55,15 +54,13 @@ export function ChatInputBar({ value, onChange, onSubmit, disabled }: ChatInputB
           aria-label="Envoyer"
           onClick={handleSend}
           disabled={disabled || !value.trim()}
-          className="ml-3 w-10 h-10 rounded-lg flex items-center justify-center hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-          style={{ backgroundColor: '#FF5C1A' }}
+          className="ml-3 w-10 h-10 rounded-lg flex items-center justify-center bg-primary hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
         >
           <IoSendOutline size={18} color="#FFFFFF" />
         </button>
       </div>
-      <div className="mt-2 flex items-center gap-1 text-xs text-[#6B6963]">
-        <IoSparklesOutline size={12} />
-        <span>Propulsé par Claude Sonnet · 3 outils disponibles</span>
+      <div className="mt-2 flex items-center gap-1 text-xs text-muted">
+        <span>Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</span>
       </div>
     </div>
   );

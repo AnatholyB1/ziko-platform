@@ -2,6 +2,7 @@
 import { useRef } from 'react';
 import { IoOpenOutline } from 'react-icons/io5';
 import gsap from 'gsap';
+import { useLocale } from 'next-intl';
 
 export interface CoachAlert {
   id: string;
@@ -15,10 +16,10 @@ export interface CoachAlert {
   clientName?: string;
 }
 
-const SEVERITY_COLORS: Record<CoachAlert['severity'], string> = {
-  high: '#EF4444',
-  medium: '#F59E0B',
-  low: '#EAB308',
+const severityBgClass: Record<CoachAlert['severity'], string> = {
+  high: 'bg-danger',
+  medium: 'bg-warning',
+  low: 'bg-caution',
 };
 
 const ALERT_TYPE_LABELS: Record<CoachAlert['alert_type'], string> = {
@@ -49,9 +50,9 @@ interface AlertCardProps {
 }
 
 export function AlertCard({ alert, onDismiss }: AlertCardProps) {
+  const locale = useLocale();
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const dotColor = SEVERITY_COLORS[alert.severity];
   const typeLabel = ALERT_TYPE_LABELS[alert.alert_type];
   const timestamp = formatTimestamp(alert.created_at);
   const clientName = alert.clientName ?? 'Client inconnu';
@@ -65,14 +66,18 @@ export function AlertCard({ alert, onDismiss }: AlertCardProps) {
       // Intentional: fire-and-forget
     });
 
-    // GSAP collapse animation, then remove from parent state
-    if (cardRef.current) {
+    // GSAP collapse animation, then remove from parent state.
+    // Skip animation when the user has requested reduced motion.
+    const mq = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq && mq.matches) {
+      onDismiss(alert.id);
+    } else if (cardRef.current) {
       gsap.to(cardRef.current, {
         opacity: 0,
-        height: 0,
-        marginBottom: 0,
-        duration: 0.2,
+        scaleY: 0,
+        duration: 0.18,
         ease: 'power2.in',
+        transformOrigin: 'top',
         onComplete: () => onDismiss(alert.id),
       });
     } else {
@@ -88,32 +93,23 @@ export function AlertCard({ alert, onDismiss }: AlertCardProps) {
       {/* Header row */}
       <div className="flex items-center gap-2">
         {/* Severity dot */}
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: dotColor,
-            flexShrink: 0,
-            display: 'inline-block',
-          }}
-        />
+        <span className={`w-2 h-2 rounded-full shrink-0 inline-block ${severityBgClass[alert.severity]}`} />
         {/* Client name */}
-        <span className="text-sm font-semibold text-[#1C1A17]">{clientName}</span>
-        <span className="text-sm text-[#6B6963]">·</span>
+        <span className="text-sm font-semibold text-text">{clientName}</span>
+        <span className="text-sm text-muted">·</span>
         {/* Alert type label */}
-        <span className="text-sm font-normal text-[#6B6963]">{typeLabel}</span>
+        <span className="text-sm font-normal text-muted">{typeLabel}</span>
         {/* Timestamp right-aligned */}
-        <span className="text-xs font-normal text-[#6B6963] ml-auto">{timestamp}</span>
+        <span className="text-xs font-normal text-muted ml-auto">{timestamp}</span>
       </div>
 
       {/* Summary text */}
-      <p className="text-sm font-normal text-[#1C1A17] mt-1 line-clamp-2">{alert.summary}</p>
+      <p className="text-sm font-normal text-text mt-1 line-clamp-2">{alert.summary}</p>
 
       {/* Footer row */}
       <div className="flex items-center mt-3 gap-3">
         <a
-          href={`/fr/coach/ai?client=${alert.client_id}`}
+          href={`/${locale}/coach/ai?client=${alert.client_id}`}
           className="text-sm text-primary font-semibold flex items-center gap-1 hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
@@ -122,8 +118,9 @@ export function AlertCard({ alert, onDismiss }: AlertCardProps) {
         </a>
         <button
           type="button"
+          aria-label={`Marquer comme lu : ${typeLabel} – ${clientName}`}
           onClick={handleDismiss}
-          className="text-sm text-[#6B6963] hover:text-[#1C1A17] ml-auto transition-colors"
+          className="text-sm text-muted hover:text-text ml-auto transition-colors"
         >
           Marquer lu
         </button>
