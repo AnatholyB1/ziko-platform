@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.5 Coach Platform & CRM (Shipped: 2026-05-22)
+
+**Phases completed:** 10 phases, 61 plans (Phases 22–31 + Phase 36)
+**Phase 30 (Strava):** ⏭️ Skipped — deferred to v1.6
+**Known gaps at close:** Phase 27 Track B mobile gaps (MOBILE-02/03/04 — 3 items) deferred to Phase 41/milestone-mobile; Strava (STRAVA-01–07) deferred to v1.6
+
+**Key accomplishments:**
+
+1. **RLS Keystone — `is_coach_of()`** — SECURITY DEFINER STABLE SQL function + 11 cross-user `FOR SELECT` policies on all athlete tables (habits, sessions, measurements, nutrition, sleep, cardio, hydration, journal, stretching); 47/47 Vitest assertions green; 3 Supabase migrations (034/035/036) landed idempotently
+2. **Monorepo + Auth Bootstrap** — `apps/web/` onboarded via git subtree (full ziko-web history preserved); `packages/coach-sdk` dual ESM/CJS Zod schemas; `@supabase/ssr` dual-store cookies; ESLint cross-module guards; Vercel Pro two-project topology; 4-job CI pipeline
+3. **Coach Identity & Onboarding** — Self-serve 3-step wizard (role promotion → profile → KYC); `coach/identity` bounded module; CoachSidebar layout; `(marketing)` route group isolation; migration 037 KYC bucket; 10/10 UAT pass
+4. **Invitation System** — 6-char `[A-Z2-9]` nanoid codes; Upstash serial rate-limit (5/15min IP + 10/hr user); constant-time INVALID_OR_EXPIRED envelope; typed "COACH" revoke modal; `/redeem` + `/r/[code]` web state machine; pixel-perfect to canonical mockups
+5. **CRM Client Roster** — TanStack Table paginated roster + signal chips; 7-tab read-only client detail (sessions/measurements/habits/nutrition/sleep/cardio/journal); ExecutiveSummaryCard; private notes + tags (coach-private); ComparisonChart multi-client comparison; 31/31 must-haves verified
+6. **Coaching Programs** — Multi-week program editor (WeekAccordion + SessionSlideOver + ExerciseTypeahead on 1000+ exercise library); fork-on-assign (is_template=FALSE, template_source_id back-ref); 5–10 expert seed templates; AssignmentModal batch assignment; Client Programs tab
+7. **AI File Imports** — Drag-drop upload PDF/image/Excel/Word via signed URL (bypasses Vercel 4.5 MB limit); Claude vision/document parsing → Zod-validated `ImportedProgramSchema`; async polling up to 60s; confidence scores (<70% highlighted yellow); athlete + coach modes; 10/10 IMPORT requirements
+8. **AI Coach Orchestrator** — 3 tools (`analyze_client`, `generate_coaching_program`, `monitor_client_alerts`); SSE streaming /coach/ai chat UI; AlertsPanel on dashboard; AdaptWithAIButton; `ai_tool_audit` logging; `@ziko/email` WeeklyDigest via Resend; credit-gated by v1.4 system
+9. **Public Marketing `/coachs`** — SSG FR/EN static page (hero, 4 feature blocks, comparison table, FAQ accordion, founder section, CTA footer); framer-motion animations; OG metadata; CNIL-compliant
+10. **Web Performance (Phase 36)** — React `cache()` deduplication for `supabase.auth.getUser()` — one DB call per request; settings page ISR (revalidate=60); 20 files refactored; TypeScript clean
+
+---
+
 ## v1.4 Système de Crédits IA & Monétisation (Shipped: 2026-04-29)
 
 **Phases completed:** 5 phases, 11 plans (Phases 17–21)

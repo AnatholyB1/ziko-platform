@@ -7,7 +7,7 @@
 - [x] **v1.2 Barcode Enrichment + Tech Debt** — Phases 10–11 (shipped 2026-04-02)
 - [x] **v1.3 Security + Cloud Infrastructure** — Phases 12–16 (shipped 2026-04-05)
 - [x] **v1.4 Systeme de Credits IA & Monetisation** — Phases 17–21 (shipped 2026-04-29)
-- [ ] **v1.5 Coach Platform & CRM** — Phases 22–31 (in progress, started 2026-05-13)
+- [x] **v1.5 Coach Platform & CRM** — Phases 22–31 (shipped 2026-05-22)
 
 ## Phases
 
@@ -72,20 +72,24 @@ Five phases implemented a gamified AI credit system — atomic PostgreSQL credit
 
 </details>
 
-### 🚧 v1.5 Coach Platform & CRM (Phases 22–31) — IN PROGRESS
+<details>
+<summary>✅ v1.5 Coach Platform & CRM (Phases 22–31) — SHIPPED 2026-05-22</summary>
 
-Ten phases transform Ziko from a single-tenant athlete app into a two-sided platform: a coach-facing CRM on the Next.js web app reading client data via cross-user RLS, athlete-side Strava OAuth, and AI file imports replacing CSV. Three parallelizable lanes: (a) backend identity → invitations → clients → programs → imports → AI; (b) Strava integration (after schema); (c) public marketing landing (after onboarding URL stable). The architectural keystone is `coach_client_links` + a `SECURITY DEFINER` SQL function `is_coach_of(coach, client)` extending every existing table's RLS with `OR is_coach_of(auth.uid(), user_id)` — coach reads, never writes.
+Ten phases transform Ziko from a single-tenant athlete app into a two-sided coach CRM platform. Architectural keystone: `is_coach_of()` SECURITY DEFINER STABLE + 11 cross-user SELECT policies. Phase 30 (Strava) skipped/deferred to v1.6. Full details in [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md).
 
-- [x] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables — **4/4 plans complete (2026-05-14)**
-- [x] **Phase 23: Web Turborepo Onboarding & Auth Bootstrap** — Monorepo path (git subtree merge), `@supabase/ssr` dual-store auth, `(coach)` route group scaffold, `packages/coach-sdk` Zod schemas, Vercel Pro provisioned, CI/CD pipeline — **8/8 plans complete (2026-05-15)**
-- [x] **Phase 24: Coach Identity & Onboarding** — `coach/identity` bounded module, self-serve 3-step coach signup (role promotion → profile → KYC), coach-kyc storage bucket, `CoachSidebar` layout, dashboard + settings pages, login page, GAP fixes (locale redirects, NEXT_PUBLIC_API_URL, marketing header) — **6/6 plans complete (2026-05-16)**
-- [x] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` bounded modules, 6-char codes, web redemption state machine (/redeem + /r/[code]), rate-limited preview/redeem/revoke loop — **9/9 plans complete (2026-05-17)**
-- [ ] **Phase 26: CRM Client Management** — `/coach/clients` list + detail with TanStack Table, tabbed read-only client data, executive summary, tags, private notes, multi-client comparison
-- [ ] **Phase 27: Coaching Programs & Mobile "Mon coach" Full** — Program templates, folders, assignments (fork-on-assign), seed templates, mobile prescribed-program badge + compliance widget + contact CTA
-- [ ] **Phase 28: AI File Imports** — Upload/parse/preview/commit flow for PDF/image/Excel/Word, athlete + coach modes, multi-page PDFs, re-upload diff, async polling
-- [ ] **Phase 29: AI Coach Orchestrator** — 3 tools (`analyze_client`, `generate_coaching_program`, `monitor_client_alerts`), web chat UI, weekly digest, `ai_tool_audit`
-- [ ] **Phase 30: Strava Integration** — Migration 037, OAuth + webhook + backfill + reconciliation cron, mobile connect/disconnect (parallel with Phases 24–29)
-- [ ] **Phase 31: Public Marketing `/coachs`** — FR/EN static landing, demo video, comparison vs Trainerize/TrueCoach, beta signup CTA (parallel after Phase 23)
+- [x] Phase 22: Schema Foundation & RLS Keystone (4/4 plans) — completed 2026-05-14
+- [x] Phase 23: Web Turborepo Onboarding & Auth Bootstrap (8/8 plans) — completed 2026-05-15
+- [x] Phase 24: Coach Identity & Onboarding (6/6 plans) — completed 2026-05-16
+- [x] Phase 25: Invitations & Mobile "Mon coach" Minimal (9/9 plans) — completed 2026-05-17
+- [x] Phase 26: CRM Client Management (7/7 plans) — completed 2026-05-18
+- [x] Phase 27: Coaching Programs & Mobile "Mon coach" Full (8/8 plans) — completed (10/13 must-haves; 3 gaps deferred to Phase 41/milestone-mobile)
+- [x] Phase 28: AI File Imports (8/8 plans) — completed 2026-05-21
+- [x] Phase 29: AI Coach Orchestrator (6/6 plans) — completed 2026-05-22
+- [⏭️] Phase 30: Strava Integration — skipped, deferred to v1.6
+- [x] Phase 31: Public Marketing `/coachs` (3/3 plans) — completed 2026-05-22
+- [x] Phase 36: Web Performance Optimization (2/2 plans) — completed 2026-05-22
+
+</details>
 
 ---
 
@@ -348,12 +352,12 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
 | 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Complete | 2026-05-17 |
 | 26. CRM Client Management | v1.5 | 7/7 | Complete | 2026-05-18 |
-| 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
-| 28. AI File Imports | v1.5 | 0/0 | Not started | — |
-| 29. AI Coach Orchestrator | v1.5 | 0/6 | In progress | — |
-| 30. Strava Integration | v1.5 | 0/0 | Not started | — |
-| 31. Public Marketing `/coachs` | v1.5 | 0/0 | Not started | — |
-| 36. Web Performance Optimization | v1.5 | 0/2 | Planned | — |
+| 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 8/8 | Complete (10/13 must-haves) | 2026-05-21 |
+| 28. AI File Imports | v1.5 | 8/8 | Complete | 2026-05-21 |
+| 29. AI Coach Orchestrator | v1.5 | 6/6 | Complete | 2026-05-22 |
+| 30. Strava Integration | v1.5 | — | ⏭️ Skipped — deferred to v1.6 | — |
+| 31. Public Marketing `/coachs` | v1.5 | 3/3 | Complete | 2026-05-22 |
+| 36. Web Performance Optimization | v1.5 | 2/2 | Complete | 2026-05-22 |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
@@ -369,3 +373,4 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 *Updated: 2026-05-18 — Phase 26 (CRM Client Management) complete: 7/7 plans + 2 gap-closure rounds. @tanstack/react-table, recharts, migration 041 (coach_client_tags/notes), full backend roster/summary/tabs/compare routes, ClientsTable + signal chips, 7-tab client detail, ExecutiveSummaryCard + NotesPanel + TagInput, ComparisonChart. 31/31 must-haves verified, 16/16 tests green. Ready for Phase 27 (Coaching Programs & Mobile "Mon coach" Full).*
 *Updated: 2026-05-22 — Phase 29 (AI Coach Orchestrator) planned: 6 plans in 6 waves. Migration 050 (coach_alerts + ai_tool_audit), coach/ai/ bounded module, /coach/ai SSE chat UI, alerts panel, AdaptWithAIButton, weekly digest via Resend + React Email.*
 *Updated: 2026-05-22 — Phase 36 (Web Performance Optimization) planned: 2 plans in 2 waves. React cache() auth deduplication via getCachedCoachUser(), revalidate=60 ISR for settings, force-dynamic preserved on all client data pages.*
+*Updated: 2026-05-24 — v1.5 archived: Coach Platform & CRM (Phases 22–31 + 36). Phase 30 (Strava) deferred to v1.6. Archive at milestones/v1.5-ROADMAP.md.*

@@ -4,14 +4,14 @@ workstream: main
 milestone: v1.5
 milestone_name: Coach Platform & CRM
 branch: main
-status: executing
-last_updated: "2026-05-22T12:30:00Z"
+status: archived
+last_updated: "2026-05-24T00:00:00Z"
 progress:
   total_phases: 10
-  completed_phases: 9
-  total_plans: 58
-  completed_plans: 58
-  percent: 90
+  completed_phases: 10
+  total_plans: 61
+  completed_plans: 61
+  percent: 100
 ---
 
 # Project State — v1.5 Coach Platform & CRM
@@ -23,15 +23,15 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 
 **Phase files:** `.planning/phases/<N>-*/`  
 **Roadmap:** `.planning/ROADMAP.md`  
-**Requirements:** `.planning/REQUIREMENTS.md`
+**Archive:** `.planning/milestones/v1.5-ROADMAP.md` | `.planning/milestones/v1.5-REQUIREMENTS.md`
 
 ---
 
-## Current Position
+## ✅ MILESTONE ARCHIVED — 2026-05-24
 
-Phase: **29 — AI Coach Orchestrator** (executing — plan 05/06 done)
+**v1.5 Coach Platform & CRM shipped 2026-05-22.**
 
-Progress: [████████▓░] 84%
+All 10 phases complete. 61 plans delivered. Phase 30 (Strava) deferred to v1.6. 3 Phase 27 Track B mobile gaps deferred to Phase 41/milestone-mobile.
 
 | Phase | Status | Plans |
 |-------|--------|-------|
@@ -41,48 +41,28 @@ Progress: [████████▓░] 84%
 | 25. Invitations & Mobile "Mon coach" Minimal | ✅ Complete | 9/9 |
 | 26. CRM Client Management | ✅ Complete | 7/7 |
 | 27. Coaching Programs & Mobile "Mon coach" Full | ✅ Complete (gaps 10/13) | 8/8 |
-| 28. AI File Imports | ✅ Complete — approved 2026-05-21 | 8/8 |
-| 29. AI Coach Orchestrator | ✅ Complete — approved 2026-05-22 | 6/6 |
-| 30. Strava Integration | ⏭️ Skipped — out of scope | — |
-| 31. Public Marketing `/coachs` | ⬜ Not started | — |
+| 28. AI File Imports | ✅ Complete | 8/8 |
+| 29. AI Coach Orchestrator | ✅ Complete | 6/6 |
+| 30. Strava Integration | ⏭️ Skipped — deferred to v1.6 | — |
+| 31. Public Marketing `/coachs` | ✅ Complete | 3/3 |
+| 36. Web Performance Optimization | ✅ Complete (appended) | 2/2 |
 
 ---
 
-## Accumulated Context
+## Deferred Items
 
-### Key Decisions
+Items acknowledged and deferred at milestone close on 2026-05-24:
 
-- `is_coach_of()` SECURITY DEFINER function is the RLS keystone — all coach reads go through it
-- `apps/web/` lives in monorepo via git subtree (no --squash); coach-sdk as workspace package
-- `@supabase/ssr` dual-store cookie pattern for server component auth
-- Marketing pages isolated in `(marketing)` route group to keep coach layout clean
-- All coach AI tool invocations must deduct credits via v1.4 credit system
-- Phase 27 Track B (mobile Mon coach full) delivered with 10/13 must-haves; 3 gaps to close in Phase 41 of milestone-mobile
-- Phase 28 upload flow uses signed URL pattern (bypasses Vercel 4.5 MB body limit)
-- Phase 29 plan 05: @ziko/email uses tsx source exports (no build step); @types/react must NOT be in email package devDeps (React 18/19 type mismatch)
-- Phase 29 plan 05: render() from @react-email/components is async (returns Promise<string>) — always await it
-
-### Pending Todos
-
-- [x] Phase 28 approved — workout import flow confirmed working 2026-05-21
-- [x] Phase 29 plan 01 — coach_alerts + ai_tool_audit migration (050)
-- [x] Phase 29 plan 02 — Coach AI backend service (chat/stream, monitor-cron, 3 tools)
-- [x] Phase 29 plan 03 — Coach AI chat UI (/coach/ai page)
-- [x] Phase 29 plan 04 — Dashboard alerts panel + CoachSidebar AI nav entry
-- [x] Phase 29 plan 05 — @ziko/email package + WeeklyDigest + Resend wiring
-- [ ] Phase 29 plan 06 — Credit gate deep-link + "Adapter avec l'IA" button (final plan)
-- [ ] Add RESEND_API_KEY to Vercel env vars (resend.com dashboard)
-- [ ] Verify ziko-app.com domain in Resend (or use sandbox)
-- [ ] Phase 30 (Strava) + Phase 31 (Marketing) — parallel after Phase 29 ships
-
-### Blockers/Concerns
-
-None.
+| Category | Item | Status |
+|----------|------|--------|
+| requirements | STRAVA-01–07 (Phase 30 Strava Integration) | Deferred to v1.6 |
+| requirements | MOBILE-02/03/04 (Phase 27 Track B mobile gaps) | Deferred to Phase 41/milestone-mobile |
+| config | RESEND_API_KEY + domain verification in Resend | Pending deployment config |
 
 ---
 
-## Session Continuity
+## Next Step
 
-Last session: 2026-05-22
-Stopped at: Phase 29 plan 05 complete — @ziko/email + WeeklyDigest + Resend wiring done
-Resume: Execute Phase 29 plan 06 (final plan — credit gate + "Adapter avec l'IA" deep-link)
+Start v1.6 milestone: `/gsd:new-milestone`
+
+Or continue v1.7 Mobile UX v2 on milestone-mobile workstream.
