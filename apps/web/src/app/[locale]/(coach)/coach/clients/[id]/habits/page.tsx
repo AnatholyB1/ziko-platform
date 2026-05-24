@@ -67,7 +67,7 @@ export default async function ClientHabitsPage({
             </thead>
             <tbody>
               {habits.map((habit: Record<string, unknown>) => {
-                const completedDays = logsByHabit[habit.id] ?? 0;
+                const completedDays = logsByHabit[habit.id as string] ?? 0;
                 const rate = Math.round((completedDays / totalDays) * 100);
                 return (
                   <tr key={habit.id} className="border-t border-border hover:bg-background/60">
