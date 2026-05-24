@@ -60,9 +60,9 @@ export default async function ClientNutritionPage({
             </thead>
             <tbody>
               {rows.map((row: Record<string, unknown>) => (
-                <tr key={row.id} className="border-t border-border hover:bg-background/60">
+                <tr key={row.id as string} className="border-t border-border hover:bg-background/60">
                   <td className="py-3 px-4 text-text">
-                    {row.date ? new Date(row.date).toLocaleDateString('fr-FR') : '—'}
+                    {row.date ? new Date(row.date as string).toLocaleDateString('fr-FR') : '—'}
                   </td>
                   <td className="py-3 px-4 text-muted capitalize">{row.meal_type ?? '—'}</td>
                   <td className="py-3 px-4 text-text">{row.food_name ?? '—'}</td>

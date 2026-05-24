@@ -533,7 +533,7 @@ export function ImportsClient({ imports, locale, accessToken }: ImportsClientPro
             {/* Table rows */}
             {localImports.map((row, idx) => (
               <div
-                key={row.id}
+                key={row.id as string}
                 className="import-row"
                 onMouseEnter={() => setHoveredRow(row.id)}
                 onMouseLeave={() => setHoveredRow(null)}

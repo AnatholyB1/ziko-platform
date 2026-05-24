@@ -8,7 +8,7 @@ import {
   type RowSelectionState,
   useReactTable,
 } from '@tanstack/react-table';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientSignalChip } from './ClientSignalChip';
 import { CompareButton } from './CompareButton';
@@ -110,7 +110,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
     return true;
   });
 
-  const columns: ColumnDef<ClientRow>[] = [
+  const columns = useMemo<ColumnDef<ClientRow>[]>(() => [
     {
       id: 'select',
       header: ({ table }) => {
@@ -149,7 +149,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
           <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center overflow-hidden shrink-0">
             {row.original.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={row.original.avatar_url} alt="" className="w-full h-full object-cover" />
+              <img src={row.original.avatar_url} alt="" className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <span className="text-xs font-bold text-muted">
                 {(row.original.name ?? '?')[0].toUpperCase()}
@@ -159,6 +159,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
           <button
             onClick={() => router.push(`/${locale}/coach/clients/${row.original.id}`)}
             className="text-sm font-normal text-text hover:text-primary hover:underline text-left"
+            aria-label={`Voir le profil de ${row.original.name ?? 'ce client'}`}
           >
             {row.original.name ?? 'Client sans nom'}
           </button>
@@ -203,12 +204,13 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
           <button
             onClick={() => router.push(`/${locale}/coach/clients/${row.original.id}`)}
             className="text-sm text-primary hover:underline"
+            aria-label={`Voir ${row.original.name ?? 'ce client'}`}
           >
             Voir
           </button>
           <button
             onClick={() => setRevokeTarget(row.original)}
-            className="text-sm text-red-600 hover:underline"
+            className="text-sm text-danger hover:underline"
             aria-label={`Retirer ${row.original.name ?? row.original.id}`}
           >
             Retirer
@@ -216,7 +218,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
         </div>
       ),
     },
-  ];
+  ], [router, locale, setRevokeTarget]);
 
   const table = useReactTable({
     data: filteredRows,
@@ -264,20 +266,24 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
     <div className="space-y-4">
       {/* Search + filter bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <label htmlFor="client-search" className="sr-only">
+          Rechercher un client
+        </label>
         <input
+          id="client-search"
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Rechercher un client…"
           className="border border-border rounded-xl px-4 py-2 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Filtres signal">
+        <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Filtres signal">
           {SIGNAL_CHIPS.map((chip) => (
             <button
               key={chip.key}
-              role="tab"
-              aria-selected={signalFilter === chip.key}
+              role="radio"
+              aria-checked={signalFilter === chip.key}
               onClick={() => setSignalFilter(chip.key)}
-              className={`px-4 py-1.5 rounded-full border text-sm font-normal transition-colors ${
+              className={`px-4 py-2.5 rounded-full border text-sm font-normal transition-colors min-h-[44px] ${
                 signalFilter === chip.key
                   ? 'border-primary bg-primary/10 text-primary font-bold'
                   : 'border-border bg-white text-muted hover:border-primary/50'
@@ -291,6 +297,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
 
       {/* Table */}
       <div className="bg-white rounded-2xl border border-border overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-background">
             {table.getHeaderGroups().map((hg) => (
@@ -317,7 +324,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-t border-border hover:bg-background/60">
+                <tr key={row.id as string} className="border-t border-border hover:bg-background/60">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-3 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -328,6 +335,7 @@ export function ClientsTable({ rows, locale }: { rows: ClientRow[]; locale: stri
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Sticky compare button — visible when >= 2 selected */}
