@@ -72,9 +72,9 @@ export default async function ClientHabitsPage({
                 return (
                   <tr key={habit.id as string} className="border-t border-border hover:bg-background/60">
                     <td className="py-3 px-4 text-text">
-                      {habit.emoji ? `${habit.emoji} ` : ''}{habit.name}
+                      {habit.emoji ? `${habit.emoji} ` : ''}{habit.name as string}
                     </td>
-                    <td className="py-3 px-4 text-muted capitalize">{habit.type ?? '—'}</td>
+                    <td className="py-3 px-4 text-muted capitalize">{(habit.type as string) ?? '—'}</td>
                     <td className="py-3 px-4 text-muted">{rate}%</td>
                   </tr>
                 );
