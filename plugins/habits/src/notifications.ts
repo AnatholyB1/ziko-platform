@@ -37,10 +37,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
   const n = N();
   if (!n) return false;
   try {
-    const { status: existing } = await n.getPermissionsAsync();
-    if (existing === 'granted') return true;
-    const { status } = await n.requestPermissionsAsync();
-    return status === 'granted';
+    const existing = await n.getPermissionsAsync();
+    if (existing.granted) return true;
+    const result = await n.requestPermissionsAsync();
+    return result.granted;
   } catch {
     return false;
   }
