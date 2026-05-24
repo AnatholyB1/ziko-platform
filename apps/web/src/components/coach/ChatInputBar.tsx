@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import gsap from 'gsap';
+import { useReducedMotion } from 'framer-motion';
 import { IoSendOutline } from 'react-icons/io5';
 
 interface ChatInputBarProps {
@@ -13,10 +14,11 @@ interface ChatInputBarProps {
 
 export function ChatInputBar({ value, onChange, onSubmit, disabled }: ChatInputBarProps) {
   const sendBtnRef = useRef<HTMLButtonElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   function handleSend() {
     if (!value.trim() || disabled) return;
-    if (sendBtnRef.current) {
+    if (sendBtnRef.current && !prefersReducedMotion) {
       gsap.to(sendBtnRef.current, {
         scale: 0.94,
         duration: 0.1,
@@ -36,12 +38,12 @@ export function ChatInputBar({ value, onChange, onSubmit, disabled }: ChatInputB
   }
 
   return (
-    <div className="fixed bottom-0 left-0 lg:left-60 right-0 bg-white border-t border-border px-6 py-4">
+    <div className="px-6 py-4">
       <div className="flex items-end gap-2">
-        <label htmlFor="chat-input" className="sr-only">Message à l'IA Coach</label>
+        <label htmlFor="chat-input" className="sr-only">Message à l&apos;IA Coach</label>
         <textarea
           id="chat-input"
-          className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none min-h-[44px] max-h-[120px]"
+          className="flex-1 bg-background border border-border rounded-lg px-4 py-2 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none min-h-[44px] max-h-[120px]"
           placeholder="Posez une question à votre IA Coach..."
           value={value}
           onChange={(e) => onChange(e.target.value)}

@@ -29,7 +29,7 @@ export default function CoachsFounderSection() {
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* LEFT — mission content */}
             <div className="flex-1">
-              <span className="text-5xl text-primary/20 font-bold leading-none select-none" aria-hidden="true">"</span>
+              <span className="text-5xl text-primary/20 font-bold leading-none select-none" aria-hidden="true">&ldquo;</span>
               <p className="text-xl font-bold text-text leading-snug mb-4">{t('founder.quote')}</p>
               {/* TODO: replace with real founder story before go-live */}
               <p className="text-base text-muted leading-relaxed">{t('founder.story')}</p>

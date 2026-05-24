@@ -5,5 +5,10 @@
     "rootDir": "../..",
     "jsx": "react-native"
   },
-  "include": ["src", "../../apps/mobile/src/stores/creditStore.ts"]
+  "include": [
+    "src",
+    "../../apps/mobile/src/stores/creditStore.ts",
+    "../../apps/mobile/src/stores/userPrefsStore.ts",
+    "../../apps/mobile/src/hooks/useUnits.ts"
+  ]
 }

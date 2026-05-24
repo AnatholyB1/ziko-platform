@@ -73,7 +73,7 @@ export default async function ClientDetailLayout({
             <ClientNotesPanel
               clientId={id}
               initialNote={noteData?.content ?? ''}
-              initialTags={(tagsData ?? []).map((t: any) => ({ id: t.id, tag: t.tag }))}
+              initialTags={(tagsData ?? []).map((t: { id: string; tag: string }) => ({ id: t.id, tag: t.tag }))}
               apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ''}
             />
           </div>

@@ -66,7 +66,7 @@ export default async function ClientHabitsPage({
               </tr>
             </thead>
             <tbody>
-              {habits.map((habit: any) => {
+              {habits.map((habit: Record<string, unknown>) => {
                 const completedDays = logsByHabit[habit.id] ?? 0;
                 const rate = Math.round((completedDays / totalDays) * 100);
                 return (

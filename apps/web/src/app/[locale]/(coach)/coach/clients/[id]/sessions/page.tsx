@@ -77,7 +77,7 @@ export default async function ClientSessionsPage({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row: any) => (
+              {rows.map((row: Record<string, unknown>) => (
                 <tr key={row.id} className="border-t border-border hover:bg-background/60">
                   <td className="py-3 px-4 text-text">
                     {new Date(row.created_at).toLocaleDateString('fr-FR')}
