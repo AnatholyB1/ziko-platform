@@ -28,6 +28,10 @@ jobs:
         run: npx turbo run lint
       - name: Test
         run: npx turbo run test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   # ─── Deploy: API → Vercel (only on push to main) ────────────────────────
   deploy-backend:
