@@ -70,7 +70,7 @@ export default async function ClientHabitsPage({
                 const completedDays = logsByHabit[habit.id as string] ?? 0;
                 const rate = Math.round((completedDays / totalDays) * 100);
                 return (
-                  <tr key={habit.id} className="border-t border-border hover:bg-background/60">
+                  <tr key={habit.id as string} className="border-t border-border hover:bg-background/60">
                     <td className="py-3 px-4 text-text">
                       {habit.emoji ? `${habit.emoji} ` : ''}{habit.name}
                     </td>
