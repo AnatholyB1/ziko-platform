@@ -58,7 +58,7 @@ export default async function ClientCardioPage({
                   <td className="py-3 px-4 text-text">
                     {new Date(row.created_at as string).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="py-3 px-4 text-text capitalize">{row.activity_type ?? '—'}</td>
+                  <td className="py-3 px-4 text-text capitalize">{(row.activity_type as string) ?? '—'}</td>
                   <td className="py-3 px-4 text-muted">
                     {row.duration_min != null ? `${row.duration_min} min` : '—'}
                   </td>
