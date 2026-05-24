@@ -837,7 +837,7 @@ export default function ImportFileScreen({ supabase }: ImportFileScreenProps) {
           ].map(({ value, label }) => (
             <View key={label} style={{ flex: 1, alignItems: 'center' }}>
               <Animated.Text style={{ fontSize: 18, fontWeight: '600', color: '#1C1A17' }}>
-                {value}
+                {value as unknown as string}
               </Animated.Text>
               <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 2 }}>{label}</Text>
             </View>
