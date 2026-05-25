@@ -51,30 +51,31 @@ export function ProgramEditorClient({
   locale,
 }: ProgramEditorClientProps) {
   const [name, setName] = useState(program.name);
-  const rawWeeksData = program.weeks_data;
-  const rawArrayUnknown: unknown = Array.isArray(rawWeeksData)
-    ? rawWeeksData
-    : Array.isArray((rawWeeksData as Record<string, unknown>)?.weeks)
-      ? (rawWeeksData as Record<string, unknown>).weeks
-      : [];
-  const rawArray = rawArrayUnknown as Record<string, unknown>[];
+  const rawWeeksData = program.weeks_data as unknown;
+  const rawArray = (
+    Array.isArray(rawWeeksData)
+      ? rawWeeksData
+      : Array.isArray((rawWeeksData as Record<string, unknown>)?.weeks)
+        ? ((rawWeeksData as Record<string, unknown>).weeks as unknown[])
+        : []
+  ) as Record<string, unknown>[];
   // Normalize corrupt rows (e.g. pre-fix imports stored in old ImportedProgram format).
   const initialWeeks: ProgramWeek[] = rawArray.map((week) => ({
-    week_number: week.week_number as number,
-    sessions: (Array.isArray(week.sessions) ? week.sessions as Record<string, unknown>[] : []).map((s) => ({
-      session_id: (s.session_id ?? genId()) as string,
-      session_name: (s.session_name ?? s.name ?? 'Séance') as string,
-      day_of_week: (s.day_of_week ?? 1) as number,
-      exercises: (Array.isArray(s.exercises) ? s.exercises as Record<string, unknown>[] : []).map((ex) => ({
-        exercise_id: ex.exercise_id ?? null,
-        exercise_name: ex.exercise_name ?? ex.name ?? '',
-        sets: ex.sets ?? 1,
-        reps: ex.reps ?? null,
-        duration_seconds: ex.duration_seconds ?? null,
-        target_rpe: ex.target_rpe ?? null,
-        target_rir: ex.target_rir ?? null,
-        rest_seconds: ex.rest_seconds ?? null,
-        notes: ex.notes ?? null,
+    week_number: Number(week.week_number),
+    sessions: (Array.isArray(week.sessions) ? (week.sessions as Record<string, unknown>[]) : []).map((s) => ({
+      session_id: String(s.session_id ?? genId()),
+      session_name: String(s.session_name ?? s.name ?? 'Séance'),
+      day_of_week: Number(s.day_of_week ?? 1),
+      exercises: (Array.isArray(s.exercises) ? (s.exercises as Record<string, unknown>[]) : []).map((ex) => ({
+        exercise_id: ex.exercise_id != null ? String(ex.exercise_id) : null,
+        exercise_name: String(ex.exercise_name ?? ex.name ?? ''),
+        sets: Number(ex.sets ?? 1),
+        reps: ex.reps != null ? Number(ex.reps) : null,
+        duration_seconds: ex.duration_seconds != null ? Number(ex.duration_seconds) : null,
+        target_rpe: ex.target_rpe != null ? Number(ex.target_rpe) : null,
+        target_rir: ex.target_rir != null ? Number(ex.target_rir) : null,
+        rest_seconds: ex.rest_seconds != null ? Number(ex.rest_seconds) : null,
+        notes: ex.notes != null ? String(ex.notes) : null,
       })),
     })),
   }));
