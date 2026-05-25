@@ -1348,26 +1348,6 @@ export default function WorkoutSessionScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          {phase === 'rest' && (
-            <RestTimer
-              visible={phase === 'rest'}
-              remaining={restTimer}
-              duration={restTimerMax}
-              nextLabel={(() => {
-                const sets = trackedSets.get(currentExIdx) ?? [];
-                const isLastSet = currentSetIdx >= sets.length - 1;
-                const nextExIdx = isLastSet ? currentExIdx + 1 : currentExIdx;
-                const nextSetIdx = isLastSet ? 0 : currentSetIdx + 1;
-                const nextEx = workoutExercises[nextExIdx];
-                return isLastSet
-                  ? `Next: ${nextEx?.exercises?.name ?? 'Exercise'}`
-                  : `Next: Set ${nextSetIdx + 1}`;
-              })()}
-              onSkip={skipRest}
-              onClose={skipRest}
-              onAdjust={(delta) => setRestTimer((t) => Math.max(0, t + delta))}
-            />
-          )}
         </SafeAreaView>
       );
     }
@@ -1466,6 +1446,15 @@ export default function WorkoutSessionScreen() {
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Skip Rest</Text>
             </TouchableOpacity>
           </View>
+          <RestTimer
+            visible={true}
+            remaining={restTimer}
+            duration={restTimerMax}
+            nextLabel={nextLabel}
+            onSkip={skipRest}
+            onClose={skipRest}
+            onAdjust={(delta) => setRestTimer((t) => Math.max(0, t + delta))}
+          />
         </SafeAreaView>
       );
     }
