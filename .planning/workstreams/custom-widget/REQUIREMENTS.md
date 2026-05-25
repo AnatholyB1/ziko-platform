@@ -70,9 +70,30 @@
 
 ## Traceability
 
-| Phase | Requirements |
-|-------|-------------|
-| TBD   | TBD (filled by roadmapper) |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DASH-01 | Phase 02 | Pending |
+| DASH-02 | Phase 02 | Pending |
+| DASH-03 | Phase 02 | Pending |
+| DASH-04 | Phase 01 | Pending |
+| WIDGET-01 | Phase 02 | Pending |
+| WIDGET-02 | Phase 02 | Pending |
+| WIDGET-03 | Phase 02 | Pending |
+| WIDGET-04 | Phase 02 | Pending |
+| WIDGET-05 | Phase 02 | Pending |
+| WIDGET-06 | Phase 02 | Pending |
+| WIDGET-07 | Phase 02 | Pending |
+| EDIT-01 | Phase 03 | Pending |
+| EDIT-02 | Phase 03 | Pending |
+| EDIT-03 | Phase 03 | Pending |
+| EDIT-04 | Phase 03 | Pending |
+| EDIT-05 | Phase 03 | Pending |
+| MEM-01 | Phase 04 | Pending |
+| MEM-02 | Phase 04 | Pending |
+| INFRA-01 | Phase 01 | Pending |
+| INFRA-02 | Phase 01 | Pending |
+| INFRA-03 | Phase 01 | Pending |
+| INFRA-04 | Phase 01 | Pending |
 
 ---
 
