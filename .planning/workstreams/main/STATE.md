@@ -28,10 +28,10 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 
 ## Current Position
 
-Phase: Not started (roadmap defined, awaiting Phase 37)
+Phase: 37 — UI Design Contract (context gathered)
 Plan: —
-Status: Planning complete — roadmap created
-Last activity: 2026-05-25 — Roadmap written (Phases 37–41)
+Status: Discussion complete — awaiting /gsd:ui-phase 37 --ws main
+Last activity: 2026-05-25 — Phase 37 context captured (4 design decisions)
 
 ---
 
