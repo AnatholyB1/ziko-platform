@@ -32,6 +32,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Goal:** Full visual redesign of the Ziko mobile app to match the 24 canonical mockup files (`C:/Users/Anatholy/Downloads/ziko/`). Design and real data connections are done together per screen. The active workout session screen (`workout-active.jsx`) is the only exclusion. Ships: design system (FormRing, AISuggestion, SubTabs, PluginsDrawer, etc.), 3-tab nav restructure, home screen realignment, all 18 plugins redesigned, workout stack (non-active), auth/onboarding/profile/settings redesigns, extra screens, and elimination of all hardcoded fixture data.
 
 **Parallel milestone:** v1.5 Coach Platform (web, main branch) continues independently.
+**Parallel workstream:** v1.8 Notification System (`notification-mobile`) — push + in-app notifications, Hono-triggered, per-category prefs.
 
 ---
 

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import Script from 'next/script'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
@@ -26,18 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       {children}
-      <Script
-        async
-        src="https://plausible.io/js/pa-rJuI-Kc3gPygcauGKG7eV.js"
-        strategy="afterInteractive"
-      />
-      <Script
-        id="plausible-init"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()`,
-        }}
-      />
     </>
   )
 }
