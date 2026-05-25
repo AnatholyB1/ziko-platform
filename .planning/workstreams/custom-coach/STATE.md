@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Custom Coach Exercises
 status: active
-last_updated: "2026-05-25"
-last_activity: 2026-05-25
+last_updated: "2026-05-26"
+last_activity: 2026-05-26
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 1
   completed_plans: 0
   percent: 0
 ---
@@ -18,9 +18,9 @@ progress:
 ## Current Position
 
 Phase: 42 — Audit Client Programs Visibility
-Plan: Not started
-Status: Roadmap created — ready to plan Phase 42
-Last activity: 2026-05-25 — Roadmap written (3 phases, 7 requirements mapped)
+Plan: 1 plan ready (42-01)
+Status: Planned — ready to execute
+Last activity: 2026-05-26 — Phase 42 planned (1 plan, Wave 1)
 
 ## Progress
 
@@ -29,7 +29,7 @@ Last activity: 2026-05-25 — Roadmap written (3 phases, 7 requirements mapped)
 ```
 
 **Phases Complete:** 0/3
-**Current Plan:** N/A — run `/gsd:plan-phase 42` to begin
+**Current Plan:** 42-01 — Fix getProgramsForClient: remove coach filter, return { active, history }
 
 ## Accumulated Context
 
@@ -55,6 +55,6 @@ None.
 
 ## Session Continuity
 
-**Stopped At:** Roadmap creation complete
-**Resume File:** `.planning/workstreams/custom-coach/ROADMAP.md`
-**Next Action:** `/gsd:plan-phase 42`
+**Stopped At:** Phase 42 planning complete (1 plan, verification passed)
+**Resume File:** `.planning/phases/42-audit-client-programs-visibility/42-01-PLAN.md`
+**Next Action:** `/gsd:execute-phase 42 --ws custom-coach`
