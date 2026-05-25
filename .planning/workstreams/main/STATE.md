@@ -1,68 +1,62 @@
 ---
 gsd_state_version: 1.0
 workstream: main
-milestone: v1.5
-milestone_name: Coach Platform & CRM
+milestone: v1.8
+milestone_name: Sport Dashboards
 branch: main
-status: archived
-last_updated: "2026-05-24T00:00:00Z"
+status: planning
+last_updated: "2026-05-25T00:00:00Z"
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 61
-  completed_plans: 61
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# Project State — v1.5 Coach Platform & CRM
+# Project State — v1.8 Sport Dashboards
 
 ## Workstream Scope
 
-This workstream tracks **main branch** work only (v1.5 Coach Platform & CRM).  
+This workstream tracks **main branch** work only (v1.8 Sport Dashboards).  
 For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.md`
 
 **Phase files:** `.planning/phases/<N>-*/`  
-**Roadmap:** `.planning/ROADMAP.md`  
-**Archive:** `.planning/milestones/v1.5-ROADMAP.md` | `.planning/milestones/v1.5-REQUIREMENTS.md`
+**Roadmap:** `.planning/workstreams/main/ROADMAP.md`
 
 ---
 
-## ✅ MILESTONE ARCHIVED — 2026-05-24
+## Current Position
 
-**v1.5 Coach Platform & CRM shipped 2026-05-22.**
-
-All 10 phases complete. 61 plans delivered. Phase 30 (Strava) deferred to v1.6. 3 Phase 27 Track B mobile gaps deferred to Phase 41/milestone-mobile.
-
-| Phase | Status | Plans |
-|-------|--------|-------|
-| 22. Schema Foundation & RLS Keystone | ✅ Complete | 4/4 |
-| 23. Web Turborepo Onboarding & Auth Bootstrap | ✅ Complete | 8/8 |
-| 24. Coach Identity & Onboarding | ✅ Complete | 6/6 |
-| 25. Invitations & Mobile "Mon coach" Minimal | ✅ Complete | 9/9 |
-| 26. CRM Client Management | ✅ Complete | 7/7 |
-| 27. Coaching Programs & Mobile "Mon coach" Full | ✅ Complete (gaps 10/13) | 8/8 |
-| 28. AI File Imports | ✅ Complete | 8/8 |
-| 29. AI Coach Orchestrator | ✅ Complete | 6/6 |
-| 30. Strava Integration | ⏭️ Skipped — deferred to v1.6 | — |
-| 31. Public Marketing `/coachs` | ✅ Complete | 3/3 |
-| 36. Web Performance Optimization | ✅ Complete (appended) | 2/2 |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-25 — Milestone v1.8 started
 
 ---
 
-## Deferred Items
+## Accumulated Context
 
-Items acknowledged and deferred at milestone close on 2026-05-24:
+### Decisions
 
-| Category | Item | Status |
-|----------|------|--------|
-| requirements | STRAVA-01–07 (Phase 30 Strava Integration) | Deferred to v1.6 |
-| requirements | MOBILE-02/03/04 (Phase 27 Track B mobile gaps) | Deferred to Phase 41/milestone-mobile |
-| config | RESEND_API_KEY + domain verification in Resend | Pending deployment config |
+- Onglet "Dashboard" dans la vue client detail — sélecteur sport type en haut, courbes en dessous
+- Powerlifting livré en semaine 1 (4 courbes : 1RM SBD, Fatigue RPE, Volume/Tonnage, Intensité %)
+- 4 autres dashboards en parallèle semaine 2 : Hyrox, Running/Cardio, Bodybuilding/Hypertrophie, Perte de poids/Retour de blessure
+- Data sources existantes : workout_sessions, session_sets, cardio_sessions, sleep_logs via is_coach_of() RLS
+- Critère fini : Guillaume ouvre "powerlifting → Joaquim" → voit les 4 courbes sans rien configurer
+- Dashboard injecte son contexte dans l'AI chat coach (point de départ customisation, anti-blank-page)
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+None.
 
 ---
 
-## Next Step
+## Previous Milestone
 
-Start v1.6 milestone: `/gsd:new-milestone`
-
-Or continue v1.7 Mobile UX v2 on milestone-mobile workstream.
+**v1.5 Coach Platform & CRM — archived 2026-05-24**  
+See: `.planning/milestones/v1.5-ROADMAP.md` | `.planning/milestones/v1.5-REQUIREMENTS.md`

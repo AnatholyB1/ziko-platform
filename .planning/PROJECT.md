@@ -27,12 +27,17 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 ---
 
-## Current Milestone: v1.7 Mobile UX v2
+## Current Milestone: v1.8 Sport Dashboards (main — web/coach)
 
-**Goal:** Full visual redesign of the Ziko mobile app to match the 24 canonical mockup files (`C:/Users/Anatholy/Downloads/ziko/`). Design and real data connections are done together per screen. The active workout session screen (`workout-active.jsx`) is the only exclusion. Ships: design system (FormRing, AISuggestion, SubTabs, PluginsDrawer, etc.), 3-tab nav restructure, home screen realignment, all 18 plugins redesigned, workout stack (non-active), auth/onboarding/profile/settings redesigns, extra screens, and elimination of all hardcoded fixture data.
+**Goal:** Fournir aux coachs des dashboards pré-construits par type de sport — élimine le blank-page problem et permet une analyse client immédiate sans configuration.
 
-**Parallel milestone:** v1.5 Coach Platform (web, main branch) continues independently.
-**Parallel workstream:** v1.8 Notification System (`notification-mobile`) — push + in-app notifications, Hono-triggered, per-category prefs.
+**Target features:**
+- Onglet "Dashboard" dans la vue client detail — sélecteur sport + courbes instantanées
+- Dashboard Powerlifting en premier (1RM SBD, Fatigue RPE, Tonnage hebdo, Intensité %) — semaine 1
+- 4 dashboards restants en parallèle semaine 2 : Hyrox, Running/Cardio, Bodybuilding/Hypertrophie, Perte de poids/Retour de blessure
+- Point de départ pour customisation AI chat coach (contexte dashboard injecté)
+
+**Parallel milestone:** v1.7 Mobile UX v2 (workstream `milestone-mobile`) — continue indépendamment.
 
 ---
 
