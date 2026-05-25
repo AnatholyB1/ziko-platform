@@ -41,7 +41,7 @@ export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
           );
         })}
         </div>
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#F7F6F3] to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent" />
       </div>
     </nav>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import gsap from 'gsap';
+import { useReducedMotion } from 'framer-motion';
 import { IoSparklesOutline, IoAlertCircleOutline } from 'react-icons/io5';
 import { MessageBubble } from '@/components/coach/MessageBubble';
 import { ChatInputBar } from '@/components/coach/ChatInputBar';
@@ -52,37 +53,48 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
 
   const pageRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const cursorRef = useRef<HTMLSpanElement>(null);
   const searchParams = useSearchParams();
+  const prefersReducedMotion = useReducedMotion();
 
   // ── Page entrance animation ──────────────────────────────────────────────
   useEffect(() => {
     if (pageRef.current) {
-      gsap.from('.chat-page', { opacity: 0, y: 16, duration: 0.2, ease: 'power2.out' });
-      if (messages.length === 0) {
-        gsap.from('.suggestion-chip', {
-          opacity: 0,
-          y: 8,
-          duration: 0.2,
-          stagger: 0.06,
-          ease: 'power2.out',
-          delay: 0.1,
-        });
+      if (!prefersReducedMotion) {
+        gsap.from(pageRef.current, { opacity: 0, y: 16, duration: 0.2, ease: 'power2.out' });
+        if (messages.length === 0) {
+          gsap.from(pageRef.current.querySelectorAll('.suggestion-chip'), {
+            opacity: 0,
+            y: 8,
+            duration: 0.2,
+            stagger: 0.06,
+            ease: 'power2.out',
+            delay: 0.1,
+          });
+        }
       }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Streaming cursor blink ───────────────────────────────────────────────
   useEffect(() => {
-    if (isStreaming) {
-      gsap.to('.stream-cursor', {
+    if (isStreaming && cursorRef.current && !prefersReducedMotion) {
+      const tween = gsap.to(cursorRef.current, {
         opacity: 0,
         duration: 0.3,
         yoyo: true,
         repeat: -1,
         ease: 'sine.inOut',
       });
+      return () => {
+        tween.kill();
+      };
     }
-  }, [isStreaming]);
+    if (!isStreaming && cursorRef.current) {
+      gsap.killTweensOf(cursorRef.current);
+    }
+  }, [isStreaming, prefersReducedMotion]);
 
   // ── Auto-scroll to bottom ────────────────────────────────────────────────
   useEffect(() => {
@@ -124,7 +136,7 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
 
     // Animate new user bubble
     setTimeout(() => {
-      gsap.from('.message-bubble:last-child', {
+      gsap.from(messagesRef.current?.lastElementChild ?? null, {
         opacity: 0,
         y: 12,
         duration: 0.18,
@@ -211,28 +223,33 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
   const isLastMsgStreaming = isStreaming && lastMsg?.role === 'assistant';
 
   return (
-    <div ref={pageRef} className="flex flex-col h-screen bg-[#F7F6F3] chat-page">
+    <div ref={pageRef} className="absolute inset-0 flex flex-col bg-background chat-page overflow-hidden">
+      {/* Screen-reader streaming announcement */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {isStreaming ? 'Génération de la réponse en cours...' : ''}
+      </span>
+
       {/* Header */}
-      <div className="h-16 bg-white border-b border-[#E2E0DA] px-6 flex items-center justify-between flex-shrink-0">
+      <div className="hidden lg:flex h-16 bg-white border-b border-border px-6 items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
-          <IoSparklesOutline size={20} color="#FF5C1A" />
-          <span className="text-lg font-semibold text-[#1C1A17]">IA Coach</span>
-          <span className="text-sm text-[#6B6963]"> — Votre assistant coaching</span>
+          <IoSparklesOutline size={20} className="text-primary" />
+          <span className="text-lg font-semibold text-text">IA Coach</span>
+          <span className="text-sm text-muted"> — Votre assistant coaching</span>
         </div>
         <CreditWidget />
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-[88px]">
+      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4 min-h-0">
         {messages.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center h-full text-center gap-4">
-            <IoSparklesOutline size={48} color="#E2E0DA" />
+            <IoSparklesOutline size={48} className="text-border" aria-hidden="true" />
             <div className="flex flex-col gap-2">
-              <h2 className="text-lg font-semibold text-[#1C1A17]">
+              <h2 className="text-lg font-semibold text-text">
                 Commencez une conversation
               </h2>
-              <p className="text-sm text-[#6B6963] max-w-sm">
+              <p className="text-sm text-muted max-w-sm">
                 Demandez une analyse client, générez un programme ou consultez les alertes de surveillance.
               </p>
             </div>
@@ -240,8 +257,11 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
               {SUGGESTION_CHIPS.map((chip) => (
                 <button
                   key={chip}
-                  className="suggestion-chip border border-[#E2E0DA] rounded-lg px-3 py-2 text-sm text-[#1C1A17] hover:bg-[#F7F6F3] cursor-pointer transition-colors bg-white"
-                  onClick={() => setInputValue(chip)}
+                  className="suggestion-chip border border-border rounded-lg px-3 py-2 min-h-[44px] text-sm text-text hover:bg-background cursor-pointer transition-colors bg-white"
+                  onClick={() => {
+                    setInputValue('');
+                    streamChat(chip);
+                  }}
                 >
                   {chip}
                 </button>
@@ -250,7 +270,7 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
           </div>
         ) : (
           /* Message list */
-          <div className="flex flex-col gap-0">
+          <div ref={messagesRef} className="flex flex-col gap-0">
             {messages.map((msg) => (
               <div key={msg.id}>
                 {/* Tool invocation cards (within assistant messages) */}
@@ -271,8 +291,8 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
                 {/* Streaming indicator on last assistant message */}
                 {isLastMsgStreaming && msg.id === lastMsg?.id && (
                   <div className="flex items-center gap-1 ml-11 mb-2">
-                    <span className="stream-cursor text-[#FF5C1A] font-bold">|</span>
-                    <p className="text-xs text-[#3B82F6]">Génération en cours...</p>
+                    <span ref={cursorRef} className="stream-cursor text-primary font-bold">|</span>
+                    <p className="text-xs text-muted">Génération en cours...</p>
                   </div>
                 )}
               </div>
@@ -280,11 +300,11 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
 
             {/* Error state */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 flex items-start gap-3 text-sm mt-3 error-card">
-                <IoAlertCircleOutline size={16} color="#EF4444" className="flex-shrink-0 mt-0.5" />
-                <span className="text-[#1C1A17] flex-1">{error}</span>
+              <div className="bg-danger-subtle border border-danger/30 rounded-lg px-4 py-2 flex items-start gap-3 text-sm mt-3 error-card">
+                <IoAlertCircleOutline size={16} className="flex-shrink-0 mt-0.5 text-danger" />
+                <span className="text-text flex-1">{error}</span>
                 <button
-                  className="text-[#FF5C1A] font-semibold underline cursor-pointer ml-auto flex-shrink-0"
+                  className="text-primary font-semibold underline cursor-pointer ml-auto flex-shrink-0"
                   onClick={handleRetry}
                 >
                   Réessayer
@@ -297,16 +317,18 @@ export function AIChatClient({ initialConversationId }: AIChatClientProps) {
         )}
       </div>
 
-      {/* Fixed input bar */}
-      <ChatInputBar
-        value={inputValue}
-        onChange={setInputValue}
-        onSubmit={(msg) => {
-          setInputValue('');
-          streamChat(msg);
-        }}
-        disabled={isStreaming}
-      />
+      {/* Input bar */}
+      <div className="flex-shrink-0 border-t border-border bg-white">
+        <ChatInputBar
+          value={inputValue}
+          onChange={setInputValue}
+          onSubmit={(msg) => {
+            setInputValue('');
+            streamChat(msg);
+          }}
+          disabled={isStreaming}
+        />
+      </div>
     </div>
   );
 }

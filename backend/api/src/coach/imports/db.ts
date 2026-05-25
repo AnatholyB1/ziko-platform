@@ -162,7 +162,7 @@ export async function commitImport(
 ): Promise<{ program_id: string }> {
   const db = createUserClient(jwt);
   const isTemplate = mode === 'coach_template';
-  const weeksArray = Array.isArray((parsedData as any).weeks)
+  const rawWeeks = Array.isArray((parsedData as any).weeks)
     ? (parsedData as any).weeks
     : [];
   const derivedName =
@@ -171,14 +171,37 @@ export async function commitImport(
       ? (parsedData as any).name
       : 'Imported Program');
 
+  // Transform ImportedProgram weeks → ProgramWeek[] (coach-sdk canonical format).
+  // ImportedProgram uses: session.name, no session_id, exercise.name (not exercise_name).
+  // ProgramWeek uses:     session.session_name, session_id (uuid), exercise.exercise_name.
+  const weeksData = rawWeeks.map((week: any) => ({
+    week_number: week.week_number,
+    sessions: (Array.isArray(week.sessions) ? week.sessions : []).map((session: any) => ({
+      session_id: crypto.randomUUID(),
+      session_name: session.name ?? 'Séance',
+      day_of_week: session.day_of_week ?? 1,
+      exercises: (Array.isArray(session.exercises) ? session.exercises : []).map((ex: any) => ({
+        exercise_id: ex.exercise_id ?? null,
+        exercise_name: ex.name ?? '',
+        sets: ex.sets ?? 1,
+        reps: ex.reps ?? null,
+        duration_seconds: ex.duration_seconds ?? null,
+        target_rpe: ex.target_rpe ?? null,
+        target_rir: ex.target_rir ?? null,
+        rest_seconds: ex.rest_seconds ?? null,
+        notes: ex.notes ?? null,
+      })),
+    })),
+  }));
+
   // Step 1 — Insert workout_programs row
   const { data: programData, error: programError } = await db
     .from('workout_programs')
     .insert({
       user_id: userId,
       name: derivedName,
-      weeks_data: parsedData,
-      weeks_count: weeksArray.length > 0 ? weeksArray.length : 1,
+      weeks_data: weeksData,
+      weeks_count: weeksData.length > 0 ? weeksData.length : 1,
       is_template: isTemplate,
       // T-28-03-03: only coach_template imports set created_by_coach_id
       created_by_coach_id: isTemplate ? userId : null,

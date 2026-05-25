@@ -54,11 +54,14 @@ export const getCachedAlertCount = cache(async () => {
   const { user } = await getCachedCoachUser();
 
   const supabase = await createServerSupabase();
-  const { count } = await supabase
-    .from('coach_alerts')
-    .select('id', { count: 'exact', head: true })
-    .eq('coach_id', user.id)
-    .eq('is_read', false);
-
-  return count ?? 0;
+  try {
+    const { count } = await supabase
+      .from('coach_alerts')
+      .select('id', { count: 'exact', head: true })
+      .eq('coach_id', user.id)
+      .eq('is_read', false);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
 });

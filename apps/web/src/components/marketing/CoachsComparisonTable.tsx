@@ -56,15 +56,15 @@ export default function CoachsComparisonTable() {
                   style={{ borderLeft: '4px solid #FF5C1A' }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <IoCheckmarkCircleOutline size={18} className="text-[#22C55E] flex-shrink-0" aria-label="Oui" />
+                    <IoCheckmarkCircleOutline size={18} className="text-success flex-shrink-0" aria-label="Oui" />
                     {t('comparison.zikoFeature1')}
                   </div>
                 </td>
                 <td className="px-4 py-3 border-b border-border text-xs text-text">
-                  <IoCloseCircleOutline size={18} className="text-[#EF4444]" aria-label="Non" />
+                  <IoCloseCircleOutline size={18} className="text-danger" aria-label="Non" />
                 </td>
                 <td className="px-4 py-3 border-b border-border text-xs text-text">
-                  <IoCloseCircleOutline size={18} className="text-[#EF4444]" aria-label="Non" />
+                  <IoCloseCircleOutline size={18} className="text-danger" aria-label="Non" />
                 </td>
               </tr>
               {/* Row 2 — Client data depth */}
@@ -77,7 +77,7 @@ export default function CoachsComparisonTable() {
                   style={{ borderLeft: '4px solid #FF5C1A' }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <IoCheckmarkCircleOutline size={18} className="text-[#22C55E] flex-shrink-0" aria-label="Oui" />
+                    <IoCheckmarkCircleOutline size={18} className="text-success flex-shrink-0" aria-label="Oui" />
                     {t('comparison.zikoFeature2')}
                   </div>
                 </td>
@@ -98,13 +98,13 @@ export default function CoachsComparisonTable() {
                   style={{ borderLeft: '4px solid #FF5C1A' }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <IoCheckmarkCircleOutline size={18} className="text-[#22C55E] flex-shrink-0" aria-label="Oui" />
+                    <IoCheckmarkCircleOutline size={18} className="text-success flex-shrink-0" aria-label="Oui" />
                     {t('comparison.zikoFeature3')}
                   </div>
                 </td>
                 <td className="px-4 py-3 border-b border-border text-xs text-text">
                   <div className="flex items-center gap-1.5">
-                    <IoCheckmarkCircleOutline size={18} className="text-[#22C55E] flex-shrink-0" aria-label="Oui" />
+                    <IoCheckmarkCircleOutline size={18} className="text-success flex-shrink-0" aria-label="Oui" />
                     {t('comparison.trainerizeFeature3')}
                   </div>
                 </td>

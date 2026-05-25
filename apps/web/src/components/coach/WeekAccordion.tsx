@@ -134,7 +134,7 @@ export function WeekAccordion({
                     </button>
                     <button
                       type="button"
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-background"
+                      className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-background"
                       onClick={() => {
                         onDeleteWeek(week.week_number);
                         setContextMenu(null);
@@ -209,7 +209,7 @@ export function WeekAccordion({
                             </button>
                             <button
                               type="button"
-                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-background"
+                              className="w-full text-left px-4 py-2.5 text-sm text-danger hover:bg-background"
                               onClick={() => {
                                 onDeleteSession(session.session_id);
                                 setContextMenu(null);

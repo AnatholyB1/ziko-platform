@@ -18,11 +18,15 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-background">
       <CoachSidebar unreadAlertCount={unreadAlertCount} />
-      <main className="flex-1 overflow-auto">
-        <div className="lg:hidden flex items-center h-14 px-4 border-b border-border bg-white">
+      <main className="flex-1 flex flex-col overflow-hidden h-screen">
+        <div className="lg:hidden flex items-center h-14 px-4 border-b border-border bg-white flex-shrink-0">
           <span className="text-2xl font-bold text-primary">ZIKO</span>
         </div>
-        <div className="mx-auto max-w-6xl px-4 lg:px-8 py-10 pb-16 lg:pb-10">{children}</div>
+        <div className="flex-1 overflow-auto min-h-0 relative">
+          <div className="mx-auto max-w-6xl px-4 lg:px-8 py-10 pb-16 lg:pb-10 min-h-full">
+            {children}
+          </div>
+        </div>
         <MobileNav />
       </main>
     </div>

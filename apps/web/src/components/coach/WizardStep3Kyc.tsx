@@ -38,7 +38,7 @@ export function WizardStep3Kyc({
       <p className="text-sm font-normal text-muted mb-6">{t('step3Subtitle')}</p>
       <KycDocList userId={userId} apiUrl={apiUrl} jwt={jwt} onChange={setDocs} />
       {state.status === 'error' && (
-        <p role="alert" className="text-sm font-normal text-red-600 mt-3">
+        <p role="alert" className="text-sm font-normal text-danger mt-3">
           {state.message}
         </p>
       )}

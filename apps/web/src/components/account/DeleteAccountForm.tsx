@@ -14,8 +14,8 @@ export function DeleteAccountForm() {
 
   if (state.status === 'success') {
     return (
-      <div className="rounded-lg bg-green-50 border border-green-200 p-6">
-        <p className="text-green-800 font-medium">{state.message}</p>
+      <div className="rounded-lg bg-success-subtle border border-success/30 p-6">
+        <p className="text-success font-medium">{state.message}</p>
       </div>
     );
   }
@@ -64,13 +64,13 @@ export function DeleteAccountForm() {
       </div>
 
       {state.status === 'error' && (
-        <p className="text-red-600 text-sm">{state.message}</p>
+        <p className="text-danger text-sm">{state.message}</p>
       )}
 
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-red-600 px-6 py-3 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+        className="w-full rounded-lg bg-danger px-6 py-3 text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-danger/90 transition-colors"
       >
         {pending ? 'Suppression en cours...' : 'Supprimer mon compte'}
       </button>

@@ -6,9 +6,9 @@ const SIGNAL_LABELS: Record<SignalType, string> = {
   declining: 'Humeur en baisse',
 };
 const SIGNAL_CLASSES: Record<SignalType, string> = {
-  missed: 'bg-red-50 text-red-600 border border-red-200',
+  missed: 'bg-danger-subtle text-danger border border-danger/30',
   stale: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-  declining: 'bg-red-50 text-red-600 border border-red-200',
+  declining: 'bg-danger-subtle text-danger border border-danger/30',
 };
 
 export function ClientSignalChip({ type }: { type: SignalType }) {
