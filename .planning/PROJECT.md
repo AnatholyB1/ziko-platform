@@ -39,6 +39,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 **Parallel milestone:** v1.7 Mobile UX v2 (workstream `milestone-mobile`) — continue indépendamment.
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
+**Parallel workstream:** v1.10 Custom Coach Exercises (`custom-coach`) — coach crée ses propres exercices (vidéo + photo), disponibles dans les programmes de ses athlètes.
 
 ---
 
