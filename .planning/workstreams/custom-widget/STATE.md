@@ -51,6 +51,9 @@ Progress: [░░░░░░░░░░] 0%
 - **Multi-turn spike on day 1 of Phase 3**: Two-turn integration test must pass before any Phase 3 plan is marked complete (PITFALLS: forgetting `response.messages` silently breaks history)
 - **Dashboard tools isolated in `coach/dashboards/tools.ts`**: Never merged into `coach/ai/tools.ts`; `stopWhen: stepCountIs(2)` (not 5)
 - **/memory route registered before /:clientId in Hono**: Route order critical to prevent Hono treating "memory" as a clientId param
+- **coach_memory in migration 054**: Same migration as dashboard_configs — no split
+- **Credit rate /ai-edit**: Same as `coach_chat` for now — no separate dashboard_edit type
+- **DASH-03 confirmed**: Drag-to-reorder in scope — react-grid-layout@2.2.1 installed in Phase 02
 
 ### Pending Todos
 
@@ -58,9 +61,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- Open question: drag-to-reorder confirmed in scope (DASH-03)? react-grid-layout install gates Phase 02 plan.
-- Open question: credit deduction rate for `/ai-edit` — same as `coach_chat`? Must confirm before Phase 03.
-- Open question: `coach_memory` in migration 054 or 055? Decide before Phase 01 migration is written.
+None.
 
 ## Session Continuity
 
