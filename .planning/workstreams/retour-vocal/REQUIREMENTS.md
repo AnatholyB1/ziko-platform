@@ -52,12 +52,12 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| VOICE-01 | — | pending |
-| VOICE-02 | — | pending |
-| VOICE-03 | — | pending |
-| STRUCT-01 | — | pending |
-| STRUCT-02 | — | pending |
-| STRUCT-03 | — | pending |
-| MEM-01 | — | pending |
-| MEM-02 | — | pending |
-| MEM-03 | — | pending |
+| VOICE-01 | Phase 01 | pending |
+| VOICE-02 | Phase 01 | pending |
+| VOICE-03 | Phase 01 | pending |
+| STRUCT-01 | Phase 02 | pending |
+| STRUCT-02 | Phase 02 | pending |
+| STRUCT-03 | Phase 02 | pending |
+| MEM-01 | Phase 03 | pending |
+| MEM-02 | Phase 03 | pending |
+| MEM-03 | Phase 03 | pending |
