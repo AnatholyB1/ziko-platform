@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-05-25"
 last_activity: 2026-05-25
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,40 +15,43 @@ progress:
 
 # Project State — v1.13 Retour Vidéo Coach
 
-## Workstream Scope
+## Project Reference
 
-This workstream tracks **retour-video** work only (v1.13 Retour Vidéo Coach).
+See: .planning/PROJECT.md (updated 2026-05-24)
 
-**Phase files:** `.planning/phases/<N>-*/`
-**Roadmap:** `.planning/workstreams/retour-video/ROADMAP.md`
-
----
+**Core value:** Coach annotates athlete video with timecoded text and voice feedback; athlete reviews synchronized on mobile
+**Current focus:** Phase 45 — Storage Pipeline & Mobile Upload (ready to plan)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 45 of 47 (Storage Pipeline & Mobile Upload)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-25 — Milestone v1.13 started
-
-## Progress
-
-**Phases Complete:** 0/0
-**Current Plan:** N/A
+Status: Ready to plan
+Last activity: 2026-05-25 — Roadmap created (3 phases, 20 requirements mapped)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 ```
 
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: —
+- Total execution time: —
+
+*Updated after each plan completion*
+
 ## Accumulated Context
 
 ### Decisions
 
-- v1.11 version number was already taken by notification-mobile → retour-video uses v1.13
-- Retour webcam coach (coach envoie vidéo) explicitement hors scope v1.13 → reporté v1.x+1
-- Stack vocale retour-vocal (v1.9) réutilisée pour les commentaires vocaux timecodés
-- Supabase Storage existant utilisé pour le stockage vidéo (pas de nouvelle infra)
-- Done criterion: Joaquim upload squat video, Guillaume annote à T+1:23 avec commentaire vocal nettoyé
+- Retour webcam coach (coach sends video) explicitly out of scope v1.13 → deferred v1.x+1
+- Supabase Storage reused for coach-videos bucket (no new infra provider)
+- Whisper + Claude pipeline from v1.9 retour-vocal reused via independent route — v1.9 route never modified
+- lib/whisper.ts built in Phase 47 regardless of v1.9 shipping status
+- Video bytes never pass through Vercel/Hono — signed URL PUT direct to Supabase Storage
+- iOS HEVC format enforced to H.264/MP4 via videoExportPreset at picker time
 
 ### Pending Todos
 
@@ -56,4 +59,11 @@ None yet.
 
 ### Blockers/Concerns
 
-None.
+- **Expo Dev Build prerequisite**: TUS/XMLHttpRequest large-file uploads require Dev Build — confirm before Phase 45 execution
+- **Supabase Pro prerequisite**: Free tier 50 MB per-file cap makes video upload impossible — upgrade to Pro before Phase 45
+
+## Session Continuity
+
+Last session: 2026-05-25
+Stopped at: Roadmap created — Phase 45 ready to plan
+Resume file: None

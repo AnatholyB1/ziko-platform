@@ -68,16 +68,29 @@
 
 ---
 
-## Traceability (filled by roadmapper)
+## Traceability
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| UPLOAD-01–04 | TBD | — |
-| INFRA-01–04 | TBD | — |
-| PLAYER-01–02 | TBD | — |
-| ANNOT-01–03 | TBD | — |
-| REVIEW-01–02 | TBD | — |
-| VOICE-01–04 | TBD | — |
+| UPLOAD-01 | Phase 45 | Pending |
+| UPLOAD-02 | Phase 45 | Pending |
+| UPLOAD-03 | Phase 45 | Pending |
+| UPLOAD-04 | Phase 45 | Pending |
+| INFRA-01 | Phase 45 | Pending |
+| INFRA-02 | Phase 45 | Pending |
+| INFRA-03 | Phase 45 | Pending |
+| INFRA-04 | Phase 45 | Pending |
+| PLAYER-01 | Phase 46 | Pending |
+| PLAYER-02 | Phase 46 | Pending |
+| ANNOT-01 | Phase 46 | Pending |
+| ANNOT-02 | Phase 46 | Pending |
+| ANNOT-03 | Phase 46 | Pending |
+| REVIEW-01 | Phase 46 | Pending |
+| REVIEW-02 | Phase 46 | Pending |
+| VOICE-01 | Phase 47 | Pending |
+| VOICE-02 | Phase 47 | Pending |
+| VOICE-03 | Phase 47 | Pending |
+| VOICE-04 | Phase 47 | Pending |
 
 ---
 
