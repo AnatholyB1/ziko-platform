@@ -25,11 +25,10 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **35 — Profile + Settings Redesign** — GAP FIX IN PROGRESS
+Phase: **35 — Profile + Settings Redesign** — COMPLETE ✅
 
 Automated verification: 30/30 PASS ✅  
-Human smoke test: FAILED — 7 gaps identified  
-Gap plans written: G01–G07 (7 plans, awaiting execution)
+Human UAT: 15/15 PASS ✅ (2026-05-25)
 
 Progress: [████████░░] 75%
 
