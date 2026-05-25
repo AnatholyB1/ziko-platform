@@ -40,6 +40,8 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel milestone:** v1.7 Mobile UX v2 (workstream `milestone-mobile`) — continue indépendamment.
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
 **Parallel workstream:** v1.10 Custom Coach Exercises (`custom-coach`) — coach crée ses propres exercices (vidéo + photo), disponibles dans les programmes de ses athlètes.
+**Parallel workstream:** v1.11 Notification System (`notification-mobile`) — push + in-app notifications mobile (Expo Push, APNs/FCM), Hono-triggered, préférences par catégorie.
+**Parallel workstream:** v1.12 DA Coach (`da-coach`) — coach définit sa direction artistique (couleurs, logo, ton) → app des athlètes liés affiche la DA automatiquement au refresh. Différenciateur Pro 29€/mois.
 
 ---
 
