@@ -2,9 +2,26 @@
   "phase": "01",
   "phase_name": "Transcription Pipeline",
   "timestamp": "2026-05-25T00:00:00Z",
-  "areas_completed": ["Entry point fiche client"],
-  "areas_remaining": ["UX affichage transcript", "Langue Whisper"],
+  "areas_completed": ["Entry point fiche client", "UX affichage transcript"],
+  "areas_remaining": ["Langue Whisper"],
   "decisions": {
+    "UX affichage transcript": [
+      {
+        "question": "Comment le transcript apparaît-il après Stop ?",
+        "answer": "Inline progressif : 4 états — idle → recording (chrono) → transcribing → review (bloc transcript + Valider/Relancer)",
+        "options_presented": ["Inline — étapes progressives", "Modal / Slide-over"]
+      },
+      {
+        "question": "Si coach quitte l'onglet pendant la transcription ?",
+        "answer": "Upload annulé, re-record requis. Warning before-unload si en cours d'enregistrement.",
+        "options_presented": ["Upload annulé, re-record requis", "Upload en background"]
+      },
+      {
+        "question": "Si Whisper échoue, que voit le coach ?",
+        "answer": "Message d'erreur inline + bouton Ressayer (audio toujours en mémoire) ou Relancer",
+        "options_presented": ["Message d'erreur + Relancer", "Re-record forcé"]
+      }
+    ],
     "Entry point fiche client": [
       {
         "question": "Où le coach accède-t-il au bouton d'enregistrement vocal ?",

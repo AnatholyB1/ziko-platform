@@ -43,6 +43,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.11 Notification System (`notification-mobile`) — push + in-app notifications mobile (Expo Push, APNs/FCM), Hono-triggered, préférences par catégorie.
 **Parallel workstream:** v1.12 DA Coach (`da-coach`) — coach définit sa direction artistique (couleurs, logo, ton) → app des athlètes liés affiche la DA automatiquement au refresh. Différenciateur Pro 29€/mois.
 **Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé). Retour webcam coach reporté v1.x+1.
+**Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions (premier contact, fin de cycle, date fixe, envoi manuel) ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 
 ---
 
