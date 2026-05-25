@@ -2,16 +2,12 @@ import { z } from 'zod';
 
 // ─── ExerciseSchema ───────────────────────────────────────────
 // PROG-02: each exercise has name, sets, reps, optional RPE/RIR/rest
-//
-// Note: Anthropic structured output rejects most JSON Schema validation keywords
-// (minimum, maximum, minLength, maxLength, minItems, maxItems, format).
-// All range constraints are stripped here — validation happens after parsing.
 const ExerciseSchema = z.object({
   // From existing exercise library OR free-text (PROG-03)
   exercise_id: z.string().nullable().optional(),
   name: z.string(),
-  sets: z.number().int(),
-  reps: z.number().int(),
+  sets: z.number().int().min(1),
+  reps: z.number().int().min(1),
   // Either RPE (1-10) or RIR (0-5) — at most one
   target_rpe: z.number().nullable().optional(),
   target_rir: z.number().int().nullable().optional(),
