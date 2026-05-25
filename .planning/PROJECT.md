@@ -38,6 +38,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - Point de départ pour customisation AI chat coach (contexte dashboard injecté)
 
 **Parallel milestone:** v1.7 Mobile UX v2 (workstream `milestone-mobile`) — continue indépendamment.
+**Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
 
 ---
 
