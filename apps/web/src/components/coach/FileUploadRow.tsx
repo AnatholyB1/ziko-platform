@@ -86,7 +86,7 @@ export function FileUploadRow({
           type="button"
           onClick={onRemove}
           aria-label="Supprimer le document"
-          className="text-muted hover:text-red-600 transition-colors"
+          className="text-muted hover:text-danger transition-colors"
         >
           ×
         </button>
@@ -110,7 +110,7 @@ export function FileUploadRow({
         />
         {uploading ? 'Transfert…' : label}
       </label>
-      {error && <p className="text-sm font-normal text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-sm font-normal text-danger mt-1">{error}</p>}
     </div>
   );
 }

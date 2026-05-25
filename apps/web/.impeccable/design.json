@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-23T00:00:00Z",
+  "title": "Design System: Ziko",
+  "extensions": {
+    "colorMeta": {
+      "sprint-orange":         { "role": "primary",  "displayName": "Sprint Orange",          "canonical": "oklch(62% 0.22 40)",  "tonalRamp": ["#5C1500","#8A2200","#B53000","#DF3F00","#FF5C1A","#FF8C5A","#FFB994","#FFE0CF"] },
+      "warm-training-ground":  { "role": "neutral",  "displayName": "Warm Training Ground",   "canonical": "oklch(97% 0.005 90)", "tonalRamp": ["#1C1A17","#2E2B27","#403D38","#534F4A","#6B6963","#8C8985","#B5B2AE","#F7F6F3"] },
+      "charcoal-kit":          { "role": "neutral",  "displayName": "Charcoal Kit",           "canonical": "oklch(14% 0.007 90)", "tonalRamp": ["#0A0906","#1C1A17","#2E2B27","#403D38","#534F4A","#6B6963","#8C8985","#B5B2AE"] },
+      "chalk-line":            { "role": "neutral",  "displayName": "Chalk Line",             "canonical": "oklch(90% 0.008 90)", "tonalRamp": ["#403D38","#534F4A","#6B6963","#8C8985","#B5B2AE","#D4D2CE","#E2E0DA","#F7F6F3"] },
+      "stadium-concrete":      { "role": "neutral",  "displayName": "Stadium Concrete",       "canonical": "oklch(46% 0.008 90)", "tonalRamp": ["#1C1A17","#2E2B27","#403D38","#534F4A","#6B6963","#8C8985","#B5B2AE","#E2E0DA"] },
+      "alert-red":             { "role": "semantic", "displayName": "Alert Red",              "canonical": "oklch(58% 0.22 25)",  "tonalRamp": ["#7F1D1D","#991B1B","#B91C1C","#DC2626","#EF4444","#F87171","#FCA5A5","#FEE2E2"] },
+      "caution-amber":         { "role": "semantic", "displayName": "Caution Amber",          "canonical": "oklch(72% 0.17 70)",  "tonalRamp": ["#78350F","#92400E","#B45309","#D97706","#F59E0B","#FCD34D","#FDE68A","#FEF3C7"] },
+      "low-signal-yellow":     { "role": "semantic", "displayName": "Low Signal Yellow",      "canonical": "oklch(80% 0.18 95)",  "tonalRamp": ["#713F12","#854D0E","#A16207","#CA8A04","#EAB308","#FACC15","#FDE047","#FEF9C3"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Marketing hero headlines only. Three staggered lines, weight 900." },
+      "headline": { "displayName": "Headline", "purpose": "Marketing section headings and coach app page-level h1." },
+      "title":    { "displayName": "Title",    "purpose": "Card headings, modal titles, dialog headings." },
+      "body":     { "displayName": "Body",     "purpose": "All running copy in the coach app. Max 65-75ch." },
+      "label":    { "displayName": "Label",    "purpose": "Table column headers only. Uppercase + tracking. Not for decorative labels." }
+    },
+    "shadows": [
+      { "name": "ambient-low",      "value": "0 1px 3px rgba(0,0,0,0.06)",           "purpose": "Static informational cards (WelcomeCard). Lifted but not interactive." },
+      { "name": "interactive-hover","value": "0 4px 12px rgba(0,0,0,0.10)",           "purpose": "Clickable cards on hover (ProgramCard)." },
+      { "name": "overlay",          "value": "0 8px 24px rgba(0,0,0,0.12)",           "purpose": "Dropdowns, context menus. Always topmost." },
+      { "name": "cta-glow",         "value": "0 4px 20px rgba(255,92,26,0.30)",       "purpose": "Primary CTA buttons only. Orange glow reinforces brand." },
+      { "name": "accent-card-glow", "value": "0 8px 48px rgba(255,92,26,0.12)",       "purpose": "Marketing featured/pricing card. Diluted orange frame." }
+    ],
+    "motion": [
+      { "name": "ease-expo-out",  "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Standard easing for entrances and transitions. Used throughout Framer Motion variants." },
+      { "name": "ease-power2-out","value": "cubic-bezier(0.33, 1, 0.68, 1)","purpose": "GSAP easing for micro-interactions (AlertCard dismiss, send button tap)." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px", "purpose": "Sidebar visibility threshold. Below: mobile bottom nav + full-width chat input. Above: 240px sidebar + offset input bar." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The only filled button. Used for the single most important action on a surface.",
+      "html": "<button class=\"ds-btn-primary\">Commencer</button>",
+      "css": ".ds-btn-primary { background: #FF5C1A; color: #ffffff; padding: 12px 24px; border-radius: 12px; font-size: 0.875rem; font-weight: 700; border: none; cursor: pointer; transition: opacity 0.15s ease, box-shadow 0.15s ease; box-shadow: none; font-family: system-ui, sans-serif; } .ds-btn-primary:hover { opacity: 0.9; box-shadow: 0 4px 20px rgba(255,92,26,0.30); } .ds-btn-primary:focus-visible { outline: 2px solid #FF5C1A; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary CTA. No fill at rest, fills on hover.",
+      "html": "<button class=\"ds-btn-ghost\">En savoir plus</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #FF5C1A; padding: 10px 24px; border-radius: 12px; border: 2px solid #FF5C1A; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: background 0.15s ease, color 0.15s ease; font-family: system-ui, sans-serif; } .ds-btn-ghost:hover { background: #FF5C1A; color: #ffffff; } .ds-btn-ghost:focus-visible { outline: 2px solid #FF5C1A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard form field. 44px touch target. Focus ring in Sprint Orange.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-label\" for=\"ds-input-ex\">Email</label><input class=\"ds-input\" id=\"ds-input-ex\" type=\"email\" placeholder=\"vous@exemple.com\" /></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; font-family: system-ui, sans-serif; } .ds-label { font-size: 0.875rem; font-weight: 700; color: #1C1A17; } .ds-input { height: 44px; background: #ffffff; border: 1px solid #E2E0DA; border-radius: 12px; padding: 0 12px; font-size: 0.875rem; font-weight: 400; color: #1C1A17; width: 100%; box-sizing: border-box; transition: border-color 0.15s ease, box-shadow 0.15s ease; outline: none; } .ds-input::placeholder { color: #6B6963; } .ds-input:focus { border-color: #FF5C1A; box-shadow: 0 0 0 3px rgba(255,92,26,0.15); } .ds-input:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-filter-default",
+      "description": "Signal filter pill. Default: bordered white. Active: Sprint Orange tint.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-chip\" aria-selected=\"false\">Tous</button><button class=\"ds-chip ds-chip--active\" aria-selected=\"true\">Séances manquées</button><button class=\"ds-chip\" aria-selected=\"false\">Humeur en baisse</button></div>",
+      "css": ".ds-chip { padding: 6px 16px; border-radius: 9999px; border: 1px solid #E2E0DA; background: #ffffff; color: #6B6963; font-size: 0.875rem; font-weight: 400; cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s; font-family: system-ui, sans-serif; } .ds-chip:hover { border-color: rgba(255,92,26,0.4); } .ds-chip--active { border-color: #FF5C1A; background: rgba(255,92,26,0.10); color: #FF5C1A; font-weight: 700; } .ds-chip:focus-visible { outline: 2px solid #FF5C1A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Data Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "The primary container. White on Training Ground. Border defines it, not shadow.",
+      "html": "<div class=\"ds-card\"><h2 class=\"ds-card-title\">Bienvenue, Marie</h2><p class=\"ds-card-body\">Vous avez 3 nouveaux signaux clients à traiter.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #E2E0DA; border-radius: 16px; padding: 32px; font-family: system-ui, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.06); } .ds-card-title { font-size: 1.25rem; font-weight: 700; color: #1C1A17; margin: 0 0 8px; } .ds-card-body { font-size: 0.875rem; font-weight: 400; color: #6B6963; margin: 0; line-height: 1.6; }"
+    },
+    {
+      "name": "Alert Card",
+      "kind": "custom",
+      "description": "Coach risk signal. Severity dot (not stripe). White background, Chalk Line border.",
+      "html": "<div class=\"ds-alert\"><div class=\"ds-alert-header\"><span class=\"ds-alert-dot ds-alert-dot--high\"></span><span class=\"ds-alert-client\">Marie D.</span><span class=\"ds-alert-sep\">·</span><span class=\"ds-alert-type\">Séances manquées</span><span class=\"ds-alert-time\">Il y a 2h</span></div><p class=\"ds-alert-summary\">3 séances manquées cette semaine. Aucune réponse aux messages.</p><div class=\"ds-alert-footer\"><a class=\"ds-alert-cta\" href=\"#\">Ouvrir le chat →</a><button class=\"ds-alert-dismiss\">Marquer lu</button></div></div>",
+      "css": ".ds-alert { border: 1px solid #E2E0DA; border-radius: 8px; padding: 16px; background: #ffffff; font-family: system-ui, sans-serif; overflow: hidden; } .ds-alert-header { display: flex; align-items: center; gap: 8px; } .ds-alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; } .ds-alert-dot--high { background: #EF4444; } .ds-alert-dot--medium { background: #F59E0B; } .ds-alert-dot--low { background: #EAB308; } .ds-alert-client { font-size: 0.875rem; font-weight: 600; color: #1C1A17; } .ds-alert-sep { color: #6B6963; font-size: 0.875rem; } .ds-alert-type { font-size: 0.875rem; color: #6B6963; } .ds-alert-time { font-size: 0.75rem; color: #6B6963; margin-left: auto; } .ds-alert-summary { font-size: 0.875rem; color: #1C1A17; margin: 4px 0 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .ds-alert-footer { display: flex; align-items: center; gap: 12px; } .ds-alert-cta { font-size: 0.875rem; font-weight: 600; color: #FF5C1A; text-decoration: none; } .ds-alert-cta:hover { text-decoration: underline; } .ds-alert-dismiss { font-size: 0.875rem; color: #6B6963; background: none; border: none; cursor: pointer; margin-left: auto; } .ds-alert-dismiss:hover { color: #1C1A17; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "description": "Coach sidebar navigation. 44px height, 8px radius. Active: orange tint fill.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/></svg>Dashboard</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M23 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>Clients</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 4px; padding: 16px 8px; font-family: system-ui, sans-serif; } .ds-nav-item { height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 400; color: #1C1A17; text-decoration: none; transition: background 0.15s; position: relative; } .ds-nav-item:hover { background: #F7F6F3; } .ds-nav-item--active { background: rgba(255,92,26,0.10); color: #FF5C1A; font-weight: 700; } .ds-nav-item:focus-visible { outline: 2px solid #FF5C1A; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Athletic Clipboard",
+    "overview": "Ziko's visual system is a coach's tool: the kind of interface that earns trust through clarity, not decoration. Every surface is in service of action. Inputs are immediate. Data is legible. Sprint Orange appears when something must be done — and nowhere else. The system does not seek to be admired; it seeks to be used.\n\nThe light sport theme is non-negotiable. Coaches use this dashboard at a gym, in daylight, between sets, on a laptop or tablet. The warm off-white background (#F7F6F3) is not default white — it is the colour of a training room wall, slightly lived-in.\n\nThe register is product, not brand. The coach app is a B2B productivity tool; visual exuberance belongs on the marketing page, not in the dashboard.",
+    "keyCharacteristics": [
+      "Warm off-white canvas, not pure white — the paper has been held",
+      "Sprint Orange at low frequency: active state, primary CTA, alert severity dot",
+      "System-ui typeface: no custom font, maximum legibility, no visual ceremony",
+      "Cards are functional containers, not decorative blocks",
+      "Shadows are responses to state, not ambient decoration",
+      "No dark mode, no gradients, no glassmorphism in product surfaces"
+    ],
+    "rules": [
+      { "name": "The One Voice Rule",      "body": "Sprint Orange is the only accent. It speaks once per screen. The moment it appears in two unrelated places, its authority diminishes.", "section": "colors" },
+      { "name": "The Warm Tint Rule",      "body": "#FFFFFF and #000000 are forbidden. Every neutral must carry the brand's ochre warmth.", "section": "colors" },
+      { "name": "The Weight Ceiling Rule", "body": "font-black (900) is reserved for display and headline roles only. Buttons are bold (700). Nav items are normal (400) at rest.", "section": "typography" },
+      { "name": "The Scale Gap Rule",      "body": "Adjacent type roles must differ by at least 1.25x in size. A 1.14x ratio is too flat — one role must step up.", "section": "typography" },
+      { "name": "The Flat-First Rule",     "body": "Every new component starts with no shadow. A shadow is added only after a specific state requires it.", "section": "elevation" }
+    ],
+    "dos": [
+      "Use Sprint Orange for exactly one semantic purpose per screen surface.",
+      "Establish depth through tonal layering: page at #F7F6F3, cards at #FFFFFF, table headers back to #F7F6F3.",
+      "Give every interactive element a focus-visible:outline in Sprint Orange.",
+      "Keep near-black (#1C1A17) and white (#FFFFFF) always warm-tinted.",
+      "Use font-black (900) only on display headlines and section headings.",
+      "Cap body prose at 65-75ch on wide viewports.",
+      "Add pb-16 to main content on mobile so the bottom nav never clips content.",
+      "Show empty states with a clear action pointing somewhere."
+    ],
+    "donts": [
+      "Don't use a dark sidebar or a blue accent — the generic SaaS dashboard look is the explicit anti-reference.",
+      "Don't target the consumer social app aesthetic: rounded-everything, pastel gradients, playful motion.",
+      "Don't use a coloured border-left stripe on any card, list item, or alert. Severity is expressed with a dot.",
+      "Don't use gradient text (background-clip: text). Emphasis is weight and size.",
+      "Don't use glassmorphism outside the sticky marketing header.",
+      "Don't build identical card grids.",
+      "Don't animate CSS layout properties (height, margin, padding). Use transform and opacity only.",
+      "Don't hardcode left: 240px — use lg:left-60 so layout responds to breakpoints.",
+      "Don't use #000 or #fff anywhere.",
+      "Don't add a custom typeface without justifying it against the system-ui baseline."
+    ]
+  }
+}

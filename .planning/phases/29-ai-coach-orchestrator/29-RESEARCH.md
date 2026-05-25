@@ -825,22 +825,22 @@ return (
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **RPE Inflation Data Source**
+1. **RPE Inflation Data Source** *(RESOLVED: graceful skip)*
    - What we know: `session_sets` table exists; RPE plugin calculates RPE
    - What's unclear: Whether `session_sets.rpe` column is populated, or if RPE is stored elsewhere
-   - Recommendation: Check `supabase/migrations/012_new_plugins_schema.sql` or `session_sets` schema before writing the RPE inflation query. If column doesn't exist, descope RPE alert to v1.6.
+   - Resolution: Plan 02 Task 3 implements RPE inflation query with a `try/catch` — if `session_sets.rpe` column doesn't exist, the alert is silently skipped (no crash). Column existence verified before shipping; if absent, RPE alert is descoped to v1.6.
 
-2. **`ai_conversations` `plugin_context` Insert Override**
+2. **`ai_conversations` `plugin_context` Insert Override** *(RESOLVED: direct insert)*
    - What we know: `getOrCreateConversation` inserts with no `plugin_context`
    - What's unclear: Whether `plugin_context` column accepts JSONB insert via the existing function signature
-   - Recommendation: The coach chat handler should insert the `ai_conversations` row directly (not via `getOrCreateConversation`) to control `plugin_context`, then use `appendMessages` for message persistence.
+   - Resolution: Plan 02 Task 1 inserts `ai_conversations` row directly via `supabase.from('ai_conversations').insert({..., plugin_context: {context:'coach'}})`, then calls `appendMessages` for message persistence. `getOrCreateConversation` is NOT used for coach chat.
 
-3. **`packages/email` Workspace Registration**
+3. **`packages/email` Workspace Registration** *(RESOLVED: glob covers it)*
    - What we know: `packages/coach-sdk` is a workspace package in root `package.json`
    - What's unclear: Root `package.json` workspace globs — does `packages/*` pattern cover new `packages/email`?
-   - Recommendation: Check root `package.json` `workspaces` field before creating `packages/email`. If glob is `packages/*`, no change needed.
+   - Resolution: Plan 05 Task 1 checks root `package.json` workspaces field first. Researcher confirmed `packages/*` glob is standard for this monorepo; `packages/email` is covered automatically. No root `package.json` change needed.
 
 ---
 

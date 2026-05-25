@@ -473,17 +473,19 @@ Note: `ctaHover` and `ctaTap` are exported from `@/lib/motion` — they are the 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **OG image creation method**
    - What we know: Must be a static 1200×630 PNG at `/public/og-coachs.png`
    - What's unclear: Whether the planner should include a "create manually" step or a code-based approach (e.g., HTML canvas script)
    - Recommendation: Plan includes a manual creation task (design the PNG once, check in to public/). A code-based generator is overkill for a one-time static asset.
+   - RESOLVED: Plan 31-01 Task 1 creates `/public/og-coachs.png` as a static PNG via a minimal Node.js canvas script. Static file in public/ — no dynamic OG route.
 
 2. **`next-intl` Link vs `next/link` for CTA**
    - What we know: Hero.tsx uses `<motion.a href="...">` for external links
    - What's unclear: Whether internal coach routes should use next-intl's typed `useRouter`/`Link` or plain `next/link`
    - Recommendation: Use `import Link from 'next/link'` with explicit locale prefix: `href={`/${locale}/coach/onboarding`}` passed from the server page as a prop, or hardcode `/fr/coach/onboarding` and `/en/coach/onboarding` via the locale variable. This matches Phase 24/25's established patterns.
+   - RESOLVED: Plan 31-02 Task 1 uses `import Link from 'next/link'` with explicit `href={`/${locale}/coach/onboarding`}` — locale prop passed down from the server page component. Confirmed consistent with Phase 24/25 established patterns.
 
 ---
 

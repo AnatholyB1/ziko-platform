@@ -79,7 +79,7 @@ export default function CoachsHero({ locale }: CoachsHeroProps) {
               <motion.div whileHover={ctaHover} whileTap={ctaTap} className="inline-block">
                 <Link
                   href={`/${locale}/coach/onboarding`}
-                  className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-xs inline-block"
+                  className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm inline-block"
                   style={{ boxShadow: '0 4px 20px rgba(255,92,26,0.30)' }}
                 >
                   {t('hero.cta')}

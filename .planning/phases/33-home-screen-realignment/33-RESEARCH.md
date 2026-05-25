@@ -273,6 +273,8 @@ fireAndForget('measurements_log', { weight_kg: kg });
 
 ### Pattern 5: MMKV tip dismissal state
 
+> **SUPERSEDED — Use appStorage (AsyncStorage wrapper) from apps/mobile/src/lib/storage.ts per useAIDailyTip.ts pattern. MMKV is NOT installed. See plan 33-02 for implementation.**
+
 ```typescript
 // Source: [ASSUMED] — MMKV is in stack per CLAUDE.md; verify import path
 import { MMKV } from 'react-native-mmkv';
@@ -589,28 +591,23 @@ import { Skeleton } from '@ziko/ui';
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **MissionCard source: `ai_generated_programs` vs `workout_programs`**
+1. **MissionCard source: `ai_generated_programs` vs `workout_programs`** [RESOLVED]
    - What we know: Both tables exist. Current code uses `workout_programs`. UI-SPEC targets `ai_generated_programs`.
-   - What's unclear: Should Phase 33 display EITHER (try AI programs first, fall back to workout_programs) or strictly only `ai_generated_programs`?
-   - Recommendation: Use `ai_generated_programs` as primary (per UI-SPEC). Show empty state if no active AI program. The workout_programs path belongs to Phase 36 (Workout Stack Redesign).
+   - Resolution: Use `ai_generated_programs` as primary source (per UI-SPEC). Show empty state if no active AI program. The `workout_programs` path belongs to Phase 36 (Workout Stack Redesign). Implemented in plan 33-03 Task 1.
 
-2. **`program_data` JSONB structure for MissionCard exercise list**
+2. **`program_data` JSONB structure for MissionCard exercise list** [RESOLVED]
    - What we know: `ai_generated_programs.program_data` is JSONB with no enforced schema.
-   - What's unclear: The exact JSON shape (does it have `{ sessions: [{ name, exercises: [{name, sets, reps}] }] }` or something different?).
-   - Recommendation: The executor must inspect a real row in the Supabase dashboard before writing the parse logic. Add a defensive fallback if `program_data.sessions` is undefined.
+   - Resolution: Defensive access pattern adopted in plan 33-03: `program_data?.sessions ?? program_data?.workouts ?? []`. Executor inspects real row shape at runtime; fallbacks handle all JSONB variants. Duration defaults to 45 min if not present in JSONB.
 
-3. **WeekStrip "scheduled" state**
+3. **WeekStrip "scheduled" state** [RESOLVED]
    - What we know: The UI-SPEC shows dashed orange border for scheduled days. Computing "scheduled" requires knowing the user's training days.
-   - What's unclear: Where to read the training schedule (workout_frequency from user_profiles or program_data).
-   - Recommendation: Omit "scheduled" state in Phase 33. Render only done/today/rest. Scheduled state can be added in Phase 36 when program structure is clearer.
+   - Resolution: "Scheduled" state omitted from Phase 33. HomeWeekStrip renders only done/today/rest states. Scheduled state deferred to Phase 36 when ai_generated_programs.program_data structure is documented. Decision recorded in plan 33-03 PATTERNS and action.
 
-4. **`usePluginRegistry` property name: `installedPlugins` vs `enabledPlugins`**
+4. **`usePluginRegistry` property name: `installedPlugins` vs `enabledPlugins`** [RESOLVED]
    - What we know: @ziko/ui PluginsDrawer uses `installedPlugins`. The home screen index.tsx uses `enabledPlugins`.
-   - What's unclear: Which property is the canonical one exposed by `usePluginRegistry`.
-   - Recommendation: Executor must check `packages/plugin-sdk/src/` for the PluginRegistry store type.
-
+   - Resolution: `packages/plugin-sdk/src/hooks.ts` verified — both `installedPlugins` and `enabledPlugins` exist as separate arrays. PluginsDrawer correctly uses `installedPlugins`. HOME-08 is now served by a TQ query against `user_plugins` (is_enabled=true) passed as `installedPluginIds` prop, bypassing the Zustand registry for the home screen drawer. Implemented in plan 33-04 Task 2.
 ---
 
 ## Sources

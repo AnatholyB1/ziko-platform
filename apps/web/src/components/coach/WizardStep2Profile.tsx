@@ -34,7 +34,7 @@ export function WizardStep2Profile({
       <form action={formAction} className="flex flex-col gap-4">
         <ProfileForm initial={{}} userId={userId} apiUrl={apiUrl} jwt={jwt} />
         {state.status === 'error' && (
-          <p role="alert" className="text-sm font-normal text-red-600">
+          <p role="alert" className="text-sm font-normal text-danger">
             {state.message}
           </p>
         )}

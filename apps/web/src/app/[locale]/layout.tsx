@@ -23,10 +23,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
 
   return (
-    <NextIntlClientProvider>
-      <div className={`${inter.className} bg-background text-text min-h-screen flex flex-col`}>
-        {children}
-      </div>
-    </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning>
+      <body className={`${inter.className} bg-background text-text min-h-screen flex flex-col`}>
+        <NextIntlClientProvider>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

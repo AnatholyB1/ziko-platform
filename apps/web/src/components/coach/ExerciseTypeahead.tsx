@@ -144,6 +144,7 @@ export function ExerciseTypeahead({ onAdd, apiUrl, accessToken }: ExerciseTypeah
         aria-expanded={open}
         aria-autocomplete="list"
         aria-controls="exercise-listbox"
+        aria-activedescendant={open && highlightedIndex >= 0 ? `exercise-option-${highlightedIndex}` : undefined}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -172,6 +173,7 @@ export function ExerciseTypeahead({ onAdd, apiUrl, accessToken }: ExerciseTypeah
               {results.map((result, idx) => (
                 <button
                   key={result.id}
+                  id={`exercise-option-${idx}`}
                   type="button"
                   role="option"
                   aria-selected={highlightedIndex === idx}
@@ -200,6 +202,7 @@ export function ExerciseTypeahead({ onAdd, apiUrl, accessToken }: ExerciseTypeah
               ))}
               {showCreate && (
                 <button
+                  id={`exercise-option-${results.length}`}
                   type="button"
                   role="option"
                   aria-selected={highlightedIndex === results.length}

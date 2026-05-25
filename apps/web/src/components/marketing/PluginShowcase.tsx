@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion'
 import {
   IoTimerOutline, IoBicycleOutline, IoBarbellOutline, IoCalculatorOutline,
   IoBodyOutline, IoMoonOutline, IoScaleOutline, IoWaterOutline, IoWatchOutline,
@@ -50,6 +50,11 @@ export function PluginShowcase() {
   const [activeTab, setActiveTab] = useState<TabKey>('all')
   const ref = useRef<HTMLElement>(null)
   const isVisible = useInView(ref, { once: true, margin: '-100px' })
+  const prefersReducedMotion = useReducedMotion()
+
+  const cardVariants = prefersReducedMotion
+    ? { hidden: {}, visible: {} }
+    : { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }
 
   const filtered = activeTab === 'all' ? PLUGINS : PLUGINS.filter(p => p.category === activeTab)
 
@@ -107,10 +112,11 @@ export function PluginShowcase() {
               return (
                 <motion.div
                   key={plugin.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.35 }}
-                  whileHover={cardHover}
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  transition={prefersReducedMotion ? undefined : { delay: i * 0.05, duration: 0.35 }}
+                  whileHover={prefersReducedMotion ? undefined : cardHover}
                   className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-2 cursor-pointer"
                 >
                   <Icon className="text-primary" size={28} />

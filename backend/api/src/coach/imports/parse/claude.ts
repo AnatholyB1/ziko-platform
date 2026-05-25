@@ -15,8 +15,15 @@
 //   File content is passed as structured data blocks (base64/CSV/markdown),
 //   NOT as system prompt text. generateObject's Zod schema enforces output
 //   shape — injected content cannot alter the schema structure.
+//
+// Schema sanitization (IMPORT-BUG-01):
+//   @ai-sdk/provider-utils adds implicit minimum/maximum on ALL z.number().int()
+//   fields (Number.MIN/MAX_SAFE_INTEGER), which Anthropic rejects. Similarly,
+//   minItems/maxItems on arrays and minLength/maxLength on strings are unsupported.
+//   stripUnsupportedKeywords removes all disallowed keywords before sending.
 
-import { generateObject, NoObjectGeneratedError } from 'ai';
+import { generateObject, jsonSchema, NoObjectGeneratedError } from 'ai';
+import { zodSchema } from '@ai-sdk/provider-utils';
 import { VISION_MODEL } from '../../../config/models.js';
 import { ImportedProgramSchema } from '@ziko/coach-sdk';
 import type { z } from 'zod';
@@ -24,6 +31,35 @@ import type { z } from 'zod';
 // Re-export NoObjectGeneratedError so the route handler can import it from here
 // without needing a direct 'ai' import (reduces coupling).
 export { NoObjectGeneratedError };
+
+// ─── Anthropic schema sanitizer ────────────────────────────────────────────────
+// Anthropic structured output only supports a subset of JSON Schema keywords.
+// Rejected keywords: minimum, maximum, exclusiveMinimum, exclusiveMaximum,
+//                   minLength, maxLength, minItems, maxItems, multipleOf, $schema.
+const ANTHROPIC_BANNED_KEYWORDS = new Set([
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+  'minLength', 'maxLength', 'minItems', 'maxItems',
+  'multipleOf', '$schema', 'format',
+]);
+
+function stripUnsupportedKeywords(node: unknown): unknown {
+  if (typeof node !== 'object' || node === null) return node;
+  if (Array.isArray(node)) return node.map(stripUnsupportedKeywords);
+  return Object.fromEntries(
+    Object.entries(node as Record<string, unknown>)
+      .filter(([key]) => !ANTHROPIC_BANNED_KEYWORDS.has(key))
+      .map(([key, value]) => [key, stripUnsupportedKeywords(value)]),
+  );
+}
+
+// Build a clean jsonSchema wrapper from a Zod type, stripping all Anthropic-
+// unsupported keywords that the SDK converter injects implicitly.
+function anthropicSchema<T>(zodType: z.ZodTypeAny) {
+  const raw = zodSchema(zodType).jsonSchema;
+  return jsonSchema<T>(stripUnsupportedKeywords(raw) as any);
+}
+
+const PARSE_SCHEMA = anthropicSchema<z.infer<typeof ImportedProgramSchema>>(ImportedProgramSchema);
 
 // Shared instruction injected in both parse paths (IMPORT-03, Pitfall 8)
 const CONFIDENCE_INSTRUCTION = `
@@ -64,7 +100,7 @@ export async function parseWithVision(
 
   const { object } = await generateObject({
     model: VISION_MODEL,
-    schema: ImportedProgramSchema,
+    schema: PARSE_SCHEMA,
     messages: [
       {
         role: 'user',
@@ -94,7 +130,7 @@ export async function parseWithText(
 
   const { object } = await generateObject({
     model: VISION_MODEL,
-    schema: ImportedProgramSchema,
+    schema: PARSE_SCHEMA,
     prompt,
   });
 

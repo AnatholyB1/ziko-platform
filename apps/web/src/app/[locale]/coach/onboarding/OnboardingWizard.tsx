@@ -52,7 +52,11 @@ export function OnboardingWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!authChecked) return <div className="text-sm font-normal text-muted text-center py-8">Chargement…</div>;
+  if (!authChecked) return (
+    <div role="status" aria-live="polite" className="text-sm font-normal text-muted text-center py-8">
+      Chargement…
+    </div>
+  );
   if (!userId || !jwt) return null; // redirect in progress
 
   const goToStep = (n: number) => router.push(`/${locale}/coach/onboarding?step=${n}`);

@@ -76,7 +76,7 @@ export function ClientNotesPanel({
             Enregistré le {savedAt.toLocaleDateString('fr-FR')} à {savedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
-        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+        {error && <p className="text-xs text-danger mt-1">{error}</p>}
       </div>
     </div>
   );

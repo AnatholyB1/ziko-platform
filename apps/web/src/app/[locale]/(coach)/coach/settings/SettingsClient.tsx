@@ -59,7 +59,7 @@ export function SettingsClient({
             <p
               role="alert"
               className={`text-sm font-normal ${
-                profileState.status === 'success' ? 'text-primary' : 'text-red-600'
+                profileState.status === 'success' ? 'text-primary' : 'text-danger'
               }`}
             >
               {profileState.message}
@@ -96,7 +96,7 @@ export function SettingsClient({
             <p
               role="alert"
               className={`text-sm font-normal ${
-                kycState.status === 'success' ? 'text-primary' : 'text-red-600'
+                kycState.status === 'success' ? 'text-primary' : 'text-danger'
               }`}
             >
               {kycState.message}

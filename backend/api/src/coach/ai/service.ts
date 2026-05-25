@@ -23,8 +23,8 @@ import {
 import { createUserClient } from '../clients/db.js';
 import { appendMessages } from '../../context/conversation.js';
 import type { CoachContext } from './types.js';
-import { WeeklyDigest } from '@ziko/email/src/templates/WeeklyDigest.js';
-import type { AlertClient } from '@ziko/email/src/templates/WeeklyDigest.js';
+import { WeeklyDigest } from '@ziko/email/templates/WeeklyDigest';
+import type { AlertClient } from '@ziko/email/templates/WeeklyDigest';
 
 // ─── Service client for token logging ─────────────────────────────────────────
 const supabase = createClient(

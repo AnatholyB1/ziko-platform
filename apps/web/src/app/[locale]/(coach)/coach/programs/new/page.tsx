@@ -155,7 +155,7 @@ export default function NewProgramPage() {
                 autoFocus
               />
               {nameError && (
-                <p className="text-xs text-red-600 mt-1">{nameError}</p>
+                <p className="text-xs text-danger mt-1">{nameError}</p>
               )}
             </div>
 
