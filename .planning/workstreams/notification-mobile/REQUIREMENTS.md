@@ -80,11 +80,33 @@
 
 ## Traceability
 
-| Requirement | Phase |
-|-------------|-------|
-| INFRA-01..04, TOKEN-01..04 | Phase A — Infrastructure |
-| PUSH-01..04 | Phase B — Action-triggered Push |
-| CENTER-01..05 | Phase C — In-app Center |
-| CRON-01..03 | Phase D — Cron Reminders |
-| PREF-01..04 | Phase E — Preferences UI |
-| LOCAL-01..03, APP-01 | Phase F — Local Reminders |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| TOKEN-01 | Phase 1 | Pending |
+| TOKEN-02 | Phase 1 | Pending |
+| TOKEN-03 | Phase 1 | Pending |
+| TOKEN-04 | Phase 1 | Pending |
+| PUSH-01 | Phase 2 | Pending |
+| PUSH-02 | Phase 2 | Pending |
+| PUSH-03 | Phase 2 | Pending |
+| PUSH-04 | Phase 2 | Pending |
+| CENTER-01 | Phase 3 | Pending |
+| CENTER-02 | Phase 3 | Pending |
+| CENTER-03 | Phase 3 | Pending |
+| CENTER-04 | Phase 3 | Pending |
+| CENTER-05 | Phase 3 | Pending |
+| CRON-01 | Phase 4 | Pending |
+| CRON-02 | Phase 4 | Pending |
+| CRON-03 | Phase 4 | Pending |
+| PREF-01 | Phase 5 | Pending |
+| PREF-02 | Phase 5 | Pending |
+| PREF-03 | Phase 5 | Pending |
+| PREF-04 | Phase 5 | Pending |
+| LOCAL-01 | Phase 6 | Pending |
+| LOCAL-02 | Phase 6 | Pending |
+| LOCAL-03 | Phase 6 | Pending |
+| APP-01 | Phase 6 | Pending |
