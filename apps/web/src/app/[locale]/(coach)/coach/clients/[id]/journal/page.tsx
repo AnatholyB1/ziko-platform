@@ -68,7 +68,7 @@ export default async function ClientJournalPage({
                     {row.stress != null ? `${row.stress}/5` : '—'}
                   </td>
                   <td className="py-3 px-4 text-muted max-w-xs truncate">
-                    {row.notes ?? '—'}
+                    {(row.notes as string) ?? '—'}
                   </td>
                 </tr>
               ))}

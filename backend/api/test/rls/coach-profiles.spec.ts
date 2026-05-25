@@ -30,14 +30,20 @@ describe('coach_profiles RLS', () => {
     expect(error?.code === '42501' || error?.message?.includes('row-level security')).toBe(true);
   });
 
-  it('User A only sees their own row in SELECT', async () => {
+  it('User A can read their own coach_profiles row', async () => {
+    // Migration 042 added "coach_profiles_authenticated_read" allowing all
+    // authenticated users to SELECT any coach_profiles row (athletes need to
+    // read their coach's display name). User A must at minimum see their own row.
     const a = await createTestUser('cp-sel-a');
     const b = await createTestUser('cp-sel-b');
     createdIds.push(a.id, b.id);
     await a.client.from('coach_profiles').insert({ user_id: a.id, display_name: 'A' });
     await admin.from('coach_profiles').insert({ user_id: b.id, display_name: 'B' });
 
-    const { data, error } = await a.client.from('coach_profiles').select('user_id');
+    const { data, error } = await a.client
+      .from('coach_profiles')
+      .select('user_id')
+      .eq('user_id', a.id);
     expect(error).toBeNull();
     expect(data?.length).toBe(1);
     expect(data?.[0].user_id).toBe(a.id);
