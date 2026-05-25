@@ -722,18 +722,17 @@ export async function getProgramsForClient(
   jwt: string,
   coachId: string,
   clientId: string,
-): Promise<{ programs: any[] }> {
+): Promise<{ active: any | null; history: any[] }> {
   const db = createUserClient(jwt);
 
   const { data: programs, error } = await db
     .from('workout_programs')
     .select('id, name, description, goal, weeks_count, is_template, created_by_coach_id, assigned_to_user_id, template_source_id, start_date, weeks_data')
     .eq('assigned_to_user_id', clientId)
-    .eq('created_by_coach_id', coachId)
     .order('start_date', { ascending: false, nullsFirst: false });
 
   if (error) throw new Error(error.message);
-  if (!programs || programs.length === 0) return { programs: [] };
+  if (!programs || programs.length === 0) return { active: null, history: [] };
 
   // Compute week_number_current for the ISO week (Monday 00:00 UTC)
   const now = Date.now();

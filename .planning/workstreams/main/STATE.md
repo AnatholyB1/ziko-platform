@@ -28,10 +28,10 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 
 ## Current Position
 
-Phase: 37 — UI Design Contract (context gathered)
+Phase: 37 — UI Design Contract (UI-SPEC approved)
 Plan: —
-Status: Discussion complete — awaiting /gsd:ui-phase 37 --ws main
-Last activity: 2026-05-25 — Phase 37 context captured (4 design decisions)
+Status: UI design contract complete — awaiting /gsd:plan-phase 37 --ws main
+Last activity: 2026-05-25 — Phase 37 UI-SPEC approved (6/6 dimensions)
 
 ---
 
