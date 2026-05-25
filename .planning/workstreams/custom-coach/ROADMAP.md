@@ -29,7 +29,10 @@ created: "2026-05-25"
   1. Coach opens a client's detail page and sees a "Programs" tab or section that lists programs created by the athlete (not only coach-assigned ones)
   2. If athlete-created programs were missing, the coach now sees them alongside coach-assigned programs after the fix
   3. No regression on the 7 existing tabs (sessions, measurements, habits, nutrition, sleep, cardio, journal) — all still load correctly
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 42-01-PLAN.md — Fix getProgramsForClient: remove coach filter, return { active, history }
 
 ### Phase 43: Coach Exercise Library Backend + Web UI
 **Goal**: Coach can create, edit, delete, and attach video/photo demos to custom exercises from the web CRM
@@ -64,6 +67,6 @@ created: "2026-05-25"
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 42. Audit Client Programs Visibility | 0/? | Not started | — |
+| 42. Audit Client Programs Visibility | 0/1 | Not started | — |
 | 43. Coach Exercise Library Backend + Web UI | 0/? | Not started | — |
 | 44. Program Editor + Athlete Media Integration | 0/? | Not started | — |
