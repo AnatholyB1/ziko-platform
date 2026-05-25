@@ -1,0 +1,26 @@
+{
+  "phase": "01",
+  "phase_name": "Transcription Pipeline",
+  "timestamp": "2026-05-25T00:00:00Z",
+  "areas_completed": ["Entry point fiche client"],
+  "areas_remaining": ["UX affichage transcript", "Langue Whisper"],
+  "decisions": {
+    "Entry point fiche client": [
+      {
+        "question": "Où le coach accède-t-il au bouton d'enregistrement vocal ?",
+        "answer": "Nouvel onglet 'Retour vocal' dans ClientTabStrip — 9e onglet, page app/(coach)/coach/clients/[id]/vocal/page.tsx",
+        "options_presented": ["Nouvel onglet 'Retour vocal'", "Bouton inline onglet Séances"]
+      },
+      {
+        "question": "État initial de l'onglet quand aucun retour n'existe ?",
+        "answer": "Gros bouton micro centré — empty state simple, sans anticiper Phase 03",
+        "options_presented": ["Gros bouton micro centré", "Header + bouton + placeholder historique"]
+      }
+    ]
+  },
+  "deferred_ideas": [],
+  "canonical_refs": [
+    "apps/web/src/components/coach/ClientTabStrip.tsx",
+    "apps/web/src/app/[locale]/(coach)/coach/clients/[id]/layout.tsx"
+  ]
+}
