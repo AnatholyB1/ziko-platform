@@ -52,19 +52,20 @@ export function ProgramEditorClient({
 }: ProgramEditorClientProps) {
   const [name, setName] = useState(program.name);
   const rawWeeksData = program.weeks_data;
-  const rawArray: any[] = Array.isArray(rawWeeksData)
+  const rawArrayUnknown: unknown = Array.isArray(rawWeeksData)
     ? rawWeeksData
-    : Array.isArray((rawWeeksData as any)?.weeks)
-      ? (rawWeeksData as any).weeks
+    : Array.isArray((rawWeeksData as Record<string, unknown>)?.weeks)
+      ? (rawWeeksData as Record<string, unknown>).weeks
       : [];
+  const rawArray = rawArrayUnknown as Record<string, unknown>[];
   // Normalize corrupt rows (e.g. pre-fix imports stored in old ImportedProgram format).
-  const initialWeeks: ProgramWeek[] = rawArray.map((week: any) => ({
-    week_number: week.week_number,
-    sessions: (Array.isArray(week.sessions) ? week.sessions : []).map((s: any) => ({
-      session_id: s.session_id ?? genId(),
-      session_name: s.session_name ?? s.name ?? 'Séance',
-      day_of_week: s.day_of_week ?? 1,
-      exercises: (Array.isArray(s.exercises) ? s.exercises : []).map((ex: any) => ({
+  const initialWeeks: ProgramWeek[] = rawArray.map((week) => ({
+    week_number: week.week_number as number,
+    sessions: (Array.isArray(week.sessions) ? week.sessions as Record<string, unknown>[] : []).map((s) => ({
+      session_id: (s.session_id ?? genId()) as string,
+      session_name: (s.session_name ?? s.name ?? 'Séance') as string,
+      day_of_week: (s.day_of_week ?? 1) as number,
+      exercises: (Array.isArray(s.exercises) ? s.exercises as Record<string, unknown>[] : []).map((ex) => ({
         exercise_id: ex.exercise_id ?? null,
         exercise_name: ex.exercise_name ?? ex.name ?? '',
         sets: ex.sets ?? 1,
