@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { useReducedMotion } from 'framer-motion';
 import {
   IoAnalyticsOutline,
   IoBarChartOutline,
@@ -22,50 +23,39 @@ const TOOL_META: Record<string, { icon: React.ComponentType<{ size: number; colo
   monitor_client_alerts: { icon: IoAlertCircleOutline, credit: '1 cr' },
 };
 
-function StatusChip({ status }: { status: 'pending' | 'success' | 'error' }) {
-  if (status === 'pending') {
-    return (
-      <span className="status-chip bg-blue-50 text-blue-600 border border-blue-200 text-xs px-2 py-0.5 rounded">
-        En cours...
-      </span>
-    );
+const StatusChip = React.forwardRef<HTMLSpanElement, { status: 'pending' | 'success' | 'error' }>(
+  function StatusChip({ status }, ref) {
+    if (status === 'pending') {
+      return <span ref={ref} className="bg-info-subtle text-info border border-info/30 text-xs px-2 py-0.5 rounded">En cours...</span>;
+    }
+    if (status === 'success') {
+      return <span ref={ref} className="bg-success-subtle text-success border border-success/30 text-xs px-2 py-0.5 rounded">Terminé</span>;
+    }
+    return <span ref={ref} className="bg-danger-subtle text-danger border border-danger/30 text-xs px-2 py-0.5 rounded">Échec</span>;
   }
-  if (status === 'success') {
-    return (
-      <span className="status-chip bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded">
-        Terminé
-      </span>
-    );
-  }
-  return (
-    <span className="status-chip bg-red-50 text-red-700 border border-red-200 text-xs px-2 py-0.5 rounded">
-      Échec
-    </span>
-  );
-}
+);
 
 export function ToolResultCard({ toolName, status, args, result }: ToolResultCardProps) {
   const meta = TOOL_META[toolName];
   const Icon = meta?.icon ?? IoAnalyticsOutline;
   const credit = meta?.credit ?? '? cr';
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLSpanElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+
   // Card entrance animation
   useEffect(() => {
-    gsap.from('.tool-card', {
-      opacity: 0,
-      y: 8,
-      duration: 0.22,
-      ease: 'power2.out',
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (cardRef.current && !prefersReducedMotion) {
+      gsap.from(cardRef.current, { opacity: 0, y: 8, duration: 0.22, ease: 'power2.out' });
+    }
+  }, []);
 
   // Status chip transition
   useEffect(() => {
-    gsap.fromTo(
-      '.status-chip',
-      { opacity: 0, scale: 0.9 },
-      { opacity: 1, scale: 1, duration: 0.15, ease: 'power2.out' }
-    );
+    if (chipRef.current && !prefersReducedMotion) {
+      gsap.fromTo(chipRef.current, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.15, ease: 'power2.out' });
+    }
   }, [status]);
 
   // Extract program_id from result for generate_coaching_program
@@ -74,19 +64,19 @@ export function ToolResultCard({ toolName, status, args, result }: ToolResultCar
     : undefined;
 
   return (
-    <div className="bg-[#F0EFE9] border border-[#E2E0DA] rounded-lg p-2 my-2 text-sm tool-card">
+    <div ref={cardRef} className="bg-surface-alt border border-border rounded-lg p-2 my-2 text-sm">
       {/* Header row */}
       <div className="flex items-center gap-2">
-        <Icon size={16} color="#6B6963" />
-        <span className="text-sm font-semibold text-[#1C1A17]">{toolName}</span>
-        <span className="ml-auto bg-[#FF5C1A]/10 text-[#FF5C1A] text-xs font-semibold px-2 py-0.5 rounded">
+        <Icon size={16} color="var(--color-muted)" />
+        <span className="text-sm font-semibold text-text">{toolName}</span>
+        <span className="ml-auto bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 rounded">
           {credit}
         </span>
       </div>
 
       {/* Args row */}
       {args && Object.keys(args).length > 0 && (
-        <p className="text-xs text-[#6B6963] mt-1">
+        <p className="text-xs text-muted mt-1">
           {Object.entries(args)
             .map(([k, v]) => `${k}: ${String(v)}`)
             .join(' · ')}
@@ -95,18 +85,18 @@ export function ToolResultCard({ toolName, status, args, result }: ToolResultCar
 
       {/* Status + result */}
       <div className="flex items-center gap-2 mt-1">
-        <StatusChip status={status} />
+        <StatusChip ref={chipRef} status={status} />
 
         {/* generate_coaching_program success badge */}
         {toolName === 'generate_coaching_program' && status === 'success' && (
           <>
-            <span className="bg-purple-50 text-purple-700 border border-purple-200 text-xs font-semibold px-2 py-0.5 rounded">
+            <span className="bg-primary/10 text-primary border border-primary/20 text-xs font-semibold px-2 py-0.5 rounded">
               Programme créé
             </span>
             {programId && (
               <a
                 href={`/coach/programs/${programId}`}
-                className="text-xs text-[#FF5C1A] font-semibold underline ml-1"
+                className="text-xs text-primary font-semibold underline ml-1"
               >
                 Voir le programme →
               </a>

@@ -154,7 +154,7 @@ export function AssignmentModal({
               height="48"
               fill="none"
               viewBox="0 0 24 24"
-              className="text-green-600 mb-4"
+              className="text-success mb-4"
             >
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
               <path

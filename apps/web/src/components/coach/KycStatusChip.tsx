@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<string, { label: string; classes: string }> = {
   },
   rejected: {
     label: 'Rejeté',
-    classes: 'bg-red-50 text-red-600 border-red-200',
+    classes: 'bg-danger-subtle text-danger border-danger/30',
   },
 };
 

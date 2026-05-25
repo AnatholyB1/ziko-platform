@@ -639,7 +639,7 @@ export function PreviewClient({ importRow, locale, accessToken }: PreviewClientP
         setTimeout(() => {
           const el = document.querySelector(`[data-week="${weekNumber}"] .accordion-body`);
           if (el) {
-            gsap.from(el, { height: 0, opacity: 0, duration: 0.2, ease: 'power2.out' });
+            gsap.from(el, { opacity: 0, y: 6, duration: 0.2, ease: 'power2.out', clearProps: 'all' });
           }
         }, 0);
       }
@@ -1150,7 +1150,7 @@ export function PreviewClient({ importRow, locale, accessToken }: PreviewClientP
         {displayWeeks.map((week, weekIdx) => {
           const isExpanded = expandedWeeks.has(week.week_number);
           return (
-            <div key={week.week_number} data-week={week.week_number}>
+            <div key={week.week_number} data-week={week.week_number} style={{ position: 'relative', zIndex: isExpanded ? 1 : 0 }}>
               {/* Week header */}
               <div
                 onClick={() => toggleWeek(week.week_number)}
@@ -1398,7 +1398,7 @@ export function PreviewClient({ importRow, locale, accessToken }: PreviewClientP
           style={{
             position: 'fixed',
             bottom: 0,
-            left: 0,
+            left: 240,
             right: 0,
             background: '#FFFFFF',
             borderTop: '1px solid #E2E0DA',

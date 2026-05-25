@@ -8,7 +8,7 @@ import { RevokeConfirmModal } from './RevokeConfirmModal';
 type Filter = 'active' | 'all';
 
 const STATUS_CHIP: Record<CoachInvitationWithStatus['status'], string> = {
-  active: 'bg-green-50 text-green-700 border-green-200',
+  active: 'bg-success-subtle text-success border-success/30',
   used: 'bg-blue-50 text-blue-700 border-blue-200',
   expired: 'bg-yellow-50 text-yellow-700 border-yellow-200',
   revoked: 'bg-neutral-100 text-neutral-500 border-neutral-200',
@@ -79,7 +79,7 @@ export function InvitationsTable({
                     <button
                       type="button"
                       onClick={() => setConfirmingId(r.id)}
-                      className="text-red-600 text-sm font-normal hover:underline"
+                      className="text-danger text-sm font-normal hover:underline"
                     >
                       {t('revokeCta')}
                     </button>

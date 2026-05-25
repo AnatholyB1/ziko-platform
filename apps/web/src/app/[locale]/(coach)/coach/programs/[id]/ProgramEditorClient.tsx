@@ -1,5 +1,10 @@
 'use client';
 import { useState, useCallback } from 'react';
+
+const genId = (): string =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 import { WeekAccordion } from '@/components/coach/WeekAccordion';
 import { SessionSlideOver } from '@/components/coach/SessionSlideOver';
 import { AssignmentModal, type AssignmentClient } from '@/components/coach/AssignmentModal';
@@ -46,7 +51,33 @@ export function ProgramEditorClient({
   locale,
 }: ProgramEditorClientProps) {
   const [name, setName] = useState(program.name);
-  const [weeks, setWeeks] = useState<ProgramWeek[]>(program.weeks_data ?? []);
+  const rawWeeksData = program.weeks_data;
+  const rawArray: any[] = Array.isArray(rawWeeksData)
+    ? rawWeeksData
+    : Array.isArray((rawWeeksData as any)?.weeks)
+      ? (rawWeeksData as any).weeks
+      : [];
+  // Normalize corrupt rows (e.g. pre-fix imports stored in old ImportedProgram format).
+  const initialWeeks: ProgramWeek[] = rawArray.map((week: any) => ({
+    week_number: week.week_number,
+    sessions: (Array.isArray(week.sessions) ? week.sessions : []).map((s: any) => ({
+      session_id: s.session_id ?? genId(),
+      session_name: s.session_name ?? s.name ?? 'Séance',
+      day_of_week: s.day_of_week ?? 1,
+      exercises: (Array.isArray(s.exercises) ? s.exercises : []).map((ex: any) => ({
+        exercise_id: ex.exercise_id ?? null,
+        exercise_name: ex.exercise_name ?? ex.name ?? '',
+        sets: ex.sets ?? 1,
+        reps: ex.reps ?? null,
+        duration_seconds: ex.duration_seconds ?? null,
+        target_rpe: ex.target_rpe ?? null,
+        target_rir: ex.target_rir ?? null,
+        rest_seconds: ex.rest_seconds ?? null,
+        notes: ex.notes ?? null,
+      })),
+    })),
+  }));
+  const [weeks, setWeeks] = useState<ProgramWeek[]>(initialWeeks);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -255,7 +286,7 @@ export function ProgramEditorClient({
           <button
             type="button"
             onClick={() => setDeleteModalOpen(true)}
-            className="p-2 rounded-lg text-muted hover:text-red-600 hover:bg-background border border-border transition-colors"
+            className="p-2 rounded-lg text-muted hover:text-danger hover:bg-background border border-border transition-colors"
             aria-label="Supprimer le programme"
             title="Supprimer le programme"
           >

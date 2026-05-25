@@ -49,7 +49,7 @@ export function LoginForm() {
             autoComplete="email"
             required
             placeholder="vous@exemple.com"
-            className={`bg-white border rounded-lg px-3 h-11 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted ${state.status === 'error' ? 'border-red-400' : 'border-border'}`}
+            className={`bg-white border rounded-lg px-3 h-11 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted ${state.status === 'error' ? 'border-danger/30' : 'border-border'}`}
           />
         </div>
 
@@ -63,12 +63,12 @@ export function LoginForm() {
             type="password"
             autoComplete="current-password"
             required
-            className={`bg-white border rounded-lg px-3 h-11 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted ${state.status === 'error' ? 'border-red-400' : 'border-border'}`}
+            className={`bg-white border rounded-lg px-3 h-11 w-full text-base font-normal text-text focus:outline-none focus:border-text transition-colors placeholder:text-muted ${state.status === 'error' ? 'border-danger/30' : 'border-border'}`}
           />
         </div>
 
         {state.status === 'error' && (
-          <p role="alert" className="text-sm font-normal text-red-600 -mt-2">
+          <p role="alert" className="text-sm font-normal text-danger -mt-2">
             {state.message}
           </p>
         )}

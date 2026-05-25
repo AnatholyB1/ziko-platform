@@ -55,52 +55,58 @@ export function HowItWorks() {
           {t('howItWorks.heading')}
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <div className="flex flex-col md:flex-row items-start gap-0">
           {STEPS.map((step, index) => {
             const Icon = step.icon
+            const isLast = index === STEPS.length - 1
+
+            const numberSize =
+              index === 0 ? 'text-[9rem] md:text-[10rem]' :
+              index === 1 ? 'text-8xl md:text-9xl' :
+              'text-7xl md:text-8xl'
+
+            const headingSize =
+              index === 0 ? 'text-2xl font-black' :
+              index === 1 ? 'text-xl font-bold' :
+              'text-lg font-bold'
+
             return (
-              <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 30 }}
-                animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                transition={{ delay: index * 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center md:items-start text-center md:text-left px-4"
-              >
-                <div className="text-8xl md:text-9xl font-black leading-none select-none mb-2 text-primary/15">
-                  <CountUp target={step.number} isVisible={isVisible} />
-                </div>
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 -mt-4">
-                  <Icon className="text-primary" size={24} />
-                </div>
-                <h3 className="text-xl font-black text-text mb-2">
-                  {t(step.titleKey as Parameters<typeof t>[0])}
-                </h3>
-                <p className="text-sm text-muted leading-relaxed">
-                  {t(step.descKey as Parameters<typeof t>[0])}
-                </p>
-              </motion.div>
+              <div key={step.number} className="flex flex-col md:flex-row items-start flex-1">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                  transition={{ delay: index * 0.15, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col items-start text-left px-4 flex-1"
+                >
+                  <div className={`${numberSize} font-black leading-none select-none mb-3 text-primary/15`}>
+                    <CountUp target={step.number} isVisible={isVisible} />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon className="text-primary shrink-0" size={index === 0 ? 22 : 18} />
+                    <h3 className={`${headingSize} text-text`}>
+                      {t(step.titleKey as Parameters<typeof t>[0])}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-muted leading-relaxed">
+                    {t(step.descKey as Parameters<typeof t>[0])}
+                  </p>
+                </motion.div>
+
+                {!isLast && (
+                  <div className="hidden md:flex items-start pt-16 px-2 text-border" aria-hidden>
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={isVisible ? { opacity: 1 } : { opacity: 0 }}
+                      transition={{ delay: index * 0.15 + 0.3, duration: 0.4 }}
+                      className="text-2xl font-light select-none text-muted"
+                    >
+                      →
+                    </motion.span>
+                  </div>
+                )}
+              </div>
             )
           })}
-
-          <svg
-            className="absolute hidden md:block pointer-events-none"
-            style={{ top: '4.5rem', left: 0, width: '100%', height: '4px' }}
-            fill="none"
-            overflow="visible"
-          >
-            <motion.line
-              x1="17%"
-              y1="2"
-              x2="83%"
-              y2="2"
-              stroke="#E2E0DA"
-              strokeWidth="2"
-              strokeDasharray="6 4"
-              initial={{ pathLength: 0 }}
-              animate={isVisible ? { pathLength: 1 } : { pathLength: 0 }}
-              transition={{ duration: 1, delay: 0.5, ease: 'easeInOut' }}
-            />
-          </svg>
         </div>
       </div>
     </section>

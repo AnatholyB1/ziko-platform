@@ -21,9 +21,9 @@ function formatRelative(isoDate: string | null): string {
 
 function getMoodBadgeClasses(delta: number | null): string {
   if (delta === null) return 'bg-neutral-100 text-neutral-500 border-neutral-200';
-  if (delta < -0.3) return 'bg-red-50 text-red-600 border-red-200';
+  if (delta < -0.3) return 'bg-danger-subtle text-danger border-danger/30';
   if (delta < 0) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-  return 'bg-green-50 text-green-700 border-green-200';
+  return 'bg-success-subtle text-success border-success/30';
 }
 
 function getMoodLabel(summary: ClientSummary): string {

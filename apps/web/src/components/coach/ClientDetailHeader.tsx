@@ -31,7 +31,7 @@ function RevokeClientButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-sm text-red-600 border border-red-200 rounded-xl px-4 py-2 hover:bg-red-50 transition-colors"
+        className="text-sm text-danger border border-danger/30 rounded-xl px-4 py-2 hover:bg-danger-subtle transition-colors"
         aria-label={`Retirer ${clientName ?? clientId}`}
       >
         Retirer

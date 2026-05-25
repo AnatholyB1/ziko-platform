@@ -245,7 +245,7 @@ export function SessionSlideOver({
                         <button
                           type="button"
                           onClick={() => deleteExercise(idx)}
-                          className="text-muted hover:text-red-600 transition-colors"
+                          className="text-muted hover:text-danger transition-colors"
                           aria-label="Supprimer l'exercice"
                         >
                           <svg width="16" height="16" fill="none" viewBox="0 0 24 24">

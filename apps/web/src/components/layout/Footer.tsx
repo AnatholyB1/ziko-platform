@@ -23,10 +23,7 @@ export function Footer() {
 
   return (
     <footer className="bg-white">
-      <div
-        className="h-px w-full"
-        style={{ background: 'linear-gradient(90deg, #FF5C1A 0%, transparent 100%)' }}
-      />
+      <div className="h-px w-full bg-gradient-to-r from-primary/20 to-transparent" />
       <div className="max-w-screen-xl mx-auto px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xl font-black text-primary">ZIKO</span>

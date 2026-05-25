@@ -100,7 +100,7 @@ export function PhotoUpload({
           {uploading ? 'Transfert…' : 'Choisir une photo'}
         </label>
         <p className="text-sm font-normal text-muted">Photo de profil (optionnel)</p>
-        {error && <p className="text-sm font-normal text-red-600">{error}</p>}
+        {error && <p className="text-sm font-normal text-danger">{error}</p>}
       </div>
     </div>
   );

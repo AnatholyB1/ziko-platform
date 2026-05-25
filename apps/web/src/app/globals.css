@@ -13,4 +13,8 @@
   --color-danger-hover: #DC2626;
   --color-danger-subtle: #FEF2F2;
   --color-surface-alt: #F0EFE9;
+  --color-info: #3B82F6;
+  --color-info-subtle: #EFF6FF;
+  --color-success-subtle: #F0FDF4;
+  --color-warning-subtle: #FFFBEB;
 }

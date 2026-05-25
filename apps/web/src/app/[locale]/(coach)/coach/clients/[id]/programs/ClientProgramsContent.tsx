@@ -41,9 +41,9 @@ interface ClientProgramsContentProps {
 }
 
 function complianceColor(pct: number): string {
-  if (pct >= 80) return 'bg-green-600';
+  if (pct >= 80) return 'bg-success';
   if (pct >= 50) return 'bg-primary';
-  return 'bg-red-600';
+  return 'bg-danger';
 }
 
 function formatDate(iso: string | null): string {
@@ -132,7 +132,7 @@ function RemoveProgramConfirm({
     return (
       <button
         type="button"
-        className="text-sm text-red-600 hover:underline"
+        className="text-sm text-danger hover:underline"
         onClick={() => setConfirming(true)}
       >
         Retirer ce programme
@@ -153,7 +153,7 @@ function RemoveProgramConfirm({
       <button
         type="button"
         disabled={removing}
-        className="text-red-600 font-bold hover:underline disabled:opacity-40"
+        className="text-danger font-bold hover:underline disabled:opacity-40"
         onClick={async () => {
           setRemoving(true);
           try {

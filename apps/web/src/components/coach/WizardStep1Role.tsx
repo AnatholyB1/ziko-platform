@@ -32,7 +32,7 @@ export function WizardStep1Role({
       </p>
       <form action={formAction} className="flex gap-3 mt-8 justify-end items-center">
         {state.status === 'error' && (
-          <p role="alert" className="text-sm font-normal text-red-600 mr-auto">
+          <p role="alert" className="text-sm font-normal text-danger mr-auto">
             {state.message}
           </p>
         )}

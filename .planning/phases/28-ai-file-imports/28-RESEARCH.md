@@ -841,22 +841,25 @@ export default function ImportFileRoute() {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **canvas build on Vercel**
    - What we know: `canvas` uses `prebuild-install` for Linux x86_64. Vercel runs Linux x86_64.
    - What's unclear: Whether Vercel's `npm ci` build step successfully finds the pre-built binary for Node 22 without hitting `node-gyp`.
    - Recommendation: Create a Vercel preview deployment with `canvas` installed and run a smoke test PDF rasterization endpoint before Phase 28 is marked complete.
+   - **RESOLVED:** Accept the researcher's recommendation. A smoke test on Vercel preview is the required verification gate in plan 28-08 (smoke test + human verify). The `canvas` prebuild covers Linux x86_64 (Vercel's runtime); the Windows local dev caveat is documented in plan 28-01.
 
 2. **deductCredits variable cost API**
    - What we know: `creditService.deductCredits(userId, action, idempotencyKey)` uses `CREDIT_COSTS[action]` for the amount.
    - What's unclear: The cleanest way to pass a variable cost without breaking existing typed callers.
    - Recommendation: Add an optional 4th parameter `costOverride?: number` to `deductCredits()`. If provided, use it instead of `CREDIT_COSTS[action]`. This is backward-compatible.
+   - **RESOLVED:** Add optional 4th parameter `costOverride?: number` to `deductCredits()`. Add `'import': 0` to `CREDIT_COSTS` as sentinel. Existing callers unchanged — backward-compatible. Implemented in plan 28-02.
 
 3. **pdfjs-dist version compatibility with canvas**
    - What we know: pdfjs-dist 5.7.284 is the latest stable. canvas 3.2.3 is the latest.
    - What's unclear: Whether pdfjs-dist 5.x requires specific canvas API versions.
    - Recommendation: Test in a local Node.js environment before plan execution. If incompatible, pin pdfjs-dist to 4.x.
+   - **RESOLVED:** Plan 28-01 installs pdfjs-dist@5.7.284 + canvas@3.2.3 together; plan 28-08 smoke tests PDF rasterization. If the combination fails, the fallback is `pdfjs-dist@4.x` (pinned in package.json). Compatibility is verified empirically during Wave 1 execution.
 
 ---
 

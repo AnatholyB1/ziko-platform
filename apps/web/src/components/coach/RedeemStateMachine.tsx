@@ -112,7 +112,7 @@ export function RedeemStateMachine({
           {pending ? '…' : t('stateA.submit')}
         </button>
         {state.error && (
-          <p id={errorId} className="text-sm text-red-600 mt-3 text-center" role="alert">
+          <p id={errorId} className="text-sm text-danger mt-3 text-center" role="alert">
             {state.error === 'rateLimited' ? t('errors.rateLimited') : t('errors.invalidOrExpired')}
           </p>
         )}
@@ -169,7 +169,7 @@ export function RedeemStateMachine({
         <button
           type="button"
           onClick={() => setConfirmingRevoke(true)}
-          className="text-red-600 text-sm font-normal underline"
+          className="text-danger text-sm font-normal underline"
         >
           {t('stateC.revoke')}
         </button>
