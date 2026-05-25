@@ -4,31 +4,40 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: [main]
 
 jobs:
-  quality:
-    name: Type-check & Lint
+  # ─── Gate: type-check + lint + unit tests (all packages via turbo) ─────
+  verify:
+    name: type-check / lint / test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
+      - name: Install
+        run: npm install
       - name: Type-check
-        run: npm run type-check
-
+        run: npx turbo run type-check
       - name: Lint
-        run: npm run lint
+        run: npx turbo run lint
+      - name: Test
+        run: npx turbo run test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
+  # ─── Deploy: API → Vercel (only on push to main) ────────────────────────
   deploy-backend:
     name: Deploy API to Vercel
-    needs: quality
+    needs: [verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,9 +52,48 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+  # ─── Deploy: web (Next.js) → Vercel prebuilt (only on push to main) ─────
+  deploy-web:
+    name: Deploy web to Vercel
+    needs: [verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel env & project config
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Build (turbo from monorepo root)
+        run: npx turbo run build --filter=ziko-web
+
+      - name: Deploy prebuilt
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+  # ─── Migrations Supabase (only on push to main) ─────────────────────────
   migrate-supabase:
     name: Apply Supabase migrations
-    needs: quality
+    needs: [verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,3 +132,64 @@ jobs:
           supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # ─── Guard: no SERVICE_ROLE under coach/ (ARCH-02, D-12) ────────────────
+  no-service-role-in-coach:
+    name: Verify no SERVICE_ROLE under coach/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Grep guard
+        run: |
+          if [ -d backend/api/src/coach ]; then
+            if grep -r 'SERVICE_ROLE' backend/api/src/coach/; then
+              echo "FAIL: SERVICE_ROLE reference found under backend/api/src/coach/"
+              exit 1
+            fi
+          fi
+          echo "PASS: no SERVICE_ROLE under coach/ (or directory does not exist yet)"
+
+  # ─── Guard: no react-native in web bundle (D-02) ────────────────────────
+  bundle-hygiene:
+    name: Verify no react-native in web bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install
+      - name: Build with analyzer
+        run: ANALYZE=true npx turbo run build --filter=ziko-web
+      - name: Assert RN-clean bundle
+        run: |
+          if grep -E '"name":\s*"[^"]*react-native(?!-web)' apps/web/.next/analyze/stats.json; then
+            echo "FAIL: react-native leaked into web bundle"
+            exit 1
+          fi
+          echo "PASS: web bundle is RN-clean"
+
+  # ─── Guard: Zod version drift (D-08) ────────────────────────────────────
+  zod-drift:
+    name: coach-sdk zod resolves to root zod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm install
+      - name: Verify zod is hoisted, not duplicated
+        run: |
+          ROOT_ZOD=$(node -e "console.log(require.resolve('zod'))")
+          SDK_ZOD=$(node -e "console.log(require.resolve('zod', { paths: ['packages/coach-sdk'] }))")
+          if [ "$ROOT_ZOD" != "$SDK_ZOD" ]; then
+            echo "FAIL: coach-sdk resolves a different zod than root"
+            echo "  ROOT: $ROOT_ZOD"
+            echo "  SDK:  $SDK_ZOD"
+            exit 1
+          fi
+          echo "PASS: zod resolves to single instance ($ROOT_ZOD)"

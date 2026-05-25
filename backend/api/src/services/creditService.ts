@@ -111,22 +111,29 @@ export async function earnCredits(
  * The RPC uses SELECT FOR UPDATE to prevent negative balances under concurrent requests.
  * (CRED-02: deduction is atomic and race-safe)
  *
+ * @param costOverride — optional runtime cost override. Used for variable-cost actions
+ *   (e.g. 'import': Math.min(page_count, 10)). When provided and > 0, overrides
+ *   CREDIT_COSTS[action]. Existing callers passing no 4th arg are unaffected. (Phase 28 D-01)
+ *
  * Returns the success flag, updated balance, and required amount on failure.
  */
 export async function deductCredits(
   userId: string,
   action: CreditAction,
   idempotencyKey: string,
+  costOverride?: number,
 ): Promise<{ success: boolean; balance: number; required?: number }> {
+  const p_cost = (costOverride !== undefined && costOverride > 0) ? costOverride : CREDIT_COSTS[action];
+
   const { data, error } = await supabase.rpc('deduct_ai_credits', {
     p_user_id: userId,
-    p_cost: CREDIT_COSTS[action],
+    p_cost,
     p_action_type: action,
     p_idempotency_key: idempotencyKey,
   });
 
   if (error || !data) {
-    return { success: false, balance: 0, required: CREDIT_COSTS[action] };
+    return { success: false, balance: 0, required: p_cost };
   }
 
   // RPC returns JSONB: { success: true, balance_after: N } | { success: false, balance: N, required: N }

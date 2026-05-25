@@ -1,75 +1,283 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  FadeInUp,
+} from 'react-native-reanimated';
+import { supabase } from '../../../src/lib/supabase';
+import { useAuthStore } from '../../../src/stores/authStore';
+import { showAlert } from '@ziko/plugin-sdk';
+import { OBContext } from './_layout';
+import { PluginLoader } from '../../../src/lib/PluginLoader';
 
-const TOTAL = 8;
-const STEP = 6;
+const LOAD_PHASES = [
+  'Analyse de ton profil',
+  'Calcul de tes besoins caloriques',
+  'Sélection des exercices adaptés',
+  'Construction de ton programme',
+  'Calibration du coach IA',
+];
 
-function OBShell({ step, total, onBack, onNext, children }: {
-  step: number; total: number; onBack: () => void; onNext: () => void; children: React.ReactNode;
-}) {
-  const theme = useThemeStore((s) => s.theme);
+function goalName(g: string | null): string {
+  const map: Record<string, string> = {
+    strength: 'force',
+    muscle_gain: 'muscle',
+    fat_loss: 'sèche',
+    endurance: 'cardio',
+    health: 'forme',
+  };
+  return g ? (map[g] ?? 'champion') : 'champion';
+}
+
+function goalLabel(g: string | null): string {
+  const map: Record<string, string> = {
+    strength: 'gagner en force',
+    muscle_gain: 'prendre du muscle',
+    fat_loss: 'perdre du gras',
+    endurance: "l'endurance",
+    health: 'la forme générale',
+  };
+  return g ? (map[g] ?? 'tes objectifs') : 'tes objectifs';
+}
+
+// ─── OBReady dark screen ──────────────────────────────────────────────────────
+
+function OBReady() {
+  const { obState } = useContext(OBContext);
+  const user = useAuthStore((s) => s.user);
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFinish = async () => {
+    setIsLoading(true);
+    try {
+      const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
+      if (uid) {
+        await supabase.from('user_profiles').upsert({
+          id: uid,
+          goal: obState.goal,
+          level: obState.level,
+          frequency: obState.frequency,
+          equipment: obState.equipment,
+          sex: obState.sex,
+          age: obState.age,
+          height_cm: obState.height,
+          weight_kg: obState.weight,
+          onboarding_done: true,
+        });
+      }
+      // Trigger mandatory plugin pre-load if available (preloadMandatory is optional static extension)
+      await (PluginLoader as any).preloadMandatory?.();
+      await refreshProfile();
+      router.replace('/(app)');
+    } catch (err: any) {
+      showAlert('Erreur', err.message ?? 'Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-        <TouchableOpacity onPress={onBack} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: theme.text + '10', alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="chevron-back" size={16} color={theme.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, height: 4, backgroundColor: theme.text + '14', borderRadius: 999, overflow: 'hidden' }}>
-          <View style={{ width: `${((step + 1) / total) * 100}%` as any, height: '100%', backgroundColor: '#FF5C1A', borderRadius: 999 }} />
+    <View style={{ flex: 1, backgroundColor: '#1C1A17' }}>
+      {/* Radial glow overlay approximation */}
+      <View
+        style={{
+          position: 'absolute', top: -40, left: '50%', marginLeft: -180,
+          width: 360, height: 360, borderRadius: 180,
+          backgroundColor: 'rgba(255,92,26,0.25)',
+        }}
+        pointerEvents="none"
+      />
+
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 40, justifyContent: 'center' }}>
+          {/* Check icon with spring entrance */}
+          <Animated.View
+            entering={FadeInUp.springify().damping(12)}
+            style={{
+              width: 76, height: 76, borderRadius: 22,
+              backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
+              shadowColor: 'rgba(255,92,26,0.70)', shadowOffset: { width: 0, height: 12 },
+              shadowRadius: 40, shadowOpacity: 1, elevation: 16,
+              marginBottom: 24,
+            }}
+          >
+            <Ionicons name="checkmark" size={38} color="#fff" />
+          </Animated.View>
+
+          {/* Heading */}
+          <Text style={{ fontSize: 36, fontWeight: '800', lineHeight: 37, letterSpacing: -0.7, color: '#FFFAF6' }}>
+            {'Ton plan\nest prêt'}
+            <Text style={{ color: '#FF5C1A' }}>.</Text>
+          </Text>
+
+          {/* Sub */}
+          <Text style={{
+            fontSize: 14.5, color: 'rgba(255,250,246,0.70)', marginTop: 12,
+            lineHeight: 21.5, maxWidth: 320,
+          }}>
+            {`On a calibré tout ça pour ${goalLabel(obState.goal)}, ${obState.frequency}× / semaine. Première séance demain matin.`}
+          </Text>
+
+          {/* Program summary card */}
+          <View style={{
+            marginTop: 28, padding: 16, backgroundColor: 'rgba(255,250,246,0.06)',
+            borderWidth: 1, borderColor: 'rgba(255,250,246,0.12)', borderRadius: 16,
+          }}>
+            <Text style={{
+              fontSize: 10, fontWeight: '800', color: '#FF5C1A',
+              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
+            }}>
+              Ton programme
+            </Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#FFFAF6' }}>
+              {obState.frequency >= 4 ? 'Push / Pull / Legs' : 'Full Body Progressif'}
+            </Text>
+            <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.55)', marginTop: 4 }}>
+              {`8 semaines · ${obState.frequency} séances/sem · ~50 min`}
+            </Text>
+          </View>
         </View>
-        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted }}>{step + 1}/{total}</Text>
-      </View>
-      <View style={{ flex: 1, paddingHorizontal: 22 }}>{children}</View>
-      <View style={{ paddingHorizontal: 18, paddingBottom: 22, paddingTop: 10 }}>
-        <TouchableOpacity onPress={onNext} style={{ paddingVertical: 15, borderRadius: 16, alignItems: 'center', backgroundColor: '#FF5C1A' }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Tout est bon !</Text>
-        </TouchableOpacity>
-      </View>
+
+        {/* CTA */}
+        <View style={{ paddingHorizontal: 18, paddingBottom: 22, paddingTop: 10 }}>
+          <TouchableOpacity
+            onPress={handleFinish}
+            disabled={isLoading}
+            style={{
+              paddingVertical: 16, borderRadius: 16, backgroundColor: '#FF5C1A',
+              alignItems: 'center', opacity: isLoading ? 0.7 : 1,
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>
+              {isLoading ? 'Chargement…' : "C'est parti, démarrer ma journée →"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
-export default function OnboardingStep7() {
-  const theme = useThemeStore((s) => s.theme);
+// ─── OBPrep loading screen ────────────────────────────────────────────────────
 
-  const items = [
-    { icon: 'checkmark-circle-outline' as const, color: '#2E9E5B', text: 'Ton objectif et ton niveau enregistrés' },
-    { icon: 'checkmark-circle-outline' as const, color: '#2E9E5B', text: 'Fréquence et équipement configurés' },
-    { icon: 'checkmark-circle-outline' as const, color: '#2E9E5B', text: 'Profil morphologique créé' },
-    { icon: 'sparkles-outline' as const, color: '#FF5C1A', text: 'Le Coach IA va personnaliser ton plan' },
-  ];
+export default function OnboardingStep7() {
+  const { obState } = useContext(OBContext);
+  const [screenPhase, setScreenPhase] = useState<'loading' | 'ready'>('loading');
+  const [loadIdx, setLoadIdx] = useState(0);
+
+  // Advance loading phases
+  useEffect(() => {
+    if (screenPhase !== 'loading') return;
+    if (loadIdx >= LOAD_PHASES.length) {
+      const t = setTimeout(() => setScreenPhase('ready'), 400);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setLoadIdx((i) => i + 1), 700);
+    return () => clearTimeout(t);
+  }, [loadIdx, screenPhase]);
+
+  // Icon pulse animation
+  const iconScale = useSharedValue(1);
+  useEffect(() => {
+    iconScale.value = withRepeat(
+      withSequence(
+        withTiming(1.06, { duration: 800 }),
+        withTiming(1.0, { duration: 800 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
+
+  // Current step blink animation
+  const blinkOpacity = useSharedValue(1);
+  useEffect(() => {
+    blinkOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 500 }),
+        withTiming(0.3, { duration: 500 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+  const blinkStyle = useAnimatedStyle(() => ({ opacity: blinkOpacity.value }));
+
+  if (screenPhase === 'ready') {
+    return <OBReady />;
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <OBShell step={STEP} total={TOTAL} onBack={() => router.back()} onNext={() => router.push('/(auth)/onboarding/step-8' as any)}>
-        <View style={{ marginTop: 18, marginBottom: 28 }}>
-          <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase', color: '#FF5C1A', marginBottom: 8 }}>Préparation</Text>
-          <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, lineHeight: 30, letterSpacing: -0.5 }}>Ton profil est prêt</Text>
-          <Text style={{ fontSize: 14, color: theme.muted, marginTop: 8, lineHeight: 20 }}>Voici ce qu'on a configuré pour toi.</Text>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 40 }}>
+        {/* Loading icon with pulse */}
+        <Animated.View style={[{
+          width: 64, height: 64, borderRadius: 18,
+          backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20,
+          shadowColor: 'rgba(255,92,26,0.55)', shadowOffset: { width: 0, height: 8 },
+          shadowRadius: 20, shadowOpacity: 1, elevation: 8,
+        }, iconStyle]}>
+          <Ionicons name="sparkles" size={28} color="#fff" />
+        </Animated.View>
 
-        <View style={{
-          backgroundColor: theme.surface, borderRadius: 20,
-          borderWidth: 1, borderColor: theme.border, padding: 20, gap: 14,
-        }}>
-          {items.map((item) => (
-            <View key={item.text} style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-              <View style={{
-                width: 36, height: 36, borderRadius: 11,
-                backgroundColor: item.color + '18',
-                alignItems: 'center', justifyContent: 'center',
+        {/* Heading */}
+        <Text style={{ fontSize: 26, fontWeight: '800', lineHeight: 30, color: '#1C1A17', marginBottom: 24 }}>
+          {'On prépare ton\nplan, '}
+          <Text style={{ color: '#FF5C1A' }}>
+            {goalName(obState.goal)}
+          </Text>
+          {'…'}
+        </Text>
+
+        {/* Loading phases list */}
+        <View style={{ gap: 10 }}>
+          {LOAD_PHASES.map((text, i) => {
+            const isDone = i < loadIdx;
+            const isCurrent = i === loadIdx;
+            return (
+              <View key={i} style={{
+                flexDirection: 'row', alignItems: 'center', gap: 12,
+                opacity: i > loadIdx ? 0.35 : 1,
               }}>
-                <Ionicons name={item.icon} size={18} color={item.color} />
+                {isDone ? (
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 11, backgroundColor: '#2E9E5B',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Ionicons name="checkmark" size={11} color="#fff" />
+                  </View>
+                ) : isCurrent ? (
+                  <Animated.View style={[{
+                    width: 22, height: 22, borderRadius: 11,
+                    backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
+                  }, blinkStyle]}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#fff' }} />
+                  </Animated.View>
+                ) : (
+                  <View style={{
+                    width: 22, height: 22, borderRadius: 11,
+                    backgroundColor: 'rgba(28,26,23,0.08)',
+                  }} />
+                )}
+                <Text style={{
+                  fontSize: 13.5, color: '#1C1A17',
+                  fontWeight: isCurrent ? '700' : '500',
+                }}>{text}</Text>
               </View>
-              <Text style={{ fontSize: 14, color: theme.text, flex: 1, lineHeight: 19 }}>{item.text}</Text>
-            </View>
-          ))}
+            );
+          })}
         </View>
-      </OBShell>
+      </View>
     </SafeAreaView>
   );
 }

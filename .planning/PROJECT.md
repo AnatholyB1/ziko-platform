@@ -8,7 +8,35 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
 
-## Current Milestone: v1.5 Coach Platform & CRM
+<details>
+<summary>✅ v1.6 Mobile v2 [milestone-mobile] — SHIPPED 2026-05-21</summary>
+
+**Goal:** Livrer le plugin "Mon coach" mobile (côté athlete).
+
+**What shipped:**
+- `manifest.mandatory: true` field in `PluginManifest` type; PluginLoader pre-load bypass; mandatory trash gate in plugin store (migration 047 adds coach to `plugins_registry`)
+- Plugin "Mon coach" — pre-installed, non-removable for athletes; 3-state UX: State A (code entry `[A-Z2-9]`, 6-char), State B (coach preview card from `GET /preview`), State C (linked + revocation)
+- Typed "COACH" confirmation modal for revocation from both plugin screen and Settings > Mon coach
+- 22 fr+en i18n keys across all states, error cases, and modals
+- AI tools `coach_get_link` + `coach_revoke_link` wired into backend tool registry
+- UI design contract: Figma + UI-SPEC.md for all 3 states in light sport theme
+
+**Archive:** `.planning/milestones/v1.6-ROADMAP.md` · `.planning/milestones/v1.6-REQUIREMENTS.md`
+
+</details>
+
+---
+
+## Current Milestone: v1.7 Mobile UX v2
+
+**Goal:** Full visual redesign of the Ziko mobile app to match the 24 canonical mockup files (`C:/Users/Anatholy/Downloads/ziko/`). Design and real data connections are done together per screen. The active workout session screen (`workout-active.jsx`) is the only exclusion. Ships: design system (FormRing, AISuggestion, SubTabs, PluginsDrawer, etc.), 3-tab nav restructure, home screen realignment, all 18 plugins redesigned, workout stack (non-active), auth/onboarding/profile/settings redesigns, extra screens, and elimination of all hardcoded fixture data.
+
+**Parallel milestone:** v1.5 Coach Platform (web, main branch) continues independently.
+
+---
+
+<details>
+<summary>v1.5 Coach Platform & CRM — ongoing on main branch</summary>
 
 **Goal:** Ship the first coach-facing milestone — a modular web CRM (bounded-contexts architecture preparing the future ERP) that lets a coach manage their clients, assign programs, import data via AI file parsing, and use a dedicated AI assistant — with a simple invitation link between coach and athlete.
 
@@ -45,6 +73,8 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 - Full-access default on client data via RLS JOIN on `coach_client_links` (revocable, GDPR covered by revocation)
 - Self-serve coach onboarding with a posteriori moderation — no human bottleneck in v1.5
 - AI imports replace CSV — no stable format to maintain, reuses existing AI/vision stack, cost-gated by v1.4 credit system
+
+</details>
 
 ---
 
@@ -124,6 +154,19 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 - [x] Per-call token logging to `ai_cost_log`; monthly cost ≤ €0.75 verified (COST-02, COST-03)
 - [x] `user_profiles.tier` column (free/premium); middleware bypasses deduction for premium (PREM-01, PREM-02)
 
+### Validated (v1.5 — Coach Platform & CRM)
+
+- [x] `is_coach_of()` SECURITY DEFINER STABLE function + 11 cross-user SELECT policies — coach reads, never writes — v1.5
+- [x] Self-serve coach signup (3-step wizard: role promotion → profile → KYC); `coach/identity` bounded module — v1.5
+- [x] 6-char invitation codes; rate-limited constant-time redemption; web redeem state machine — v1.5
+- [x] Coach CRM: paginated roster + signal chips + 7-tab read-only client detail — v1.5
+- [x] Executive summary card + private coach notes + tags + multi-client comparison chart — v1.5
+- [x] Multi-week program editor (fork-on-assign); 5–10 expert seed templates — v1.5
+- [x] AI file imports — PDF/image/Excel/Word → Zod-validated programs; async polling; confidence highlights — v1.5
+- [x] AI coach orchestrator — 3 tools + SSE chat UI + alerts panel + weekly digest — v1.5
+- [x] Public `/coachs` SSG marketing page FR/EN — v1.5
+- [x] React `cache()` auth deduplication — one getUser() DB call per coach request — v1.5
+
 ### Deferred (post-v1.5)
 
 **Coach ERP (future milestone, after v1.5 CRM ships)**
@@ -150,7 +193,7 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 
 ## Context
 
-- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure)
+- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.5 (Coach Platform & CRM — 2026-05-22), v1.6 (Mon coach plugin mobile — 2026-05-21)
 - **Mobile app state**: 18 plugins, 26 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
 - **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup, centralized model config (`backend/api/src/config/models.ts`)
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
@@ -180,6 +223,13 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | Lazy daily-reset (date-keyed check at earn time) | No cron dependency — avoids Vercel at-least-once cron delivery causing double-resets | v1.4 Phase 18 ✓ |
 | POST /earn always returns HTTP 200 { credited: boolean } | Mobile client must never crash on earn failure; 4xx would require error handling in fire-and-forget context | v1.4 Phase 20 ✓ |
 | AIBridge 402 body slice extended 200→500 chars | earned_today array with ≥1 source exceeds 200 chars; truncation caused silent JSON.parse failure and no exhaustion sheet | v1.4 Phase 21 ✓ |
+| Monorepo path: apps/web in ziko-platform via git subtree (no --squash) | Preserves full c:/ziko-web history; dual-repo fallback 23-02b not needed; D-01/D-02 triple-green PASS | v1.5 Phase 23 ✓ |
+| @supabase/ssr dual-store cookie pattern (request + response) | Fresh tokens must propagate to downstream Server Components; stale JWT on locale redirects causes auth loops | v1.5 Phase 23 ✓ |
+| coach-sdk peerDependency zod ^4.0.0 + external:['zod'] in tsup | Prevents zod-instance drift across workspace; CJS bundle 3.6 KB (zod not inlined); T-23-03-02 mitigated | v1.5 Phase 23 ✓ |
+| (coach) route group with hard-coded redirect('/fr/login') | No searchParams.next interpolation prevents open-redirect (T-23-06-01 Tampering); Server Action independently re-calls getUser() for TOCTOU defense | v1.5 Phase 23 ✓ |
+| NEXT_PUBLIC_API_URL must be set in apps/web | Missing env var caused "Failed to fetch" on /storage/upload-url — component fell back to localhost:3000 (unreachable in production). Added to apps/web/.env. | v1.5 Phase 24 ✓ |
+| Marketing pages isolated in (marketing) route group | locale root layout rendered sticky `<Header />` unconditionally — coach pages inherited it, causing CoachSidebar to slide behind. Moving marketing pages to `[locale]/(marketing)/layout.tsx` strips Header/Footer from all coach routes cleanly. | v1.5 Phase 24 ✓ |
+| loginAction uses `getLocale()` + `/${locale}/` prefix on all redirects | loginAction returned hardcoded locale-less paths ('/coach/onboarding') causing 404 in next-intl; all redirects now prefixed dynamically. | v1.5 Phase 24 ✓ |
 
 ## Evolution
 
@@ -199,4 +249,12 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-13 — v1.5 milestone started: Coach Platform & CRM*
+*Last updated: 2026-05-24 after v1.5 milestone — Coach Platform & CRM (Phases 22–31 + 36) archived; v1.5 validated requirements added; Strava (STRAVA-01–07) deferred to v1.6.*
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Design + data together per screen (not two separate passes) | User requested "design + data ensemble" — prevents drift between UI and data layer | v1.7 decision |
+| Active workout session screen excluded from v1.7 | `workout-active.jsx` already functional; user explicitly said "seulement session active" | v1.7 decision |
+| 3-tab nav (Accueil/Séance/Profil) replacing 4-tab structure | `app.jsx` mockup has 3 tabs; PluginsDrawer on home replaces separate plugin tab | v1.7 Phase 32 |
+| New shared components in `packages/ui/` | FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip shared across all plugins | v1.7 Phase 32 |
+| Rule-based AICoachInline tips (not AI chat) | Mockup shows rotating contextual tips, not a chat UI; saves AI credits for real coach interactions | v1.7 Phase 33 |

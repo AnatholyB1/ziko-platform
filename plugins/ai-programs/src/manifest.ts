@@ -93,6 +93,12 @@ You can generate entire workout programs personalized to the user. When they ask
       icon: 'add-circle-outline',
       showInTabBar: false,
     },
+    {
+      path: '/(plugins)/ai-programs/import',
+      title: 'Importer un fichier',
+      icon: 'cloud-upload-outline',
+      showInTabBar: false,
+    },
   ],
 };
 

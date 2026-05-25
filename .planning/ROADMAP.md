@@ -7,7 +7,7 @@
 - [x] **v1.2 Barcode Enrichment + Tech Debt** — Phases 10–11 (shipped 2026-04-02)
 - [x] **v1.3 Security + Cloud Infrastructure** — Phases 12–16 (shipped 2026-04-05)
 - [x] **v1.4 Systeme de Credits IA & Monetisation** — Phases 17–21 (shipped 2026-04-29)
-- [ ] **v1.5 Coach Platform & CRM** — Phases 22–31 (in progress, started 2026-05-13)
+- [x] **v1.5 Coach Platform & CRM** — Phases 22–31 (shipped 2026-05-22)
 
 ## Phases
 
@@ -72,20 +72,24 @@ Five phases implemented a gamified AI credit system — atomic PostgreSQL credit
 
 </details>
 
-### 🚧 v1.5 Coach Platform & CRM (Phases 22–31) — IN PROGRESS
+<details>
+<summary>✅ v1.5 Coach Platform & CRM (Phases 22–31) — SHIPPED 2026-05-22</summary>
 
-Ten phases transform Ziko from a single-tenant athlete app into a two-sided platform: a coach-facing CRM on the Next.js web app reading client data via cross-user RLS, athlete-side Strava OAuth, and AI file imports replacing CSV. Three parallelizable lanes: (a) backend identity → invitations → clients → programs → imports → AI; (b) Strava integration (after schema); (c) public marketing landing (after onboarding URL stable). The architectural keystone is `coach_client_links` + a `SECURITY DEFINER` SQL function `is_coach_of(coach, client)` extending every existing table's RLS with `OR is_coach_of(auth.uid(), user_id)` — coach reads, never writes.
+Ten phases transform Ziko from a single-tenant athlete app into a two-sided coach CRM platform. Architectural keystone: `is_coach_of()` SECURITY DEFINER STABLE + 11 cross-user SELECT policies. Phase 30 (Strava) skipped/deferred to v1.6. Full details in [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md).
 
-- [ ] **Phase 22: Schema Foundation & RLS Keystone** — Migrations 034–036, `is_coach_of()` function, coach role + profiles + invitations + links + program extensions; cross-user RLS policies on 11 athlete tables
-- [ ] **Phase 23: Web Turborepo Onboarding & Auth Bootstrap** — Resolve `apps/web/` vs `c:/ziko-web` decision, `@supabase/ssr` layered auth, `(coach)` segment scaffolding, `packages/coach-sdk` shared Zod schemas, Vercel Pro + `maxDuration=60`
-- [ ] **Phase 24: Coach Identity & Onboarding** — `coach/identity` module, self-serve coach signup, profile + KYC, ESLint module boundaries, CI no-service-role guard
-- [ ] **Phase 25: Invitations & Mobile "Mon coach" Minimal** — `coach/invitations` + `coach/clients` link primitives, 6-char codes, mobile redemption screen, revoke flow
-- [ ] **Phase 26: CRM Client Management** — `/coach/clients` list + detail with TanStack Table, tabbed read-only client data, executive summary, tags, private notes, multi-client comparison
-- [ ] **Phase 27: Coaching Programs & Mobile "Mon coach" Full** — Program templates, folders, assignments (fork-on-assign), seed templates, mobile prescribed-program badge + compliance widget + contact CTA
-- [ ] **Phase 28: AI File Imports** — Upload/parse/preview/commit flow for PDF/image/Excel/Word, athlete + coach modes, multi-page PDFs, re-upload diff, async polling
-- [ ] **Phase 29: AI Coach Orchestrator** — 3 tools (`analyze_client`, `generate_coaching_program`, `monitor_client_alerts`), web chat UI, weekly digest, `ai_tool_audit`
-- [ ] **Phase 30: Strava Integration** — Migration 037, OAuth + webhook + backfill + reconciliation cron, mobile connect/disconnect (parallel with Phases 24–29)
-- [ ] **Phase 31: Public Marketing `/coachs`** — FR/EN static landing, demo video, comparison vs Trainerize/TrueCoach, beta signup CTA (parallel after Phase 23)
+- [x] Phase 22: Schema Foundation & RLS Keystone (4/4 plans) — completed 2026-05-14
+- [x] Phase 23: Web Turborepo Onboarding & Auth Bootstrap (8/8 plans) — completed 2026-05-15
+- [x] Phase 24: Coach Identity & Onboarding (6/6 plans) — completed 2026-05-16
+- [x] Phase 25: Invitations & Mobile "Mon coach" Minimal (9/9 plans) — completed 2026-05-17
+- [x] Phase 26: CRM Client Management (7/7 plans) — completed 2026-05-18
+- [x] Phase 27: Coaching Programs & Mobile "Mon coach" Full (8/8 plans) — completed (10/13 must-haves; 3 gaps deferred to Phase 41/milestone-mobile)
+- [x] Phase 28: AI File Imports (8/8 plans) — completed 2026-05-21
+- [x] Phase 29: AI Coach Orchestrator (6/6 plans) — completed 2026-05-22
+- [⏭️] Phase 30: Strava Integration — skipped, deferred to v1.6
+- [x] Phase 31: Public Marketing `/coachs` (3/3 plans) — completed 2026-05-22
+- [x] Phase 36: Web Performance Optimization (2/2 plans) — completed 2026-05-22
+
+</details>
 
 ---
 
@@ -102,10 +106,10 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   4. Migration 036 lands `workout_programs` extensions (`created_by_coach_id`, `assigned_to_user_id`, `is_template`, `weeks_data JSONB`, `template_source_id`) and the `ai_imports` table.
   5. A 4-case smoke test passes: coach can read linked client, coach cannot read unlinked client, revoked link blocks read immediately, expired link is treated as revoked.
 **Plans**: 4 plans
-- [ ] 22-01-PLAN.md — Test infrastructure (Vitest install, fixtures, CI workflow) — Wave 0
-- [ ] 22-02-PLAN.md — Migration 034: user_profiles.role + coach_profiles + RLS — Wave 1
-- [ ] 22-03-PLAN.md — Migration 035: invitations, links, is_coach_of(), redeem RPC, 11 SELECT policies (keystone) — Wave 2
-- [ ] 22-04-PLAN.md — Migration 036: workout_programs extensions + ai_imports — Wave 3
+- [x] 22-01-PLAN.md — Test infrastructure (Vitest install, fixtures, CI workflow) — Wave 0
+- [x] 22-02-PLAN.md — Migration 034: user_profiles.role + coach_profiles + RLS — Wave 1
+- [x] 22-03-PLAN.md — Migration 035: invitations, links, is_coach_of(), redeem RPC, 11 SELECT policies (keystone) — Wave 2
+- [x] 22-04-PLAN.md — Migration 036: workout_programs extensions + ai_imports — Wave 3
 
 ### Phase 23: Web Turborepo Onboarding & Auth Bootstrap
 **Goal**: A `(coach)` segment under `apps/web/` is reachable with cookie-based Supabase auth, `force-dynamic`, and the shared `coach-sdk` Zod package installed.
@@ -117,7 +121,16 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. `packages/coach-sdk` exists in the workspace exporting `ImportedProgramSchema`, `CoachClientLinkSchema`, `CoachProfileSchema` Zod schemas consumed by backend, web, and mobile.
   4. ESLint `no-restricted-imports` is configured to block cross-module imports outside `coach/<m>/service`; a CI grep verifies no `SERVICE_ROLE` references appear under `backend/api/src/coach/`.
   5. Vercel Pro tier is confirmed enabled for both `apps/web/` and backend deployments; `/coach/imports/:id/parse` declares `maxDuration = 60`; all `(coach)` routes use `dynamic = 'force-dynamic'`, `revalidate = 0`, and `cache: 'no-store'`.
-**Plans**: TBD
+**Plans**: 8 plans
+- [x] 23-01-PLAN.md — Wave 0: Pre-flight cleanup + rollback tag — completed 2026-05-14
+- [x] 23-02-PLAN.md — Wave 1: Spike — subtree merge c:/ziko-web → apps/web + triple-green gate — completed 2026-05-15 (PASS)
+- [ ] 23-02b-PLAN.md — Wave 1b (CONTINGENT on 23-02 FAIL): Dual-repo fallback per D-04 (reset, publish coach-sdk to GH Packages, c:/ziko-web .npmrc)
+- [x] 23-03-PLAN.md — Wave 2: packages/coach-sdk (Zod schemas + tsup dual ESM/CJS) — completed 2026-05-15
+- [x] 23-04-PLAN.md — Wave 3: @supabase/ssr factories + composed middleware — completed 2026-05-15
+- [x] 23-05-PLAN.md — Wave 4: ESLint no-restricted-imports (D-11 + D-12) — completed 2026-05-15
+- [x] 23-06-PLAN.md — Wave 5: (coach) layout + /fr/coach/_smoke thin slice — completed 2026-05-15
+- [x] 23-07-PLAN.md — Wave 6: Vercel topology + Pro-tier probes + CI workflow + GHA release insurance — completed 2026-05-15
+- [ ] 23-08-PLAN.md — Wave 7: Vercel cutover + smoke deploy + 23-VERIFICATION.md
 **UI hint**: yes
 
 ### Phase 24: Coach Identity & Onboarding
@@ -130,20 +143,38 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach can upload optional KYC documents (certifications, ID) without being blocked from coach features; `kyc_status` stays `pending` and is visible in their settings.
   4. A `role='both'` user signs in once and reaches both the athlete app (mobile) and the coach CRM (web) with the same account.
   5. `backend/api/src/coach/identity/` exists as a bounded module with `service.ts` as the only public entry; CI verifies no `SERVICE_ROLE` reference anywhere under `coach/`.
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 24-01-PLAN.md — Housekeeping + storage bucket migration + Wave 0 test stub
+- [ ] 24-02-PLAN.md — Backend bounded module (coach/identity/ types, db, service) + integration tests
+- [ ] 24-03-PLAN.md — Coach layout chrome (sidebar) + /fr/login page + loginAction
+- [ ] 24-04-PLAN.md — Shared coach components + Server Actions (promoteRole, saveProfile, saveKyc)
+- [ ] 24-05-PLAN.md — Pages assembly (onboarding wizard, dashboard, settings) + i18n keys
+- [ ] 24-06-PLAN.md — Full verification (automated suite + manual smoke all 5 surfaces)
 **UI hint**: yes
 
 ### Phase 25: Invitations & Mobile "Mon coach" Minimal
-**Goal**: A coach can issue an invitation code and an athlete can redeem it from mobile to create a revocable coach↔client link.
+**Goal**: A coach can issue an invitation code and an athlete can redeem it FROM WEB to create a revocable coach↔client link. (Mobile "Mon coach" plugin deferred to v1.6 seed per 25-CONTEXT.md D-01 — see .planning/seeds/SEED-002-mobile-mon-coach-plugin.md.)
 **Depends on**: Phase 24
-**Requirements**: INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05, INVITE-06, INVITE-07, MOBILE-01, MOBILE-05
+**Requirements**: INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05, INVITE-06, INVITE-07 (MOBILE-01 + MOBILE-05 deferred to v1.6 seed)
 **Success Criteria** (what must be TRUE):
-  1. A coach can generate a 6-character `[A-Z2-9]` invitation code from the coach dashboard, set its expiration (default 14 days), see it in a list with status (active/used/expired/revoked), and revoke any active code.
-  2. An athlete sees a "Mon coach" screen in the mobile app: when unlinked, an empty state with a code-entry input; entering a valid code creates a `coach_client_links` row with `status='active'`.
-  3. Before confirming, the athlete sees a preview of the coach (display name, bio, specialties, photo); expired or already-used codes return a clear error and do not create a link.
-  4. Code redemption is rate-limited (5 attempts/15min per IP, 10/hour per user) with constant-time error responses regardless of failure reason.
-  5. The athlete can revoke the coach link from mobile settings in a 2-step confirmation; the coach loses read access immediately (RLS check on next read returns nothing).
-**Plans**: TBD
+  1. A coach can generate a 6-character `[A-Z2-9]` invitation code from `/coach/invitations`, set its expiration (preset chips 7d/14d-default/30d/Never), see it in a list with status (active/used/expired/revoked), and revoke any active code.
+  2. An athlete sees a state-aware web surface at `/redeem` (manual entry) or `/r/[code]` (deep-link): when unlinked, code-entry input; entering a valid code transitions to a preview state; valid redemption creates a `coach_client_links` row.
+  3. Before confirming, the athlete sees a preview of the coach (display name, bio, specialties, signed-URL photo, KYC badge); expired or already-used codes return a single constant-time error (no per-cause leak) and do not create a link.
+  4. Code redemption is rate-limited (5 attempts/15min per IP, 10/hour per user) with constant-time wire envelope regardless of failure reason; serial IP+user composition via Upstash sliding window.
+  5. The athlete can revoke the coach link from `/redeem` (state C) via a typed-confirmation modal ("Tapez COACH"); the coach loses read access immediately (RLS check on next read returns nothing).
+**Plans**: 8 plans
+  - [x] 25-01-PLAN.md — Foundation (peek_invitation migration 040, nanoid@^3.3.11, coach-sdk schemas, i18n stubs)
+  - [x] 25-02-PLAN.md — Backend coach/invitations bounded module (generate/list/revoke)
+  - [x] 25-03-PLAN.md — Backend coach/clients bounded module (links/me, preview, redeem, revoke) + composed rate limiter + constant-time envelope
+  - [x] 25-04-PLAN.md — Web (coach) /coach/invitations page + components + Server Actions + sidebar nav INSERT
+  - [x] 25-05-PLAN.md — Web (athlete) /redeem + /r/[code] state machine + CoachPreviewCard + safeNext extension
+  - [x] 25-06-PLAN.md — Validation (backend unit + integration + rate-limit + timing + safeNext tests)
+  - [x] 25-07a-PLAN.md — Refonte Phase 24 (1/2) — login + 3-step onboarding wizard (pixel-perfect to Ziko+Onboarding.html)
+  - [x] 25-07b-PLAN.md — Refonte Phase 24 (2/2) — coach dashboard + settings (pixel-perfect to Ziko+Onboarding.html)
+  - [x] 25-08-PLAN.md — Gap closure: redeem flow JWT fix (getUser() first, API_URL fallback, error logging, pending CTAs)
+  - [x] 25-09-PLAN.md — UI pixel-perfect audit: 4 class-string deviations fixed (RevokeConfirmModal input, InvitationsTable chips/empty-state, InvitationCodeCard label)
+**Canonical mockups:** `.planning/mockups/Ziko-Onboarding.html` (Phase 24 surfaces) + `.planning/mockups/Ziko-Screens.html` (Phase 25 surfaces) - pixel-perfect match required.
+**Phase 24 refonte (folded into Phase 25):** login + onboarding wizard + dashboard + settings re-delivered pixel-perfect to canonical Phase 24 mockup. Tracked in plans 25-07a (login + onboarding) and 25-07b (dashboard + settings).
 **UI hint**: yes
 
 ### Phase 26: CRM Client Management
@@ -156,7 +187,14 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach sees an executive summary card at the top of the client detail (weekly compliance %, last workout date, latest measurement, 14-day mood trend).
   4. A coach can attach custom tags (`coach_client_tags`) and write versioned private notes (`coach_client_notes`) per client; both are coach-private and never visible to the client.
   5. A coach can select 3–5 clients and view a multi-client comparison chart for a common metric; a coach can revoke a coach↔client link from the dashboard with a 2-step confirmation that immediately removes read access while preserving client data.
-**Plans**: TBD
+**Plans**: 7 plans
+- [x] 26-01-PLAN.md — Wave 0: Pre-flight (deps + 8 test stubs + coach-sdk schemas) — COMPLETE 2026-05-18
+- [x] 26-02-PLAN.md — Wave 1: Migration 041 [BLOCKING] + backend roster/tags/notes/revoke routes — COMPLETE 2026-05-18
+- [x] 26-03-PLAN.md — Wave 2: Backend summary/7 tab/compare routes — COMPLETE 2026-05-18
+- [ ] 26-04-PLAN.md — Wave 2: Web roster page (ClientsTable + CoachSidebar Clients enabled)
+- [ ] 26-05-PLAN.md — Wave 2: Web client detail layout + all 7 tab pages
+- [ ] 26-06-PLAN.md — Wave 3: ExecutiveSummaryCard + ClientNotesPanel + ClientTagInput
+- [ ] 26-07-PLAN.md — Wave 3: ComparisonChart + compare page + human checkpoint
 **UI hint**: yes
 
 ### Phase 27: Coaching Programs & Mobile "Mon coach" Full
@@ -169,7 +207,15 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. A coach can assign a template to one or more linked clients in a single action; assignment creates a forked copy (`is_template=FALSE`, `assigned_to_user_id` set, `template_source_id` back-reference) and per-client edits never touch the source template.
   4. An athlete with an assigned program sees the coach card (name, photo, certifications) plus today's session preview in the "Mon coach" mobile screen; assigned sessions execute like any workout and log into `workout_sessions`.
   5. The mobile athlete sees a "Programme prescrit par [coach]" badge on prescribed sessions (read-only badge), a "75% this week" weekly compliance widget, the coach's latest shared note, and a "Contact coach" CTA that opens `mailto:` with the coach's signup email.
-**Plans**: TBD
+**Plans**: 8 plans (Track A: Web ONLY)
+- [ ] 27-00-PLAN.md — Wave 0: vitest smoke test stubs for backend/api (programs.spec.ts)
+- [ ] 27-01-PLAN.md — Wave 0: coach-sdk Zod schemas
+- [ ] 27-02-PLAN.md — Wave 1: Migration 045 core schema + [BLOCKING] supabase db push
+- [ ] 27-03-PLAN.md — Wave 1: Migration 046 seed templates + [BLOCKING] push
+- [ ] 27-04-PLAN.md — Wave 2: Backend programsRouter (9 routes + exercise search)
+- [ ] 27-05-PLAN.md — Wave 2: Backend clients extensions (programs tab + shared-note)
+- [ ] 27-06-PLAN.md — Wave 3: Web programs list (A1) + new program form (A2) + CoachSidebar flip
+- [ ] 27-07-PLAN.md — Wave 3: Program editor (A3) + AssignmentModal (A4) + Programs tab (A5)
 **UI hint**: yes
 
 ### Phase 28: AI File Imports
@@ -182,7 +228,17 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. The preview UI shows extracted weeks/sessions/exercises with confidence scores per field; fields below 70% confidence are highlighted yellow; every field is editable before commit; multi-page PDFs (up to 30 pages, e.g. 12-week programs) are reassembled into a single structured program.
   4. An athlete commits in "athlete mode" creating a usable `workout_programs` row owned by them; a coach commits in "coach template mode" creating a template (`is_template=TRUE`) ready to assign.
   5. The import flow is async — the client polls `GET /coach/imports/:id` every 2s and handles parse durations up to 60s without blocking; re-uploading a new version of a previously imported file shows a diff (new/changed/removed weeks/sessions/exercises) before commit.
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — Pre-flight: deps + migration 048 + schema push + test stubs
+- [ ] 28-02-PLAN.md — Credits extension + parse submodule (pdf/excel/word/claude)
+- [ ] 28-03-PLAN.md — Backend bounded module types.ts + db.ts
+- [ ] 28-04-PLAN.md — Backend service.ts (6 routes) + app.ts mount
+- [ ] 28-05-PLAN.md — Web: imports list page + CoachSidebar entry
+- [ ] 28-06-PLAN.md — Web: parse preview/editor page (/coach/imports/[id])
+- [ ] 28-07-PLAN.md — Mobile: ImportFileScreen + manifest + route wrapper
+- [ ] 28-08-PLAN.md — Verification: full test suite + smoke test
 **UI hint**: yes
 
 ### Phase 29: AI Coach Orchestrator
@@ -195,7 +251,14 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. `monitor_client_alerts` flags concerning patterns (missed sessions, sleep drop, declining mood, RPE inflation) and a background job runs it every 24h per coach, surfacing results in a coach inbox with optional push notification.
   4. A coach can click "Adapt this program for [client X]" on any template page and the AI chat opens pre-filled with the template + client context; every Monday morning, a coach receives a weekly digest (email + in-app notification) summarizing key points across all linked clients.
   5. Every coach AI tool invocation is logged to `ai_tool_audit` (timestamp, coach_id, tool_name, target_client_id, args_hash, result_status, conversation_id); coach AI usage is credit-gated by the v1.4 credit system with per-tool cost classes visible to the coach.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 29-01-PLAN.md — Wave 1: Migration 050 (coach_alerts + ai_tool_audit) + [BLOCKING] supabase db push
+- [ ] 29-02-PLAN.md — Wave 2: Backend coach/ai/ bounded module (types, context, db, tools, service) + credits.ts + app.ts + vercel.json
+- [ ] 29-03-PLAN.md — Wave 3: Web /coach/ai page + AIChatClient + MessageBubble + ChatInputBar + CreditWidget + ToolResultCard
+- [ ] 29-04-PLAN.md — Wave 4: AlertsPanel + AlertCard + CoachSidebar update + dashboard update + AdaptWithAIButton + ProgramsClient update
+- [ ] 29-05-PLAN.md — Wave 5: packages/email (WeeklyDigest React Email template) + Resend integration in monitor-cron
+- [ ] 29-06-PLAN.md — Wave 6: Verification (TypeScript + 10 grep gates + human smoke test)
 **UI hint**: yes
 
 ### Phase 30: Strava Integration
@@ -208,7 +271,10 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   3. New Strava activities arrive via webhook (handler returns 200 in <2s, processing in a `*/5 * * * *` cron with `FOR UPDATE SKIP LOCKED`); on initial connection, a 30-day backfill runs throttled by Upstash (max 90 req/15min).
   4. A daily reconciliation cron (03:00 UTC) catches missed webhook deliveries since `last_sync_at`; Strava deauthorization marks the row deauthorized and the mobile app surfaces a "Reconnect" CTA.
   5. An athlete can disconnect Strava from mobile settings; tokens are cleared and the webhook subscription is unsubscribed.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 31-01-PLAN.md — OG image + i18n keys (fr/en) + SSG page shell — Wave 1
+- [ ] 31-02-PLAN.md — CoachsHero + CoachsVideoPlaceholder + CoachsFeatureBlocks — Wave 2
+- [ ] 31-03-PLAN.md — CoachsComparisonTable + CoachsFounderSection + CoachsFAQ + CoachsCtaFooter — Wave 2 (parallel)
 **UI hint**: yes
 
 ### Phase 31: Public Marketing `/coachs`
@@ -222,6 +288,19 @@ Ten phases transform Ziko from a single-tenant athlete app into a two-sided plat
   4. The page is fully static (SSG via `generateStaticParams` + `setRequestLocale`), CNIL-compliant (self-hosted fonts via `next/font`), and SEO-optimized with OG metadata.
 **Plans**: TBD
 **UI hint**: yes
+
+### Phase 36: Web Performance Optimization
+**Goal**: Eliminate redundant auth DB round-trips on every coach page navigation by introducing React cache() deduplication and selective ISR.
+**Depends on**: Phase 26 (coach layout and page structure established)
+**Requirements**: PERF-01, PERF-02, PERF-03, PERF-04
+**Success Criteria** (what must be TRUE):
+  1. A single request through the (coach) route segment triggers exactly ONE `supabase.auth.getUser()` DB call, regardless of how many server components (layout + page + nested layouts) participate in the render.
+  2. No `supabase.auth.getUser()` call exists directly in any (coach) route file — all auth resolution goes through `getCachedCoachUser()` from `@/lib/coach/auth`.
+  3. The settings page uses `revalidate = 60` ISR (coach profile data changes rarely); all client data pages keep `force-dynamic` (live athlete data).
+  4. TypeScript compilation passes with zero errors after all refactors.
+**Plans**: 2 plans
+- [ ] 36-01-PLAN.md — Wave 1: Create @/lib/coach/auth with getCachedCoachUser + getCachedAlertCount; refactor coach layout
+- [ ] 36-02-PLAN.md — Wave 2: Refactor all coach route pages to use getCachedCoachUser(); apply ISR to settings
 
 ---
 
@@ -268,18 +347,30 @@ Within v1.5, Phases 30 (Strava) and 31 (Marketing) execute in parallel lanes aft
 | 19. Backend Routes + AI Integration | v1.4 | 3/3 | Complete | 2026-04-05 |
 | 20. Activity Earn Hooks | v1.4 | 2/2 | Complete | 2026-04-09 |
 | 21. Mobile UI — Credit Display + Exhaustion UX | v1.4 | 2/2 | Complete | 2026-04-09 |
-| 22. Schema Foundation & RLS Keystone | v1.5 | 0/4 | Not started | — |
-| 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 0/0 | Not started | — |
-| 24. Coach Identity & Onboarding | v1.5 | 0/0 | Not started | — |
-| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 0/0 | Not started | — |
-| 26. CRM Client Management | v1.5 | 0/0 | Not started | — |
-| 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 0/0 | Not started | — |
-| 28. AI File Imports | v1.5 | 0/0 | Not started | — |
-| 29. AI Coach Orchestrator | v1.5 | 0/0 | Not started | — |
-| 30. Strava Integration | v1.5 | 0/0 | Not started | — |
-| 31. Public Marketing `/coachs` | v1.5 | 0/0 | Not started | — |
+| 22. Schema Foundation & RLS Keystone | v1.5 | 4/4 | Complete | 2026-05-14 |
+| 23. Web Turborepo Onboarding & Auth Bootstrap | v1.5 | 8/8 | Complete | 2026-05-15 |
+| 24. Coach Identity & Onboarding | v1.5 | 6/6 | Complete | 2026-05-16 |
+| 25. Invitations & Mobile "Mon coach" Minimal | v1.5 | 8/8 | Complete | 2026-05-17 |
+| 26. CRM Client Management | v1.5 | 7/7 | Complete | 2026-05-18 |
+| 27. Coaching Programs & Mobile "Mon coach" Full | v1.5 | 8/8 | Complete (10/13 must-haves) | 2026-05-21 |
+| 28. AI File Imports | v1.5 | 8/8 | Complete | 2026-05-21 |
+| 29. AI Coach Orchestrator | v1.5 | 6/6 | Complete | 2026-05-22 |
+| 30. Strava Integration | v1.5 | — | ⏭️ Skipped — deferred to v1.6 | — |
+| 31. Public Marketing `/coachs` | v1.5 | 3/3 | Complete | 2026-05-22 |
+| 36. Web Performance Optimization | v1.5 | 2/2 | Complete | 2026-05-22 |
 
 ---
 *Roadmap created: 2026-03-26 — Milestone v1.0 Landing Page*
 *Updated: 2026-04-29 — v1.4 archived: Systeme de Credits IA & Monetisation (Phases 17–21)*
 *Updated: 2026-05-13 — v1.5 Coach Platform & CRM roadmap drafted (Phases 22–31)*
+*Updated: 2026-05-14 — Phase 22 (Schema Foundation & RLS Keystone) execution complete: 4/4 plans, 3 migrations live on slkobhavpwsubnsmuhya (034/035/036), 47/47 RLS tests green. Ready for `/gsd-verify-phase`.*
+*Updated: 2026-05-14 — Phase 23 Wave 0 complete: Plan 23-01 (root react-native-worklets removed, pre-web-onboarding tag pushed to origin, 23-ROLLBACK.md committed). Ready for Wave 1 spike (Plan 23-02).*
+*Updated: 2026-05-15 — Phase 23 Wave 2 complete: Plan 23-03 packages/coach-sdk — ImportedProgramSchema/CoachClientLinkSchema/CoachProfileSchema built, tsup dual ESM+CJS, 4/4 Vitest tests green, apps/web wired. Ready for Wave 3 (Plan 23-04 @supabase/ssr).*
+*Updated: 2026-05-15 — Phase 23 Wave 3 complete: Plan 23-04 @supabase/ssr@0.10.3 installed, 3 factories (client/server/middleware), apps/web/middleware.ts replaced with Supabase-first + next-intl composition, 3/3 vitest tests green. ARCH-05 layer 1 operational. Ready for Wave 4 (Plan 23-05 ESLint).*
+*Updated: 2026-05-15 — Phase 23 Wave 6 complete: Plan 23-07 Vercel two-project topology (ignoreCommand on both), Pro-tier _debug probes (DELETE IN PHASE 24, ARCH-08), CI 4 new jobs (verify/no-service-role-in-coach/bundle-hygiene/zod-drift), publish-coach-sdk.yml D-04 insurance. 7/8 plans done. Ready for Wave 7 (Plan 23-08 Vercel cutover + smoke deploy).*
+*Updated: 2026-05-16 — Phase 24 (Coach Identity & Onboarding) complete: 6/6 plans + GAP fixes, 10/10 UAT pass. coach/identity bounded module, 3-step onboarding wizard, KYC storage bucket (migration 037), CoachSidebar layout, dashboard + settings pages. GAP fixes: locale prefix on all redirects, NEXT_PUBLIC_API_URL added to apps/web, marketing pages isolated in (marketing) route group. Ready for Phase 25 (Invitations & Mobile "Mon coach" Minimal).*
+*Updated: 2026-05-17 — Phase 25 (Invitations & Mobile "Mon coach" Minimal) complete: 8/8 plans + focus trap gap fix. coach/invitations + coach/clients bounded modules, 6-char nanoid codes, web-only redeem state machine (/redeem + /r/[code]), serial rate-limit (5/15min IP + 10/hr user), constant-time INVALID_OR_EXPIRED envelope, typed-confirmation revoke (COACH token), Phase 24 refonte pixel-perfect to canonical mockups, RevokeConfirmModal focus trap fixed. Ready for Phase 26 (CRM Client Management).*
+*Updated: 2026-05-18 — Phase 26 (CRM Client Management) complete: 7/7 plans + 2 gap-closure rounds. @tanstack/react-table, recharts, migration 041 (coach_client_tags/notes), full backend roster/summary/tabs/compare routes, ClientsTable + signal chips, 7-tab client detail, ExecutiveSummaryCard + NotesPanel + TagInput, ComparisonChart. 31/31 must-haves verified, 16/16 tests green. Ready for Phase 27 (Coaching Programs & Mobile "Mon coach" Full).*
+*Updated: 2026-05-22 — Phase 29 (AI Coach Orchestrator) planned: 6 plans in 6 waves. Migration 050 (coach_alerts + ai_tool_audit), coach/ai/ bounded module, /coach/ai SSE chat UI, alerts panel, AdaptWithAIButton, weekly digest via Resend + React Email.*
+*Updated: 2026-05-22 — Phase 36 (Web Performance Optimization) planned: 2 plans in 2 waves. React cache() auth deduplication via getCachedCoachUser(), revalidate=60 ISR for settings, force-dynamic preserved on all client data pages.*
+*Updated: 2026-05-24 — v1.5 archived: Coach Platform & CRM (Phases 22–31 + 36). Phase 30 (Strava) deferred to v1.6. Archive at milestones/v1.5-ROADMAP.md.*

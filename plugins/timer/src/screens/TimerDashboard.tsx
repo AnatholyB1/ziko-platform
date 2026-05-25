@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Vibration, RefreshControl, Modal, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Vibration, RefreshControl, Modal, Alert, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -79,7 +79,7 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
   const params = useLocalSearchParams<{ autoStartPresetId?: string }>();
   const {
     activePreset, currentRound, timeLeft,
-    isWork, isRunning, isPaused, elapsedSeconds,
+    isWork, isRunning, isPaused, elapsedSeconds, startedAt,
     customPresets, setCustomPresets,
     startTimer, tick, togglePause, stopTimer,
   } = useTimerStore();
@@ -205,6 +205,19 @@ export default function TimerDashboard({ supabase }: { supabase: any }) {
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning, isPaused]);
+
+  // Background correction — fix T2 (timer chrono après background)
+  // When app returns from background, compute exact state from wall-clock time.
+  useEffect(() => {
+    if (!isRunning || isPaused) return;
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active' && startedAt) {
+        const actualElapsed = Math.round((Date.now() - startedAt) / 1000);
+        useTimerStore.getState().computeStateAt(actualElapsed);
+      }
+    });
+    return () => sub.remove();
+  }, [isRunning, isPaused, startedAt]);
 
   const handleDismissComplete = () => {
     setCompleted(false);

@@ -1,0 +1,346 @@
+{
+  "Header": {
+    "logo": "Ziko",
+    "cta": "Télécharger l'app",
+    "localeFR": "FR",
+    "localeEN": "EN"
+  },
+  "Home": {
+    "hero": {
+      "badge": "🔥 Coach IA · 17 plugins · iOS & Android",
+      "headline1": "Entraîne-toi.",
+      "headline2": "Progresse.",
+      "headline3": "Recommence.",
+      "subline": "17 plugins, un seul abonnement. Coaching IA, suivi nutrition, GPS running et bien plus.",
+      "ctaAppStore": "Télécharger sur l'App Store",
+      "ctaPlayStore": "Disponible sur Google Play",
+      "ctaCoach": "Vous êtes coach ? Accéder à l'espace coach"
+    },
+    "howItWorks": {
+      "heading": "Comment ça marche",
+      "step1": {
+        "title": "Télécharge",
+        "description": "Installe Ziko en 30 secondes, disponible sur iOS et Android."
+      },
+      "step2": {
+        "title": "Personnalise",
+        "description": "Choisis tes plugins, configure ton coach IA selon ton style d'entraînement."
+      },
+      "step3": {
+        "title": "Progresse",
+        "description": "Suis tes données, reçois des recommandations et bats tes records."
+      }
+    },
+    "aiCoach": {
+      "badge": "Propulsé par Claude Sonnet",
+      "heading": "Ton coach IA qui te comprend vraiment",
+      "description": "Pose tes questions, fixe tes objectifs, demande un programme. Le coach IA analyse tes habitudes, ta nutrition et tes performances pour te donner des conseils personnalisés en temps réel.",
+      "cta": "Découvrir le coach IA",
+      "userMessage": "J'ai du mal à rester régulier, comment m'aider ?",
+      "aiMessage": "Commençons par 3 habitudes simples cette semaine. Je vais t'envoyer un rappel chaque jour et ajuster selon tes résultats. 💪"
+    },
+    "showcase": {
+      "heading": "17 plugins, une seule app",
+      "categoryAll": "Tous",
+      "categoryTraining": "Entraînement",
+      "categoryHealth": "Santé",
+      "categoryNutrition": "Nutrition",
+      "categoryCoaching": "Coaching & IA",
+      "categoryCommunity": "Communauté"
+    },
+    "pricing": {
+      "popularBadge": "Le plus populaire",
+      "heading": "Gratuit pour toujours",
+      "price": "0€",
+      "priceUnit": "/mois",
+      "valueProp1": "Pas d'abonnement, pas de surprise",
+      "valueProp2": "Coaching IA inclus dans l'app",
+      "valueProp3": "17 plugins disponibles dès le téléchargement",
+      "cta": "Télécharger gratuitement",
+      "priceNote": "Essai gratuit 7 jours · Annulation à tout moment"
+    }
+  },
+  "Plugins": {
+    "timer": "Créez des séances Tabata, HIIT, EMOM et Hyrox avec des timers personnalisables et un suivi d'exercices.",
+    "cardio": "Enregistrez vos courses et sorties vélo avec suivi GPS en direct, allure, distance et dénivelé.",
+    "ai-programs": "Générez des programmes d'entraînement complets adaptés à vos objectifs grâce à l'IA.",
+    "rpe": "Calculez votre 1RM estimé et ajustez l'intensité de vos séances avec l'échelle RPE.",
+    "stretching": "Accédez à des routines de stretching et mobilité adaptées à votre récupération.",
+    "sleep": "Suivez la qualité de votre sommeil et obtenez un score de récupération journalier.",
+    "measurements": "Enregistrez vos mesures corporelles et visualisez votre progression dans le temps.",
+    "hydration": "Suivez votre consommation d'eau quotidienne et atteignez vos objectifs d'hydratation.",
+    "wearables": "Synchronisez Apple Health ou Health Connect pour centraliser toutes vos données santé.",
+    "nutrition": "Tracez vos repas, suivez vos macros et calculez vos besoins caloriques avec le calculateur TDEE.",
+    "supplements": "Explorez le catalogue de compléments et comparez les prix entre les marques en temps réel.",
+    "habits": "Créez des habitudes quotidiennes, suivez vos objectifs et restez régulier grâce au coaching IA.",
+    "persona": "Personnalisez le style de coaching de votre IA pour un accompagnement adapté à votre personnalité.",
+    "journal": "Notez votre humeur, énergie et stress pour un suivi complet de votre bien-être mental.",
+    "gamification": "Gagnez de l'XP, montez de niveau et débloquez des récompenses en atteignant vos objectifs.",
+    "stats": "Analysez vos performances avec des graphiques et des statistiques détaillées sur vos progrès.",
+    "community": "Rejoignez des défis, suivez vos amis et grimpez dans les classements de la communauté."
+  },
+  "Metadata": {
+    "homeTitle": "Ziko — L'appli fitness tout-en-un",
+    "homeDescription": "Coaching IA, suivi nutrition, GPS running, 17 plugins. Téléchargez Ziko gratuitement.",
+    "ogImageAlt": "Ziko — Application fitness tout-en-un",
+    "legalTitle": "Mentions légales",
+    "legalDescription": "Mentions légales de Ziko, application fitness mobile.",
+    "privacyTitle": "Politique de confidentialité",
+    "privacyDescription": "Comment Ziko collecte et traite vos données personnelles.",
+    "cguTitle": "CGU",
+    "cguDescription": "Conditions générales d'utilisation de l'application Ziko.",
+    "deleteTitle": "Supprimer mon compte",
+    "deleteDescription": "Demander la suppression de votre compte Ziko.",
+    "appScreenshotAlt": "Capture d'écran de l'application Ziko"
+  },
+  "Footer": {
+    "copyright": "© 2026 Ziko. Tous droits réservés.",
+    "legal": "Mentions légales",
+    "privacy": "Politique de confidentialité",
+    "terms": "CGU",
+    "deleteAccount": "Supprimer mon compte"
+  },
+  "Login": {
+    "title": "Bienvenue",
+    "subtitle": "Connectez-vous à votre espace coach.",
+    "emailLabel": "Adresse email",
+    "passwordLabel": "Mot de passe",
+    "submitButton": "Se connecter",
+    "errorInvalid": "Email ou mot de passe incorrect. Veuillez réessayer.",
+    "errorServer": "Une erreur est survenue. Réessayez dans quelques instants."
+  },
+  "Onboarding": {
+    "title": "Devenir coach Ziko",
+    "progressLabel": "Étape {current} sur {total}",
+    "step1Heading": "Activez votre rôle coach",
+    "step1BodyNew": "Votre compte Ziko sera configuré comme coach.",
+    "step1BodyBoth": "Votre compte athlète reste actif — vous ajoutez le rôle coach.",
+    "step1Cta": "Commencer l'inscription",
+    "step2Heading": "Votre profil coach",
+    "step2Subtitle": "Ces informations seront visibles par vos futurs clients.",
+    "displayNameLabel": "Nom affiché",
+    "displayNamePlaceholder": "Prénom Nom ou nom de votre structure",
+    "bioLabel": "Bio (optionnel)",
+    "bioPlaceholder": "Décrivez votre approche, vos spécialités…",
+    "specialtiesLabel": "Spécialités (optionnel)",
+    "specialtiesPlaceholder": "Ex : Hyrox, perte de poids, remise en forme…",
+    "websiteLabel": "Site web (optionnel)",
+    "photoLabel": "Photo de profil (optionnel)",
+    "photoCta": "Choisir une photo",
+    "step2Cta": "Continuer la configuration",
+    "step3Heading": "Vérification (optionnel)",
+    "step3Subtitle": "Ajoutez vos certifications pour renforcer la confiance de vos clients. Vous pouvez passer cette étape.",
+    "kycCertificationCta": "Ajouter une certification",
+    "kycIdDocumentCta": "Ajouter une pièce d'identité",
+    "kycOtherCta": "Ajouter un autre document",
+    "step3Skip": "Passer cette étape",
+    "step3Cta": "Terminer la configuration"
+  },
+  "Dashboard": {
+    "welcome": "Bonjour, {displayName} 👋",
+    "subtitle": "Votre espace coach est prêt.",
+    "inviteTeaser": "Inviter un client → (bientôt disponible)"
+  },
+  "Settings": {
+    "title": "Paramètres du profil",
+    "profileSection": "Informations du profil",
+    "kycSection": "Documents de vérification",
+    "saveCta": "Enregistrer les modifications",
+    "saving": "Enregistrement…",
+    "loading": "Chargement…",
+    "saveSuccess": "Profil mis à jour.",
+    "saveError": "Impossible de sauvegarder. Réessayez."
+  },
+  "KycStatus": {
+    "pending": "En attente",
+    "submitted": "Documents soumis",
+    "verified": "Vérifié",
+    "rejected": "Rejeté"
+  },
+  "Upload": {
+    "errorSize": "Fichier trop volumineux (max 5 Mo).",
+    "errorFormat": "Format non accepté. PDF, JPEG, PNG ou WebP uniquement.",
+    "errorMaxDocs": "Maximum 3 documents. Supprimez-en un pour ajouter un autre.",
+    "success": "Document ajouté.",
+    "error": "Échec du transfert. Réessayez."
+  },
+  "CoachInvitations": {
+    "title": "Invitations",
+    "generateCta": "Générer un code",
+    "cardLabel": "Code d'invitation",
+    "panelSubmit": "Générer",
+    "copyCode": "Copier le code",
+    "copyLink": "Copier le lien",
+    "expiration": {
+      "7d": "7j",
+      "14d": "14j",
+      "30d": "30j",
+      "never": "Sans expiration"
+    },
+    "expiresOn": "Expire le {date}",
+    "noExpiry": "Sans expiration",
+    "filter": {
+      "active": "Actives",
+      "all": "Toutes"
+    },
+    "table": {
+      "code": "Code",
+      "createdAt": "Créé le",
+      "expiresAt": "Expire le",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Actif",
+      "used": "Utilisé",
+      "expired": "Expiré",
+      "revoked": "Révoqué"
+    },
+    "revokeCta": "Révoquer",
+    "noRevoke": "—",
+    "revokeModal": {
+      "title": "Révoquer cette invitation ?",
+      "body": "Ce code sera immédiatement désactivé et ne pourra plus être utilisé par aucun athlète.",
+      "confirmLabel": "Tapez \"COACH\" pour confirmer",
+      "confirmCta": "Révoquer",
+      "cancel": "Annuler"
+    },
+    "emptyHeading": "Aucun code généré",
+    "emptyBody": "Générez votre premier code d'invitation et partagez-le avec un athlète.",
+    "shareUrlBase": "https://ziko-app.com/r/"
+  },
+  "CoachRedeem": {
+    "stateA": {
+      "heading": "Rejoignez votre coach",
+      "body": "Entrez le code de 6 caractères fourni par votre coach.",
+      "submit": "Valider",
+      "inputLabel": "Code d'invitation",
+      "inputPlaceholder": "XXXXXX"
+    },
+    "stateB": {
+      "back": "← Entrer un autre code",
+      "link": "Lier mon compte",
+      "cancel": "Annuler"
+    },
+    "stateC": {
+      "banner": "Vous êtes lié à {displayName} depuis le {date}",
+      "revoke": "Retirer ce coach"
+    },
+    "kyc": {
+      "verified": "Vérifié",
+      "pending": "En attente"
+    },
+    "bioMore": "Voir plus",
+    "bioLess": "Voir moins",
+    "successToast": "Vous êtes maintenant lié à {displayName}.",
+    "revokeModal": {
+      "title": "Retirer ce coach ?",
+      "body": "{displayName} perdra immédiatement l'accès en lecture à vos données.",
+      "confirmLabel": "Tapez \"COACH\" pour confirmer",
+      "confirmCta": "Retirer",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "invalidOrExpired": "Ce code n'est pas valide ou a expiré.",
+      "rateLimited": "Trop de tentatives. Réessayez dans quelques minutes."
+    }
+  },
+  "Sidebar": {
+    "invitations": "Invitations"
+  },
+  "coachs": {
+    "meta": {
+      "title": "Ziko — La CRM coaching à l'IA",
+      "description": "Gérez vos clients fitness avec l'IA. CRM coach + app athlète intégrée. Bêta privée gratuite."
+    },
+    "hero": {
+      "badge": "Bêta privée · 100% gratuit",
+      "headline": "La CRM coaching à l'IA",
+      "subtitle": "Gérez vos clients, analysez leurs données en temps réel, et générez des programmes avec l'IA. Gratuit en bêta privée — le futur ERP des coachs fitness.",
+      "cta": "Rejoindre la bêta privée",
+      "ctaNote": "Aucune carte bancaire requise"
+    },
+    "video": {
+      "heading": "Découvrez Ziko en action",
+      "caption": "Démo bientôt disponible"
+    },
+    "features": {
+      "heading": "Tout ce dont un coach a besoin",
+      "subheading": "Un CRM IA construit pour les professionnels du fitness.",
+      "crm": {
+        "title": "CRM Client intelligent",
+        "body": "Consultez le roster complet de vos clients. Accédez à leurs données en lecture seule — séances, mesures corporelles, sommeil, nutrition, RPE, habitudes et cardio — tout en un seul endroit.",
+        "bullet1": "Historique complet des séances et séries",
+        "bullet2": "Données de sommeil, nutrition, et cardio automatiques",
+        "bullet3": "Mesures corporelles et progression visuelle"
+      },
+      "ai": {
+        "title": "Analyse IA intégrée",
+        "body": "Interrogez l'IA sur n'importe quel client — analysez ses performances, générez un programme personnalisé, ou identifiez les clients à risque de décrochage.",
+        "bullet1": "Analyse client en langage naturel",
+        "bullet2": "Génération de programme multi-semaines",
+        "bullet3": "Alertes clients à risque automatiques"
+      },
+      "programs": {
+        "title": "Programmes de coaching",
+        "body": "Créez des templates multi-semaines, assignez-les à vos clients liés, et suivez la compliance hebdomadaire en temps réel depuis votre tableau de bord.",
+        "bullet1": "Templates réutilisables à travers tous vos clients",
+        "bullet2": "Assignation directe depuis le CRM",
+        "bullet3": "Suivi de compliance hebdomadaire"
+      },
+      "erp": {
+        "tag": "Roadmap",
+        "title": "Du CRM à l'ERP coaching",
+        "body": "Ziko est né CRM IA. La suite : agenda, facturation, gestion d'entreprise. Construit pour évoluer avec votre activité de coaching.",
+        "bullet1": "Agenda et planification de séances",
+        "bullet2": "Facturation et gestion des paiements",
+        "bullet3": "Gestion d'entreprise complète"
+      }
+    },
+    "comparison": {
+      "heading": "Pourquoi choisir Ziko ?",
+      "subheading": "Une comparaison honnête.",
+      "feature1Label": "Outils IA natifs",
+      "feature2Label": "Profondeur des données client",
+      "feature3Label": "App mobile athlète intégrée",
+      "zikoFeature1": "Analyse client + génération de programme",
+      "zikoFeature2": "Sommeil, nutrition, RPE, cardio, habitudes — automatiques",
+      "zikoFeature3": "Complète, incluse gratuitement",
+      "trainerizeFeature1": "",
+      "trainerizeFeature2": "Saisie manuelle",
+      "trainerizeFeature3": "Basique",
+      "truecoachFeature1": "",
+      "truecoachFeature2": "Saisie manuelle",
+      "truecoachFeature3": "Limitée",
+      "footnote": "* Données au 2026-05-22. Comparaison basée sur les fonctionnalités publiquement documentées."
+    },
+    "founder": {
+      "heading": "Notre mission",
+      "quote": "«Construit par des athlètes, pour les coachs.»",
+      "story": "Nous avons vécu le manque d'outils adaptés — à la fois comme athlètes et comme coachs. Ziko est la plateforme que nous aurions voulu avoir.",
+      "name": "Fondateur, Ziko",
+      "title": "Athlète & entrepreneur"
+    },
+    "faq": {
+      "heading": "Questions fréquentes",
+      "q1": "Quelles données mes clients doivent-ils partager ?",
+      "a1": "Vos clients téléchargent l'app Ziko gratuite et créent un compte. En acceptant votre invitation, vous accédez à leurs données en lecture seule : séances, mesures, sommeil, nutrition, RPE, habitudes et cardio. Aucun partage manuel requis — tout se synchronise automatiquement.",
+      "q2": "Est-ce vraiment gratuit ?",
+      "a2": "Oui. Ziko est 100% gratuit pendant la bêta privée. Aucune carte bancaire requise. Nous vous préviendrons avant tout changement de modèle tarifaire.",
+      "q3": "Sur quelles plateformes fonctionne l'app athlète ?",
+      "a3": "L'app Ziko pour athlètes est disponible sur iOS (iPhone) et Android. Le CRM coach est une application web qui fonctionne sur tout navigateur moderne.",
+      "q4": "Combien de clients puis-je gérer ?",
+      "a4": "Sans limite pendant la bêta privée. Nous évaluerons les limites selon les retours des coachs avant le lancement public.",
+      "q5": "Mes clients voient-ils mes données de coach ?",
+      "a5": "Non. L'accès est unidirectionnel : vous voyez les données de vos clients liés, mais vos clients n'ont pas accès à votre espace coach. Le lien est révocable à tout moment par le client.",
+      "q6": "Comment lier un client à mon espace coach ?",
+      "a6": "Depuis votre tableau de bord, générez un code d'invitation à 6 caractères. Votre client le saisit dans l'app Ziko > \"Mon coach\". La liaison est instantanée."
+    },
+    "cta": {
+      "heading": "Rejoignez les premiers coachs sur Ziko.",
+      "subheading": "Bêta privée ouverte — 100% gratuit, sans engagement.",
+      "button": "Rejoindre la bêta privée",
+      "note": "Aucune carte bancaire requise"
+    }
+  }
+}

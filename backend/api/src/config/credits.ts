@@ -4,13 +4,27 @@
 // When costs change, update ONE file. (D-08, D-09, D-10)
 
 // Per-action credit costs deducted on each AI call (D-08, D-09)
+// 'import' cost is 0 as a sentinel — actual cost is always passed via costOverride
+// at runtime (Math.min(page_count, 10) for PDFs, 1 for other formats). Phase 28 D-01/D-02.
 export const CREDIT_COSTS = {
   chat: 4,
   scan: 3,
   program: 4,
+  import: 0,
+  coach_chat: 4, // same cost as athlete chat (AIC-10)
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;
+
+// Per-tool cost classes for coach AI tools (AIC-10).
+// These are informational — the per-chat credit gate covers the full conversation.
+export const COACH_TOOL_COSTS = {
+  analyze_client: 2,
+  generate_coaching_program: 3,
+  monitor_client_alerts: 1,
+} as const;
+
+export type CoachToolName = keyof typeof COACH_TOOL_COSTS;
 
 // Daily free quota per action:
 //   base  = granted each day without any activity (daily_base grant)
@@ -18,6 +32,8 @@ export type CreditAction = keyof typeof CREDIT_COSTS;
 export const DAILY_QUOTAS = {
   chat: { base: 1, bonus: 2 },
   scan: { base: 1, bonus: 2 },
+  import: { base: 999, bonus: 0 }, // no free-quota gate for imports — cost is paid via costOverride
+  coach_chat: { base: 1, bonus: 0 }, // 1 free coach AI chat/day, no activity bonus (AIC-10)
 } as const;
 
 // Monthly free quota per action (D-10)

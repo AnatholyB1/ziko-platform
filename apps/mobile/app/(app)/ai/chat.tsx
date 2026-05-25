@@ -354,7 +354,7 @@ export default function AIChatScreen() {
               {messages.length === 0 && !streaming && (
                 <View style={{
                   flex: 1, alignItems: 'center', justifyContent: 'center',
-                  paddingVertical: 60, paddingHorizontal: 24, textAlign: 'center',
+                  paddingVertical: 60, paddingHorizontal: 24,
                 }}>
                   <View style={{
                     width: 56, height: 56, borderRadius: 18,

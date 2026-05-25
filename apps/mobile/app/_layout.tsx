@@ -7,11 +7,12 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Sentry from '@sentry/react-native';
 import { useAuthStore } from '../src/stores/authStore';
+import { useWorkoutStore } from '../src/stores/workoutStore';
 import { PluginLoader } from '../src/lib/PluginLoader';
 import { useThemeStore } from '../src/stores/themeStore';
 import { supabase } from '../src/lib/supabase';
 import CustomAlert from '../src/components/CustomAlert';
-import BugReportModal from '../src/components/BugReportModal';
+import { BugFab, BugSheet } from '@ziko/ui';
 import CreditEarnToast from '../src/components/CreditEarnToast';
 import CreditExhaustionSheet from '../src/components/CreditExhaustionSheet';
 import ErrorBoundary from '../src/components/ErrorBoundary';
@@ -68,6 +69,12 @@ function RootLayout() {
     initialize();
   }, []);
 
+  // Restore any in-progress workout session after restart (fix #19)
+  const restoreSession = useWorkoutStore((s) => s.restoreSession);
+  useEffect(() => {
+    if (session?.user) restoreSession();
+  }, [session?.user?.id]);
+
   // Sync Sentry user context with auth state
   useEffect(() => {
     if (session?.user) {
@@ -111,7 +118,8 @@ function RootLayout() {
                 <Stack.Screen name="(app)" options={{ headerShown: false }} />
               </Stack>
               <CustomAlert />
-              <BugReportModal />
+              <BugFab />
+              <BugSheet supabase={supabase} apiUrl={process.env.EXPO_PUBLIC_API_URL ?? ''} />
               <CreditEarnToast />
               <CreditExhaustionSheet />
             </PluginLoader>

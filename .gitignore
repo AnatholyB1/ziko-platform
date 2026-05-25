@@ -16,3 +16,4 @@ out/
 .claude-flow/
 .mcp.json
 com.facebook.react.devsupport.*
+.worktrees/

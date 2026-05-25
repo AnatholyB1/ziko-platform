@@ -1,0 +1,346 @@
+{
+  "Header": {
+    "logo": "Ziko",
+    "cta": "Download the app",
+    "localeFR": "FR",
+    "localeEN": "EN"
+  },
+  "Home": {
+    "hero": {
+      "badge": "🔥 AI Coach · 17 plugins · iOS & Android",
+      "headline1": "Train.",
+      "headline2": "Progress.",
+      "headline3": "Repeat.",
+      "subline": "17 plugins, one app. AI coaching, nutrition tracking, GPS running and much more.",
+      "ctaAppStore": "Download on the App Store",
+      "ctaPlayStore": "Get it on Google Play",
+      "ctaCoach": "Are you a coach? Access the coach space"
+    },
+    "howItWorks": {
+      "heading": "How it works",
+      "step1": {
+        "title": "Download",
+        "description": "Install Ziko in 30 seconds, available on iOS and Android."
+      },
+      "step2": {
+        "title": "Customize",
+        "description": "Choose your plugins, configure your AI coach to match your training style."
+      },
+      "step3": {
+        "title": "Progress",
+        "description": "Track your data, get personalized recommendations and beat your records."
+      }
+    },
+    "aiCoach": {
+      "badge": "Powered by Claude Sonnet",
+      "heading": "An AI coach that truly gets you",
+      "description": "Ask questions, set goals, request a program. Your AI coach analyzes your habits, nutrition and performance to give you real-time personalized advice.",
+      "cta": "Discover the AI coach",
+      "userMessage": "I struggle to stay consistent — how can you help?",
+      "aiMessage": "Let's start with 3 simple habits this week. I'll send you a daily reminder and adjust based on your results. 💪"
+    },
+    "showcase": {
+      "heading": "17 plugins, one app",
+      "categoryAll": "All",
+      "categoryTraining": "Training",
+      "categoryHealth": "Health",
+      "categoryNutrition": "Nutrition",
+      "categoryCoaching": "Coaching & AI",
+      "categoryCommunity": "Community"
+    },
+    "pricing": {
+      "popularBadge": "Most popular",
+      "heading": "Free forever",
+      "price": "$0",
+      "priceUnit": "/month",
+      "valueProp1": "No subscription, no hidden fees",
+      "valueProp2": "AI coaching included in the app",
+      "valueProp3": "17 plugins available from day one",
+      "cta": "Download for free",
+      "priceNote": "7-day free trial · Cancel anytime"
+    }
+  },
+  "Plugins": {
+    "timer": "Build Tabata, HIIT, EMOM and Hyrox sessions with customizable timers and exercise tracking.",
+    "cardio": "Record your runs and rides with live GPS tracking, pace, distance and elevation.",
+    "ai-programs": "Generate complete workout programs tailored to your goals with AI.",
+    "rpe": "Calculate your estimated 1RM and fine-tune session intensity using the RPE scale.",
+    "stretching": "Access stretching and mobility routines tailored to your recovery needs.",
+    "sleep": "Track your sleep quality and get a daily recovery score.",
+    "measurements": "Log your body measurements and visualize your progress over time.",
+    "hydration": "Track your daily water intake and hit your hydration goals.",
+    "wearables": "Sync Apple Health or Health Connect to centralize all your health data.",
+    "nutrition": "Log your meals, track your macros and calculate your caloric needs with the TDEE calculator.",
+    "supplements": "Browse the supplement catalog and compare prices across brands in real time.",
+    "habits": "Build daily habits, track your goals and stay consistent with AI coaching.",
+    "persona": "Customize your AI coach's style for guidance that fits your personality.",
+    "journal": "Log your mood, energy and stress levels for a complete mental well-being snapshot.",
+    "gamification": "Earn XP, level up and unlock rewards by reaching your fitness goals.",
+    "stats": "Analyze your performance with detailed charts and statistics on your progress.",
+    "community": "Join challenges, follow friends and climb community leaderboards."
+  },
+  "Metadata": {
+    "homeTitle": "Ziko — All-in-one fitness app",
+    "homeDescription": "AI coaching, nutrition tracking, GPS running, 17 plugins. Download Ziko for free.",
+    "ogImageAlt": "Ziko — All-in-one fitness app",
+    "legalTitle": "Legal notice",
+    "legalDescription": "Legal notice for Ziko, a mobile fitness application.",
+    "privacyTitle": "Privacy policy",
+    "privacyDescription": "How Ziko collects and processes your personal data.",
+    "cguTitle": "Terms of use",
+    "cguDescription": "Terms of use for the Ziko application.",
+    "deleteTitle": "Delete my account",
+    "deleteDescription": "Request deletion of your Ziko account.",
+    "appScreenshotAlt": "Ziko app screenshot"
+  },
+  "Footer": {
+    "copyright": "© 2026 Ziko. All rights reserved.",
+    "legal": "Legal notice",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "deleteAccount": "Delete my account"
+  },
+  "Login": {
+    "title": "Welcome",
+    "subtitle": "Sign in to your coach workspace.",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "submitButton": "Sign in",
+    "errorInvalid": "Incorrect email or password. Please try again.",
+    "errorServer": "An error occurred. Please try again in a moment."
+  },
+  "Onboarding": {
+    "title": "Become a Ziko coach",
+    "progressLabel": "Step {current} of {total}",
+    "step1Heading": "Activate your coach role",
+    "step1BodyNew": "Your Ziko account will be set up as a coach.",
+    "step1BodyBoth": "Your athlete account stays active — you are adding the coach role.",
+    "step1Cta": "Start registration",
+    "step2Heading": "Your coach profile",
+    "step2Subtitle": "This information will be visible to your future clients.",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "First Last or your business name",
+    "bioLabel": "Bio (optional)",
+    "bioPlaceholder": "Describe your approach, your specialties…",
+    "specialtiesLabel": "Specialties (optional)",
+    "specialtiesPlaceholder": "E.g. Hyrox, weight loss, fitness…",
+    "websiteLabel": "Website (optional)",
+    "photoLabel": "Profile photo (optional)",
+    "photoCta": "Choose a photo",
+    "step2Cta": "Continue setup",
+    "step3Heading": "Verification (optional)",
+    "step3Subtitle": "Add your certifications to build client trust. You can skip this step.",
+    "kycCertificationCta": "Add a certification",
+    "kycIdDocumentCta": "Add an ID document",
+    "kycOtherCta": "Add another document",
+    "step3Skip": "Skip this step",
+    "step3Cta": "Complete setup"
+  },
+  "Dashboard": {
+    "welcome": "Hello, {displayName} 👋",
+    "subtitle": "Your coach workspace is ready.",
+    "inviteTeaser": "Invite a client → (coming soon)"
+  },
+  "Settings": {
+    "title": "Profile settings",
+    "profileSection": "Profile information",
+    "kycSection": "Verification documents",
+    "saveCta": "Save changes",
+    "saving": "Saving…",
+    "loading": "Loading…",
+    "saveSuccess": "Profile updated.",
+    "saveError": "Could not save. Please try again."
+  },
+  "KycStatus": {
+    "pending": "Pending",
+    "submitted": "Documents submitted",
+    "verified": "Verified",
+    "rejected": "Rejected"
+  },
+  "Upload": {
+    "errorSize": "File too large (max 5 MB).",
+    "errorFormat": "Format not accepted. PDF, JPEG, PNG or WebP only.",
+    "errorMaxDocs": "Maximum 3 documents. Remove one to add another.",
+    "success": "Document added.",
+    "error": "Upload failed. Please try again."
+  },
+  "CoachInvitations": {
+    "title": "Invitations",
+    "generateCta": "Generate a code",
+    "cardLabel": "Invitation code",
+    "panelSubmit": "Generate",
+    "copyCode": "Copy code",
+    "copyLink": "Copy link",
+    "expiration": {
+      "7d": "7d",
+      "14d": "14d",
+      "30d": "30d",
+      "never": "No expiry"
+    },
+    "expiresOn": "Expires {date}",
+    "noExpiry": "No expiry",
+    "filter": {
+      "active": "Active",
+      "all": "All"
+    },
+    "table": {
+      "code": "Code",
+      "createdAt": "Created",
+      "expiresAt": "Expires",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "used": "Used",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "revokeCta": "Revoke",
+    "noRevoke": "—",
+    "revokeModal": {
+      "title": "Revoke this invitation?",
+      "body": "This code will be deactivated immediately and can no longer be used by any athlete.",
+      "confirmLabel": "Type \"COACH\" to confirm",
+      "confirmCta": "Revoke",
+      "cancel": "Cancel"
+    },
+    "emptyHeading": "No codes generated",
+    "emptyBody": "Generate your first invitation code and share it with an athlete.",
+    "shareUrlBase": "https://ziko-app.com/r/"
+  },
+  "CoachRedeem": {
+    "stateA": {
+      "heading": "Join your coach",
+      "body": "Enter the 6-character code from your coach.",
+      "submit": "Submit",
+      "inputLabel": "Invitation code",
+      "inputPlaceholder": "XXXXXX"
+    },
+    "stateB": {
+      "back": "← Enter another code",
+      "link": "Link my account",
+      "cancel": "Cancel"
+    },
+    "stateC": {
+      "banner": "You are linked to {displayName} since {date}",
+      "revoke": "Remove this coach"
+    },
+    "kyc": {
+      "verified": "Verified",
+      "pending": "Pending"
+    },
+    "bioMore": "Read more",
+    "bioLess": "Read less",
+    "successToast": "You are now linked to {displayName}.",
+    "revokeModal": {
+      "title": "Remove this coach?",
+      "body": "{displayName} will immediately lose read access to your data.",
+      "confirmLabel": "Type \"COACH\" to confirm",
+      "confirmCta": "Remove",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "invalidOrExpired": "This code is invalid or has expired.",
+      "rateLimited": "Too many attempts. Try again in a few minutes."
+    }
+  },
+  "Sidebar": {
+    "invitations": "Invitations"
+  },
+  "coachs": {
+    "meta": {
+      "title": "Ziko — The AI-powered coaching CRM",
+      "description": "Manage your fitness clients with AI. Coach CRM + integrated athlete app. Free private beta."
+    },
+    "hero": {
+      "badge": "Private beta · 100% free",
+      "headline": "The AI-powered coaching CRM",
+      "subtitle": "Manage your clients, analyze their real-time data, and generate programs with AI. Free in private beta — the future ERP for fitness coaches.",
+      "cta": "Join the private beta",
+      "ctaNote": "No credit card required"
+    },
+    "video": {
+      "heading": "See Ziko in action",
+      "caption": "Demo coming soon"
+    },
+    "features": {
+      "heading": "Everything a coach needs",
+      "subheading": "An AI CRM built for fitness professionals.",
+      "crm": {
+        "title": "Smart client CRM",
+        "body": "View your full client roster. Access their read-only data — sessions, body measurements, sleep, nutrition, RPE, habits, and cardio — all in one place.",
+        "bullet1": "Full session and set history",
+        "bullet2": "Automatic sleep, nutrition, and cardio data",
+        "bullet3": "Body measurements and visual progression"
+      },
+      "ai": {
+        "title": "Built-in AI analysis",
+        "body": "Ask the AI about any client — analyze their performance, generate a personalized program, or identify at-risk clients before they drop off.",
+        "bullet1": "Natural language client analysis",
+        "bullet2": "Multi-week program generation",
+        "bullet3": "Automatic at-risk client alerts"
+      },
+      "programs": {
+        "title": "Coaching programs",
+        "body": "Build multi-week templates, assign them to linked clients, and track weekly compliance in real time from your dashboard.",
+        "bullet1": "Reusable templates across all clients",
+        "bullet2": "Direct assignment from the CRM",
+        "bullet3": "Weekly compliance tracking"
+      },
+      "erp": {
+        "tag": "Roadmap",
+        "title": "From CRM to coaching ERP",
+        "body": "Ziko started as an AI CRM. What's coming: scheduling, billing, business management. Built to grow with your coaching business.",
+        "bullet1": "Scheduling and session planning",
+        "bullet2": "Billing and payment management",
+        "bullet3": "Full business management"
+      }
+    },
+    "comparison": {
+      "heading": "Why choose Ziko?",
+      "subheading": "An honest comparison.",
+      "feature1Label": "AI-native tools",
+      "feature2Label": "Client data depth",
+      "feature3Label": "Integrated athlete mobile app",
+      "zikoFeature1": "Client analysis + program generation",
+      "zikoFeature2": "Sleep, nutrition, RPE, cardio, habits — automatic",
+      "zikoFeature3": "Full-featured, included free",
+      "trainerizeFeature1": "",
+      "trainerizeFeature2": "Manual input",
+      "trainerizeFeature3": "Basic",
+      "truecoachFeature1": "",
+      "truecoachFeature2": "Manual input",
+      "truecoachFeature3": "Limited",
+      "footnote": "* Data as of 2026-05-22. Comparison based on publicly documented features."
+    },
+    "founder": {
+      "heading": "Our mission",
+      "quote": "\"Built by athletes, for coaches.\"",
+      "story": "We lived the lack of proper tools — both as athletes and as coaches. Ziko is the platform we wish had existed.",
+      "name": "Founder, Ziko",
+      "title": "Athlete & entrepreneur"
+    },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "q1": "What data do my clients need to share?",
+      "a1": "Your clients download the free Ziko app and create an account. By accepting your invitation, you get read-only access to their data: sessions, measurements, sleep, nutrition, RPE, habits, and cardio. No manual sharing required — everything syncs automatically.",
+      "q2": "Is it really free?",
+      "a2": "Yes. Ziko is 100% free during the private beta. No credit card required. We'll notify you before any pricing changes.",
+      "q3": "What platforms does the athlete app run on?",
+      "a3": "The Ziko athlete app is available on iOS (iPhone) and Android. The coach CRM is a web app that works in any modern browser.",
+      "q4": "How many clients can I manage?",
+      "a4": "Unlimited during the private beta. We'll evaluate limits based on coach feedback before the public launch.",
+      "q5": "Can my clients see my coach data?",
+      "a5": "No. Access is one-directional: you see your linked clients' data, but your clients have no access to your coach space. The link is revocable at any time by the client.",
+      "q6": "How do I link a client to my coach space?",
+      "a6": "From your dashboard, generate a 6-character invitation code. Your client enters it in the Ziko app > \"My coach\". The link is instant."
+    },
+    "cta": {
+      "heading": "Join the first coaches on Ziko.",
+      "subheading": "Open private beta — 100% free, no commitment.",
+      "button": "Join the private beta",
+      "note": "No credit card required"
+    }
+  }
+}

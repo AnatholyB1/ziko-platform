@@ -1,0 +1,36 @@
+name: Publish @ziko/coach-sdk
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/coach-sdk/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    if: ${{ vars.PUBLISH_COACH_SDK == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ziko'
+      - name: Install
+        run: npm install
+      - name: Build coach-sdk
+        run: npx turbo run build --filter=@ziko/coach-sdk
+      - name: Type-check + test
+        run: |
+          npx turbo run type-check --filter=@ziko/coach-sdk
+          npx turbo run test --filter=@ziko/coach-sdk
+      - name: Publish
+        working-directory: packages/coach-sdk
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

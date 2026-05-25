@@ -85,6 +85,8 @@ export interface PluginManifest {
   aiPersonaTraits?: string[];
   /** Appended to the AI system prompt when this plugin is active */
   aiSystemPromptAddition?: string;
+  /** When true, this plugin is pre-installed for all users and cannot be uninstalled. */
+  mandatory?: boolean;
   routes: PluginRoute[];
 }
 
@@ -104,7 +106,10 @@ export interface UserProfile {
   goal: FitnessGoal | null;
   units: 'metric' | 'imperial';
   avatar_url: string | null;
+  avatar_color: string | null;
   onboarding_done: boolean;
+  /** User role from migration 034. Defaults to 'client'. */
+  role?: 'client' | 'coach' | 'both';
 }
 
 // ── Workout Domain Types ──────────────────────────────────

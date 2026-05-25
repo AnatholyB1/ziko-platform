@@ -25,6 +25,7 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   supplements:   () => import('@ziko/plugin-supplements/manifest') as any,
   rpe:           () => import('@ziko/plugin-rpe/manifest') as any,
   pantry:        () => import('@ziko/plugin-pantry/manifest') as any,
+  coach:         () => import('@ziko/plugin-coach/manifest') as any,
 };
 
 /** Load persona settings from Supabase and inject dynamic system prompt */
@@ -54,6 +55,28 @@ async function applyPersonaDynamicPrompt(manifest: PluginManifest, userId: strin
   return manifest;
 }
 
+/** Auto-install the coach plugin for athletes (role 'client' or 'both') — idempotent */
+async function autoInstallCoachPlugin(userId: string): Promise<void> {
+  try {
+    const { data: profileRow } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+    const role = profileRow?.role ?? 'client';
+    if (role === 'client' || role === 'both') {
+      await supabase
+        .from('user_plugins')
+        .upsert(
+          { user_id: userId, plugin_id: 'coach', is_enabled: true },
+          { onConflict: 'user_id,plugin_id' }
+        );
+    }
+  } catch (err) {
+    console.warn('[PluginLoader] autoInstallCoachPlugin failed:', err);
+  }
+}
+
 interface PluginLoaderProps {
   children: React.ReactNode;
 }
@@ -68,6 +91,26 @@ export function PluginLoader({ children }: PluginLoaderProps) {
 
     async function loadInstalledPlugins() {
       if (!user) return;
+
+      // Pre-load mandatory plugins (bypass user_plugins DB)
+      for (const [pluginId, loader] of Object.entries(PLUGIN_LOADERS)) {
+        if (loadedRef.current.has(pluginId)) continue;
+        try {
+          const mod = await loader();
+          if (mod.default.mandatory === true) {
+            let manifest: PluginManifest = mod.default;
+            manifest = await applyPersonaDynamicPrompt(manifest, user.id);
+            registerPlugin(manifest);
+            aiBridge.registerPlugin(manifest);
+            loadedRef.current.add(pluginId);
+          }
+        } catch (err) {
+          console.warn(`[PluginLoader] Failed to load mandatory plugin "${pluginId}":`, err);
+        }
+      }
+
+      await autoInstallCoachPlugin(user.id);
+
       const { data: userPlugins, error } = await supabase
         .from('user_plugins')
         .select('plugin_id, is_enabled')

@@ -91,6 +91,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
   // Barcode tab state
   const [permission, requestPermission] = useCameraPermissions();
   const scannedRef = useRef(false);
+  const scanScrollRef = useRef<ScrollView>(null);
   const [barcodeProduct, setBarcodeProduct] = useState<FoodProduct | null>(null);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
   const [barcodeScannedCode, setBarcodeScannedCode] = useState('');
@@ -183,16 +184,33 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     // Resize to max 1568px — Anthropic rejects images > 8000px per dimension
-    const resized = await ImageManipulator.manipulateAsync(
-      asset.uri,
-      [{ resize: { width: Math.min(asset.width ?? 1568, 1568) } }],
-      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-    );
-    setScanImage(resized.uri);
+    // Fallback to original URI if native module is incompatible (Fixes ZIKO-MOBILE-2)
+    let imageUri = asset.uri;
+    try {
+      const resized = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: Math.min(asset.width ?? 1568, 1568) } }],
+        { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      imageUri = resized.uri;
+    } catch (e) {
+      console.warn('[Nutrition] Image resize failed, using original:', e);
+    }
     setScanResults(null);
     setScanDescription('');
-    analyzeImage(resized.uri);
+    setScanImage(imageUri); // set last so useEffect triggers after image is visible
   };
+
+  // Trigger analysis after scanImage is committed to native — rAF fires before native paint on RN,
+  // so use setTimeout to give the bridge time to render the Image before the spinner appears.
+  // Also scroll to top to ensure the image is visible (ScrollView may retain old scroll position).
+  useEffect(() => {
+    if (!scanImage) return;
+    scanScrollRef.current?.scrollTo({ y: 0, animated: false });
+    const timer = setTimeout(() => analyzeImage(scanImage), 500);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanImage]);
 
   const analyzeImage = async (uri: string) => {
     setAnalyzing(true);
@@ -254,6 +272,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       const data = await res.json();
       setScanResults(data.foods ?? []);
       setScanDescription(data.description ?? '');
+      setTimeout(() => scanScrollRef.current?.scrollTo({ y: 300, animated: true }), 100);
     } catch (e: any) {
       showAlert(t('general.error'), e.message || 'Network error');
     }
@@ -423,7 +442,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
             )}
           </View>
         ) : tab === 'scan' ? (
-          <ScrollView style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView ref={scanScrollRef} style={{ flex: 1, paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 100 }}>
             {!scanImage ? (
               <View style={{ alignItems: 'center', paddingTop: 40 }}>
                 <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: theme.border }}>

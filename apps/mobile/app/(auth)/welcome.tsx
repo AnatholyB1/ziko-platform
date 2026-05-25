@@ -91,17 +91,31 @@ export default function WelcomeScreen() {
 
           {/* CTAs */}
           <View style={{ gap: 10 }}>
-            {/* Google */}
+            {/* Apple */}
             <TouchableOpacity
-              onPress={handleGoogle}
+              onPress={() => showAlert('Bientôt disponible', 'La connexion Apple arrive prochainement.')}
               style={{
                 paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14,
                 backgroundColor: '#fff',
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >
-              <Ionicons name="logo-google" size={16} color="#1C1A17" />
-              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#1C1A17' }}>Continuer avec Google</Text>
+              <Ionicons name="logo-apple" size={16} color="#1C1A17" />
+              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#1C1A17' }}>Continuer avec Apple</Text>
+            </TouchableOpacity>
+
+            {/* Google */}
+            <TouchableOpacity
+              onPress={handleGoogle}
+              style={{
+                paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14,
+                borderWidth: 1, borderColor: 'rgba(255,250,246,0.16)',
+                backgroundColor: 'rgba(255,250,246,0.06)',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+              }}
+            >
+              <Ionicons name="logo-google" size={16} color="#FFFAF6" />
+              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#FFFAF6' }}>Continuer avec Google</Text>
             </TouchableOpacity>
 
             {/* Email → Sign up */}

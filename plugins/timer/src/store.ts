@@ -38,6 +38,7 @@ interface TimerState {
   updateCustomPreset: (id: string, p: Partial<TimerPreset>) => void;
   startTimer: (preset: TimerPreset) => void;
   tick: () => boolean;
+  computeStateAt: (targetElapsed: number) => void;
   togglePause: () => void;
   stopTimer: () => void;
 }
@@ -149,6 +150,33 @@ export const useTimerStore = create<TimerState>()((set, get) => ({
     // All rounds done
     set({ isRunning: false, isPaused: false });
     return true;
+  },
+
+  computeStateAt: (targetElapsed: number) => {
+    const { activePreset } = get();
+    if (!activePreset) return;
+    let elapsed = 0;
+    let round = 1;
+    let isWork = activePreset.work_seconds > 0;
+    while (true) {
+      const phaseLen = isWork ? activePreset.work_seconds : activePreset.rest_seconds;
+      const phaseEnd = elapsed + phaseLen;
+      if (targetElapsed < phaseEnd) {
+        set({ currentRound: round, isWork, timeLeft: phaseEnd - targetElapsed, elapsedSeconds: targetElapsed });
+        return;
+      }
+      elapsed = phaseEnd;
+      if (isWork && activePreset.rest_seconds > 0) {
+        isWork = false;
+      } else {
+        if (round >= activePreset.rounds) {
+          set({ isRunning: false, isPaused: false, elapsedSeconds: targetElapsed });
+          return;
+        }
+        round++;
+        isWork = activePreset.work_seconds > 0;
+      }
+    }
   },
 
   togglePause: () => set((s) => ({ isPaused: !s.isPaused })),

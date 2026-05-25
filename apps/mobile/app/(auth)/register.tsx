@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
 
 function getStrength(pw: string): number {
@@ -22,7 +22,6 @@ const STRENGTH_LABELS = ['', 'Faible', 'Correct', 'Fort', 'Excellent'];
 const STRENGTH_COLORS = ['transparent', '#E94B3C', '#E8A33A', '#2E9E5B', '#2E9E5B'];
 
 export default function RegisterScreen() {
-  const theme = useThemeStore((s) => s.theme);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,14 +49,14 @@ export default function RegisterScreen() {
   };
 
   const fieldStyle = {
-    backgroundColor: theme.surface,
-    borderRadius: 12, borderWidth: 1, borderColor: theme.border,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA',
     paddingHorizontal: 14, paddingVertical: 14,
-    color: theme.text, fontSize: 14,
+    color: '#1C1A17', fontSize: 14,
   } as const;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
 
@@ -67,11 +66,11 @@ export default function RegisterScreen() {
               onPress={() => router.back()}
               style={{
                 width: 36, height: 36, borderRadius: 12,
-                backgroundColor: theme.text + '10',
+                backgroundColor: 'rgba(28,26,23,0.06)',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <Ionicons name="chevron-back" size={18} color={theme.text} />
+              <Ionicons name="chevron-back" size={16} color="#1C1A17" />
             </TouchableOpacity>
           </View>
 
@@ -80,10 +79,10 @@ export default function RegisterScreen() {
             <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 2, textTransform: 'uppercase', color: '#FF5C1A', marginBottom: 12 }}>
               Bienvenue
             </Text>
-            <Text style={{ fontSize: 32, fontWeight: '800', color: theme.text, lineHeight: 34, letterSpacing: -0.5 }}>
+            <Text style={{ fontSize: 32, fontWeight: '800', color: '#1C1A17', lineHeight: 34, letterSpacing: -0.6 }}>
               Crée ton compte
             </Text>
-            <Text style={{ fontSize: 13.5, color: theme.muted, marginTop: 8, lineHeight: 19 }}>
+            <Text style={{ fontSize: 13.5, color: '#6B6963', marginTop: 8, lineHeight: 19.5 }}>
               2 minutes pour démarrer. Tu pourras compléter ton profil ensuite.
             </Text>
           </View>
@@ -92,10 +91,10 @@ export default function RegisterScreen() {
           <View style={{ paddingHorizontal: 24, gap: 14 }}>
             {/* Name */}
             <View>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted, marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Prénom</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#6B6963', marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Prénom</Text>
               <TextInput
                 value={name} onChangeText={setName}
-                placeholder="Comment on t'appelle ?" placeholderTextColor={theme.muted}
+                placeholder="Comment on t'appelle ?" placeholderTextColor="#6B6963"
                 autoComplete="name"
                 style={fieldStyle}
               />
@@ -103,10 +102,10 @@ export default function RegisterScreen() {
 
             {/* Email */}
             <View>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted, marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Email</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#6B6963', marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Email</Text>
               <TextInput
                 value={email} onChangeText={setEmail}
-                placeholder="toi@email.com" placeholderTextColor={theme.muted}
+                placeholder="toi@email.com" placeholderTextColor="#6B6963"
                 keyboardType="email-address" autoCapitalize="none" autoComplete="email"
                 style={fieldStyle}
               />
@@ -114,10 +113,10 @@ export default function RegisterScreen() {
 
             {/* Password + strength */}
             <View>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted, marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Mot de passe</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#6B6963', marginBottom: 6, letterSpacing: 0.6, textTransform: 'uppercase' }}>Mot de passe</Text>
               <TextInput
                 value={password} onChangeText={setPassword}
-                placeholder="6 caractères minimum" placeholderTextColor={theme.muted}
+                placeholder="6 caractères minimum" placeholderTextColor="#6B6963"
                 secureTextEntry
                 style={fieldStyle}
               />
@@ -127,7 +126,7 @@ export default function RegisterScreen() {
                     {[0, 1, 2, 3].map((i) => (
                       <View key={i} style={{
                         flex: 1, height: 3, borderRadius: 2,
-                        backgroundColor: i < strength ? STRENGTH_COLORS[strength] : theme.border,
+                        backgroundColor: i < strength ? STRENGTH_COLORS[strength] : '#E2E0DA',
                       }} />
                     ))}
                   </View>
@@ -151,8 +150,15 @@ export default function RegisterScreen() {
               disabled={!valid || isLoading}
               style={{
                 paddingVertical: 14, borderRadius: 14,
-                backgroundColor: valid ? '#FF5C1A' : '#FF5C1A' + '40',
+                backgroundColor: valid ? '#FF5C1A' : 'rgba(255,92,26,0.30)',
                 alignItems: 'center',
+                ...(valid ? {
+                  shadowColor: 'rgba(255,92,26,0.55)',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowRadius: 22,
+                  shadowOpacity: 1,
+                  elevation: 8,
+                } : {}),
               }}
             >
               <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#fff' }}>
@@ -160,7 +166,7 @@ export default function RegisterScreen() {
               </Text>
             </TouchableOpacity>
 
-            <Text style={{ textAlign: 'center', fontSize: 12.5, color: theme.muted }}>
+            <Text style={{ textAlign: 'center', fontSize: 12.5, color: '#6B6963' }}>
               {'Déjà un compte ? '}
               <Text onPress={() => router.push('/(auth)/login')} style={{ color: '#FF5C1A', fontWeight: '700' }}>
                 Se connecter
@@ -168,7 +174,7 @@ export default function RegisterScreen() {
             </Text>
 
             <Text style={{
-              textAlign: 'center', fontSize: 10.5, color: theme.muted,
+              textAlign: 'center', fontSize: 10.5, color: '#6B6963',
               lineHeight: 15, paddingHorizontal: 12,
             }}>
               En créant ton compte tu acceptes nos CGU et notre politique de confidentialité.

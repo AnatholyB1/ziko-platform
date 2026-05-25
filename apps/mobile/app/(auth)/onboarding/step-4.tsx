@@ -1,42 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '@ziko/plugin-sdk';
-import { useAuthStore } from '../../../src/stores/authStore';
-import { supabase } from '../../../src/lib/supabase';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn } from 'react-native-reanimated';
+import { OBContext } from './_layout';
 
-const TOTAL = 8;
-const STEP = 3;
+const TOTAL = 7;
+const STEP = 3; // 0-indexed → displays 4/7
 
-const FREQS = [
-  { id: '2',  label: '2 fois / semaine', sub: 'Entrainement léger, début progressif' },
-  { id: '3',  label: '3 fois / semaine', sub: 'Le sweet spot pour la plupart' },
-  { id: '4',  label: '4 fois / semaine', sub: 'Programme structuré par groupes' },
-  { id: '5+', label: '5+ fois / semaine', sub: 'Haute fréquence, récup optimale' },
-];
+const TIPS: Record<number, string> = {
+  1: 'Bon démarrage. On vise le full body.',
+  2: 'Bon démarrage. On vise le full body.',
+  3: 'Format idéal débutant — full body × 3.',
+  4: 'Le sweet spot. Push / Pull / Legs / Upper.',
+  5: 'Solide. PPL + bras / épaules dédiés.',
+  6: 'Volume élevé — on surveillera la récup.',
+  7: 'Volume élevé — on surveillera la récup.',
+};
 
 function OBShell({ step, total, onBack, onNext, canNext, children }: {
   step: number; total: number; onBack: () => void; onNext: () => void; canNext: boolean; children: React.ReactNode;
 }) {
   const theme = useThemeStore((s) => s.theme);
+
+  const fillWidth = useSharedValue(((step + 1) / total) * 100);
+  React.useEffect(() => {
+    fillWidth.value = withTiming(((step + 1) / total) * 100, { duration: 350 });
+  }, [step, total]);
+  const animStyle = useAnimatedStyle(() => ({ width: `${fillWidth.value}%` as any }));
+
+  const ctaOpacity = useSharedValue(canNext ? 1 : 0.35);
+  React.useEffect(() => {
+    ctaOpacity.value = withTiming(canNext ? 1 : 0.35, { duration: 200 });
+  }, [canNext]);
+  const ctaStyle = useAnimatedStyle(() => ({ opacity: ctaOpacity.value }));
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-        <TouchableOpacity onPress={onBack} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: theme.text + '10', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, paddingTop: 14, paddingBottom: 8 }}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: 'rgba(28,26,23,0.06)', alignItems: 'center', justifyContent: 'center' }}
+        >
           <Ionicons name="chevron-back" size={16} color={theme.text} />
         </TouchableOpacity>
-        <View style={{ flex: 1, height: 4, backgroundColor: theme.text + '14', borderRadius: 999, overflow: 'hidden' }}>
-          <View style={{ width: `${((step + 1) / total) * 100}%` as any, height: '100%', backgroundColor: '#FF5C1A', borderRadius: 999 }} />
+        <View style={{ flex: 1, height: 4, backgroundColor: 'rgba(28,26,23,0.08)', borderRadius: 999, overflow: 'hidden' }}>
+          <Animated.View style={[{ height: '100%', backgroundColor: '#FF5C1A', borderRadius: 999 }, animStyle]} />
         </View>
-        <Text style={{ fontSize: 11, fontWeight: '700', color: theme.muted }}>{step + 1}/{total}</Text>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: '#6B6963', minWidth: 28, textAlign: 'right' }}>{step + 1}/{total}</Text>
       </View>
       <View style={{ flex: 1, paddingHorizontal: 22 }}>{children}</View>
       <View style={{ paddingHorizontal: 18, paddingBottom: 22, paddingTop: 10 }}>
-        <TouchableOpacity onPress={canNext ? onNext : undefined} style={{ paddingVertical: 15, borderRadius: 16, alignItems: 'center', backgroundColor: '#FF5C1A', opacity: canNext ? 1 : 0.35 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Continuer</Text>
-        </TouchableOpacity>
+        <Animated.View style={ctaStyle}>
+          <TouchableOpacity
+            onPress={canNext ? onNext : undefined}
+            style={{ paddingVertical: 15, borderRadius: 16, alignItems: 'center', backgroundColor: '#FF5C1A' }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Continuer</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </View>
   );
@@ -44,55 +68,67 @@ function OBShell({ step, total, onBack, onNext, canNext, children }: {
 
 export default function OnboardingStep4() {
   const theme = useThemeStore((s) => s.theme);
-  const user = useAuthStore((s) => s.user);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const { setObState } = useContext(OBContext);
+  const [v, setV] = useState(4);
+  // canNext is always true since default is 4 (valid)
+  const canNext = true;
 
-  const handleNext = async () => {
-    if (!selected || saving) return;
-    setSaving(true);
-    const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
-    if (uid) await supabase.from('user_profiles').update({ workout_frequency: selected }).eq('id', uid);
-    setSaving(false);
+  const handleNext = () => {
+    setObState({ frequency: v });
     router.push('/(auth)/onboarding/step-5');
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <OBShell step={STEP} total={TOTAL} onBack={() => router.back()} onNext={handleNext} canNext={!!selected && !saving}>
+      <OBShell step={STEP} total={TOTAL} onBack={() => router.back()} onNext={handleNext} canNext={canNext}>
+        {/* OBHeader */}
         <View style={{ marginTop: 18, marginBottom: 22 }}>
           <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase', color: '#FF5C1A', marginBottom: 8 }}>Étape 3</Text>
-          <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, lineHeight: 30, letterSpacing: -0.5 }}>Combien de fois par semaine ?</Text>
-          <Text style={{ fontSize: 14, color: theme.muted, marginTop: 8, lineHeight: 20 }}>Pour construire un programme adapté à ton rythme.</Text>
+          <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, lineHeight: 31, letterSpacing: -0.5 }}>Combien de séances par semaine ?</Text>
+          <Text style={{ fontSize: 14, color: '#6B6963', marginTop: 8, lineHeight: 20 }}>Sois honnête. Mieux vaut 3 séances tenues que 6 prévues.</Text>
         </View>
-        <View style={{ gap: 10 }}>
-          {FREQS.map((f) => {
-            const active = selected === f.id;
-            return (
+
+        {/* Frequency card */}
+        <View style={{ padding: 22, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E0DA' }}>
+          {/* Big number display */}
+          <View style={{ alignItems: 'center', marginBottom: 18 }}>
+            <Text style={{ fontSize: 64, fontWeight: '800', color: '#FF5C1A', lineHeight: 64 }}>{v}</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B6963', marginTop: 4 }}>
+              {v} séance{v > 1 ? 's' : ''} par semaine
+            </Text>
+          </View>
+
+          {/* 7-button grid */}
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <TouchableOpacity
-                key={f.id}
-                onPress={() => setSelected(f.id)}
+                key={n}
+                onPress={() => setV(n)}
                 style={{
-                  padding: 18, borderRadius: 16,
-                  backgroundColor: active ? '#FF5C1A' + '10' : theme.surface,
-                  borderWidth: active ? 2 : 1,
-                  borderColor: active ? '#FF5C1A' : theme.border,
-                  flexDirection: 'row', alignItems: 'center', gap: 14,
+                  flex: 1,
+                  aspectRatio: 1,
+                  borderRadius: 10,
+                  backgroundColor: v === n ? '#FF5C1A' : 'rgba(28,26,23,0.05)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>{f.label}</Text>
-                  <Text style={{ fontSize: 12, color: theme.muted, marginTop: 3 }}>{f.sub}</Text>
-                </View>
-                <View style={{
-                  width: 22, height: 22, borderRadius: 11,
-                  borderWidth: active ? 6 : 1.5,
-                  borderColor: active ? '#FF5C1A' : theme.border,
-                  backgroundColor: active ? '#fff' : 'transparent',
-                }} />
+                <Text style={{ fontWeight: '800', fontSize: 14, color: v === n ? '#fff' : '#1C1A17' }}>{n}</Text>
               </TouchableOpacity>
-            );
-          })}
+            ))}
+          </View>
+
+          {/* AI tip card */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, paddingHorizontal: 12, borderRadius: 10, backgroundColor: 'rgba(255,92,26,0.08)', marginTop: 16 }}>
+            <Ionicons name="sparkles-outline" size={13} color="#FF5C1A" />
+            <Animated.Text
+              key={v}
+              entering={FadeIn.duration(200)}
+              style={{ fontSize: 11.5, color: '#6B6963', flex: 1 }}
+            >
+              {TIPS[v] ?? TIPS[4]}
+            </Animated.Text>
+          </View>
         </View>
       </OBShell>
     </SafeAreaView>

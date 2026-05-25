@@ -9,8 +9,14 @@ import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
 import { creditsRouter } from './routes/credits.js';
+import { referralRoutes } from './routes/referral.js';
 import { storageRouter, storageCleanupRouter } from './routes/storage.js';
-
+import { identityRouter } from './coach/identity/service.js';
+import { invitationsRouter } from './coach/invitations/service.js';
+import { clientsRouter } from './coach/clients/service.js';
+import { programsRouter } from './coach/programs/service.js';
+import { importsRouter } from './coach/imports/service.js';
+import { coachAiRouter } from './coach/ai/service.js';
 const app = new Hono();
 
 // Global middleware
@@ -32,7 +38,7 @@ app.use(
         ? origin
         : null;
     },
-    allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     maxAge: 86400,
   }),
@@ -49,8 +55,16 @@ app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
 app.route('/credits', creditsRouter);
+app.route('/referral', referralRoutes);
+app.route('/promo', referralRoutes);
 app.route('/storage', storageRouter);
 app.route('/storage', storageCleanupRouter);
+app.route('/coach/identity', identityRouter);
+app.route('/coach/invitations', invitationsRouter);
+app.route('/coach/clients', clientsRouter);
+app.route('/coach/programs', programsRouter);
+app.route('/coach/imports', importsRouter);
+app.route('/coach/ai', coachAiRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
