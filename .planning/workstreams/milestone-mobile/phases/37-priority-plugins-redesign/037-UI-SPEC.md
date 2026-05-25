@@ -18,6 +18,14 @@ framework: expo-sdk-54
 
 ## 0. Global Conventions
 
+### Color Distribution (60/30/10)
+
+- **60% — Background/surface:** `#F7F6F3` (screen canvas) and `#FFFFFF` (card surface) — dominant canvas layer
+- **30% — Structural:** Text `#1C1A17`, border `#E2E0DA`, muted `#6B6963` — layout skeleton and typography
+- **10% — Accent:** Primary `#FF5C1A` + semantic blue `#2E7BF6` / green `#2E9E5B` / amber `#F59E0B` — focal points, CTAs, state indicators only
+
+**Destructive actions:** Use `showAlert` with OS-native destructive button style (red system button on iOS, confirmation dialog on Android). No custom destructive hex is needed — the OS renders it. Document confirmation copy in §8.
+
 ### Locked Design Tokens
 
 | Token | Value | Usage |
@@ -33,6 +41,40 @@ framework: expo-sdk-54
 | warn (amber) | `#F59E0B` | Lipides macro bar, warnings |
 | violet | `#7B5BD0` | Habit color variant, Zoé persona |
 | shadow | `opacity: 0.08, radius: 12, elevation: 3` | All card shadows |
+
+### Typography Scale
+
+The type scale uses **4 semantic tiers** and **2 weights**. Pixel values within a tier may vary by ±2 at implementation time based on mockup fidelity. Executors must document any deviation from the tier center value.
+
+| Tier | Center px | Range | Usage |
+|---|---|---|---|
+| **label** | 11px | 9–12px | Labels, secondary metadata, uppercase caps, icon badges, macro labels, chip text, day axis ticks |
+| **body** | 13px | 12–14px | Body text, card content, row labels, food names, conversation previews, form sub-labels |
+| **title** | 17px | 15–20px | Section headings, card titles, program names, plugin header title, persona names, empty state headings |
+| **display** | 28px | 22–32px | Display values, stat numbers, calorie totals, completion percentages, goal values |
+
+**Weights:** 500 (regular) and 700 (bold). Map any intermediate weight (600) to 500. Map any heavier weight (800) to 700.
+
+**Line heights:** body tier → 1.5; title and display tiers → 1.2.
+
+**Letter spacing:** uppercase label tier → 0.06em. All other tiers → default (0).
+
+### Spacing Scale
+
+All spacing values are multiples of 4. No exceptions.
+
+| Use | Value |
+|---|---|
+| Micro gap (icon padding, dot gap, chip internal) | 4px |
+| Small gap (tight rows, inline gaps) | 8px |
+| Card internal padding (tight) | 12px |
+| Card internal padding (standard) | 16px |
+| ScrollView paddingHorizontal (all 6 plugins) | 16px |
+| ScrollView paddingTop | 16px |
+| ScrollView paddingBottom | 100px (tab bar clearance) |
+| Gap between cards | 12px |
+| Section title marginBottom | 8px |
+| Grid gap | 8px |
 
 ### Card Pattern
 
@@ -53,9 +95,9 @@ elevation: 3
 ### Screen Layout Pattern
 
 Every plugin screen:
-- `PluginHeader` (height 54px) — back chevron + title + optional right element
+- `PluginHeader` (height 56px) — back chevron + title + optional right element
 - `SubTabs` — pill-style segmented bar (see component spec below)
-- `ScrollView` — `contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 14, paddingBottom: 100 }}`
+- `ScrollView` — `contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}`
 - Gap between cards: 12px
 
 ### SubTabs Actual Rendering (Phase 37 Update)
@@ -64,10 +106,10 @@ The existing `SubTabs.tsx` uses an underline indicator style. Phase 37 uses the 
 
 ```
 Container: flexDirection row, gap 4, padding 4, backgroundColor rgba(28,26,23,0.05),
-borderRadius 12, marginBottom 14
-Each tab button: flex 1, paddingVertical 8, paddingHorizontal 10, borderRadius 9,
-fontSize 12, fontWeight 700
-Active: backgroundColor surface (#FFF), shadowOpacity 0.08, shadowRadius 3, elevation 1
+borderRadius 12, marginBottom 16
+Each tab button: flex 1, paddingVertical 8, paddingHorizontal 8, borderRadius 8,
+fontSize 12 (label tier), fontWeight 700
+Active: backgroundColor surface (#FFF), shadowOpacity 0.08, shadowRadius 4, elevation 1
 Inactive: backgroundColor transparent, color muted
 ```
 
@@ -76,8 +118,8 @@ Inactive: backgroundColor transparent, color muted
 ### PluginHeader Rendering
 
 Current `PluginHeader.tsx` is correct. Verify:
-- Back button: 34×34px, borderRadius 11, `rgba(28,26,23,0.06)` bg, `chevron-back` Ionicons
-- Title: fontSize 20, fontWeight 800, letterSpacing -0.4
+- Back button: 36×36px, borderRadius 12, `rgba(28,26,23,0.06)` bg, `chevron-back` Ionicons
+- Title: title tier (17–20px range), fontWeight 700, letterSpacing -0.4
 - Right slot: optional `React.ReactNode`
 
 ### AISuggestion Rendering
@@ -88,7 +130,15 @@ Current `AISuggestion.tsx` is correct. Props:
 - `onAction?: () => void` — CTA press handler
 - `tintColor?: string` — defaults to `theme.primary (#FF5C1A)`
 
-The card has `borderLeftWidth: 3` tint strip. Sparkles icon top-left. "Coach IA · suggestion" label above tip text (10px, 700, uppercase, letterSpacing 0.06em — add this label to the component if not already present, matching the mockup's visual hierarchy).
+The card has `borderLeftWidth: 4` tint strip. Sparkles icon top-left. "Coach IA · suggestion" label above tip text (label tier, fontWeight 700, uppercase, letterSpacing 0.06em — add this label to the component if not already present, matching the mockup's visual hierarchy).
+
+### Copywriting — Space-Constrained Action Chips
+
+Short single-word action labels ("Créer", "Générer", "Essayer", "Adapter", "Activer", "Rejoindre") appear in `AISuggestion` actionLabel and in chip CTAs throughout all 6 plugins. These are **deliberate space-constrained action chips** — they inherit their subject from surrounding context (e.g., the AISuggestion body text directly above). This is intentional; do not expand them.
+
+### Registry
+
+No shadcn or third-party component registry used. Components: `@ziko/ui` (internal monorepo package), standard React Native primitives, `react-native-svg`, `@react-native-community/slider`. No vetting gate needed.
 
 ---
 
@@ -110,7 +160,7 @@ The card has `borderLeftWidth: 3` tint strip. Sparkles icon top-left. "Coach IA 
       <TouchableOpacity onPress={() => setActiveTab('add')}
         style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999,
                  backgroundColor: '#FF5C1A' }}>
-        <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 700 }}>+ Ajouter</Text>
+        <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>+ Ajouter</Text>
       </TouchableOpacity>
     )
   }
@@ -137,7 +187,7 @@ onChange={setActiveTab}
 
 ```
 Card (surface, shadow, borderRadius 16, padding 16)
-  Row (alignItems center, gap 14):
+  Row (alignItems center, gap 16):
     SVG Calorie Ring (92×92px, flex 0)
     Stat column (flex 1)
 ```
@@ -151,29 +201,30 @@ Progress arc: cx=46 cy=46 r=38 stroke=#FF5C1A strokeWidth=8 fill=none
   strokeLinecap: round
   transform: rotate(-90deg) on the SVG element
 Center overlay (absolute, inset 0, centered):
-  calories consumed: fontSize 20, fontWeight 800, #1C1A17
-  "/ {target}": fontSize 9, color muted, marginTop 2
+  calories consumed: display tier (28px), fontWeight 700, #1C1A17
+  "/ {target}": label tier (11px), color muted, marginTop 4
 ```
 
 **Stat column (right of ring):**
 ```
-Label: "CALORIES" — fontSize 11, fontWeight 700, color muted, letterSpacing 0.06em, uppercase
+Label: "CALORIES" — label tier (11px), fontWeight 700, color muted,
+       letterSpacing 0.06em, uppercase
 Remaining value: "{remaining} kcal restantes"
-  — "{remaining}": className h-display fontSize 22
-  — "kcal restantes": fontSize 11, color muted, fontWeight 600
+  — "{remaining}": display tier (28px)
+  — "kcal restantes": label tier (11px), color muted, fontWeight 500
 Subtitle: e.g. "T'as bien tenu ta journée. Encore un repas pour boucler la cible."
-  — fontSize 11.5, color muted, lineHeight 1.4 (marginTop 4)
+  — body tier (13px), color muted, lineHeight 1.5, marginTop 4
 ```
 
 **Macro bars (inside same card, below ring row):**
 ```
-3-column grid (gridTemplateColumns repeat(3, 1fr), gap 8, marginTop 14):
+3-column grid (flexDirection row, gap 8, marginTop 16):
   Each macro:
     Label: "PROTÉINES" / "GLUCIDES" / "LIPIDES"
-      — fontSize 10, color muted, fontWeight 700, uppercase, letterSpacing 0.05em
+      — label tier (11px), color muted, fontWeight 700, uppercase, letterSpacing 0.05em
     Value: "{consumed}g/{target}g"
-      — consumed: fontSize 13, fontWeight 800
-      — "/{target}g": fontSize 10, color muted, fontWeight 500
+      — consumed: body tier (13px), fontWeight 700
+      — "/{target}g": label tier (11px), color muted, fontWeight 500
     Progress bar: height 4, borderRadius 999, backgroundColor rgba(28,26,23,0.06)
       Fill: width={(consumed/target)*100}%, height 100%, borderRadius 999
       Protéines fill color: #FF5C1A
@@ -200,25 +251,25 @@ Always show (even without rule trigger) with generic text if protein OK: "Bonne 
 
 ```
 Section title row: "Repas du jour" (left) + "Historique →" link (right)
-  — title: fontSize 11, fontWeight 700, color muted, uppercase, letterSpacing 0.06em
-  — link: fontSize 11, fontWeight 700, color primary, onPress → setActiveTab('history')
+  — title: label tier (11px), fontWeight 700, color muted, uppercase, letterSpacing 0.06em
+  — link: label tier (11px), fontWeight 700, color primary, onPress → setActiveTab('history')
 ```
 
 **Meal cards** (one per meal_type from DB + placeholder for missing future meals):
 
 ```
-Card (surface, shadow, borderRadius 14, padding 12):
+Card (surface, shadow, borderRadius 16, padding 12):
   Row (alignItems center, gap 12):
-    Icon circle (38×38px, borderRadius 11):
+    Icon circle (40×40px, borderRadius 12):
       Logged meal: backgroundColor rgba(255,92,26,0.12), Ionicons "restaurant-outline" 16px, color primary
       Placeholder: transparent bg, border 1px dashed border-color, Ionicons "add-outline" 16px, color primary
     Content column (flex 1):
-      Title: "{mealType} · {time}" — fontSize 13, fontWeight 700
+      Title: "{mealType} · {time}" — body tier (13px), fontWeight 700
         mealType values: "Petit-déj", "Déjeuner", "Collation", "Dîner"
         time from nutrition_log.created_at formatted as "7h45"
-      Items: comma-joined food names — fontSize 11, color muted, numberOfLines 1, ellipsis
+      Items: comma-joined food names — label tier (11px), color muted, numberOfLines 1, ellipsis
     Calorie badge (right):
-      Logged: "{kcal}" fontWeight 800 fontSize 13 + "kcal" fontSize 10 color muted
+      Logged: "{kcal}" fontWeight 700 body tier (13px) + "kcal" label tier (11px) color muted
       Placeholder: Ionicons "add-outline" 16px color primary
 ```
 
@@ -243,9 +294,9 @@ Per decision D-02: this tab provides shortcuts + navigates to LogMealScreen for 
 
 ```
 Container: position relative
-Input: paddingVertical 13, paddingLeft 40, paddingRight 14, borderRadius 14,
+Input: paddingVertical 12, paddingLeft 40, paddingRight 16, borderRadius 16,
        borderWidth 1, borderColor border, backgroundColor surface,
-       fontSize 13, shadow (card shadow)
+       body tier (13px), shadow (card shadow)
 placeholder: "Cherche un aliment ou plat…"
 Search icon (absolute, left 12, verticalCenter):
   Ionicons "search-outline" 16px color muted
@@ -259,20 +310,20 @@ On submit: navigate to `LogMealScreen` with query pre-filled.
 3-column grid, gap 8:
 
 Scanner card:
-  Card (padding 14 8, placeItems center, gap 6):
-    Icon circle (32×32px, borderRadius 10, bg rgba(255,92,26,0.14)):
-      Ionicons "barcode-outline" 15px color primary
-    Label: "Scanner" — fontSize 11, fontWeight 700
+  Card (padding 16 8, placeItems center, gap 8):
+    Icon circle (32×32px, borderRadius 8, bg rgba(255,92,26,0.14)):
+      Ionicons "barcode-outline" 16px color primary
+    Label: "Scanner" — label tier (11px), fontWeight 700
 
 Photo IA card:
   Icon circle: bg rgba(46,123,246,0.14)
-    Ionicons "camera-outline" 15px color #2E7BF6
-  Label: "Photo IA" — fontSize 11, fontWeight 700
+    Ionicons "camera-outline" 16px color #2E7BF6
+  Label: "Photo IA" — label tier (11px), fontWeight 700
 
 Repas vite card:
   Icon circle: bg rgba(245,158,11,0.14)
-    Ionicons "flash-outline" 15px color #F59E0B
-  Label: "Repas vite" — fontSize 11, fontWeight 700
+    Ionicons "flash-outline" 16px color #F59E0B
+  Label: "Repas vite" — label tier (11px), fontWeight 700
 ```
 
 **Interactions:**
@@ -295,12 +346,12 @@ Repas vite card:
 
 ```
 Section title: "Récents"
-Each food item card (padding 10 12, row, gap 10):
+Each food item card (padding 8 12, row, gap 8):
   Content column (flex 1):
-    Name: fontSize 12.5, fontWeight 700 — e.g. "Skyr nature 0%"
-    Sub: fontSize 10.5, color muted — "{brand} · {qty} · P{p} G{c} L{f}"
-  Calories: fontWeight 800 fontSize 13 + "kcal" fontSize 9 color muted
-  Add button: 28×28px, borderRadius 9, bg rgba(255,92,26,0.14), Ionicons "add-outline" 14px color primary
+    Name: body tier (13px), fontWeight 700 — e.g. "Skyr nature 0%"
+    Sub: label tier (11px), color muted — "{brand} · {qty} · P{p} G{c} L{f}"
+  Calories: fontWeight 700 body tier (13px) + "kcal" label tier (11px) color muted
+  Add button: 28×28px, borderRadius 8, bg rgba(255,92,26,0.14), Ionicons "add-outline" 16px color primary
 ```
 
 Data source: `nutrition_logs` ordered by created_at DESC, deduplicated by food_name, limit 5.
@@ -319,10 +370,11 @@ Data source: `nutrition_logs` ordered by created_at DESC, deduplicated by food_n
 Card (padding 16):
   Row (justifyContent space-between, alignItems flex-start):
     Left:
-      Label: "7 DERNIERS JOURS" — fontSize 10.5, color muted, fontWeight 700, uppercase
-      Value: "{avg} kcal/j moyen" — avg: fontSize 22, fontWeight 800; "kcal/j moyen": fontSize 11, color muted
+      Label: "7 DERNIERS JOURS" — label tier (11px), color muted, fontWeight 700, uppercase
+      Value: "{avg} kcal/j moyen" — avg: display tier (28px), fontWeight 700;
+             "kcal/j moyen": label tier (11px), color muted
     Right: Chip "cible {target}" — success color (#2E9E5B) bg, green text
-  Bar chart (height 110, marginTop 16):
+  Bar chart (height 112, marginTop 16):
     7 columns, flex layout, alignItems flex-end, gap 8
     Each bar:
       Width: flex 1
@@ -330,7 +382,7 @@ Card (padding 16):
       Today bar: backgroundColor primary (#FF5C1A)
       Past bars: backgroundColor rgba(255,92,26,0.22)
       Above-target indicator: dashed top border on bar if value > target
-    Day label below each bar: fontSize 10, fontWeight 700
+    Day label below each bar: label tier (11px), fontWeight 700
       Today: color primary
       Others: color muted
 ```
@@ -352,14 +404,14 @@ Rule: detect if certain days consistently exceed or fall short of target.
 
 ```
 Card (padding 16):
-  Title: "Macros moyens (7j)" — fontSize 13, fontWeight 700, marginBottom 10
+  Title: "Macros moyens (7j)" — body tier (13px), fontWeight 700, marginBottom 8
   4 macro rows (Protéines, Glucides, Lipides, Fibres):
-    Row (justifyContent space-between, marginBottom 10):
-      Label: fontSize 11.5, fontWeight 600
+    Row (justifyContent space-between, marginBottom 8):
+      Label: body tier (13px), fontWeight 500
       Value+pct: "{Xg} · {pct}% obj."
-        — Xg: fontWeight 700 fontSize 11.5
+        — Xg: fontWeight 700 body tier (13px)
         — "· {pct}% obj.": color muted fontWeight 500
-    Progress bar: height 5, borderRadius 999
+    Progress bar: height 4, borderRadius 999
       Fill colors: Protéines=#FF5C1A, Glucides=#2E7BF6, Lipides=#F59E0B, Fibres=#2E9E5B
 ```
 
@@ -373,12 +425,12 @@ Card (padding 16):
 
 ```
 Card (padding 16):
-  Label: "OBJECTIF CALORIQUE" — fontSize 11, fontWeight 700, color muted, uppercase
-  Value row: "{calorieGoal}" (fontSize 28, fontWeight 800) + "kcal / jour" (fontSize 12, color muted)
+  Label: "OBJECTIF CALORIQUE" — label tier (11px), fontWeight 700, color muted, uppercase
+  Value row: "{calorieGoal}" (display tier 28px, fontWeight 700) + "kcal / jour" (body tier 13px, color muted)
   Slider: min=1200, max=4000, step=50, value=calorieGoal
     accentColor: primary (#FF5C1A)
     React Native: use @react-native-community/slider or equivalent
-  Scale labels row (justifyContent space-between, fontSize 10, color muted):
+  Scale labels row (justifyContent space-between, label tier 11px, color muted):
     "1200" | "Déficit léger" | "Surplus" | "4000"
 ```
 
@@ -399,7 +451,7 @@ Recalculate button navigates to `TDEECalculatorScreen`.
 
 ```
 Card (overflow hidden, borderRadius 16):
-  List rows (borderTop between rows, padding 12 14, row, gap 12):
+  List rows (borderTop between rows, padding 12 16, row, gap 12):
     Each row: Ionicons icon (16px, color muted) | label+sub column | chevron-forward icon
     Rows:
       1. Répartition macros | "40 / 40 / 20" | chevron → macro ratio screen
@@ -465,7 +517,7 @@ tabs={['Aujourd\'hui', 'Historique', 'Réglages']}
 #### Bottle + Stats Card
 
 ```
-Card (padding 16, row, gap 18, alignItems center):
+Card (padding 16, row, gap 16, alignItems center):
   SVG Bottle (80×140px, flex 0)
   Stat column (flex 1)
 ```
@@ -488,7 +540,7 @@ Fill rect (level indicator):
   clipPath="url(#bottle-clip)"
 
 Surface line (water surface):
-  x=0 y={140 - (fillRatio * 120)} width=80 height=3
+  x=0 y={140 - (fillRatio * 120)} width=80 height=4
   fill=#2E7BF6 opacity=0.85
   clipPath="url(#bottle-clip)"
 
@@ -497,20 +549,21 @@ where fillRatio = Math.min(1, today_ml / goal_ml)
 
 Center overlay on bottle (absolute, centered):
 ```
-consumed: "{(today_ml/1000).toFixed(1)}L" — fontSize 22, fontWeight 800, color #2E7BF6
-target: "/ {(goal_ml/1000).toFixed(1)}L" — fontSize 9, color muted
+consumed: "{(today_ml/1000).toFixed(1)}L" — display tier (28px), fontWeight 700, color #2E7BF6
+target: "/ {(goal_ml/1000).toFixed(1)}L" — label tier (11px), color muted
 ```
 
 **Stat column:**
 ```
-Label: "HYDRATATION" — fontSize 11, fontWeight 700, color #2E7BF6, uppercase, letterSpacing 0.06em
-Remaining: "Encore {remaining}L" — fontSize 19, fontWeight 800 (h-display style)
-Subtitle: e.g. "Allez, c'est presque plié. {streak} jours d'affilée à objectif 💪"
-  — fontSize 11.5, color muted, lineHeight 1.4, marginTop 4
-Streak chip: marginTop 10
+Label: "HYDRATATION" — label tier (11px), fontWeight 700, color #2E7BF6, uppercase, letterSpacing 0.06em
+Remaining: "Encore {remaining}L" — display tier (28px), fontWeight 700
+Subtitle: e.g. "Allez, c'est presque plié. {streak} jours d'affilée à objectif"
+  — body tier (13px), color muted, lineHeight 1.5, marginTop 4
+Streak chip: marginTop 8
   bg: rgba(46,123,246,0.10)
   color: #2E7BF6
-  content: Ionicons "flame-outline" 11px + "Streak {streak}j"
+  Ionicons "flame-outline" 12px + "Streak {streak}j"
+  padding: 4 8, label tier (11px)
 ```
 
 Streak is computed as consecutive days where sum(amount_ml) >= goal_ml.
@@ -533,13 +586,13 @@ Rule: if most logs are after 14h00 → show distribution tip.
 ```
 Section title: "Logger rapide"
 4-column grid, gap 8:
-  +250ml card: Ionicons "water-outline" 14px, color #2E7BF6
-  +500ml card: Ionicons "water-outline" 18px, color #2E7BF6
-  +750ml card: Ionicons "water-outline" 22px, color #2E7BF6
-  Custom card: Ionicons "add-circle-outline" 18px, color #2E7BF6
+  +250ml card: Ionicons "water-outline" 16px, color #2E7BF6
+  +500ml card: Ionicons "water-outline" 20px, color #2E7BF6
+  +750ml card: Ionicons "water-outline" 24px, color #2E7BF6
+  Custom card: Ionicons "add-circle-outline" 20px, color #2E7BF6
 
-Each card: Card style (padding 14 6, placeItems center, gap 4)
-Label: fontSize 11, fontWeight 700
+Each card: Card style (padding 16 8, placeItems center, gap 4)
+Label: label tier (11px), fontWeight 700
 ```
 
 Interactions:
@@ -551,12 +604,12 @@ Interactions:
 ```
 Section title: "Aujourd'hui"
 Each log entry (from hydration_logs ordered by created_at ASC):
-  Card (padding 10 12, row, gap 10):
-    Icon circle (32×32px, borderRadius 10, bg rgba(46,123,246,0.12)):
-      Ionicons "water-outline" 14px color #2E7BF6
+  Card (padding 8 12, row, gap 8):
+    Icon circle (32×32px, borderRadius 8, bg rgba(46,123,246,0.12)):
+      Ionicons "water-outline" 16px color #2E7BF6
     Content:
-      "{amount_ml}ml · {label}" — fontSize 12.5, fontWeight 700
-      "{time}" — fontSize 10.5, color muted
+      "{amount_ml}ml · {label}" — body tier (13px), fontWeight 700
+      "{time}" — label tier (11px), color muted
 ```
 
 Label for each entry: derive from time of day (Réveil / Café + eau / Bouteille bureau / Déjeuner / Entraînement / Soir) or leave as "Eau". Time formatted as "7h00".
@@ -571,14 +624,14 @@ Label for each entry: derive from time of day (Réveil / Café + eau / Bouteille
 
 ```
 Card (padding 16):
-  Title: "7 derniers jours" — fontSize 13, fontWeight 700, marginBottom 12
-  Bar chart (height 110, row, alignItems flex-end, gap 8):
+  Title: "7 derniers jours" — body tier (13px), fontWeight 700, marginBottom 12
+  Bar chart (height 112, row, alignItems flex-end, gap 8):
     7 bars (max y-scale = 3L = 3000ml):
       Today bar: bg #2E7BF6
       Reached (>= goal) past bars: bg rgba(46,123,246,0.35)
       Below-goal past bars: bg rgba(46,123,246,0.18)
-      minHeight: 6
-    Day labels: ["L","M","M","J","V","S","D"] fontSize 9.5, fontWeight 700
+      minHeight: 4
+    Day labels: ["L","M","M","J","V","S","D"] label tier (11px), fontWeight 700
       Today: color #2E7BF6; Others: color muted
 ```
 
@@ -586,8 +639,8 @@ Card (padding 16):
 
 ```
 2 cards, side by side (1fr 1fr, gap 8):
-  Card 1: "MOYENNE 7J" label + "{avg}L/j" value (color #2E7BF6, fontSize 22)
-  Card 2: "STREAK RECORD" label + "{record}j" value (fontSize 22)
+  Card 1: "MOYENNE 7J" label + "{avg}L/j" value (color #2E7BF6, display tier 28px)
+  Card 2: "STREAK RECORD" label + "{record}j" value (display tier 28px)
 Each card: padding 12
 ```
 
@@ -614,9 +667,9 @@ Rule: if workout days have higher intake than rest days:
 
 ```
 Card (padding 16):
-  Label: "OBJECTIF QUOTIDIEN" — fontSize 11, fontWeight 700, color muted, uppercase
-  Value: "{(goal/1000).toFixed(1)}L" — fontSize 28, fontWeight 800, color #2E7BF6, marginTop 6
-  Sub: "recommandé selon ton poids et activité" — fontSize 11, color muted
+  Label: "OBJECTIF QUOTIDIEN" — label tier (11px), fontWeight 700, color muted, uppercase
+  Value: "{(goal/1000).toFixed(1)}L" — display tier (28px), fontWeight 700, color #2E7BF6, marginTop 4
+  Sub: "recommandé selon ton poids et activité" — label tier (11px), color muted
   Note: goal is editable via a TouchableOpacity that opens a numeric input inline or sheet
 ```
 
@@ -636,7 +689,7 @@ Rows (no top border on first):
 
 **Empty (no logs today):** Bottle at 0% fill. Log list shows: "Aucune entrée pour l'instant. Commence par ton verre du matin." Placeholder text centered below empty list.
 
-**Goal reached:** Bottle is full (100%), stat column text changes to "Objectif atteint 🎉 Tu as bu {consumed}L aujourd'hui." Streak chip gains +1 animation.
+**Goal reached:** Bottle is full (100%), stat column text changes to "Objectif atteint ! Tu as bu {consumed}L aujourd'hui." Streak chip gains +1 animation.
 
 ---
 
@@ -671,10 +724,11 @@ tabs={['Aujourd\'hui', 'Historique', 'Nouvelle']}
 Card (padding 16):
   Row (justifyContent space-between, alignItems center):
     Left:
-      Label: "AUJOURD'HUI" — fontSize 10.5, color muted, fontWeight 700, uppercase
-      Count: "{done}/{total} habitudes" — done: fontSize 22, fontWeight 800; "/total habitudes": fontSize 12, color muted
+      Label: "AUJOURD'HUI" — label tier (11px), color muted, fontWeight 700, uppercase
+      Count: "{done}/{total} habitudes" — done: display tier (28px), fontWeight 700;
+             "/total habitudes": body tier (13px), color muted
     Right: dot grid row
-      One dot per habit (18×18px, borderRadius 6):
+      One dot per habit (20×20px, borderRadius 4):
         Done: backgroundColor = habit.color
         Not done: backgroundColor rgba(28,26,23,0.06)
       Gap: 4px
@@ -700,22 +754,22 @@ Generic version if all habits consistent: "Continue comme ça ! Tu as une série
 Each habit row:
 ```
 Card (padding 12, row, alignItems center, gap 12, cursor pointer):
-  Completion button (36×36px, borderRadius 11, flex 0):
-    Done state: backgroundColor = habit.color, Ionicons "checkmark" 18px color white, strokeWidth 3
-    Undone state: backgroundColor transparent, outline 2px solid habit.color (use borderWidth+borderColor)
+  Completion button (36×36px, borderRadius 8, flex 0):
+    Done state: backgroundColor = habit.color, Ionicons "checkmark" 18px color white
+    Undone state: backgroundColor transparent, borderWidth 2, borderColor habit.color
       Ionicons matching habit icon 16px color muted
 
   Content column (flex 1):
-    Habit name: fontSize 13, fontWeight 700
+    Habit name: body tier (13px), fontWeight 700
       Done: textDecorationLine "line-through", textDecorationColor muted
       Undone: no decoration
-    Frequency: "Tous les jours" / "Lun-Ven" — fontSize 11, color muted, marginTop 1
+    Frequency: "Tous les jours" / "Lun-Ven" — label tier (11px), color muted, marginTop 4
 
   Streak chip (if streak > 0):
-    bg: color-mix(habit.color 14%, transparent) — approximate with rgba
+    bg: rgba(habit.color, 0.14) — approximate
     color: habit.color
-    Ionicons "flame-outline" 11px + "{streak}j"
-    padding: 3 8, fontSize 11
+    Ionicons "flame-outline" 12px + "{streak}j"
+    padding: 4 8, label tier (11px)
 ```
 
 **Habit icon mapping:**
@@ -752,12 +806,12 @@ info: #2E7BF6
 Card (padding 16):
   Row (justifyContent space-between, alignItems flex-end):
     Left:
-      Completion rate: "{rate}%" — fontSize 32, fontWeight 800, color primary
-      Sub: "de tes habitudes ce mois" — fontSize 11, color muted
+      Completion rate: "{rate}%" — display tier (32px), fontWeight 700, color primary
+      Sub: "de tes habitudes ce mois" — label tier (11px), color muted
     Right: chip "+{delta}% vs dernier mois" — success chip
   30-day heatmap grid (marginTop 16):
-    10 columns × 3 rows (gridTemplateColumns repeat(10, 1fr), gap 4)
-    Each cell (aspectRatio 1, borderRadius 6):
+    10 columns × 3 rows (flexDirection row, flexWrap wrap, gap 4)
+    Each cell (aspectRatio 1, borderRadius 4):
       Done day: backgroundColor primary, opacity between 0.5–1.0 proportional to completion rate
       Missed day: backgroundColor rgba(28,26,23,0.05), opacity 1
 ```
@@ -768,12 +822,12 @@ Card (padding 16):
 Section title: "Top streaks"
 Each habit with streak > 0, sorted by streak DESC:
   Card (padding 12, row, gap 12):
-    Icon circle (34×34px, borderRadius 10):
+    Icon circle (36×36px, borderRadius 8):
       bg: rgba(habit.color, 0.14) — approximate
-      Ionicons icon 15px color habit.color
-    Name: fontSize 13, fontWeight 700, flex 1
-    Streak: "{streak}j" — h-display style, fontSize 16, color habit.color
-      sub "j": fontSize 10, color muted, fontWeight 500
+      Ionicons icon 16px color habit.color
+    Name: body tier (13px), fontWeight 700, flex 1
+    Streak: "{streak}j" — title tier (17px), fontWeight 700, color habit.color
+      sub "j": label tier (11px), color muted, fontWeight 500
 ```
 
 ### 3.5 Tab: Nouvelle
@@ -798,12 +852,12 @@ Rule: analyze user goal from `user_profiles.goal` + last sleep log duration. If 
 ```
 2-column grid, gap 8:
 6 template cards:
-  Card (padding 14, row, gap 10):
-    Icon circle (36×36px, borderRadius 11, bg rgba(color, 0.14)):
+  Card (padding 16, row, gap 8):
+    Icon circle (36×36px, borderRadius 8, bg rgba(color, 0.14)):
       Ionicons icon 16px color habit.color
     Content:
-      Name: fontSize 13, fontWeight 700
-      "+ Ajouter": fontSize 10.5, color muted, marginTop 1
+      Name: body tier (13px), fontWeight 700
+      "+ Ajouter": label tier (11px), color muted, marginTop 4
 
 Templates:
   "Méditer" — "leaf-outline" — #2E9E5B
@@ -819,9 +873,9 @@ Interaction: tap template → open habit creation form pre-filled with name + ic
 #### Primary CTA
 
 ```
-Button (padding 14, width 100%, backgroundColor primary, borderRadius 14, marginTop 4):
+Button (padding 16, width 100%, backgroundColor primary, borderRadius 16, marginTop 4):
   Ionicons "add-outline" 16px color white + "Créer une habitude perso"
-  fontSize 14, fontWeight 700, color white
+  body tier (13px), fontWeight 700, color white
 ```
 
 onPress: open full habit creation form (blank).
@@ -872,34 +926,33 @@ Card:
   overflow: hidden
   position: relative
 
-Glow decoration (absolute, top: -30, right: -30):
+Glow decoration (absolute, top: -32, right: -32):
   Circle 140×140px, borderRadius 70
   backgroundColor: rgba(46,123,246,0.30)
   filter: blur(40px) — use React Native blur or just opacity approximation
 
-Chip (marginBottom 10, relative z:1):
+Chip (marginBottom 8, relative z:1):
   bg: rgba(46,123,246,0.25), color: #9DC4FF
-  Ionicons "sparkles" 11px + "Programme actif"
+  Ionicons "sparkles" 12px + "Programme actif"
 
-Program name: fontSize 22, fontWeight 800, color #FFFAF6 (white-warm)
-  — h-display style
+Program name: title tier (20px range), fontWeight 700, color #FFFAF6 (white-warm)
 Progress sub: "Semaine {week}/{totalWeeks} · {sessionsCompleted}/{totalSessions} séances"
-  — fontSize 12, color rgba(255,250,246,0.6), marginTop 2
+  — body tier (13px), color rgba(255,250,246,0.6), marginTop 4
 
-Progress bar (marginTop 14):
-  height 6, bg rgba(255,250,246,0.12), borderRadius 999, overflow hidden
+Progress bar (marginTop 16):
+  height 4, bg rgba(255,250,246,0.12), borderRadius 999, overflow hidden
   Fill: width = "{progress}%", height 100%,
         gradient: left #FF5C1A → right #FFB07A (LinearGradient or solid primary)
         borderRadius 999
 
-Action row (marginTop 14, gap 8):
+Action row (marginTop 16, gap 8):
   "Prochaine séance" CTA:
-    flex 1, padding 10 14, fontSize 12, fontWeight 700
+    flex 1, padding 8 16, body tier (13px), fontWeight 700
     bg primary (#FF5C1A), color white, borderRadius 12
-    Ionicons "play-outline" 13px color white
+    Ionicons "play-outline" 14px color white
     onPress: navigate to workout/session.tsx
   "Détails" button:
-    padding 10 14, fontSize 12
+    padding 8 16, body tier (13px)
     bg rgba(255,250,246,0.10), color #FFFAF6, borderRadius 12
 ```
 
@@ -921,9 +974,9 @@ Rule: if sessions completed this week > last week → positive reinforcement. If
 ```
 Centered in tab area:
   Ionicons "barbell-outline" 48px color muted
-  Title: "Aucun programme actif" — fontSize 18, fontWeight 800, marginTop 12
+  Title: "Aucun programme actif" — title tier (17px), fontWeight 700, marginTop 12
   Sub: "Génère un programme IA personnalisé pour commencer ta progression."
-       — fontSize 12, color muted, textAlign center, marginTop 6
+       — body tier (13px), color muted, textAlign center, marginTop 8
   CTA: "Générer un programme" — primary button, onPress: setActiveTab('generate')
 ```
 
@@ -938,13 +991,13 @@ Per decision D-10: this tab is a **launch card + CTA** that navigates to the exi
 ```
 Card (padding 16):
   Chip (marginBottom 8, bg rgba(46,123,246,0.08), color #2E7BF6):
-    Ionicons "sparkles" 11px + "Génération IA"
-  Title: "Crée ton programme sur mesure" — fontSize 17, fontWeight 800
+    Ionicons "sparkles" 12px + "Génération IA"
+  Title: "Crée ton programme sur mesure" — title tier (17px), fontWeight 700
   Sub: "L'IA construit un plan adapté à ton matériel, tes objectifs et ton emploi du temps."
-    — fontSize 12, color muted, marginTop 4, lineHeight 1.45
+    — body tier (13px), color muted, marginTop 4, lineHeight 1.5
   CTA button (marginTop 12, width 100%, padding 12):
     bg primary, borderRadius 12
-    Ionicons "sparkles-outline" 14px color white + "Générer un programme"
+    Ionicons "sparkles-outline" 16px color white + "Générer un programme"
     onPress: navigation.navigate('workout/ai-generate')
 ```
 
@@ -984,18 +1037,18 @@ Rule: derive from `user_profiles.goal` + `user_profiles.workout_days_per_week`. 
 
 Each program card:
 ```
-Card (padding 14):
-  Program name: h-display fontSize 15
+Card (padding 16):
+  Program name: title tier (17px), fontWeight 700
   Sub row: "{status} · {progress}% · {weeks} sem"
     status: "En cours" (color primary) or "Terminé" (color success)
-    — fontSize 11, color muted, marginTop 2
-  Progress bar (marginTop 9, height 5):
+    — body tier (13px), color muted, marginTop 4
+  Progress bar (marginTop 8, height 4):
     Active: fill color primary
     Completed: fill color success (#2E9E5B)
     Width: "{progress}%"
   "Réactiver" button (if not active, below bar, marginTop 8):
     ghost style: border 1px border-color, bg surface
-    fontSize 12, padding 8 12
+    body tier (13px), padding 8 12
     onPress: mutation → SET is_active=true WHERE id=this.id, SET is_active=false WHERE id!=this.id AND user_id=user_id
 ```
 
@@ -1038,10 +1091,10 @@ Note: mockup uses 3 tabs (Discussion / Personas / Réglages). REQUIREMENTS PLUG-
   title="Coach IA"
   onBack={navigation.goBack}
   right={
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10,
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8,
                    paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(255,92,26,0.10)' }}>
       <Ionicons name="flash-outline" size={12} color="#FF5C1A" />
-      <Text style={{ fontSize: 12, fontWeight: 700, color: '#FF5C1A' }}>{credits}</Text>
+      <Text style={{ fontSize: 12, fontWeight: '700', color: '#FF5C1A' }}>{credits}</Text>
     </View>
   }
 />
@@ -1064,17 +1117,18 @@ Per D-07: shows `ai_conversations` list. Tapping opens `AIChatDetailScreen`.
 #### Active Persona Banner Card
 
 ```
-Card (padding 14, row, gap 12, alignItems center):
-  Persona avatar circle (42×42px, borderRadius 21):
+Card (padding 16, row, gap 12, alignItems center):
+  Persona avatar circle (44×44px, borderRadius 22):
     LinearGradient: from persona.color to lighter variant
-    Emoji centered (fontSize 22)
+    Emoji centered (title tier ~20px)
   Content (flex 1):
-    Name + style: h-display fontSize 14 + " · {style}" color muted fontSize 11
+    Name + style: body tier (13px), fontWeight 700 + " · {style}" color muted body tier (13px)
     Status: "● En ligne · répond en moins de 2s"
-      — fontSize 11, color #2E9E5B, marginTop 2
-  Settings button (32×32px, borderRadius 10, border 1px border-color):
-    Ionicons "settings-outline" 14px color muted
+      — label tier (11px), color #2E9E5B, marginTop 4
+  Settings button (32×32px, borderRadius 8, border 1px border-color):
+    Ionicons "settings-outline" 16px color muted
     onPress: setActiveTab('reglages')
+    accessibilityLabel: "Ouvrir les réglages du coach"
 ```
 
 Persona data sourced from `user_profiles.settings.ai_persona`. Fallback to "Max" if not set.
@@ -1086,12 +1140,12 @@ Data: `ai_conversations` WHERE user_id, ordered by updated_at DESC, limit 20.
 ```
 Section title: "Conversations"
 Each conversation row:
-  Card (padding 12 14, row, gap 12):
+  Card (padding 12 16, row, gap 12):
     Persona avatar circle (36×36px) — small version
     Content (flex 1):
-      Title: conversation.title or "Nouvelle conversation" — fontSize 13, fontWeight 700
-      Preview: last message preview — fontSize 11.5, color muted, numberOfLines 1
-      Time: ago label — fontSize 10.5, color muted
+      Title: conversation.title or "Nouvelle conversation" — body tier (13px), fontWeight 700
+      Preview: last message preview — label tier (11px), color muted, numberOfLines 1
+      Time: ago label — label tier (11px), color muted
     Unread dot (if last message role='assistant' and not yet read):
       8×8px circle, bg primary, borderRadius 4
 ```
@@ -1099,7 +1153,7 @@ Each conversation row:
 **New conversation CTA:**
 
 ```
-Button (below list, marginTop 8, padding 14, width 100%, bg primary, borderRadius 14):
+Button (below list, marginTop 8, padding 16, width 100%, bg primary, borderRadius 16):
   Ionicons "chatbubble-outline" 16px color white + "Nouvelle conversation"
   onPress: create new ai_conversation → navigate to AIChatDetailScreen with new conversationId
 ```
@@ -1107,12 +1161,12 @@ Button (below list, marginTop 8, padding 14, width 100%, bg primary, borderRadiu
 #### Quick Prompts row
 
 ```
-Horizontal ScrollView (showsHorizontalScrollIndicator false, gap 6):
+Horizontal ScrollView (showsHorizontalScrollIndicator false, gap 8):
   Prompt chips (each: chip ghost style, paddingHorizontal 12, paddingVertical 8):
     "Plan ma séance"
     "Ai-je récupéré ?"
     "Mes macros du soir ?"
-    "Motivation 💪"
+    "Motivation"
   onPress: create/open conversation with pre-filled message
 ```
 
@@ -1125,25 +1179,25 @@ Horizontal ScrollView (showsHorizontalScrollIndicator false, gap 6):
 Intro text:
 ```
 "Choisis le coach qui te parle le mieux. Tu peux changer à tout moment."
-— fontSize 12, color muted, lineHeight 1.45, marginBottom 12
+— body tier (13px), color muted, lineHeight 1.5, marginBottom 12
 ```
 
 #### Persona Cards (4 cards, vertical list)
 
 ```
-Each persona card (padding 14, row, alignItems center, gap 14):
-  Selected state: borderWidth 1.5, borderColor = persona.color
+Each persona card (padding 16, row, alignItems center, gap 16):
+  Selected state: borderWidth 2, borderColor = persona.color
   Unselected state: standard card border (border-color)
 
   Avatar circle (56×56px, borderRadius 28):
     LinearGradient from persona.color to lighter
-    Emoji centered, fontSize 28
+    Emoji centered, title tier (~20px)
 
   Content (flex 1):
-    Name row: h-display fontSize 16 + "Actif" chip (if selected)
-      "Actif" chip: success chip style, padding 2 7, fontSize 9.5
-    Style label: fontSize 11, color persona.color, fontWeight 700, marginTop 1
-    Description: fontSize 11.5, color muted, lineHeight 1.4, marginTop 4
+    Name row: title tier (17px), fontWeight 700 + "Actif" chip (if selected)
+      "Actif" chip: success chip style, padding 4 8, label tier (11px)
+    Style label: label tier (11px), color persona.color, fontWeight 700, marginTop 4
+    Description: body tier (13px), color muted, lineHeight 1.5, marginTop 4
 
   Interaction: onPress → update user_profiles.settings.ai_persona = persona.id
                + mutation to save, optimistic update
@@ -1189,7 +1243,7 @@ Card (overflow hidden):
     4. Données partagées | "Activité, sommeil, nutrition" | Ionicons "watch-outline" | chevron
        → multi-toggle (activity / sleep / nutrition / measurements)
     5. Effacer l'historique | "{N} conversations" | Ionicons "close-outline" | chevron
-       → showAlert destructive confirm before delete
+       → showAlert with OS destructive button style before delete
 ```
 
 Settings saved via mutation: `supabase.from('user_profiles').update({ settings: { ...existing, ai_language, ai_coaching_style, ai_response_length } })`.
@@ -1272,24 +1326,24 @@ Generic: "Tes amis restent actifs. Consulte le fil pour rester motivé !"
 #### Activity Feed Cards
 
 ```
-Each workout session card (padding 14):
-  Header row (gap 10):
+Each workout session card (padding 16):
+  Header row (gap 8):
     Friend avatar circle (36×36px, borderRadius 18):
       Gradient from friend.color (generate from name hash) to lighter
-      Initials: first char of display_name, fontSize 14, fontWeight 800, color white
+      Initials: first char of display_name, body tier (13px), fontWeight 700, color white
     Content (flex 1):
-      "{friendName} a terminé une séance {programName}" — fontSize 12.5
+      "{friendName} a terminé une séance {programName}" — body tier (13px)
         — name: fontWeight 700
         — action: color muted
-      Time: "{ago}" — fontSize 10.5, color muted, marginTop 1
+      Time: "{ago}" — label tier (11px), color muted, marginTop 4
 
-  Session value card (marginTop 10, padding 10, borderRadius 11):
+  Session value card (marginTop 8, padding 8, borderRadius 8):
     bg: rgba(255,92,26,0.08) (primary tint)
-    "{duration} min · {sessionName}" — fontSize 13, fontWeight 700, color primary
+    "{duration} min · {sessionName}" — body tier (13px), fontWeight 700, color primary
 
-  Action row (marginTop 10, gap 14):
-    Like button: Ionicons "heart-outline" 13px + "{likes}" — fontSize 11.5, color muted
-    Comment button: Ionicons "chatbubble-outline" 13px + "{comments}" — fontSize 11.5, color muted
+  Action row (marginTop 8, gap 16):
+    Like button: Ionicons "heart-outline" 14px + "{likes}" — label tier (11px), color muted
+    Comment button: Ionicons "chatbubble-outline" 14px + "{comments}" — label tier (11px), color muted
 ```
 
 **Friend color generation:** hash of friend's display_name to pick from a set of 6 colors:
@@ -1309,23 +1363,23 @@ Per D-06 context: researcher must confirm challenges table schema. Expected colu
 
 Each challenge card:
 ```
-Card (padding 14):
-  Row (justifyContent space-between, gap 10):
+Card (padding 16):
+  Row (justifyContent space-between, gap 8):
     Left (flex 1):
-      Name: h-display fontSize 15
-      Desc: fontSize 11.5, color muted, marginTop 2
+      Name: title tier (17px), fontWeight 700
+      Desc: body tier (13px), color muted, marginTop 4
     Right: "Inscrit" chip (success) if user is enrolled
 
-  Stats row (marginTop 10, gap 10, fontSize 11, color muted):
-    Ionicons "people-outline" 11px + "{participant_count}"
-    Ionicons "timer-outline" 11px + "{daysLeft}j restants"
-    Leader badge if relevant: "👑 {leader_name}"
+  Stats row (marginTop 8, gap 8, label tier 11px, color muted):
+    Ionicons "people-outline" 12px + "{participant_count}"
+    Ionicons "timer-outline" 12px + "{daysLeft}j restants"
+    Leader badge if relevant: "{leader_name}"
 
   Progress bar (if enrolled, marginTop 8):
     height 4, borderRadius 999, bg rgba(28,26,23,0.06)
     Fill: user's progress / target × 100%, bg primary
 
-  CTA button (marginTop 10, width 100%, padding 8 12, fontSize 12):
+  CTA button (marginTop 8, width 100%, padding 8 12, body tier 13px):
     Enrolled: bg rgba(28,26,23,0.06), color text → "Voir le classement"
     Not enrolled: bg primary, color white → "Rejoindre"
     onPress enrolled: navigate to ChallengeDetailScreen (existing, untouched per D-04)
@@ -1362,28 +1416,28 @@ Each group card:
 ```
 Card (padding 12, row, gap 12):
   Icon circle (40×40px, borderRadius 12, bg rgba(255,92,26,0.12)):
-    Ionicons from group.category: barbell/people/body/nutrition → matching icon, 17px, color primary
+    Ionicons from group.category: barbell/people/body/nutrition → matching icon, 18px, color primary
   Content (flex 1):
-    Name: fontSize 13, fontWeight 700
-    Sub: "{memberCount} membres · {activity}" — fontSize 11, color muted, marginTop 1
-  Ionicons "chevron-forward" 14px color muted
+    Name: body tier (13px), fontWeight 700
+    Sub: "{memberCount} membres · {activity}" — label tier (11px), color muted, marginTop 4
+  Ionicons "chevron-forward" 16px color muted
 ```
 
 Interaction: tap → navigate to GroupsScreen (existing, untouched per D-04).
 
 Ghost CTA at bottom:
 ```
-Button (padding 12, width 100%, border 1px border-color, borderRadius 14, bg transparent, marginTop 4):
-  Ionicons "add-outline" 14px + "Créer un groupe"
-  color text, fontSize 13, fontWeight 600
+Button (padding 12, width 100%, border 1px border-color, borderRadius 16, bg transparent, marginTop 4):
+  Ionicons "add-outline" 16px + "Créer un groupe"
+  color text, body tier (13px), fontWeight 500
 ```
 
 **Empty state (no groups table or no groups):**
 ```
 Centered card (padding 32 16, alignItems center):
   Ionicons "people-outline" 48px color muted, marginBottom 12
-  Title: "Groupes bientôt disponibles" — fontSize 16, fontWeight 700
-  Sub: "Les groupes sont en cours de développement. Reviens bientôt !" — fontSize 12, color muted, textAlign center, marginTop 6
+  Title: "Groupes bientôt disponibles" — title tier (17px), fontWeight 700
+  Sub: "Les groupes sont en cours de développement. Reviens bientôt !" — body tier (13px), color muted, textAlign center, marginTop 8
 ```
 
 ### 6.6 States
@@ -1453,7 +1507,7 @@ Centered:
 | Quick prompt chip | AIChatDetailScreen with pre-filled message |
 | Settings gear in persona banner | setActiveTab('reglages') |
 | Persona card tap | mutation save (no navigation) |
-| "Effacer l'historique" | showAlert destructive confirm → delete all ai_conversations for user |
+| "Effacer l'historique" | showAlert (OS destructive button) → delete all ai_conversations for user |
 
 ### Community Plugin
 
@@ -1528,7 +1582,7 @@ Centered:
 | AI suggestion action | "Activer rappels" |
 | Quick log section | "Logger rapide" |
 | Today section | "Aujourd'hui" |
-| Goal reached | "Objectif atteint 🎉 Tu as bu {N}L aujourd'hui." |
+| Goal reached | "Objectif atteint ! Tu as bu {N}L aujourd'hui." |
 | Avg 7d label | "MOYENNE 7J" |
 | Record label | "STREAK RECORD" |
 | AI history body | "Tes journées de séance tu bois +30% : ton corps réclame plus. On adapte la cible les jours d'entraînement ?" |
@@ -1607,7 +1661,7 @@ Centered:
 | Online status | "● En ligne · répond en moins de 2s" |
 | Conversations section | "Conversations" |
 | New conversation CTA | "Nouvelle conversation" |
-| Quick prompts | "Plan ma séance" / "Ai-je récupéré ?" / "Mes macros du soir ?" / "Motivation 💪" |
+| Quick prompts | "Plan ma séance" / "Ai-je récupéré ?" / "Mes macros du soir ?" / "Motivation" |
 | Persona intro | "Choisis le coach qui te parle le mieux. Tu peux changer à tout moment." |
 | Selected chip | "Actif" |
 | AI suggestion body (settings) | "Active 'Notif quotidiennes du coach' pour recevoir un check-in matinal personnalisé." |
@@ -1622,6 +1676,7 @@ Centered:
 | Data shared sub | "Activité, sommeil, nutrition" |
 | Clear history row | "Effacer l'historique" |
 | Clear history sub | "{N} conversations" |
+| Clear history confirm | showAlert: "Effacer l'historique", "Toutes tes {N} conversations seront supprimées définitivement.", destructive button "Effacer", cancel button "Annuler" |
 | Empty conversations | "Aucune conversation pour l'instant. Lance une discussion avec ton coach !" |
 | Empty CTA | "Commencer" |
 
@@ -1677,7 +1732,7 @@ Centered:
 | `SubTabs` | `@ziko/ui` | All 6 plugins |
 | `AISuggestion` | `@ziko/ui` | All 6 plugins (1 per tab minimum) |
 | `PluginHeader` | `@ziko/ui` | All 6 plugins |
-| `WeekStrip` | `@ziko/ui` | Not used in Phase 37 (used in Habits Historique via custom heatmap instead) |
+| `WeekStrip` | `@ziko/ui` | Not used in Phase 37 (Habits Historique uses custom heatmap instead) |
 | `STRow` | `@ziko/ui` | Nutrition Réglages, Hydration Réglages, Coach IA Réglages |
 
 ### SubTabs Update Required
@@ -1737,7 +1792,7 @@ const { data, isLoading, error, refetch } = useQuery({
 | Nutrition | Réglages | TDEE recommendation | Always shown with user's data |
 | Hydration | Aujourd'hui | Timing distribution | `pct_logged_after_14h > 0.6` (most intake after 2pm) |
 | Hydration | Historique | Workout day delta | `avg(workout_day_ml) / avg(rest_day_ml) > 1.2` |
-| Habits | Aujourd'hui | Habit miss pattern | Any habit missed ≥ 4/7 last days |
+| Habits | Aujourd'hui | Habit miss pattern | Any habit missed >= 4/7 last days |
 | Habits | Aujourd'hui (good) | Streak encouragement | All habits < 3 misses in 7 days |
 | Habits | Nouvelle | Sleep + goal tip | `last_sleep_duration < 7h AND user_profiles.goal = 'force'` |
 | AI Programs | Programme | Recovery tip | `last_sleep_quality >= 4` → increase load; else → lighter session |
@@ -1745,7 +1800,7 @@ const { data, isLoading, error, refetch } = useQuery({
 | AI Programs | Bibliothèque | Progress motivation | `count(completed_programs) >= 1` |
 | Coach IA | Réglages | Daily notif tip | Always shown |
 | Community | Fil | PR challenge prompt | Any friend PR in last 7 days |
-| Community | Groupes | Group recommendation | User has ≥ 3 sessions of powerlifting exercises |
+| Community | Groupes | Group recommendation | User has >= 3 sessions of powerlifting exercises |
 
 **Fallback:** If rule condition cannot be evaluated (data unavailable), show a generic positive tip. Never show an empty AISuggestion.
 
@@ -1791,7 +1846,7 @@ Fill body rect:
   clipPath: url(#hydration-bottle-clip)
 
 Surface line rect:
-  x=0, y={140 - fillRatio * 120}, width=80, height=3
+  x=0, y={140 - fillRatio * 120}, width=80, height=4
   fill: #2E7BF6, fillOpacity: 0.85
   clipPath: url(#hydration-bottle-clip)
 
@@ -1811,7 +1866,7 @@ Container: flexDirection row, flexWrap wrap,
   Each cell: View
     width: (availableWidth - 9 * gap) / 10   ← dynamic, ~28px at 390 screen
     aspectRatio: 1
-    borderRadius: 6
+    borderRadius: 4
     backgroundColor:
       Done day: #FF5C1A, opacity: 0.4 + (completionRate * 0.6)
         where completionRate = habitsCompleted/totalHabits for that day
@@ -1848,7 +1903,7 @@ or: use React Native's built-in `Animated.timing`
 ```
 On mount: translateY 16 → 0, opacity 0 → 1
 Duration: 250ms, ease-out
-Stagger: card elements stagger 30ms apart using Animated.stagger
+Stagger: card elements stagger 32ms apart using Animated.stagger
 ```
 
 #### 13.3 Calorie Ring (Nutrition)
@@ -1912,7 +1967,7 @@ On persona tap:
 ```
 Feed cards stagger on initial load:
   Each card: translateY 12 → 0, opacity 0 → 1
-  Stagger: 60ms between cards
+  Stagger: 64ms between cards
   Duration per card: 200ms, ease-out
 ```
 
@@ -1948,13 +2003,13 @@ Cycle duration: 1400ms, repeat
 - 4 quick-log button shimmer squares
 
 **Habits Aujourd'hui:**
-- Summary card shimmer (height 70) + 5 habit row shimmer (height 52 each)
+- Summary card shimmer (height 72) + 5 habit row shimmer (height 52 each)
 
 **AI Programs Programme:**
 - Hero card shimmer (height 200, dark variant) + AISuggestion shimmer (height 64)
 
 **Coach IA Discussion:**
-- Persona banner shimmer (height 70) + 3 conversation row shimmer (height 60 each)
+- Persona banner shimmer (height 72) + 3 conversation row shimmer (height 64 each)
 
 **Community Fil:**
 - AISuggestion shimmer (height 64) + 3 activity card shimmer (height 120 each)
@@ -1988,13 +2043,13 @@ All must return zero results before deletion.
 
 ## 16. Accessibility
 
-- All touch targets: minimum 44×44px (habit completion button 36×36 — add 4px padding around)
+- All touch targets: minimum 44×44px (habit completion button 36×36 — add 4px padding around to reach 44×44)
 - All interactive elements: `accessibilityRole` prop set (button / tab / etc.)
 - AISuggestion card: `accessibilityLabel="Coach IA suggestion: {text}"`
 - Hydration log buttons: `accessibilityLabel="Logger {amount}ml d'eau"`
 - Habit completion: `accessibilityLabel="{name} — {done ? 'Complété' : 'Non complété'}"`
 - Calorie ring SVG: `accessibilityLabel="Calories : {consumed} sur {target} kcal consommées"`
-- Color contrast: all text on surface (#FFFFFF) meets 4.5:1. Primary (#FF5C1A) on white: 3.1:1 (use for decorative only, not body text)
+- Color contrast: all text on surface (#FFFFFF) meets 4.5:1. Primary (#FF5C1A) on white: 3.1:1 (use for decorative and accent elements only, not body text)
 
 ---
 
@@ -2023,9 +2078,15 @@ All must return zero results before deletion.
 | showAlert (not Alert.alert) | CLAUDE.md (locked) |
 | paddingBottom: 100 on ScrollViews | CLAUDE.md (locked) |
 | AISuggestion rule conditions | REQUIREMENTS §PLUG-N-06, §PLUG-HAB-05, §PLUG-AI-05 |
+| Typography: 4 tiers, 2 weights | Checker revision 2026-05-25 |
+| Spacing: multiples of 4 only | Checker revision 2026-05-25 |
+| 60/30/10 color distribution | Checker revision 2026-05-25 |
+| Destructive via showAlert OS-native | Checker revision 2026-05-25 |
+| Space-constrained chip pattern documented | Checker revision 2026-05-25 |
+| Registry: internal only, no third-party | Checker revision 2026-05-25 |
 
 ---
 
-*Phase 37 UI-SPEC — Draft*
-*Written: 2026-05-25*
+*Phase 37 UI-SPEC — Draft (revised)*
+*Written: 2026-05-25 | Revised: 2026-05-25*
 *Checker: gsd-ui-checker*
