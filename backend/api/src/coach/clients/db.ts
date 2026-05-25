@@ -791,7 +791,12 @@ export async function getProgramsForClient(
     });
   }
 
-  return { programs: enriched };
+  const todayStr = new Date().toISOString().split('T')[0];
+  const activeProgram = enriched.find(
+    (prog) => prog.start_date !== null && prog.start_date <= todayStr,
+  ) ?? null;
+  const history = enriched.filter((prog) => prog !== activeProgram);
+  return { active: activeProgram ?? null, history };
 }
 
 // ----- PUT /:clientId/shared-note — update shared note on the coach↔client link (PROG-07, PROG-09) -----
