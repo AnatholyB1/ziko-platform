@@ -1,6 +1,6 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.11
+milestone: v1.13
 milestone_name: Retour Vidéo Coach
 status: planning
 last_updated: "2026-05-25"
@@ -13,14 +13,23 @@ progress:
   percent: 0
 ---
 
-# Project State
+# Project State — v1.13 Retour Vidéo Coach
+
+## Workstream Scope
+
+This workstream tracks **retour-video** work only (v1.13 Retour Vidéo Coach).
+
+**Phase files:** `.planning/phases/<N>-*/`
+**Roadmap:** `.planning/workstreams/retour-video/ROADMAP.md`
+
+---
 
 ## Current Position
 
-Phase: Not started (workstream created, awaiting milestone definition)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Workstream created — ready for `/gsd:new-milestone --ws retour-video`
-Last activity: 2026-05-25 — Workstream created
+Status: Defining requirements
+Last activity: 2026-05-25 — Milestone v1.13 started
 
 ## Progress
 
@@ -31,8 +40,20 @@ Last activity: 2026-05-25 — Workstream created
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 ```
 
-## Session Continuity
+## Accumulated Context
 
-**Stopped At:** Workstream creation
-**Resume File:** `.planning/workstreams/retour-video/STATE.md`
-**Next Action:** `/gsd:new-milestone --ws retour-video` — Define milestone + roadmap
+### Decisions
+
+- v1.11 version number was already taken by notification-mobile → retour-video uses v1.13
+- Retour webcam coach (coach envoie vidéo) explicitement hors scope v1.13 → reporté v1.x+1
+- Stack vocale retour-vocal (v1.9) réutilisée pour les commentaires vocaux timecodés
+- Supabase Storage existant utilisé pour le stockage vidéo (pas de nouvelle infra)
+- Done criterion: Joaquim upload squat video, Guillaume annote à T+1:23 avec commentaire vocal nettoyé
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+None.
