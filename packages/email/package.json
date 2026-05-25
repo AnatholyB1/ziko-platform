@@ -4,12 +4,20 @@
   "private": false,
   "description": "React Email templates for Ziko platform (weekly coaching digest).",
   "type": "module",
-  "main": "src/templates/WeeklyDigest.tsx",
+  "main": "./dist/WeeklyDigest.cjs",
+  "module": "./dist/WeeklyDigest.mjs",
+  "types": "./dist/WeeklyDigest.d.ts",
   "exports": {
-    "./src/templates/WeeklyDigest.js": {
-      "types": "./src/templates/WeeklyDigest.tsx",
-      "default": "./src/templates/WeeklyDigest.tsx"
+    "./templates/WeeklyDigest": {
+      "import": "./dist/WeeklyDigest.mjs",
+      "require": "./dist/WeeklyDigest.cjs",
+      "types": "./dist/WeeklyDigest.d.ts"
     }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -18,6 +26,7 @@
     "@react-email/components": "^1.0.12"
   },
   "devDependencies": {
+    "tsup": "^8.5.1",
     "typescript": "^5.0.0"
   }
 }
