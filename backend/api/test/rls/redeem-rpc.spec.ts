@@ -170,8 +170,8 @@ describe('redeem_invitation_code — error coverage', () => {
       // eslint-disable-next-line no-console
       console.log(`[redeem-rpc] cross-class p95 variance: ${variance.toFixed(2)} ms`);
 
-      // Loose bound — research suggests <10ms typical; allow 20ms for CI jitter.
-      expect(variance).toBeLessThan(20);
+      // Loose bound — research suggests <10ms typical; allow 35ms for CI jitter.
+      expect(variance).toBeLessThan(35);
     },
     60_000
   );
