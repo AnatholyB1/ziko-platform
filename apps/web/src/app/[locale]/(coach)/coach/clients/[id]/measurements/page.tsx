@@ -56,7 +56,7 @@ export default async function ClientMeasurementsPage({
               {rows.map((row: Record<string, unknown>) => (
                 <tr key={row.id as string} className="border-t border-border hover:bg-background/60">
                   <td className="py-3 px-4 text-text">
-                    {new Date(row.created_at).toLocaleDateString('fr-FR')}
+                    {new Date(row.created_at as string).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="py-3 px-4 text-text">
                     {row.weight_kg != null ? `${row.weight_kg} kg` : '—'}
