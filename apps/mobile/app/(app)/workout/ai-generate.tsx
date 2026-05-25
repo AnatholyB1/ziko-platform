@@ -1,4 +1,3 @@
-// @ts-ignore — WSHeader created by plan 36-01, exists when branches are merged
 import WSHeader from '../../../src/components/WSHeader';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
@@ -208,7 +207,6 @@ export default function AIGenerateScreen() {
   if (step === 'generating') {
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* @ts-ignore */}
         <WSHeader title="Génération…" />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 24 }}>
           <MotiView
@@ -250,7 +248,6 @@ export default function AIGenerateScreen() {
     const exos = generatedSession.exercises;
     return (
       <View style={{ flex: 1, backgroundColor: theme.background }}>
-        {/* @ts-ignore */}
         <WSHeader
           title="Ta séance générée"
           sub={`~${duration ?? 45} min · adapté à toi`}
@@ -413,9 +410,7 @@ export default function AIGenerateScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* @ts-ignore */}
       <WSHeader
-        variant="light"
         title="Coach IA"
         sub={stepLabel}
         onBack={step === 0 ? () => router.back() : handleBack}
