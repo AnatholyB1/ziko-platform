@@ -74,12 +74,28 @@ Le coach crée des formulaires déclenchés par des conditions (premier contact,
 
 ---
 
-## Traceability (filled by roadmapper)
+## Traceability
 
-| REQ-ID | Phase | Plan |
-|--------|-------|------|
-| FORM-01–06 | TBD | TBD |
-| TRIGGER-01–05 | TBD | TBD |
-| MOBILE-01–05 | TBD | TBD |
-| RESPONSES-01–03 | TBD | TBD |
-| CLAUDE-01–02 | TBD | TBD |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| FORM-01 | Phase 03 | Pending |
+| FORM-02 | Phase 03 | Pending |
+| FORM-03 | Phase 03 | Pending |
+| FORM-04 | Phase 03 | Pending |
+| FORM-05 | Phase 03 | Pending |
+| FORM-06 | Phase 03 | Pending |
+| TRIGGER-01 | Phase 02 | Pending |
+| TRIGGER-02 | Phase 02 | Pending |
+| TRIGGER-03 | Phase 02 | Pending |
+| TRIGGER-04 | Phase 02 | Pending |
+| TRIGGER-05 | Phase 01 + Phase 02 | Pending |
+| MOBILE-01 | Phase 04 | Pending |
+| MOBILE-02 | Phase 04 | Pending |
+| MOBILE-03 | Phase 04 | Pending |
+| MOBILE-04 | Phase 04 | Pending |
+| MOBILE-05 | Phase 04 | Pending |
+| RESPONSES-01 | Phase 05 | Pending |
+| RESPONSES-02 | Phase 05 | Pending |
+| RESPONSES-03 | Phase 05 | Pending |
+| CLAUDE-01 | Phase 05 | Pending |
+| CLAUDE-02 | Phase 05 | Pending |
