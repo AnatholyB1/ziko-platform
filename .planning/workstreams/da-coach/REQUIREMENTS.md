@@ -55,16 +55,16 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| FOUND-01 | — | pending |
-| FOUND-02 | — | pending |
-| FOUND-03 | — | pending |
-| FOUND-04 | — | pending |
-| WEB-01 | — | pending |
-| WEB-02 | — | pending |
-| WEB-03 | — | pending |
-| WEB-04 | — | pending |
-| WEB-05 | — | pending |
-| MOB-01 | — | pending |
-| MOB-02 | — | pending |
-| MOB-03 | — | pending |
-| MOB-04 | — | pending |
+| FOUND-01 | Phase 1 | pending |
+| FOUND-02 | Phase 1 | pending |
+| FOUND-03 | Phase 1 | pending |
+| FOUND-04 | Phase 1 | pending |
+| WEB-01 | Phase 2 | pending |
+| WEB-02 | Phase 2 | pending |
+| WEB-03 | Phase 2 | pending |
+| WEB-04 | Phase 2 | pending |
+| WEB-05 | Phase 2 | pending |
+| MOB-01 | Phase 3 | pending |
+| MOB-02 | Phase 3 | pending |
+| MOB-03 | Phase 3 | pending |
+| MOB-04 | Phase 3 | pending |
