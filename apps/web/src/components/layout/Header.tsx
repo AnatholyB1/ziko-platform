@@ -26,7 +26,7 @@ export function Header() {
             <Link
               href="/"
               locale="fr"
-              className={locale === 'fr' ? 'font-bold text-text text-sm' : 'text-sm text-muted hover:text-text transition-colors'}
+              className={locale === 'fr' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : 'text-sm text-muted hover:text-text transition-colors px-2 py-2 min-h-[44px] inline-flex items-center rounded'}
             >
               {t('localeFR')}
             </Link>
@@ -34,13 +34,13 @@ export function Header() {
             <Link
               href="/"
               locale="en"
-              className={locale === 'en' ? 'font-bold text-text text-sm' : 'text-sm text-muted hover:text-text transition-colors'}
+              className={locale === 'en' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : 'text-sm text-muted hover:text-text transition-colors px-2 py-2 min-h-[44px] inline-flex items-center rounded'}
             >
               {t('localeEN')}
             </Link>
           </div>
           <motion.div whileHover={ctaHover} whileTap={ctaTap}>
-            <Link href="#" className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold block">
+            <Link href="/coach/dashboard" className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold block">
               {t('cta')}
             </Link>
           </motion.div>

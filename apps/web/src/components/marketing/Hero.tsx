@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { motion, useScroll, useTransform, useReducedMotion } from 'framer-motion'
 import { fadeIn, fadeUp, ctaHover, ctaTap } from '@/lib/motion'
 import { IoChevronDownOutline } from 'react-icons/io5'
+import { Link } from '@/i18n/navigation'
 
 const wordVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -106,12 +107,26 @@ export function Hero() {
                 {t('hero.ctaPlayStore')}
               </motion.a>
             </motion.div>
+
+            <motion.div
+              variants={fadeUp}
+              initial={prefersReducedMotion ? false : "hidden"}
+              animate="visible"
+              transition={{ delay: 0.9 }}
+            >
+              <Link
+                href="/coach/dashboard"
+                className="text-sm text-muted hover:text-primary transition-colors font-medium"
+              >
+                {t('hero.ctaCoach')} →
+              </Link>
+            </motion.div>
           </div>
 
           {/* Right column — phone + orb */}
           <div className="flex justify-center items-center md:w-2/5 relative">
             <motion.div
-              style={prefersReducedMotion ? { willChange: 'transform' } : { y: orbY, willChange: 'transform' }}
+              style={prefersReducedMotion ? {} : { y: orbY, willChange: 'transform' }}
               className="absolute w-80 h-80"
               aria-hidden
             >

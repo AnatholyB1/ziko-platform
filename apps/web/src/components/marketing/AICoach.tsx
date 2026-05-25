@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { motion, useInView } from 'framer-motion'
 import { IoFlashOutline } from 'react-icons/io5'
 import { ctaHover, ctaTap } from '@/lib/motion'
+import { Link } from '@/i18n/navigation'
 
 function TypewriterText({ text, isVisible }: { text: string; isVisible: boolean }) {
   const [displayed, setDisplayed] = useState('')
@@ -29,7 +30,7 @@ export function AICoach() {
   const isVisible = useInView(ref, { once: true, margin: '-100px' })
 
   return (
-    <section ref={ref} className="py-24 bg-[#1C1A17]">
+    <section ref={ref} className="py-24 bg-text">
       <div className="max-w-screen-xl mx-auto px-8">
         <div className="flex flex-col md:flex-row md:items-center gap-12">
           <motion.div
@@ -45,17 +46,21 @@ export function AICoach() {
             <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
               {t('aiCoach.heading')}
             </h2>
-            <p className="text-white/70 text-base leading-relaxed">
+            <p className="text-white/80 text-base leading-relaxed">
               {t('aiCoach.description')}
             </p>
-            <motion.a
-              href="#"
+            <motion.div
               whileHover={{ ...ctaHover, boxShadow: '0 4px 24px rgba(255,92,26,0.4)' }}
               whileTap={ctaTap}
-              className="inline-flex self-start bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm"
+              className="self-start"
             >
-              {t('aiCoach.cta')}
-            </motion.a>
+              <Link
+                href="/coach/dashboard"
+                className="inline-flex bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm"
+              >
+                {t('aiCoach.cta')}
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div

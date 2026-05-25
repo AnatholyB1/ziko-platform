@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { motion, useInView } from 'framer-motion'
 import { IoCheckmarkCircleOutline } from 'react-icons/io5'
 import { ctaHover, ctaTap } from '@/lib/motion'
+import { Link } from '@/i18n/navigation'
 
 export function Pricing() {
   const t = useTranslations('Home')
@@ -55,14 +56,17 @@ export function Pricing() {
             ))}
           </ul>
 
-          <motion.a
-            href="#"
+          <motion.div
             whileHover={{ ...ctaHover, boxShadow: '0 8px 32px rgba(255,92,26,0.45)' }}
             whileTap={ctaTap}
-            className="block w-full bg-primary text-white py-4 rounded-2xl font-black text-base text-center"
           >
-            {t('pricing.cta')}
-          </motion.a>
+            <Link
+              href="/coach/dashboard"
+              className="block w-full bg-primary text-white py-4 rounded-2xl font-black text-base text-center"
+            >
+              {t('pricing.cta')}
+            </Link>
+          </motion.div>
 
           <p className="text-center text-xs text-muted mt-4">
             {t('pricing.priceNote')}
