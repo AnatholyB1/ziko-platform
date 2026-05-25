@@ -82,7 +82,7 @@ export default async function ClientSessionsPage({
                   <td className="py-3 px-4 text-text">
                     {new Date(row.created_at as string).toLocaleDateString('fr-FR')}
                   </td>
-                  <td className="py-3 px-4 text-text">{row.name ?? '—'}</td>
+                  <td className="py-3 px-4 text-text">{(row.name as string) ?? '—'}</td>
                   <td className="py-3 px-4 text-muted">
                     {row.duration_minutes != null ? `${row.duration_minutes} min` : '—'}
                   </td>

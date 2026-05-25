@@ -64,12 +64,12 @@ export default async function ClientNutritionPage({
                   <td className="py-3 px-4 text-text">
                     {row.date ? new Date(row.date as string).toLocaleDateString('fr-FR') : '—'}
                   </td>
-                  <td className="py-3 px-4 text-muted capitalize">{row.meal_type ?? '—'}</td>
-                  <td className="py-3 px-4 text-text">{row.food_name ?? '—'}</td>
-                  <td className="py-3 px-4 text-muted">{row.calories ?? '—'}</td>
-                  <td className="py-3 px-4 text-muted">{row.protein_g ?? '—'}</td>
-                  <td className="py-3 px-4 text-muted">{row.carbs_g ?? '—'}</td>
-                  <td className="py-3 px-4 text-muted">{row.fat_g ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted capitalize">{(row.meal_type as string) ?? '—'}</td>
+                  <td className="py-3 px-4 text-text">{(row.food_name as string) ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.calories as string | number) ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.protein_g as string | number) ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.carbs_g as string | number) ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.fat_g as string | number) ?? '—'}</td>
                 </tr>
               ))}
             </tbody>

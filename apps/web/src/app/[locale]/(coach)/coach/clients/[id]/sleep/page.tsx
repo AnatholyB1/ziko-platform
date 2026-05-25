@@ -58,8 +58,8 @@ export default async function ClientSleepPage({
                   <td className="py-3 px-4 text-text">
                     {row.date ? new Date(row.date as string).toLocaleDateString('fr-FR') : '—'}
                   </td>
-                  <td className="py-3 px-4 text-muted">{row.bedtime ?? '—'}</td>
-                  <td className="py-3 px-4 text-muted">{row.wake_time ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.bedtime as string) ?? '—'}</td>
+                  <td className="py-3 px-4 text-muted">{(row.wake_time as string) ?? '—'}</td>
                   <td className="py-3 px-4 text-muted">
                     {row.duration_hours != null ? `${row.duration_hours}h` : '—'}
                   </td>
