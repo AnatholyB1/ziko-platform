@@ -75,18 +75,25 @@ All dashboards query existing Supabase tables — no new data collection tables:
 
 ## Traceability
 
-_Filled by roadmapper_
-
-| REQ-ID | Phase |
-|--------|-------|
-| DASH-01–03 | — |
-| DASH-04–05 | — |
-| PL-01–04 | — |
-| HYR-01 | — |
-| RUN-01 | — |
-| BB-01 | — |
-| WL-01 | — |
-| AI-01–04 | — |
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| DASH-01 | Phase 38 | Pending |
+| DASH-02 | Phase 38 | Pending |
+| DASH-03 | Phase 38 | Pending |
+| DASH-04 | Phase 40 | Pending |
+| DASH-05 | Phase 40 | Pending |
+| PL-01 | Phase 38 | Pending |
+| PL-02 | Phase 38 | Pending |
+| PL-03 | Phase 38 | Pending |
+| PL-04 | Phase 38 | Pending |
+| HYR-01 | Phase 39 | Pending |
+| RUN-01 | Phase 39 | Pending |
+| BB-01 | Phase 39 | Pending |
+| WL-01 | Phase 39 | Pending |
+| AI-01 | Phase 41 | Pending |
+| AI-02 | Phase 41 | Pending |
+| AI-03 | Phase 41 | Pending |
+| AI-04 | Phase 41 | Pending |
 
 ---
 
