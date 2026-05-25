@@ -33,63 +33,8 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-  # ─── Deploy: API → Vercel (only on push to main) ────────────────────────
-  deploy-backend:
-    name: Deploy API to Vercel
-    needs: [verify]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Deploy to production
-        run: vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: backend/api
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-  # ─── Deploy: web (Next.js) → Vercel prebuilt (only on push to main) ─────
-  deploy-web:
-    name: Deploy web to Vercel
-    needs: [verify]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Pull Vercel env & project config
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-
-      - name: Build (turbo from monorepo root)
-        run: npx turbo run build --filter=ziko-web
-
-      - name: Deploy prebuilt
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        working-directory: apps/web
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-
   # ─── Migrations Supabase (only on push to main) ─────────────────────────
+  # Note: Vercel handles API + web deployments via GitHub integration.
   migrate-supabase:
     name: Apply Supabase migrations
     needs: [verify]
@@ -119,9 +64,8 @@ jobs:
         if: steps.migrations.outputs.changed == 'true'
         run: |
           supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
-          # The DB was set up outside supabase CLI so migration history is empty.
-          # Mark all migrations NOT added in this commit as already applied,
-          # so db push only runs the new ones.
+          # Mark all existing migrations as applied except the new ones,
+          # so db push only runs the new files.
           NEW=$(git diff --name-only HEAD~1 HEAD | grep '^supabase/migrations/' | xargs -I{} basename {} .sql)
           for f in supabase/migrations/*.sql; do
             version=$(basename "$f" .sql)
@@ -129,7 +73,7 @@ jobs:
               supabase migration repair --status applied "$version" 2>/dev/null || true
             fi
           done
-          supabase db push
+          supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
