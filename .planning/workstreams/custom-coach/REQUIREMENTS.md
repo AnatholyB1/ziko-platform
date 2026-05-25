@@ -43,18 +43,16 @@
 
 ## Traceability
 
-*(Rempli par le roadmapper)*
-
-| REQ-ID   | Phase | Phase Name |
-|----------|-------|------------|
-| AUDIT-01 | TBD   | —          |
-| EXLIB-01 | TBD   | —          |
-| EXLIB-02 | TBD   | —          |
-| EXLIB-03 | TBD   | —          |
-| EXLIB-04 | TBD   | —          |
-| EXLIB-05 | TBD   | —          |
-| EXLIB-06 | TBD   | —          |
+| REQ-ID   | Phase | Phase Name                                       | Status  |
+|----------|-------|--------------------------------------------------|---------|
+| AUDIT-01 | 42    | Audit Client Programs Visibility                 | Pending |
+| EXLIB-01 | 43    | Coach Exercise Library Backend + Web UI          | Pending |
+| EXLIB-02 | 43    | Coach Exercise Library Backend + Web UI          | Pending |
+| EXLIB-03 | 43    | Coach Exercise Library Backend + Web UI          | Pending |
+| EXLIB-04 | 43    | Coach Exercise Library Backend + Web UI          | Pending |
+| EXLIB-05 | 44    | Program Editor + Athlete Media Integration       | Pending |
+| EXLIB-06 | 44    | Program Editor + Athlete Media Integration       | Pending |
 
 ---
 
-*Last updated: 2026-05-25 — Milestone v1.10 started*
+*Last updated: 2026-05-25 — Roadmap created, all 7 requirements mapped to phases 42–44*
