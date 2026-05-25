@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { IoClipboardOutline } from 'react-icons/io5';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 export function InvitationCodeCard({
   code,
@@ -11,9 +11,10 @@ export function InvitationCodeCard({
   expiresAt: string | null;
 }) {
   const t = useTranslations('CoachInvitations');
+  const locale = useLocale();
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const shareUrl = `https://ziko-app.com/r/${code}`;
+  const shareUrl = `https://ziko-app.com/${locale}/redeem?code=${code}`;
 
   function copy(text: string, which: 'code' | 'link') {
     navigator.clipboard.writeText(text);

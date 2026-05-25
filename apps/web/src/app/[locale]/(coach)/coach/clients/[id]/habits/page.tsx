@@ -1,6 +1,3 @@
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 import { createServerSupabase } from '@/lib/supabase/server';
 import { getCachedCoachUser } from '@/lib/coach/auth';
 

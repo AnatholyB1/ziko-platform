@@ -1,5 +1,5 @@
 import { Inter } from 'next/font/google';
-import { setRequestLocale } from 'next-intl/server';
+import { setRequestLocale, getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
@@ -22,10 +22,19 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const messages = await getMessages();
+  const clientMessages = {
+    Login: (messages as Record<string, unknown>).Login,
+    CoachRedeem: (messages as Record<string, unknown>).CoachRedeem,
+    CoachInvitations: (messages as Record<string, unknown>).CoachInvitations,
+    Settings: (messages as Record<string, unknown>).Settings,
+    Onboarding: (messages as Record<string, unknown>).Onboarding,
+  };
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-text min-h-screen flex flex-col`}>
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}>
           {children}
         </NextIntlClientProvider>
       </body>
