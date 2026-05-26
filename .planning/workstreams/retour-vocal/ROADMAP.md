@@ -21,12 +21,18 @@
 **Goal**: Coach can record a vocal feedback and read the transcript before structuring
 **Depends on**: Nothing (first phase)
 **Requirements**: VOICE-01, VOICE-02, VOICE-03
+**Plans**: 5 plans
+Plans:
+- [ ] 01-01-PLAN.md — Wave 0: proxy bug fix + web vitest config + 4 frontend test stubs (RED)
+- [ ] 01-02-PLAN.md — Wave 0: openai package + OPENAI_API_KEY env + voiceRouter skeleton + backend test stub (RED)
+- [ ] 01-03-PLAN.md — Wave 1: full Whisper handler in service.ts + mount voiceRouter in app.ts
+- [ ] 01-04-PLAN.md — Wave 2: vocalReducer + useVocalRecorder + useVocalTimer + VocalRetourPanel (logic)
+- [ ] 01-05-PLAN.md — Wave 3: 4 styled sub-components + page.tsx + ClientTabStrip tab + VocalRetourPanel wired (UI)
 **Success Criteria** (what must be TRUE):
   1. Coach can press a record button on the client sheet, speak for up to 5 minutes, and stop recording — all from the browser
   2. After stopping, the audio is uploaded and Whisper returns a French/English transcript within a few seconds
   3. The transcript appears on screen in read-only mode with options to validate or re-record
   4. The Hono route `POST /coach/voice/transcribe` accepts audio blob and returns the transcript text
-**Plans**: TBD
 
 ### Phase 02: Claude Structuring
 **Goal**: Coach receives a structured, editable 5-section feedback card generated from the transcript and athlete context
@@ -56,7 +62,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 01. Transcription Pipeline | 0/? | Not started | - |
+| 01. Transcription Pipeline | 0/5 | Planned | - |
 | 02. Claude Structuring | 0/? | Not started | - |
 | 03. Persistence & Memory | 0/? | Not started | - |
 
