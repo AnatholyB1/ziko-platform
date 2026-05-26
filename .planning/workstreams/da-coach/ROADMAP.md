@@ -6,7 +6,7 @@ Three phases build the coach branding feature end-to-end. Phase 1 lays the manda
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - DB migration, Hono branding module, plugin-sdk theme actions
+- [x] **Phase 1: Foundation** - DB migration, Hono branding module, plugin-sdk theme actions
 - [ ] **Phase 2: Web Editor** - Coach branding settings page in Next.js CRM (parallel after Phase 1)
 - [ ] **Phase 3: Mobile Injection** - Athlete CoachScreen applies coach theme with MMKV persistence (parallel after Phase 1)
 
@@ -23,9 +23,12 @@ Three phases build the coach branding feature end-to-end. Phase 1 lays the manda
   4. `useThemeStore` exposes `setCustomTheme(overrides)` and `clearCoachTheme()` actions in plugin-sdk and both compile without errors in the monorepo
 **Plans**: 3 plans
 Plans:
-- [ ] 01-01-PLAN.md — DB migration: coach_branding table + coach-logos bucket + RLS + push
-- [ ] 01-02-PLAN.md — plugin-sdk: setCustomTheme + clearCoachTheme actions in useThemeStore
-- [ ] 01-03-PLAN.md — Hono branding module: PATCH /coach/branding, GET /links/me augmentation, app.ts mount
+**Wave 1** (parallel)
+- [x] 01-01-PLAN.md — DB migration: coach_branding table + coach-logos bucket + RLS + push
+- [x] 01-02-PLAN.md — plugin-sdk: setCustomTheme + clearCoachTheme actions in useThemeStore
+
+**Wave 2** *(blocked on 01-01 completion — migration must be pushed first)*
+- [x] 01-03-PLAN.md — Hono branding module: PATCH /coach/branding, GET /links/me augmentation, app.ts mount
 
 ### Phase 2: Web Editor
 **Goal**: A Pro coach can configure their direction artistique (color, logo, tone) from the web CRM and see a live preview before saving
@@ -60,6 +63,6 @@ Phase 1 first (strict prerequisite). Phases 2 and 3 parallel after Phase 1.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 3/3 | ✅ Complete | 2026-05-26 |
 | 2. Web Editor | 0/TBD | Not started | - |
 | 3. Mobile Injection | 0/TBD | Not started | - |
