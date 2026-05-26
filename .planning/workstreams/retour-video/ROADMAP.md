@@ -28,7 +28,13 @@ Three phases that build the video feedback pipeline from the ground up. Phase 45
   3. The athlete can attach a title (e.g. "Squat dos 2026-05-26") before uploading and it is stored with the video record
   4. The coach receives a push notification when the upload completes
   5. The signed URL pattern bypasses the Vercel 4.5 MB limit — video bytes never pass through Hono
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — SQL migration 057 (coach_client_videos + coach_video_annotations + RLS) + bucket creation + schema push
+- [ ] 45-02-PLAN.md — Hono backend: /coach/videos/upload-url + /:videoId/complete endpoints + vitest tests + app.ts registration
+- [ ] 45-03-PLAN.md — Mobile screens: VideoListScreen + VideoUploadSheet (H.264, XHR progress, title input) + videos.tsx route
+- [ ] 45-04-PLAN.md — Push token registration in CoachScreen (State C) + E2E verification checkpoint
 
 ### Phase 46: Web Player & Text Annotations
 **Goal**: The coach can watch the uploaded video with full scrubbing, leave timecoded text annotations with markers on the timeline, and the athlete can review those annotations synchronized with the video on mobile
@@ -58,6 +64,6 @@ Three phases that build the video feedback pipeline from the ground up. Phase 45
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 45. Storage Pipeline & Mobile Upload | 0/? | Not started | - |
+| 45. Storage Pipeline & Mobile Upload | 0/4 | Not started | - |
 | 46. Web Player & Text Annotations | 0/? | Not started | - |
 | 47. Voice Annotations | 0/? | Not started | - |
