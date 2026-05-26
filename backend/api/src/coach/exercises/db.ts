@@ -1,0 +1,123 @@
+// ARCH-03: per-request JWT client — no admin keys (SUPABASE_PUBLISHABLE_KEY only)
+import { createClient } from '@supabase/supabase-js';
+import type {
+  CoachExercise,
+  CreateExerciseBody,
+  UpdateExerciseBody,
+} from './types.js';
+
+export function createUserClient(jwt: string) {
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+    },
+  );
+}
+
+// ----- GET / — list coach's custom exercises (RLS + explicit coach_id filter) -----
+export async function listExercises(
+  jwt: string,
+  coachId: string,
+): Promise<{ exercises: CoachExercise[] }> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_exercises')
+    .select('*')
+    .eq('coach_id', coachId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return { exercises: data ?? [] };
+}
+
+// ----- POST / — create a new exercise -----
+export async function createExercise(
+  jwt: string,
+  coachId: string,
+  body: CreateExerciseBody,
+): Promise<CoachExercise> {
+  const db = createUserClient(jwt);
+  const { data, error } = await db
+    .from('coach_exercises')
+    .insert({
+      coach_id: coachId,
+      name: body.name,
+      description: body.description ?? null,
+      category: body.category,
+      muscle_groups: body.muscle_groups ?? [],
+      video_path: body.video_path ?? null,
+      photo_path: body.photo_path ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ----- PATCH /:id — update only provided fields -----
+export async function updateExercise(
+  jwt: string,
+  coachId: string,
+  id: string,
+  body: UpdateExerciseBody,
+): Promise<CoachExercise | null> {
+  const db = createUserClient(jwt);
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.name !== undefined) updates.name = body.name;
+  if (body.description !== undefined) updates.description = body.description;
+  if (body.category !== undefined) updates.category = body.category;
+  if (body.muscle_groups !== undefined) updates.muscle_groups = body.muscle_groups;
+  if (body.video_path !== undefined) updates.video_path = body.video_path;
+  if (body.photo_path !== undefined) updates.photo_path = body.photo_path;
+
+  const { data, error } = await db
+    .from('coach_exercises')
+    .update(updates)
+    .eq('id', id)
+    .eq('coach_id', coachId)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}
+
+// ----- DELETE /:id — remove storage files then DB row -----
+export async function deleteExercise(
+  jwt: string,
+  coachId: string,
+  id: string,
+): Promise<{ deleted: boolean }> {
+  const db = createUserClient(jwt);
+
+  // Step 1: Fetch the row to get storage paths (IDOR guard: coach_id filter)
+  const { data: row, error: fetchErr } = await db
+    .from('coach_exercises')
+    .select('video_path, photo_path')
+    .eq('id', id)
+    .eq('coach_id', coachId)
+    .maybeSingle();
+  if (fetchErr) throw new Error(fetchErr.message);
+
+  // Step 2: If not found, return early
+  if (!row) return { deleted: false };
+
+  // Step 3: Delete storage files if paths exist (user JWT — RLS allows own-prefix DELETE)
+  if (row.video_path) {
+    await db.storage.from('coach-exercises').remove([row.video_path]);
+  }
+  if (row.photo_path) {
+    await db.storage.from('coach-exercises').remove([row.photo_path]);
+  }
+
+  // Step 4: Delete the DB row
+  const { error: deleteErr } = await db
+    .from('coach_exercises')
+    .delete()
+    .eq('id', id)
+    .eq('coach_id', coachId);
+  if (deleteErr) throw new Error(deleteErr.message);
+
+  return { deleted: true };
+}
