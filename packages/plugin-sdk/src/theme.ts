@@ -159,9 +159,11 @@ interface ThemeState {
   setTheme: (themeId: string) => void;
   setBanner: (bannerId: string | null) => void;
   resetTheme: () => void;
+  setCustomTheme: (overrides: Partial<ThemePalette>) => void;
+  clearCoachTheme: () => void;
 }
 
-export const useThemeStore = create<ThemeState>()((set) => ({
+export const useThemeStore = create<ThemeState>()((set, get) => ({
   theme: DEFAULT_THEME,
   equippedBanner: null,
 
@@ -177,4 +179,13 @@ export const useThemeStore = create<ThemeState>()((set) => ({
   },
 
   resetTheme: () => set({ theme: DEFAULT_THEME, equippedBanner: null }),
+
+  setCustomTheme: (overrides) => {
+    const primary = overrides.primary ?? DEFAULT_THEME.primary;
+    const primaryLight = primary + '15';
+    const tabBarActive = primary;
+    set({ theme: { ...DEFAULT_THEME, ...overrides, primaryLight, tabBarActive } });
+  },
+
+  clearCoachTheme: () => get().resetTheme(),
 }));
