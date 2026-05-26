@@ -498,19 +498,19 @@ function PowerliftingDashboard({ clientId, dateRange }: Props) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **QueryClientProvider placement in coach layout**
+1. **QueryClientProvider placement in coach layout** — (RESOLVED: 038-01 creates QueryProvider.tsx and adds it to coach clients layout.tsx)
    - What we know: `apps/web/src/app/[locale]/(coach)/coach/layout.tsx` is a Server Component (async, imports server-only `getCachedCoachUser`). `QueryClientProvider` must be `'use client'`.
    - What's unclear: Whether to add a thin `QueryProvider` client wrapper inside the coach layout, or wrap the entire `[locale]/layout.tsx`.
    - Recommendation: Create `components/coach/QueryProvider.tsx` (`'use client'`) and wrap `{children}` inside `CoachLayout`. This is the standard Next.js App Router pattern for mixing server layouts with client providers.
 
-2. **Supabase embedded join filter for `workout_sessions.user_id`**
+2. **Supabase embedded join filter for `workout_sessions.user_id`** — (RESOLVED: 038-03 uses .eq('workout_sessions.user_id', clientId) on the join; executor to verify exact Supabase JS syntax.)
    - What we know: `session_sets` has no `user_id`. The join filter must use `workout_sessions.user_id`.
    - What's unclear: The exact Supabase JS v2 syntax for filtering on embedded table columns (`.eq('workout_sessions.user_id', clientId)` vs `.eq('workout_sessions!inner.user_id', clientId)`).
    - Recommendation: Use `workout_sessions!inner` in the select and filter with `.filter('workout_sessions.user_id', 'eq', clientId)`. The RLS policy already enforces this as a safety net — the explicit filter ensures the query scope is correct even in the absence of RLS.
 
-3. **`loading.tsx` vs inline skeleton for dashboard**
+3. **`loading.tsx` vs inline skeleton for dashboard** — (RESOLVED: 038-02 creates loading.tsx alongside page.tsx for route transition skeleton.)
    - What we know: All other tab pages have a `loading.tsx` alongside `page.tsx` for Next.js streaming skeleton.
    - What's unclear: Since the dashboard is a full client component that manages its own loading state via TanStack Query, whether `loading.tsx` is still useful.
    - Recommendation: Create a minimal `loading.tsx` that renders `<DashboardLoadingState />` — it appears during the Next.js route transition (before the JS hydrates), matching behavior of all other tabs.
