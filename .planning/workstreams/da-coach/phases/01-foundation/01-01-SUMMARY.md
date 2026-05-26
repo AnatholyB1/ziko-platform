@@ -43,7 +43,7 @@ patterns-established:
 requirements-completed: [FOUND-01, FOUND-04]
 
 # Metrics
-duration: 4min
+duration: 24min
 completed: 2026-05-26
 ---
 
@@ -53,10 +53,10 @@ completed: 2026-05-26
 
 ## Performance
 
-- **Duration:** 4 min
+- **Duration:** 24 min
 - **Started:** 2026-05-26T10:07:17Z
-- **Completed:** 2026-05-26T10:11:27Z
-- **Tasks:** 1 of 2 completed (Task 2 is checkpoint:human-verify — awaiting `supabase db push`)
+- **Completed:** 2026-05-26T10:31:02Z
+- **Tasks:** 2 of 2 completed
 - **Files modified:** 1
 
 ## Accomplishments
@@ -64,12 +64,14 @@ completed: 2026-05-26
 - `supabase/migrations/054_coach_branding.sql` written with all required DDL, RLS policies, and storage bucket creation
 - All 9 acceptance criteria verified and passing
 - Migration committed to git on branch `dev`
+- Migration applied to live Supabase project (slkobhavpwsubnsmuhya) via MCP `apply_migration` — `coach_branding` table and `coach-logos` bucket confirmed live
 
 ## Task Commits
 
 1. **Task 1: Write migration 054_coach_branding.sql** — `97417fa` (feat)
+2. **Task 2: Push migration to live database** — completed via MCP apply_migration (no separate commit — push is a remote operation)
 
-**Plan metadata:** pending (after checkpoint resolution)
+**Plan metadata:** `6b36743` (docs: SUMMARY + checkpoint) → updated below
 
 ## Files Created/Modified
 
@@ -92,7 +94,7 @@ None.
 
 ## User Setup Required
 
-**`supabase db push` required.** Task 2 (checkpoint:human-verify) is blocking. See instructions below.
+None - migration applied to live database via MCP apply_migration.
 
 ## Threat Surface Scan
 
@@ -106,9 +108,10 @@ None.
 
 ## Next Phase Readiness
 
-- Migration file written and committed — ready for `supabase db push`
-- Once pushed, Plans 02 and 03 can proceed (Plan 02 requires the live table for API integration)
-- Blocker: Task 2 (push to live database) must complete before Plan 03 can be verified
+- `coach_branding` table live with all CHECK constraints, trigger, and RLS
+- `coach-logos` public bucket live in Supabase Storage
+- Plans 02 and 03 can now proceed — the data layer prerequisite is complete
+- No blockers remaining for Phase 1
 
 ---
 *Phase: 01-foundation*
