@@ -55,6 +55,9 @@ Only navigate when it makes sense (user requests action or wants to see somethin
 function buildSystemPrompt(userCtx: UserContext): string {
   const sections: string[] = [BASE_SYSTEM];
 
+  // Persona injection — unconditional (defaults to Max when ai_persona not set in DB)
+  sections.push('## Coaching Persona\n' + userCtx.personaInstruction);
+
   // User profile
   if (userCtx.profile) {
     const p = userCtx.profile;
