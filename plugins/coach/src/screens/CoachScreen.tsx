@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,11 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Platform,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +43,18 @@ interface LinkRow {
 interface LinkStatusResponse {
   link: LinkRow | null;
   preview: CoachPreviewPayload | null;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+// Stable deviceId stored in module scope — persists across re-renders for the session.
+// Best-effort: the backend deduplicates tokens by (userId, token), deviceId is secondary.
+let _deviceId: string | null = null;
+function getOrCreateDeviceId(): string {
+  if (!_deviceId) {
+    _deviceId = [Date.now().toString(36), Math.random().toString(36).slice(2), Math.random().toString(36).slice(2)].join('-');
+  }
+  return _deviceId;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -231,6 +247,42 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  // ── Push token registration (State C — fires once on link activation) ──
+  useEffect(() => {
+    if (!link) return;
+    if (!Device.isDevice) return;
+
+    async function registerToken() {
+      try {
+        const perm = await Notifications.requestPermissionsAsync() as any;
+        if (perm.status !== 'granted') return;
+
+        const projectId =
+          Constants?.expoConfig?.extra?.eas?.projectId ??
+          (Constants as any)?.easConfig?.projectId ??
+          '9b672c1a-10c4-4d66-882c-b9a08294650f';
+
+        const expoPushToken = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+        const deviceId = getOrCreateDeviceId();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        await fetch(`${process.env.EXPO_PUBLIC_API_URL}/notifications/token`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: expoPushToken, platform: Platform.OS, deviceId }),
+        });
+      } catch {
+        // Push token registration is best-effort — silently swallow errors
+      }
+    }
+
+    registerToken();
+  }, [link?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loading state ──
   if (isLoading) {
