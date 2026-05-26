@@ -13,7 +13,7 @@
 ### VOICE — Enregistrement & Transcription
 
 - [ ] **VOICE-01**: Coach peut démarrer/arrêter un enregistrement audio (mic browser, max 5 min) depuis la fiche client web CRM
-- [ ] **VOICE-02**: Audio uploadé au serveur et transcrit via OpenAI Whisper API (`whisper-1`, FR/EN)
+- [x] **VOICE-02**: Audio uploadé au serveur et transcrit via OpenAI Whisper API (`whisper-1`, FR/EN)
 - [ ] **VOICE-03**: Transcript affiché en lecture seule avant la structuration — le coach peut valider ou relancer
 
 ### STRUCT — Structuration Claude
@@ -53,7 +53,7 @@
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
 | VOICE-01 | Phase 01 | pending |
-| VOICE-02 | Phase 01 | pending |
+| VOICE-02 | Phase 01 | complete |
 | VOICE-03 | Phase 01 | pending |
 | STRUCT-01 | Phase 02 | pending |
 | STRUCT-02 | Phase 02 | pending |
