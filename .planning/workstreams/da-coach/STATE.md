@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.12
 milestone_name: DA Coach
 status: planning
-last_updated: "2026-05-25"
-last_activity: 2026-05-25
+last_updated: "2026-05-26"
+last_activity: 2026-05-26
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 ## Current Position
 
 Phase: 1 of 3 (Foundation)
-Plan: — of — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-05-25 — Roadmap created, 13 requirements mapped across 3 phases
+Plan: 1 of 3 (01-02 complete)
+Status: In Progress
+Last activity: 2026-05-26 — Plan 01-02 complete (setCustomTheme + clearCoachTheme ajoutés à useThemeStore)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -42,7 +42,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-foundation | 1/3 | 8min | 8min |
 
 *Updated after each plan completion*
 
@@ -55,6 +55,8 @@ Progress: [░░░░░░░░░░] 0%
 - Theme injection: `setCustomTheme()` in useThemeStore via inline style objects only — no NativeWind class interpolation
 - RLS: `is_coach_of(coach_id, auth.uid())` — coach_id first, athlete second (matches migration 035 signature)
 - MMKV cache: required to prevent cold-start flash; read synchronously before first render
+- [01-02] tabBarActive et primaryLight auto-dérivés depuis primary dans setCustomTheme — jamais lus depuis overrides (sécurité T-02-02)
+- [01-02] clearCoachTheme délègue à get().resetTheme() pour un seul chemin de reset (D-12)
 
 ### Pending Todos
 
@@ -67,6 +69,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25
-Stopped at: Roadmap created — ready to plan Phase 1
+Last session: 2026-05-26
+Stopped at: Completed 01-02-PLAN.md — setCustomTheme + clearCoachTheme dans useThemeStore
 Resume file: None
