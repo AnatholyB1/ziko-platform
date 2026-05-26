@@ -17,9 +17,9 @@ progress:
 
 ## Current Position
 
-Phase: 43 — Coach Custom Exercises (next)
-Status: Phase 42 complete — ready for phase 43
-Last activity: 2026-05-26 — Phase 42 executed (1 plan, all done)
+Phase: 43 — Coach Exercise Library Backend + Web UI (plan 1/4 complete)
+Status: Phase 43 executing — plan 43-01 committed, plans 43-02 through 43-04 pending
+Last activity: 2026-05-26 — 43-01 executed: migration 055 + ALLOWED_BUCKETS updated
 
 ## Progress
 
@@ -54,5 +54,6 @@ None.
 
 ## Session Continuity
 
-**Stopped At:** Phase 42 complete (commit 4128dac)
-**Next Action:** `/gsd:plan-phase 43 --ws custom-coach`
+**Stopped At:** Phase 43 plan 43-01 complete — migration 055, ALLOWED_BUCKETS updated
+**Resume File:** .planning/workstreams/custom-coach/phases/43-coach-exercises-backend-ui/43-02-PLAN.md
+**Next Action:** `/gsd:execute-phase 43 --ws custom-coach` (plan 43-02: Hono CRUD API)
