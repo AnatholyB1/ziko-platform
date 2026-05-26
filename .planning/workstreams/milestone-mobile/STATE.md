@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
 status: in_progress
-stopped_at: Gap plans 35-G01 through 35-G07 written — ready to execute
-last_updated: "2026-05-23T11:54:00.776Z"
+stopped_at: Phase 37 complete — 7/7 plans executed, human smoke test approved 2026-05-26
+last_updated: "2026-05-26T00:00:00.000Z"
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 16
-  completed_plans: 12
-  percent: 50
+  completed_phases: 4
+  total_plans: 23
+  completed_plans: 19
+  percent: 66
 ---
 
 # Project State — v1.7 Mobile UX v2
@@ -25,12 +25,12 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **35 — Profile + Settings Redesign** — COMPLETE ✅
+Phase: **37 — Priority Plugins Redesign** — COMPLETE ✅
 
-Automated verification: 30/30 PASS ✅  
-Human UAT: 15/15 PASS ✅ (2026-05-25)
+Automated verification: 13/13 PASS ✅  
+Human smoke test: APPROVED ✅ (2026-05-26)
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 66%
 
 ## Accumulated Context
 
@@ -50,7 +50,7 @@ Progress: [████████░░] 75%
 ### Fixture Inventory (to be replaced)
 
 - `home.jsx`: PROFILE, STREAK, TODAY, FORME, RECENT, ALL_PLUGINS — ✅ DONE (Phase 33)
-- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED
+- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED — ✅ DONE (Phase 37)
 - `plugins-2.jsx`: STATS, SLEEP_DATA, GAMIFICATION, PANTRY, RECIPE data
 - `coach.jsx`: COACH_DATA
 - `workout-data.jsx`: SESSION_DATA
@@ -76,6 +76,7 @@ Progress: [████████░░] 75%
   - [ ] 35-G05 — Apparences: remove theme, add language/region migration 052, useUnits hook
   - [ ] 35-G06 — Parrainage: migration 053 + Hono routes + mobile screen
   - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
+- [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
 
 ### Blockers/Concerns
 
@@ -83,9 +84,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-23T11:53:48.537Z
-Stopped at: Gap plans 35-G01 through 35-G07 written — ready to execute
-Resume: Run `/gsd-execute-phase 35` starting from 35-G01. Execute G01–G06 sequentially, G07 last (verification). G05 must run before G06 (migration 052 before 053).
+Last session: 2026-05-26
+Stopped at: Phase 37 complete — all 6 priority plugins redesigned (Nutrition, Hydration, Habits, AI Programs, Coach IA, Community). SubTabs pill style + AISuggestion label shipped. Backend persona injection active.
+Resume: Next phase per ROADMAP-v1.7.md (Phase 36 gap closure or Phase 38).
 
 ---
 
