@@ -31,6 +31,7 @@ import {
   getProgramsForClient,
   upsertSharedNote,
 } from './db.js';
+import { getWidgetData } from '../dashboards/db.js';
 
 const CODE_REGEX = /^[A-Z2-9]{6}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -417,5 +418,34 @@ clientsRouter.put('/:clientId/shared-note', async (c) => {
   } catch (err: any) {
     console.error('[coach/clients] PUT /:clientId/shared-note error:', err.message);
     return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:clientId/widget-data — returns shaped data for a single widget type (01-04)
+clientsRouter.get('/:clientId/widget-data', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('clientId');
+  const type = c.req.query('type');
+  const period = c.req.query('period') ?? '30d';
+
+  if (!type) return c.json({ error: 'type query param required' }, 400);
+
+  const params: Record<string, string> = {};
+  for (const key of ['dataKey', 'threshold', 'unit', 'message', 'severity', 'filter']) {
+    const v = c.req.query(key);
+    if (v !== undefined) params[key] = v;
+  }
+
+  try {
+    const data = await getWidgetData(jwt, userId, clientId, type, period, params);
+    return c.json(data);
+  } catch (err: any) {
+    const msg: string = err?.message ?? 'Unknown error';
+    if (msg.startsWith('Unknown widget type') || msg === 'Invalid period') {
+      return c.json({ error: msg }, 400);
+    }
+    console.error('[widget-data]', err);
+    return c.json({ error: 'Internal server error' }, 500);
   }
 });
