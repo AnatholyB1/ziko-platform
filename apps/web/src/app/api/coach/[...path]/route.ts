@@ -10,14 +10,24 @@ async function proxy(req: NextRequest, { params }: { params: Promise<{ path: str
 
   const upstreamUrl = `${API_URL}/coach/${path.join('/')}${req.nextUrl.search}`;
 
-  const headers: Record<string, string> = {
-    'Content-Type': req.headers.get('Content-Type') ?? 'application/json',
-  };
+  const isMultipart = req.headers.get('Content-Type')?.includes('multipart/form-data') ?? false;
+
+  const headers: Record<string, string> = {};
+  if (!isMultipart) {
+    headers['Content-Type'] = req.headers.get('Content-Type') ?? 'application/json';
+  } else {
+    // Forward the original Content-Type verbatim (includes boundary parameter)
+    headers['Content-Type'] = req.headers.get('Content-Type')!;
+  }
   if (session?.access_token) {
     headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
-  const body = ['GET', 'HEAD'].includes(req.method) ? undefined : await req.text();
+  const body = ['GET', 'HEAD'].includes(req.method)
+    ? undefined
+    : isMultipart
+      ? await req.arrayBuffer()
+      : await req.text();
 
   const upstream = await fetch(upstreamUrl, {
     method: req.method,
