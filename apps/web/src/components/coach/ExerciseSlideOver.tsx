@@ -94,7 +94,12 @@ export function ExerciseSlideOver({
 
   function shakeField(ref: React.RefObject<HTMLDivElement | null>) {
     if (ref.current) {
-      gsap.to(ref.current, { x: [-6, 6, -4, 4, 0], duration: 0.3, ease: 'none' });
+      gsap.timeline()
+        .to(ref.current, { x: -6, duration: 0.06, ease: 'none' })
+        .to(ref.current, { x: 6, duration: 0.06, ease: 'none' })
+        .to(ref.current, { x: -4, duration: 0.06, ease: 'none' })
+        .to(ref.current, { x: 4, duration: 0.06, ease: 'none' })
+        .to(ref.current, { x: 0, duration: 0.06, ease: 'none' });
     }
   }
 
