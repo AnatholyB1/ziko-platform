@@ -1,12 +1,63 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useVocalRecorder } from './useVocalRecorder';
 
-// RED stub — useVocalRecorder.ts does not exist yet.
-// These tests will fail with "Cannot find module './useVocalRecorder'" until Wave 2.
+// GREEN — implementation exists in Wave 2 (Plan 01-04).
+// MediaRecorder and navigator.mediaDevices are mocked below for node test environment.
+
+// --- MediaRecorder mock ---
+class MockMediaRecorder {
+  static isTypeSupported = vi.fn().mockReturnValue(true);
+  ondataavailable: ((event: { data: Blob }) => void) | null = null;
+  onstop: (() => void) | null = null;
+  stream: { getTracks: () => Array<{ stop: () => void }> };
+  _mimeType: string;
+
+  constructor(stream: MediaStream, options?: { mimeType?: string }) {
+    this._mimeType = options?.mimeType ?? '';
+    this.stream = stream as unknown as { getTracks: () => Array<{ stop: () => void }> };
+  }
+
+  start(_timeslice?: number) {
+    // Simulate a single data chunk after start
+    setTimeout(() => {
+      if (this.ondataavailable) {
+        this.ondataavailable({ data: new Blob(['audio-data'], { type: this._mimeType || 'audio/webm' }) });
+      }
+    }, 0);
+  }
+
+  stop() {
+    setTimeout(() => {
+      if (this.onstop) {
+        this.onstop();
+      }
+    }, 0);
+  }
+}
+
+const mockStream = {
+  getTracks: () => [{ stop: vi.fn() }],
+} as unknown as MediaStream;
+
+Object.defineProperty(global, 'MediaRecorder', {
+  value: MockMediaRecorder,
+  writable: true,
+});
+
+Object.defineProperty(global, 'navigator', {
+  value: {
+    mediaDevices: {
+      getUserMedia: vi.fn().mockResolvedValue(mockStream),
+    },
+  },
+  writable: true,
+});
 
 describe('useVocalRecorder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    MockMediaRecorder.isTypeSupported = vi.fn().mockReturnValue(true);
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockResolvedValue(mockStream);
   });
 
   it('produces a non-empty blob on stop', async () => {

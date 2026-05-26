@@ -614,17 +614,15 @@ async function registerPushToken(apiUrl: string, token: string) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **D-04 vs. existing notification infrastructure conflict**
+1. **D-04 vs. existing notification infrastructure conflict** — RESOLVED
    - What we know: CONTEXT.md D-04 says to use `user_profiles.expo_push_token` column. The codebase already has `notification_tokens` table, `notificationService.ts`, and `POST /notifications/token` endpoint.
-   - What's unclear: Whether the user wants to follow D-04 literally (add a column that will be "migrated later") or use the already-production-ready infrastructure.
-   - Recommendation: **Use the existing `notificationService` and `notification_tokens` table.** It is strictly better and already in production. The planner should diverge from D-04/D-05 here and document the override decision.
+   - **Resolution:** Plans use existing `notificationService.send()` + `notification_tokens` table (Plan 45-02 service.ts, Plan 45-04 CoachScreen). D-04/D-05 are superseded. No `expo_push_token` column added to `user_profiles`.
 
-2. **Bucket creation step ordering**
+2. **Bucket creation step ordering** — RESOLVED
    - What we know: Supabase bucket must be created before migration 057 storage policies can be tested.
-   - What's unclear: Whether Supabase CLI (`supabase storage buckets create`) is available in the target execution environment, or whether the bucket must be created via Dashboard.
-   - Recommendation: Plan must include an explicit bucket creation task (Wave 0 or Wave 1) with both CLI and Dashboard instructions as options.
+   - **Resolution:** Plan 45-01 Task 1 is a `checkpoint:human-action` that explicitly sequences bucket creation before the migration is applied. Both CLI (`supabase storage buckets create coach-videos --private`) and Dashboard instructions are provided.
 
 ---
 
