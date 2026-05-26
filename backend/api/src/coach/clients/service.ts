@@ -5,6 +5,7 @@
 //   POST   /links/redeem     — redeem a code; constant-time envelope; rate-limited
 //   DELETE /links/:id        — athlete revokes own link (INVITE-06)
 import { Hono } from 'hono';
+import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../../middleware/auth.js';
 import { redemptionRateLimit } from './ratelimit.js';
 import {
@@ -32,6 +33,13 @@ import {
   upsertSharedNote,
 } from './db.js';
 import { getWidgetData } from '../dashboards/db.js';
+
+// Admin client for fire-and-forget RPC calls (SECURITY DEFINER functions, no JWT required)
+const adminClient = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_PUBLISHABLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
 const CODE_REGEX = /^[A-Z2-9]{6}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -111,6 +119,20 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
 
   try {
     const result = await redeemInvitation(jwt, { code }, userId);
+    // TRIGGER-01: fire first-contact hook non-blocking (result.ok guaranteed before RPC)
+    if (result.ok === true) {
+      const coachId = result.link.coach_id;
+      const athleteId = userId;
+      adminClient
+        .rpc('create_form_instances_for_trigger', {
+          p_trigger_type: 'first_contact',
+          p_athlete_id: athleteId,
+          p_coach_id: coachId,
+        })
+        .then(({ error }) => {
+          if (error) console.warn('[forms/first_contact trigger]', error.message);
+        });
+    }
     return c.json(result);
   } catch (err: any) {
     console.warn('[coach/clients] /links/redeem unexpected error:', err.message);

@@ -135,6 +135,58 @@ router.post('/coach/forms/:id/publish', async (c) => {
   }
 });
 
+// POST /coach/forms/:id/send — manually send form to one or more athletes (TRIGGER-04)
+router.post('/coach/forms/:id/send', async (c) => {
+  try {
+    const { userId } = c.get('auth');
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => ({}));
+    const { athlete_ids } = body as { athlete_ids?: unknown };
+
+    if (!Array.isArray(athlete_ids) || athlete_ids.length === 0) {
+      return c.json({ error: 'athlete_ids must be a non-empty array of UUIDs' }, 400);
+    }
+    if (athlete_ids.length > 100) {
+      return c.json({ error: 'athlete_ids must contain at most 100 entries' }, 400);
+    }
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!(athlete_ids as unknown[]).every((aid) => typeof aid === 'string' && uuidRe.test(aid))) {
+      return c.json({ error: 'athlete_ids must be a non-empty array of UUIDs' }, 400);
+    }
+
+    const { data: form, error: formErr } = await supabase
+      .from('coach_forms')
+      .select('id, status')
+      .eq('id', id)
+      .eq('coach_id', userId)
+      .single();
+
+    if (formErr?.code === 'PGRST116' || !form) {
+      return c.json({ error: 'form not found' }, 404);
+    }
+    if (formErr) throw formErr;
+    if (form.status !== 'active') {
+      return c.json({ error: 'form must be active to send' }, 409);
+    }
+
+    let totalCount = 0;
+    for (const athleteId of athlete_ids as string[]) {
+      const { data, error } = await supabase.rpc('create_form_instances_for_trigger', {
+        p_trigger_type: 'manual',
+        p_athlete_id: athleteId,
+        p_coach_id: userId,
+      });
+      if (error) console.warn('[POST /coach/forms/:id/send]', error.message);
+      else totalCount += data ?? 0;
+    }
+
+    return c.json({ sent: totalCount, skipped: (athlete_ids as string[]).length - totalCount });
+  } catch (err) {
+    console.error('[POST /coach/forms/:id/send]', err);
+    return c.json({ error: 'internal server error' }, 500);
+  }
+});
+
 // ─── Athlete routes ────────────────────────────────────────────────────────────
 
 // GET /athlete/forms/pending — list pending form instances for the athlete
