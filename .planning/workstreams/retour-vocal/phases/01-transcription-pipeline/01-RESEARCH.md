@@ -630,22 +630,13 @@ const body = ['GET', 'HEAD'].includes(req.method)
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **OPENAI_API_KEY environment variable name**
-   - What we know: `ANTHROPIC_API_KEY` exists in `backend/api/.env`. The additional context says "OpenAI is already available via ANTHROPIC_API_KEY context — but Whisper requires openai package."
-   - What's unclear: Is there an `OPENAI_API_KEY` already set in `backend/api/.env`, or does it need to be added?
-   - Recommendation: The plan must include a task to verify/add `OPENAI_API_KEY` to `backend/api/.env` (and `.env.example`). The service.ts must reference `process.env.OPENAI_API_KEY`.
+1. **OPENAI_API_KEY environment variable name** — RESOLVED: Plan 01-02 Task 1 verifies/adds `OPENAI_API_KEY` to `backend/api/.env.example` and warns executor if absent from `.env.local`. `service.ts` references `process.env.OPENAI_API_KEY`.
 
-2. **Safari mp4 blob size at 5 minutes**
-   - What we know: Safari encodes AAC in mp4 at typically 128 kbps → ~4.8 MB for 5 min — above Vercel's 4.5 MB limit.
-   - What's unclear: Whether Guillaume uses Safari. The CRM is a web app for coaches (desktop likely Chrome/Firefox).
-   - Recommendation: Add a client-side blob size check before upload. If `blob.size > 4_000_000` (4 MB), show a warning "Fichier trop volumineux. Réenregistrez avec une durée plus courte." This is a safer UX than a 413 error.
+2. **Safari mp4 blob size at 5 minutes** — RESOLVED: Plan 01-04 Task 2 adds a client-side `blob.size > 4_000_000` guard with a user-facing warning "Fichier trop volumineux. Réenregistrez avec une durée plus courte." before upload.
 
-3. **`hono/body-limit` sub-path export availability**
-   - What we know: Hono 4.7.0 is installed. The `bodyLimit` middleware is documented at `hono.dev/examples/file-upload`.
-   - What's unclear: Whether `hono/body-limit` is a valid sub-path export in 4.7.0 vs. `hono` (main).
-   - Recommendation: Executor should verify with `node -e "require('hono/body-limit')"` before writing the import. Fallback: import from `hono` directly.
+3. **`hono/body-limit` sub-path export availability** — RESOLVED: Plans 01-02 and 01-03 include runtime verification (`node -e "require('hono/body-limit')"`) with documented fallback to `import { bodyLimit } from 'hono'` main export.
 
 ---
 
