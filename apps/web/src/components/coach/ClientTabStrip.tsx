@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
+  { key: 'dashboard', label: 'Dashboard' },
   { key: 'sessions', label: 'Séances' },
   { key: 'measurements', label: 'Mesures' },
   { key: 'habits', label: 'Habitudes' },
