@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Formulaires Conditionnels
 status: planning
-last_updated: "2026-05-25"
-last_activity: 2026-05-25
+last_updated: "2026-05-26"
+last_activity: 2026-05-26
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
   percent: 0
 ---
@@ -17,10 +17,10 @@ progress:
 
 ## Current Position
 
-Phase: 01 — DB Schema & Backend API (context gathered)
+Phase: 01 — DB Schema & Backend API
 Plan: —
-Status: Context ready — awaiting /gsd:plan-phase 01 --ws formulaire-condi
-Last activity: 2026-05-26 — Phase 01 context gathered (4 gray areas discussed)
+Status: Ready to execute — 2 plans in 2 waves
+Last activity: 2026-05-26 — Phase 01 planned (2 plans: 01-01 migration + 01-02 Hono routes)
 
 ## Progress
 
