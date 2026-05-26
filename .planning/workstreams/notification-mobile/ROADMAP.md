@@ -33,8 +33,13 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
   2. After granting permission, the device push token is silently registered (or updated) in `notification_tokens` on every app start without user action
   3. If the iOS permission was permanently denied, the app does not re-prompt; a CTA in Settings deep-links to OS system preferences instead
   4. A Development Build is available on a real device and a test push sent via `notificationService.ts` arrives on that device end-to-end
-  5. Migration 022 is applied: `notification_tokens`, `notification_log`, and `notification_preferences` tables exist with RLS and ON DELETE CASCADE
-**Plans:** TBD
+  5. Migration 054 is applied: `notification_tokens`, `notification_log`, and `notification_preferences` tables exist with RLS and ON DELETE CASCADE
+**Plans:** 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Migration 054 + notificationService.ts + Hono /notifications router
+- [ ] 01-02-PLAN.md — app.json: expo-notifications plugin, iOS UIBackgroundModes, Android POST_NOTIFICATIONS + googleServicesFile
+- [ ] 01-03-PLAN.md — useNotificationSetup hook + NotificationPermissionModal + _layout.tsx wiring
+- [ ] 01-04-PLAN.md — EAS Development Build + end-to-end smoke test (manual)
 **UI hint:** yes
 
 ### Phase 2: Action-triggered Push Notifications
@@ -101,7 +106,7 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure & Configuration | 0/0 | Not started | - |
+| 1. Infrastructure & Configuration | 0/4 | In progress | - |
 | 2. Action-triggered Push Notifications | 0/0 | Not started | - |
 | 3. In-app Notification Center | 0/0 | Not started | - |
 | 4. Cron / Scheduled Notifications | 0/0 | Not started | - |
