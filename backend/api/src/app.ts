@@ -22,6 +22,7 @@ import { voiceRouter } from './coach/voice/service.js';
 import { brandingRouter } from './coach/branding/service.js';
 import { exercisesRouter } from './coach/exercises/service.js';
 import { dashboardsRouter } from './coach/dashboards/service.js';
+import { videosRouter } from './coach/videos/service.js';
 import { formsRouter } from './routes/forms.js';
 const app = new Hono();
 
@@ -76,6 +77,7 @@ app.route('/coach/voice', voiceRouter);
 app.route('/coach/branding', brandingRouter);
 app.route('/coach/exercises', exercisesRouter);
 app.route('/coach/dashboards', dashboardsRouter);
+app.route('/coach/videos', videosRouter);
 app.route('/forms', formsRouter);
 
 // 404 fallback
