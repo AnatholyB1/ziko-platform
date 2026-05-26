@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useReducer, useEffect, useRef, useState, useCallback } from 'react';
+import gsap from 'gsap';
 import { vocalReducer } from './vocalReducer';
 import { useVocalRecorder } from './useVocalRecorder';
 import { useVocalTimer } from './useVocalTimer';
+import { VocalIdle } from './VocalIdle';
+import { VocalRecording } from './VocalRecording';
+import { VocalTranscribing } from './VocalTranscribing';
+import { VocalReview } from './VocalReview';
 
 export function VocalRetourPanel({ clientId }: { clientId: string }): React.ReactElement {
   // clientId is reserved for Phase 02 (structuring route) — not used in Phase 01
   void clientId;
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [state, dispatch] = useReducer(vocalReducer, { status: 'idle' });
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -47,6 +53,13 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
         clearInterval(intervalRef.current);
       }
     };
+  }, []);
+
+  // Page entrance animation
+  useEffect(() => {
+    if (panelRef.current) {
+      gsap.from(panelRef.current, { y: 16, opacity: 0, duration: 0.2, ease: 'power2.out' });
+    }
   }, []);
 
   // beforeunload guard — fires ONLY during state.status === 'recording' (D-04)
@@ -133,61 +146,35 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
 
   const formatted = timer.formatElapsed(elapsedSeconds);
 
-  // Render — placeholder divs for all 5 states (Plan 01-05 replaces with styled sub-components)
-  if (state.status === 'idle') {
-    return (
-      <div data-testid="vocal-idle">
-        <span>idle</span>
-        <button type="button" onClick={handleStart}>
-          Nouveau retour
-        </button>
-      </div>
-    );
-  }
-
-  if (state.status === 'recording') {
-    return (
-      <div data-testid="vocal-recording">
-        <span>recording {formatted}</span>
-        <button type="button" onClick={handleStop}>
-          Arrêter
-        </button>
-      </div>
-    );
-  }
-
-  if (state.status === 'transcribing') {
-    return (
-      <div data-testid="vocal-transcribing">
-        <span>transcribing</span>
-      </div>
-    );
-  }
-
-  if (state.status === 'review') {
-    return (
-      <div data-testid="vocal-review">
-        <span>{state.transcript}</span>
-        <button type="button" onClick={handleValidate}>
-          Valider
-        </button>
-        <button type="button" onClick={handleRelaunch}>
-          Relancer
-        </button>
-      </div>
-    );
-  }
-
-  // state.status === 'error'
   return (
-    <div data-testid="vocal-error">
-      <span>{state.message}</span>
-      <button type="button" onClick={handleRetry}>
-        Ressayer
-      </button>
-      <button type="button" onClick={handleRelaunch}>
-        Relancer
-      </button>
+    <div ref={panelRef} className="vocal-panel" data-testid="vocal-panel">
+      {state.status === 'idle' && (
+        <VocalIdle onStart={handleStart} />
+      )}
+      {state.status === 'recording' && (
+        <VocalRecording
+          formatted={formatted}
+          elapsedSeconds={elapsedSeconds}
+          onStop={handleStop}
+        />
+      )}
+      {state.status === 'transcribing' && (
+        <VocalTranscribing />
+      )}
+      {state.status === 'review' && (
+        <VocalReview
+          transcript={state.transcript}
+          onValidate={handleValidate}
+          onRelaunch={handleRelaunch}
+        />
+      )}
+      {state.status === 'error' && (
+        <VocalReview
+          error={state.message}
+          onRetry={handleRetry}
+          onRelaunch={handleRelaunch}
+        />
+      )}
     </div>
   );
 }

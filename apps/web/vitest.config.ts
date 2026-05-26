@@ -13,6 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    globals: true,
     include: ['{src,test}/**/*.{spec,test}.{ts,tsx}'],
     environmentMatchGlobs: [['**/*.test.tsx', 'happy-dom']],
     passWithNoTests: true,
