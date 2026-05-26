@@ -29,7 +29,10 @@
   3. A response record stores one athlete's full answers (question ID + answer value) linked to a form instance
   4. `GET /coach/forms` returns the coach's form list; `POST /coach/forms` creates a form; `PATCH /coach/forms/:id` updates it; `POST /coach/forms/:id/publish` changes status to active
   5. RLS policies ensure a coach only reads forms they created, and an athlete only reads instances assigned to them
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Supabase migration 054: coach_forms, form_instances, form_responses tables + RLS + push
+- [ ] 01-02-PLAN.md — Hono forms router (6 routes: coach CRUD + athlete pending/submit) + app.ts mount
 
 ### Phase 02: Trigger Engine
 **Goal**: Pending form instances are created automatically when trigger conditions fire, with no duplicate instances for the same pending form
@@ -88,7 +91,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 01. DB Schema & Backend API | 0/? | Not started | - |
+| 01. DB Schema & Backend API | 0/2 | Planned | - |
 | 02. Trigger Engine | 0/? | Not started | - |
 | 03. Coach Form Builder (Web) | 0/? | Not started | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/? | Not started | - |
