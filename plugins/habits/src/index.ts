@@ -7,3 +7,4 @@ export {
   cancelHabitReminder,
   schedulAllReminders,
 } from './notifications';
+export { default as HabitsPlugin } from './screens/HabitsPlugin';
