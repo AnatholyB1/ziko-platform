@@ -21,7 +21,11 @@ Three phases build the coach branding feature end-to-end. Phase 1 lays the manda
   2. `PATCH /coach/branding` saves primary color, logo path, and tone; the endpoint rejects non-Pro coaches with 403
   3. `GET /coach/clients/links/me` returns a `branding` object (primary_color, logo_url, tone) alongside existing link data; returns `branding: null` when the coach has no branding row
   4. `useThemeStore` exposes `setCustomTheme(overrides)` and `clearCoachTheme()` actions in plugin-sdk and both compile without errors in the monorepo
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — DB migration: coach_branding table + coach-logos bucket + RLS + push
+- [ ] 01-02-PLAN.md — plugin-sdk: setCustomTheme + clearCoachTheme actions in useThemeStore
+- [ ] 01-03-PLAN.md — Hono branding module: PATCH /coach/branding, GET /links/me augmentation, app.ts mount
 
 ### Phase 2: Web Editor
 **Goal**: A Pro coach can configure their direction artistique (color, logo, tone) from the web CRM and see a live preview before saving
@@ -56,6 +60,6 @@ Phase 1 first (strict prerequisite). Phases 2 and 3 parallel after Phase 1.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/3 | Not started | - |
 | 2. Web Editor | 0/TBD | Not started | - |
 | 3. Mobile Injection | 0/TBD | Not started | - |
