@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Modal,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +40,7 @@ function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
 function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string }) {
   const theme = useThemeStore((s) => s.theme);
   const [isLoading, setIsLoading] = useState(true);
+  const [notifDenied, setNotifDenied] = useState(false);
   const [s, setS] = useState({
     sessionsReminder: true, hydration: true, streakAlert: true, coach: true,
     achievements: true, social: true, marketing: false,
@@ -55,6 +57,12 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
         setIsLoading(false);
       });
   }, [userId]);
+
+  useEffect(() => {
+    Notifications.getPermissionsAsync().then(({ canAskAgain, status }) => {
+      setNotifDenied(status === 'denied' && !canAskAgain);
+    });
+  }, []);
 
   const updateToggle = (k: keyof typeof s) => (v: boolean) => {
     const next = { ...s, [k]: v };
@@ -86,6 +94,37 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <STHeader onBack={onBack} title="Notifications" />
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
+        {notifDenied && (
+          <TouchableOpacity
+            onPress={() => Linking.openSettings()}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+              marginBottom: 12,
+              shadowColor: '#000',
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
+            }}
+          >
+            <Ionicons name="notifications-off-outline" size={20} color="#FF5C1A" style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#1C1A17' }}>
+                Réactiver les notifications
+              </Text>
+              <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 2 }}>
+                Les notifications sont bloquées — ouvrir les réglages système
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={16} color="#6B6963" />
+          </TouchableOpacity>
+        )}
         <STGroup title="Coach & rappels">
           <STRow icon="barbell-outline" tint="#FF5C1A" label="Rappels de séance" sub="60 min avant" toggleValue={s.sessionsReminder} onToggle={updateToggle('sessionsReminder')} />
           <STRow icon="water-outline" tint="#3B82F6" label="Hydratation" sub="Toutes les 2h" toggleValue={s.hydration} onToggle={updateToggle('hydration')} />
