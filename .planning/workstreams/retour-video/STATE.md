@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.13
 milestone_name: Retour Vidéo Coach
-status: planning
-last_updated: "2026-05-25"
-last_activity: 2026-05-25
+status: in_progress
+last_updated: "2026-05-26"
+last_activity: 2026-05-26
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 4
+  percent: 33
 ---
 
 # Project State — v1.13 Retour Vidéo Coach
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-24)
 
 **Core value:** Coach annotates athlete video with timecoded text and voice feedback; athlete reviews synchronized on mobile
-**Current focus:** Phase 45 — Storage Pipeline & Mobile Upload (ready to plan)
+**Current focus:** Phase 46 — Video Player & Annotations (next)
 
 ## Current Position
 
-Phase: 45 of 47 (Storage Pipeline & Mobile Upload)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-05-25 — Roadmap created (3 phases, 20 requirements mapped)
+Phase: 45 of 47 (Storage Pipeline & Mobile Upload) — COMPLETE
+Plan: 4/4
+Status: Phase 45 complete — Phase 46 ready to plan
+Last activity: 2026-05-26 — Phase 45 executed (4 plans, bucket + migration + Hono endpoints + mobile screens + push token)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
