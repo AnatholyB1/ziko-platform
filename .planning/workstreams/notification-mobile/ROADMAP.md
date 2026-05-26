@@ -13,7 +13,7 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 
 ## Phases
 
-- [ ] **Phase 1: Infrastructure & Configuration** — Establish the push token pipeline, Supabase schema, and backend send service so all subsequent phases have a working delivery foundation
+- [x] **Phase 1: Infrastructure & Configuration** — Establish the push token pipeline, Supabase schema, and backend send service so all subsequent phases have a working delivery foundation
 - [ ] **Phase 2: Action-triggered Push Notifications** — Wire the highest-value server-side push events (program assignment, invitations, post-session summary, level-up) to prove the end-to-end pipeline
 - [ ] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
 - [ ] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
@@ -36,10 +36,10 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
   5. Migration 054 is applied: `notification_tokens`, `notification_log`, and `notification_preferences` tables exist with RLS and ON DELETE CASCADE
 **Plans:** 4 plans
 Plans:
-- [ ] 01-01-PLAN.md — Migration 054 + notificationService.ts + Hono /notifications router
-- [ ] 01-02-PLAN.md — app.json: expo-notifications plugin, iOS UIBackgroundModes, Android POST_NOTIFICATIONS + googleServicesFile
-- [ ] 01-03-PLAN.md — useNotificationSetup hook + NotificationPermissionModal + _layout.tsx wiring
-- [ ] 01-04-PLAN.md — EAS Development Build + end-to-end smoke test (manual)
+- [x] 01-01-PLAN.md — Migration 054 + notificationService.ts + Hono /notifications router
+- [x] 01-02-PLAN.md — app.json: expo-notifications plugin, iOS UIBackgroundModes, Android POST_NOTIFICATIONS + googleServicesFile
+- [x] 01-03-PLAN.md — useNotificationSetup hook + NotificationPermissionModal + _layout.tsx wiring
+- [x] 01-04-PLAN.md — EAS Development Build + end-to-end smoke test (manual)
 **UI hint:** yes
 
 ### Phase 2: Action-triggered Push Notifications
