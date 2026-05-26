@@ -1,7 +1,7 @@
 import React from 'react';
-import PersonaCustomizeScreen from '@ziko/plugin-persona/screens/PersonaCustomizeScreen';
+import CoachIAPlugin from '@ziko/plugin-persona/screens/CoachIAPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function PersonaCustomizeRoute() {
-  return <PersonaCustomizeScreen supabase={supabase} />;
+  return <CoachIAPlugin supabase={supabase} />;
 }
