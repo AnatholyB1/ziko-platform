@@ -17,10 +17,10 @@ progress:
 
 ## Current Position
 
-Phase: Not started (roadmap created, planning next)
+Phase: 01 — DB Schema & Backend API (context gathered)
 Plan: —
-Status: Roadmap defined — ready for phase planning
-Last activity: 2026-05-25 — Roadmap v1.14 created (5 phases, 17/17 requirements mapped)
+Status: Context ready — awaiting /gsd:plan-phase 01 --ws formulaire-condi
+Last activity: 2026-05-26 — Phase 01 context gathered (4 gray areas discussed)
 
 ## Progress
 
