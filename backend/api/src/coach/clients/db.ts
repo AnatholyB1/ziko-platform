@@ -10,6 +10,7 @@ import type {
   ClientNote,
   ClientSummary,
 } from './types.js';
+import { getBranding, type BrandingRow } from '../branding/db.js';
 
 const COACH_PHOTO_BUCKET = 'coach-kyc';
 const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes per RESEARCH.md §Don't Hand-Roll
@@ -56,6 +57,7 @@ export async function getActiveLink(
 ): Promise<{
   link: LinkRow | null;
   preview: CoachPreviewPayload | null;
+  branding: BrandingRow | null;
 }> {
   const db = createUserClient(jwt);
   const { data: linkRow, error: linkErr } = await db
@@ -71,7 +73,7 @@ export async function getActiveLink(
     .maybeSingle();
 
   if (linkErr) throw new Error(linkErr.message);
-  if (!linkRow) return { link: null, preview: null };
+  if (!linkRow) return { link: null, preview: null, branding: null };
 
   // Fetch coach profile — readable by all authenticated users via migration 042 policy.
   const { data: cp, error: cpErr } = await db
@@ -83,6 +85,10 @@ export async function getActiveLink(
   if (cpErr) throw new Error(cpErr.message);
 
   const photoSignedUrl = await signCoachPhoto(db, cp?.photo_url ?? null);
+
+  // Fetch branding for this coach — returns null when no row exists (D-08).
+  // Uses athlete's user-scoped JWT so RLS athlete-read policy applies (T-03-05).
+  const branding = await getBranding(jwt, linkRow.coach_id);
 
   return {
     link: {
@@ -101,6 +107,7 @@ export async function getActiveLink(
           kyc_status: cp.kyc_status as CoachPreviewPayload['kyc_status'],
         }
       : null,
+    branding, // BrandingRow | null — per D-07, D-08, D-09
   };
 }
 
