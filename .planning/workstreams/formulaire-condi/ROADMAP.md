@@ -44,7 +44,12 @@ Plans:
   3. A Vercel cron job (daily) scans active forms with a "fixed date" trigger and creates pending instances for all assigned athletes when the date is reached
   4. Coach can call `POST /coach/forms/:id/send` with a list of client IDs to immediately create pending instances — only athletes without an existing pending instance receive a new one
   5. The duplicate guard (`UNIQUE` on `(form_id, athlete_id, status='pending')` or equivalent check) prevents a second pending instance when one already exists
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — Migration 058: SECURITY DEFINER function create_form_instances_for_trigger (shared engine for all 4 trigger types)
+- [ ] 02-02-PLAN.md — TRIGGER-01 (first-contact hook in invitation redemption) + TRIGGER-04 (manual send route in forms.ts)
+- [ ] 02-03-PLAN.md — TRIGGER-02 (after-N-sessions via webhook extension in webhooks.ts)
+- [ ] 02-04-PLAN.md — TRIGGER-03 (fixed-date cron route in forms.ts + vercel.json entry)
 
 ### Phase 03: Coach Form Builder (Web)
 **Goal**: Coach can build and manage forms entirely from the web CRM without touching the DB directly
@@ -92,7 +97,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 01. DB Schema & Backend API | 0/2 | Planned | - |
-| 02. Trigger Engine | 0/? | Not started | - |
+| 02. Trigger Engine | 0/4 | Planned | - |
 | 03. Coach Form Builder (Web) | 0/? | Not started | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/? | Not started | - |
 | 05. Response Viewer & Claude Injection | 0/? | Not started | - |
