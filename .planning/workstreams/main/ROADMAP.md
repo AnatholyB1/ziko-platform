@@ -28,7 +28,9 @@
   2. Figma file contains annotated mockups for each surface with exact color tokens (#FF5C1A primary, #F7F6F3 background), typography, and spacing
   3. Chart library selection is documented (component name, import path) with a rationale note
   4. Every chart variant (line, bar, multi-series) is represented with sample data shapes matching the actual Supabase table columns queried
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [x] 037-01-PLAN.md — Verify and finalize the UI design contract (037-UI-SPEC.md)
 **UI hint**: yes
 
 ### Phase 38: Dashboard Foundation + Powerlifting
