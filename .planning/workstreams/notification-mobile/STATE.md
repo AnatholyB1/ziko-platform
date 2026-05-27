@@ -2,33 +2,33 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
-status: ready_to_execute
+status: in_progress
 last_updated: "2026-05-27T00:00:00.000Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 4
+  percent: 17
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 2 — Action-triggered Push Notifications
+Phase: 2 — Action-triggered Push Notifications ✅ COMPLETE
 Plan: —
-Status: Ready to execute — 4 plans planned, verification passed
-Last activity: 2026-05-27 — Phase 2 planned (4 plans, 2 waves)
+Status: Phase 2 complete — all 4 plans executed, smoke test passed
+Last activity: 2026-05-27 — Phase 2 executed (PUSH-01 through PUSH-04 live)
 
 ## Progress
 
-**Phases Complete:** 0 / 6
+**Phases Complete:** 1 / 6
 **Current Plan:** N/A
 
 ```
-[          ] 0%
+[##        ] 17%
 ```
 
 ## Accumulated Context
@@ -58,8 +58,13 @@ Last activity: 2026-05-27 — Phase 2 planned (4 plans, 2 waves)
 - Only backend addition: expo-server-sdk ^6.1.0 in backend/api/
 - Existing notifications.tsx has correct UI shell — wire real data in Phase 3
 
+### Phase 2 Decisions (2026-05-27)
+- PUSH-04 webhook targets `user_gamification` table (not `user_xp` — that table doesn't exist)
+- `WEBHOOK_SECRET` added as new env var in Vercel + Supabase webhook header
+- All four pushes proven end-to-end: Supabase/Hono → waitUntil → notificationService → Expo Push → device
+
 ## Session Continuity
 
-**Stopped At:** Phase 2 planned
-**Resume File:** .planning/workstreams/notification-mobile/phases/02-action-triggered-push/
-**Next Action:** `/gsd:execute-phase 2 notification-mobile` — execute 4 plans (Wave 1: 02-01, 02-02, 02-03 parallel; Wave 2: 02-04 manual)
+**Stopped At:** Phase 2 complete
+**Resume File:** .planning/workstreams/notification-mobile/phases/03-*/
+**Next Action:** `/gsd:plan-phase 3 notification-mobile` — plan Phase 3 (in-app notification center)
