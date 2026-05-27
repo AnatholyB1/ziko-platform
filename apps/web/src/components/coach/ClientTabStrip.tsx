@@ -13,6 +13,7 @@ const TABS = [
   { key: 'journal', label: 'Journal' },
   { key: 'programs', label: 'Programmes' },
   { key: 'vocal', label: 'Retour vocal' },
+  { key: 'videos', label: 'Vidéos' },
 ];
 
 export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
@@ -26,7 +27,9 @@ export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
         >
         {TABS.map((tab) => {
           const href = `/${locale}/coach/clients/${id}/${tab.key}`;
-          const isActive = pathname.endsWith(`/${tab.key}`);
+          const isActive = tab.key === 'videos'
+            ? pathname.includes('/videos')
+            : pathname.endsWith(`/${tab.key}`);
           return (
             <Link
               key={tab.key}

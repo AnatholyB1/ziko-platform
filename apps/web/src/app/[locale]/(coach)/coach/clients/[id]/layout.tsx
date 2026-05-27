@@ -4,7 +4,7 @@ import { createServerSupabase } from '@/lib/supabase/server';
 import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ClientDetailHeader } from '@/components/coach/ClientDetailHeader';
 import { ClientTabStrip } from '@/components/coach/ClientTabStrip';
-import { ClientNotesPanel } from '@/components/coach/ClientNotesPanel';
+import { ClientNotesPanelConditional } from '@/components/coach/videos/ClientNotesPanelConditional';
 import { QueryProvider } from '@/components/coach/QueryProvider';
 
 export default async function ClientDetailLayout({
@@ -70,7 +70,7 @@ export default async function ClientDetailLayout({
         </div>
         <div className="hidden lg:block w-72 shrink-0">
           <div className="sticky top-8">
-            <ClientNotesPanel
+            <ClientNotesPanelConditional
               clientId={id}
               initialNote={noteData?.content ?? ''}
               initialTags={(tagsData ?? []).map((t: { id: string; tag: string }) => ({ id: t.id, tag: t.tag }))}
