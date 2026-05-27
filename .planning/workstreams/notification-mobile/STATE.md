@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
 status: planning
-last_updated: "2026-05-26T00:00:00.000Z"
-last_activity: 2026-05-26
+last_updated: "2026-05-27T00:00:00.000Z"
+last_activity: 2026-05-27
 progress:
   total_phases: 6
   completed_phases: 0
@@ -17,10 +17,10 @@ progress:
 
 ## Current Position
 
-Phase: 1 — Infrastructure & Configuration
+Phase: 2 — Action-triggered Push Notifications
 Plan: —
 Status: Context gathered — ready for planning
-Last activity: 2026-05-26 — Phase 1 context discussion completed (4 areas)
+Last activity: 2026-05-27 — Phase 2 context discussion completed (4 areas)
 
 ## Progress
 
@@ -40,6 +40,11 @@ Last activity: 2026-05-26 — Phase 1 context discussion completed (4 areas)
 - Vercel Cron for three scheduled jobs (CRON_SECRET Bearer auth, follows supplements.ts pattern)
 - device_id as stable client-generated UUID in MMKV; UPSERT on (user_id, device_id)
 - Local notifications for reminders; server push for events
+- PUSH-03/PUSH-04 triggered via Supabase DB webhook → Hono (not mobile-initiated)
+- PUSH-03 2-min delay: waitUntil + setTimeout(120s); re-query active session before send
+- PUSH-04 level-up detection: compare old_record.level vs record.level in webhook payload
+- PUSH-01/02: fire-and-forget via waitUntil in existing Hono routes
+- idempotencyKey pattern: {event}_{userId}_{entityId} — deduplication via notification_log UNIQUE
 
 ### Critical Watch-Outs (from research)
 - app.json must add expo-notifications plugin + aps-environment + POST_NOTIFICATIONS before any EAS build
@@ -55,6 +60,6 @@ Last activity: 2026-05-26 — Phase 1 context discussion completed (4 areas)
 
 ## Session Continuity
 
-**Stopped At:** Phase 1 context gathered
-**Resume File:** .planning/workstreams/notification-mobile/phases/01-infrastructure-configuration/01-CONTEXT.md
-**Next Action:** `/gsd:plan-phase 1 notification-mobile` — Infrastructure & Configuration
+**Stopped At:** Phase 2 context gathered
+**Resume File:** .planning/workstreams/notification-mobile/phases/02-action-triggered-push/02-CONTEXT.md
+**Next Action:** `/gsd:plan-phase 2 notification-mobile` — Action-triggered Push Notifications
