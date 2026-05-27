@@ -10,8 +10,8 @@
 ## Phases
 
 - [x] **Phase 01: Transcription Pipeline** - Coach records audio, server transcribes via Whisper, transcript displayed for validation
-- [ ] **Phase 02: Claude Structuring** - Claude receives full athlete context + transcript, produces 5-section structured card, coach can edit before saving
-- [ ] **Phase 03: Persistence & Memory** - Structured feedback saved to DB, injected as long-term memory into future Claude calls, history accessible from client sheet
+- [x] **Phase 02: Claude Structuring** - Claude receives full athlete context + transcript, produces 5-section structured card, coach can edit before saving
+- [x] **Phase 03: Persistence & Memory** - Structured feedback saved to DB, injected as long-term memory into future Claude calls, history accessible from client sheet
 
 ---
 
@@ -67,8 +67,8 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 01. Transcription Pipeline | 5/5 | Complete | 2026-05-27 |
-| 02. Claude Structuring | 0/4 | In progress | - |
-| 03. Persistence & Memory | 0/? | Not started | - |
+| 02. Claude Structuring | 4/4 | Complete | 2026-05-27 |
+| 03. Persistence & Memory | 3/3 | Complete | 2026-05-27 |
 
 ---
 
