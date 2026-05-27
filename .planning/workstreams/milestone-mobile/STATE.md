@@ -84,7 +84,7 @@ Progress: [████████░░] 80% (8/10 phases complete)
   - [ ] 40-01 — Notifications + Store redesign
   - [ ] 40-02 — AIChatScreen + AvatarUpload
   - [ ] 40-03 — Calendar + Search + Help/Legal
-  - [ ] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral
+  - [x] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral — DONE (0afabd7)
   - [ ] 40-05 — EmptyState + ErrorScreen components + integrations
   - [ ] 40-06 — Phase verification
 - [ ] Phase 41 — Coach StateC + Final Audit — NOT STARTED
@@ -96,8 +96,8 @@ Progress: [████████░░] 80% (8/10 phases complete)
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Phase 40 PLANNED — 6 PLAN.md files created. Phase 36 retroactively confirmed complete (was missing from STATE). Actual progress: 8/10 phases complete (phases 32–39 done, 40–41 remaining).
-Resume: Execute Phase 40 plans (40-01 → 40-04 in parallel, then 40-05, then 40-06 verification). Then Phase 35 gaps (35-G01–G07). Then Phase 41.
+Stopped at: Phase 40 plan 40-04 complete — program-builder wizard + community screens + goal-edit 5-goals redesign.
+Resume: Execute 40-05 (EmptyState + ErrorScreen), then 40-06 (verification). Then Phase 35 gaps (35-G01–G07). Then Phase 41.
 
 ---
 
