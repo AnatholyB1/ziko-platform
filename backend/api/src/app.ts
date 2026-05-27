@@ -5,6 +5,7 @@ import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { pushEventsRouter } from './routes/push-events.js';
 import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
@@ -58,6 +59,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.route('/ai', aiRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
+app.route('/push-events', pushEventsRouter);
 app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
