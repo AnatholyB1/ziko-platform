@@ -63,7 +63,13 @@ Plans:
   2. The voice blob uploads to `coach-videos/annotations/` in storage and the Whisper + Claude route transcribes and cleans filler words — the result appears in the annotation within seconds
   3. The transcript and audio player are visible inline in the lateral annotation panel — athlete can read the cleaned transcript and play the raw audio
   4. The voice annotation route is independent from the retour-vocal (v1.9) route — `POST /coach/video/annotations/:annotationId/transcribe` shares only `lib/whisper.ts`, never modifies the v1.9 endpoint
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 47-01-PLAN.md — Backend: lib/whisper.ts extraction + voice/service.ts DRY refactor + two new videosRouter voice annotation routes (Wave 1)
+- [ ] 47-02-PLAN.md — Web: VoiceComposer.tsx — 5-state useReducer voice recording lifecycle component (Wave 2)
+- [ ] 47-03-PLAN.md — Web: AnnotationPanel extension — mode toggle + VoiceComposer mount + voice annotation list item + signed URL fetch (Wave 3)
+- [ ] 47-04-PLAN.md — Mobile: VideoPlayerScreen voice annotation row mic badge (Wave 2)
 
 ## Progress
 
@@ -71,4 +77,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 45. Storage Pipeline & Mobile Upload | 0/4 | Not started | - |
 | 46. Web Player & Text Annotations | 0/4 | Not started | - |
-| 47. Voice Annotations | 0/? | Not started | - |
+| 47. Voice Annotations | 0/4 | Not started | - |
