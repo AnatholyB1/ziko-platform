@@ -7,10 +7,10 @@ last_updated: "2026-05-27"
 last_activity: 2026-05-27
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 5
-  percent: 38
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State — v1.13 Retour Vidéo Coach
@@ -20,25 +20,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-24)
 
 **Core value:** Coach annotates athlete video with timecoded text and voice feedback; athlete reviews synchronized on mobile
-**Current focus:** Phase 46 — Video Player & Annotations (next)
+**Current focus:** Phase 47 — Voice Annotations (next)
 
 ## Current Position
 
-Phase: 46 of 47 (Web Player & Text Annotations) — IN PROGRESS
-Plan: 1/4
-Status: 46-01 complete — Hono annotation routes + DB functions, 29/29 tests green
-Last activity: 2026-05-27 — 46-01 executed: 7 annotation routes + 7 DB helpers + vitest coverage
+Phase: 46 COMPLETE — Web Player & Text Annotations
+All 4 plans done: backend API (29/29 vitest green), web list page, mobile player screen, web player + annotation panel.
+Next: Phase 47 — Voice Annotations
 
 ```
-[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 14%
+[██████████████████████░░░░░░░░] 75%
 ```
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1 (Phase 46)
-- Average duration: 16 minutes
-- Total execution time: 16 minutes
+- Phase 46 plans completed: 4
+- Average duration: ~17 minutes/plan
+- Total execution time: ~70 minutes
 
 *Updated after each plan completion*
 
@@ -55,18 +54,20 @@ Last activity: 2026-05-27 — 46-01 executed: 7 annotation routes + 7 DB helpers
 - vitest.config.ts include extended to cover src/**/*.test.ts (blocking fix — config excluded src/ unit tests)
 - send-feedback coach name degrades gracefully if user_profiles fails (non-fatal try/catch)
 - GET /signed-url uses createSignedUrl not createSignedUploadUrl (read vs write)
+- expo-video resolved to 3.0.16 (not 2.0.6); statusChange event uses 'readyToPlay' not 'readyForDisplay' in v3
+- @vidstack/react@next resolved to 1.15.1 (React 19 compatible); @vidstack/react@latest is 0.6.x (React 18 only)
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- **Expo Dev Build prerequisite**: TUS/XMLHttpRequest large-file uploads require Dev Build — confirm before Phase 45 execution
+- **Expo Dev Build prerequisite**: TUS/XMLHttpRequest large-file uploads + expo-video native module require Dev Build
 - **Supabase Pro prerequisite**: Free tier 50 MB per-file cap makes video upload impossible — upgrade to Pro before Phase 45
 
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: 46-01 complete — continue with 46-02 (web VideoListPage + ClientTabStrip Vidéos tab)
-Resume file: None
+Stopped at: Phase 46 complete — all 4 plans executed
+Resume: Phase 47 (Voice Annotations)
