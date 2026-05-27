@@ -26,13 +26,20 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
 ### Phase 01: DB + API Foundation
 **Goal**: The data layer and API surface are in place so every other phase can build without schema risk
 **Depends on**: Nothing (first phase)
-**Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04, DASH-04
+**Requirements**: INFRA-01, INFRA-02a, INFRA-03, INFRA-04, DASH-04
 **Success Criteria** (what must be TRUE):
   1. Migration 054 applies cleanly; `dashboard_configs` and `coach_memory` tables exist in Supabase with correct RLS policies (coach reads/writes only their own rows)
   2. `GET /coach/dashboards/:clientId` returns the stored widget array (or empty array for new pairs); `PUT` upserts and returns the full config with `schema_version: 1` intact
   3. `GET /coach/clients/:clientId/widget-data?type=X&period=Y` returns correctly shaped data for each of the 7 widget types
   4. The Zod discriminated union rejects an unknown widget type with a clear validation error; `additionalProperties: false` enforced on all variants
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 01-PLAN-1.md — Migration 054: dashboard_configs + coach_memory tables with RLS
+- [ ] 01-PLAN-2.md — Zod schemas: 7 widget type variants + DashboardConfigSchema + DEFAULT_WIDGETS
+- [ ] 01-PLAN-3.md — Hono bounded context coach/dashboards/: 5 CRUD routes + app.ts mount
+- [ ] 01-PLAN-4.md — Widget-data endpoint: GET /coach/clients/:clientId/widget-data for all 7 types
+- [ ] 01-PLAN-5.md — [BLOCKING] Schema push + smoke tests: supabase db push + Phase 01 verification
 
 ### Phase 02: Widget Renderers + Static Dashboard
 **Goal**: Coaches can open a real, populated dashboard on any client detail page with no AI involvement
@@ -49,7 +56,7 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
 ### Phase 03: AI Edit Session
 **Goal**: Coaches can customize a dashboard via natural language chat and see changes live in under 30 seconds
 **Depends on**: Phase 02
-**Requirements**: EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-05
+**Requirements**: EDIT-01, EDIT-02, EDIT-03, EDIT-04, EDIT-05, INFRA-02b
 **Success Criteria** (what must be TRUE):
   1. Clicking "Customize" enters split-screen mode: dashboard preview on the left, chat panel on the right; view-mode dashboard is hidden
   2. Typing "Add a weight progression chart for the last 30 days" causes Claude to call `add_widget`, and the widget appears in the preview panel within 5 seconds — with no intermediate broken JSON states visible
@@ -57,8 +64,15 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
   4. Clicking Save persists the pending config to Supabase and closes the split-screen; clicking Cancel discards all pending changes and restores the original view
   5. The edit chat refuses general coaching questions — Claude responds that this session is for dashboard customization only
   6. Two-turn integration test passes: add widget in turn 1, update it in turn 2 — conversation history is correctly appended after each step (PITFALLS checklist cleared)
-**Plans**: TBD
+**Plans**: 5 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 03-01-PLAN.md — tools.ts: 4 stateless widget mutation functions + buildDashboardSDKTools factory
+- [ ] 03-02-PLAN.md — POST /:clientId/ai-edit SSE endpoint in service.ts (streamText + onStepFinish + creditGate)
+- [ ] 03-03-PLAN.md — DashboardEditOverlay + EditChatPanel + TypingIndicator + PreviewLoadingOverlay + SaveToast
+- [ ] 03-04-PLAN.md — dashboard/page.tsx: Personnaliser button + isEditing state + overlay wiring
+- [ ] 03-05-PLAN.md — Unit tests + two-turn integration test (D-18) + PITFALLS checklist clearance
 
 ### Phase 04: Polish + Coach Memory
 **Goal**: Coaches can save dashboard templates and have their widget preferences remembered across athletes
@@ -95,11 +109,12 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
 | MEM-01 | Phase 04 | Pending |
 | MEM-02 | Phase 04 | Pending |
 | INFRA-01 | Phase 01 | Pending |
-| INFRA-02 | Phase 01 | Pending |
+| INFRA-02a | Phase 01 | Pending |
+| INFRA-02b | Phase 03 | Pending |
 | INFRA-03 | Phase 01 | Pending |
 | INFRA-04 | Phase 01 | Pending |
 
-**Coverage: 22/22 requirements mapped (18 v1 + 4 INFRA). No orphans.**
+**Coverage: 23/23 requirements mapped (18 v1 + 5 INFRA). No orphans.**
 
 ---
 
@@ -107,7 +122,7 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 01. DB + API Foundation | 0/TBD | Not started | - |
+| 01. DB + API Foundation | 0/5 | Not started | - |
 | 02. Widget Renderers + Static Dashboard | 0/TBD | Not started | - |
-| 03. AI Edit Session | 0/TBD | Not started | - |
+| 03. AI Edit Session | 0/5 | Planned | - |
 | 04. Polish + Coach Memory | 0/TBD | Not started | - |
