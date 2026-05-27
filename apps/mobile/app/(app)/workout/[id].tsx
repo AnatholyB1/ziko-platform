@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList, Image,
 } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +34,7 @@ interface WorkoutDay {
   day_of_week: number | null;
   name: string;
   order_index: number;
-  program_exercises: (ProgramExercise & { exercises?: { name: string; name_fr?: string | null; muscle_groups: string[] } })[];
+  program_exercises: (ProgramExercise & { coach_exercise_id?: string | null; exercises?: { name: string; name_fr?: string | null; muscle_groups: string[] } })[];
 }
 
 // ── Exercise config form state ────────────────────────────
@@ -107,6 +108,37 @@ export default function ProgramDetailScreen() {
   // Cycle config
   const [showCycleConfig, setShowCycleConfig] = useState(false);
 
+  // Media bottom sheet
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [mediaExerciseName, setMediaExerciseName] = useState('');
+  const [mediaVideoUrl, setMediaVideoUrl] = useState<string | null>(null);
+  const [mediaPhotoUrl, setMediaPhotoUrl] = useState<string | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+
+  const fetchAndOpenMedia = async (coachExerciseId: string, exerciseName: string) => {
+    setMediaExerciseName(exerciseName);
+    setMediaVideoUrl(null);
+    setMediaPhotoUrl(null);
+    setMediaLoading(true);
+    setShowMediaModal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+      const res = await fetch(`${apiUrl}/coach/exercises/${coachExerciseId}/media-url`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setMediaVideoUrl(json.video_url ?? null);
+        setMediaPhotoUrl(json.photo_url ?? null);
+      }
+    } catch {
+      // graceful degradation — modal shows name only
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
   const loadProgram = useCallback(async () => {
     if (!id) return;
     const { data: prog } = await supabase.from('workout_programs').select('*').eq('id', id).single();
@@ -114,7 +146,7 @@ export default function ProgramDetailScreen() {
 
     const { data: wkts } = await supabase
       .from('program_workouts')
-      .select('*, program_exercises(*, exercises(name, name_fr, muscle_groups))')
+      .select('*, program_exercises(*, coach_exercise_id, exercises(name, name_fr, muscle_groups))')
       .eq('program_id', id)
       .order('day_of_week');
     const workoutList = (wkts ?? []) as WorkoutDay[];
@@ -607,6 +639,10 @@ export default function ProgramDetailScreen() {
               .sort((a, b) => a.order_index - b.order_index)
               .map((pe) => (
                 <TouchableOpacity key={pe.id} onLongPress={() => handleDeleteExercise(pe.id)}
+                  onPress={pe.coach_exercise_id
+                    ? () => fetchAndOpenMedia(pe.coach_exercise_id!, pe.exercises?.name ?? '')
+                    : undefined
+                  }
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: theme.background, borderRadius: 10, padding: 10 }}>
                   <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="barbell-outline" size={14} color={theme.primary} />
@@ -1028,6 +1064,46 @@ export default function ProgramDetailScreen() {
         theme={theme}
         t={t}
       />
+
+      {/* ── Media bottom sheet (coach exercise demo) ── */}
+      <Modal
+        visible={showMediaModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMediaModal(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.surface }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', flex: 1, marginRight: 8 }} numberOfLines={2}>{mediaExerciseName}</Text>
+            <TouchableOpacity onPress={() => setShowMediaModal(false)}>
+              <Ionicons name="close" size={22} color={theme.muted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            {mediaLoading ? (
+              <View style={{ height: 200, backgroundColor: theme.background, borderRadius: 12 }} />
+            ) : mediaVideoUrl ? (
+              <Video
+                source={{ uri: mediaVideoUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={false}
+              />
+            ) : mediaPhotoUrl ? (
+              <Image
+                source={{ uri: mediaPhotoUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ color: theme.muted, fontSize: 14, textAlign: 'center', marginTop: 24 }}>
+                Aucun média disponible pour cet exercice.
+              </Text>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
