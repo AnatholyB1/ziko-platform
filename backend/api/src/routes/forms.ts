@@ -108,11 +108,18 @@ router.patch('/coach/forms/:id', async (c) => {
   }
 });
 
-// POST /coach/forms/:id/publish — set status to active
+// POST /coach/forms/:id/publish — set status to active, optionally target one client or all
 router.post('/coach/forms/:id/publish', async (c) => {
   const { userId } = c.get('auth');
   const { id } = c.req.param();
   try {
+    const body = await c.req.json().catch(() => ({}));
+    const { target, client_id } = body as { target?: 'one' | 'all'; client_id?: string };
+
+    if (target === 'one' && !client_id) {
+      return c.json({ error: 'client_id required when target is one' }, 400);
+    }
+
     const { data, error } = await supabase
       .from('coach_forms')
       .update({ status: 'active', updated_at: new Date().toISOString() })
@@ -128,6 +135,38 @@ router.post('/coach/forms/:id/publish', async (c) => {
       throw error;
     }
     if (!data) return c.json({ error: 'form not found' }, 404);
+
+    // Distribute form instances after activation
+    if (target === 'one' && client_id) {
+      // Send to one specific client
+      const { error: rpcErr } = await supabase.rpc('create_form_instances_for_trigger', {
+        p_trigger_type: 'manual',
+        p_athlete_id: client_id,
+        p_coach_id: userId,
+      });
+      if (rpcErr) console.warn('[POST /coach/forms/:id/publish] rpc error (one):', rpcErr.message);
+    } else {
+      // Send to all linked clients (target === 'all' or omitted)
+      const { data: linkedClients, error: clientsErr } = await supabase
+        .from('coach_client_links')
+        .select('client_id')
+        .eq('coach_id', userId)
+        .is('revoked_at', null);
+
+      if (clientsErr) {
+        console.warn('[POST /coach/forms/:id/publish] clients fetch error:', clientsErr.message);
+      } else {
+        for (const link of linkedClients ?? []) {
+          const { error: rpcErr } = await supabase.rpc('create_form_instances_for_trigger', {
+            p_trigger_type: 'manual',
+            p_athlete_id: link.client_id,
+            p_coach_id: userId,
+          });
+          if (rpcErr) console.warn('[POST /coach/forms/:id/publish] rpc error (all):', rpcErr.message);
+        }
+      }
+    }
+
     return c.json({ form: data });
   } catch (err) {
     console.error('[POST /coach/forms/:id/publish]', err);

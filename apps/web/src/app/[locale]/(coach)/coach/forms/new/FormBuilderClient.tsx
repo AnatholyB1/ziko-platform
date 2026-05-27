@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { gsap } from 'gsap';
-import { IoAddOutline, IoCheckmarkCircleOutline } from 'react-icons/io5';
+import { IoAddOutline, IoCheckmarkCircleOutline, IoLockClosedOutline } from 'react-icons/io5';
 import type {
   CoachForm,
   FormQuestion,
@@ -11,6 +11,17 @@ import type {
 } from '@/components/coach/FormStatusBadge';
 import QuestionCard from '@/components/coach/QuestionCard';
 import TriggerConfigComponent from '@/components/coach/TriggerConfig';
+import PublishModal from '@/components/coach/PublishModal';
+import ArchiveModal from '@/components/coach/ArchiveModal';
+
+// ─── Question type labels ───────────────────────────────────────────────────────
+
+const Q_TYPE_LABELS: Record<string, string> = {
+  text: 'Texte libre',
+  scale: 'Échelle 1-10',
+  yesno: 'Oui / Non',
+  choice: 'Choix unique',
+};
 
 // ─── genId ─────────────────────────────────────────────────────────────────────
 
@@ -59,7 +70,8 @@ export default function FormBuilderClient({
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const isActive = form?.status === 'active';
   const isDraft = !form || form.status === 'draft';
@@ -142,6 +154,31 @@ export default function FormBuilderClient({
     }
   }
 
+  // ─── handlePublishSuccess / handleArchiveSuccess ─────────────────────────────
+
+  function handlePublishSuccess() {
+    setPublishModalOpen(false);
+    setToast({ message: 'Formulaire publié avec succès', type: 'success' });
+    setTimeout(() => router.push(`/${locale}/coach/forms`), 1500);
+  }
+
+  function handleArchiveSuccess() {
+    setArchiveModalOpen(false);
+    setToast({ message: 'Formulaire archivé', type: 'success' });
+    setTimeout(() => router.push(`/${locale}/coach/forms`), 1500);
+  }
+
+  // ─── handlePublishClick — guard: save first if form has no id ────────────────
+
+  async function handlePublishClick() {
+    if (!form?.id) {
+      setToast({ message: 'Sauvegardez d\'abord le formulaire.', type: 'info' });
+      await handleSave();
+      return; // user clicks Publish again after save has created an ID
+    }
+    setPublishModalOpen(true);
+  }
+
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -181,7 +218,7 @@ export default function FormBuilderClient({
             </button>
             <button
               type="button"
-              onClick={() => setPublishModalOpen(true)}
+              onClick={handlePublishClick}
               disabled={saving}
               className="bg-primary text-white rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-40"
             >
@@ -192,9 +229,7 @@ export default function FormBuilderClient({
         {isActive && (
           <button
             type="button"
-            onClick={() => {
-              // archiveModalOpen wired in Plan 03-04
-            }}
+            onClick={() => setArchiveModalOpen(true)}
             className="border border-destructive text-destructive bg-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-[#FEE2E2]"
           >
             Archiver
@@ -218,7 +253,26 @@ export default function FormBuilderClient({
       <div className="builder-section px-8 py-6">
         <SectionLabel>Questions</SectionLabel>
 
-        {questions.map((q, i) => (
+        {/* Active mode: read-only question cards */}
+        {isActive && questions.map((q) => (
+          <div
+            key={q.id}
+            className="bg-[#F0EFE9] border border-border rounded-xl p-4 mb-3 flex items-center gap-3"
+          >
+            <span className="bg-white text-[#6B6963] text-xs font-bold rounded px-2 py-0.5 shrink-0">
+              {Q_TYPE_LABELS[q.type] ?? q.type}
+            </span>
+            <span className="text-sm text-text font-bold flex-1 truncate">{q.label}</span>
+            <IoLockClosedOutline
+              size={12}
+              className="text-muted ml-auto shrink-0"
+              title="Ce formulaire est actif — modification impossible"
+            />
+          </div>
+        ))}
+
+        {/* Draft mode: interactive question cards */}
+        {isDraft && questions.map((q, i) => (
           <QuestionCard
             key={q.id}
             question={q}
@@ -290,7 +344,7 @@ export default function FormBuilderClient({
               </button>
               <button
                 type="button"
-                onClick={() => setPublishModalOpen(true)}
+                onClick={handlePublishClick}
                 disabled={saving}
                 className="bg-primary text-white rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-40"
               >
@@ -310,9 +364,7 @@ export default function FormBuilderClient({
             </div>
             <button
               type="button"
-              onClick={() => {
-                // archiveModalOpen wired in Plan 03-04
-              }}
+              onClick={() => setArchiveModalOpen(true)}
               className="border border-destructive text-destructive bg-white rounded-xl px-6 py-3 text-sm font-bold hover:bg-[#FEE2E2]"
             >
               Archiver
@@ -321,11 +373,29 @@ export default function FormBuilderClient({
         )}
       </div>
 
-      {/* Publish modal placeholder — full modal wired in Plan 03-04 */}
-      {publishModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-50"
-          onClick={() => setPublishModalOpen(false)}
+      {/* Publish modal */}
+      {publishModalOpen && form?.id && (
+        <PublishModal
+          open={publishModalOpen}
+          formId={form.id}
+          accessToken={accessToken}
+          apiUrl={apiUrl}
+          locale={locale}
+          onClose={() => setPublishModalOpen(false)}
+          onSuccess={handlePublishSuccess}
+        />
+      )}
+
+      {/* Archive modal */}
+      {archiveModalOpen && form?.id && (
+        <ArchiveModal
+          open={archiveModalOpen}
+          formId={form.id}
+          accessToken={accessToken}
+          apiUrl={apiUrl}
+          locale={locale}
+          onClose={() => setArchiveModalOpen(false)}
+          onSuccess={handleArchiveSuccess}
         />
       )}
     </div>
