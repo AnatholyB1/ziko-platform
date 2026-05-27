@@ -8,7 +8,7 @@ last_activity: 2026-05-27
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 10
+  total_plans: 14
   completed_plans: 6
   percent: 40
 ---
@@ -19,8 +19,8 @@ progress:
 
 Phase: 03 — Coach Form Builder (Web)
 Plan: —
-Status: Phase 02 complete — ready to plan Phase 03
-Last activity: 2026-05-27 — Phase 02 executed (4 plans, all triggers wired, migration 058 applied)
+Status: Phase 03 planned — ready to execute (4 plans, verified)
+Last activity: 2026-05-27 — Phase 03 planned (4 plans: sidebar nav + form list + builder + modals)
 
 ## Progress
 
@@ -37,7 +37,7 @@ Last activity: 2026-05-27 — Phase 02 executed (4 plans, all triggers wired, mi
 |-------|------|--------------|--------|
 | 01. DB Schema & Backend API | Forms, instances, responses in DB + Hono CRUD routes | FORM-01,02,04,05,06 · TRIGGER-05 | ✅ Complete |
 | 02. Trigger Engine | 4 trigger types create pending instances; duplicate guard | TRIGGER-01–05 | ✅ Complete |
-| 03. Coach Form Builder (Web) | Coach builds, edits, publishes, and lists forms from CRM | FORM-01–06 | Not started |
+| 03. Coach Form Builder (Web) | Coach builds, edits, publishes, and lists forms from CRM | FORM-01–06 | Planned (4 plans) |
 | 04. Athlete Blocking Overlay (Mobile) | Pending forms block app; athlete submits sequentially | MOBILE-01–05 | Not started |
 | 05. Response Viewer & Claude Injection | Coach reads submissions; Claude gets last 5 as context | RESPONSES-01–03 · CLAUDE-01–02 | Not started |
 
@@ -64,6 +64,6 @@ None currently.
 
 ## Session Continuity
 
-**Stopped At:** Phase 02 execution complete
+**Stopped At:** Phase 03 planning complete
 **Resume File:** `.planning/workstreams/formulaire-condi/STATE.md`
-**Next Action:** `/gsd:plan-phase 03 --ws formulaire-condi`
+**Next Action:** `/gsd:execute-phase 03 --ws formulaire-condi`
