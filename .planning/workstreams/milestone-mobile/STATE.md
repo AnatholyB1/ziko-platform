@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
 status: in_progress
-stopped_at: Phase 37 complete — 7/7 plans executed, human smoke test approved 2026-05-26
-last_updated: "2026-05-26T00:00:00.000Z"
+stopped_at: Phase 38 complete — 4/4 plans executed, automated checks 10/10 PASS, human smoke test pending
+last_updated: "2026-05-27T00:00:00.000Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 23
-  completed_plans: 19
-  percent: 66
+  completed_plans: 23
+  percent: 83
 ---
 
 # Project State — v1.7 Mobile UX v2
@@ -25,12 +25,12 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **37 — Priority Plugins Redesign** — COMPLETE ✅
+Phase: **38 — Remaining Plugins Group 1** — COMPLETE ✅ (smoke test pending)
 
-Automated verification: 13/13 PASS ✅  
-Human smoke test: APPROVED ✅ (2026-05-26)
+Automated verification: 10/10 PASS ✅  
+Human smoke test: PENDING
 
-Progress: [████████░░] 66%
+Progress: [█████████░] 83%
 
 ## Accumulated Context
 
@@ -77,6 +77,7 @@ Progress: [████████░░] 66%
   - [ ] 35-G06 — Parrainage: migration 053 + Hono routes + mobile screen
   - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
 - [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
+- [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test pending)
 
 ### Blockers/Concerns
 
@@ -84,9 +85,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-26
-Stopped at: Phase 37 complete — all 6 priority plugins redesigned (Nutrition, Hydration, Habits, AI Programs, Coach IA, Community). SubTabs pill style + AISuggestion label shipped. Backend persona injection active.
-Resume: Next phase per ROADMAP-v1.7.md (Phase 36 gap closure or Phase 38).
+Last session: 2026-05-27
+Stopped at: Phase 38 complete — 6 remaining plugins redesigned (Stats, Gamification, Stretching, Sleep, Measurements, Timer). Automated verification 10/10 PASS. Human smoke test pending.
+Resume: Smoke test approval, then Phase 36 gap closure or next phase per ROADMAP-v1.7.md.
 
 ---
 
