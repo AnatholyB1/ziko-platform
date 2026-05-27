@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
 status: in_progress
-stopped_at: Phase 38 complete — 4/4 plans executed, automated checks 10/10 PASS, human smoke test pending
+stopped_at: Phase 38 complete — 4/4 plans executed, 10/10 automated checks PASS, human smoke test APPROVED 2026-05-27
 last_updated: "2026-05-27T00:00:00.000Z"
 progress:
   total_phases: 6
@@ -25,10 +25,10 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **38 — Remaining Plugins Group 1** — COMPLETE ✅ (smoke test pending)
+Phase: **38 — Remaining Plugins Group 1** — COMPLETE ✅
 
 Automated verification: 10/10 PASS ✅  
-Human smoke test: PENDING
+Human smoke test: APPROVED ✅ (2026-05-27)
 
 Progress: [█████████░] 83%
 
@@ -77,7 +77,7 @@ Progress: [█████████░] 83%
   - [ ] 35-G06 — Parrainage: migration 053 + Hono routes + mobile screen
   - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
 - [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
-- [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test pending)
+- [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test APPROVED 2026-05-27)
 
 ### Blockers/Concerns
 
@@ -86,8 +86,8 @@ None.
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Phase 38 complete — 6 remaining plugins redesigned (Stats, Gamification, Stretching, Sleep, Measurements, Timer). Automated verification 10/10 PASS. Human smoke test pending.
-Resume: Smoke test approval, then Phase 36 gap closure or next phase per ROADMAP-v1.7.md.
+Stopped at: Phase 38 complete — 6 remaining plugins redesigned (Stats, Gamification, Stretching, Sleep, Measurements, Timer). Automated verification 10/10 PASS. Human smoke test APPROVED 2026-05-27.
+Resume: Phase 36 gap closure or next phase per ROADMAP-v1.7.md.
 
 ---
 

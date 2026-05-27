@@ -21,7 +21,7 @@ completed_at: "2026-05-27"
 10. D-05 Gamification: query sur 'user_gamification' (pas 'user_xp')
 
 ## Smoke Test
-Pending human approval — Task 2 checkpoint.
+APPROVED by user — 2026-05-27
 
 ## Deliverables
 - 6 Plugin screens redesigned matching plugins-2.jsx mockup
