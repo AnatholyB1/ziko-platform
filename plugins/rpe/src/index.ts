@@ -43,3 +43,7 @@ export const TRAINING_ZONES = [
   { label: '97.5%', pct: 0.975 },
   { label: '100%', pct: 1 },
 ];
+
+// ─── Screen exports ──────────────────────────────────────────────────────────
+
+export { default as RPEPlugin } from './screens/RPEPlugin';

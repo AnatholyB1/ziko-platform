@@ -6,7 +6,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
-    "./screens/RPECalculatorScreen": "./src/screens/RPECalculatorScreen.tsx",
     "./screens/RPEPlugin": "./src/screens/RPEPlugin.tsx"
   },
   "scripts": {

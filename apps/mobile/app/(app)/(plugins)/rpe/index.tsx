@@ -1,6 +1,7 @@
 import React from 'react';
-import RPECalculatorScreen from '@ziko/plugin-rpe/screens/RPECalculatorScreen';
+import RPEPlugin from '@ziko/plugin-rpe/screens/RPEPlugin';
+import { supabase } from '../../../../src/lib/supabase';
 
-export default function RPECalculatorRoute() {
-  return <RPECalculatorScreen />;
+export default function RPEPluginRoute() {
+  return <RPEPlugin supabase={supabase} />;
 }
