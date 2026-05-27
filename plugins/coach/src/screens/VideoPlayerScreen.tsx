@@ -27,9 +27,20 @@ interface Annotation {
   id: string;
   timestamp_s: number;
   content: string;
+  type?: 'text' | 'voice';
+  audio_path?: string | null;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+const micBadgeStyle = {
+  width: 20, height: 20, borderRadius: 10,
+  backgroundColor: '#FFF0E8',
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+  flexShrink: 0,
+  marginTop: 1,
+};
 
 function formatMmSs(s: number): string {
   return (
@@ -310,26 +321,18 @@ export default function VideoPlayerScreen({ supabase, videoId }: VideoPlayerScre
               <Ionicons name="close" size={18} color="#6B6963" />
             </TouchableOpacity>
 
-            {/* Timestamp chip */}
-            <View
-              style={{
-                alignSelf: 'flex-start',
-                backgroundColor: '#FFF0E8',
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 4,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: '400',
-                  color: '#C2410C',
-                  fontVariant: ['tabular-nums'],
-                }}
-              >
-                {formatMmSs(activeAnnotation.timestamp_s)}
-              </Text>
+            {/* Timestamp chip — with mic badge for voice annotations */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {activeAnnotation.type === 'voice' && (
+                <View style={micBadgeStyle}>
+                  <Ionicons name="mic-outline" size={10} color="#FF5C1A" />
+                </View>
+              )}
+              <View style={{ alignSelf: 'flex-start', backgroundColor: '#FFF0E8', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 }}>
+                <Text style={{ fontSize: 12, fontWeight: '400', color: '#C2410C', fontVariant: ['tabular-nums'] }}>
+                  {formatMmSs(activeAnnotation.timestamp_s)}
+                </Text>
+              </View>
             </View>
 
             {/* Annotation text */}
@@ -398,6 +401,7 @@ export default function VideoPlayerScreen({ supabase, videoId }: VideoPlayerScre
                 setActiveAnnotationId(a.id);
               }}
               activeOpacity={0.7}
+              accessibilityLabel={a.type === 'voice' ? `Annotation vocale à ${formatMmSs(a.timestamp_s)} : ${a.content}` : undefined}
               style={{
                 paddingVertical: 10,
                 borderBottomWidth: index < annotations.length - 1 ? 1 : 0,
@@ -407,6 +411,13 @@ export default function VideoPlayerScreen({ supabase, videoId }: VideoPlayerScre
                 gap: 10,
               }}
             >
+              {/* Mic badge — voice annotations only */}
+              {a.type === 'voice' && (
+                <View style={micBadgeStyle}>
+                  <Ionicons name="mic-outline" size={10} color="#FF5C1A" />
+                </View>
+              )}
+
               {/* Timestamp chip */}
               <View
                 style={{
@@ -441,6 +452,7 @@ export default function VideoPlayerScreen({ supabase, videoId }: VideoPlayerScre
               >
                 {a.content}
               </Text>
+              {/* TODO: audio player on mobile — post-v1.13 */}
             </TouchableOpacity>
           ))
         )}
