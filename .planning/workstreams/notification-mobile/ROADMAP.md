@@ -51,7 +51,12 @@ Plans:
   2. When an invitation is accepted, both the athlete and the coach each receive a push notification
   3. Approximately 2 minutes after a workout session ends, the athlete receives a push summary — and no push is sent if a session is still active
   4. When a user levels up or unlocks a badge, they receive exactly one push notification even if multiple events occur in the same session
-**Plans:** TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — PUSH-01: program assignment push (waitUntil in POST /coach/programs/:id/assign)
+- [ ] 02-02-PLAN.md — PUSH-02: invitation accepted push bidirectional (waitUntil in POST /coach/clients/links/redeem)
+- [ ] 02-03-PLAN.md — PUSH-03 + PUSH-04: Supabase webhook handlers + 2-min delay + level-up detection (new push-events.ts router)
+- [ ] 02-04-PLAN.md — Supabase Dashboard webhook configuration + end-to-end smoke test (manual)
 
 ### Phase 3: In-app Notification Center
 **Goal:** Replace the static mock data in the existing `notifications.tsx` shell with live Supabase data, enabling read/unread management, deep links, badge sync, and real-time updates.
@@ -107,7 +112,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure & Configuration | 0/4 | In progress | - |
-| 2. Action-triggered Push Notifications | 0/0 | Not started | - |
+| 2. Action-triggered Push Notifications | 0/4 | Planning done | - |
 | 3. In-app Notification Center | 0/0 | Not started | - |
 | 4. Cron / Scheduled Notifications | 0/0 | Not started | - |
 | 5. Notification Preferences UI | 0/0 | Not started | - |
