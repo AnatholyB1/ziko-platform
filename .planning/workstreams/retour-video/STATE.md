@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.13
 milestone_name: Retour Vidéo Coach
 status: in_progress
-last_updated: "2026-05-26"
-last_activity: 2026-05-26
+last_updated: "2026-05-27"
+last_activity: 2026-05-27
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 4
+  total_plans: 8
   completed_plans: 4
   percent: 33
 ---
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 45 of 47 (Storage Pipeline & Mobile Upload) — COMPLETE
-Plan: 4/4
-Status: Phase 45 complete — Phase 46 ready to plan
-Last activity: 2026-05-26 — Phase 45 executed (4 plans, bucket + migration + Hono endpoints + mobile screens + push token)
+Phase: 46 of 47 (Web Player & Text Annotations) — PLANNED
+Plan: 0/4
+Status: Phase 46 planned — ready to execute
+Last activity: 2026-05-27 — Phase 46 planned (4 plans: 46-01 Hono routes, 46-02 web layout/pages, 46-03 VideoPlayer+AnnotationPanel, 46-04 mobile VideoPlayerScreen)
 
 ```
 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
