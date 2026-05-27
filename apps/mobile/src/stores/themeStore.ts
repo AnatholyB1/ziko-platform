@@ -4,5 +4,6 @@ export {
   DEFAULT_THEME,
   THEME_REGISTRY,
   BANNER_REGISTRY,
+  coachStorage,
 } from '@ziko/plugin-sdk';
 export type { ThemePalette, BannerDef } from '@ziko/plugin-sdk';

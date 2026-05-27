@@ -5,8 +5,9 @@ import { Tabs, Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/stores/authStore';
-import { useThemeStore } from '../../src/stores/themeStore';
+import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
@@ -30,7 +31,57 @@ function handleNotificationResponse(response: Notifications.NotificationResponse
   }
 }
 
+// ── Coach Branding Bootstrap ─────────────────────────────────────────────────
+// Fetches /coach/clients/links/me on authenticated mount and keeps the mobile
+// theme + MMKV cache in sync. Uses the same queryKey as CoachScreen so TanStack
+// Query deduplicates — CoachScreen gets cached data for free on first visit.
+
+interface BrandingShape {
+  primary_color: string;
+  logo_url: string | null;
+  tone: string | null;
+}
+
+interface LinkStatusBootstrap {
+  branding: BrandingShape | null;
+}
+
+function useBrandingBootstrap() {
+  const userId = useAuthStore((s) => s.user?.id);
+  const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
+  const clearCoachTheme = useThemeStore((s) => s.clearCoachTheme);
+
+  const { data } = useQuery<LinkStatusBootstrap | undefined>({
+    queryKey: ['coach-link', userId],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/coach/clients/links/me`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) throw new Error('fetch failed');
+      return res.json();
+    },
+    staleTime: 30_000,
+    enabled: !!userId,
+  });
+
+  useEffect(() => {
+    if (data === undefined) return; // query not yet resolved — keep existing state
+    if (data?.branding) {
+      setCustomTheme({ primary: data.branding.primary_color });
+      coachStorage.set('coach:branding', JSON.stringify(data.branding));
+    } else {
+      clearCoachTheme();
+      coachStorage.delete('coach:branding');
+    }
+  }, [data?.branding, setCustomTheme, clearCoachTheme]);
+}
+
 export default function AppLayout() {
+  useBrandingBootstrap();
+
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
