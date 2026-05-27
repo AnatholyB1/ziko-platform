@@ -46,8 +46,13 @@ Plans:
   3. Coach can pause at any moment, type a text annotation, and see a colored marker appear on the timeline scrub bar at the exact timecode
   4. Coach can edit or delete any existing annotation from the lateral panel, and clicking an annotation seeks the player to that timestamp
   5. Athlete receives a push notification when the coach submits annotations, then can open the video on mobile and see annotation markers on the timeline — tapping a marker seeks to that timecode and shows the comment
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+
+Plans:
+- [ ] 46-01-PLAN.md — Hono backend: annotation CRUD + signed-url + send-feedback routes + vitest tests (Wave 1)
+- [ ] 46-02-PLAN.md — Web pages: ClientTabStrip Vidéos tab + notes panel hide + VideoListPage with all states (Wave 2)
+- [ ] 46-03-PLAN.md — Web player: @vidstack/react install + VideoPlayerClient + AnnotatedTimeSlider + AnnotationPanel state machine (Wave 2)
+- [ ] 46-04-PLAN.md — Mobile: expo-video install + video-player route + VideoPlayerScreen + VideoListScreen extension (Wave 2)
 
 ### Phase 47: Voice Annotations
 **Goal**: The coach can record a voice comment at a specific timecode, which is transcribed by Whisper and cleaned by Claude, with the transcript and audio playback available inline in the annotation panel
@@ -65,5 +70,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 45. Storage Pipeline & Mobile Upload | 0/4 | Not started | - |
-| 46. Web Player & Text Annotations | 0/? | Not started | - |
+| 46. Web Player & Text Annotations | 0/4 | Not started | - |
 | 47. Voice Annotations | 0/? | Not started | - |
