@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/stores/authStore';
+import { EmptyState } from '@ziko/ui';
 
 // ── Types ─────────────────────────────────────────────────
 type NotifType = 'coach_ai' | 'community' | 'records' | 'system';
@@ -223,12 +224,23 @@ export default function NotificationsScreen() {
         </View>
       );
     }
+    if (isError) {
+      return (
+        <EmptyState
+          variant="error"
+          title="Impossible de charger"
+          message="Vérifie ta connexion"
+          ctaLabel="Réessayer"
+          onCta={() => queryClient.invalidateQueries({ queryKey: ['notifications', userId] })}
+        />
+      );
+    }
     return (
-      <View style={{ alignItems: 'center', paddingTop: 60 }}>
-        <Ionicons name="notifications-off-outline" size={48} color={BORDER} />
-        <Text style={{ fontSize: 15, color: MUTED, marginTop: 12 }}>Pas encore de notifications</Text>
-        <Text style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Elles apparaîtront ici</Text>
-      </View>
+      <EmptyState
+        variant="no-data"
+        title="Pas encore de notifications"
+        message="Elles apparaîtront ici dès qu'il y aura de l'activité"
+      />
     );
   };
 

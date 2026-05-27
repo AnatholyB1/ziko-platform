@@ -8,6 +8,7 @@ import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
+import { ErrorScreen } from '@ziko/ui';
 
 // ── Design tokens ──────────────────────────────────────────
 const BG      = '#F7F6F3';
@@ -83,13 +84,17 @@ export default function PluginStoreScreen() {
   const [reviews, setReviews] = useState<ReviewAgg[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [loadError, setLoadError] = useState(false);
 
   // ── Load data ──────────────────
   const load = useCallback(async () => {
+    setLoadError(false);
     const [regRes, reviewsRes] = await Promise.all([
       supabase.from('plugins_registry').select('*').eq('is_active', true),
       supabase.from('plugin_reviews').select('plugin_id, rating'),
     ]);
+
+    if (regRes.error) { setLoadError(true); return; }
 
     setPlugins((regRes.data ?? []) as RegistryPlugin[]);
 
@@ -172,6 +177,10 @@ export default function PluginStoreScreen() {
   }, [plugins, activeCategory]);
 
   const getRating = (pid: string) => reviews.find((r) => r.plugin_id === pid);
+
+  if (loadError) {
+    return <ErrorScreen variant="network" onRetry={() => load()} />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>

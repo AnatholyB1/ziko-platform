@@ -6,6 +6,7 @@ import { useThemeStore } from '../stores/themeStore';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { EmptyState } from '@ziko/ui';
 
 // ── Main component ─────────────────────────────────────────
 
@@ -225,9 +226,9 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                     ))}
                   </View>
                 ) : (
-                  <Text style={{ fontSize: 13, color: '#6B6963', marginVertical: 8 }}>
-                    Aucun exercice trouvé
-                  </Text>
+                  <View style={{ height: 80 }}>
+                    <EmptyState variant="no-results" title="Aucun résultat" />
+                  </View>
                 )}
 
                 {/* Section Programmes */}
@@ -278,9 +279,9 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                     ))}
                   </View>
                 ) : (
-                  <Text style={{ fontSize: 13, color: '#6B6963', marginVertical: 8 }}>
-                    Aucun programme trouvé
-                  </Text>
+                  <View style={{ height: 80 }}>
+                    <EmptyState variant="no-results" title="Aucun résultat" />
+                  </View>
                 )}
 
                 {/* Section Utilisateurs */}
@@ -337,9 +338,9 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                     ))}
                   </View>
                 ) : (
-                  <Text style={{ fontSize: 13, color: '#6B6963', marginVertical: 8 }}>
-                    Aucun utilisateur trouvé
-                  </Text>
+                  <View style={{ height: 80 }}>
+                    <EmptyState variant="no-results" title="Aucun résultat" />
+                  </View>
                 )}
               </>
             )}

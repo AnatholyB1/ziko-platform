@@ -7,6 +7,7 @@ import { useThemeStore } from '../../src/stores/themeStore';
 import { useAuthStore } from '../../src/stores/authStore';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
+import { EmptyState } from '@ziko/ui';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -137,11 +138,11 @@ export default function CalendarScreen() {
             <ActivityIndicator color="#FF5C1A" />
           </View>
         ) : isError ? (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ fontSize: 14, color: '#6B6963' }}>
-              Impossible de charger le calendrier
-            </Text>
-          </View>
+          <EmptyState
+            variant="error"
+            title="Impossible de charger"
+            message="Vérifie ta connexion et réessaie"
+          />
         ) : (
           <>
             {/* Weekday labels */}
@@ -227,18 +228,28 @@ export default function CalendarScreen() {
               })}
             </View>
 
-            {/* Month summary */}
-            <Text
-              style={{
-                fontSize: 15,
-                color: '#6B6963',
-                marginTop: 16,
-                textAlign: 'center',
-              }}
-            >
-              {Object.keys(sessionsByDate).length} séances en{' '}
-              {new Date(year, month, 1).toLocaleDateString('fr-FR', { month: 'long' })}
-            </Text>
+            {/* Month summary or empty state */}
+            {Object.keys(sessionsByDate).length === 0 ? (
+              <EmptyState
+                variant="no-data"
+                title="Aucune séance ce mois"
+                message="Commence un entraînement pour le voir apparaître ici"
+                ctaLabel="Démarrer une séance"
+                onCta={() => router.push('/(app)/workout' as any)}
+              />
+            ) : (
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: '#6B6963',
+                  marginTop: 16,
+                  textAlign: 'center',
+                }}
+              >
+                {Object.keys(sessionsByDate).length} séances en{' '}
+                {new Date(year, month, 1).toLocaleDateString('fr-FR', { month: 'long' })}
+              </Text>
+            )}
           </>
         )}
       </ScrollView>

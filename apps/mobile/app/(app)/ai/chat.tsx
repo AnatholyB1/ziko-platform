@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
+import { ErrorScreen } from '@ziko/ui';
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ export default function AIChatScreen() {
 
   // ── Credits query ─────────────────────────────────────────
 
-  const { data: creditsData } = useQuery({
+  const { data: creditsData, isError: creditsError } = useQuery({
     queryKey: ['userCredits'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -226,6 +227,11 @@ export default function AIChatScreen() {
   });
 
   const creditsBalance = creditsData?.ai_credits_balance ?? 0;
+
+  // ── Error guard ───────────────────────────────────────────
+  if (creditsError) {
+    return <ErrorScreen variant="network" onRetry={() => {}} onGoBack={() => router.back()} />;
+  }
 
   // ── Scroll helpers ────────────────────────────────────────
 
