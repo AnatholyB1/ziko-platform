@@ -1,4 +1,8 @@
+// Vercel: allow up to 60s for audio transcription operations (Whisper can take up to 30s)
+export const maxDuration = 60;
+
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { authMiddleware } from '../../middleware/auth.js';
@@ -12,14 +16,23 @@ import {
   updateAnnotation,
   deleteAnnotation,
   updateVideoStatus,
+  getAnnotationById,
+  insertVoiceAnnotation,
 } from './db.js';
 import { notificationService } from '../../services/notificationService.js';
+import { ALLOWED_MIME_TYPES, validateMimeType, transcribeAudio } from '../../lib/whisper.js';
+import { generateText } from 'ai';
+import { AGENT_MODEL } from '../../config/models.js';
 import type {
   UploadUrlResponse,
   CompleteVideoBody,
   CreateAnnotationBody,
   UpdateAnnotationBody,
 } from './types.js';
+
+// ─── Claude cleaning prompt (D-05) ───────────────────────────────────────────
+const CLEANING_SYSTEM_PROMPT =
+  'Tu es un assistant de coach sportif. Reformule ce retour vocal en 1 à 2 phrases courtes, naturelles et directes. Observation factuelle + conseil d\'action. Supprime les hésitations et répétitions. Pas de structure, pas de labels. Maximum 2 phrases.';
 
 // Service-role client for storage signing (D-02).
 // createSignedUploadUrl requires service role; publishable key lacks storage.admin.
@@ -379,4 +392,155 @@ videosRouter.post('/:videoId/send-feedback', async (c) => {
   });
 
   return c.json({ ok: true });
+});
+
+// ── Phase 47: voice annotation routes ─────────────────────────────────────────
+
+/**
+ * POST /coach/videos/annotations/transcribe
+ * Accepts multipart audio blob, uploads to storage, transcribes via Whisper,
+ * cleans via Claude, returns { transcript, audioPath, annotationId }.
+ *
+ * Security (T-47-01..T-47-05):
+ * - mimeType whitelist validation (T-47-01)
+ * - Coach ownership guard via getVideoById + coachId check (T-47-02)
+ * - Storage path constructed server-side — no client-controlled path segment (T-47-05)
+ * - 20 MB body limit (T-47-04)
+ *
+ * IMPORTANT: Registered BEFORE /:annotationId routes to avoid Hono treating
+ * 'transcribe' as an annotationId parameter.
+ */
+videosRouter.post(
+  '/annotations/transcribe',
+  bodyLimit({
+    maxSize: 20 * 1024 * 1024, // 20 MB max (T-47-04)
+    onError: (c) => c.json({ error: 'Audio file too large (max 20 MB)' }, 413),
+  }),
+  async (c) => {
+    const { userId: coachId } = c.get('auth');
+
+    // Parse multipart body
+    const body = await c.req.parseBody();
+
+    // Validate audio field
+    const audioFile = body['audio'];
+    if (!(audioFile instanceof File)) {
+      return c.json({ error: 'audio field is required' }, 400);
+    }
+
+    // Extract and validate form fields
+    const mimeType = (body['mimeType'] as string) ?? 'audio/webm';
+    const videoId = body['videoId'] as string;
+    const timestampRaw = body['timestamp_s'];
+    const timestamp_s = typeof timestampRaw === 'string' ? parseFloat(timestampRaw) : NaN;
+
+    // Validate mimeType against whitelist (T-47-01)
+    if (!validateMimeType(mimeType)) {
+      return c.json({ error: 'Unsupported audio format. Use webm or mp4.' }, 400);
+    }
+
+    // Validate required fields
+    if (!videoId || isNaN(timestamp_s)) {
+      return c.json({ error: 'videoId and timestamp_s are required' }, 400);
+    }
+
+    // Fetch video — ensures it exists and gives us athlete_id + coach_id
+    const video = await getVideoById(videoId);
+    if (!video) {
+      return c.json({ error: 'Video not found' }, 404);
+    }
+
+    // Coach ownership guard (T-47-02)
+    if (coachId !== video.coach_id) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    try {
+      // Convert File to Buffer
+      const buffer = Buffer.from(await audioFile.arrayBuffer());
+
+      // Upload audio blob to Supabase storage (T-47-05: server-side path construction)
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      const path = `${video.athlete_id}/annotations/${randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('coach-videos')
+        .upload(path, buffer, { contentType: mimeType });
+
+      if (uploadError) {
+        console.error('[coach/videos] annotation audio upload error:', uploadError.message);
+        return c.json({ error: 'Failed to upload audio' }, 500);
+      }
+
+      // Whisper transcription via shared utility
+      let rawTranscript: string;
+      try {
+        rawTranscript = await transcribeAudio(buffer, mimeType);
+      } catch (err: any) {
+        console.error('[coach/videos] transcribeAudio error:', err.message);
+        return c.json({ error: err.message ?? 'Transcription failed' }, 500);
+      }
+
+      // Claude cleaning — produce 1-2 natural coaching sentences (D-05)
+      const { text: cleanedTranscript } = await generateText({
+        model: AGENT_MODEL,
+        system: CLEANING_SYSTEM_PROMPT,
+        prompt: rawTranscript,
+      });
+
+      // Generate annotation ID — returned so caller can associate the audio with an annotation
+      const annotationId = randomUUID();
+
+      return c.json({ transcript: cleanedTranscript, audioPath: path, annotationId }, 200);
+    } catch (err: any) {
+      console.error('[coach/videos] annotations/transcribe error:', err.message);
+      return c.json({ error: err.message ?? 'Processing failed' }, 500);
+    }
+  },
+);
+
+/**
+ * GET /coach/videos/annotations/:annotationId/audio-url
+ * Returns a 15-min signed URL for the raw audio blob of a voice annotation.
+ * Accessible by coach OR linked athlete of that video (T-47-03 IDOR guard).
+ * Never exposes storage_path to client.
+ */
+videosRouter.get('/annotations/:annotationId/audio-url', async (c) => {
+  const { userId: callerId } = c.get('auth');
+  const { annotationId } = c.req.param();
+
+  // Fetch annotation
+  const annotation = await getAnnotationById(annotationId);
+  if (!annotation) {
+    return c.json({ error: 'Annotation not found' }, 404);
+  }
+
+  // Fetch parent video to enforce access guard
+  const video = await getVideoById(annotation.video_id);
+  if (!video) {
+    return c.json({ error: 'Video not found' }, 404);
+  }
+
+  // T-47-03: caller must be coach or athlete of this video
+  if (callerId !== video.coach_id && callerId !== video.athlete_id) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+
+  // Guard: annotation must have an audio blob
+  if (!annotation.audio_path) {
+    return c.json({ error: 'No audio for this annotation' }, 400);
+  }
+
+  // Create 15-min signed read URL (900s = 15 minutes)
+  const { data, error } = await supabaseAdmin.storage
+    .from('coach-videos')
+    .createSignedUrl(annotation.audio_path, 900);
+
+  if (error || !data) {
+    console.error('[coach/videos] annotation audio-url signed URL error:', error);
+    return c.json({ error: 'Failed to generate signed URL' }, 500);
+  }
+
+  // Return only signedUrl — never expose audio_path (T-47-03)
+  return c.json({ signedUrl: data.signedUrl });
 });

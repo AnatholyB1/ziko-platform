@@ -50,12 +50,26 @@ export interface AnnotationRow {
   timestamp_s: number;
   content: string;
   created_at: string;
+  /** Phase 47: annotation type — 'text' for keyboard annotations, 'voice' for recorded audio */
+  type?: 'text' | 'voice';
+  /** Phase 47: Supabase storage path for the raw audio blob (voice annotations only) */
+  audio_path?: string | null;
+}
+
+/** Phase 47: Non-file fields sent alongside the audio blob in POST /annotations/transcribe */
+export interface VoiceTranscribeBody {
+  videoId: string;
+  timestamp_s: number;
 }
 
 /** Body for POST /coach/videos/:videoId/annotations */
 export interface CreateAnnotationBody {
   timestamp_s: number;
   content: string;
+  /** Phase 47: annotation type — defaults to 'text' if omitted */
+  type?: 'text' | 'voice';
+  /** Phase 47: storage path for the audio blob (voice annotations only) */
+  audio_path?: string | null;
 }
 
 /** Body for PATCH /coach/videos/:videoId/annotations/:annotId */

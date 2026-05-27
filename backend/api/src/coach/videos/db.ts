@@ -141,7 +141,7 @@ export async function getAnnotationsForVideo(videoId: string): Promise<Annotatio
 
   const { data, error } = await db
     .from('coach_video_annotations')
-    .select('id, video_id, coach_id, timestamp_s, content, created_at')
+    .select('id, video_id, coach_id, timestamp_s, content, type, audio_path, created_at')
     .eq('video_id', videoId)
     .order('timestamp_s', { ascending: true });
 
@@ -217,6 +217,59 @@ export async function deleteAnnotation(annotId: string, coachId: string): Promis
 
   if (error) {
     throw new Error(`[coach/videos] deleteAnnotation error: ${error.message}`);
+  }
+}
+
+// ── Phase 47: voice annotation helpers ────────────────────────────────────────
+
+/**
+ * Returns a single annotation row by ID, or null if not found.
+ * Selects type and audio_path so voice annotations carry their metadata.
+ */
+export async function getAnnotationById(annotationId: string): Promise<AnnotationRow | null> {
+  const db = createServiceClient();
+
+  const { data, error } = await db
+    .from('coach_video_annotations')
+    .select('id, video_id, coach_id, timestamp_s, content, type, audio_path, created_at')
+    .eq('id', annotationId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`[coach/videos] getAnnotationById error: ${error.message}`);
+  }
+
+  return (data as AnnotationRow | null) ?? null;
+}
+
+/**
+ * Inserts a new voice annotation row.
+ * Sets type='voice' and stores the audio_path (storage path of the raw audio blob).
+ * Throws on DB error.
+ */
+export async function insertVoiceAnnotation(params: {
+  id: string;
+  videoId: string;
+  coachId: string;
+  timestampS: number;
+  content: string;
+  audioPath: string;
+}): Promise<void> {
+  const db = createServiceClient();
+  const { id, videoId, coachId, timestampS, content, audioPath } = params;
+
+  const { error } = await db.from('coach_video_annotations').insert({
+    id,
+    video_id: videoId,
+    coach_id: coachId,
+    timestamp_s: timestampS,
+    type: 'voice',
+    content,
+    audio_path: audioPath,
+  });
+
+  if (error) {
+    throw new Error(`[coach/videos] insertVoiceAnnotation error: ${error.message}`);
   }
 }
 
