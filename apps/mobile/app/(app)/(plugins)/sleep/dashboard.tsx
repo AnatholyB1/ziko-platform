@@ -1,7 +1,7 @@
 import React from 'react';
-import SleepDashboard from '@ziko/plugin-sleep/screens/SleepDashboard';
+import SleepPlugin from '@ziko/plugin-sleep/screens/SleepPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function SleepDashboardRoute() {
-  return <SleepDashboard supabase={supabase} />;
+  return <SleepPlugin supabase={supabase} />;
 }
