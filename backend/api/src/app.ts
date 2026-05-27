@@ -23,7 +23,7 @@ import { brandingRouter } from './coach/branding/service.js';
 import { exercisesRouter } from './coach/exercises/service.js';
 import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
-import { formsRouter } from './routes/forms.js';
+import { formsRouter, formsCronRouter } from './routes/forms.js';
 const app = new Hono();
 
 // Global middleware
@@ -79,6 +79,7 @@ app.route('/coach/exercises', exercisesRouter);
 app.route('/coach/dashboards', dashboardsRouter);
 app.route('/coach/videos', videosRouter);
 app.route('/forms', formsRouter);
+app.route('/forms', formsCronRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

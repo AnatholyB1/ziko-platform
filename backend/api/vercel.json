@@ -15,6 +15,10 @@
     {
       "path": "/coach/ai/monitor-cron",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/forms/cron/trigger-fixed-date",
+      "schedule": "0 6 * * *"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."

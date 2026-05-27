@@ -286,4 +286,69 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
   }
 });
 
-export { router as formsRouter };
+// ─── Cron router (no authMiddleware — secured by CRON_SECRET header) ──────────
+
+const cronRouter = new Hono();
+
+cronRouter.get('/cron/trigger-fixed-date', async (c) => {
+  try {
+    const secret = c.req.header('x-cron-secret');
+    if (!secret || secret !== process.env.CRON_SECRET) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+
+    const { data: forms, error: formsErr } = await supabase
+      .from('coach_forms')
+      .select('id, coach_id, trigger_config')
+      .eq('status', 'active')
+      .filter('trigger_config->>type', 'eq', 'fixed_date');
+
+    if (formsErr) throw formsErr;
+
+    const matchingForms = (forms ?? []).filter(
+      (f) => (f.trigger_config as { date?: string }).date !== undefined &&
+              (f.trigger_config as { date?: string }).date! <= todayISO,
+    );
+
+    let totalCreated = 0;
+
+    for (const form of matchingForms) {
+      const { data: athletes, error: athletesErr } = await supabase
+        .from('coach_client_links')
+        .select('client_id')
+        .eq('coach_id', form.coach_id)
+        .is('revoked_at', null);
+
+      if (athletesErr) {
+        console.warn('[forms/cron/trigger-fixed-date] athletes fetch error:', athletesErr.message);
+        continue;
+      }
+
+      for (const athlete of athletes ?? []) {
+        const { data, error: rpcErr } = await supabase.rpc(
+          'create_form_instances_for_trigger',
+          {
+            p_trigger_type: 'fixed_date',
+            p_athlete_id: athlete.client_id,
+            p_coach_id: form.coach_id,
+            p_date: todayISO,
+          },
+        );
+        if (rpcErr) {
+          console.warn('[forms/cron/trigger-fixed-date]', rpcErr.message);
+        } else {
+          totalCreated += data ?? 0;
+        }
+      }
+    }
+
+    return c.json({ processed_forms: matchingForms.length, total_created: totalCreated });
+  } catch (err) {
+    console.error('[forms/cron/trigger-fixed-date]', err);
+    return c.json({ error: 'internal server error' }, 500);
+  }
+});
+
+export { router as formsRouter, cronRouter as formsCronRouter };
