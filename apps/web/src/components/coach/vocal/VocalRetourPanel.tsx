@@ -9,10 +9,11 @@ import { VocalIdle } from './VocalIdle';
 import { VocalRecording } from './VocalRecording';
 import { VocalTranscribing } from './VocalTranscribing';
 import { VocalReview } from './VocalReview';
+import { VocalStructuring } from './VocalStructuring';
+import { VocalStructuringError } from './VocalStructuringError';
+import { VocalCardReady } from './VocalCardReady';
 
 export function VocalRetourPanel({ clientId }: { clientId: string }): React.ReactElement {
-  // clientId is reserved for Phase 02 (structuring route) — not used in Phase 01
-  void clientId;
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [state, dispatch] = useReducer(vocalReducer, { status: 'idle' });
@@ -61,6 +62,43 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
       gsap.from(panelRef.current, { y: 16, opacity: 0, duration: 0.2, ease: 'power2.out' });
     }
   }, []);
+
+  // handleStructure: fires POST /api/coach/voice/structure with clientId as athlete_id
+  async function handleStructure(transcript: string) {
+    try {
+      const res = await fetch('/api/coach/voice/structure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ athlete_id: clientId, transcript }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Structuration failed' }));
+        dispatch({
+          type: 'STRUCTURE_ERROR',
+          message: (data as { error?: string }).error ?? 'Structuration failed',
+        });
+        return;
+      }
+      const data = await res.json();
+      dispatch({ type: 'STRUCTURE_SUCCESS', card: data.card });
+    } catch {
+      dispatch({ type: 'STRUCTURE_ERROR', message: 'Erreur réseau. Vérifiez votre connexion.' });
+    }
+  }
+
+  // Trigger structure call when state transitions to 'structuring'
+  useEffect(() => {
+    if (state.status !== 'structuring') return;
+    handleStructure(state.transcript);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
+  // Auto-reset after card-saved (3 seconds)
+  useEffect(() => {
+    if (state.status !== 'card-saved') return;
+    const timer = setTimeout(() => dispatch({ type: 'RESET' }), 3000);
+    return () => clearTimeout(timer);
+  }, [state.status]);
 
   // beforeunload guard — fires ONLY during state.status === 'recording' (D-04)
   useEffect(() => {
@@ -141,7 +179,11 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
 
   function handleValidate() {
     dispatch({ type: 'VALIDATE' });
-    // Phase 02 will intercept VALIDATE to trigger structuring
+  }
+
+  function handleRetryStructure() {
+    dispatch({ type: 'RETRY_STRUCTURE' });
+    // The useEffect on state.status will re-trigger handleStructure once state becomes 'structuring'
   }
 
   const formatted = timer.formatElapsed(elapsedSeconds);
@@ -173,6 +215,23 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
           error={state.message}
           onRetry={handleRetry}
           onRelaunch={handleRelaunch}
+        />
+      )}
+      {state.status === 'structuring' && <VocalStructuring />}
+      {state.status === 'structuring-error' && (
+        <VocalStructuringError
+          message={state.message}
+          onRetry={handleRetryStructure}
+          onBack={() => dispatch({ type: 'RELAUNCH' })}
+        />
+      )}
+      {(state.status === 'card-ready' ||
+        state.status === 'card-editing' ||
+        state.status === 'card-saving' ||
+        state.status === 'card-saved') && (
+        <VocalCardReady
+          state={state}
+          dispatch={dispatch}
         />
       )}
     </div>

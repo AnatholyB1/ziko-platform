@@ -40,7 +40,8 @@ export type VocalAction =
   | { type: 'TAG_TOGGLE'; tag: TagKey }
   | { type: 'START_SAVING' }
   | { type: 'SAVE_COMPLETE' }
-  | { type: 'RESET' };
+  | { type: 'RESET' }
+  | { type: 'RETRY_STRUCTURE' };
 
 export function vocalReducer(state: VocalState, action: VocalAction): VocalState {
   switch (action.type) {
@@ -75,7 +76,7 @@ export function vocalReducer(state: VocalState, action: VocalAction): VocalState
     }
 
     case 'RELAUNCH': {
-      if (state.status !== 'error' && state.status !== 'review') return state;
+      if (state.status !== 'error' && state.status !== 'review' && state.status !== 'structuring-error') return state;
       return { status: 'idle' };
     }
 
@@ -125,6 +126,11 @@ export function vocalReducer(state: VocalState, action: VocalAction): VocalState
 
     case 'RESET': {
       return { status: 'idle' };
+    }
+
+    case 'RETRY_STRUCTURE': {
+      if (state.status !== 'structuring-error') return state;
+      return { status: 'structuring', transcript: state.transcript };
     }
 
     default:
