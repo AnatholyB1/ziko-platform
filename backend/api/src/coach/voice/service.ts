@@ -212,7 +212,7 @@ voiceRouter.post('/structure', async (c) => {
 
   const sessionIds = (sessions ?? []).map((s: any) => s.id);
 
-  const [setsRes, measurementsRes, sleepRes, noteRes] = await Promise.all([
+  const [setsRes, measurementsRes, sleepRes, noteRes, vocalHistoryRes] = await Promise.all([
     sessionIds.length > 0
       ? db
           .from('session_sets')
@@ -237,6 +237,12 @@ voiceRouter.post('/structure', async (c) => {
       .eq('client_id', athlete_id)
       // coach_id constraint is enforced by RLS (auth.uid() = coach_id)
       .maybeSingle(),
+    db
+      .from('coach_vocal_feedbacks')
+      .select('created_at, card')
+      .eq('athlete_id', athlete_id)
+      .order('created_at', { ascending: false })
+      .limit(3),
   ]);
 
   const athleteContext = {
@@ -245,7 +251,7 @@ voiceRouter.post('/structure', async (c) => {
     measurements: (measurementsRes as any).data ?? [],
     sleep_scores: (sleepRes as any).data ?? [],
     coach_notes: (noteRes as any).data?.content ?? '',
-    vocal_history: [], // Phase 03 will populate from coach_vocal_feedbacks
+    vocal_history: (vocalHistoryRes as any).data ?? [],
   };
 
   // --- generateObject with Claude ---
