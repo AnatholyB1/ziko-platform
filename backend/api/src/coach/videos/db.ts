@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { VideoRow, AnnotationRow } from './types.js';
 
 // Service client — uses SUPABASE_SERVICE_KEY for storage admin operations (D-02).
 // createSignedUploadUrl requires service role; publishable key lacks storage.admin.
@@ -84,5 +85,159 @@ export async function insertVideoRecord(params: {
 
   if (error) {
     throw new Error(`[coach/videos] insertVideoRecord error: ${error.message}`);
+  }
+}
+
+// ── Phase 46: annotation + video read helpers ─────────────────────────────────
+
+/**
+ * Returns all videos for a client, filtered by both coach_id and athlete_id.
+ * Ordered by created_at DESC (newest first).
+ */
+export async function getVideosForClient(
+  clientId: string,
+  coachId: string,
+): Promise<VideoRow[]> {
+  const db = createServiceClient();
+
+  const { data, error } = await db
+    .from('coach_client_videos')
+    .select('id, athlete_id, coach_id, storage_path, title, duration_s, status, created_at')
+    .eq('coach_id', coachId)
+    .eq('athlete_id', clientId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`[coach/videos] getVideosForClient error: ${error.message}`);
+  }
+
+  return (data ?? []) as VideoRow[];
+}
+
+/**
+ * Returns a single video row by ID, or null if not found.
+ */
+export async function getVideoById(videoId: string): Promise<VideoRow | null> {
+  const db = createServiceClient();
+
+  const { data, error } = await db
+    .from('coach_client_videos')
+    .select('id, athlete_id, coach_id, storage_path, title, duration_s, status, created_at')
+    .eq('id', videoId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`[coach/videos] getVideoById error: ${error.message}`);
+  }
+
+  return (data as VideoRow | null) ?? null;
+}
+
+/**
+ * Returns all annotations for a video, ordered by timestamp_s ASC.
+ */
+export async function getAnnotationsForVideo(videoId: string): Promise<AnnotationRow[]> {
+  const db = createServiceClient();
+
+  const { data, error } = await db
+    .from('coach_video_annotations')
+    .select('id, video_id, coach_id, timestamp_s, content, created_at')
+    .eq('video_id', videoId)
+    .order('timestamp_s', { ascending: true });
+
+  if (error) {
+    throw new Error(`[coach/videos] getAnnotationsForVideo error: ${error.message}`);
+  }
+
+  return (data ?? []) as AnnotationRow[];
+}
+
+/**
+ * Inserts a new text annotation row.
+ * Throws on DB error.
+ */
+export async function insertAnnotation(params: {
+  id: string;
+  videoId: string;
+  coachId: string;
+  timestampS: number;
+  content: string;
+}): Promise<void> {
+  const db = createServiceClient();
+  const { id, videoId, coachId, timestampS, content } = params;
+
+  const { error } = await db.from('coach_video_annotations').insert({
+    id,
+    video_id: videoId,
+    coach_id: coachId,
+    timestamp_s: timestampS,
+    type: 'text',
+    content,
+  });
+
+  if (error) {
+    throw new Error(`[coach/videos] insertAnnotation error: ${error.message}`);
+  }
+}
+
+/**
+ * Updates annotation content. Double-column guard (id + coach_id) prevents
+ * cross-coach edits (T-46-01).
+ */
+export async function updateAnnotation(
+  annotId: string,
+  coachId: string,
+  content: string,
+): Promise<void> {
+  const db = createServiceClient();
+
+  const { error } = await db
+    .from('coach_video_annotations')
+    .update({ content })
+    .eq('id', annotId)
+    .eq('coach_id', coachId);
+
+  if (error) {
+    throw new Error(`[coach/videos] updateAnnotation error: ${error.message}`);
+  }
+}
+
+/**
+ * Deletes an annotation. Double-column guard (id + coach_id) prevents
+ * cross-coach deletions (T-46-01).
+ */
+export async function deleteAnnotation(annotId: string, coachId: string): Promise<void> {
+  const db = createServiceClient();
+
+  const { error } = await db
+    .from('coach_video_annotations')
+    .delete()
+    .eq('id', annotId)
+    .eq('coach_id', coachId);
+
+  if (error) {
+    throw new Error(`[coach/videos] deleteAnnotation error: ${error.message}`);
+  }
+}
+
+/**
+ * Updates the status of a video. Double-column guard (id + coach_id) ensures
+ * only the owning coach can change the status (T-46-03).
+ */
+export async function updateVideoStatus(
+  videoId: string,
+  coachId: string,
+  status: 'uploading' | 'ready' | 'annotated',
+): Promise<void> {
+  const db = createServiceClient();
+
+  const { error } = await db
+    .from('coach_client_videos')
+    .update({ status })
+    .eq('id', videoId)
+    .eq('coach_id', coachId);
+
+  if (error) {
+    throw new Error(`[coach/videos] updateVideoStatus error: ${error.message}`);
   }
 }
