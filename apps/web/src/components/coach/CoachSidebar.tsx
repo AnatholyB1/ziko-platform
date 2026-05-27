@@ -7,6 +7,7 @@ import {
   IoBarbellOutline,
   IoCloudUploadOutline,
   IoSparklesOutline,
+  IoColorPaletteOutline,
   IoSettingsOutline,
 } from 'react-icons/io5';
 import { useLocale } from 'next-intl';
@@ -21,6 +22,7 @@ function getNavItems(locale: string) {
     { label: 'Exercices', href: `/${locale}/coach/exercises`, icon: IoBarbellOutline, disabled: false },
     { label: 'Imports', href: `/${locale}/coach/imports`, icon: IoCloudUploadOutline, disabled: false },
     { label: 'IA', href: `/${locale}/coach/ai`, icon: IoSparklesOutline, disabled: false },
+    { label: 'Direction artistique', href: `/${locale}/coach/branding`, icon: IoColorPaletteOutline, disabled: false },
     { label: 'Paramètres', href: `/${locale}/coach/settings`, icon: IoSettingsOutline, disabled: false },
   ];
 }
