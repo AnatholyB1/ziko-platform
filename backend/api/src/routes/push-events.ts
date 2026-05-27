@@ -16,7 +16,7 @@ const router = new Hono();
  * Supabase DB webhook receiver for action-triggered push notifications.
  * Handles:
  *   - PUSH-03: workout_sessions UPDATE (ended_at NULL→timestamp) → 2-min delayed post-session summary
- *   - PUSH-04: user_xp UPDATE (level increase) → immediate level-up push
+ *   - PUSH-04: user_gamification UPDATE (level increase) → immediate level-up push
  * Secured by WEBHOOK_SECRET header.
  */
 router.post('/supabase', async (c) => {
@@ -80,8 +80,8 @@ router.post('/supabase', async (c) => {
     return c.json({ received: true });
   }
 
-  // ── PUSH-04: user_xp UPDATE (level increase) ─────────────────────────────
-  if (table === 'user_xp' && type === 'UPDATE') {
+  // ── PUSH-04: user_gamification UPDATE (level increase) ───────────────────
+  if (table === 'user_gamification' && type === 'UPDATE') {
     const oldLevel = Number(old_record?.level ?? 0);
     const newLevel = Number(record.level);
 
