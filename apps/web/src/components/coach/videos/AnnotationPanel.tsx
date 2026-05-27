@@ -3,8 +3,9 @@
 import React, { useReducer, useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useMediaState, useMediaRemote } from '@vidstack/react';
-import { Plus, Send, Pencil, Trash2, MessageSquare, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, Send, Pencil, Trash2, MessageSquare, CheckCircle, Loader2, Type, Mic } from 'lucide-react';
 import { Annotation } from './VideoPlayerClient';
+import { VoiceComposer } from './VoiceComposer';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -12,8 +13,8 @@ import { Annotation } from './VideoPlayerClient';
 
 type AnnotationState =
   | { status: 'list'; annotations: Annotation[] }
-  | { status: 'composing'; annotations: Annotation[]; timestamp_s: number }
-  | { status: 'editing'; annotations: Annotation[]; annotationId: string; content: string; timestamp_s: number }
+  | { status: 'composing'; annotations: Annotation[]; timestamp_s: number; mode: 'text' | 'voice' }
+  | { status: 'editing'; annotations: Annotation[]; annotationId: string; content: string; timestamp_s: number; mode: 'text' | 'voice' }
   | { status: 'sending'; annotations: Annotation[] }
   | { status: 'sent'; annotations: Annotation[] };
 
@@ -27,12 +28,14 @@ type AnnotationAction =
   | { type: 'START_SEND' }
   | { type: 'SEND_SUCCESS' }
   | { type: 'SEND_ERROR'; message: string }
-  | { type: 'SET_ANNOTATIONS'; annotations: Annotation[] };
+  | { type: 'SET_ANNOTATIONS'; annotations: Annotation[] }
+  | { type: 'SET_MODE'; mode: 'text' | 'voice' }
+  | { type: 'VOICE_READY'; transcript: string; audioPath: string };
 
 function annotationReducer(state: AnnotationState, action: AnnotationAction): AnnotationState {
   switch (action.type) {
     case 'START_COMPOSE':
-      return { status: 'composing', annotations: state.annotations, timestamp_s: action.timestamp_s };
+      return { status: 'composing', annotations: state.annotations, timestamp_s: action.timestamp_s, mode: 'text' };
 
     case 'START_EDIT':
       return {
@@ -41,6 +44,7 @@ function annotationReducer(state: AnnotationState, action: AnnotationAction): An
         annotationId: action.annotationId,
         content: action.content,
         timestamp_s: action.timestamp_s,
+        mode: 'text',
       };
 
     case 'CANCEL_COMPOSE':
@@ -77,6 +81,12 @@ function annotationReducer(state: AnnotationState, action: AnnotationAction): An
 
     case 'SET_ANNOTATIONS':
       return { ...state, annotations: action.annotations };
+
+    case 'SET_MODE':
+      if (state.status === 'composing' || state.status === 'editing') {
+        return { ...state, mode: action.mode };
+      }
+      return state;
 
     default:
       return state;
@@ -129,6 +139,7 @@ export function AnnotationPanel({
   const [text, setText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [audioUrlMap, setAudioUrlMap] = useState<Map<string, string>>(new Map());
 
   const panelRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -169,6 +180,32 @@ export function AnnotationPanel({
     }
   }, [state.annotations]);
 
+  // Fetch signed audio URLs for all voice annotations when in list state
+  useEffect(() => {
+    if (state.status !== 'list') return;
+    const voiceAnnotations = state.annotations.filter(
+      (a) => a.type === 'voice' && a.audio_path,
+    );
+    if (voiceAnnotations.length === 0) return;
+
+    voiceAnnotations.forEach(async (a) => {
+      // Skip if already fetched
+      if (audioUrlMap.has(a.id)) return;
+
+      try {
+        const res = await fetch(`${apiUrl}/coach/videos/annotations/${a.id}/audio-url`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setAudioUrlMap((prev) => new Map(prev).set(a.id, data.signedUrl));
+      } catch (err) {
+        console.error('[AnnotationPanel] audio-url fetch failed:', a.id, err);
+        // No UI error — skeleton persists for this item
+      }
+    });
+  }, [state.status, state.annotations]);
+
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
@@ -194,6 +231,31 @@ export function AnnotationPanel({
       const annotation: Annotation = await res.json();
       dispatch({ type: 'SAVE_SUCCESS', annotation });
       setText('');
+    } catch {
+      setErrorMessage('Impossible de sauvegarder. Réessayez.');
+    }
+  }
+
+  async function handleVoiceReady({ transcript, audioPath }: { transcript: string; audioPath: string }) {
+    if (state.status !== 'composing' && state.status !== 'editing') return;
+    const timestamp_s = state.timestamp_s;
+    setErrorMessage('');
+    try {
+      const res = await fetch(`${apiUrl}/coach/videos/${videoId}/annotations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ timestamp_s, content: transcript, type: 'voice', audio_path: audioPath }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Impossible de sauvegarder. Réessayez.' }));
+        setErrorMessage((data as { error?: string }).error ?? 'Impossible de sauvegarder. Réessayez.');
+        return;
+      }
+      const annotation: Annotation = await res.json();
+      dispatch({ type: 'SAVE_SUCCESS', annotation });
     } catch {
       setErrorMessage('Impossible de sauvegarder. Réessayez.');
     }
@@ -284,6 +346,9 @@ export function AnnotationPanel({
   const isComposing = state.status === 'composing';
   const isEditing = state.status === 'editing';
   const isComposerVisible = isComposing || isEditing;
+  const currentMode = isComposerVisible
+    ? (state as { mode: 'text' | 'voice' }).mode ?? 'text'
+    : 'text';
 
   // ---------------------------------------------------------------------------
   // Render
@@ -309,7 +374,33 @@ export function AnnotationPanel({
       {/* Body */}
       {isComposerVisible ? (
         // Composer state (composing or editing)
-        <div ref={composerRef} className="flex-1 overflow-y-auto px-4 py-4">
+        <div ref={composerRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col">
+          {/* Mode toggle — [Texte] [Voix] — ABOVE timestamp chip */}
+          <div className="flex rounded-md border border-[#E2E0DA] overflow-hidden w-full mb-4">
+            <button
+              className={`w-1/2 py-1.5 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-100 ${
+                currentMode === 'text'
+                  ? 'bg-white text-[#1C1A17]'
+                  : 'bg-[#F0EFE9] text-[#6B6963] hover:text-[#1C1A17]'
+              }`}
+              onClick={() => dispatch({ type: 'SET_MODE', mode: 'text' })}
+            >
+              <Type size={14} className="flex-shrink-0" />
+              Texte
+            </button>
+            <button
+              className={`w-1/2 py-1.5 flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-100 ${
+                currentMode === 'voice'
+                  ? 'bg-[#FF5C1A] text-white'
+                  : 'bg-[#F0EFE9] text-[#6B6963] hover:text-[#1C1A17]'
+              }`}
+              onClick={() => dispatch({ type: 'SET_MODE', mode: 'voice' })}
+            >
+              <Mic size={14} className="flex-shrink-0" />
+              Voix
+            </button>
+          </div>
+
           {/* Timestamp chip */}
           <div className="mb-4">
             <p className="text-[12px] text-[#6B6963] mb-1">Moment</p>
@@ -322,21 +413,36 @@ export function AnnotationPanel({
             </span>
           </div>
 
-          {/* Textarea */}
-          <div>
-            <p className="text-[12px] text-[#6B6963] mb-1">Commentaire</p>
-            <textarea
-              rows={6}
-              maxLength={2000}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Décrivez ce que vous observez..."
-              className="w-full bg-[#F0EFE9] border border-[#E2E0DA] focus:border-[#FF5C1A] outline-none resize-none rounded-md px-3 py-2 text-[14px] text-[#1C1A17] placeholder-[#6B6963]"
+          {/* Text or Voice composer area */}
+          {currentMode === 'voice' ? (
+            <VoiceComposer
+              timestampSeconds={
+                isComposing
+                  ? (state as { status: 'composing'; timestamp_s: number }).timestamp_s
+                  : (state as { status: 'editing'; timestamp_s: number }).timestamp_s
+              }
+              onVoiceReady={handleVoiceReady}
+              onCancel={() => dispatch({ type: 'SET_MODE', mode: 'text' })}
+              accessToken={accessToken}
+              apiUrl={apiUrl}
+              videoId={videoId}
             />
-            <p className="text-[12px] text-[#6B6963] text-right mt-1">
-              {text.length}/2000
-            </p>
-          </div>
+          ) : (
+            <div>
+              <p className="text-[12px] text-[#6B6963] mb-1">Commentaire</p>
+              <textarea
+                rows={6}
+                maxLength={2000}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Décrivez ce que vous observez..."
+                className="w-full bg-[#F0EFE9] border border-[#E2E0DA] focus:border-[#FF5C1A] outline-none resize-none rounded-md px-3 py-2 text-[14px] text-[#1C1A17] placeholder-[#6B6963]"
+              />
+              <p className="text-[12px] text-[#6B6963] text-right mt-1">
+                {text.length}/2000
+              </p>
+            </div>
+          )}
 
           {errorMessage && (
             <p className="text-[12px] text-[#EF4444] mt-2">{errorMessage}</p>
@@ -356,74 +462,166 @@ export function AnnotationPanel({
               </p>
             </div>
           ) : (
-            annotations.map((a) => (
-              <div
-                key={a.id}
-                className="px-4 py-3 border-b border-[#E2E0DA] last:border-0 group flex items-start gap-3 cursor-pointer hover:bg-[#F0EFE9] transition-colors duration-100 relative"
-                onClick={() => remote.seek(a.timestamp_s)}
-              >
-                {/* Left accent strip — always shown for consistency */}
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF5C1A] rounded-r opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
-
-                {/* Timestamp chip */}
-                <span className="flex-shrink-0 font-mono text-[12px] bg-[#FFF0E8] text-[#C2410C] px-1.5 py-0.5 rounded">
-                  {formatMmSs(a.timestamp_s)}
-                </span>
-
-                {/* Annotation text */}
-                <p className="text-[14px] text-[#1C1A17] flex-1 line-clamp-3 overflow-hidden">
-                  {a.content.slice(0, 120)}{a.content.length > 120 ? '...' : ''}
-                </p>
-
-                {/* Action icons */}
-                {deletingId === a.id ? (
+            annotations.map((a) => {
+              if (a.type === 'voice') {
+                // Voice annotation list item
+                return (
                   <div
-                    className="flex items-center gap-2 flex-shrink-0"
-                    onClick={(e) => e.stopPropagation()}
+                    key={a.id}
+                    className="px-4 py-3 border-b border-[#E2E0DA] last:border-0 group flex flex-col gap-2 cursor-pointer hover:bg-[#F0EFE9] transition-colors duration-100 relative"
+                    onClick={() => remote.seek(a.timestamp_s)}
                   >
-                    <button
-                      className="text-[12px] text-[#EF4444] hover:text-[#DC2626]"
-                      onClick={() => handleDelete(a.id)}
-                    >
-                      Supprimer ?
-                    </button>
-                    <button
-                      className="text-[12px] text-[#6B6963] hover:text-[#1C1A17]"
-                      onClick={() => setDeletingId(null)}
-                    >
-                      Annuler
-                    </button>
+                    {/* Left accent strip */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF5C1A] rounded-r opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
+
+                    {/* Line 1 — header row */}
+                    <div className="flex items-center gap-2">
+                      {/* Mic badge */}
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#FFF0E8] flex items-center justify-center">
+                        <Mic size={10} className="text-[#FF5C1A]" />
+                      </span>
+
+                      {/* Timestamp chip */}
+                      <span className="flex-shrink-0 font-mono text-[12px] bg-[#FFF0E8] text-[#C2410C] px-1.5 py-0.5 rounded">
+                        {formatMmSs(a.timestamp_s)}
+                      </span>
+
+                      {/* Transcript text */}
+                      <p className="flex-1 text-sm text-[#1C1A17] line-clamp-2">
+                        {a.content}
+                      </p>
+
+                      {/* Action icons */}
+                      {deletingId === a.id ? (
+                        <div
+                          className="flex items-center gap-2 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="text-[12px] text-[#EF4444] hover:text-[#DC2626]"
+                            onClick={() => handleDelete(a.id)}
+                          >
+                            Supprimer ?
+                          </button>
+                          <button
+                            className="text-[12px] text-[#6B6963] hover:text-[#1C1A17]"
+                            onClick={() => setDeletingId(null)}
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            aria-label="Modifier l'annotation"
+                            title="Ré-enregistrement disponible dans une prochaine version"
+                            className="text-[#6B6963] opacity-40 cursor-not-allowed transition-colors"
+                            disabled
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            aria-label="Supprimer l'annotation"
+                            className="text-[#EF4444] hover:text-[#DC2626] transition-colors"
+                            onClick={() => setDeletingId(a.id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Line 2 — audio player */}
+                    <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                      {audioUrlMap.get(a.id) === undefined ? (
+                        <div className="w-full h-8 rounded bg-[#E2E0DA] animate-pulse" />
+                      ) : (
+                        <audio
+                          controls
+                          preload="none"
+                          src={audioUrlMap.get(a.id)}
+                          className="w-full h-8 rounded"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div
-                    className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      aria-label="Modifier l'annotation"
-                      className="text-[#6B6963] hover:text-[#1C1A17] transition-colors"
-                      onClick={() =>
-                        dispatch({
-                          type: 'START_EDIT',
-                          annotationId: a.id,
-                          content: a.content,
-                          timestamp_s: a.timestamp_s,
-                        })
-                      }
+                );
+              }
+
+              // Text annotation list item (default)
+              return (
+                <div
+                  key={a.id}
+                  className="px-4 py-3 border-b border-[#E2E0DA] last:border-0 group flex items-start gap-3 cursor-pointer hover:bg-[#F0EFE9] transition-colors duration-100 relative"
+                  onClick={() => remote.seek(a.timestamp_s)}
+                >
+                  {/* Left accent strip — always shown for consistency */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF5C1A] rounded-r opacity-0 group-hover:opacity-100 transition-opacity duration-100" />
+
+                  {/* Timestamp chip */}
+                  <span className="flex-shrink-0 font-mono text-[12px] bg-[#FFF0E8] text-[#C2410C] px-1.5 py-0.5 rounded">
+                    {formatMmSs(a.timestamp_s)}
+                  </span>
+
+                  {/* Annotation text */}
+                  <p className="text-[14px] text-[#1C1A17] flex-1 line-clamp-3 overflow-hidden">
+                    {a.content.slice(0, 120)}{a.content.length > 120 ? '...' : ''}
+                  </p>
+
+                  {/* Action icons */}
+                  {deletingId === a.id ? (
+                    <div
+                      className="flex items-center gap-2 flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      aria-label="Supprimer l'annotation"
-                      className="text-[#EF4444] hover:text-[#DC2626] transition-colors"
-                      onClick={() => setDeletingId(a.id)}
+                      <button
+                        className="text-[12px] text-[#EF4444] hover:text-[#DC2626]"
+                        onClick={() => handleDelete(a.id)}
+                      >
+                        Supprimer ?
+                      </button>
+                      <button
+                        className="text-[12px] text-[#6B6963] hover:text-[#1C1A17]"
+                        onClick={() => setDeletingId(null)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-100"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+                      <button
+                        aria-label="Modifier l'annotation"
+                        className="text-[#6B6963] hover:text-[#1C1A17] transition-colors"
+                        onClick={() =>
+                          dispatch({
+                            type: 'START_EDIT',
+                            annotationId: a.id,
+                            content: a.content,
+                            timestamp_s: a.timestamp_s,
+                          })
+                        }
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        aria-label="Supprimer l'annotation"
+                        className="text-[#EF4444] hover:text-[#DC2626] transition-colors"
+                        onClick={() => setDeletingId(a.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}
@@ -431,30 +629,32 @@ export function AnnotationPanel({
       {/* Footer */}
       <div className="flex-shrink-0 px-4 py-3 border-t border-[#E2E0DA] flex flex-col gap-2">
         {isComposerVisible ? (
-          // Composer footer
-          <div className="flex gap-2">
-            <button
-              className="w-1/2 border border-[#E2E0DA] text-[#6B6963] bg-white text-sm font-medium py-2 rounded-md hover:bg-[#F0EFE9] transition-colors duration-100"
-              onClick={() => {
-                dispatch({ type: 'CANCEL_COMPOSE' });
-                setText('');
-                setErrorMessage('');
-              }}
-            >
-              Annuler
-            </button>
-            <button
-              className={`w-1/2 text-sm font-medium py-2 rounded-md transition-colors duration-100 ${
-                text.trim()
-                  ? 'bg-[#FF5C1A] text-white hover:bg-[#E04E14]'
-                  : 'bg-[#E2E0DA] text-[#6B6963] cursor-not-allowed'
-              }`}
-              disabled={!text.trim()}
-              onClick={isEditing ? handleUpdate : handleSave}
-            >
-              {isEditing ? 'Mettre à jour' : 'Enregistrer'}
-            </button>
-          </div>
+          // Composer footer — hide when voice mode (VoiceComposer owns its own footer)
+          currentMode === 'voice' ? null : (
+            <div className="flex gap-2">
+              <button
+                className="w-1/2 border border-[#E2E0DA] text-[#6B6963] bg-white text-sm font-medium py-2 rounded-md hover:bg-[#F0EFE9] transition-colors duration-100"
+                onClick={() => {
+                  dispatch({ type: 'CANCEL_COMPOSE' });
+                  setText('');
+                  setErrorMessage('');
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                className={`w-1/2 text-sm font-medium py-2 rounded-md transition-colors duration-100 ${
+                  text.trim()
+                    ? 'bg-[#FF5C1A] text-white hover:bg-[#E04E14]'
+                    : 'bg-[#E2E0DA] text-[#6B6963] cursor-not-allowed'
+                }`}
+                disabled={!text.trim()}
+                onClick={isEditing ? handleUpdate : handleSave}
+              >
+                {isEditing ? 'Mettre à jour' : 'Enregistrer'}
+              </button>
+            </div>
+          )
         ) : (
           // List footer
           <>
