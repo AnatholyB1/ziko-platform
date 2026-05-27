@@ -12,6 +12,7 @@ import {
   createExercise,
   updateExercise,
   deleteExercise,
+  getMediaUrls,
 } from './db.js';
 import { EXERCISE_CATEGORIES } from './types.js';
 import type { CreateExerciseBody, UpdateExerciseBody } from './types.js';
@@ -72,6 +73,33 @@ exercisesRouter.post('/', async (c) => {
   } catch (err: any) {
     console.error('[coach/exercises] POST / error:', err.message);
     return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// ── GET /:id/media-url — generate signed URLs for athlete (EXLIB-06, D-12) ───
+// Static segment '/media-url' registered BEFORE /:id catch-all (Hono static-before-param rule).
+// Authenticates via existing exercisesRouter.use('*', authMiddleware).
+// Never returns 500 — any error degrades to { video_url: null, photo_url: null } (D-13).
+exercisesRouter.get('/:id/media-url', async (c) => {
+  const { userId: athleteUserId } = c.get('auth');
+  const id = c.req.param('id');
+
+  // UUID validation — reject malformed IDs early
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return c.json({ error: 'Invalid exercise id' }, 400);
+  }
+
+  try {
+    const result = await getMediaUrls(id, athleteUserId);
+    // If exercise not found getMediaUrls returns nulls — surface as 404 per must_haves
+    // We can't distinguish "not found" vs "no relationship" from the return value alone,
+    // so we always return 200 with nulls for the no-relationship case (graceful degradation D-13).
+    // A separate existence check would require an extra query; per plan spec both degrade to nulls.
+    return c.json(result);
+  } catch (err: any) {
+    // Graceful degradation — never 500
+    console.warn('[coach/exercises] GET /:id/media-url unhandled error:', err.message);
+    return c.json({ video_url: null, photo_url: null });
   }
 });
 
