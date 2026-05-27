@@ -127,7 +127,7 @@ describe('vocalReducer state transitions', () => {
 
   it('card-saving → card-saved on SAVE_COMPLETE', () => {
     const next = vocalReducer(
-      { status: 'card-saving', editedCard: mockCard },
+      { status: 'card-saving', card: mockCard, editedCard: mockCard },
       { type: 'SAVE_COMPLETE' }
     );
     expect(next.status).toBe('card-saved');

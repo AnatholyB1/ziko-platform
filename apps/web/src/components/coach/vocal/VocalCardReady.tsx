@@ -17,13 +17,6 @@ export function VocalCardReady({ state, dispatch }: VocalCardReadyProps): React.
   const successBlockRef = useRef<HTMLDivElement>(null);
   const [isNewButtonHovered, setIsNewButtonHovered] = React.useState(false);
 
-  // Fake save: 500ms timeout then SAVE_COMPLETE
-  useEffect(() => {
-    if (state.status !== 'card-saving') return;
-    const timer = setTimeout(() => dispatch({ type: 'SAVE_COMPLETE' }), 500);
-    return () => clearTimeout(timer);
-  }, [state.status, dispatch]);
-
   // GSAP entrance for success block
   useEffect(() => {
     if (state.status === 'card-saved' && successBlockRef.current) {
@@ -94,10 +87,7 @@ export function VocalCardReady({ state, dispatch }: VocalCardReadyProps): React.
   // card-ready | card-editing | card-saving
   const isSaving = state.status === 'card-saving';
 
-  // Narrow the type: card-saving has no `card` field — we use a fallback empty card
-  const card = state.status === 'card-saving'
-    ? state.editedCard
-    : state.card;
+  const card = state.card;
 
   return (
     <div style={{ maxWidth: 640, marginLeft: 'auto', marginRight: 'auto' }}>

@@ -12,12 +12,15 @@ import { VocalReview } from './VocalReview';
 import { VocalStructuring } from './VocalStructuring';
 import { VocalStructuringError } from './VocalStructuringError';
 import { VocalCardReady } from './VocalCardReady';
+import { VocalFeedbackHistory } from './VocalFeedbackHistory';
 
 export function VocalRetourPanel({ clientId }: { clientId: string }): React.ReactElement {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [state, dispatch] = useReducer(vocalReducer, { status: 'idle' });
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [savedTranscript, setSavedTranscript] = useState<string>('');
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const { start: recorderStart, stop: recorderStop } = useVocalRecorder();
 
   // Stable ref for handleStop to avoid circular dependency in useVocalTimer onAutoStop
@@ -93,11 +96,41 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
-  // Auto-reset after card-saved (3 seconds)
+  // Real save: POST /api/coach/voice/save when card-saving
   useEffect(() => {
-    if (state.status !== 'card-saved') return;
-    const timer = setTimeout(() => dispatch({ type: 'RESET' }), 3000);
-    return () => clearTimeout(timer);
+    if (state.status !== 'card-saving') return;
+    const editedCard = state.editedCard;
+    let cancelled = false;
+
+    async function doSave() {
+      try {
+        const res = await fetch('/api/coach/voice/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            athlete_id: clientId,
+            transcript: savedTranscript,
+            card: editedCard,
+          }),
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          console.error('[VocalRetourPanel] save failed:', res.status);
+          dispatch({ type: 'SAVE_ERROR' });
+          return;
+        }
+        dispatch({ type: 'SAVE_COMPLETE' });
+        setHistoryRefreshKey((k) => k + 1);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[VocalRetourPanel] save network error:', err);
+        dispatch({ type: 'SAVE_ERROR' });
+      }
+    }
+
+    doSave();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);
 
   // beforeunload guard — fires ONLY during state.status === 'recording' (D-04)
@@ -178,6 +211,9 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
   }
 
   function handleValidate() {
+    if (state.status === 'review') {
+      setSavedTranscript(state.transcript);
+    }
     dispatch({ type: 'VALIDATE' });
   }
 
@@ -189,51 +225,54 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
   const formatted = timer.formatElapsed(elapsedSeconds);
 
   return (
-    <div ref={panelRef} className="vocal-panel" data-testid="vocal-panel">
-      {state.status === 'idle' && (
-        <VocalIdle onStart={handleStart} />
-      )}
-      {state.status === 'recording' && (
-        <VocalRecording
-          formatted={formatted}
-          elapsedSeconds={elapsedSeconds}
-          onStop={handleStop}
-        />
-      )}
-      {state.status === 'transcribing' && (
-        <VocalTranscribing />
-      )}
-      {state.status === 'review' && (
-        <VocalReview
-          transcript={state.transcript}
-          onValidate={handleValidate}
-          onRelaunch={handleRelaunch}
-        />
-      )}
-      {state.status === 'error' && (
-        <VocalReview
-          error={state.message}
-          onRetry={handleRetry}
-          onRelaunch={handleRelaunch}
-        />
-      )}
-      {state.status === 'structuring' && <VocalStructuring />}
-      {state.status === 'structuring-error' && (
-        <VocalStructuringError
-          message={state.message}
-          onRetry={handleRetryStructure}
-          onBack={() => dispatch({ type: 'RELAUNCH' })}
-        />
-      )}
-      {(state.status === 'card-ready' ||
-        state.status === 'card-editing' ||
-        state.status === 'card-saving' ||
-        state.status === 'card-saved') && (
-        <VocalCardReady
-          state={state}
-          dispatch={dispatch}
-        />
-      )}
-    </div>
+    <>
+      <div ref={panelRef} className="vocal-panel" data-testid="vocal-panel">
+        {state.status === 'idle' && (
+          <VocalIdle onStart={handleStart} />
+        )}
+        {state.status === 'recording' && (
+          <VocalRecording
+            formatted={formatted}
+            elapsedSeconds={elapsedSeconds}
+            onStop={handleStop}
+          />
+        )}
+        {state.status === 'transcribing' && (
+          <VocalTranscribing />
+        )}
+        {state.status === 'review' && (
+          <VocalReview
+            transcript={state.transcript}
+            onValidate={handleValidate}
+            onRelaunch={handleRelaunch}
+          />
+        )}
+        {state.status === 'error' && (
+          <VocalReview
+            error={state.message}
+            onRetry={handleRetry}
+            onRelaunch={handleRelaunch}
+          />
+        )}
+        {state.status === 'structuring' && <VocalStructuring />}
+        {state.status === 'structuring-error' && (
+          <VocalStructuringError
+            message={state.message}
+            onRetry={handleRetryStructure}
+            onBack={() => dispatch({ type: 'RELAUNCH' })}
+          />
+        )}
+        {(state.status === 'card-ready' ||
+          state.status === 'card-editing' ||
+          state.status === 'card-saving' ||
+          state.status === 'card-saved') && (
+          <VocalCardReady
+            state={state}
+            dispatch={dispatch}
+          />
+        )}
+      </div>
+      <VocalFeedbackHistory clientId={clientId} refreshKey={historyRefreshKey} />
+    </>
   );
 }

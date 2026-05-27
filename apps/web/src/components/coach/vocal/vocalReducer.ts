@@ -22,7 +22,7 @@ export type VocalState =
   | { status: 'structuring'; transcript: string }
   | { status: 'card-ready'; card: StructuredCard; editedCard: StructuredCard }
   | { status: 'card-editing'; card: StructuredCard; editedCard: StructuredCard; activeSection: CardSection }
-  | { status: 'card-saving'; editedCard: StructuredCard }
+  | { status: 'card-saving'; card: StructuredCard; editedCard: StructuredCard }
   | { status: 'card-saved' }
   | { status: 'structuring-error'; transcript: string; message: string };
 
@@ -40,6 +40,7 @@ export type VocalAction =
   | { type: 'TAG_TOGGLE'; tag: TagKey }
   | { type: 'START_SAVING' }
   | { type: 'SAVE_COMPLETE' }
+  | { type: 'SAVE_ERROR' }
   | { type: 'RESET' }
   | { type: 'RETRY_STRUCTURE' };
 
@@ -116,12 +117,17 @@ export function vocalReducer(state: VocalState, action: VocalAction): VocalState
 
     case 'START_SAVING': {
       if (state.status !== 'card-ready' && state.status !== 'card-editing') return state;
-      return { status: 'card-saving', editedCard: state.editedCard };
+      return { status: 'card-saving', card: state.card, editedCard: state.editedCard };
     }
 
     case 'SAVE_COMPLETE': {
       if (state.status !== 'card-saving') return state;
       return { status: 'card-saved' };
+    }
+
+    case 'SAVE_ERROR': {
+      if (state.status !== 'card-saving') return state;
+      return { status: 'card-ready', card: state.card, editedCard: state.editedCard };
     }
 
     case 'RESET': {
