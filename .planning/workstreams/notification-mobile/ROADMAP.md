@@ -68,7 +68,11 @@ Plans:
   3. "Mark all as read" sets `read_at` on all unread entries; the unread badge on the header icon drops to zero immediately
   4. The app icon badge count and header badge reflect the current unread count and update without a manual refresh
   5. A new push notification sent from the server appears in the center in real time via Supabase Realtime without the user pulling to refresh
-**Plans:** TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 03-01-PLAN.md — notificationStore.ts + useNotifications.ts (data layer: Zustand + TanStack Query)
+- [ ] 03-02-PLAN.md — notifications.tsx wiring (replace INITIAL_ITEMS, deep link tap, markAllRead)
+- [ ] 03-03-PLAN.md — _layout.tsx badge sync (AppState) + Supabase Realtime subscription
 **UI hint:** yes
 
 ### Phase 4: Cron / Scheduled Notifications
@@ -113,7 +117,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Infrastructure & Configuration | 0/4 | In progress | - |
 | 2. Action-triggered Push Notifications | 0/4 | Planning done | - |
-| 3. In-app Notification Center | 0/0 | Not started | - |
+| 3. In-app Notification Center | 0/3 | Planning done | - |
 | 4. Cron / Scheduled Notifications | 0/0 | Not started | - |
 | 5. Notification Preferences UI | 0/0 | Not started | - |
 | 6. Local Reminders & App Updates | 0/0 | Not started | - |
