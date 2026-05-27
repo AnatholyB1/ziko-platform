@@ -8,6 +8,7 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/MeasurementsDashboard": "./src/screens/MeasurementsDashboard.tsx",
+    "./screens/MeasurementsPlugin": "./src/screens/MeasurementsPlugin.tsx",
     "./screens/MeasurementsLog": "./src/screens/MeasurementsLog.tsx"
   },
   "scripts": {
