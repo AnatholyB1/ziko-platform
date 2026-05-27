@@ -54,7 +54,14 @@ Plans:
   2. The coach logo appears in the Mon coach card (State B and State C) with correct aspect ratio
   3. After a cold app restart, the coach theme is applied before the first rendered frame — no flash of the default Ziko orange is visible
   4. When the athlete revokes the coach link, the Ziko default theme (orange #FF5C1A) is immediately restored and the MMKV branding cache is cleared
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+**Wave 1** (parallel)
+- [ ] 03-01-PLAN.md — Install react-native-mmkv + useThemeStore MMKV synchronous init
+
+**Wave 2** *(blocked on 03-01 — MMKV must be installed first)*
+- [ ] 03-02-PLAN.md — useBrandingBootstrap hook in (app)/_layout.tsx
+- [ ] 03-03-PLAN.md — CoachScreen: branding logo + theme.primary + revoke cleanup
 
 ## Progress
 
