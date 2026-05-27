@@ -1,254 +1,299 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View, Text, ScrollView, FlatList, TouchableOpacity, ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '../../src/stores/themeStore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../src/lib/supabase';
+import { useAuthStore } from '../../src/stores/authStore';
 
-type NotifCat = 'pr' | 'achievement' | 'coach' | 'community' | 'reminder';
-type NotifGroup = 'today' | 'earlier';
+// ── Types ─────────────────────────────────────────────────
+type NotifType = 'coach_ai' | 'community' | 'records' | 'system';
 
-interface NotifItem {
+interface Notification {
   id: string;
-  cat: NotifCat;
-  group: NotifGroup;
-  icon: keyof typeof Ionicons.glyphMap;
-  tint: string;
+  user_id: string;
+  type: NotifType;
   title: string;
   body: string;
-  time: string;
-  unread: boolean;
-  action?: string;
+  read: boolean;
+  created_at: string;
+  action_url?: string | null;
 }
 
+// ── Constants ─────────────────────────────────────────────
 const FILTERS = [
   { id: 'all', label: 'Tout' },
-  { id: 'pr', label: 'PR & Victoires' },
-  { id: 'coach', label: 'Coach IA' },
+  { id: 'coach_ai', label: 'Coach IA' },
   { id: 'community', label: 'Communauté' },
-  { id: 'reminder', label: 'Rappels' },
+  { id: 'records', label: 'Records' },
+  { id: 'system', label: 'Système' },
 ];
 
-const INITIAL_ITEMS: NotifItem[] = [
-  {
-    id: '1', cat: 'pr', group: 'today', icon: 'trophy-outline', tint: '#E8A33A',
-    title: 'Nouveau PR — Squat',
-    body: "Tu as soulevé 120 kg au squat, +5 kg de ton record précédent. Continue comme ça !",
-    time: "Il y a 12 min", unread: true, action: 'Voir le PR',
-  },
-  {
-    id: '2', cat: 'coach', group: 'today', icon: 'sparkles-outline', tint: '#7B5BD0',
-    title: 'Ton coach IA a analysé ta semaine',
-    body: "Volume en hausse de 8 %. Je recommande d'augmenter légèrement le repos demain.",
-    time: "Il y a 45 min", unread: true, action: 'Lire l\'analyse',
-  },
-  {
-    id: '3', cat: 'community', group: 'today', icon: 'people-outline', tint: '#2E7BF6',
-    title: 'Marco T. a accepté ton défi',
-    body: "Le défi «  30 jours push » est lancé. Première vérification dans 7 jours.",
-    time: "Il y a 1 h", unread: true,
-  },
-  {
-    id: '4', cat: 'reminder', group: 'today', icon: 'notifications-outline', tint: '#FF5C1A',
-    title: 'Séance Pull prévue ce soir',
-    body: 'Rappel : Pull Day à 18 h 30. 6 exercices planifiés.',
-    time: "Il y a 2 h", unread: false, action: 'Voir la séance',
-  },
-  {
-    id: '5', cat: 'achievement', group: 'earlier', icon: 'ribbon-outline', tint: '#2E9E5B',
-    title: 'Badge débloqué — Régularité 🔥',
-    body: "10 séances consécutives sans interruption. Tu es dans le top 5 % de tes amis.",
-    time: "Hier · 19:32", unread: false,
-  },
-  {
-    id: '6', cat: 'coach', group: 'earlier', icon: 'fitness-outline', tint: '#7B5BD0',
-    title: 'Programme ajusté automatiquement',
-    body: "Suite à ton sommeil court cette semaine, la charge de jeudi a été réduite de 10 %.",
-    time: "Hier · 08:10", unread: false,
-  },
-  {
-    id: '7', cat: 'community', group: 'earlier', icon: 'chatbubble-outline', tint: '#2E7BF6',
-    title: 'Sophie R. a commenté ton post',
-    body: "« Incroyable ce squat, tu m'inspires ! »",
-    time: "Il y a 2 j", unread: false,
-  },
-  {
-    id: '8', cat: 'pr', group: 'earlier', icon: 'barbell-outline', tint: '#E8A33A',
-    title: 'PR estimé — Développé couché',
-    body: "Basé sur tes séries d'hier, ton 1RM estimé est maintenant de 95 kg.",
-    time: "Il y a 3 j", unread: false, action: 'Voir le calcul',
-  },
-  {
-    id: '9', cat: 'reminder', group: 'earlier', icon: 'water-outline', tint: '#2E9E5B',
-    title: 'Objectif hydratation atteint',
-    body: "Tu as bu 2,4 L aujourd'hui. Objectif dépassé de 20 % !",
-    time: "Il y a 4 j", unread: false,
-  },
-];
+const TYPE_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; tint: string }> = {
+  coach_ai:  { icon: 'sparkles-outline',      tint: '#FF5C1A' },
+  community: { icon: 'people-outline',         tint: '#7B5BD0' },
+  records:   { icon: 'trophy-outline',         tint: '#F59E0B' },
+  system:    { icon: 'settings-outline',       tint: '#6B6963' },
+  default:   { icon: 'notifications-outline',  tint: '#2E7BF6' },
+};
 
-export default function NotificationsScreen() {
-  const theme = useThemeStore((s) => s.theme);
-  const [filter, setFilter] = useState('all');
-  const [items, setItems] = useState<NotifItem[]>(INITIAL_ITEMS);
+const SURFACE = '#FFFFFF';
+const BORDER  = '#E2E0DA';
+const TEXT    = '#1C1A17';
+const MUTED   = '#6B6963';
+const PRIMARY = '#FF5C1A';
+const BG      = '#F7F6F3';
 
-  const filtered = items.filter((n) => {
-    if (filter === 'all') return true;
-    if (filter === 'pr') return n.cat === 'pr' || n.cat === 'achievement';
-    return n.cat === filter;
-  });
+const SHADOW = {
+  shadowColor: '#1C1A17',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 12,
+  elevation: 3,
+};
 
-  const today = filtered.filter((n) => n.group === 'today');
-  const earlier = filtered.filter((n) => n.group === 'earlier');
-  const unreadCount = items.filter((n) => n.unread).length;
+// ── Helpers ────────────────────────────────────────────────
+function relativeDate(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'À l\'instant';
+  if (mins < 60) return `Il y a ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Il y a ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Hier';
+  return `Il y a ${days} j`;
+}
 
-  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
-  const tapNotif = (id: string) => setItems((prev) => prev.map((n) => n.id === id ? { ...n, unread: false } : n));
+// ── NFItem ─────────────────────────────────────────────────
+interface NFItemProps {
+  id: string;
+  type: NotifType;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+  action_url?: string | null;
+  onPress: () => void;
+}
 
-  const cardStyle = {
-    backgroundColor: theme.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.border,
-  };
-
-  const sectionLabel = (label: string) => (
-    <Text style={{ fontSize: 10.5, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' as const, color: theme.muted, paddingVertical: 10, paddingHorizontal: 4 }}>
-      {label}
-    </Text>
-  );
+function NFItem({ id, type, title, body, read, created_at, action_url, onPress }: NFItemProps) {
+  const meta = TYPE_META[type] ?? TYPE_META.default;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6, gap: 10 }}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: theme.text + '0F', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Ionicons name="chevron-back" size={18} color={theme.text} />
-        </TouchableOpacity>
-
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: theme.text }}>
-            Notifications{unreadCount > 0 ? (
-              <Text style={{ color: theme.primary }}> · {unreadCount}</Text>
-            ) : null}
-          </Text>
-        </View>
-
-        {unreadCount > 0 && (
-          <TouchableOpacity
-            onPress={markAllRead}
-            style={{ paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999, backgroundColor: theme.text + '0F' }}
-          >
-            <Text style={{ fontSize: 11, fontWeight: '700', color: theme.text }}>Tout marquer lu</Text>
-          </TouchableOpacity>
-        )}
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        backgroundColor: SURFACE,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: BORDER,
+        marginBottom: 8,
+        padding: 14,
+        flexDirection: 'row',
+        gap: 12,
+        ...SHADOW,
+      }}
+    >
+      {/* Icon */}
+      <View style={{
+        width: 40, height: 40, borderRadius: 12,
+        backgroundColor: meta.tint + '24',
+        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <Ionicons name={meta.icon} size={20} color={meta.tint} />
       </View>
 
-      {/* Filter pills */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 10, gap: 6 }}>
+      {/* Content */}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, lineHeight: 20 }}>
+          {title}
+        </Text>
+        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 18 }} numberOfLines={2}>
+          {body}
+        </Text>
+        <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
+          {relativeDate(created_at)}
+        </Text>
+        {action_url ? (
+          <Text style={{ fontSize: 12, fontWeight: '700', color: PRIMARY, marginTop: 6 }}>
+            Voir
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Unread dot */}
+      {!read ? (
+        <View style={{
+          width: 8, height: 8, borderRadius: 4,
+          backgroundColor: PRIMARY, alignSelf: 'flex-start', marginTop: 3,
+        }} />
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
+// ── Main Screen ────────────────────────────────────────────
+export default function NotificationsScreen() {
+  const userId = useAuthStore((s) => s.user?.id);
+  const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState('all');
+
+  // ── Fetch notifications ────────────────────────────────
+  const { data, isLoading, isError } = useQuery<Notification[]>({
+    queryKey: ['notifications', userId, activeFilter],
+    queryFn: async () => {
+      if (!userId) return [];
+      let q = supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (activeFilter !== 'all') {
+        q = q.eq('type', activeFilter);
+      }
+      const { data: rows, error } = await q;
+      if (error) throw error;
+      return (rows ?? []) as Notification[];
+    },
+    enabled: !!userId,
+  });
+
+  // ── Mark single notification read ─────────────────────
+  const markReadMutation = useMutation({
+    mutationFn: async (notifId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notifId);
+      if (error) throw error;
+    },
+    onMutate: async (notifId: string) => {
+      const key = ['notifications', userId, activeFilter];
+      await queryClient.cancelQueries({ queryKey: key });
+      const prev = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (old) =>
+        (old ?? []).map((n) => n.id === notifId ? { ...n, read: true } : n)
+      );
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(['notifications', userId, activeFilter], ctx.prev);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    },
+  });
+
+  // ── Mark all read ─────────────────────────────────────
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      if (!userId) return;
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    },
+  });
+
+  const notifications = data ?? [];
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handlePress = (item: Notification) => {
+    if (!item.read) markReadMutation.mutate(item.id);
+  };
+
+  // ── Render ─────────────────────────────────────────────
+  const renderEmpty = () => {
+    if (isLoading) {
+      return (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 }}>
+          <ActivityIndicator size="large" color={PRIMARY} />
+        </View>
+      );
+    }
+    return (
+      <View style={{ alignItems: 'center', paddingTop: 60 }}>
+        <Ionicons name="notifications-off-outline" size={48} color={BORDER} />
+        <Text style={{ fontSize: 15, color: MUTED, marginTop: 12 }}>Pas encore de notifications</Text>
+        <Text style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Elles apparaîtront ici</Text>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
+      {/* Header */}
+      <View style={{
+        backgroundColor: SURFACE,
+        borderBottomWidth: 1, borderBottomColor: BORDER,
+        padding: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: TEXT }}>
+          Notifications
+        </Text>
+        <TouchableOpacity onPress={() => markAllReadMutation.mutate()}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: PRIMARY }}>Tout lire</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0, backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: BORDER }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, gap: 8 }}
+      >
         {FILTERS.map((f) => {
-          const active = filter === f.id;
+          const active = f.id === activeFilter;
           return (
             <TouchableOpacity
               key={f.id}
-              onPress={() => setFilter(f.id)}
+              onPress={() => setActiveFilter(f.id)}
               style={{
-                paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
-                backgroundColor: active ? theme.text : theme.text + '0D',
+                paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
+                backgroundColor: active ? PRIMARY : SURFACE,
+                borderWidth: active ? 0 : 1,
+                borderColor: BORDER,
                 marginRight: 6,
               }}
             >
-              <Text style={{ fontSize: 11.5, fontWeight: '700', color: active ? '#fff' : theme.text }}>{f.label}</Text>
+              <Text style={{
+                fontSize: 13, fontWeight: '600',
+                color: active ? '#FFFFFF' : MUTED,
+              }}>
+                {f.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}>
-        {filtered.length === 0 && (
-          <View style={{ alignItems: 'center', padding: 60 }}>
-            <View style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: theme.text + '0D', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Ionicons name="notifications-outline" size={24} color={theme.muted} />
-            </View>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text }}>Tu es à jour</Text>
-            <Text style={{ fontSize: 12, color: theme.muted, marginTop: 4 }}>Pas de notification dans cette catégorie.</Text>
-          </View>
+      {/* List */}
+      <FlatList<Notification>
+        data={notifications}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <NFItem
+            {...item}
+            onPress={() => handlePress(item)}
+          />
         )}
-
-        {today.length > 0 && (
-          <>
-            {sectionLabel("Aujourd'hui")}
-            <View style={{ gap: 8 }}>
-              {today.map((n) => (
-                <NotifCard key={n.id} item={n} theme={theme} onTap={() => tapNotif(n.id)} />
-              ))}
-            </View>
-          </>
-        )}
-
-        {earlier.length > 0 && (
-          <>
-            {sectionLabel('Plus tôt')}
-            <View style={{ gap: 8 }}>
-              {earlier.map((n) => (
-                <NotifCard key={n.id} item={n} theme={theme} onTap={() => tapNotif(n.id)} />
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* Settings CTA */}
-        <TouchableOpacity
-          style={{ marginTop: 18, padding: 12, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-        >
-          <Ionicons name="settings-outline" size={13} color={theme.muted} />
-          <Text style={{ fontSize: 12, fontWeight: '600', color: theme.muted }}>Paramètres de notifications</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        ListEmptyComponent={renderEmpty}
+      />
     </SafeAreaView>
-  );
-}
-
-function NotifCard({ item, theme, onTap }: { item: NotifItem; theme: any; onTap: () => void }) {
-  return (
-    <TouchableOpacity
-      onPress={onTap}
-      style={{
-        backgroundColor: item.unread ? item.tint + '0A' : theme.surface,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: theme.border,
-        padding: 12,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 12,
-      }}
-    >
-      {/* Unread dot */}
-      {item.unread && (
-        <View style={{ position: 'absolute', top: 14, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: theme.primary }} />
-      )}
-
-      {/* Icon */}
-      <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: item.tint + '24', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Ionicons name={item.icon} size={17} color={item.tint} />
-      </View>
-
-      {/* Content */}
-      <View style={{ flex: 1, paddingRight: item.unread ? 12 : 0 }}>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, lineHeight: 18 }}>{item.title}</Text>
-        <Text style={{ fontSize: 12, color: theme.muted, marginTop: 3, lineHeight: 17 }}>{item.body}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
-          <Text style={{ fontSize: 10.5, color: theme.muted, fontWeight: '600' }}>{item.time}</Text>
-          {item.action && (
-            <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: theme.primary + '1F' }}>
-              <Text style={{ fontSize: 10.5, fontWeight: '700', color: theme.primary }}>{item.action}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
   );
 }

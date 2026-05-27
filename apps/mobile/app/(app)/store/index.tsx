@@ -1,21 +1,36 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert } from '@ziko/plugin-sdk';
-import { useThemeStore } from '../../../src/stores/themeStore';
 import type { PluginManifest } from '@ziko/plugin-sdk';
+
+// ── Design tokens ──────────────────────────────────────────
+const BG      = '#F7F6F3';
+const SURFACE = '#FFFFFF';
+const BORDER  = '#E2E0DA';
+const TEXT    = '#1C1A17';
+const MUTED   = '#6B6963';
+const PRIMARY = '#FF5C1A';
+
+const SHADOW = {
+  shadowColor: '#1C1A17',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 12,
+  elevation: 3,
+};
 
 // ── Types ─────────────────────────────────────────────────
 interface RegistryPlugin {
   plugin_id: string;
   manifest: PluginManifest;
   is_active: boolean;
+  is_featured?: boolean;
 }
 
 interface ReviewAgg {
@@ -25,18 +40,15 @@ interface ReviewAgg {
 }
 
 // ── Constants ─────────────────────────────────────────────
-
-// v2 categories — matches design and PluginCategory type
 const STORE_CATS = [
-  { id: 'all',      label: 'Tous' },
-  { id: 'training', label: 'Training' },
-  { id: 'nutrition',label: 'Nutrition' },
-  { id: 'health',   label: 'Santé' },
-  { id: 'coaching', label: 'Coaching' },
-  { id: 'social',   label: 'Social' },
-] as const;
+  { id: 'all',        label: 'Tous' },
+  { id: 'health',     label: 'Santé' },
+  { id: 'training',   label: 'Entraînement' },
+  { id: 'nutrition',  label: 'Nutrition' },
+  { id: 'coaching',   label: 'Coaching' },
+  { id: 'social',     label: 'Social' },
+];
 
-// Plugin accent colors by id
 const PLUGIN_COLORS: Record<string, string> = {
   habits:        '#FF5C1A',
   nutrition:     '#FF5C1A',
@@ -57,22 +69,20 @@ const PLUGIN_COLORS: Record<string, string> = {
   rpe:           '#7B5BD0',
 };
 
-// Plugins shown in the "À la une" horizontal row
-const FEATURED_IDS = new Set(['habits', 'ai-programs']);
+// Fallback featured set when DB flag is not available
+const FEATURED_IDS = new Set(['habits', 'ai-programs', 'cardio']);
 
 // ── Main screen ───────────────────────────────────────────
 export default function PluginStoreScreen() {
   const user = useAuthStore((s) => s.user);
   const { registerPlugin } = usePluginRegistry();
-  const theme = useThemeStore((s) => s.theme);
   const { t } = useTranslation();
 
   const [plugins, setPlugins] = useState<RegistryPlugin[]>([]);
   const [userPlugins, setUserPlugins] = useState<string[]>([]);
   const [reviews, setReviews] = useState<ReviewAgg[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<string>('all');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
 
   // ── Load data ──────────────────
   const load = useCallback(async () => {
@@ -83,7 +93,6 @@ export default function PluginStoreScreen() {
 
     setPlugins((regRes.data ?? []) as RegistryPlugin[]);
 
-    // Aggregate reviews client-side
     const map: Record<string, { sum: number; count: number }> = {};
     for (const r of (reviewsRes.data ?? []) as { plugin_id: string; rating: number }[]) {
       if (!map[r.plugin_id]) map[r.plugin_id] = { sum: 0, count: 0 };
@@ -145,79 +154,58 @@ export default function PluginStoreScreen() {
     ]);
   };
 
-  // ── Filter ──────────────────────
+  // ── Featured plugins ───────────────────────────────────
+  const featuredPlugins = useMemo(() => {
+    // Prefer DB is_featured flag, fallback to hardcoded set
+    const byFlag = plugins.filter((p) => p.is_featured);
+    return byFlag.length > 0 ? byFlag : plugins.filter((p) => FEATURED_IDS.has(p.plugin_id));
+  }, [plugins]);
+
+  // ── Filtered list ──────────────────────────────────────
   const filtered = useMemo(() => {
-    let list = plugins;
-    if (category !== 'all') {
-      list = list.filter((p) => {
-        const cat = p.manifest.category;
-        // Map legacy categories to new ones
-        const mapped = cat === 'analytics' || cat === 'persona' ? 'coaching' : cat;
-        return mapped === category;
-      });
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) =>
-        p.manifest.name.toLowerCase().includes(q) ||
-        p.manifest.description?.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [plugins, category, search]);
+    if (activeCategory === 'all') return plugins;
+    return plugins.filter((p) => {
+      const cat = p.manifest.category;
+      const mapped = cat === 'analytics' || cat === 'persona' ? 'coaching' : cat;
+      return mapped === activeCategory;
+    });
+  }, [plugins, activeCategory]);
 
   const getRating = (pid: string) => reviews.find((r) => r.plugin_id === pid);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: BG }}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PRIMARY} />}
       >
         {/* ── Header ───────────────────────── */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 16, marginBottom: 16 }}>
-          <View>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: (theme as any).muted }}>Étend ton Ziko</Text>
-            <Text style={{ fontSize: 26, fontWeight: '800', color: theme.text, lineHeight: 30, marginTop: 2 }}>
-              Boutique<Text style={{ color: theme.primary }}>.</Text>
-            </Text>
-          </View>
+        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 }}>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: TEXT }}>Modules</Text>
+          <Text style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>Étends ton expérience</Text>
         </View>
 
-        {/* ── Search ───────────────────────── */}
-        <View style={{
-          flexDirection: 'row', alignItems: 'center', backgroundColor: theme.surface,
-          borderRadius: 14, borderWidth: 1, borderColor: (theme as any).border,
-          paddingHorizontal: 14, height: 44, marginBottom: 14,
-        }}>
-          <Ionicons name="search" size={16} color={(theme as any).muted} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Rechercher un module…"
-            placeholderTextColor={(theme as any).muted}
-            style={{ flex: 1, marginLeft: 10, fontSize: 13, color: theme.text }}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={(theme as any).muted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* ── Category pills ───────────────── */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -20 }}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 8, marginBottom: 16 }}>
+        {/* ── Category chips ───────────────── */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginBottom: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+        >
           {STORE_CATS.map((cat) => {
-            const active = cat.id === category;
+            const active = cat.id === activeCategory;
             return (
-              <TouchableOpacity key={cat.id} onPress={() => setCategory(cat.id)}
+              <TouchableOpacity
+                key={cat.id}
+                onPress={() => setActiveCategory(cat.id)}
                 style={{
                   paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
-                  backgroundColor: active ? theme.text : theme.text + '10',
-                }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#fff' : theme.text }}>
+                  backgroundColor: active ? PRIMARY : SURFACE,
+                  borderWidth: active ? 0 : 1, borderColor: BORDER,
+                  marginRight: 4,
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#FFFFFF' : MUTED }}>
                   {cat.label}
                 </Text>
               </TouchableOpacity>
@@ -225,133 +213,118 @@ export default function PluginStoreScreen() {
           })}
         </ScrollView>
 
-        {/* ── Featured (only cat=all, no search) ── */}
-        {category === 'all' && search === '' && (
-          <FeaturedRow
-            plugins={plugins}
-            installed={userPlugins}
-            onInstall={(p) => installPlugin(p.plugin_id, p.manifest)}
-            onUninstall={(p) => uninstallPlugin(p.plugin_id)}
-          />
+        {/* ── Featured dark cards (only when showing all, no filter) ── */}
+        {activeCategory === 'all' && featuredPlugins.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
+              color: MUTED, marginBottom: 12, paddingHorizontal: 20,
+            }}>
+              À la une
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            >
+              {featuredPlugins.map((p) => {
+                const m = p.manifest;
+                const color = PLUGIN_COLORS[p.plugin_id] ?? PRIMARY;
+                const isInstalled = userPlugins.includes(p.plugin_id);
+                return (
+                  <View
+                    key={p.plugin_id}
+                    style={{
+                      width: 260,
+                      backgroundColor: '#1C1A17',
+                      borderRadius: 20,
+                      padding: 20,
+                      overflow: 'hidden',
+                      ...SHADOW,
+                    }}
+                  >
+                    {/* Category chip */}
+                    <View style={{
+                      alignSelf: 'flex-start',
+                      backgroundColor: 'rgba(255,92,26,0.2)',
+                      paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+                    }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: PRIMARY }}>
+                        {m.category ?? 'Module'}
+                      </Text>
+                    </View>
+
+                    {/* Plugin name */}
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFAF6', marginTop: 8 }}>
+                      {m.name}
+                    </Text>
+
+                    {/* Description */}
+                    <Text
+                      numberOfLines={2}
+                      style={{ fontSize: 12, color: 'rgba(255,250,246,0.65)', marginTop: 4, lineHeight: 18 }}
+                    >
+                      {m.description}
+                    </Text>
+
+                    {/* Install CTA */}
+                    <TouchableOpacity
+                      onPress={() => isInstalled ? uninstallPlugin(p.plugin_id) : installPlugin(p.plugin_id, m)}
+                      activeOpacity={0.8}
+                      style={{
+                        marginTop: 16,
+                        alignSelf: 'flex-start',
+                        paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
+                        backgroundColor: isInstalled ? 'rgba(255,250,246,0.15)' : PRIMARY,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFAF6' }}>
+                        {isInstalled ? 'Installé \u2713' : 'Installer'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
 
         {/* ── Plugin list ───────────────────── */}
-        <Text style={{
-          fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
-          color: (theme as any).muted, marginBottom: 10,
-        }}>
-          {category === 'all'
-            ? 'Tous les modules'
-            : STORE_CATS.find((c) => c.id === category)?.label ?? ''}
-        </Text>
+        <View style={{ paddingHorizontal: 20 }}>
+          <Text style={{
+            fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
+            color: MUTED, marginBottom: 12,
+          }}>
+            {activeCategory === 'all'
+              ? 'Tous les modules'
+              : STORE_CATS.find((c) => c.id === activeCategory)?.label ?? ''}
+          </Text>
 
-        {filtered.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingTop: 48 }}>
-            <Ionicons name="search-outline" size={40} color={(theme as any).border} />
-            <Text style={{ color: (theme as any).muted, fontSize: 14, marginTop: 12 }}>Aucun module trouvé</Text>
-          </View>
-        ) : (
-          filtered.map((p) => (
-            <PluginRow
-              key={p.plugin_id}
-              plugin={p}
-              isInstalled={userPlugins.includes(p.plugin_id)}
-              rating={getRating(p.plugin_id)}
-              onInstall={() => installPlugin(p.plugin_id, p.manifest)}
-              onUninstall={() => uninstallPlugin(p.plugin_id)}
-            />
-          ))
-        )}
+          {filtered.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingTop: 48 }}>
+              <Ionicons name="search-outline" size={40} color={BORDER} />
+              <Text style={{ color: MUTED, fontSize: 14, marginTop: 12 }}>Aucun module trouvé</Text>
+            </View>
+          ) : (
+            filtered.map((p) => (
+              <PluginCard
+                key={p.plugin_id}
+                plugin={p}
+                isInstalled={userPlugins.includes(p.plugin_id)}
+                rating={getRating(p.plugin_id)}
+                onInstall={() => installPlugin(p.plugin_id, p.manifest)}
+                onUninstall={() => uninstallPlugin(p.plugin_id)}
+              />
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ── Featured row ──────────────────────────────────────────
-function FeaturedRow({
-  plugins,
-  installed,
-  onInstall,
-  onUninstall,
-}: {
-  plugins: RegistryPlugin[];
-  installed: string[];
-  onInstall: (p: RegistryPlugin) => void;
-  onUninstall: (p: RegistryPlugin) => void;
-}) {
-  const theme = useThemeStore((s) => s.theme);
-  const featured = plugins.filter((p) => FEATURED_IDS.has(p.plugin_id));
-  if (featured.length === 0) return null;
-
-  return (
-    <View style={{ marginBottom: 20 }}>
-      <Text style={{
-        fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase',
-        color: theme.muted, marginBottom: 10,
-      }}>
-        À la une
-      </Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }}
-        contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}>
-        {featured.map((p) => {
-          const m = p.manifest;
-          const color = PLUGIN_COLORS[p.plugin_id] ?? theme.primary;
-          const isInstalled = installed.includes(p.plugin_id);
-          return (
-            <View key={p.plugin_id} style={{
-              width: 230, backgroundColor: (theme as any).cardDark, borderRadius: 20,
-              padding: 14, gap: 10,
-            }}>
-              {/* Icon + name row */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{
-                  width: 40, height: 40, borderRadius: 11,
-                  backgroundColor: color + '30', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Ionicons name={(m.icon || 'grid') as any} size={20} color={color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: (theme as any).cardDarkText }}>{m.name}</Text>
-                  <Text style={{ fontSize: 10.5, color: 'rgba(255,250,246,.55)' }}>
-                    {m.price === 'free' ? 'Gratuit' : `${m.price} \u20ac`}
-                  </Text>
-                </View>
-              </View>
-              {/* Description */}
-              <Text numberOfLines={2} style={{
-                fontSize: 11.5, color: 'rgba(255,250,246,.7)', lineHeight: 16,
-              }}>
-                {m.description}
-              </Text>
-              {/* Toggle button */}
-              <TouchableOpacity
-                onPress={() => isInstalled ? onUninstall(p) : onInstall(p)}
-                activeOpacity={0.8}
-                style={{
-                  alignSelf: 'flex-start', borderRadius: 999,
-                  paddingHorizontal: 14, paddingVertical: 8,
-                  backgroundColor: isInstalled
-                    ? 'rgba(255,250,246,.12)'
-                    : theme.primary,
-                }}
-              >
-                <Text style={{
-                  fontSize: 11.5, fontWeight: '700',
-                  color: isInstalled ? (theme as any).cardDarkText : '#fff',
-                }}>
-                  {isInstalled ? '\u2713 Install\u00e9' : 'Installer'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-}
-
-// ── Plugin row ────────────────────────────────────────────
-const PluginRow = React.memo(function PluginRow({
+// ── Plugin card ───────────────────────────────────────────
+const PluginCard = React.memo(function PluginCard({
   plugin,
   isInstalled,
   rating,
@@ -364,76 +337,59 @@ const PluginRow = React.memo(function PluginRow({
   onInstall: () => void;
   onUninstall: () => void;
 }) {
-  const theme = useThemeStore((s) => s.theme);
   const m = plugin.manifest;
-  const color = PLUGIN_COLORS[plugin.plugin_id] ?? theme.primary;
-  const isPremium = m.price !== 'free';
+  const color = PLUGIN_COLORS[plugin.plugin_id] ?? PRIMARY;
 
   return (
     <View style={{
-      backgroundColor: theme.surface, borderRadius: 16, padding: 12,
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      borderWidth: 1, borderColor: theme.border, marginBottom: 8,
+      backgroundColor: SURFACE,
+      borderRadius: 16,
+      borderWidth: 1, borderColor: BORDER,
+      padding: 14,
+      marginBottom: 8,
+      ...SHADOW,
     }}>
-      {/* Icon */}
-      <View style={{
-        width: 44, height: 44, borderRadius: 12, flex: 0,
-        backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Ionicons name={(m.icon || 'grid') as any} size={20} color={color} />
-      </View>
-
-      {/* Info */}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        {/* Name + PRO badge */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text }}>{m.name}</Text>
-          {isPremium && (
-            <View style={{
-              backgroundColor: (theme as any).warn + '22', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6,
-            }}>
-              <Text style={{ fontSize: 9.5, fontWeight: '800', color: (theme as any).warn }}>PRO</Text>
-            </View>
-          )}
-        </View>
-        {/* Description */}
-        <Text numberOfLines={1} style={{ fontSize: 11, color: theme.muted, marginTop: 2, lineHeight: 15 }}>
-          {m.description}
-        </Text>
-        {/* Rating + price */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-          {rating && (
-            <Text style={{ fontSize: 10.5, color: theme.muted }}>
-              ⭐ {rating.avg.toFixed(1)} ·{' '}
-            </Text>
-          )}
-          <Text style={{
-            fontSize: 10.5, fontWeight: '700',
-            color: m.price === 'free' ? (theme as any).success : theme.primary,
-          }}>
-            {m.price === 'free' ? 'Gratuit' : `${m.price} €/mo`}
-          </Text>
-        </View>
-      </View>
-
-      {/* Toggle button */}
-      <TouchableOpacity
-        onPress={isInstalled ? onUninstall : onInstall}
-        activeOpacity={0.75}
-        style={{
-          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-          backgroundColor: isInstalled
-            ? (theme as any).success + '18'
-            : theme.primary,
-        }}
-      >
-        <Text style={{
-          fontSize: 11, fontWeight: '700',
-          color: isInstalled ? (theme as any).success : '#fff',
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        {/* Icon 48×48 */}
+        <View style={{
+          width: 48, height: 48, borderRadius: 14,
+          backgroundColor: BG,
+          alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          {isInstalled ? '✓' : 'Installer'}
-        </Text>
-      </TouchableOpacity>
+          <Ionicons name={(m.icon || 'grid') as any} size={22} color={color} />
+        </View>
+
+        {/* Info */}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{m.name}</Text>
+          <Text numberOfLines={2} style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 17 }}>
+            {m.description}
+          </Text>
+          {rating ? (
+            <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
+              {'\u2605'} {rating.avg.toFixed(1)} · {rating.count} avis
+            </Text>
+          ) : null}
+        </View>
+
+        {/* CTA */}
+        <TouchableOpacity
+          onPress={isInstalled ? onUninstall : onInstall}
+          activeOpacity={0.8}
+          style={{
+            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+            backgroundColor: isInstalled ? '#E2E0DA' : PRIMARY,
+            flexShrink: 0,
+          }}
+        >
+          <Text style={{
+            fontSize: 12, fontWeight: '700',
+            color: isInstalled ? MUTED : '#FFFFFF',
+          }}>
+            {isInstalled ? 'Installé' : 'Installer'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 });
