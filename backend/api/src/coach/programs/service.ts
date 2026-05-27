@@ -16,8 +16,10 @@
 //   POST   /:id/duplicate      — duplicate template (PROG-04)
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
 import { ProgramWeekSchema } from '@ziko/coach-sdk';
+import { notificationService } from '../../services/notificationService.js';
 import {
   listPrograms,
   createProgram,
@@ -243,6 +245,24 @@ programsRouter.post('/:id/assign', async (c) => {
     return c.json({ error: 'All client_ids must be valid UUIDs' }, 400);
   try {
     const result = await assignProgram(jwt, coachId, id, body.client_ids);
+    // PUSH-01: fire push to every assigned athlete in the background (D-06)
+    // waitUntil keeps the Vercel function alive until all sends complete,
+    // but the HTTP 200 is returned synchronously before any push resolves.
+    waitUntil(
+      Promise.allSettled(
+        body.client_ids.map((athleteId: string) =>
+          notificationService.send({
+            recipientUserId: athleteId,
+            category: 'coach',
+            type: 'program_assigned',
+            title: 'Nouveau programme 💪',
+            body: "Ton coach t'a assigné un nouveau programme. Commence maintenant !",
+            data: { url: '/(app)/coach' },
+            idempotencyKey: `program_assign_${athleteId}_${id}`,
+          }),
+        ),
+      ),
+    );
     return c.json(result);
   } catch (err: any) {
     console.error('[coach/programs] POST /:id/assign error:', err.message);
