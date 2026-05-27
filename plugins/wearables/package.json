@@ -11,7 +11,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
-    "./screens/WearablesDashboard": "./src/screens/WearablesDashboard.tsx"
+    "./screens/WearablesPlugin": "./src/screens/WearablesPlugin.tsx"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",

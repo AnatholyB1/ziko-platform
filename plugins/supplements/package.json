@@ -7,7 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
-    "./screens/SupplementsList": "./src/screens/SupplementsListScreen.tsx",
+    "./screens/SupplementsPlugin": "./src/screens/SupplementsPlugin.tsx",
     "./screens/SupplementDetail": "./src/screens/SupplementDetailScreen.tsx",
     "./screens/SupplementCompare": "./src/screens/SupplementCompareScreen.tsx"
   },
