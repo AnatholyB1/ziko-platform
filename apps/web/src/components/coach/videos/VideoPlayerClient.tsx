@@ -12,6 +12,8 @@ export interface Annotation {
   content: string;
   coach_id: string;
   created_at: string;
+  type?: 'text' | 'voice';
+  audio_path?: string | null;
 }
 
 export interface VideoRecord {
