@@ -57,11 +57,16 @@ Plans:
 **Requirements**: FORM-01, FORM-02, FORM-03, FORM-04, FORM-05, FORM-06
 **Success Criteria** (what must be TRUE):
   1. Coach can open a form builder, type a title, add questions sequentially, and choose a type for each question (free text, 1-10 scale, yes/no, single choice with editable options)
-  2. Coach can drag to reorder questions and delete any question — changes are reflected immediately before publishing
+  2. Coach can reorder questions with ↑↓ buttons and delete any question — changes are reflected immediately before publishing
   3. Coach can select a trigger type (first contact, after N sessions, fixed date, manual send) and configure its parameter (N, date) before publishing
   4. Coach can publish the form to one specific client or to all linked clients in a single action
   5. Coach sees a "Formulaires" list in the web CRM showing each form with its status badge (draft / active / archived)
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — Foundation: sidebar nav, FormStatusBadge, server page scaffolds (forms list + new + [id])
+- [ ] 03-02-PLAN.md — Form list page: FormsListClient (empty/skeleton/populated states) + FormCard row component
+- [ ] 03-03-PLAN.md — Draft builder: FormBuilderClient + QuestionCard (inline editor + ChoiceEditor) + TriggerConfig
+- [ ] 03-04-PLAN.md — Modals + active view: PublishModal (client typeahead) + ArchiveModal + active read-only rendering
 **UI hint**: yes
 
 ### Phase 04: Athlete Blocking Overlay (Mobile)
@@ -98,7 +103,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 01. DB Schema & Backend API | 0/2 | Planned | - |
 | 02. Trigger Engine | 0/4 | Planned | - |
-| 03. Coach Form Builder (Web) | 0/? | Not started | - |
+| 03. Coach Form Builder (Web) | 0/4 | Planned | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/? | Not started | - |
 | 05. Response Viewer & Claude Injection | 0/? | Not started | - |
 
