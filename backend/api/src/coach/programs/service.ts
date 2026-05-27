@@ -47,12 +47,12 @@ programsRouter.use('*', authMiddleware);
 // ── 1. GET /exercises?q= — search exercises ──────────────────────────────────
 // CRITICAL: registered BEFORE /:id to avoid Hono matching 'exercises' as :id
 programsRouter.get('/exercises', async (c) => {
-  const { userId: _coachId } = c.get('auth');
+  const { userId: coachId } = c.get('auth');
   const jwt = c.req.header('Authorization')!.slice(7);
   const q = c.req.query('q') ?? '';
   if (!q.trim()) return c.json({ error: 'q query param is required' }, 400);
   try {
-    const result = await searchExercises(jwt, q.trim());
+    const result = await searchExercises(jwt, coachId, q.trim());
     return c.json(result);
   } catch (err: any) {
     console.error('[coach/programs] GET /exercises error:', err.message);

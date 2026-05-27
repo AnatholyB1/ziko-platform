@@ -235,28 +235,65 @@ export async function createFolder(
 // ----- GET /exercises?q= — search exercises (PROG-08, read_exercises RLS) -----
 // RLS read_exercises policy limits results to public (is_custom=FALSE) + own (user_id=auth.uid()).
 // Supabase JS client doesn't support raw CASE ordering, so we fetch both groups and sort in JS.
+// Results merge global library exercises + coach's custom exercises (coach_custom items first).
 export async function searchExercises(
   jwt: string,
+  coachId: string,
   query: string,
 ): Promise<{ exercises: any[] }> {
   const db = createUserClient(jwt);
-  const { data, error } = await db
+
+  // Query 1: global exercises library
+  const { data: globalData, error: globalError } = await db
     .from('exercises')
     .select('id, name, category, muscle_groups')
     .ilike('name', `%${query}%`)
     .limit(10);
-  if (error) throw new Error(error.message);
+  if (globalError) throw new Error(globalError.message);
 
-  // Sort: prefix matches first (name starts with query), then alphabetically
+  // Query 2: coach's custom exercises
+  const { data: customData, error: customError } = await db
+    .from('coach_exercises')
+    .select('id, name, category')
+    .eq('coach_id', coachId)
+    .ilike('name', `%${query}%`)
+    .limit(10);
+  if (customError) throw new Error(customError.message);
+
+  // Map global results
   const lower = query.toLowerCase();
-  const sorted = (data ?? []).sort((a: any, b: any) => {
+  const globalMapped = (globalData ?? []).map((ex: any) => ({
+    id: ex.id,
+    name: ex.name,
+    category: ex.category,
+    source: 'global' as const,
+    coach_exercise_id: null,
+  }));
+
+  // Map custom results
+  const customMapped = (customData ?? []).map((ce: any) => ({
+    id: ce.id,
+    name: ce.name,
+    category: ce.category,
+    source: 'coach_custom' as const,
+    coach_exercise_id: ce.id,
+  }));
+
+  // Sort global: prefix matches first (name starts with query), then alphabetically
+  const globalSorted = globalMapped.sort((a: any, b: any) => {
     const aPrefix = a.name.toLowerCase().startsWith(lower) ? 0 : 1;
     const bPrefix = b.name.toLowerCase().startsWith(lower) ? 0 : 1;
     if (aPrefix !== bPrefix) return aPrefix - bPrefix;
     return a.name.localeCompare(b.name);
   });
 
-  return { exercises: sorted };
+  // Sort custom: alphabetically by name
+  const customSorted = customMapped.sort((a: any, b: any) =>
+    a.name.localeCompare(b.name),
+  );
+
+  // Custom items first, then global items
+  return { exercises: [...customSorted, ...globalSorted] };
 }
 
 // ----- POST /exercises — create user-defined exercise -----
