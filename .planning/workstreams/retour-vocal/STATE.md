@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Retour Vocal Coach
-status: in_progress
+status: complete
 last_updated: "2026-05-27"
 last_activity: 2026-05-27
 progress:
@@ -17,15 +17,14 @@ progress:
 
 ## Current Position
 
-Phase: 03 — Persistence & Memory
-Plan: All complete (3/3)
-Status: Milestone complete — all 3 phases verified
-Last activity: 2026-05-27 — Phase 03 UAT passed (8/8)
+**Milestone v1.9 — SHIPPED 2026-05-27**
+
+All 3 phases complete (12/12 plans). UAT 8/8 passed.
+Milestone archived to `.planning/workstreams/retour-vocal/milestones/`.
 
 ## Progress
 
 **Phases Complete:** 3/3
-**Next:** Milestone v1.9 complete ✅
 
 ```
 [██████████████████████████████] 100%
@@ -35,11 +34,23 @@ Last activity: 2026-05-27 — Phase 03 UAT passed (8/8)
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 01 | Transcription Pipeline | VOICE-01, VOICE-02, VOICE-03 | ✅ Complete (verified 2026-05-27) |
-| 02 | Claude Structuring | STRUCT-01, STRUCT-02, STRUCT-03 | ✅ Complete (executed 2026-05-27) |
-| 03 | Persistence & Memory | MEM-01, MEM-02, MEM-03 | ✅ Complete (verified 2026-05-27) |
+| 01 | Transcription Pipeline | VOICE-01, VOICE-02, VOICE-03 | ✅ Shipped |
+| 02 | Claude Structuring | STRUCT-01, STRUCT-02, STRUCT-03 | ✅ Shipped |
+| 03 | Persistence & Memory | MEM-01, MEM-02, MEM-03 | ✅ Shipped |
 
-## Session Continuity
+## What Was Shipped
 
-**Stopped At:** Milestone v1.9 complete
-**Next Action:** `/gsd:complete-milestone --ws retour-vocal` or start next milestone
+- Mic recording → Whisper transcription → structured Claude card (5 sections) → DB persistence
+- Long-term memory: last 3 feedbacks/athlete injected into Claude structuring context
+- History view in client sheet with inline expand
+
+## Next Steps
+
+Workstream complete. Deferred items for post-v1.9:
+- Partage feedback à l'athlète (email/push)
+- Synthèse mensuelle automatique
+- Export PDF
+
+## Project Reference
+
+See: `.planning/workstreams/retour-vocal/milestones/v1.9-ROADMAP.md`
