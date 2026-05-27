@@ -43,8 +43,12 @@ Plans:
   2. Claude returns a card with exactly 5 sections: Contexte séance, Points forts, Corrections, Next steps, and auto-tags (force / technique / mental / cardio / récupération)
   3. Coach can edit any section of the card inline before saving
   4. The Hono route `POST /coach/voice/structure` accepts transcript + athlete context and returns the structured card JSON
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — Wave 1: extend vocalReducer types + transitions (RED→GREEN TDD); 15 tests
+- [ ] 02-02-PLAN.md — Wave 1: POST /coach/voice/structure Hono route + generateObject + athlete context assembly (parallel)
+- [ ] 02-03-PLAN.md — Wave 2: VocalRetourPanel wired + VocalStructuring + VocalStructuringError + VocalCardReady shell
+- [ ] 02-04-PLAN.md — Wave 3: FeedbackCard + CardSection + TagChip + GSAP animations + fake save flow
 
 ### Phase 03: Persistence & Memory
 **Goal**: Structured feedbacks are saved, browsable from the client sheet, and injected into future Claude structuring calls
@@ -63,7 +67,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 01. Transcription Pipeline | 5/5 | Complete | 2026-05-27 |
-| 02. Claude Structuring | 0/? | Not started | - |
+| 02. Claude Structuring | 0/4 | In progress | - |
 | 03. Persistence & Memory | 0/? | Not started | - |
 
 ---
