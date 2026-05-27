@@ -9,8 +9,8 @@ progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
-  percent: 33
+  completed_plans: 5
+  percent: 38
 ---
 
 # Project State — v1.13 Retour Vidéo Coach
@@ -24,21 +24,21 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 
 ## Current Position
 
-Phase: 46 of 47 (Web Player & Text Annotations) — PLANNED
-Plan: 0/4
-Status: Phase 46 planned — ready to execute
-Last activity: 2026-05-27 — Phase 46 planned (4 plans: 46-01 Hono routes, 46-02 web layout/pages, 46-03 VideoPlayer+AnnotationPanel, 46-04 mobile VideoPlayerScreen)
+Phase: 46 of 47 (Web Player & Text Annotations) — IN PROGRESS
+Plan: 1/4
+Status: 46-01 complete — Hono annotation routes + DB functions, 29/29 tests green
+Last activity: 2026-05-27 — 46-01 executed: 7 annotation routes + 7 DB helpers + vitest coverage
 
 ```
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
+[████░░░░░░░░░░░░░░░░░░░░░░░░░░] 14%
 ```
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1 (Phase 46)
+- Average duration: 16 minutes
+- Total execution time: 16 minutes
 
 *Updated after each plan completion*
 
@@ -52,6 +52,9 @@ Last activity: 2026-05-27 — Phase 46 planned (4 plans: 46-01 Hono routes, 46-0
 - lib/whisper.ts built in Phase 47 regardless of v1.9 shipping status
 - Video bytes never pass through Vercel/Hono — signed URL PUT direct to Supabase Storage
 - iOS HEVC format enforced to H.264/MP4 via videoExportPreset at picker time
+- vitest.config.ts include extended to cover src/**/*.test.ts (blocking fix — config excluded src/ unit tests)
+- send-feedback coach name degrades gracefully if user_profiles fails (non-fatal try/catch)
+- GET /signed-url uses createSignedUrl not createSignedUploadUrl (read vs write)
 
 ### Pending Todos
 
@@ -64,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-25
-Stopped at: Roadmap created — Phase 45 ready to plan
+Last session: 2026-05-27
+Stopped at: 46-01 complete — continue with 46-02 (web VideoListPage + ClientTabStrip Vidéos tab)
 Resume file: None

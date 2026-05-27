@@ -49,7 +49,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 46-01-PLAN.md — Hono backend: annotation CRUD + signed-url + send-feedback routes + vitest tests (Wave 1)
+- [x] 46-01-PLAN.md — Hono backend: annotation CRUD + signed-url + send-feedback routes + vitest tests (Wave 1)
 - [ ] 46-02-PLAN.md — Web pages: ClientTabStrip Vidéos tab + notes panel hide + VideoListPage with all states (Wave 2)
 - [ ] 46-03-PLAN.md — Web player: @vidstack/react install + VideoPlayerClient + AnnotatedTimeSlider + AnnotationPanel state machine (Wave 2)
 - [ ] 46-04-PLAN.md — Mobile: expo-video install + video-player route + VideoPlayerScreen + VideoListScreen extension (Wave 2)
