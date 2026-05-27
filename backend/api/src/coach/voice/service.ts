@@ -266,3 +266,33 @@ voiceRouter.post('/structure', async (c) => {
     return c.json({ error: err.message ?? 'Structuration failed' }, 500);
   }
 });
+
+// ─── POST /save ──────────────────────────────────────────────────────────────
+// Persists a structured feedback card to coach_vocal_feedbacks.
+// Payload: { athlete_id, transcript, card } — card is the full StructuredCard JSON.
+// Returns: { id } of the new row.
+voiceRouter.post('/save', async (c) => {
+  const { userId: coachId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+
+  const body = await c.req.json<{ athlete_id: string; transcript: string; card: unknown }>();
+  if (!body.athlete_id || !body.transcript || !body.card) {
+    return c.json({ error: 'athlete_id, transcript, and card are required' }, 400);
+  }
+
+  const { athlete_id, transcript, card } = body;
+  const db = createUserClient(jwt);
+
+  const { data, error } = await db
+    .from('coach_vocal_feedbacks')
+    .insert({ coach_id: coachId, athlete_id, transcript, card })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('[coach/voice] save error:', error.message);
+    return c.json({ error: error.message }, 500);
+  }
+
+  return c.json({ id: (data as any).id }, 201);
+});
