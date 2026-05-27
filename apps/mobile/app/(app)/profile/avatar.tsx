@@ -54,6 +54,7 @@ export default function AvatarUploadScreen() {
   );
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const preset = AVATAR_PRESETS.find((p) => p.id === selectedPreset) ?? AVATAR_PRESETS[0];
   const initials = getInitials(displayName || profile?.name || 'AT');
@@ -79,6 +80,15 @@ export default function AvatarUploadScreen() {
 
     const path = `${user.id}/avatar.jpg`;
 
+    // Simulate progress 0 → 0.9 during upload
+    setUploadProgress(0);
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 0.88) { clearInterval(progressInterval); return prev; }
+        return prev + 0.08;
+      });
+    }, 120);
+
     // FormData approach — fetch(localUri).blob() fails on Android physical devices
     const formData = new FormData();
     formData.append('file', { uri: finalUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
@@ -87,11 +97,15 @@ export default function AvatarUploadScreen() {
       .from('avatars')
       .upload(path, formData, { upsert: true, contentType: 'image/jpeg' });
 
+    clearInterval(progressInterval);
+
     if (error) {
+      setUploadProgress(0);
       console.warn('[Avatar] Storage upload error:', error.message);
       return null;
     }
 
+    setUploadProgress(1);
     const { data } = supabase.storage.from('avatars').getPublicUrl(path);
     // Bust cache so the new image loads immediately
     return `${data.publicUrl}?t=${Date.now()}`;
@@ -333,6 +347,23 @@ export default function AvatarUploadScreen() {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Upload progress bar */}
+          {uploading && (
+            <View style={{
+              width: '100%', height: 4,
+              backgroundColor: '#E2E0DA',
+              borderRadius: 999,
+              marginTop: 16,
+            }}>
+              <View style={{
+                width: `${uploadProgress * 100}%`,
+                height: '100%',
+                backgroundColor: '#FF5C1A',
+                borderRadius: 999,
+              }} />
+            </View>
+          )}
         </View>
 
         {/* Color presets */}

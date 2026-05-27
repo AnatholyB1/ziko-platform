@@ -12,6 +12,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
@@ -77,38 +78,73 @@ const SUGGESTIONS = [
   'Programme pour 3 séances/sem',
 ];
 
-// ── Typing indicator dots ─────────────────────────────────────
+// ── Credit Chip ───────────────────────────────────────────────
 
-function TypingDot({ delay, theme }: { delay: number; theme: any }) {
-  const opacity = useRef(new Animated.Value(0.3)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+function CreditChip({ balance }: { balance: number }) {
+  const isLow = balance <= 5;
+  const bg = isLow ? 'rgba(239,68,68,0.1)' : 'rgba(255,92,26,0.1)';
+  const color = isLow ? '#EF4444' : '#FF5C1A';
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: bg,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    }}>
+      <Ionicons name="flash-outline" size={12} color={color} style={{ marginRight: 4 }} />
+      <Text style={{ fontSize: 12, fontWeight: '700', color }}>
+        {balance} crédits
+      </Text>
+    </View>
+  );
+}
+
+// ── Streaming Dots ────────────────────────────────────────────
+
+function StreamingDots() {
+  const dot1 = useRef(new Animated.Value(0.3)).current;
+  const dot2 = useRef(new Animated.Value(0.3)).current;
+  const dot3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    const anim = Animated.loop(
+    const makeAnim = (dot: Animated.Value) =>
       Animated.sequence([
-        Animated.delay(delay),
-        Animated.parallel([
-          Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: -3, duration: 300, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.timing(opacity, { toValue: 0.3, duration: 300, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true }),
-        ]),
-        Animated.delay(600 - delay),
-      ]),
+        Animated.timing(dot, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(dot, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+      ]);
+
+    const loop = Animated.loop(
+      Animated.stagger(200, [makeAnim(dot1), makeAnim(dot2), makeAnim(dot3)])
     );
-    anim.start();
-    return () => anim.stop();
-  }, [delay, opacity, translateY]);
+    loop.start();
+    return () => {
+      loop.stop();
+      dot1.setValue(0.3);
+      dot2.setValue(0.3);
+      dot3.setValue(0.3);
+    };
+  }, [dot1, dot2, dot3]);
 
   return (
-    <Animated.View style={{
-      width: 6, height: 6, borderRadius: 3,
-      backgroundColor: theme.muted,
-      opacity,
-      transform: [{ translateY }],
-    }} />
+    <View style={{
+      flexDirection: 'row',
+      gap: 4,
+      padding: 12,
+      alignSelf: 'flex-start',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      shadowColor: '#1C1A17',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 3,
+    }}>
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#6B6963', opacity: dot1 }} />
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#6B6963', opacity: dot2 }} />
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#6B6963', opacity: dot3 }} />
+    </View>
   );
 }
 
@@ -167,8 +203,31 @@ export default function AIChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>('c1');
 
   const scrollRef = useRef<ScrollView>(null);
+
+  // ── Credits query ─────────────────────────────────────────
+
+  const { data: creditsData } = useQuery({
+    queryKey: ['userCredits'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('ai_credits_balance')
+        .eq('id', user.id)
+        .limit(1)
+        .single();
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  const creditsBalance = creditsData?.ai_credits_balance ?? 0;
+
+  // ── Scroll helpers ────────────────────────────────────────
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -206,6 +265,7 @@ export default function AIChatScreen() {
 
   const startNewConversation = useCallback(() => {
     setMessages([]);
+    setActiveConvId(null);
     setView('chat');
   }, []);
 
@@ -265,6 +325,9 @@ export default function AIChatScreen() {
             </Text>
           </View>
 
+          {/* Credit chip */}
+          <CreditChip balance={creditsBalance} />
+
           {/* Toggle view */}
           <TouchableOpacity
             onPress={() => setView((v) => (v === 'chat' ? 'list' : 'chat'))}
@@ -286,21 +349,24 @@ export default function AIChatScreen() {
         {view === 'list' ? (
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
+            contentContainerStyle={{ padding: 14, paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
           >
+            {/* Nouvelle conversation button */}
             <TouchableOpacity
               onPress={startNewConversation}
               style={{
-                width: '100%', padding: 12, borderRadius: 12,
-                marginBottom: 14,
-                backgroundColor: theme.text,
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-                gap: 6,
+                backgroundColor: '#FF5C1A',
+                borderRadius: 12,
+                padding: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 12,
               }}
             >
-              <Ionicons name="add" size={14} color="#fff" />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>
+              <Ionicons name="add-outline" size={18} color="#FFFFFF" />
+              <Text style={{ fontWeight: '700', color: '#FFFFFF', fontSize: 14 }}>
                 Nouvelle conversation
               </Text>
             </TouchableOpacity>
@@ -312,32 +378,43 @@ export default function AIChatScreen() {
               Conversations
             </Text>
 
-            <View style={{ gap: 8 }}>
-              {CONVERSATIONS.map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  onPress={() => setView('chat')}
-                  style={{
-                    padding: 12, borderRadius: 14,
-                    backgroundColor: theme.surface,
-                    borderWidth: 1, borderColor: theme.border,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <View style={{ gap: 6 }}>
+              {CONVERSATIONS.map((c) => {
+                const isActive = activeConvId === c.id;
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    onPress={() => {
+                      setActiveConvId(c.id);
+                      setView('chat');
+                    }}
+                    style={{
+                      backgroundColor: isActive ? 'rgba(255,92,26,0.04)' : '#FFFFFF',
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      borderColor: isActive ? '#FF5C1A' : '#E2E0DA',
+                      padding: 12,
+                      marginBottom: 0,
+                    }}
+                  >
                     <Text style={{
-                      flex: 1, fontSize: 13, fontWeight: '700', color: theme.text,
+                      fontWeight: '600',
+                      fontSize: 14,
+                      color: '#1C1A17',
+                      marginBottom: 2,
                     }} numberOfLines={1}>
                       {c.title}
                     </Text>
-                    <Text style={{ fontSize: 10.5, color: theme.muted }}>{c.date}</Text>
-                  </View>
-                  <Text style={{
-                    fontSize: 11.5, color: theme.muted, lineHeight: 16,
-                  }} numberOfLines={2}>
-                    {c.preview}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={{
+                      fontSize: 11,
+                      color: '#6B6963',
+                      marginTop: 2,
+                    }}>
+                      {c.date}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
         ) : (
@@ -391,17 +468,7 @@ export default function AIChatScreen() {
                   }}>
                     <Ionicons name="sparkles" size={13} color="#FFE6D9" />
                   </View>
-                  <View style={{
-                    paddingHorizontal: 14, paddingVertical: 12,
-                    borderRadius: 14, borderTopLeftRadius: 4,
-                    backgroundColor: theme.surface,
-                    borderWidth: 1, borderColor: theme.border,
-                    flexDirection: 'row', gap: 4, alignItems: 'center',
-                  }}>
-                    <TypingDot delay={0} theme={theme} />
-                    <TypingDot delay={200} theme={theme} />
-                    <TypingDot delay={400} theme={theme} />
-                  </View>
+                  <StreamingDots />
                 </View>
               )}
             </ScrollView>
@@ -472,11 +539,6 @@ export default function AIChatScreen() {
                     paddingBottom: 0,
                   }}
                 />
-                {/* Credit indicator */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                  <Ionicons name="flash" size={10} color={theme.muted} />
-                  <Text style={{ fontSize: 10, color: theme.muted }}>47</Text>
-                </View>
               </View>
 
               {/* Send button */}
