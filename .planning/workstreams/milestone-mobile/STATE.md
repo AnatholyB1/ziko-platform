@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
 status: in_progress
-stopped_at: Phase 39 complete — 4/4 plans executed, all 26 automated checks PASS
+stopped_at: Phase 40 planned — 6/6 PLAN.md files ready
 last_updated: "2026-05-27T00:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 27
+  total_phases: 10
+  completed_phases: 8
+  total_plans: 33
   completed_plans: 27
-  percent: 100
+  percent: 80
 ---
 
 # Project State — v1.7 Mobile UX v2
@@ -25,11 +25,12 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **39 — Remaining Plugins Group 2** — COMPLETE ✅
+Phase: **40 — Extra Screens** — PLANNED ⏳ (6 plans ready, not yet executed)
 
-Automated verification: 26/26 PASS ✅
+Previous: Phase 39 complete — 26/26 automated checks PASS ✅
+Also complete (missing from prior STATE): Phase 36 — Workout Stack Redesign (12/12 PASS, 2026-05-25) ✅
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80% (8/10 phases complete)
 
 ## Accumulated Context
 
@@ -77,17 +78,26 @@ Progress: [██████████] 100%
   - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
 - [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
 - [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test APPROVED 2026-05-27)
+- [x] Phase 36 — Workout Stack Redesign — COMPLETE (6/6 plans, automated 12/12 PASS, 2026-05-25) ← was missing from previous STATE
 - [x] Phase 39 — Remaining Plugins Group 2 — COMPLETE (4/4 plans, automated 26/26 PASS, 2026-05-27)
+- [ ] Phase 40 — Extra Screens — PLANNED (6 plans ready, not yet executed)
+  - [ ] 40-01 — Notifications + Store redesign
+  - [ ] 40-02 — AIChatScreen + AvatarUpload
+  - [ ] 40-03 — Calendar + Search + Help/Legal
+  - [ ] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral
+  - [ ] 40-05 — EmptyState + ErrorScreen components + integrations
+  - [ ] 40-06 — Phase verification
+- [ ] Phase 41 — Coach StateC + Final Audit — NOT STARTED
 
 ### Blockers/Concerns
 
-None.
+- Phase 35 gaps (35-G01–G07) still open — referral (35-G06) may overlap with Phase 40 plan 40-04. Coordinate or merge.
 
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Phase 39 complete — 6 remaining plugins redesigned (Journal, Cardio, Supplements, Wearables, RPE, Pantry). All 26 automated checks PASS. Milestone v1.7 at 100% — all 6 phases complete.
-Resume: Human smoke test Phase 39, then Phase 35 gap closure (35-G01–G07) or milestone ship prep.
+Stopped at: Phase 40 PLANNED — 6 PLAN.md files created. Phase 36 retroactively confirmed complete (was missing from STATE). Actual progress: 8/10 phases complete (phases 32–39 done, 40–41 remaining).
+Resume: Execute Phase 40 plans (40-01 → 40-04 in parallel, then 40-05, then 40-06 verification). Then Phase 35 gaps (35-G01–G07). Then Phase 41.
 
 ---
 
