@@ -7,19 +7,13 @@ export const maxDuration = 60;
 
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import OpenAI, { toFile } from 'openai';
 import { authMiddleware } from '../../middleware/auth.js';
 import { generateObject, jsonSchema, NoObjectGeneratedError } from 'ai';
 import { zodSchema } from '@ai-sdk/provider-utils';
 import { z } from 'zod';
 import { AGENT_MODEL } from '../../config/models.js';
 import { createUserClient } from '../clients/db.js';
-
-// OpenAI client at module scope — avoid re-instantiation on every request
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-// Allowed audio MIME types (T-01-04: mimeType whitelist validation)
-const ALLOWED_MIME_TYPES = ['audio/webm', 'audio/webm;codecs=opus', 'audio/mp4'];
+import { ALLOWED_MIME_TYPES, validateMimeType, transcribeAudio } from '../../lib/whisper.js';
 
 export const voiceRouter = new Hono();
 
@@ -46,7 +40,7 @@ voiceRouter.post(
 
     // 3. Validate mimeType against whitelist (T-01-04)
     const mimeType = (body['mimeType'] as string) ?? 'audio/webm';
-    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    if (!validateMimeType(mimeType)) {
       return c.json({ error: 'Unsupported audio format. Use webm or mp4.' }, 400);
     }
 
@@ -54,21 +48,11 @@ voiceRouter.post(
       // 4. Convert File to Buffer
       const buffer = Buffer.from(await audioFile.arrayBuffer());
 
-      // 5. Derive filename extension from mimeType
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      // 5. Transcribe via shared Whisper utility (language: 'fr' hardcoded in lib/whisper.ts)
+      const transcript = await transcribeAudio(buffer, mimeType);
 
-      // 6. Wrap in OpenAI-compatible File object
-      const file = await toFile(buffer, `recording.${ext}`, { type: mimeType });
-
-      // 7. Call Whisper-1 with language: 'fr' hardcoded (D-06 — never auto-detect)
-      const response = await openai.audio.transcriptions.create({
-        model: 'whisper-1',
-        file,
-        language: 'fr',
-      });
-
-      // 8. Return transcript
-      return c.json({ transcript: response.text });
+      // 6. Return transcript
+      return c.json({ transcript });
     } catch (err: any) {
       console.error('[coach/voice] transcribe error:', err.message);
       return c.json({ error: err.message ?? 'Transcription failed' }, 500);
