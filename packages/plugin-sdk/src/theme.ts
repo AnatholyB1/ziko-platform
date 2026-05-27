@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { MMKV } from 'react-native-mmkv';
 
 // ── Theme Palette ────────────────────────────────────────
 export interface ThemePalette {
@@ -152,6 +153,9 @@ export const BANNER_REGISTRY: Record<string, BannerDef> = {
   'Diamant Noir':     { id: 'Diamant Noir',     name: 'Diamant Noir',     colors: ['#1C1A17', '#525252', '#D4D4D4'], style: 'gradient' },
 };
 
+// ── Coach Storage (MMKV) ────────────────────────────────
+export const coachStorage = new MMKV({ id: 'coach-storage' });
+
 // ── Store ────────────────────────────────────────────────
 interface ThemeState {
   theme: ThemePalette;
@@ -163,8 +167,27 @@ interface ThemeState {
   clearCoachTheme: () => void;
 }
 
-export const useThemeStore = create<ThemeState>()((set, get) => ({
-  theme: DEFAULT_THEME,
+export const useThemeStore = create<ThemeState>()((set, get) => {
+  const initialTheme = (() => {
+    try {
+      const raw = coachStorage.getString('coach:branding');
+      if (!raw) return DEFAULT_THEME;
+      const branding = JSON.parse(raw) as { primary_color?: string };
+      if (!branding?.primary_color) return DEFAULT_THEME;
+      const primary = branding.primary_color;
+      return {
+        ...DEFAULT_THEME,
+        primary,
+        primaryLight: primary + '15',
+        tabBarActive: primary,
+      };
+    } catch {
+      return DEFAULT_THEME;
+    }
+  })();
+
+  return {
+  theme: initialTheme,
   equippedBanner: null,
 
   setTheme: (themeId) => {
@@ -188,4 +211,5 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   },
 
   clearCoachTheme: () => get().resetTheme(),
-}));
+  };
+});
