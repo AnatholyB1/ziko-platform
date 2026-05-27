@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
+import { useRouter } from 'expo-router';
 import { VideoUploadSheet } from './VideoUploadSheet';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ export default function VideoListScreen({ supabase }: VideoListScreenProps) {
   const theme = useThemeStore((s) => s.theme);
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const router = useRouter();
 
   const [showUploadSheet, setShowUploadSheet] = useState(false);
 
@@ -180,6 +182,11 @@ export default function VideoListScreen({ supabase }: VideoListScreenProps) {
             <TouchableOpacity
               key={video.id}
               activeOpacity={0.7}
+              onPress={() => {
+                if (video.status === 'annotated' || video.status === 'ready') {
+                  router.push(`/(plugins)/coach/video-player?videoId=${video.id}` as any);
+                }
+              }}
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
