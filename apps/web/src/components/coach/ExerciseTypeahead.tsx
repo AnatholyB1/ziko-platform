@@ -5,12 +5,15 @@ export interface ExerciseResult {
   id: string;
   name: string;
   category?: string;
+  source?: 'global' | 'coach_custom';
+  coach_exercise_id?: string | null;
 }
 
 export interface AddedExercise {
   exercise_id: string | null;
   exercise_name: string;
   category?: string;
+  coach_exercise_id?: string | null;
 }
 
 export interface ExerciseTypeaheadProps {
@@ -101,7 +104,12 @@ export function ExerciseTypeahead({ onAdd, apiUrl, accessToken }: ExerciseTypeah
   };
 
   const selectResult = (result: ExerciseResult) => {
-    onAdd({ exercise_id: result.id, exercise_name: result.name, category: result.category });
+    onAdd({
+      exercise_id: result.source === 'coach_custom' ? null : result.id,
+      exercise_name: result.name,
+      category: result.category,
+      coach_exercise_id: result.coach_exercise_id ?? null,
+    });
     setInputValue('');
     setResults([]);
     setOpen(false);
@@ -196,6 +204,11 @@ export function ExerciseTypeahead({ onAdd, apiUrl, accessToken }: ExerciseTypeah
                   {result.category && (
                     <span className="text-xs text-muted bg-background rounded-full px-2 py-0.5 shrink-0">
                       {result.category}
+                    </span>
+                  )}
+                  {result.source === 'coach_custom' && (
+                    <span className="text-xs font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5 shrink-0">
+                      Custom
                     </span>
                   )}
                 </button>
