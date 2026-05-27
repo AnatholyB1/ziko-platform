@@ -1,44 +1,62 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { DashboardControlBar } from '@/components/coach/dashboard/DashboardControlBar';
-import { DashboardEmptyState } from '@/components/coach/dashboard/DashboardEmptyState';
-import { PowerliftingDashboard } from '@/components/coach/dashboard/PowerliftingDashboard';
-import { HyroxDashboard } from '@/components/coach/dashboard/HyroxDashboard';
-import { RunningDashboard } from '@/components/coach/dashboard/RunningDashboard';
-import { BodybuildingDashboard } from '@/components/coach/dashboard/BodybuildingDashboard';
-import { WeightLossDashboard } from '@/components/coach/dashboard/WeightLossDashboard';
+import { use, useState } from 'react'
+import { useDashboardConfig } from '@/hooks/useDashboardConfig'
+import { DashboardGrid } from '@/components/coach/dashboard/DashboardGrid'
+import { DashboardLoadingState } from '@/components/coach/dashboard/DashboardLoadingState'
 
-type SportType = 'powerlifting' | 'hyrox' | 'running' | 'bodybuilding' | 'weightloss';
+export default function DashboardPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id: clientId } = use(params)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const { data: config, isLoading, error } = useDashboardConfig(clientId)
 
-export default function DashboardPage({ params }: { params: { id: string } }) {
-  const [sport, setSport] = useState<SportType | null>(null);
-  const [dateRange, setDateRange] = useState<'week' | 'month' | '3m'>('month');
+  if (isLoading) return <DashboardLoadingState />
+
+  if (error || !config) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm text-muted">
+          Impossible de charger le tableau de bord. Réessayez.
+        </p>
+      </div>
+    )
+  }
 
   return (
-    <div className="px-8 py-6">
-      <DashboardControlBar
-        sport={sport}
-        onSportChange={setSport}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
+    <div>
+      {/* Edit mode toggle bar */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-text">
+          Tableau de bord ({config.widgets.length} widgets)
+        </h2>
+        <button
+          onClick={() => setIsEditMode(prev => !prev)}
+          className={`px-4 py-2 rounded-lg text-sm font-normal transition-colors ${
+            isEditMode
+              ? 'bg-primary text-white'
+              : 'bg-white border border-border text-text hover:bg-[#F7F6F3]'
+          }`}
+        >
+          {isEditMode ? 'Terminer' : 'Éditer'}
+        </button>
+      </div>
+
+      {isEditMode && (
+        <p className="text-xs text-muted mb-3">
+          Faites glisser les widgets pour réorganiser la mise en page.
+          Les modifications sont enregistrées automatiquement.
+        </p>
+      )}
+
+      <DashboardGrid
+        widgets={config.widgets}
+        clientId={clientId}
+        isEditMode={isEditMode}
       />
-      {sport === null && <DashboardEmptyState prompt={true} />}
-      {sport === 'powerlifting' && (
-        <PowerliftingDashboard clientId={params.id} sport={sport} dateRange={dateRange} />
-      )}
-      {sport === 'hyrox' && (
-        <HyroxDashboard clientId={params.id} sport={sport} dateRange={dateRange} />
-      )}
-      {sport === 'running' && (
-        <RunningDashboard clientId={params.id} sport={sport} dateRange={dateRange} />
-      )}
-      {sport === 'bodybuilding' && (
-        <BodybuildingDashboard clientId={params.id} sport={sport} dateRange={dateRange} />
-      )}
-      {sport === 'weightloss' && (
-        <WeightLossDashboard clientId={params.id} sport={sport} dateRange={dateRange} />
-      )}
     </div>
-  );
+  )
 }
