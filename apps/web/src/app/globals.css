@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import '@vidstack/react/player/styles/default/theme.css';
+@import '@vidstack/react/player/styles/default/layouts/video.css';
+@plugin '@vidstack/react/tailwind.cjs';
 
 @theme {
   --color-primary: #FF5C1A;
