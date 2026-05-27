@@ -6,7 +6,9 @@
 //   DELETE /links/:id        — athlete revokes own link (INVITE-06)
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
+import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
+import { notificationService } from '../../services/notificationService.js';
 import { redemptionRateLimit } from './ratelimit.js';
 import {
   getActiveLink,
@@ -123,6 +125,7 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
     if (result.ok === true) {
       const coachId = result.link.coach_id;
       const athleteId = userId;
+      const linkId = result.link.id;
       adminClient
         .rpc('create_form_instances_for_trigger', {
           p_trigger_type: 'first_contact',
@@ -132,6 +135,40 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
         .then(({ error }) => {
           if (error) console.warn('[forms/first_contact trigger]', error.message);
         });
+      // PUSH-02: bidirectional invitation-accepted push (athlete + coach)
+      waitUntil(
+        (async () => {
+          // Resolve athlete display name from user_profiles
+          const { data: profileRow } = await adminClient
+            .from('user_profiles')
+            .select('name')
+            .eq('id', athleteId)
+            .limit(1)
+            .maybeSingle();
+          const athleteName: string = profileRow?.name ?? 'Un athlète';
+
+          await Promise.allSettled([
+            notificationService.send({
+              recipientUserId: athleteId,
+              category: 'coach',
+              type: 'invitation_accepted',
+              title: 'Invitation acceptée ✅',
+              body: 'Tu es maintenant connecté à ton coach.',
+              data: { url: '/(app)/coach' },
+              idempotencyKey: `invitation_accepted_athlete_${athleteId}_${linkId}`,
+            }),
+            notificationService.send({
+              recipientUserId: coachId,
+              category: 'coach',
+              type: 'invitation_accepted_coach',
+              title: 'Nouvel athlète 🎉',
+              body: `${athleteName} a rejoint ta liste de clients.`,
+              data: { url: '/(app)/clients' },
+              idempotencyKey: `invitation_accepted_coach_${coachId}_${linkId}`,
+            }),
+          ]);
+        })(),
+      );
     }
     return c.json(result);
   } catch (err: any) {
