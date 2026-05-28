@@ -5,8 +5,9 @@ import { Tabs, Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
 import { useTranslation } from '@ziko/plugin-sdk';
@@ -89,6 +90,8 @@ export default function AppLayout() {
   const theme = useThemeStore((s) => s.theme);
   const userId = useAuthStore((s) => s.user?.id);
 
+  const queryClient = useQueryClient();
+
   const { showModal, onActivate, onSkip } = useNotificationSetup(userId, session);
 
   useEffect(() => {
@@ -125,15 +128,37 @@ export default function AppLayout() {
     return () => sub.remove();
   }, [session, userId]);
 
-  // AppState listener for badge sync (Phase 3 will wire notificationStore.syncUnreadCount)
   useEffect(() => {
     const stateSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        // badge sync placeholder — Phase 3 will add notificationStore.getState().syncUnreadCount()
+      if (state === 'active' && userId) {
+        useNotificationStore.getState().syncUnreadCount(userId);
       }
     });
     return () => stateSub.remove();
-  }, []);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`notifications_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notification_log',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+          useNotificationStore.getState().syncUnreadCount(userId);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
 
   if (!session) return <Redirect href="/(auth)/login" />;
   if (!profile?.onboarding_done) return <Redirect href="/(auth)/onboarding/step-1" />;
