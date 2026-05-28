@@ -13,7 +13,7 @@
 - [x] **Phase 38: Dashboard Foundation + Powerlifting** - Dashboard tab shell, sport selector, date filter, and complete Powerlifting dashboard (4 charts)
 - [x] **Phase 39: Four Sport Dashboards** - Hyrox, Running/Cardio, Bodybuilding, and Weight Loss/Injury Return dashboards
 - [x] **Phase 40: Advanced Dashboard Features** - Side-by-side comparison and PDF export
-- [ ] **Phase 41: AI Context Injection** - Dashboard metrics injected into coach chat, insight chips, narrative summary, alert thresholds
+- [x] **Phase 41: AI Context Injection** - Dashboard metrics injected into coach chat, insight chips, narrative summary, alert thresholds (completed 2026-05-28)
 
 ---
 
@@ -86,11 +86,11 @@ Plans:
   4. Coach can open an "Alerts" panel per client, define a numeric threshold for any metric (e.g. RPE avg > 8.5), and the system flags the coach — visually on the dashboard or via notification — when the threshold is crossed
 **Plans**: 5 plans
 Plans:
-- [ ] 041-01-PLAN.md — Migration 062 + coach AI types and buildCoachSystemPrompt extension (AI-01/AI-04)
-- [ ] 041-02-PLAN.md — Insights and thresholds CRUD routes in dashboardsRouter (AI-02/AI-03/AI-04)
-- [ ] 041-03-PLAN.md — useInsights hook, NarrativeSummaryCard, DashboardChatDrawer (AI-01/AI-02/AI-03)
-- [ ] 041-04-PLAN.md — AlertesModal and ChartCard badge extension (AI-04)
-- [ ] 041-05-PLAN.md — Dashboard page wiring + ControlBar extension + human verify (AI-01/AI-02/AI-03/AI-04)
+- [x] 041-01-PLAN.md — Migration 062 + coach AI types and buildCoachSystemPrompt extension (AI-01/AI-04)
+- [x] 041-02-PLAN.md — Insights and thresholds CRUD routes in dashboardsRouter (AI-02/AI-03/AI-04)
+- [x] 041-03-PLAN.md — useInsights hook, NarrativeSummaryCard, DashboardChatDrawer (AI-01/AI-02/AI-03)
+- [x] 041-04-PLAN.md — AlertesModal and ChartCard badge extension (AI-04)
+- [x] 041-05-PLAN.md — Dashboard page wiring + ControlBar extension + human verify (AI-01/AI-02/AI-03/AI-04)
 **UI hint**: yes
 
 ---
@@ -103,7 +103,7 @@ Plans:
 | 38. Dashboard Foundation + Powerlifting | 4/4 | ✅ Complete | 2026-05-26 |
 | 39. Four Sport Dashboards | 5/5 | ✅ Complete | 2026-05-27 |
 | 40. Advanced Dashboard Features | 4/4 | ✅ Complete | 2026-05-28 |
-| 41. AI Context Injection | 0/5 | Not started | - |
+| 41. AI Context Injection | 5/5 | Complete   | 2026-05-28 |
 
 ---
 
