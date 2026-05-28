@@ -103,7 +103,10 @@ Plans:
   2. User can independently toggle 5 notification categories (Coach, Workout, Gamification, Santé & Habitudes, App); server-side sends respect each toggle
   3. User can set a quiet hours window; no push is delivered by the server outside that window
   4. All preference changes are persisted automatically to `notification_preferences` — there is no Save button and no change is lost on navigation
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 05-01-PLAN.md — NotifSubScreen data layer: state shape (notification_preferences columns), mount UPSERT defaults + SELECT, 600ms debounced auto-save with timezone_offset · Wave 1
+- [ ] 05-02-PLAN.md — NotifSubScreen JSX: master switch, 5 category toggles, quiet hours InlinePicker (start + end), OS Settings CTA · Wave 2
 **UI hint:** yes
 
 ### Phase 6: Local Reminders & App Updates
@@ -128,5 +131,5 @@ Plans:
 | 2. Action-triggered Push Notifications | 4/4 | Complete | 2026-05-27 |
 | 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
 | 4. Cron / Scheduled Notifications | 2/2 | Complete | 2026-05-28 |
-| 5. Notification Preferences UI | 0/0 | Not started | - |
+| 5. Notification Preferences UI | 0/2 | Not started | - |
 | 6. Local Reminders & App Updates | 0/0 | Not started | - |
