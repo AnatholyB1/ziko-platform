@@ -33,6 +33,13 @@ export default function DashboardPage({
   const [sport, setSport] = useState<SportType | null>(null)
   const [dateRange, setDateRange] = useState<'week' | 'month' | '3m'>('month')
 
+  // Compare mode state — D-01 through D-07
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareSubMode, setCompareSubMode] = useState<'client' | 'period'>('client')
+  const [compareClientId, setCompareClientId] = useState<string | null>(null)
+  const [comparePeriod, setComparePeriod] = useState<'week' | 'month' | '3m' | null>(null)
+  const [pdfExportState, setPdfExportState] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
+
   if (isLoading) return <DashboardLoadingState />
 
   if (error || !config) {
@@ -55,6 +62,15 @@ export default function DashboardPage({
 
   function handleCancel() {
     setIsEditing(false)
+  }
+
+  function handleToggleCompare() {
+    setCompareMode(prev => !prev)
+    if (compareMode) {
+      // closing: reset selections
+      setCompareClientId(null)
+      setComparePeriod(null)
+    }
   }
 
   return (
@@ -82,13 +98,71 @@ export default function DashboardPage({
                 onSportChange={setSport}
                 dateRange={dateRange}
                 onDateRangeChange={setDateRange}
+                compareMode={compareMode}
+                onToggleCompare={handleToggleCompare}
+                compareSubMode={compareSubMode}
+                onSubModeChange={setCompareSubMode}
+                compareClientId={compareClientId}
+                onClientChange={setCompareClientId}
+                comparePeriod={comparePeriod}
+                onPeriodChange={setComparePeriod}
+                currentClientId={clientId}
+                compareLoading={false}
+                compareError={false}
+                exportState={pdfExportState}
+                onExportPDF={() => { /* no-op — wired in 040-04 */ }}
               />
             </div>
-            {sport === 'powerlifting' && <PowerliftingDashboard clientId={clientId} sport={sport} dateRange={dateRange} />}
-            {sport === 'hyrox' && <HyroxDashboard clientId={clientId} sport={sport} dateRange={dateRange} />}
-            {sport === 'running' && <RunningDashboard clientId={clientId} sport={sport} dateRange={dateRange} />}
-            {sport === 'bodybuilding' && <BodybuildingDashboard clientId={clientId} sport={sport} dateRange={dateRange} />}
-            {sport === 'weightloss' && <WeightLossDashboard clientId={clientId} sport={sport} dateRange={dateRange} />}
+            {sport === 'powerlifting' && (
+              <PowerliftingDashboard
+                clientId={clientId}
+                sport={sport}
+                dateRange={dateRange}
+                compareMode={compareMode}
+                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+              />
+            )}
+            {sport === 'hyrox' && (
+              <HyroxDashboard
+                clientId={clientId}
+                sport={sport}
+                dateRange={dateRange}
+                compareMode={compareMode}
+                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+              />
+            )}
+            {sport === 'running' && (
+              <RunningDashboard
+                clientId={clientId}
+                sport={sport}
+                dateRange={dateRange}
+                compareMode={compareMode}
+                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+              />
+            )}
+            {sport === 'bodybuilding' && (
+              <BodybuildingDashboard
+                clientId={clientId}
+                sport={sport}
+                dateRange={dateRange}
+                compareMode={compareMode}
+                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+              />
+            )}
+            {sport === 'weightloss' && (
+              <WeightLossDashboard
+                clientId={clientId}
+                sport={sport}
+                dateRange={dateRange}
+                compareMode={compareMode}
+                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+              />
+            )}
             {sport === null && <DashboardEmptyState />}
           </>
         )}

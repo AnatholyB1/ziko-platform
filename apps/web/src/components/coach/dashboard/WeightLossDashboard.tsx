@@ -46,10 +46,20 @@ export function WeightLossDashboard({
   clientId,
   sport,
   dateRange,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  compareMode,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  compareClientId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  comparePeriod,
 }: {
   clientId: string;
   sport: string | null;
   dateRange: 'week' | 'month' | '3m';
+  // TODO: 040-03 adds dual-series rendering
+  compareMode?: boolean;
+  compareClientId?: string | null;
+  comparePeriod?: 'week' | 'month' | '3m' | null;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['weightloss', clientId, sport, dateRange],
