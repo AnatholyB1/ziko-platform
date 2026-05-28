@@ -11,9 +11,9 @@
 
 ### Dashboard Core (DASH)
 
-- [ ] **DASH-01**: Coach can view a full-screen dashboard tab on each client detail page
-- [ ] **DASH-02**: Dashboard loads a default config (3–4 pre-built widgets) on first access for a coach+athlete pair
-- [ ] **DASH-03**: Coach can drag and resize widgets to reorder the layout (react-grid-layout, locked in view mode)
+- [x] **DASH-01**: Coach can view a full-screen dashboard tab on each client detail page
+- [x] **DASH-02**: Dashboard loads a default config (3–4 pre-built widgets) on first access for a coach+athlete pair
+- [x] **DASH-03**: Coach can drag and resize widgets to reorder the layout (react-grid-layout, locked in view mode)
 - [ ] **DASH-04**: Dashboard config persists per coach+athlete pair in Supabase
 
 ### Widgets — Closed Set of 7 Types (WIDGET)
@@ -29,7 +29,7 @@
 ### AI Edit Session (EDIT)
 
 - [ ] **EDIT-01**: Coach can enter edit mode: split-screen (dashboard preview left + chat right)
-- [ ] **EDIT-02**: Coach types in chat → Claude calls tools (add/update/remove/reorder widget) → live preview updates
+- [x] **EDIT-02**: Coach types in chat → Claude calls tools (add/update/remove/reorder widget) → live preview updates
 - [ ] **EDIT-03**: Changes visible in preview before any save action
 - [ ] **EDIT-04**: Coach can save (persist to Supabase) or cancel (discard preview)
 - [ ] **EDIT-05**: Edit chat restricted to dashboard tools only — no general coaching questions in this session
@@ -42,7 +42,8 @@
 ### Infrastructure (INFRA)
 
 - [ ] **INFRA-01**: Migration 054: `dashboard_configs` (coach_id, client_id, widgets JSONB flat array with `{x,y,w,h}`) + `coach_memory` (templates + prefs)
-- [ ] **INFRA-02**: Hono bounded context `coach/dashboards/` — 5 routes + `POST /ai-edit` SSE endpoint
+- [ ] **INFRA-02a**: Hono bounded context `coach/dashboards/` — 5 CRUD routes (GET/:clientId, PUT/:clientId, DELETE/:clientId, GET/memory, PUT/memory)
+- [x] **INFRA-02b**: `POST /coach/dashboards/:clientId/ai-edit` — SSE endpoint for Claude dashboard tools (Phase 03)
 - [ ] **INFRA-03**: `GET /coach/clients/:clientId/widget-data` — aggregates athlete data per widget type with period scoping
 - [ ] **INFRA-04**: Zod discriminated union strict (`additionalProperties: false`) + `schema_version: 1` from day one
 
@@ -72,9 +73,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DASH-01 | Phase 02 | Pending |
-| DASH-02 | Phase 02 | Pending |
-| DASH-03 | Phase 02 | Pending |
+| DASH-01 | Phase 02 | Complete |
+| DASH-02 | Phase 02 | Complete |
+| DASH-03 | Phase 02 | Complete |
 | DASH-04 | Phase 01 | Pending |
 | WIDGET-01 | Phase 02 | Pending |
 | WIDGET-02 | Phase 02 | Pending |
@@ -84,14 +85,15 @@
 | WIDGET-06 | Phase 02 | Pending |
 | WIDGET-07 | Phase 02 | Pending |
 | EDIT-01 | Phase 03 | Pending |
-| EDIT-02 | Phase 03 | Pending |
+| EDIT-02 | Phase 03 | Complete |
 | EDIT-03 | Phase 03 | Pending |
 | EDIT-04 | Phase 03 | Pending |
 | EDIT-05 | Phase 03 | Pending |
 | MEM-01 | Phase 04 | Pending |
 | MEM-02 | Phase 04 | Pending |
 | INFRA-01 | Phase 01 | Pending |
-| INFRA-02 | Phase 01 | Pending |
+| INFRA-02a | Phase 01 | Pending |
+| INFRA-02b | Phase 03 | Complete |
 | INFRA-03 | Phase 01 | Pending |
 | INFRA-04 | Phase 01 | Pending |
 
