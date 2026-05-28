@@ -17,7 +17,7 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 - [x] **Phase 2: Action-triggered Push Notifications** — Wire the highest-value server-side push events (program assignment, invitations, post-session summary, level-up) to prove the end-to-end pipeline
 - [x] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
 - [x] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
-- [ ] **Phase 5: Notification Preferences UI** — Expose master switch, per-category toggles, quiet hours, and OS Settings deep-link in a Paramètres > Notifications screen with auto-save
+- [x] **Phase 5: Notification Preferences UI** — Expose master switch, per-category toggles, quiet hours, and OS Settings deep-link in a Paramètres > Notifications screen with auto-save
 - [ ] **Phase 6: Local Reminders & App Updates** — Schedule per-habit local reminders and workout-day reminders via `scheduleNotificationAsync`, plus OTA update card in the in-app center
 
 ---
@@ -105,8 +105,8 @@ Plans:
   4. All preference changes are persisted automatically to `notification_preferences` — there is no Save button and no change is lost on navigation
 **Plans:** 2 plans
 Plans:
-- [ ] 05-01-PLAN.md — NotifSubScreen data layer: state shape (notification_preferences columns), mount UPSERT defaults + SELECT, 600ms debounced auto-save with timezone_offset · Wave 1
-- [ ] 05-02-PLAN.md — NotifSubScreen JSX: master switch, 5 category toggles, quiet hours InlinePicker (start + end), OS Settings CTA · Wave 2
+- [x] 05-01-PLAN.md — NotifSubScreen data layer: state shape (notification_preferences columns), mount UPSERT defaults + SELECT, 600ms debounced auto-save with timezone_offset · Wave 1
+- [x] 05-02-PLAN.md — NotifSubScreen JSX: master switch, 5 category toggles, quiet hours InlinePicker (start + end), OS Settings CTA · Wave 2
 **UI hint:** yes
 
 ### Phase 6: Local Reminders & App Updates
@@ -131,5 +131,5 @@ Plans:
 | 2. Action-triggered Push Notifications | 4/4 | Complete | 2026-05-27 |
 | 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
 | 4. Cron / Scheduled Notifications | 2/2 | Complete | 2026-05-28 |
-| 5. Notification Preferences UI | 0/2 | Not started | - |
+| 5. Notification Preferences UI | 2/2 | Complete | 2026-05-28 |
 | 6. Local Reminders & App Updates | 0/0 | Not started | - |
