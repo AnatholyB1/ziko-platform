@@ -13,7 +13,7 @@
 - [ ] **Phase 02: Trigger Engine** - All 4 trigger types create pending form instances automatically; duplicate guard prevents double-send
 - [ ] **Phase 03: Coach Form Builder (Web)** - Coach can create, edit, publish, and list forms with 4 question types and trigger conditions set
 - [ ] **Phase 04: Athlete Blocking Overlay (Mobile)** - Athlete with pending forms cannot use the app until all forms are submitted sequentially
-- [ ] **Phase 05: Response Viewer & Claude Injection** - Coach reads all submissions per client; Claude receives last 5 form responses as structured context on every call
+- [x] **Phase 05: Response Viewer & Claude Injection** - Coach reads all submissions per client; Claude receives last 5 form responses as structured context on every call (completed 2026-05-28)
 
 ---
 
@@ -96,11 +96,11 @@ Plans:
   3. When the AI coach orchestrator processes a chat request for an athlete, it automatically receives the last 5 submitted form responses injected into the system prompt — no manual action needed
   4. The injected context block is formatted as readable text: form title, submission date, and each question paired with its answer
   5. A new pending form in the "Formulaires" tab does not appear as submitted — it shows the "En attente" badge until the athlete fills it
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 05-01-PLAN.md — Hono route GET /coach/clients/:clientId/forms in clientsRouter: pre-joined FormInstance[] with Q&A resolved server-side
-- [ ] 05-02-PLAN.md — Web UI: ClientTabStrip + FormStatusBadge extension + forms/page.tsx server page + ClientFormsContent accordion
-- [ ] 05-03-PLAN.md — Claude context injection: extend fetchUserContext() with recentFormResponses + formsSection in system prompt
+- [x] 05-02-PLAN.md — Web UI: ClientTabStrip + FormStatusBadge extension + forms/page.tsx server page + ClientFormsContent accordion
+- [x] 05-03-PLAN.md — Claude context injection: extend fetchUserContext() with recentFormResponses + formsSection in system prompt
 **UI hint**: yes
 
 ---
@@ -113,7 +113,7 @@ Plans:
 | 02. Trigger Engine | 0/4 | Planned | - |
 | 03. Coach Form Builder (Web) | 0/4 | Planned | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/3 | Planned | - |
-| 05. Response Viewer & Claude Injection | 1/3 | In Progress|  |
+| 05. Response Viewer & Claude Injection | 3/3 | Complete   | 2026-05-28 |
 
 ---
 
