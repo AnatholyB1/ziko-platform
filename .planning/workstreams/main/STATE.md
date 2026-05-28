@@ -4,14 +4,14 @@ workstream: main
 milestone: v1.8
 milestone_name: Sport Dashboards
 branch: main
-status: complete
-last_updated: "2026-05-27T00:00:00Z"
+status: in_progress
+last_updated: "2026-05-28T00:00:00Z"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 60
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
+  percent: 80
 ---
 
 # Project State — v1.8 Sport Dashboards
@@ -28,18 +28,18 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 
 ## Current Position
 
-Phase: 39 — Four Sport Dashboards ✅ COMPLETE
-Plan: 5/5 plans done (039-01 through 039-05)
-Status: Complete — all sport dashboards wired into dashboard page
-Last activity: 2026-05-27 — Phase 39 executed and complete
+Phase: 40 — Advanced Dashboard Features ✅ COMPLETE
+Plan: 4/4 plans done (040-01 through 040-04)
+Status: Complete — sub-tab strip, compare mode, PDF export, dual-series charts all implemented
+Last activity: 2026-05-28 — Phase 40 executed and complete
 
 ---
 
 ## Progress Bar
 
 ```
-Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [ ] → Phase 41 [ ]
-60% complete
+Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [✅] → Phase 41 [ ]
+80% complete
 ```
 
 ---

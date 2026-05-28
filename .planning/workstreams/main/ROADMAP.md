@@ -9,10 +9,10 @@
 
 ## Phases
 
-- [ ] **Phase 37: UI Design Contract** - Design all dashboard surfaces, sport selector, and chart layouts before any implementation
-- [ ] **Phase 38: Dashboard Foundation + Powerlifting** - Dashboard tab shell, sport selector, date filter, and complete Powerlifting dashboard (4 charts)
-- [ ] **Phase 39: Four Sport Dashboards** - Hyrox, Running/Cardio, Bodybuilding, and Weight Loss/Injury Return dashboards
-- [ ] **Phase 40: Advanced Dashboard Features** - Side-by-side comparison and PDF export
+- [x] **Phase 37: UI Design Contract** - Design all dashboard surfaces, sport selector, and chart layouts before any implementation
+- [x] **Phase 38: Dashboard Foundation + Powerlifting** - Dashboard tab shell, sport selector, date filter, and complete Powerlifting dashboard (4 charts)
+- [x] **Phase 39: Four Sport Dashboards** - Hyrox, Running/Cardio, Bodybuilding, and Weight Loss/Injury Return dashboards
+- [x] **Phase 40: Advanced Dashboard Features** - Side-by-side comparison and PDF export
 - [ ] **Phase 41: AI Context Injection** - Dashboard metrics injected into coach chat, insight chips, narrative summary, alert thresholds
 
 ---
@@ -69,10 +69,10 @@ Plans:
   4. Dashboard page has a sub-tab strip: Sport tab restores DashboardControlBar + sport-specific charts; Personnalisé tab shows DashboardGrid
 **Plans**: 4 plans
 Plans:
-- [ ] 040-01-PLAN.md — Sub-tab strip + dashboard page restructure
-- [ ] 040-02-PLAN.md — Compare mode: UI controls + data
-- [ ] 040-03-PLAN.md — Dual-series chart widgets
-- [ ] 040-04-PLAN.md — PDF export (html2canvas + jsPDF)
+- [x] 040-01-PLAN.md — Sub-tab strip + dashboard page restructure
+- [x] 040-02-PLAN.md — Compare mode: UI controls + data
+- [x] 040-03-PLAN.md — Dual-series chart widgets
+- [x] 040-04-PLAN.md — PDF export (html2canvas + jsPDF)
 **UI hint**: yes
 
 ### Phase 41: AI Context Injection
@@ -93,10 +93,10 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 37. UI Design Contract | 0/0 | Not started | - |
-| 38. Dashboard Foundation + Powerlifting | 0/0 | Not started | - |
-| 39. Four Sport Dashboards | 0/0 | Not started | - |
-| 40. Advanced Dashboard Features | 0/4 | Not started | - |
+| 37. UI Design Contract | 1/1 | ✅ Complete | 2026-05-25 |
+| 38. Dashboard Foundation + Powerlifting | 4/4 | ✅ Complete | 2026-05-26 |
+| 39. Four Sport Dashboards | 5/5 | ✅ Complete | 2026-05-27 |
+| 40. Advanced Dashboard Features | 4/4 | ✅ Complete | 2026-05-28 |
 | 41. AI Context Injection | 0/0 | Not started | - |
 
 ---
