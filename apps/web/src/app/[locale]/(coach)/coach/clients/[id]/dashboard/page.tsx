@@ -118,8 +118,7 @@ export default function DashboardPage({
 
   function handleTemplateSkip() {
     setIsNewDashboard(false)
-    // config.widgets already has DEFAULT_WIDGETS from the backend (no row = returns defaults)
-    // No API call needed — query cache already has the right data
+    // Backend returns [] for new dashboards — dashboard shows empty grid, coach uses Personnaliser to add widgets
   }
 
   function handleToggleCompare() {

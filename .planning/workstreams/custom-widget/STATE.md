@@ -2,74 +2,52 @@
 gsd_state_version: 1.0
 milestone: v1.15
 milestone_name: Custom Widget Dashboards
-status: complete
-last_updated: "2026-05-28T22:00:00.000Z"
+status: shipped
+last_updated: "2026-05-28"
 last_activity: 2026-05-28
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 19
   completed_plans: 19
-  percent: 95
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-25)
+See: `.planning/workstreams/custom-widget/milestones/v1.15-ROADMAP.md`
 
 **Core value:** Coach customizes a per-athlete dashboard in 30s via Claude chat — live preview, one-click save
-**Current focus:** Phase 04 — Polish + Coach Memory (next)
+**Milestone status:** ✅ SHIPPED 2026-05-28
 
-## Current Position
+## Shipped Summary
 
-Phase: 04 of 04 (Polish + Coach Memory) — AWAITING HUMAN VERIFY
-Plan: 4 of 4 (04-04 auto tasks DONE, checkpoint pending)
-Status: Checkpoint — human verification required
-Last activity: 2026-05-28
+**v1.15 Custom Widget Dashboards** — 4 phases, 19 plans, 2026-05-25 → 2026-05-28
 
-Progress: [███████░░░] 70%
+Key deliverables:
+- Migration 056: `dashboard_configs` + `coach_memory` tables live in production Supabase
+- 7 widget types rendering live athlete data (Recharts + react-grid-layout v2)
+- AI edit session: split-screen, SSE tool calls, live preview, 15/15 PITFALLS cleared
+- Coach memory: TemplatePicker (GSAP), TemplateNamingModal, personalized opening message
+- Post-audit fix: MEM-01 apply path (TemplatePicker now reachable for new dashboard pairs)
 
-## Performance Metrics
+**WOW criterion met:** Guillaume customizes a dashboard in under 30s via chat and saves it.
 
-**Velocity:**
+## Key Decisions (Permanent Record)
 
-- Total plans completed: 5
-- Phase 01 duration: ~1 session (2026-05-26)
-- Total execution time: ~1.5h
+- Closed widget set (hard enum) — Zod discriminated union rejects unknown types at schema level
+- `schema_version: 1` from day 1 to avoid production retrofits
+- Atomic tool execution — preview only updates from `part.state === output-available`
+- `/memory` route registered before `/:clientId` in Hono (route order critical)
+- `stopWhen: stepCountIs(2)` for dashboard edit
+- `getDashboardConfig` returns `[]` for new pairs (not DEFAULT_WIDGETS) — TemplatePicker trigger
+- TemplatePicker auto-skips via useEffect when `templates.length === 0`
 
-*Updated after each plan completion*
+## Tech Debt Carried Forward
 
-## Accumulated Context
-
-### Decisions
-
-- **Closed widget set (hard enum)**: 7 widget types only; Zod discriminated union rejects unknown types at schema level — scope-creep prevention
-- **schema_version: 1 from day 1**: Add to root JSONB immediately; retrofitting after production data exists is days of debugging
-- **Atomic tool execution (not streamText)**: Preview ONLY updates from `part.state === output-available`; streaming partial JSON causes invalid intermediate states
-- **Array order for layout (not integer position field)**: Simpler schema; reorder_widgets tool shuffles the array
-- **Multi-turn spike on day 1 of Phase 3**: Two-turn integration test must pass before any Phase 3 plan is marked complete (PITFALLS: forgetting `response.messages` silently breaks history)
-- **Dashboard tools isolated in `coach/dashboards/tools.ts`**: Never merged into `coach/ai/tools.ts`; `stopWhen: stepCountIs(2)` (not 5)
-- **/memory route registered before /:clientId in Hono**: Route order critical to prevent Hono treating "memory" as a clientId param
-- **coach_memory in migration 054**: Same migration as dashboard_configs — no split
-- **Credit rate /ai-edit**: Same as `coach_chat` for now — no separate dashboard_edit type
-- **DASH-03 confirmed**: Drag-to-reorder in scope — react-grid-layout@2.2.1 installed in Phase 02
-- [Phase ?]: TypeScript GSAP: use fromTo+keyframes instead of x:[] array to satisfy TweenValue type
-- **GET /memory flat shape**: Returns `{ preferences, templates, recent_actions }` directly — no wrapper key; 200 with empty defaults (not 404) on first access
-- **PUT /memory 409 logic**: Net-new template (id absent from existing) whose name matches existing name triggers 409; existing template updates are allowed
-- **MEM-02 ref-sync pattern**: historyRef passed from DashboardEditOverlay into EditChatPanel; useEffect syncs non-opening messages to ref on change — avoids prop drilling state
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-None.
-
-## Session Continuity
-
-Last session: 2026-05-28T20:56:53.718Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/workstreams/notification-mobile/phases/06-local-reminders-app-updates/06-CONTEXT.md
+- `TemplateNamingModal` does not invalidate `['coach-memory']` query cache after save
+- `DashboardEmptyState` missing `prompt` prop in `page.tsx`
+- `DELETE /coach/dashboards/:clientId` route has no frontend caller
+- No VERIFICATION.md files for any of the 4 phases

@@ -1,6 +1,6 @@
 import { createUserClient } from '../clients/db.js'
 import type { Widget, DashboardConfig, DashboardConfigRow, CoachMemoryRow } from './types.js'
-import { WidgetSchema, DEFAULT_WIDGETS } from './schemas.js'
+import { WidgetSchema } from './schemas.js'
 
 export { createUserClient }
 
@@ -13,7 +13,7 @@ export async function getDashboardConfig(jwt: string, coachId: string, clientId:
     .eq('client_id', clientId)
     .maybeSingle()
   if (error) throw new Error(error.message)
-  if (!data) return { schema_version: 1, widgets: DEFAULT_WIDGETS.widgets }
+  if (!data) return { schema_version: 1, widgets: [] }
   return { schema_version: 1, widgets: data.widgets as Widget[] }
 }
 

@@ -22,6 +22,13 @@ export function TemplatePicker({ clientId, onSelect, onSkip }: TemplatePickerPro
   const cardRefs = useRef<HTMLDivElement[]>([]);
   const footerLinkRef = useRef<HTMLButtonElement>(null);
 
+  // Auto-skip when no templates — avoids stranding the coach on a blank panel
+  useEffect(() => {
+    if (!isLoading && (memory?.templates?.length ?? 0) === 0) {
+      onSkip()
+    }
+  }, [isLoading, memory, onSkip])
+
   // GSAP entrance — fires when data has loaded and templates are available
   useEffect(() => {
     if (!isLoading && (memory?.templates?.length ?? 0) > 0) {
