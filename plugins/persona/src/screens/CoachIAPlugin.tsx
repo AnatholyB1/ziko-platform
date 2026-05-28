@@ -5,12 +5,13 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
 // ─── Persona definitions (UI-SPEC §5.4) ───────────────────────────────────────
@@ -108,7 +109,7 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
   // ─── Queries ────────────────────────────────────────────────────────────────
 
   // Conversations
-  const { data: conversations = [] } = useQuery({
+  const { data: conversations = [], isLoading: convsLoading, isError: convsError, refetch: convsRefetch } = useQuery({
     queryKey: ['ai_conversations', userId],
     enabled: !!userId,
     queryFn: async () => {
@@ -706,6 +707,17 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────────
+
+  if (convsLoading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#FF5C1A" />
+    </View>
+  );
+
+  if (convsError) return (
+    <ErrorScreen variant="network" onRetry={convsRefetch} />
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <PluginHeader

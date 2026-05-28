@@ -29,16 +29,6 @@ const CARD_SHADOW = {
 
 const ICON_COLORS = ['#FF5C1A', '#2E7BF6', '#7C3AED', '#2E9E5B'];
 
-// ─── Static library ───────────────────────────────────────────────────────────
-
-const LIBRARY = [
-  { name: 'Pigeon', sub: 'Hanches · 60s/côté' },
-  { name: 'Cobra', sub: 'Bas du dos · 45s' },
-  { name: 'Couch stretch', sub: 'Quadriceps · 90s/côté' },
-  { name: "World's greatest", sub: 'Full body · 8 reps' },
-  { name: 'Foam roll IT band', sub: 'Bandelette · 60s/jambe' },
-  { name: 'Cat-cow', sub: 'Colonne vertébrale · 10 cycles' },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -108,6 +98,7 @@ function MiniBars({
 export default function StretchingPlugin({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const [activeTab, setActiveTab] = useState<string>('Routines');
+  const library: Array<{ name: string; sub: string }> = [];
 
   // ── Auth user ────────────────────────────────────────────────────────────
   const { data: authData } = useQuery({
@@ -315,7 +306,7 @@ export default function StretchingPlugin({ supabase }: { supabase: any }) {
             6 exercices essentiels
           </Text>
           <View style={{ gap: 8 }}>
-            {LIBRARY.map((item) => (
+            {library.map((item) => (
               <View
                 key={item.name}
                 style={{

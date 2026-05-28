@@ -24,32 +24,6 @@ const CATEGORIES = [
   { id: 'pantry', label: 'Placard', icon: 'grid-outline' as const, color: '#F59E0B' },
 ];
 
-const RECIPE_STUBS = [
-  {
-    name: 'Omelette protéinée',
-    ingredients: ['oeufs', 'fromage', 'épinards', 'ail'],
-    time: '10 min',
-    kcal: 320,
-  },
-  {
-    name: 'Bowl riz-poulet',
-    ingredients: ['riz', 'poulet', 'brocoli', 'sauce soja'],
-    time: '25 min',
-    kcal: 520,
-  },
-  {
-    name: 'Smoothie protéiné',
-    ingredients: ['banane', 'lait', 'whey', 'beurre de cacahuète'],
-    time: '5 min',
-    kcal: 380,
-  },
-  {
-    name: 'Salade Niçoise',
-    ingredients: ['thon', 'oeufs', 'tomates', 'olives', 'haricots verts'],
-    time: '15 min',
-    kcal: 410,
-  },
-];
 
 // ─── PantryPlugin ─────────────────────────────────────────────────────────────
 
@@ -58,6 +32,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const recipeStubs: Array<{ name: string; ingredients: string[]; time: string; kcal: number }> = [];
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
 
@@ -120,7 +95,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
 
   const pantryNames = pantryItems.map((i) => i.name.toLowerCase());
 
-  const recipesWithMatch = RECIPE_STUBS.map((recipe) => {
+  const recipesWithMatch = recipeStubs.map((recipe) => {
     const matchCount = recipe.ingredients.filter((ing) =>
       pantryNames.some((n) => n.includes(ing.toLowerCase()))
     ).length;

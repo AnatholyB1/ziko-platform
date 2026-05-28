@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   AppState,
   Vibration,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { playSound, playCountdownBeep } from '@ziko/sounds';
 
@@ -51,7 +52,7 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
   const [sets, setSets] = useState(3);
 
   // ── Query: timer presets ─────────────────────────────────────────────────
-  const { data: dbPresets } = useQuery({
+  const { data: dbPresets, isLoading: presetsLoading, isError: presetsError, refetch: presetsRefetch } = useQuery({
     queryKey: ['timer_presets', 'user'],
     queryFn: async () => {
       const {
@@ -218,6 +219,17 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (presetsLoading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#FF5C1A" />
+    </View>
+  );
+
+  if (presetsError) return (
+    <ErrorScreen variant="network" onRetry={presetsRefetch} />
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <PluginHeader title="Timer" onBack={() => router.back()} />

@@ -7,11 +7,12 @@ import {
   Modal,
   TextInput,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
 
@@ -122,7 +123,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   const today = new Date().toISOString().split('T')[0];
 
   // ── Habits query ─────────────────────────────────────────
-  const { data: habits = [] } = useQuery<Habit[]>({
+  const { data: habits = [], isLoading: habitsLoading, isError: habitsError, refetch: habitsRefetch } = useQuery<Habit[]>({
     queryKey: ['habits', userId],
     queryFn: async () => {
       if (!userId) return [];
@@ -802,6 +803,16 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
+
+  if (habitsLoading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#FF5C1A" />
+    </View>
+  );
+
+  if (habitsError) return (
+    <ErrorScreen variant="network" onRetry={habitsRefetch} />
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>

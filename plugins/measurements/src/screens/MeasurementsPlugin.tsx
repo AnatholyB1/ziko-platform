@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
@@ -103,7 +104,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
   const [hip, setHip] = useState('');
 
   // ── Queries ──────────────────────────────────────────────────────────────
-  const { data: latestMeasurement } = useQuery({
+  const { data: latestMeasurement, isLoading: measurementsLoading, isError: measurementsError, refetch: measurementsRefetch } = useQuery({
     queryKey: ['latest_measurement', 'user'],
     queryFn: async () => {
       const {
@@ -294,6 +295,17 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (measurementsLoading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#FF5C1A" />
+    </View>
+  );
+
+  if (measurementsError) return (
+    <ErrorScreen variant="network" onRetry={measurementsRefetch} />
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}

@@ -56,14 +56,6 @@ function getToday(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-// ─── Static reminder data ─────────────────────────────────────────────────────
-
-const REMINDERS = [
-  { time: '8h00', label: 'Matin', items: ['Vitamine D3', 'Oméga-3'] },
-  { time: 'Avant séance', label: 'Pré-entraînement', items: ['Caféine', 'Créatine'] },
-  { time: '13h00', label: 'Midi', items: ['Magnésium'] },
-  { time: '21h00', label: 'Soir', items: ['Magnésium bisglycinate'] },
-];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -71,6 +63,7 @@ export default function SupplementsPlugin({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(TABS[0]);
+  const reminders: Array<{ time: string; label: string; items: string[] }> = [];
 
   // Tab 2 — search state
   const [searchText, setSearchText] = useState('');
@@ -78,7 +71,7 @@ export default function SupplementsPlugin({ supabase }: { supabase: any }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Tab 3 — reminder toggles
-  const [reminderEnabled, setReminderEnabled] = useState<boolean[]>(REMINDERS.map(() => false));
+  const [reminderEnabled, setReminderEnabled] = useState<boolean[]>([]);
 
   // ─── Auth query ─────────────────────────────────────────────────────────────
 
@@ -391,7 +384,7 @@ export default function SupplementsPlugin({ supabase }: { supabase: any }) {
         {/* ─── Tab: Rappels ─────────────────────────────────────────── */}
         {activeTab === TABS[2] && (
           <View>
-            {REMINDERS.map((reminder, index) => (
+            {reminders.map((reminder, index) => (
               <View
                 key={index}
                 style={{

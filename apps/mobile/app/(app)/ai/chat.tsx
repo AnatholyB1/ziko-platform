@@ -37,41 +37,6 @@ interface Conversation {
 
 // ── Static seed data ──────────────────────────────────────────
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    text: "Salut ! J'ai analysé tes 3 dernières séances. Tu as bien progressé en force mais ton volume global est en baisse — probablement à cause du manque de sommeil ces derniers jours. Comment je peux t'aider aujourd'hui ?",
-  },
-];
-
-const CONVERSATIONS: Conversation[] = [
-  {
-    id: 'c1',
-    title: 'Programme pour 3 séances/sem',
-    date: 'Aujourd\'hui',
-    preview: "J'ai créé un programme Push/Pull/Legs adapté à ton niveau et tes objectifs...",
-  },
-  {
-    id: 'c2',
-    title: 'Analyse nutrition semaine 18',
-    date: 'Hier',
-    preview: 'Tes apports en protéines sont corrects (178g/jour) mais les glucides pre-workout...',
-  },
-  {
-    id: 'c3',
-    title: 'Récupération épaule gauche',
-    date: 'Lun.',
-    preview: "Voici un protocole de mobilité en 4 étapes pour l'épaule : rotations externes...",
-  },
-  {
-    id: 'c4',
-    title: 'PR squat — analyse technique',
-    date: '2 mai',
-    preview: "Bravo pour les 140kg ! Pour continuer à progresser, concentre-toi sur la profondeur...",
-  },
-];
-
 const SUGGESTIONS = [
   'Analyse ma séance d\'hier',
   'Plan repas pour cette semaine',
@@ -201,10 +166,11 @@ export default function AIChatScreen() {
   const insets = useSafeAreaInsets();
 
   const [view, setView] = useState<'chat' | 'list'>('chat');
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
-  const [activeConvId, setActiveConvId] = useState<string | null>('c1');
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const conversations: Conversation[] = [];
 
   const scrollRef = useRef<ScrollView>(null);
 
@@ -385,7 +351,7 @@ export default function AIChatScreen() {
             </Text>
 
             <View style={{ gap: 6 }}>
-              {CONVERSATIONS.map((c) => {
+              {conversations.map((c) => {
                 const isActive = activeConvId === c.id;
                 return (
                   <TouchableOpacity

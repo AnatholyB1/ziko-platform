@@ -3,13 +3,14 @@ import {
   View,
   Text,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -158,7 +159,7 @@ export default function SleepPlugin({ supabase }: { supabase: any }) {
   const [activeTab, setActiveTab] = useState<string>('Cette nuit');
 
   // ── Auth user ────────────────────────────────────────────────────────────
-  const { data: authData } = useQuery({
+  const { data: authData, isLoading: authLoading } = useQuery({
     queryKey: ['auth_user'],
     queryFn: async () => {
       const { data } = await supabase.auth.getUser();
@@ -168,7 +169,7 @@ export default function SleepPlugin({ supabase }: { supabase: any }) {
   const userId = authData?.id;
 
   // ── Last night ───────────────────────────────────────────────────────────
-  const { data: lastLog } = useQuery({
+  const { data: lastLog, isLoading: lastLogLoading, isError: lastLogError, refetch: lastLogRefetch } = useQuery({
     queryKey: ['sleep_last', userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -248,6 +249,16 @@ export default function SleepPlugin({ supabase }: { supabase: any }) {
 
   // ── Sleep stages for last night ───────────────────────────────────────────
   const stages = lastLog ? estimateSleepStages(Number(lastLog.duration_hours)) : [];
+
+  if (authLoading || lastLogLoading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color="#FF5C1A" />
+    </View>
+  );
+
+  if (lastLogError) return (
+    <ErrorScreen variant="network" onRetry={lastLogRefetch} />
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
