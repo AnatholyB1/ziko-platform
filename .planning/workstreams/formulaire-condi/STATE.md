@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Formulaires Conditionnels
 status: in_progress
-last_updated: "2026-05-27"
-last_activity: 2026-05-27
+last_updated: "2026-05-28"
+last_activity: 2026-05-28
 progress:
   total_phases: 5
   completed_phases: 3
@@ -20,7 +20,7 @@ progress:
 Phase: 04 — Athlete Blocking Overlay (Mobile)
 Plan: —
 Status: Phase 03 complete — ready to plan Phase 04
-Last activity: 2026-05-27 — Phase 03 executed (4 plans: sidebar nav + form list + builder + modals)
+Last activity: 2026-05-28 — Phase 04 context gathered
 
 ## Progress
 
@@ -64,6 +64,6 @@ None currently.
 
 ## Session Continuity
 
-**Stopped At:** Phase 03 execution complete
-**Resume File:** `.planning/workstreams/formulaire-condi/STATE.md`
+**Stopped At:** Phase 04 context gathered
+**Resume File:** `.planning/workstreams/formulaire-condi/phases/04-athlete-blocking-overlay/04-CONTEXT.md`
 **Next Action:** `/gsd:plan-phase 04 --ws formulaire-condi`
