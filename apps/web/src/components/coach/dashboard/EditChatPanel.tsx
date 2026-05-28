@@ -18,6 +18,7 @@ interface EditChatPanelProps {
   onWidgetsUpdate: (widgets: Widget[]) => void;
   initialWidgets: Widget[];
   onStreamingChange?: (v: boolean) => void;
+  historyRef?: React.MutableRefObject<Array<{ role: 'user' | 'assistant'; content: string }>>;
 }
 
 export function EditChatPanel({
@@ -26,6 +27,7 @@ export function EditChatPanel({
   onWidgetsUpdate,
   initialWidgets,
   onStreamingChange,
+  historyRef,
 }: EditChatPanelProps) {
   // Build the opening message from current widget titles
   const openingContent = `Votre dashboard affiche actuellement : ${
@@ -58,6 +60,15 @@ export function EditChatPanel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
+
+  // MEM-02: sync conversation history to parent ref (excludes system-opening message)
+  useEffect(() => {
+    if (historyRef) {
+      historyRef.current = messages
+        .filter((m) => m.id !== 'system-opening')
+        .map((m) => ({ role: m.role, content: m.content }));
+    }
+  }, [messages, historyRef]);
 
   // Animate newly appended message bubbles
   function animateLastBubble() {

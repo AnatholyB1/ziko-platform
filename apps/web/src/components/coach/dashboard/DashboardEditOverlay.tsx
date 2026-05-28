@@ -32,6 +32,8 @@ export function DashboardEditOverlay({
   const configRef = useRef<Widget[]>(initialWidgets);
   // previousConfigRef stores the pre-session state for one-tap Undo (D-14)
   const previousConfigRef = useRef<Widget[]>(initialWidgets);
+  // conversationHistoryRef: EditChatPanel writes all non-opening messages here (MEM-02)
+  const conversationHistoryRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
 
   // GSAP entrance — opacity 0→1, 150ms, power2.out (D-09)
   useEffect(() => {
@@ -64,6 +66,21 @@ export function DashboardEditOverlay({
       }
       onSave(configRef.current); // updates parent useDashboardConfig cache + closes overlay (isEditing=false)
       setToastVisible(true);
+
+      // MEM-02: fire-and-forget preference inference — silent fail, non-blocking
+      const preferredTypes = [...new Set(configRef.current.map((w: Widget) => w.type))];
+      const recentActions = conversationHistoryRef.current
+        .filter((m) => m.role === 'user')
+        .slice(-3)
+        .map((m) => m.content);
+      fetch('/api/coach/dashboards/memory', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferences: { preferred_widgets: preferredTypes },
+          recent_actions: recentActions,
+        }),
+      }).catch(() => {}); // silent fail — preferences are best-effort (MEM-02)
     } catch (err) {
       console.error('[DashboardEditOverlay] save failed:', err);
       setSaveError('Erreur lors de la sauvegarde. Réessayer ?');
@@ -236,6 +253,7 @@ export function DashboardEditOverlay({
             onWidgetsUpdate={onWidgetsUpdate}
             initialWidgets={initialWidgets}
             onStreamingChange={setIsStreaming}
+            historyRef={conversationHistoryRef}
           />
         </div>
       </div>
