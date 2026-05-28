@@ -14,8 +14,8 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 ## Phases
 
 - [x] **Phase 1: Infrastructure & Configuration** — Establish the push token pipeline, Supabase schema, and backend send service so all subsequent phases have a working delivery foundation
-- [ ] **Phase 2: Action-triggered Push Notifications** — Wire the highest-value server-side push events (program assignment, invitations, post-session summary, level-up) to prove the end-to-end pipeline
-- [ ] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
+- [x] **Phase 2: Action-triggered Push Notifications** — Wire the highest-value server-side push events (program assignment, invitations, post-session summary, level-up) to prove the end-to-end pipeline
+- [x] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
 - [ ] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
 - [ ] **Phase 5: Notification Preferences UI** — Expose master switch, per-category toggles, quiet hours, and OS Settings deep-link in a Paramètres > Notifications screen with auto-save
 - [ ] **Phase 6: Local Reminders & App Updates** — Schedule per-habit local reminders and workout-day reminders via `scheduleNotificationAsync`, plus OTA update card in the in-app center
@@ -70,9 +70,15 @@ Plans:
   5. A new push notification sent from the server appears in the center in real time via Supabase Realtime without the user pulling to refresh
 **Plans:** 3 plans
 Plans:
-- [ ] 03-01-PLAN.md — notificationStore.ts + useNotifications.ts (data layer: Zustand + TanStack Query)
-- [ ] 03-02-PLAN.md — notifications.tsx wiring (replace INITIAL_ITEMS, deep link tap, markAllRead)
-- [ ] 03-03-PLAN.md — _layout.tsx badge sync (AppState) + Supabase Realtime subscription
+- [ ] 03-01-PLAN.md — notificationStore.ts + useNotifications.ts (data layer: Zustand + TanStack Query) · Wave 1
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 03-02-PLAN.md — notifications.tsx wiring (replace INITIAL_ITEMS, deep link tap, markAllRead) · Wave 2
+- [ ] 03-03-PLAN.md — _layout.tsx badge sync (AppState) + Supabase Realtime subscription · Wave 2
+
+Cross-cutting constraints:
+- All plans depend on Phase 1 `notification_log` schema (read_at, data.url JSONB, category columns)
+- Mobile reads via Supabase direct (no Hono hop); TanStack Query key `['notifications', userId]`
 **UI hint:** yes
 
 ### Phase 4: Cron / Scheduled Notifications
@@ -83,7 +89,10 @@ Plans:
   1. At 21:00 UTC, users with a habit streak of 3 or more days that was not logged that day receive a single streak-at-risk push
   2. Every 15 minutes, the receipt-check cron queries Expo Push receipts and marks `DeviceNotRegistered` tokens as `is_active = false` — no push is ever sent to a dead token twice
   3. On Sunday at 09:00 UTC, users who have opted in to the weekly digest receive a push summarizing their week's sessions, XP earned, and current streak
-**Plans:** TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — notifications-cron.ts: three cron handlers (CRON-01 streak-at-risk, CRON-02 receipt poll + dead-token cleanup, CRON-03 weekly digest) · Wave 1
+- [ ] 04-02-PLAN.md — app.ts mount + vercel.json cron entries (3 new schedules) · Wave 2
 
 ### Phase 5: Notification Preferences UI
 **Goal:** Give users full control over which notifications they receive via a master switch, per-category toggles, quiet hours, and an OS Settings escape hatch — all auto-saved.
@@ -115,9 +124,9 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure & Configuration | 0/4 | In progress | - |
-| 2. Action-triggered Push Notifications | 0/4 | Planning done | - |
-| 3. In-app Notification Center | 0/3 | Planning done | - |
-| 4. Cron / Scheduled Notifications | 0/0 | Not started | - |
+| 1. Infrastructure & Configuration | 4/4 | Complete | 2026-05-26 |
+| 2. Action-triggered Push Notifications | 4/4 | Complete | 2026-05-27 |
+| 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
+| 4. Cron / Scheduled Notifications | 0/2 | Not started | - |
 | 5. Notification Preferences UI | 0/0 | Not started | - |
 | 6. Local Reminders & App Updates | 0/0 | Not started | - |
