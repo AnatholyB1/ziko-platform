@@ -6,9 +6,10 @@ import gsap from 'gsap';
 interface SaveToastProps {
   onUndo: () => void;
   onDismiss: () => void;
+  message?: string;
 }
 
-export function SaveToast({ onUndo, onDismiss }: SaveToastProps) {
+export function SaveToast({ onUndo, onDismiss, message }: SaveToastProps) {
   const toastRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -88,7 +89,7 @@ export function SaveToast({ onUndo, onDismiss }: SaveToastProps) {
         {/* Content */}
         <div className="flex-1">
           <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1A17', lineHeight: 1.4 }}>
-            Dashboard sauvegardé
+            {message ?? 'Dashboard sauvegardé'}
           </p>
           <button
             onClick={handleUndo}

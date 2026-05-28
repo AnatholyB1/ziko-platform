@@ -7,6 +7,7 @@ import { DashboardGrid } from './DashboardGrid';
 import { EditChatPanel } from './EditChatPanel';
 import { PreviewLoadingOverlay } from './PreviewLoadingOverlay';
 import { SaveToast } from './SaveToast';
+import { TemplateNamingModal } from './TemplateNamingModal';
 
 interface DashboardEditOverlayProps {
   clientId: string;
@@ -26,8 +27,11 @@ export function DashboardEditOverlay({
   const [toastVisible, setToastVisible] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [templateToastVisible, setTemplateToastVisible] = useState(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
+  const saveAsTemplateBtnRef = useRef<HTMLButtonElement>(null);
   // configRef is the source of truth for async SSE handlers — prevents stale closure (D-11, PITFALLS #5)
   const configRef = useRef<Widget[]>(initialWidgets);
   // previousConfigRef stores the pre-session state for one-tap Undo (D-14)
@@ -155,6 +159,44 @@ export function DashboardEditOverlay({
           </button>
 
           <button
+            ref={saveAsTemplateBtnRef}
+            onClick={() => {
+              gsap.to(saveAsTemplateBtnRef.current, { scale: 0.97, duration: 0.1, yoyo: true, repeat: 1, ease: 'power3.out' });
+              setIsTemplateModalOpen(true);
+            }}
+            disabled={isStreaming || isSaving}
+            aria-label="Enregistrer ce dashboard comme modèle réutilisable"
+            style={{
+              height: 36,
+              paddingLeft: 16,
+              paddingRight: 16,
+              border: '1px solid #E2E0DA',
+              borderRadius: 8,
+              background: 'transparent',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#1C1A17',
+              cursor: (isStreaming || isSaving) ? 'not-allowed' : 'pointer',
+              opacity: (isStreaming || isSaving) ? 0.4 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'background 0.1s',
+            }}
+            onMouseEnter={(e) => {
+              if (!isStreaming && !isSaving) (e.currentTarget as HTMLButtonElement).style.background = '#F0EFE9';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            Enregistrer comme modèle
+          </button>
+
+          <button
             onClick={handleSave}
             disabled={isSaving}
             aria-label="Sauvegarder la configuration du dashboard"
@@ -263,6 +305,26 @@ export function DashboardEditOverlay({
         <SaveToast
           onUndo={handleUndo}
           onDismiss={() => setToastVisible(false)}
+        />
+      )}
+
+      {/* Template toast */}
+      {templateToastVisible && (
+        <SaveToast
+          message="Modèle enregistré"
+          onUndo={() => {}}
+          onDismiss={() => setTemplateToastVisible(false)}
+        />
+      )}
+
+      {/* TemplateNamingModal */}
+      {isTemplateModalOpen && (
+        <TemplateNamingModal
+          currentWidgets={configRef.current}
+          onClose={() => setIsTemplateModalOpen(false)}
+          onSuccess={() => {
+            setTemplateToastVisible(true);
+          }}
         />
       )}
 
