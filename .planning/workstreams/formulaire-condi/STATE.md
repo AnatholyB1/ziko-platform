@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Formulaires Conditionnels
-status: in_progress
-last_updated: "2026-05-28"
-last_activity: 2026-05-28
+current_plan: N/A
+status: executing
+last_updated: "2026-05-28T21:13:37.886Z"
+last_activity: 2026-05-28 -- Phase 05 planning complete
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 14
+  total_plans: 16
   completed_plans: 13
-  percent: 86
+  percent: 80
 ---
 
 # Project State
@@ -19,8 +20,8 @@ progress:
 
 Phase: 05 — Response Viewer & Claude Injection
 Plan: —
-Status: Phase 04 complete — ready to plan Phase 05
-Last activity: 2026-05-28 — Phase 04 executed (3 plans: 04-01, 04-02, 04-03)
+Status: Ready to execute
+Last activity: 2026-05-28 -- Phase 05 planning complete
 
 ## Progress
 
@@ -44,11 +45,13 @@ Last activity: 2026-05-28 — Phase 04 executed (3 plans: 04-01, 04-02, 04-03)
 ## Accumulated Context
 
 ### Key Decisions
+
 - Blocking overlay is absolute — athlete cannot dismiss or skip (explicit product decision, per Out of Scope)
 - Duplicate guard prevents second pending instance if one already exists for (form, athlete) pair
 - Phase 01 and Phase 03 share FORM requirements; Phase 01 covers DB/API layer, Phase 03 covers observable web UI
 
 ### Architecture Notes
+
 - DB tables: `coach_forms` (JSONB questions + trigger_config), `form_instances` (pending/submitted), `form_responses` (answers JSONB) — no separate form_questions table
 - Trigger engine: SECURITY DEFINER Postgres function `create_form_instances_for_trigger` (migration 058) — called via `supabase.rpc()` from all 4 hooks; ON CONFLICT DO NOTHING handles duplicate guard
 - TRIGGER-01 hook: `backend/api/src/coach/clients/service.ts` POST /links/redeem → after redeemInvitation succeeds
@@ -60,6 +63,7 @@ Last activity: 2026-05-28 — Phase 04 executed (3 plans: 04-01, 04-02, 04-03)
 - Mobile: blocking overlay rendered at root layout level in `apps/mobile/app/(app)/_layout.tsx`
 
 ### Blockers
+
 None currently.
 
 ## Session Continuity
