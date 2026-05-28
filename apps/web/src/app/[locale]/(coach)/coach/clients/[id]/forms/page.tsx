@@ -56,5 +56,5 @@ export default async function ClientFormsPage({
     }
   }
 
-  return <ClientFormsContent forms={formsData.forms} locale={locale} />;
+  return <ClientFormsContent forms={formsData.forms as any} locale={locale} />;
 }
