@@ -32,7 +32,7 @@
 - [x] **EDIT-02**: Coach types in chat → Claude calls tools (add/update/remove/reorder widget) → live preview updates
 - [ ] **EDIT-03**: Changes visible in preview before any save action
 - [ ] **EDIT-04**: Coach can save (persist to Supabase) or cancel (discard preview)
-- [ ] **EDIT-05**: Edit chat restricted to dashboard tools only — no general coaching questions in this session
+- [x] **EDIT-05**: Edit chat restricted to dashboard tools only — no general coaching questions in this session
 
 ### Coach Memory (MEM)
 
@@ -88,7 +88,7 @@
 | EDIT-02 | Phase 03 | Complete |
 | EDIT-03 | Phase 03 | Pending |
 | EDIT-04 | Phase 03 | Pending |
-| EDIT-05 | Phase 03 | Pending |
+| EDIT-05 | Phase 03 | Complete |
 | MEM-01 | Phase 04 | Pending |
 | MEM-02 | Phase 04 | Pending |
 | INFRA-01 | Phase 01 | Pending |
