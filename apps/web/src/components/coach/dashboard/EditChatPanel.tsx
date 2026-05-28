@@ -7,6 +7,8 @@ import { MessageBubble } from '@/components/coach/MessageBubble';
 import type { Message } from '@/components/coach/MessageBubble';
 import { ChatInputBar } from '@/components/coach/ChatInputBar';
 import { TypingIndicator } from './TypingIndicator';
+import { useCoachMemory } from '@/hooks/useCoachMemory';
+import type { CoachMemoryData } from '@/hooks/useCoachMemory';
 
 function genId() {
   return Math.random().toString(36).slice(2, 9);
@@ -21,6 +23,44 @@ interface EditChatPanelProps {
   historyRef?: React.MutableRefObject<Array<{ role: 'user' | 'assistant'; content: string }>>;
 }
 
+function buildOpeningMessage(widgets: Widget[], memory: CoachMemoryData | undefined): string {
+  const widgetList = widgets.map((w) => w.title).join(', ');
+  const hasPreferences =
+    memory &&
+    ((memory.preferences.preferred_period) ||
+      (memory.preferences.preferred_widgets && memory.preferences.preferred_widgets.length > 0));
+  const hasRecentActions = memory && memory.recent_actions && memory.recent_actions.length > 0;
+
+  if (!hasPreferences && !hasRecentActions) {
+    // Sub-state C3: generic fallback
+    return `Votre dashboard affiche actuellement : ${widgetList}. Dites-moi ce que vous souhaitez modifier. Exemples : 'Mettez le score de sommeil en premier', 'Supprimez la note', 'Ajoutez un graphe de poids sur 30 jours'.`;
+  }
+
+  // Sub-state C2: personalized
+  const paragraphs: string[] = [];
+
+  paragraphs.push(`Votre dashboard affiche actuellement : ${widgetList}.`);
+
+  const prefParts: string[] = [];
+  if (memory!.preferences.preferred_period) {
+    prefParts.push(`période ${memory!.preferences.preferred_period}`);
+  }
+  if (memory!.preferences.preferred_widgets?.[0]) {
+    prefParts.push(`graphe de ${memory!.preferences.preferred_widgets[0]}`);
+  }
+  if (prefParts.length > 0) {
+    paragraphs.push(`J'ai appliqué vos préférences habituelles : ${prefParts.join(', ')}.`);
+  }
+
+  const examples: string[] = memory!.recent_actions?.slice(0, 2) ?? [];
+  const preferredWidget = memory!.preferences.preferred_widgets?.[0] ?? 'poids';
+  paragraphs.push(
+    `Dites-moi ce que vous souhaitez modifier. Exemples : '${examples[0] ?? "Mettez le score de sommeil en premier"}', '${examples[1] ?? "Supprimez la note"}', 'Ajoutez un graphe de ${preferredWidget} sur 30 jours'.`,
+  );
+
+  return paragraphs.join('\n\n');
+}
+
 export function EditChatPanel({
   clientId,
   configRef,
@@ -29,18 +69,9 @@ export function EditChatPanel({
   onStreamingChange,
   historyRef,
 }: EditChatPanelProps) {
-  // Build the opening message from current widget titles
-  const openingContent = `Votre dashboard affiche actuellement : ${
-    initialWidgets.map((w) => w.title).join(', ')
-  }. Dites-moi ce que vous souhaitez modifier. Exemples : 'Mettez le score de sommeil en premier', 'Supprimez la note', 'Ajoutez un graphe de poids sur 30 jours'.`;
+  const { data: memory, isLoading: isMemoryLoading } = useCoachMemory();
 
-  const OPENING_MESSAGE: Message = {
-    id: 'system-opening',
-    role: 'assistant',
-    content: openingContent,
-  };
-
-  const [messages, setMessages] = useState<Message[]>([OPENING_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +100,18 @@ export function EditChatPanel({
         .map((m) => ({ role: m.role, content: m.content }));
     }
   }, [messages, historyRef]);
+
+  // Set personalized opening message once memory finishes loading
+  useEffect(() => {
+    if (!isMemoryLoading) {
+      const content = buildOpeningMessage(initialWidgets, memory)
+      const openingMsg: Message = { id: 'system-opening', role: 'assistant', content }
+      setMessages([openingMsg])
+      // GSAP entrance for opening bubble — fires after setMessages re-render
+      setTimeout(() => animateLastBubble(), 0)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMemoryLoading]);
 
   // Animate newly appended message bubbles
   function animateLastBubble() {
@@ -191,6 +234,8 @@ export function EditChatPanel({
 
   // Show typing indicator when streaming but no chunk received yet
   const showTypingIndicator = isStreaming && !hasChunk;
+  // Show opening typing indicator while memory is loading (Sub-state C1)
+  const showOpeningTypingIndicator = isMemoryLoading && messages.length === 0;
 
   return (
     <div
@@ -199,6 +244,9 @@ export function EditChatPanel({
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-2 min-h-0">
         <div ref={messagesListRef} className="flex flex-col">
+          {/* Opening typing indicator — shown while memory is loading (Sub-state C1) */}
+          {showOpeningTypingIndicator && <TypingIndicator />}
+
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} />
           ))}
@@ -242,7 +290,7 @@ export function EditChatPanel({
             setInputValue('');
             streamEdit(msg);
           }}
-          disabled={isStreaming}
+          disabled={isStreaming || (isMemoryLoading && messages.length === 0)}
         />
       </div>
     </div>
