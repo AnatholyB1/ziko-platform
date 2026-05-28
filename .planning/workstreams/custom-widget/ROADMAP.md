@@ -71,7 +71,7 @@ Plans:
 - [x] 03-01-PLAN.md — tools.ts: 4 stateless widget mutation functions + buildDashboardSDKTools factory
 - [x] 03-02-PLAN.md — POST /:clientId/ai-edit SSE endpoint in service.ts (streamText + onStepFinish + creditGate)
 - [x] 03-03-PLAN.md — DashboardEditOverlay + EditChatPanel + TypingIndicator + PreviewLoadingOverlay + SaveToast
-- [ ] 03-04-PLAN.md — dashboard/page.tsx: Personnaliser button + isEditing state + overlay wiring
+- [x] 03-04-PLAN.md — dashboard/page.tsx: Personnaliser button + isEditing state + overlay wiring
 - [ ] 03-05-PLAN.md — Unit tests + two-turn integration test (D-18) + PITFALLS checklist clearance
 
 ### Phase 04: Polish + Coach Memory
@@ -124,5 +124,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 01. DB + API Foundation | 0/5 | Not started | - |
 | 02. Widget Renderers + Static Dashboard | 0/TBD | Not started | - |
-| 03. AI Edit Session | 3/5 | In Progress|  |
+| 03. AI Edit Session | 4/5 | In Progress|  |
 | 04. Polish + Coach Memory | 0/TBD | Not started | - |
