@@ -133,6 +133,11 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     }, 600);
   };
 
+  const HOUR_ITEMS = Array.from({ length: 24 }, (_, i) => ({
+    id: String(i),
+    label: `${i}h00`,
+  }));
+
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -228,7 +233,49 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
             />
           </STGroup>
         </View>
+
+        {s.push_enabled && (
+          <STGroup title="Heures silencieuses">
+            <STRow
+              icon="moon-outline"
+              tint="#6B6963"
+              label="De"
+              right={`${s.quiet_hours_start}h00`}
+              onPress={() => setStartPickerVisible(true)}
+            />
+            <STRow
+              icon="sunny-outline"
+              tint="#E8A33A"
+              label="À"
+              right={`${s.quiet_hours_end}h00`}
+              onPress={() => setEndPickerVisible(true)}
+            />
+          </STGroup>
+        )}
       </ScrollView>
+
+      <InlinePicker
+        visible={startPickerVisible}
+        items={HOUR_ITEMS}
+        selectedId={String(s.quiet_hours_start)}
+        onSelect={(id) => {
+          handleChange({ quiet_hours_start: parseInt(id, 10) });
+          setStartPickerVisible(false);
+        }}
+        onClose={() => setStartPickerVisible(false)}
+        theme={theme}
+      />
+      <InlinePicker
+        visible={endPickerVisible}
+        items={HOUR_ITEMS}
+        selectedId={String(s.quiet_hours_end)}
+        onSelect={(id) => {
+          handleChange({ quiet_hours_end: parseInt(id, 10) });
+          setEndPickerVisible(false);
+        }}
+        onClose={() => setEndPickerVisible(false)}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }
