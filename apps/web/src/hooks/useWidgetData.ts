@@ -8,6 +8,7 @@ export function useWidgetData(
   type: string,
   period: string,
   dataKey: string,
+  enabled?: boolean,
 ): UseQueryResult<unknown> {
   return useQuery<unknown>({
     queryKey: ['widget-data', clientId, type, period, dataKey],
@@ -36,7 +37,7 @@ export function useWidgetData(
       return res.json();
     },
     staleTime: 30_000,
-    enabled: !!clientId && !!type,
+    enabled: (enabled ?? true) && !!clientId && !!type,
   });
 }
 

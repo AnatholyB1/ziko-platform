@@ -14,6 +14,7 @@ import { useTranslation } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
 import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
+import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 
 // Set foreground notification display behavior at module scope (required by Expo SDK 54)
 Notifications.setNotificationHandler({
@@ -132,6 +133,7 @@ export default function AppLayout() {
     const stateSub = AppState.addEventListener('change', (state) => {
       if (state === 'active' && userId) {
         useNotificationStore.getState().syncUnreadCount(userId);
+        queryClient.invalidateQueries({ queryKey: ['pending-forms', userId] });
       }
     });
     return () => stateSub.remove();
@@ -229,6 +231,7 @@ export default function AppLayout() {
         onActivate={onActivate}
         onSkip={onSkip}
       />
+      <PendingFormsOverlay />
     </>
   );
 }

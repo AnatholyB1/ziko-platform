@@ -43,21 +43,25 @@ const TOOLTIP_STYLE = {
 
 const CHART_MARGIN = { top: 5, right: 8, left: -16, bottom: 5 };
 
+function mergeForCompare<T extends { date: string; value: number }>(
+  dataA: T[],
+  dataB: T[]
+): { date: string; valueA: number | null; valueB: number | null }[] {
+  const mapB = new Map(dataB.map((d) => [d.date, d.value]));
+  return dataA.map((d) => ({ date: d.date, valueA: d.value, valueB: mapB.get(d.date) ?? null }));
+}
+
 export function BodybuildingDashboard({
   clientId,
   sport,
   dateRange,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareMode,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareClientId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   comparePeriod,
 }: {
   clientId: string;
   sport: string | null;
   dateRange: 'week' | 'month' | '3m';
-  // TODO: 040-03 adds dual-series rendering
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
@@ -66,6 +70,18 @@ export function BodybuildingDashboard({
     queryKey: ['bodybuilding', clientId, sport, dateRange],
     queryFn: () => fetchBodybuildingData(supabase, clientId, dateRange),
     enabled: sport === 'bodybuilding',
+    staleTime: 60_000,
+  });
+
+  const compareIsClient = compareMode === true && !!compareClientId;
+  const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
+  const compareEffectiveClientId = compareIsClient ? compareClientId! : clientId;
+  const compareEffectivePeriod = compareIsPeriod ? comparePeriod! : (comparePeriod ?? dateRange);
+
+  const { data: compareData } = useQuery({
+    queryKey: ['bodybuilding-compare', compareEffectiveClientId, compareEffectivePeriod, compareMode],
+    queryFn: () => fetchBodybuildingData(supabase, compareEffectiveClientId, compareEffectivePeriod),
+    enabled: compareMode === true && (compareIsClient || compareIsPeriod),
     staleTime: 60_000,
   });
 
@@ -87,6 +103,13 @@ export function BodybuildingDashboard({
   ) {
     return <DashboardEmptyState prompt={false} />;
   }
+
+  const isActive = compareMode === true && !!compareData;
+
+  // Merge bodyweight data
+  const bwDataA = data.bodyweight.map((d) => ({ date: d.date, value: d.weight_kg }));
+  const bwDataB = (compareData?.bodyweight ?? []).map((d) => ({ date: d.date, value: d.weight_kg }));
+  const mergedBodyweight = isActive ? mergeForCompare(bwDataA, bwDataB) : null;
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -166,29 +189,64 @@ export function BodybuildingDashboard({
         style={{ animationDelay: '100ms' }}
       >
         <ChartCard title="Poids Corporel">
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={data.bodyweight} margin={CHART_MARGIN}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
-              <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
-              <YAxis
-                tick={{ fontSize: 11, fill: '#6B6963' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Area
-                type="monotone"
-                dataKey="weight_kg"
-                name="Poids (kg)"
-                stroke="#F59E0B"
-                fill="#F59E0B"
-                fillOpacity={0.08}
-                strokeWidth={2}
-                dot={{ r: 3, fill: '#F59E0B' }}
-                connectNulls
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {isActive && mergedBodyweight ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={mergedBodyweight} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#6B6963' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Line
+                  type="monotone"
+                  dataKey="valueA"
+                  name="Poids A (kg)"
+                  stroke="#FF5C1A"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#FF5C1A' }}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="valueB"
+                  name="Poids B (kg)"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#3B82F6' }}
+                  strokeDasharray="5 3"
+                  connectNulls
+                />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963', paddingTop: '8px' }} iconType="line" iconSize={16} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={data.bodyweight} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#6B6963' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Area
+                  type="monotone"
+                  dataKey="weight_kg"
+                  name="Poids (kg)"
+                  stroke="#F59E0B"
+                  fill="#F59E0B"
+                  fillOpacity={0.08}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#F59E0B' }}
+                  connectNulls
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
     </div>

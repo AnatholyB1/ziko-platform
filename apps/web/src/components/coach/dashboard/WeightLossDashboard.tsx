@@ -42,21 +42,25 @@ const TOOLTIP_STYLE = {
 
 const CHART_MARGIN = { top: 5, right: 8, left: -16, bottom: 5 };
 
+function mergeForCompare<T extends { date: string; value: number }>(
+  dataA: T[],
+  dataB: T[]
+): { date: string; valueA: number | null; valueB: number | null }[] {
+  const mapB = new Map(dataB.map((d) => [d.date, d.value]));
+  return dataA.map((d) => ({ date: d.date, valueA: d.value, valueB: mapB.get(d.date) ?? null }));
+}
+
 export function WeightLossDashboard({
   clientId,
   sport,
   dateRange,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareMode,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareClientId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   comparePeriod,
 }: {
   clientId: string;
   sport: string | null;
   dateRange: 'week' | 'month' | '3m';
-  // TODO: 040-03 adds dual-series rendering
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
@@ -65,6 +69,18 @@ export function WeightLossDashboard({
     queryKey: ['weightloss', clientId, sport, dateRange],
     queryFn: () => fetchWeightLossData(supabase, clientId, dateRange),
     enabled: sport === 'weightloss',
+    staleTime: 60_000,
+  });
+
+  const compareIsClient = compareMode === true && !!compareClientId;
+  const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
+  const compareEffectiveClientId = compareIsClient ? compareClientId! : clientId;
+  const compareEffectivePeriod = compareIsPeriod ? comparePeriod! : (comparePeriod ?? dateRange);
+
+  const { data: compareData } = useQuery({
+    queryKey: ['weightloss-compare', compareEffectiveClientId, compareEffectivePeriod, compareMode],
+    queryFn: () => fetchWeightLossData(supabase, compareEffectiveClientId, compareEffectivePeriod),
+    enabled: compareMode === true && (compareIsClient || compareIsPeriod),
     staleTime: 60_000,
   });
 
@@ -87,6 +103,23 @@ export function WeightLossDashboard({
     return <DashboardEmptyState prompt={false} />;
   }
 
+  const isActive = compareMode === true && !!compareData;
+
+  // Merge bodyweight curve
+  const bwCurveA = data.bodyweightCurve.map((d) => ({ date: d.date, value: d.weight_kg }));
+  const bwCurveB = (compareData?.bodyweightCurve ?? []).map((d) => ({ date: d.date, value: d.weight_kg }));
+  const mergedBwCurve = isActive ? mergeForCompare(bwCurveA, bwCurveB) : null;
+
+  // Merge calorie compliance
+  const caloriesA = data.calorieCompliance.map((d) => ({ date: d.date, value: d.calories }));
+  const caloriesB = (compareData?.calorieCompliance ?? []).map((d) => ({ date: d.date, value: d.calories }));
+  const mergedCalories = isActive ? mergeForCompare(caloriesA, caloriesB) : null;
+
+  // Merge load progression
+  const loadA = data.loadProgression.map((d) => ({ date: d.date, value: d.total_load_kg }));
+  const loadB = (compareData?.loadProgression ?? []).map((d) => ({ date: d.date, value: d.total_load_kg }));
+  const mergedLoad = isActive ? mergeForCompare(loadA, loadB) : null;
+
   return (
     <div className="grid grid-cols-2 gap-4">
       {/* Card 1 — Évolution du Poids (full width) */}
@@ -95,26 +128,57 @@ export function WeightLossDashboard({
         style={{ animationDelay: '0ms' }}
       >
         <ChartCard title="Evolution du Poids">
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={data.bodyweightCurve} margin={CHART_MARGIN}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
-              <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
-              <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
-              <Area
-                type="monotone"
-                dataKey="weight_kg"
-                name="Poids (kg)"
-                stroke="#FF5C1A"
-                fill="#FF5C1A"
-                fillOpacity={0.10}
-                strokeWidth={2}
-                dot={{ r: 3, fill: '#FF5C1A' }}
-                connectNulls
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {isActive && mergedBwCurve ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={mergedBwCurve} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Line
+                  type="monotone"
+                  dataKey="valueA"
+                  name="Poids A (kg)"
+                  stroke="#FF5C1A"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#FF5C1A' }}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="valueB"
+                  name="Poids B (kg)"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#3B82F6' }}
+                  strokeDasharray="5 3"
+                  connectNulls
+                />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963', paddingTop: '8px' }} iconType="line" iconSize={16} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={data.bodyweightCurve} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
+                <Area
+                  type="monotone"
+                  dataKey="weight_kg"
+                  name="Poids (kg)"
+                  stroke="#FF5C1A"
+                  fill="#FF5C1A"
+                  fillOpacity={0.10}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#FF5C1A' }}
+                  connectNulls
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
 
@@ -124,24 +188,38 @@ export function WeightLossDashboard({
         style={{ animationDelay: '50ms' }}
       >
         <ChartCard title="Conformite Calorique">
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data.calorieCompliance} margin={CHART_MARGIN}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
-              <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
-              <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
-              <Bar dataKey="calories" name="Calories" fill="#FF5C1A" radius={[4, 4, 0, 0]} />
-              {data.avgDailyCalories > 0 && (
-                <ReferenceLine
-                  y={data.avgDailyCalories}
-                  stroke="#22C55E"
-                  strokeDasharray="4 4"
-                  label={{ value: 'Moy.', fill: '#22C55E', fontSize: 10 }}
-                />
-              )}
-            </BarChart>
-          </ResponsiveContainer>
+          {isActive && mergedCalories ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={mergedCalories} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Bar dataKey="valueA" name="Calories A" fill="#FF5C1A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="valueB" name="Calories B" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={data.calorieCompliance} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
+                <Bar dataKey="calories" name="Calories" fill="#FF5C1A" radius={[4, 4, 0, 0]} />
+                {data.avgDailyCalories > 0 && (
+                  <ReferenceLine
+                    y={data.avgDailyCalories}
+                    stroke="#22C55E"
+                    strokeDasharray="4 4"
+                    label={{ value: 'Moy.', fill: '#22C55E', fontSize: 10 }}
+                  />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
 
@@ -151,24 +229,55 @@ export function WeightLossDashboard({
         style={{ animationDelay: '100ms' }}
       >
         <ChartCard title="Progression de Charge">
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={data.loadProgression} margin={CHART_MARGIN}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
-              <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
-              <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
-              <Tooltip {...TOOLTIP_STYLE} />
-              <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
-              <Line
-                type="monotone"
-                dataKey="total_load_kg"
-                name="Charge totale (kg)"
-                stroke="#22C55E"
-                strokeWidth={2}
-                dot={false}
-                connectNulls
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {isActive && mergedLoad ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={mergedLoad} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Line
+                  type="monotone"
+                  dataKey="valueA"
+                  name="Charge A (kg)"
+                  stroke="#FF5C1A"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  dataKey="valueB"
+                  name="Charge B (kg)"
+                  stroke="#3B82F6"
+                  strokeWidth={2}
+                  dot={false}
+                  strokeDasharray="5 3"
+                  connectNulls
+                />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963', paddingTop: '8px' }} iconType="line" iconSize={16} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={data.loadProgression} margin={CHART_MARGIN}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+                <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+                <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
+                <Line
+                  type="monotone"
+                  dataKey="total_load_kg"
+                  name="Charge totale (kg)"
+                  stroke="#22C55E"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
     </div>

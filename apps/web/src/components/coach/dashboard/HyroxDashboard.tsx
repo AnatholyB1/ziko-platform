@@ -39,21 +39,25 @@ const TOOLTIP_STYLE = {
 
 const CHART_MARGIN = { top: 5, right: 8, left: -16, bottom: 5 };
 
+function mergeForCompare<T extends { date: string; value: number }>(
+  dataA: T[],
+  dataB: T[]
+): { date: string; valueA: number | null; valueB: number | null }[] {
+  const mapB = new Map(dataB.map((d) => [d.date, d.value]));
+  return dataA.map((d) => ({ date: d.date, valueA: d.value, valueB: mapB.get(d.date) ?? null }));
+}
+
 export function HyroxDashboard({
   clientId,
   sport,
   dateRange,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareMode,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   compareClientId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   comparePeriod,
 }: {
   clientId: string;
   sport: string | null;
   dateRange: 'week' | 'month' | '3m';
-  // TODO: 040-03 adds dual-series rendering
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
@@ -62,6 +66,18 @@ export function HyroxDashboard({
     queryKey: ['hyrox', clientId, sport, dateRange],
     queryFn: () => fetchHyroxData(supabase, clientId, dateRange),
     enabled: sport === 'hyrox',
+    staleTime: 60_000,
+  });
+
+  const compareIsClient = compareMode === true && !!compareClientId;
+  const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
+  const compareEffectiveClientId = compareIsClient ? compareClientId! : clientId;
+  const compareEffectivePeriod = compareIsPeriod ? comparePeriod! : (comparePeriod ?? dateRange);
+
+  const { data: compareData } = useQuery({
+    queryKey: ['hyrox-compare', compareEffectiveClientId, compareEffectivePeriod, compareMode],
+    queryFn: () => fetchHyroxData(supabase, compareEffectiveClientId, compareEffectivePeriod),
+    enabled: compareMode === true && (compareIsClient || compareIsPeriod),
     staleTime: 60_000,
   });
 
@@ -84,6 +100,18 @@ export function HyroxDashboard({
     return <DashboardEmptyState prompt={false} />;
   }
 
+  const isActive = compareMode === true && !!compareData;
+
+  // Merge finishTimes (finish_time_seconds)
+  const finishDataA = data.finishTimes.map((d) => ({ date: d.date, value: d.finish_time_seconds }));
+  const finishDataB = (compareData?.finishTimes ?? []).map((d) => ({ date: d.date, value: d.finish_time_seconds }));
+  const mergedFinish = isActive ? mergeForCompare(finishDataA, finishDataB) : null;
+
+  // Merge weeklyVolume sessions
+  const volumeSessionsA = data.weeklyVolume.map((d) => ({ date: d.week, value: d.sessions }));
+  const volumeSessionsB = (compareData?.weeklyVolume ?? []).map((d) => ({ date: d.week, value: d.sessions }));
+  const mergedSessions = isActive ? mergeForCompare(volumeSessionsA, volumeSessionsB) : null;
+
   const CHART_CARDS = [
     {
       title: 'Temps par Station',
@@ -103,7 +131,36 @@ export function HyroxDashboard({
     {
       title: 'Temps Final Hyrox',
       colSpan: false,
-      chart: (
+      chart: isActive && mergedFinish ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={mergedFinish} margin={CHART_MARGIN}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+            <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+            <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+            <Tooltip {...TOOLTIP_STYLE} />
+            <Line
+              type="monotone"
+              dataKey="valueA"
+              name="Temps A (s)"
+              stroke="#FF5C1A"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#FF5C1A' }}
+              connectNulls
+            />
+            <Line
+              type="monotone"
+              dataKey="valueB"
+              name="Temps B (s)"
+              stroke="#3B82F6"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#3B82F6' }}
+              strokeDasharray="5 3"
+              connectNulls
+            />
+            <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963', paddingTop: '8px' }} iconType="line" iconSize={16} />
+          </LineChart>
+        </ResponsiveContainer>
+      ) : (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data.finishTimes} margin={CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
@@ -126,7 +183,19 @@ export function HyroxDashboard({
     {
       title: 'Volume Hebdomadaire',
       colSpan: false,
-      chart: (
+      chart: isActive && mergedSessions ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={mergedSessions} margin={CHART_MARGIN}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
+            <XAxis dataKey="date" {...SHARED_AXIS_PROPS} />
+            <YAxis tick={{ fontSize: 11, fill: '#6B6963' }} axisLine={false} tickLine={false} />
+            <Tooltip {...TOOLTIP_STYLE} />
+            <Bar dataKey="valueA" name="Sessions A" fill="#FF5C1A" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="valueB" name="Sessions B" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+            <Legend wrapperStyle={{ fontSize: '12px', color: '#6B6963' }} />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.weeklyVolume} margin={CHART_MARGIN}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
