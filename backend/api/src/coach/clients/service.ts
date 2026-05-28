@@ -33,6 +33,7 @@ import {
   listCompareData,
   getProgramsForClient,
   upsertSharedNote,
+  getFormsForClient,
 } from './db.js';
 import { getWidgetData } from '../dashboards/db.js';
 
@@ -458,6 +459,21 @@ clientsRouter.get('/:id/programs', async (c) => {
   } catch (err: any) {
     console.error('[coach/clients] GET /:id/programs error:', err.message);
     return c.json({ error: 'Not found' }, 404);
+  }
+});
+
+// GET /:clientId/forms — form instances for this client (RESPONSES-01, RESPONSES-02, RESPONSES-03)
+clientsRouter.get('/:clientId/forms', async (c) => {
+  const { userId: coachId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('clientId');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const result = await getFormsForClient(jwt, coachId, clientId);
+    return c.json(result);
+  } catch (err: any) {
+    console.error('[coach/clients] GET /:clientId/forms error:', err.message);
+    return c.json({ error: err.message }, 500);
   }
 });
 
