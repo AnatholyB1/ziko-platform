@@ -28,13 +28,19 @@ export interface UserContext {
     total: number;
     completed: number;
   };
+  recentFormResponses: Array<{
+    form_title: string;
+    submitted_at: string;
+    questions: Array<{ id: string; type: string; label: string }>;
+    answers: Array<{ question_id: string; value: string | number }>;
+  }>;
 }
 
 export async function fetchUserContext(userId: string, userToken?: string): Promise<UserContext> {
   const db = clientForUser(userToken);
   const date = today();
 
-  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes] =
+  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes, formResponsesRes] =
     await Promise.all([
       db.from('user_profiles')
         .select('name, age, weight_kg, height_cm, goal, units')
@@ -61,6 +67,21 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
         .select('habit_id, value')
         .eq('user_id', userId)
         .eq('date', date),
+      db.from('form_responses')
+        .select(`
+          answers,
+          submitted_at,
+          form_instances!inner(
+            form_id,
+            coach_forms!inner(
+              title,
+              questions
+            )
+          )
+        `)
+        .eq('athlete_id', userId)
+        .order('submitted_at', { ascending: false })
+        .limit(5),
     ]);
 
   // Nutrition totals
@@ -100,5 +121,11 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
     })),
     todayNutritionSummary,
     todayHabitsSummary: { total: habits.length, completed },
+    recentFormResponses: (formResponsesRes.data ?? []).map((r: any) => ({
+      form_title: r.form_instances?.coach_forms?.title ?? '',
+      submitted_at: r.submitted_at,
+      questions: r.form_instances?.coach_forms?.questions ?? [],
+      answers: r.answers ?? [],
+    })),
   };
 }
