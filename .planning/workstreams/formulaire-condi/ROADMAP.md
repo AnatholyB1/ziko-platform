@@ -79,7 +79,11 @@ Plans:
   3. Athlete can answer all 4 question types natively: free-text keyboard input, 1-10 slider, yes/no toggle, and single-choice radio buttons
   4. After answering all questions and tapping submit, the response is persisted, the form instance status changes to `submitted`, and the overlay dismisses — normal app navigation is immediately restored
   5. If 3 forms are pending, the athlete completes them one at a time in sequence; the overlay only clears after the last form is submitted
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — PendingFormsOverlay shell: Modal + Animated.View + useQuery fetch gate + _layout.tsx injection + AppState invalidation
+- [ ] 04-02-PLAN.md — All 7 form sub-components: 4 question renderers + FormQuestion router + FormProgressBar + SubmitButton
+- [ ] 04-03-PLAN.md — Complete overlay wiring: entry header S1/S4 + question ScrollView + submit flow + sequential advance (D-07) + fade-out dismiss (D-08)
 **UI hint**: yes
 
 ### Phase 05: Response Viewer & Claude Injection
@@ -104,7 +108,7 @@ Plans:
 | 01. DB Schema & Backend API | 0/2 | Planned | - |
 | 02. Trigger Engine | 0/4 | Planned | - |
 | 03. Coach Form Builder (Web) | 0/4 | Planned | - |
-| 04. Athlete Blocking Overlay (Mobile) | 0/? | Not started | - |
+| 04. Athlete Blocking Overlay (Mobile) | 0/3 | Planned | - |
 | 05. Response Viewer & Claude Injection | 0/? | Not started | - |
 
 ---

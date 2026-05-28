@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.7 Mobile UX v2 (Shipped: 2026-05-28)
+
+**Phases completed:** 10 phases, 36 plans (Phases 32–41, workstream: milestone-mobile)  
+**Known gaps at close:** Phase 35 gaps (35-G01–G07) deferred — cache invalidation, password spinner, progress photo, crédits IA, apparences migration 052, parrainage migration 053
+
+**Key accomplishments:**
+
+1. **Design System** — `packages/ui/` enriched with 10 shared components (FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet, PaywallScreen, RechargeSheet, PluginsDrawer, EmptyState/ErrorScreen); 3-tab nav
+2. **40+ Screens Redesigned** — Pixel-for-pixel match against 24 canonical mockup files; every screen ships with real data, loading, empty, and error states
+3. **17 Plugins Redesigned** — All 17 active plugins updated with SubTabs + AISuggestion + TanStack Query hooks + loading/empty/error states
+4. **Fixture Elimination** — 100% of domain-data fixtures removed from production screens; zero `const FIXTURE = [...]` data arrays remain
+5. **GPS Cardio** — Live GPS session tracker (Haversine + noise filter + rolling pace) + RouteVisualizer + Strava-like CardioDashboard
+6. **Coach StateC** — Real `sessionsCount` + `habitsPct` stats; "Lié depuis DD/MM/YYYY"; i18n "Habitudes aujourd'hui" / "Today's habits"
+
+---
+
 ## v1.5 Coach Platform & CRM (Shipped: 2026-05-22)
 
 **Phases completed:** 10 phases, 61 plans (Phases 22–31 + Phase 36)

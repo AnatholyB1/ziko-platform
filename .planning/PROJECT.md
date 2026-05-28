@@ -9,6 +9,25 @@ The Ziko fitness platform — a fully-extensible React Native / Expo mobile app 
 A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM.
 
 <details>
+<summary>✅ v1.7 Mobile UX v2 [milestone-mobile] — SHIPPED 2026-05-28</summary>
+
+**Goal:** Full visual redesign of the Ziko mobile app matching 24 canonical mockups; design + real data per screen.
+
+**What shipped:**
+- 10 shared components in `packages/ui/`: FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet, PaywallScreen, RechargeSheet, PluginsDrawer, EmptyState/ErrorScreen (4 variants each)
+- 40+ screens redesigned pixel-for-pixel; 17 plugins fully updated
+- 100% fixture elimination — zero domain-data arrays in production screens
+- GPS Cardio live tracker (Haversine + noise filter + RouteVisualizer + Strava-like dashboard)
+- Coach StateC: real stats (`sessionsCount` + `habitsPct`) + linked-since date
+- 3-tab nav (Accueil/Séance/Profil); BugFab globally mounted
+
+**Deferred:** Phase 35 gaps (35-G01–G07) — cache invalidation, password spinner, progress photo, crédits IA, apparences, parrainage
+
+**Archive:** `.planning/milestones/v1.7-ROADMAP.md` · `.planning/milestones/v1.7-REQUIREMENTS.md`
+
+</details>
+
+<details>
 <summary>✅ v1.6 Mobile v2 [milestone-mobile] — SHIPPED 2026-05-21</summary>
 
 **Goal:** Livrer le plugin "Mon coach" mobile (côté athlete).
@@ -37,7 +56,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 - 4 dashboards restants en parallèle semaine 2 : Hyrox, Running/Cardio, Bodybuilding/Hypertrophie, Perte de poids/Retour de blessure
 - Point de départ pour customisation AI chat coach (contexte dashboard injecté)
 
-**Parallel milestone:** v1.7 Mobile UX v2 (workstream `milestone-mobile`) — continue indépendamment.
+**Shipped parallel milestone:** ✅ v1.7 Mobile UX v2 (workstream `milestone-mobile`) — SHIPPED 2026-05-28. See `.planning/milestones/v1.7-ROADMAP.md`.
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
 **Parallel workstream:** v1.10 Custom Coach Exercises (`custom-coach`) — coach crée ses propres exercices (vidéo + photo), disponibles dans les programmes de ses athlètes.
 **Parallel workstream:** v1.11 Notification System (`notification-mobile`) — push + in-app notifications mobile (Expo Push, APNs/FCM), Hono-triggered, préférences par catégorie.
