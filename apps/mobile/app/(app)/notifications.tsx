@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -139,6 +140,7 @@ function NFItem({ id, type, title, body, read, created_at, action_url, onPress }
 
 // ── Main Screen ────────────────────────────────────────────
 export default function NotificationsScreen() {
+  const router = useRouter();
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState('all');
@@ -213,6 +215,7 @@ export default function NotificationsScreen() {
 
   const handlePress = (item: Notification) => {
     if (!item.read) markReadMutation.mutate(item.id);
+    if (item.action_url) router.push(item.action_url as any);
   };
 
   // ── Render ─────────────────────────────────────────────
