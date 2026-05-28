@@ -12,6 +12,7 @@ import { pantryRecipesRouter } from './routes/pantry-recipes.js';
 import { creditsRouter } from './routes/credits.js';
 import { referralRoutes } from './routes/referral.js';
 import { notificationsRouter } from './routes/notifications.js';
+import { notificationsCronRouter } from './routes/notifications-cron.js';
 import { storageRouter, storageCleanupRouter } from './routes/storage.js';
 import { identityRouter } from './coach/identity/service.js';
 import { invitationsRouter } from './coach/invitations/service.js';
@@ -37,6 +38,7 @@ app.use(
       const allowed = [
         /^exp:\/\//,
         /^https?:\/\/localhost/,
+        /^https?:\/\/192\.168\./,
         /^https?:\/\/.*\.vercel\.app$/,
         process.env.APP_ORIGIN ?? '',
       ];
@@ -67,6 +69,7 @@ app.route('/credits', creditsRouter);
 app.route('/referral', referralRoutes);
 app.route('/promo', referralRoutes);
 app.route('/notifications', notificationsRouter);
+app.route('/notifications', notificationsCronRouter);
 app.route('/storage', storageRouter);
 app.route('/storage', storageCleanupRouter);
 app.route('/coach/identity', identityRouter);
