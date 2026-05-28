@@ -1,6 +1,10 @@
 'use client'
 
 import { use, useState, useRef, useCallback, useEffect } from 'react'
+import { useInsights } from '@/hooks/useInsights'
+import { NarrativeSummaryCard } from '@/components/coach/dashboard/NarrativeSummaryCard'
+import { DashboardChatDrawer } from '@/components/coach/dashboard/DashboardChatDrawer'
+import { AlertesModal } from '@/components/coach/dashboard/AlertesModal'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDashboardConfig } from '@/hooks/useDashboardConfig'
 import { useExportPDF } from '@/hooks/useExportPDF'
@@ -45,6 +49,15 @@ export default function DashboardPage({
   const [compareSubMode, setCompareSubMode] = useState<'client' | 'period'>('client')
   const [compareClientId, setCompareClientId] = useState<string | null>(null)
   const [comparePeriod, setComparePeriod] = useState<'week' | 'month' | '3m' | null>(null)
+
+  // AI features state — Phase 41
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isAlertesOpen, setIsAlertesOpen] = useState(false)
+  const [chartSummary, setChartSummary] = useState<Record<string, unknown> | null>(null)
+  const dashboardContextRef = useRef<{ sport_type: string; metrics: Record<string, string> } | null>(null)
+
+  // useInsights hook — fires when sport dashboard data is ready
+  const { data: insights, isLoading: insightsLoading } = useInsights(clientId, sport ?? null, dateRange, chartSummary)
 
   // PDF export hook — D-12 through D-15
   const { exportPDF, exportState } = useExportPDF()
@@ -121,6 +134,16 @@ export default function DashboardPage({
     // Backend returns [] for new dashboards — dashboard shows empty grid, coach uses Personnaliser to add widgets
   }
 
+  function handleDataReady(summary: Record<string, unknown>) {
+    setChartSummary(summary)
+    if (sport) {
+      dashboardContextRef.current = {
+        sport_type: sport,
+        metrics: Object.fromEntries(Object.entries(summary).map(([k, v]) => [k, String(v)])),
+      }
+    }
+  }
+
   function handleToggleCompare() {
     setCompareMode(prev => !prev)
     if (compareMode) {
@@ -168,8 +191,13 @@ export default function DashboardPage({
                 compareError={false}
                 exportState={exportState}
                 onExportPDF={handleExportPDF}
+                onOpenChat={() => setIsChatOpen(true)}
+                onOpenAlerts={() => setIsAlertesOpen(true)}
               />
             </div>
+            {/* NarrativeSummaryCard — AI-03, above chart grid */}
+            <NarrativeSummaryCard narrative={insights?.narrative} sport={sport ?? ''} isLoading={insightsLoading && !!sport} />
+
             {/* Sport tab chart area — captured by PDF export. Sub-tab strip and ControlBar are excluded via pdf-exclude class */}
             <div ref={sportDashboardRef}>
               {sport === 'powerlifting' && (
@@ -180,6 +208,8 @@ export default function DashboardPage({
                   compareMode={compareMode}
                   compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                  onDataReady={handleDataReady}
+                  chartInsights={insights?.chartInsights}
                 />
               )}
               {sport === 'hyrox' && (
@@ -190,6 +220,8 @@ export default function DashboardPage({
                   compareMode={compareMode}
                   compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                  onDataReady={handleDataReady}
+                  chartInsights={insights?.chartInsights}
                 />
               )}
               {sport === 'running' && (
@@ -200,6 +232,8 @@ export default function DashboardPage({
                   compareMode={compareMode}
                   compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                  onDataReady={handleDataReady}
+                  chartInsights={insights?.chartInsights}
                 />
               )}
               {sport === 'bodybuilding' && (
@@ -210,6 +244,8 @@ export default function DashboardPage({
                   compareMode={compareMode}
                   compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                  onDataReady={handleDataReady}
+                  chartInsights={insights?.chartInsights}
                 />
               )}
               {sport === 'weightloss' && (
@@ -220,6 +256,8 @@ export default function DashboardPage({
                   compareMode={compareMode}
                   compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                  onDataReady={handleDataReady}
+                  chartInsights={insights?.chartInsights}
                 />
               )}
               {sport === null && <DashboardEmptyState />}
@@ -302,6 +340,24 @@ export default function DashboardPage({
           </>
         )}
       </div>
+
+      {/* DashboardChatDrawer — AI-01 */}
+      <DashboardChatDrawer
+        clientId={clientId}
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        dashboardContextRef={dashboardContextRef}
+      />
+
+      {/* AlertesModal — AI-04 */}
+      {isAlertesOpen && (
+        <AlertesModal
+          clientId={clientId}
+          sport={sport ?? null}
+          crossedThresholds={insights?.crossedThresholds}
+          onClose={() => setIsAlertesOpen(false)}
+        />
+      )}
     </div>
   )
 }
