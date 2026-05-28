@@ -17,7 +17,7 @@ This milestone delivers a per-athlete customizable dashboard to the coach CRM. A
 - [ ] **Phase 01: DB + API Foundation** - Migration 054, 5 Hono CRUD routes, widget-data endpoint, Zod schema with `schema_version: 1`
 - [ ] **Phase 02: Widget Renderers + Static Dashboard** - DashboardShell, DashboardGrid, all 7 widget components with live data, Dashboard tab wired in
 - [ ] **Phase 03: AI Edit Session** - Split-screen editor, Claude tool calls, live preview via SSE, save/cancel, credit gate, PITFALLS checklist cleared
-- [ ] **Phase 04: Polish + Coach Memory** - Template save/apply, coach preference persistence, opening message, discoverable Customize entry point
+- [x] **Phase 04: Polish + Coach Memory** - Template save/apply, coach preference persistence, opening message, discoverable Customize entry point — Complete 2026-05-28
 
 ---
 
