@@ -42,21 +42,18 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
   const [isLoading, setIsLoading] = useState(true);
   const [notifDenied, setNotifDenied] = useState(false);
   const [s, setS] = useState({
-    sessionsReminder: true, hydration: true, streakAlert: true, coach: true,
-    achievements: true, social: true, marketing: false,
-    sound: true, haptics: true,
+    push_enabled: true,
+    coach_enabled: true,
+    workout_enabled: true,
+    gamification_enabled: true,
+    health_enabled: true,
+    system_enabled: true,
+    quiet_hours_start: 22,
+    quiet_hours_end: 7,
   });
   const saveRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    if (!userId) return;
-    supabase.from('user_profiles').select('settings').eq('id', userId).single()
-      .then(({ data }) => {
-        const prefs = (data as any)?.settings?.notif_prefs;
-        if (prefs) setS((prev) => ({ ...prev, ...prefs }));
-        setIsLoading(false);
-      });
-  }, [userId]);
+  const [startPickerVisible, setStartPickerVisible] = useState(false);
+  const [endPickerVisible, setEndPickerVisible] = useState(false);
 
   useEffect(() => {
     Notifications.getPermissionsAsync().then(({ canAskAgain, status }) => {
@@ -64,18 +61,75 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     });
   }, []);
 
-  const updateToggle = (k: keyof typeof s) => (v: boolean) => {
-    const next = { ...s, [k]: v };
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      try {
+        const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
+        await supabase
+          .from('notification_preferences')
+          .upsert(
+            {
+              user_id: userId,
+              push_enabled: true,
+              coach_enabled: true,
+              workout_enabled: true,
+              gamification_enabled: true,
+              health_enabled: true,
+              system_enabled: true,
+              quiet_hours_start: 22,
+              quiet_hours_end: 7,
+              timezone_offset: tzOffset,
+            },
+            { onConflict: 'user_id', ignoreDuplicates: true }
+          );
+        const { data } = await supabase
+          .from('notification_preferences')
+          .select('push_enabled, coach_enabled, workout_enabled, gamification_enabled, health_enabled, system_enabled, quiet_hours_start, quiet_hours_end')
+          .eq('user_id', userId)
+          .single();
+        if (data) {
+          setS({
+            push_enabled: data.push_enabled ?? true,
+            coach_enabled: data.coach_enabled ?? true,
+            workout_enabled: data.workout_enabled ?? true,
+            gamification_enabled: data.gamification_enabled ?? true,
+            health_enabled: data.health_enabled ?? true,
+            system_enabled: data.system_enabled ?? true,
+            quiet_hours_start: data.quiet_hours_start ?? 22,
+            quiet_hours_end: data.quiet_hours_end ?? 7,
+          });
+        }
+        setIsLoading(false);
+      } catch {
+        setIsLoading(false);
+      }
+    })();
+  }, [userId]);
+
+  const handleChange = (patch: Partial<typeof s>) => {
+    const next = { ...s, ...patch };
     setS(next);
     clearTimeout(saveRef.current);
+    const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
     saveRef.current = setTimeout(async () => {
-      const { data: fresh } = await supabase
-        .from('user_profiles').select('settings').eq('id', userId).single();
-      const current = (fresh as any)?.settings ?? {};
-      await supabase.from('user_profiles').upsert({
-        id: userId,
-        settings: { ...current, notif_prefs: next },
-      });
+      await supabase
+        .from('notification_preferences')
+        .upsert(
+          {
+            user_id: userId,
+            push_enabled: next.push_enabled,
+            coach_enabled: next.coach_enabled,
+            workout_enabled: next.workout_enabled,
+            gamification_enabled: next.gamification_enabled,
+            health_enabled: next.health_enabled,
+            system_enabled: next.system_enabled,
+            quiet_hours_start: next.quiet_hours_start,
+            quiet_hours_end: next.quiet_hours_end,
+            timezone_offset: tzOffset,
+          },
+          { onConflict: 'user_id' }
+        );
     }, 600);
   };
 
@@ -125,21 +179,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
             <Ionicons name="chevron-forward-outline" size={16} color="#6B6963" />
           </TouchableOpacity>
         )}
-        <STGroup title="Coach & rappels">
-          <STRow icon="barbell-outline" tint="#FF5C1A" label="Rappels de séance" sub="60 min avant" toggleValue={s.sessionsReminder} onToggle={updateToggle('sessionsReminder')} />
-          <STRow icon="water-outline" tint="#3B82F6" label="Hydratation" sub="Toutes les 2h" toggleValue={s.hydration} onToggle={updateToggle('hydration')} />
-          <STRow icon="flame-outline" tint="#E94B3C" label="Alerte streak" sub="Avant que la chaîne casse" toggleValue={s.streakAlert} onToggle={updateToggle('streakAlert')} />
-          <STRow icon="sparkles-outline" tint="#FF5C1A" label="Coach IA quotidien" sub="Insight du matin" toggleValue={s.coach} onToggle={updateToggle('coach')} />
-        </STGroup>
-        <STGroup title="Activité">
-          <STRow icon="trophy-outline" tint="#E8A33A" label="PR & badges" toggleValue={s.achievements} onToggle={updateToggle('achievements')} />
-          <STRow icon="people-outline" tint="#3B82F6" label="Communauté" sub="Likes, commentaires, follows" toggleValue={s.social} onToggle={updateToggle('social')} />
-          <STRow icon="notifications-outline" tint="#6B6963" label="Promotions & nouveautés" toggleValue={s.marketing} onToggle={updateToggle('marketing')} />
-        </STGroup>
-        <STGroup title="Style">
-          <STRow icon="musical-note-outline" tint="#8B5CF6" label="Sons" toggleValue={s.sound} onToggle={updateToggle('sound')} />
-          <STRow icon="flash-outline" tint="#F59E0B" label="Vibrations" toggleValue={s.haptics} onToggle={updateToggle('haptics')} />
-        </STGroup>
+        {/* TODO Plan 02: master switch, category toggles, quiet hours */}
       </ScrollView>
     </SafeAreaView>
   );
