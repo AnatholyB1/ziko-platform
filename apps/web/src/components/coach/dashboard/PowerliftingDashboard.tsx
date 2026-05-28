@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -57,6 +58,8 @@ export function PowerliftingDashboard({
   compareMode,
   compareClientId,
   comparePeriod,
+  onDataReady,
+  chartInsights,
 }: {
   clientId: string;
   sport: string | null;
@@ -64,6 +67,8 @@ export function PowerliftingDashboard({
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
+  onDataReady?: (summary: Record<string, unknown>) => void;
+  chartInsights?: Record<string, string>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['powerlifting', clientId, sport, dateRange],
@@ -71,6 +76,21 @@ export function PowerliftingDashboard({
     enabled: sport === 'powerlifting',
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (data && onDataReady) {
+      const lastSbd = data.sbd[data.sbd.length - 1];
+      const lastRpe = data.rpe[data.rpe.length - 1];
+      const lastTonnage = data.tonnage[data.tonnage.length - 1];
+      const summary: Record<string, unknown> = {};
+      if (lastSbd?.squat != null) summary['1RM Squat (dernier)'] = lastSbd.squat;
+      if (lastSbd?.bench != null) summary['1RM Bench (dernier)'] = lastSbd.bench;
+      if (lastSbd?.deadlift != null) summary['1RM Deadlift (dernier)'] = lastSbd.deadlift;
+      if (lastRpe?.rpe != null) summary['RPE moyen (dernière séance)'] = lastRpe.rpe;
+      if (lastTonnage?.tonnage != null) summary['Tonnage hebdo (dernière sem.)'] = lastTonnage.tonnage;
+      onDataReady(summary);
+    }
+  }, [data, onDataReady]);
 
   const compareIsClient = compareMode === true && !!compareClientId;
   const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
@@ -124,6 +144,7 @@ export function PowerliftingDashboard({
   const CHART_CARDS = [
     {
       title: 'Progression 1RM — SBD',
+      chartKey: 'squat_1rm',
       chart: (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data.sbd} margin={CHART_MARGIN}>
@@ -165,6 +186,7 @@ export function PowerliftingDashboard({
     },
     {
       title: 'Tendance RPE',
+      chartKey: 'rpe_avg',
       chart: isActive && mergedRpe ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={mergedRpe} margin={CHART_MARGIN}>
@@ -238,6 +260,7 @@ export function PowerliftingDashboard({
     },
     {
       title: 'Tonnage Hebdomadaire',
+      chartKey: 'tonnage_hebdo',
       chart: isActive && mergedTonnage ? (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={mergedTonnage} margin={CHART_MARGIN}>
@@ -264,6 +287,7 @@ export function PowerliftingDashboard({
     },
     {
       title: 'Intensité (% 1RM)',
+      chartKey: 'intensite_1rm',
       chart: isActive && mergedIntensity ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={mergedIntensity} margin={CHART_MARGIN}>
@@ -341,7 +365,7 @@ export function PowerliftingDashboard({
           className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
           style={{ animationDelay: `${i * 50}ms` }}
         >
-          <ChartCard title={card.title}>{card.chart}</ChartCard>
+              <ChartCard title={card.title} aiInsight={chartInsights?.[card.chartKey]}>{card.chart}</ChartCard>
         </div>
       ))}
     </div>

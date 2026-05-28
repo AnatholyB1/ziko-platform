@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -54,6 +55,8 @@ export function HyroxDashboard({
   compareMode,
   compareClientId,
   comparePeriod,
+  onDataReady,
+  chartInsights,
 }: {
   clientId: string;
   sport: string | null;
@@ -61,6 +64,8 @@ export function HyroxDashboard({
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
+  onDataReady?: (summary: Record<string, unknown>) => void;
+  chartInsights?: Record<string, string>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['hyrox', clientId, sport, dateRange],
@@ -68,6 +73,18 @@ export function HyroxDashboard({
     enabled: sport === 'hyrox',
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (data && onDataReady) {
+      const lastFinish = data.finishTimes[data.finishTimes.length - 1];
+      const lastVolume = data.weeklyVolume[data.weeklyVolume.length - 1];
+      const summary: Record<string, unknown> = {};
+      if (lastFinish?.finish_time_seconds != null) summary['Temps total (dernière course)'] = lastFinish.finish_time_seconds;
+      if (lastVolume?.sessions != null) summary['Volume total kg (dernière séance)'] = lastVolume.sessions;
+      if (lastVolume?.distance_km != null) summary['Distance totale km (période)'] = lastVolume.distance_km;
+      onDataReady(summary);
+    }
+  }, [data, onDataReady]);
 
   const compareIsClient = compareMode === true && !!compareClientId;
   const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
@@ -115,6 +132,7 @@ export function HyroxDashboard({
   const CHART_CARDS = [
     {
       title: 'Temps par Station',
+      chartKey: 'temps_station',
       colSpan: true,
       chart: (
         <ResponsiveContainer width="100%" height={220}>
@@ -130,6 +148,7 @@ export function HyroxDashboard({
     },
     {
       title: 'Temps Final Hyrox',
+      chartKey: 'temps_total',
       colSpan: false,
       chart: isActive && mergedFinish ? (
         <ResponsiveContainer width="100%" height={220}>
@@ -182,6 +201,7 @@ export function HyroxDashboard({
     },
     {
       title: 'Volume Hebdomadaire',
+      chartKey: 'volume_hebdo',
       colSpan: false,
       chart: isActive && mergedSessions ? (
         <ResponsiveContainer width="100%" height={220}>
@@ -219,7 +239,7 @@ export function HyroxDashboard({
           className={`opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]${card.colSpan ? ' col-span-2' : ''}`}
           style={{ animationDelay: `${i * 50}ms` }}
         >
-          <ChartCard title={card.title}>{card.chart}</ChartCard>
+          <ChartCard title={card.title} aiInsight={chartInsights?.[card.chartKey]}>{card.chart}</ChartCard>
         </div>
       ))}
     </div>

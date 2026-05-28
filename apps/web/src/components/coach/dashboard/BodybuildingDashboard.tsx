@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -58,6 +59,8 @@ export function BodybuildingDashboard({
   compareMode,
   compareClientId,
   comparePeriod,
+  onDataReady,
+  chartInsights,
 }: {
   clientId: string;
   sport: string | null;
@@ -65,6 +68,8 @@ export function BodybuildingDashboard({
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
+  onDataReady?: (summary: Record<string, unknown>) => void;
+  chartInsights?: Record<string, string>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['bodybuilding', clientId, sport, dateRange],
@@ -72,6 +77,19 @@ export function BodybuildingDashboard({
     enabled: sport === 'bodybuilding',
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (data && onDataReady) {
+      const lastBw = data.bodyweight[data.bodyweight.length - 1];
+      const totalSets = data.muscleVolume.reduce((acc: number, m: { sets: number }) => acc + m.sets, 0);
+      const distinctExercises = data.topExercises?.length ?? 0;
+      const summary: Record<string, unknown> = {};
+      if (lastBw?.weight_kg != null) summary['Poids de corps kg'] = lastBw.weight_kg;
+      if (totalSets > 0) summary['Séries hebdo'] = totalSets;
+      if (distinctExercises > 0) summary['Exercices distincts (période)'] = distinctExercises;
+      onDataReady(summary);
+    }
+  }, [data, onDataReady]);
 
   const compareIsClient = compareMode === true && !!compareClientId;
   const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
@@ -118,7 +136,7 @@ export function BodybuildingDashboard({
         className="col-span-2 opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '0ms' }}
       >
-        <ChartCard title="Volume par Groupe Musculaire">
+        <ChartCard title="Volume par Groupe Musculaire" aiInsight={chartInsights?.['volume_total']}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
               layout="vertical"
@@ -154,7 +172,7 @@ export function BodybuildingDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '50ms' }}
       >
-        <ChartCard title="Surcharge Progressive">
+        <ChartCard title="Surcharge Progressive" aiInsight={chartInsights?.['series_hebdo']}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={data.progressiveOverload} margin={CHART_MARGIN}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
@@ -188,7 +206,7 @@ export function BodybuildingDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '100ms' }}
       >
-        <ChartCard title="Poids Corporel">
+        <ChartCard title="Poids Corporel" aiInsight={chartInsights?.['poids_corps']}>
           {isActive && mergedBodyweight ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedBodyweight} margin={CHART_MARGIN}>

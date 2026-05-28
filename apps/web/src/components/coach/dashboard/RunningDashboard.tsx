@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -56,6 +57,8 @@ export function RunningDashboard({
   compareMode,
   compareClientId,
   comparePeriod,
+  onDataReady,
+  chartInsights,
 }: {
   clientId: string;
   sport: string | null;
@@ -63,6 +66,8 @@ export function RunningDashboard({
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
+  onDataReady?: (summary: Record<string, unknown>) => void;
+  chartInsights?: Record<string, string>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['running', clientId, sport, dateRange],
@@ -70,6 +75,21 @@ export function RunningDashboard({
     enabled: sport === 'running',
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (data && onDataReady) {
+      const lastPace = data.paceTrend[data.paceTrend.length - 1];
+      const lastWeekly = data.weeklyDistance[data.weeklyDistance.length - 1];
+      const lastVo2max = data.vo2maxTrend[data.vo2maxTrend.length - 1];
+      const lastSession = data.sessionDistances[data.sessionDistances.length - 1];
+      const summary: Record<string, unknown> = {};
+      if (lastPace?.pace_min_per_km != null) summary['Allure moy. (dernier run)'] = lastPace.pace_min_per_km;
+      if (lastWeekly?.distance_km != null) summary['Volume hebdo km'] = lastWeekly.distance_km;
+      if (lastVo2max?.vo2max != null) summary['VO2max estimé'] = lastVo2max.vo2max;
+      if (lastSession?.distance_km != null) summary['Distance (dernier run)'] = lastSession.distance_km;
+      onDataReady(summary);
+    }
+  }, [data, onDataReady]);
 
   const compareIsClient = compareMode === true && !!compareClientId;
   const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
@@ -127,6 +147,7 @@ export function RunningDashboard({
   const CHART_CARDS = [
     {
       title: 'Allure (min/km)',
+      chartKey: 'allure_avg',
       chart: isActive && mergedPace ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={mergedPace} margin={CHART_MARGIN}>
@@ -178,6 +199,7 @@ export function RunningDashboard({
     },
     {
       title: 'Distance Hebdomadaire (km)',
+      chartKey: 'volume_hebdo',
       chart: isActive && mergedDistance ? (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={mergedDistance} margin={CHART_MARGIN}>
@@ -214,6 +236,7 @@ export function RunningDashboard({
     },
     {
       title: 'VO2max Estime',
+      chartKey: 'vo2max',
       chart: isActive && mergedVo2max ? (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={mergedVo2max} margin={CHART_MARGIN}>
@@ -265,6 +288,7 @@ export function RunningDashboard({
     },
     {
       title: 'Distance par Seance',
+      chartKey: 'distance',
       chart: isActive && mergedSessionDist ? (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={mergedSessionDist} margin={CHART_MARGIN}>
@@ -299,7 +323,7 @@ export function RunningDashboard({
           className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
           style={{ animationDelay: `${i * 50}ms` }}
         >
-          <ChartCard title={card.title}>{card.chart}</ChartCard>
+          <ChartCard title={card.title} aiInsight={chartInsights?.[card.chartKey]}>{card.chart}</ChartCard>
         </div>
       ))}
     </div>

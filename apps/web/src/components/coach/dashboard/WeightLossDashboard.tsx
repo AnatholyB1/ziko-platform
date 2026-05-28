@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -57,6 +58,8 @@ export function WeightLossDashboard({
   compareMode,
   compareClientId,
   comparePeriod,
+  onDataReady,
+  chartInsights,
 }: {
   clientId: string;
   sport: string | null;
@@ -64,6 +67,8 @@ export function WeightLossDashboard({
   compareMode?: boolean;
   compareClientId?: string | null;
   comparePeriod?: 'week' | 'month' | '3m' | null;
+  onDataReady?: (summary: Record<string, unknown>) => void;
+  chartInsights?: Record<string, string>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['weightloss', clientId, sport, dateRange],
@@ -71,6 +76,17 @@ export function WeightLossDashboard({
     enabled: sport === 'weightloss',
     staleTime: 60_000,
   });
+
+  useEffect(() => {
+    if (data && onDataReady) {
+      const lastBw = data.bodyweightCurve[data.bodyweightCurve.length - 1];
+      const avgCalories = data.avgDailyCalories;
+      const summary: Record<string, unknown> = {};
+      if (lastBw?.weight_kg != null) summary['Poids actuel kg'] = lastBw.weight_kg;
+      if (avgCalories != null && avgCalories > 0) summary['Calories moy./jour (période)'] = avgCalories;
+      onDataReady(summary);
+    }
+  }, [data, onDataReady]);
 
   const compareIsClient = compareMode === true && !!compareClientId;
   const compareIsPeriod = compareMode === true && !compareClientId && !!comparePeriod;
@@ -127,7 +143,7 @@ export function WeightLossDashboard({
         className="col-span-2 opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '0ms' }}
       >
-        <ChartCard title="Evolution du Poids">
+        <ChartCard title="Evolution du Poids" aiInsight={chartInsights?.['poids_actuel']}>
           {isActive && mergedBwCurve ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedBwCurve} margin={CHART_MARGIN}>
@@ -187,7 +203,7 @@ export function WeightLossDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '50ms' }}
       >
-        <ChartCard title="Conformite Calorique">
+        <ChartCard title="Conformite Calorique" aiInsight={chartInsights?.['calories_avg']}>
           {isActive && mergedCalories ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={mergedCalories} margin={CHART_MARGIN}>
@@ -228,7 +244,7 @@ export function WeightLossDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '100ms' }}
       >
-        <ChartCard title="Progression de Charge">
+        <ChartCard title="Progression de Charge" aiInsight={chartInsights?.['series_total']}>
           {isActive && mergedLoad ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedLoad} margin={CHART_MARGIN}>
