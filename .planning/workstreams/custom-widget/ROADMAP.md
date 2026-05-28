@@ -82,7 +82,13 @@ Plans:
   1. Coach can save the current dashboard as a named template; that template is available when creating a dashboard for a different athlete
   2. Coach's widget preferences (e.g., preferred default period, preferred chart types) persist in `coach_memory` and are applied automatically when a new dashboard is initialized
   3. The edit session opens with a concrete opening message listing 2–3 example customization actions, eliminating blank-slate paralysis
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Backend GET/PUT /memory API shape fix + 409 duplicate guard + MEM-02 fire-and-forget preference inference
+- [ ] 04-02-PLAN.md — useCoachMemory hook + TemplateCard + TemplateNamingModal (5 states, GSAP, accessibility)
+- [ ] 04-03-PLAN.md — TemplatePicker + dashboard/page.tsx isNewDashboard detection + TemplatePicker conditional render
+- [ ] 04-04-PLAN.md — DashboardEditOverlay "Enregistrer comme modèle" button + EditChatPanel personalized opening message + smoke test checkpoint
 
 ---
 
@@ -125,4 +131,4 @@ Plans:
 | 01. DB + API Foundation | 0/5 | Not started | - |
 | 02. Widget Renderers + Static Dashboard | 0/TBD | Not started | - |
 | 03. AI Edit Session | 5/5 | Complete | 2026-05-28 |
-| 04. Polish + Coach Memory | 0/TBD | Not started | - |
+| 04. Polish + Coach Memory | 0/4 | Not started | - |
