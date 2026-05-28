@@ -836,3 +836,107 @@ export async function upsertSharedNote(
 
   return { updated: true };
 }
+
+// ----- GET /:clientId/forms — form instances for a client (RESPONSES-01, RESPONSES-02, RESPONSES-03) -----
+// Returns submitted instances (with Q&A answers pre-joined from coach_forms.questions) sorted DESC,
+// then pending instances (answers = null). Manual ownership filter (RF-02: no RLS on publishable client).
+interface FormAnswer {
+  question_id: string;
+  question_label: string;
+  question_type: 'text' | 'scale' | 'yes_no' | 'choice';
+  answer_value: string | number;
+}
+
+interface FormInstanceResponse {
+  instance_id: string;
+  form_id: string;
+  form_title: string;
+  status: 'pending' | 'submitted';
+  submitted_at: string | null;
+  question_count: number;
+  answers: FormAnswer[] | null;
+}
+
+export async function getFormsForClient(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<{ forms: FormInstanceResponse[] }> {
+  const db = createUserClient(jwt);
+
+  // Step 2 — Fetch all form_instances for this athlete, joining coach_forms
+  const { data: instances, error: instErr } = await db
+    .from('form_instances')
+    .select('id, form_id, status, submitted_at, coach_forms!inner(title, questions, coach_id)')
+    .eq('athlete_id', clientId);
+
+  if (instErr) throw new Error(instErr.message);
+  if (!instances || instances.length === 0) return { forms: [] };
+
+  // Step 3 — Security filter (RF-02: manual ownership check — publishable client has no RLS)
+  const ownedInstances = (instances as any[]).filter(
+    (i) => i.coach_forms?.coach_id === coachId
+  );
+
+  if (ownedInstances.length === 0) return { forms: [] };
+
+  // Step 4 — Fetch form_responses for submitted instances only
+  const submittedIds = ownedInstances.filter((i) => i.status === 'submitted').map((i) => i.id);
+  const responsesMap = new Map<string, any[]>();
+
+  if (submittedIds.length > 0) {
+    const { data: responses, error: respErr } = await db
+      .from('form_responses')
+      .select('instance_id, answers')
+      .in('instance_id', submittedIds);
+
+    if (respErr) throw new Error(respErr.message);
+
+    for (const r of (responses as any[]) ?? []) {
+      responsesMap.set(r.instance_id, Array.isArray(r.answers) ? r.answers : []);
+    }
+  }
+
+  // Step 5 — Build FormInstanceResponse[] for each owned instance
+  const forms: FormInstanceResponse[] = ownedInstances.map((i) => {
+    const questions: any[] = i.coach_forms?.questions ?? [];
+    const questionMap = new Map<string, any>();
+    for (const q of questions) {
+      questionMap.set(q.id, q);
+    }
+
+    let answers: FormAnswer[] | null = null;
+    if (i.status === 'submitted') {
+      const rawAnswers = responsesMap.get(i.id) ?? [];
+      answers = rawAnswers.map((a: any) => {
+        const q = questionMap.get(a.question_id);
+        return {
+          question_id: a.question_id,
+          question_label: q?.label ?? a.question_id,
+          question_type: (q?.type ?? 'text') as FormAnswer['question_type'],
+          answer_value: a.answer_value,
+        };
+      });
+    }
+
+    return {
+      instance_id: i.id,
+      form_id: i.form_id,
+      form_title: i.coach_forms?.title ?? '',
+      status: i.status as 'pending' | 'submitted',
+      submitted_at: i.submitted_at ?? null,
+      question_count: questions.length,
+      answers,
+    };
+  });
+
+  // Step 6 — Sort: submitted rows first (DESC by submitted_at), then pending rows at bottom
+  const sorted: FormInstanceResponse[] = [
+    ...forms
+      .filter((f) => f.status === 'submitted')
+      .sort((a, b) => new Date(b.submitted_at!).getTime() - new Date(a.submitted_at!).getTime()),
+    ...forms.filter((f) => f.status === 'pending'),
+  ];
+
+  return { forms: sorted };
+}
