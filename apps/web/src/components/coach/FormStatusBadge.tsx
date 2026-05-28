@@ -31,7 +31,7 @@ export interface CoachForm {
 // ─── FormStatusBadge component ────────────────────────────────────────────────
 
 interface FormStatusBadgeProps {
-  status: 'draft' | 'active' | 'archived';
+  status: 'draft' | 'active' | 'archived' | 'submitted' | 'pending';
 }
 
 const STATUS_CONFIG: Record<
@@ -52,6 +52,16 @@ const STATUS_CONFIG: Record<
     bg: 'bg-[#FEE2E2]',
     text: 'text-[#DC2626]',
     label: 'Archivé',
+  },
+  submitted: {
+    bg: 'bg-[#DCFCE7]',
+    text: 'text-[#16A34A]',
+    label: 'Soumis',
+  },
+  pending: {
+    bg: 'bg-[#FEF3C7]',
+    text: 'text-[#D97706]',
+    label: 'En attente',
   },
 };
 

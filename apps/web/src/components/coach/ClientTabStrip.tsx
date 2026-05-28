@@ -14,6 +14,7 @@ const TABS = [
   { key: 'programs', label: 'Programmes' },
   { key: 'vocal', label: 'Retour vocal' },
   { key: 'videos', label: 'Vidéos' },
+  { key: 'forms', label: 'Formulaires' },
 ];
 
 export function ClientTabStrip({ id, locale }: { id: string; locale: string }) {
