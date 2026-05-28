@@ -85,6 +85,30 @@ function buildSystemPrompt(userCtx: UserContext): string {
     sections.push(`## Active Plugins\n${userCtx.installedPlugins.join(', ')}`);
   }
 
+  // Recent form responses (CLAUDE-01 + CLAUDE-02)
+  const formBlock = (userCtx.recentFormResponses ?? []).map((r) => {
+    const questionMap = new Map(
+      r.questions.map((q: any) => [q.id, q]),
+    );
+    const qaLines = r.answers.map((a: any) => {
+      const q = questionMap.get(a.question_id);
+      const label = q?.label ?? a.question_id;
+      let value = String(a.value);
+      if (q?.type === 'scale') value = `${a.value} / 10`;
+      if (q?.type === 'yes_no') value = a.value === 'yes' ? 'Oui' : 'Non';
+      return `  Q: ${label}\n  R: ${value}`;
+    }).join('\n');
+    return `### ${r.form_title} (${(r.submitted_at ?? '').slice(0, 10)})\n${qaLines}`;
+  }).join('\n\n');
+
+  const formsSection = formBlock
+    ? `## Formulaires récents\n${formBlock}`
+    : '';
+
+  if (formsSection) {
+    sections.push(formsSection);
+  }
+
   return sections.join('\n\n');
 }
 
