@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
-status: in_progress
-stopped_at: Phase 40 complete — 11/11 automated checks PASS
-last_updated: "2026-05-27T20:47:21Z"
+status: complete
+stopped_at: Phase 41 complete — all 6 automated checks PASS, smoke test APPROVED
+last_updated: "2026-05-28T00:00:00Z"
 progress:
   total_phases: 10
-  completed_phases: 9
-  total_plans: 33
-  completed_plans: 33
-  percent: 90
+  completed_phases: 10
+  total_plans: 36
+  completed_plans: 36
+  percent: 100
 ---
 
 # Project State — v1.7 Mobile UX v2
@@ -25,12 +25,14 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **40 — Extra Screens** — COMPLETE ✅ (6/6 plans, 11/11 automated checks PASS, 2026-05-27)
+Phase: **41 — Coach StateC + Final Audit** — COMPLETE ✅ (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28)
+
+Previous: Phase 40 — Extra Screens — COMPLETE ✅ (6/6 plans, 11/11 automated checks PASS, 2026-05-27)
 
 Previous: Phase 39 complete — 26/26 automated checks PASS ✅
 Also complete (missing from prior STATE): Phase 36 — Workout Stack Redesign (12/12 PASS, 2026-05-25) ✅
 
-Progress: [█████████░] 90% (9/10 phases complete)
+Progress: [██████████] 100% (10/10 phases complete) — **v1.7 MILESTONE COMPLETE** 🎉
 
 ## Accumulated Context
 
@@ -87,7 +89,10 @@ Progress: [█████████░] 90% (9/10 phases complete)
   - [x] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral — DONE (0afabd7)
   - [x] 40-05 — EmptyState + ErrorScreen components + integrations
   - [x] 40-06 — Phase verification — DONE (11/11 PASS)
-- [ ] Phase 41 — Coach StateC + Final Audit — NOT STARTED
+- [x] Phase 41 — Coach StateC + Final Audit — COMPLETE (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28) ✅
+  - [x] 41-01 — Coach StateC label fix (progress_label → "Habitudes aujourd'hui" / "Today's habits")
+  - [x] 41-02 — INITIAL_MESSAGES fixture removed; loading/empty/error sweep (5 plugins + 3 data fixtures eliminated)
+  - [x] 41-03 — Phase verification — DONE (6/6 PASS + smoke test APPROVED)
 
 ### Blockers/Concerns
 
@@ -95,9 +100,9 @@ Progress: [█████████░] 90% (9/10 phases complete)
 
 ## Session Continuity
 
-Last session: 2026-05-27
-Stopped at: Phase 40 complete — 11/11 automated checks PASS. Phase 40 : VALIDATION COMPLETE.
-Resume: Phase 35 gaps (35-G01–G07) then Phase 41 — Coach StateC + Final Audit.
+Last session: 2026-05-28
+Stopped at: Phase 41 complete — v1.7 milestone fully shipped.
+Resume: Phase 35 gaps (35-G01–G07) remain open — tracked separately, do not block v1.7.
 
 ---
 

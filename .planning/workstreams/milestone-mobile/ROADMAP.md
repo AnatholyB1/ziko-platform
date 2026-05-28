@@ -13,16 +13,16 @@ Phase 32 (Design System) is the prerequisite for all others. Phases 33–41 can 
 
 ## Phases
 
-- [ ] **Phase 32: Design System Foundation** — Tokens, shared components (FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet, PaywallScreen, RechargeSheet, PluginsDrawer), 3-tab nav restructure
-- [ ] **Phase 33: Home Screen Realignment** — Full home redesign + real data (FormeDuJour, MissionCard, AICoachInline, QuickLog, SmartActions, WeekStrip, Recent, PluginsDrawer)
-- [ ] **Phase 34: Auth + Onboarding Redesign** — AuthWelcome dark, AuthSignin, AuthSignup (4-segment strength), AuthForgot, 7-step onboarding flow
+- [x] **Phase 32: Design System Foundation** — Tokens, shared components (FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet, PaywallScreen, RechargeSheet, PluginsDrawer), 3-tab nav restructure
+- [x] **Phase 33: Home Screen Realignment** — Full home redesign + real data (FormeDuJour, MissionCard, AICoachInline, QuickLog, SmartActions, WeekStrip, Recent, PluginsDrawer)
+- [x] **Phase 34: Auth + Onboarding Redesign** — AuthWelcome dark, AuthSignin, AuthSignup (4-segment strength), AuthForgot, 7-step onboarding flow
 - [x] **Phase 35: Profile + Settings Redesign** — Profile hero/tabs/stats, Settings STGroup/STRow system + 3 sub-screens (Notif/Appearance/Integrations)
 - [x] **Phase 36: Workout Stack Redesign** — All workout screens except ActiveSession: Séance tab, ProgramDetail, AIGenerator, ExerciseDetail, ExercisePicker, HistoryDetail, WorkoutSummary, RestTimer
-- [ ] **Phase 37: Priority Plugins Redesign** — 6 plugins with SubTabs + AISuggestion + real data: Nutrition, Hydration, Habits, AI Programs, Coach IA (Persona), Community
-- [ ] **Phase 38: Remaining Plugins Group 1** — 6 plugins: Stats, Gamification, Stretching, Sleep, Measurements, Timer
-- [ ] **Phase 39: Remaining Plugins Group 2** — 6 plugins: Journal, Cardio, Supplements, Wearables, RPE, Pantry
-- [ ] **Phase 40: Extra Screens + Cross-cutting** — Notifications, Store, AIChat standalone, Calendar, Search, Help/Legal, EmptyState/ErrorScreen, AvatarUpload, Referral, ProgramBuilder, PostDetail, ChallengeDetail, LiftDetail, GoalEdit
-- [ ] **Phase 41: Coach StateC Enhancement + Final Data Audit** — StateC stats row (séances/progression), COACH_DATA fixture replacement, final sweep for remaining hardcoded fixtures (DATA-01/02/03/04)
+- [x] **Phase 37: Priority Plugins Redesign** — 6 plugins with SubTabs + AISuggestion + real data: Nutrition, Hydration, Habits, AI Programs, Coach IA (Persona), Community
+- [x] **Phase 38: Remaining Plugins Group 1** — 6 plugins: Stats, Gamification, Stretching, Sleep, Measurements, Timer
+- [x] **Phase 39: Remaining Plugins Group 2** — 6 plugins: Journal, Cardio, Supplements, Wearables, RPE, Pantry
+- [x] **Phase 40: Extra Screens + Cross-cutting** — Notifications, Store, AIChat standalone, Calendar, Search, Help/Legal, EmptyState/ErrorScreen, AvatarUpload, Referral, ProgramBuilder, PostDetail, ChallengeDetail, LiftDetail, GoalEdit
+- [x] **Phase 41: Coach StateC Enhancement + Final Data Audit** — StateC stats row (séances/progression), COACH_DATA fixture replacement, final sweep for remaining hardcoded fixtures (DATA-01/02/03/04)
 
 ---
 
