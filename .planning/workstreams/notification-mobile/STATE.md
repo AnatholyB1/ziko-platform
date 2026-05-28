@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
-current_plan: N/A
-status: planning
+current_plan: 06-01
+status: Ready to execute
 last_updated: "2026-05-28T00:00:00Z"
-last_activity: 2026-05-28 — Phase 5 complete (NotifSubScreen data layer + full JSX UI)
+last_activity: 2026-05-28 — Phase 6 planned (4 plans in 2 waves)
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 15
+  total_plans: 19
   completed_plans: 15
   percent: 83
 ---
@@ -18,10 +18,10 @@ progress:
 
 ## Current Position
 
-Phase: 6 — Local Reminders & App Updates 📋 NOT STARTED
-Plan: TBD
-Status: Ready to plan Phase 6
-Last activity: 2026-05-28 — Phase 5 complete (NotifSubScreen data layer + full JSX UI)
+Phase: 6 — Local Reminders & App Updates 📋 PLANNED (4 plans, 2 waves)
+Plan: 06-01 (next to execute)
+Status: Ready to execute Phase 6
+Last activity: 2026-05-28 — Phase 6 planned (4 plans in 2 waves)
 
 ## Progress
 
@@ -82,8 +82,17 @@ Last activity: 2026-05-28 — Phase 5 complete (NotifSubScreen data layer + full
 - STGroup.title made optional (was required string — blocked untitled master switch group per UI-SPEC)
 - Supabase PromiseLike incompatibility: .then().catch() chain → async IIFE with try/catch (TS2339 fix)
 
+### Phase 6 Decisions (2026-05-28)
+
+- Migration 062 (not 055 — already taken twice) adds `workout_reminder_days JSONB DEFAULT '[]'` and `workout_reminder_time TEXT DEFAULT NULL` to `notification_preferences`
+- HabitsPlugin.tsx has its own local `interface Habit` (missing reminder_time) — must extend + update INSERT
+- InlinePicker is unexported from settings.tsx — must be copied inline into HabitsPlugin.tsx and workout/[id].tsx
+- Expo WEEKLY weekday mapping: 1=Sunday, 2=Monday, …, 7=Saturday (explicit dict required to avoid off-by-one)
+- schedulAllReminders() wired in HabitsPlugin.tsx useEffect (not global _layout.tsx — avoids plugin coupling)
+- OTA card client-side only (useUpdates hook), no notification_log write, `__DEV__` guard on debug override
+
 ## Session Continuity
 
-**Stopped At:** Phase 5 complete — human UAT approved
-**Resume File:** .planning/workstreams/notification-mobile/phases/06-*/
-**Next Action:** `/gsd-discuss-phase 6 --ws notification-mobile` — discuss Phase 6 before planning
+**Stopped At:** Phase 6 planning complete — verification passed
+**Resume File:** .planning/workstreams/notification-mobile/phases/06-local-reminders-app-updates/
+**Next Action:** `/gsd-execute-phase 6 --ws notification-mobile` — execute Wave 1 (06-01 + 06-04 in parallel)
