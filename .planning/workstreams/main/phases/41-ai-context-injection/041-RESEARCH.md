@@ -588,25 +588,16 @@ CREATE INDEX IF NOT EXISTS idx_coach_metric_thresholds_lookup
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which chart metrics does the insights endpoint receive as `chartData`?**
-   - What we know: Each sport dashboard (`PowerliftingDashboard`, `RunningDashboard`, etc.) has its raw data from `useQuery`, but this data is an array of time-series points, not summary scalars.
-   - What's unclear: The planner must decide how the page-level component extracts top-3 summary metrics from each sport dashboard's query result to pass to (a) the `DashboardChatDrawer` as `dashboard_context.metrics` and (b) `useInsights` as `chartData`.
-   - Recommendation: Each sport dashboard component should expose a `getSummaryMetrics(data): Record<string, string>` helper function (for chat context) and a separate `getInsightsPayload(data): Record<string, unknown>` (compact numeric scalars for the insights endpoint). The page passes these up via a callback or they are computed inside a shared hook.
+1. **Which chart metrics does the insights endpoint receive as ?** — RESOLVED
+   - Resolution: Each sport dashboard accepts an  callback prop. The summary contains 3–5 scalar numeric values (last/most recent from the query result). The page collects this summary as  state and passes it to  as . Plan 05 Task 2 specifies the exact scalar keys for all five sports. No  helper function is needed — the extraction logic is inline in a  inside each sport dashboard.
 
-2. **Where does the `useInsights` hook live in the component tree?**
-   - What we know: `useInsights` needs sport + dateRange (from page state) + chartData (from sport dashboard's `useQuery`). The chart data is currently not lifted to the page.
-   - What's unclear: Two options: (a) Move `useInsights` into each sport dashboard component (where data already exists), or (b) lift a compact summary of chart data to the page via a callback prop.
-   - Recommendation: Option (b) — have each sport dashboard accept an `onDataReady(summary: Record<string, unknown>) => void` callback prop, which the page uses to populate the `useInsights` query. This keeps the dashboard page as the single source of truth for all AI context.
+2. **Where does the  hook live in the component tree?** — RESOLVED
+   - Resolution: Option (b) selected —  lives in the dashboard page (single source of truth). Each of the five sport dashboards (Powerlifting, Hyrox, Running, Bodybuilding, WeightLoss) accepts  and calls it when their  data loads. The page stores the summary in  state.  is enabled only when both  and  are non-null (Pitfall 5 guard). The  record from the insights response is threaded back down to each sport dashboard via a  prop and from there to each  prop.
 
-3. **Credit gate for insights endpoint**
-   - What we know: The `creditCheck`/`creditDeduct` middleware is applied to `/chat/stream` and `/ai-edit` at `coach_chat` rate.
-   - What's unclear: Should insights use `coach_chat` rate or a lower rate? Auto-firing on every sport/date change could deplete credits faster than expected.
-   - Recommendation: Apply `creditCheck('coach_chat')` and `creditDeduct('coach_chat')` for consistency. If credit consumption becomes a concern, a separate rate can be added later.
-
----
-
+3. **Credit gate for insights endpoint** — RESOLVED
+   - Resolution:  and  applied to the insights endpoint for consistency with the existing middleware pattern. See Plan 02 Task 1.
 ## Validation Architecture
 
 `nyquist_validation: true` in `.planning/config.json` — section included.
