@@ -46,7 +46,7 @@ Declared values (multiples of 4 only). Pulled from observed settings.tsx pattern
 Exceptions:
 - `paddingBottom: 40` on ScrollView contentContainerStyle in sub-screens (no tab bar clearance needed — settings is a sub-view, not a tab screen). Source: settings.tsx line 96.
 - Touch target for back button: `width: 36, height: 36` — meets 36px minimum in settings chrome (acceptable; parent SafeArea adds insets). Source: STHeader in settings.tsx.
-- `paddingVertical: 14` on InlinePicker rows — comfortable thumb target for list selections. Source: settings.tsx line 202.
+- `paddingVertical: 12` on InlinePicker rows — comfortable thumb target for list selections (multiple of 4). Source: settings.tsx InlinePicker pattern.
 - Quiet hours section divider: 1px `borderTopColor: #E2E0DA` between picker rows (inherited from InlinePicker pattern).
 
 ---
@@ -58,11 +58,11 @@ All sizes sourced from observed settings.tsx patterns. No new sizes introduced.
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Screen heading | 22px | 700 | 1.2 | STHeader title ("Notifications") |
-| Body / row label | 15px | 500 | 1.4 | Primary row label (e.g. "Toutes les notifications") |
+| Body / row label | 15px | 400 | 1.4 | Primary row label (e.g. "Toutes les notifications") |
 | Body / row label alt | 14px | 700 | 1.3 | Section header labels (STGroup title style), unit selectors |
 | Caption / sub-label | 12px | 400 | 1.5 | Row sub-text, OS Settings CTA description |
 
-Weight scale: 400 (regular) and 700 (bold). Weight 500 used only for primary row labels in STRow — matching existing settings.tsx convention (line 118).
+Weight scale: 400 (regular) and 700 (bold). Two weights only — the 400/700 contrast provides sufficient hierarchy across all roles.
 
 Section group titles use: `fontSize: 12, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase'` — matches AppearanceSubScreen pattern (line 282).
 
@@ -185,6 +185,7 @@ No new components created. All components reused from existing file or @ziko/ui.
 
 - Tapping the row opens the corresponding `InlinePicker` bottom sheet
 - Selection: immediate local state update → 600ms debounce → Supabase UPSERT
+- InlinePicker item padding: `paddingVertical: 12` (multiple of 4)
 - InlinePicker selected item: `fontWeight: '700'` + `#FF5C1A` checkmark icon
 - Hour display format in row `right` prop: `"${hour}h00"` (e.g. "22h00", "7h00")
 
