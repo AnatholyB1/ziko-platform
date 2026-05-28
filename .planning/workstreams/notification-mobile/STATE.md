@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
 status: in_progress
-last_updated: "2026-05-27T00:00:00.000Z"
-last_activity: 2026-05-27
+last_updated: "2026-05-28T00:00:00.000Z"
+last_activity: 2026-05-28
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 17
+  total_plans: 7
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 2 — Action-triggered Push Notifications ✅ COMPLETE
-Plan: —
-Status: Phase 2 complete — all 4 plans executed, smoke test passed
-Last activity: 2026-05-27 — Phase 2 executed (PUSH-01 through PUSH-04 live)
+Phase: 3 — In-app Notification Center
+Plan: 03-02 complete
+Status: Wave 2 partiel — 03-02 done, 03-03 remaining
+Last activity: 2026-05-28 — 03-02 complete (deep-link navigation + useRouter)
 
 ## Progress
 
@@ -65,6 +65,6 @@ Last activity: 2026-05-27 — Phase 2 executed (PUSH-01 through PUSH-04 live)
 
 ## Session Continuity
 
-**Stopped At:** Phase 2 complete
-**Resume File:** .planning/workstreams/notification-mobile/phases/03-*/
-**Next Action:** `/gsd:plan-phase 3 notification-mobile` — plan Phase 3 (in-app notification center)
+**Stopped At:** Phase 3, Plan 02 complete
+**Resume File:** .planning/workstreams/notification-mobile/phases/03-in-app-notification-center/03-03-PLAN.md
+**Next Action:** Exécuter 03-03 (Wave 2 restant)
