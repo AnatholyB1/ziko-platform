@@ -22,7 +22,7 @@ import {
 } from './db.js';
 import { createUserClient } from '../clients/db.js';
 import { appendMessages } from '../../context/conversation.js';
-import type { CoachContext } from './types.js';
+import type { CoachContext, DashboardContext } from './types.js';
 import { WeeklyDigest } from '@ziko/email/templates/WeeklyDigest';
 import type { AlertClient } from '@ziko/email/templates/WeeklyDigest';
 
@@ -68,7 +68,7 @@ You are the coach's intelligent partner. Your goal is to help coaches make data-
 - analyze_client and generate_coaching_program require a valid client_id from your linked clients.
 - monitor_client_alerts runs across all linked clients automatically.`;
 
-function buildCoachSystemPrompt(ctx: CoachContext): string {
+function buildCoachSystemPrompt(ctx: CoachContext, dashboardCtx?: DashboardContext): string {
   const sections: string[] = [COACH_BASE_SYSTEM];
 
   if (ctx.profile?.display_name) {
@@ -82,6 +82,16 @@ function buildCoachSystemPrompt(ctx: CoachContext): string {
     sections.push(`## Linked Clients\n${clientList}`);
   } else {
     sections.push('## Linked Clients\nNo linked clients yet. Ask the coach to invite clients first.');
+  }
+
+  // AI-01 dashboard context injection — appended only when present (D-03/D-04)
+  if (dashboardCtx) {
+    const metricLines = Object.entries(dashboardCtx.metrics)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join('\n');
+    sections.push(
+      `## Dashboard Context\nSport actif: ${dashboardCtx.sport_type}\nIndicateurs récents:\n${metricLines}`,
+    );
   }
 
   return sections.join('\n\n');
@@ -441,9 +451,10 @@ router.post(
   creditCheck('coach_chat'),
   creditDeduct('coach_chat'),
   async (c) => {
-    const { messages = [], conversation_id: bodyConversationId } = await c.req.json<{
+    const { messages = [], conversation_id: bodyConversationId, dashboard_context } = await c.req.json<{
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
       conversation_id?: string;
+      dashboard_context?: DashboardContext;
     }>();
 
     const auth = c.get('auth');
@@ -478,7 +489,7 @@ router.post(
       })(),
     ]);
 
-    const systemPrompt = buildCoachSystemPrompt(coachCtx);
+    const systemPrompt = buildCoachSystemPrompt(coachCtx, dashboard_context);
 
     const allMessages = [
       ...convo.history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
