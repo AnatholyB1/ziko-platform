@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, FileDown, Loader2, Check } from 'lucide-react';
+import { Users, FileDown, Loader2, Check, MessageCircle, Bell } from 'lucide-react';
 import { CompareExpandRow } from './CompareExpandRow';
 
 type SportType = 'powerlifting' | 'hyrox' | 'running' | 'bodybuilding' | 'weightloss';
@@ -31,6 +31,8 @@ interface DashboardControlBarProps {
   currentClientId: string;
   compareLoading: boolean;
   compareError: boolean;
+  onOpenChat?: () => void;
+  onOpenAlerts?: () => void;
 }
 
 export function DashboardControlBar({
@@ -51,6 +53,8 @@ export function DashboardControlBar({
   currentClientId,
   compareLoading,
   compareError,
+  onOpenChat,
+  onOpenAlerts,
 }: DashboardControlBarProps) {
   return (
     <div className="mb-4">
@@ -101,6 +105,28 @@ export function DashboardControlBar({
               </button>
             ))}
           </div>
+
+          {/* Alertes button — D-12, AI-04 */}
+          {onOpenAlerts && (
+            <button
+              onClick={onOpenAlerts}
+              className="h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-[#1C1A17] border border-[#E2E0DA] rounded-lg bg-white hover:bg-[#F0EFE9] transition-colors"
+            >
+              <Bell className="w-4 h-4 text-[#6B6963]" />
+              Alertes
+            </button>
+          )}
+
+          {/* Demander à l'IA button — D-02, AI-01 */}
+          {onOpenChat && (
+            <button
+              onClick={onOpenChat}
+              className="h-9 px-3 flex items-center gap-1.5 text-sm font-bold text-white bg-[#FF5C1A] rounded-lg hover:opacity-90 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Demander à l&apos;IA
+            </button>
+          )}
 
           {/* Export PDF button — D-15 */}
           <button
