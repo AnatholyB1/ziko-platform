@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.15
 milestone_name: Custom Widget Dashboards
-status: in-progress
-stopped_at: Phase 03 COMPLETE — all 5 plans shipped and approved. Ready for Phase 04.
-last_updated: "2026-05-28T14:15:00.000Z"
+status: in_progress
+stopped_at: Phase 04 Plan 01 complete — 04-02 is next.
+last_updated: "2026-05-28T20:17:05Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 4
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 19
-  percent: 75
+  completed_phases: 3
+  total_plans: 13
+  completed_plans: 16
+  percent: 70
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 
 ## Current Position
 
-Phase: 03 of 04 (AI Edit Session) — COMPLETE (approved 2026-05-28)
-Plan: 5 of 5 (ALL DONE)
-Status: Phase 03 complete and approved — ready to start Phase 04
+Phase: 04 of 04 (Polish + Coach Memory) — IN PROGRESS
+Plan: 1 of 4 (04-01 DONE)
+Status: Executing — 04-02 is next
 Last activity: 2026-05-28
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -57,6 +57,9 @@ Progress: [██████████] 100%
 - **Credit rate /ai-edit**: Same as `coach_chat` for now — no separate dashboard_edit type
 - **DASH-03 confirmed**: Drag-to-reorder in scope — react-grid-layout@2.2.1 installed in Phase 02
 - [Phase ?]: TypeScript GSAP: use fromTo+keyframes instead of x:[] array to satisfy TweenValue type
+- **GET /memory flat shape**: Returns `{ preferences, templates, recent_actions }` directly — no wrapper key; 200 with empty defaults (not 404) on first access
+- **PUT /memory 409 logic**: Net-new template (id absent from existing) whose name matches existing name triggers 409; existing template updates are allowed
+- **MEM-02 ref-sync pattern**: historyRef passed from DashboardEditOverlay into EditChatPanel; useEffect syncs non-opening messages to ref on change — avoids prop drilling state
 
 ### Pending Todos
 
@@ -68,6 +71,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-28T14:15:00.000Z
-Stopped at: Phase 03 complete — checkpoint approved. Phase 04 (Polish + Coach Memory) is next.
+Last session: 2026-05-28T20:17:05Z
+Stopped at: Phase 04 Plan 01 complete — 04-02 is next.
 Resume file: None
