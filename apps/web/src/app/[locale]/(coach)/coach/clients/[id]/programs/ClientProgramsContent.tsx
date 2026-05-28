@@ -226,19 +226,29 @@ export function ClientProgramsContent({
           <span className="text-xs font-bold text-muted uppercase tracking-wide">
             Programme actif
           </span>
-          <a
-            href={`/${locale}/coach/programs`}
-            className="text-sm text-primary hover:underline"
-          >
-            Changer de programme
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href={`/${locale}/coach/programs/${active.id}`}
+              className="text-sm text-primary font-bold hover:underline"
+            >
+              Modifier
+            </a>
+            <a
+              href={`/${locale}/coach/programs`}
+              className="text-sm text-muted hover:underline"
+            >
+              Changer
+            </a>
+          </div>
         </div>
 
         <h2 className="text-base font-bold text-text">{active.name}</h2>
 
-        <p className="text-sm text-muted mt-1">
-          Semaine {active.current_week} sur {active.week_count}
-        </p>
+        {active.week_count != null && (
+          <p className="text-sm text-muted mt-1">
+            Semaine {active.current_week ?? 1} sur {active.week_count}
+          </p>
+        )}
 
         <div className="flex items-center gap-2 text-xs text-muted mt-1">
           {active.coach_display_name && (

@@ -72,7 +72,7 @@ Does NOT include: sending real push events (Phase 2), in-app notification center
 - `backend/api/src/middleware/auth.ts` — Hono auth middleware pattern
 
 ### Schema Reference
-- `supabase/migrations/` — Next migration is **022** (`022_notification_schema.sql`). Three tables: `notification_tokens`, `notification_log`, `notification_preferences`
+- `supabase/migrations/` — Next migration is **054** (`054_notification_schema.sql`). Three tables: `notification_tokens`, `notification_log`, `notification_preferences`
 
 </canonical_refs>
 
@@ -82,7 +82,7 @@ Does NOT include: sending real push events (Phase 2), in-app notification center
 ### Reusable Assets
 - `apps/mobile/app/(app)/notifications.tsx` — Full UI shell with filter pills, grouped notification list, read/unread state, card components. Ready for real data in Phase 3. No changes needed in Phase 1.
 - `apps/mobile/eas.json` `development` profile — Already configured with `developmentClient: true`, `distribution: internal`, real device. INFRA-04 only needs the build triggered.
-- Supabase migration numbering — Currently at 021. Phase 1 migration is 022.
+- Supabase migration numbering — Currently at 053. Phase 1 migration is 054.
 - `backend/api/src/routes/supplements.ts` cron pattern — Lines 129–140 show the exact CRON_SECRET Bearer auth guard. Copy for Phase 4.
 
 ### Established Patterns

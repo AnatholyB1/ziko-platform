@@ -154,17 +154,17 @@ Research flag: Standard patterns - skip research-phase.
 
 ---
 
-## Open Questions (need product decisions before or during dev)
+## Open Questions (RESOLVED — see 01-CONTEXT.md for locked decisions)
 
-1. **Drag-to-reorder in scope for v1.15?** If yes, react-grid-layout goes into Phase 2. If no, deferred entirely.
+1. **Drag-to-reorder in scope for v1.15?** → **RESOLVED (L-09):** Yes, in scope. `react-grid-layout@2.2.1` installed in Phase 02.
 
-2. **Widget layout: array order or integer position field?** Must align before Phase 1 schema is written. Recommendation: array order, no position integer.
+2. **Widget layout: array order or integer position field?** → **RESOLVED (L-04):** Array order determines layout; no integer `position` field. `reorder_widgets` tool shuffles the array.
 
-3. **Credit deduction rate for /ai-edit?** Same as coach_chat? Confirm before Phase 3.
+3. **Credit deduction rate for /ai-edit?** → **RESOLVED (L-08, deferred to Phase 03):** Same rate as `coach_chat` for now — no separate `dashboard_edit` credit type.
 
-4. **coach_memory in migration 054 or 055?** Decide before writing the migration.
+4. **coach_memory in migration 054 or 055?** → **RESOLVED (L-01):** Both `dashboard_configs` and `coach_memory` in single migration 054.
 
-5. **Default dashboard config for new coaches?** Empty array or pre-populated starter set? Gates Phase 2 completion criterion.
+5. **Default dashboard config for new coaches?** → **RESOLVED (D-03/D-04):** Server-side computed defaults (3–4 widgets) returned by GET when no row exists; lazy persistence — no DB write until first PUT.
 
 ---
 

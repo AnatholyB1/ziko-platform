@@ -1,15 +1,6 @@
 import { Hono } from 'hono';
-import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../../middleware/auth.js';
 import { upsertBranding } from './db.js';
-
-// Service client for tier check — must use service key so the caller cannot
-// manipulate their own tier via JWT (T-03-01).
-const supabaseUrl = process.env.SUPABASE_URL!;
-const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
-const supabase = createClient(supabaseUrl, serviceKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
 
 const ALLOWED_TONES = ['Motivant', 'Analytique', 'Bienveillant', 'Exigeant'] as const;
 const COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -17,24 +8,12 @@ const COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 export const brandingRouter = new Hono();
 brandingRouter.use('*', authMiddleware);
 
-// PATCH /coach/branding — upsert coach branding config (Pro gate, D-01..D-05)
+// PATCH /coach/branding — upsert coach branding config
 brandingRouter.patch('/', async (c) => {
   const { userId } = c.get('auth');
   const jwt = c.req.header('Authorization')!.slice(7);
 
-  // T-03-01: Pro gate — read tier with service key (not caller JWT) so tier
-  // cannot be spoofed. user_profiles PK is 'id' (migration 001).
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('tier')
-    .eq('id', userId)
-    .single();
-
-  if (profile?.tier !== 'premium') {
-    return c.json({ error: 'Pro required' }, 403);
-  }
-
-  // Parse body — return 400 on malformed JSON (T-03-02, T-03-03)
+  // Parse body — return 400 on malformed JSON
   let body: { primary_color?: unknown; logo_url?: unknown; tone?: unknown };
   try {
     body = await c.req.json();

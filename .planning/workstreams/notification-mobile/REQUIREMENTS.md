@@ -10,7 +10,7 @@
 ### Infrastructure & Configuration
 
 - [ ] **INFRA-01:** Les packages `expo-notifications`, l'entitlement `aps-environment` iOS, la permission `POST_NOTIFICATIONS` Android et le plugin `expo-notifications` sont ajoutés à `app.json` avant tout build EAS
-- [ ] **INFRA-02:** Une migration Supabase `022_notification_schema.sql` crée les tables `notification_tokens`, `notification_log` et `notification_preferences` avec RLS et politique ON DELETE CASCADE sur suppression compte
+- [ ] **INFRA-02:** Une migration Supabase `054_notification_schema.sql` crée les tables `notification_tokens`, `notification_log` et `notification_preferences` avec RLS et politique ON DELETE CASCADE sur suppression compte
 - [ ] **INFRA-03:** Un service `notificationService.ts` dans Hono gère l'envoi push : vérification des préférences, fetch des tokens actifs, chunking ≤100, idempotency via `UNIQUE(idempotency_key)`, écriture dans `notification_log`
 - [ ] **INFRA-04:** Un EAS Development Build (profil `development`) est disponible pour tester les push sur device réel (Expo Go ne supporte plus les push en SDK 54)
 

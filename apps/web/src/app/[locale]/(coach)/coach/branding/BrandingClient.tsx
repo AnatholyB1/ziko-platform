@@ -6,7 +6,7 @@ import { ColorPickerInput } from '@/components/coach/ColorPickerInput';
 import { LogoUpload } from '@/components/coach/LogoUpload';
 import { ToneSelector } from '@/components/coach/ToneSelector';
 import { BrandingPreviewCard } from '@/components/coach/BrandingPreviewCard';
-import { IoSparklesOutline, IoCheckmarkCircle } from 'react-icons/io5';
+import { IoCheckmarkCircle } from 'react-icons/io5';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -169,33 +169,15 @@ export function BrandingClient({
 
           {/* Action row */}
           <div className="flex justify-end pt-2">
-            {isPro ? (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !jwt}
-                aria-busy={saving}
-                className="save-btn h-11 px-6 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? 'Enregistrement…' : 'Enregistrer'}
-              </button>
-            ) : (
-              <div className="flex items-center gap-4">
-                <p className="text-sm text-muted">
-                  Passez en Pro pour sauvegarder votre direction artistique.
-                </p>
-                <button
-                  type="button"
-                  className="h-11 px-6 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
-                  onClick={() => {
-                    window.location.href = '/coach/settings?tab=subscription';
-                  }}
-                >
-                  <IoSparklesOutline size={16} />
-                  Passer en Pro
-                </button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !jwt}
+              aria-busy={saving}
+              className="save-btn h-11 px-6 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
           </div>
         </div>
 

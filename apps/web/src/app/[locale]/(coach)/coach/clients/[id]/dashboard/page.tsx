@@ -1,12 +1,13 @@
 'use client'
 
-import { use, useState, useRef, useCallback } from 'react'
+import { use, useState, useRef, useCallback, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDashboardConfig } from '@/hooks/useDashboardConfig'
 import { useExportPDF } from '@/hooks/useExportPDF'
 import { DashboardGrid } from '@/components/coach/dashboard/DashboardGrid'
 import { DashboardLoadingState } from '@/components/coach/dashboard/DashboardLoadingState'
 import { DashboardEditOverlay } from '@/components/coach/dashboard/DashboardEditOverlay'
+import { TemplatePicker } from '@/components/coach/dashboard/TemplatePicker'
 import type { Widget } from '@/types/dashboard'
 import { DashboardControlBar } from '@/components/coach/dashboard/DashboardControlBar'
 import { DashboardEmptyState } from '@/components/coach/dashboard/DashboardEmptyState'
@@ -15,7 +16,7 @@ import { HyroxDashboard } from '@/components/coach/dashboard/HyroxDashboard'
 import { RunningDashboard } from '@/components/coach/dashboard/RunningDashboard'
 import { BodybuildingDashboard } from '@/components/coach/dashboard/BodybuildingDashboard'
 import { WeightLossDashboard } from '@/components/coach/dashboard/WeightLossDashboard'
-import { FileDown, Loader2, Check } from 'lucide-react'
+import { FileDown, Loader2, Check, Pencil } from 'lucide-react'
 
 type SportType = 'powerlifting' | 'hyrox' | 'running' | 'bodybuilding' | 'weightloss'
 
@@ -27,6 +28,8 @@ export default function DashboardPage({
   const { id: clientId } = use(params)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  // isNewDashboard: null = not yet determined, true = new (no widgets), false = existing
+  const [isNewDashboard, setIsNewDashboard] = useState<boolean | null>(null)
   const previousConfigRef = useRef<Widget[]>([])
   const sportDashboardRef = useRef<HTMLDivElement>(null)
   const widgetDashboardRef = useRef<HTMLDivElement>(null)
@@ -47,6 +50,15 @@ export default function DashboardPage({
   const { exportPDF, exportState } = useExportPDF()
   // TODO: replace clientId with client name when available from config
   const clientName = (config as { client_name?: string } | undefined)?.client_name ?? clientId
+
+  // Detect isNewDashboard once config loads — initialized only once (null guard)
+  useEffect(() => {
+    if (isNewDashboard === null && config) {
+      setIsNewDashboard(config.widgets.length === 0)
+    }
+  }, [config, isNewDashboard])
+
+  const showTemplatePicker = isNewDashboard === true
 
   const handleExportPDF = useCallback(async () => {
     if (activeTab === 'sport' && sportDashboardRef.current) {
@@ -93,6 +105,21 @@ export default function DashboardPage({
 
   function handleCancel() {
     setIsEditing(false)
+  }
+
+  // TemplatePicker handlers
+  function handleTemplateSelect(templateWidgets: Widget[]) {
+    setIsNewDashboard(false)
+    queryClient.setQueryData(['dashboard-config', clientId], {
+      schema_version: 1 as const,
+      widgets: templateWidgets,
+    })
+  }
+
+  function handleTemplateSkip() {
+    setIsNewDashboard(false)
+    // config.widgets already has DEFAULT_WIDGETS from the backend (no row = returns defaults)
+    // No API call needed — query cache already has the right data
   }
 
   function handleToggleCompare() {
@@ -202,56 +229,76 @@ export default function DashboardPage({
         )}
         {activeTab === 'widget' && (
           <>
-            {/* Personnalisé tab header — per D-19, D-15 */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-semibold text-text">Tableau de bord personnalisé</h2>
-                <p className="text-sm text-muted mt-0.5">Vue personnalisée pour ce client</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* PDF export button — D-15 Personnalisé tab */}
-                <button
-                  onClick={handleExportPDF}
-                  disabled={exportState === 'generating'}
-                  className={
-                    exportState === 'generating'
-                      ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white opacity-70 cursor-not-allowed'
-                      : exportState === 'done'
-                      ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-[#15803D] border border-[#22C55E]/30 rounded-lg bg-[#DCFCE7] transition-colors'
-                      : 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white hover:bg-[#F0EFE9] transition-colors'
-                  }
-                >
-                  {exportState === 'generating' && <Loader2 className="w-4 h-4 animate-spin text-muted" />}
-                  {exportState === 'done' && <Check className="w-4 h-4 text-[#15803D]" />}
-                  {(exportState === 'idle' || exportState === 'error') && <FileDown className="w-4 h-4 text-muted" />}
-                  {exportState === 'generating' ? 'Génération en cours…' : exportState === 'done' ? 'PDF exporté' : exportState === 'error' ? "Erreur d'export. Réessayez." : 'Exporter PDF'}
-                </button>
-                {/* Éditer button — pdf-exclude so it is not captured in PDF */}
-                <div className="pdf-exclude">
-                  <button
-                    onClick={() => {
-                      if (!isEditMode) { previousConfigRef.current = config.widgets }
-                      setIsEditMode(prev => !prev)
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-normal transition-colors ${isEditMode ? 'bg-primary text-white' : 'bg-white border border-border text-text hover:bg-[#F7F6F3]'}`}
-                  >
-                    {isEditMode ? 'Terminer' : 'Éditer'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* Widget grid area — captured by PDF export */}
-            <div ref={widgetDashboardRef}>
-              {isEditMode && <p className="text-xs text-muted mb-3">Faites glisser les widgets pour réorganiser...</p>}
-              <DashboardGrid widgets={config.widgets} clientId={clientId} isEditMode={isEditMode} />
-            </div>
-            {isEditing && (
-              <DashboardEditOverlay
+            {showTemplatePicker ? (
+              <TemplatePicker
                 clientId={clientId}
-                initialWidgets={config.widgets}
-                onSave={handleSave}
-                onCancel={handleCancel}
+                onSelect={handleTemplateSelect}
+                onSkip={handleTemplateSkip}
               />
+            ) : (
+              <>
+                {/* Personnalisé tab header — per D-19, D-15 */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-lg font-semibold text-text">Tableau de bord personnalisé</h2>
+                    <p className="text-sm text-muted mt-0.5">Vue personnalisée pour ce client</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* PDF export button — D-15 Personnalisé tab */}
+                    <button
+                      onClick={handleExportPDF}
+                      disabled={exportState === 'generating'}
+                      className={
+                        exportState === 'generating'
+                          ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white opacity-70 cursor-not-allowed'
+                          : exportState === 'done'
+                          ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-[#15803D] border border-[#22C55E]/30 rounded-lg bg-[#DCFCE7] transition-colors'
+                          : 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white hover:bg-[#F0EFE9] transition-colors'
+                      }
+                    >
+                      {exportState === 'generating' && <Loader2 className="w-4 h-4 animate-spin text-muted" />}
+                      {exportState === 'done' && <Check className="w-4 h-4 text-[#15803D]" />}
+                      {(exportState === 'idle' || exportState === 'error') && <FileDown className="w-4 h-4 text-muted" />}
+                      {exportState === 'generating' ? 'Génération en cours…' : exportState === 'done' ? 'PDF exporté' : exportState === 'error' ? "Erreur d'export. Réessayez." : 'Exporter PDF'}
+                    </button>
+                    {/* Personnaliser button — triggers DashboardEditOverlay (AI edit session) */}
+                    <div className="pdf-exclude">
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="h-9 px-4 flex items-center gap-1.5 text-sm font-semibold text-text border border-border rounded-lg bg-white hover:bg-[#F0EFE9] transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-muted" />
+                        Personnaliser
+                      </button>
+                    </div>
+                    {/* Éditer button — pdf-exclude so it is not captured in PDF */}
+                    <div className="pdf-exclude">
+                      <button
+                        onClick={() => {
+                          if (!isEditMode) { previousConfigRef.current = config.widgets }
+                          setIsEditMode(prev => !prev)
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-normal transition-colors ${isEditMode ? 'bg-primary text-white' : 'bg-white border border-border text-text hover:bg-[#F7F6F3]'}`}
+                      >
+                        {isEditMode ? 'Terminer' : 'Éditer'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {/* Widget grid area — captured by PDF export */}
+                <div ref={widgetDashboardRef}>
+                  {isEditMode && <p className="text-xs text-muted mb-3">Faites glisser les widgets pour réorganiser...</p>}
+                  <DashboardGrid widgets={config.widgets} clientId={clientId} isEditMode={isEditMode} />
+                </div>
+                {isEditing && (
+                  <DashboardEditOverlay
+                    clientId={clientId}
+                    initialWidgets={config.widgets}
+                    onSave={handleSave}
+                    onCancel={handleCancel}
+                  />
+                )}
+              </>
             )}
           </>
         )}

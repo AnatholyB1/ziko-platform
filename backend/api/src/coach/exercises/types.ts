@@ -10,6 +10,7 @@ export interface CoachExercise {
   muscle_groups: string[];
   video_path: string | null;
   photo_path: string | null;
+  gif_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +22,7 @@ export interface CreateExerciseBody {
   muscle_groups?: string[];   // optional, defaults to []
   video_path?: string | null;
   photo_path?: string | null;
+  gif_path?: string | null;
 }
 
 export interface UpdateExerciseBody {
@@ -30,6 +32,7 @@ export interface UpdateExerciseBody {
   muscle_groups?: string[];
   video_path?: string | null;
   photo_path?: string | null;
+  gif_path?: string | null;
 }
 
 export const EXERCISE_CATEGORIES = ['Force', 'Cardio', 'Mobilité', 'HIIT', 'Hyrox', 'Autre'] as const;

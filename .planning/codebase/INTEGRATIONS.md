@@ -1,210 +1,198 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-05-28
 
 ## APIs & External Services
 
-**Anthropic Claude AI:**
-- Service: claude-sonnet-4-20250514 (Claude Sonnet 4 via Vercel AI SDK v6)
-- What it's used for: Orchestrator agent for fitness coaching, tool calling, workout/nutrition/habit analysis
-- SDK/Client: @ai-sdk/anthropic ^3.0.58
-- Auth: `ANTHROPIC_API_KEY` (backend/.env)
-- API: Vercel AI SDK v6 streaming with structured tool execution
-- Model features: Vision-capable, streaming support, structured outputs, tool use
+**AI / LLM:**
+- **Anthropic Claude** — primary AI provider
+  - SDK: `@ai-sdk/anthropic` ^3.0.58 (Vercel AI SDK adapter)
+  - Models: `claude-sonnet-4-20250514` (orchestrator), `claude-haiku-4-5-20251001` (vision/food scan)
+  - Config: `backend/api/src/config/models.ts`
+  - Auth env var: `ANTHROPIC_API_KEY` (backend only)
 
-**Custom Backend API:**
-- Service: Ziko Platform Hono API
-- What it's used for: REST endpoints for AI chat, tool execution, plugin registry, webhooks
-- Client: AIBridge (packages/ai-client/AIBridge.ts) - SSE streaming wrapper
-- Auth: Supabase Bearer JWT token (Authorization header)
-- Endpoints (backend/api/src/routes/):
-  - `POST /ai/chat/stream` - Streaming AI chat with orchestrator agent
-  - `POST /ai/chat` - Non-streaming variant
-  - `GET /ai/tools` - List available tool schemas
-  - `POST /ai/tools/execute` - Direct tool execution
-  - `GET /health` - Health check
-  - `GET /plugins` - Plugin registry
-  - `POST /webhooks` - Supabase event handlers
-  - `POST /bugs` - Bug report submission
-  - `POST /supplements/cron/scrape` - Weekly supplement price scraper (Vercel cron)
+- **OpenAI Whisper** — voice transcription
+  - SDK: `openai` ^6.39.0
+  - Model: `whisper-1`, language hardcoded to `fr`
+  - Implementation: `backend/api/src/lib/whisper.ts`
+  - Used by: `backend/api/src/coach/voice/service.ts` (POST `/coach/voice/transcribe`) and `backend/api/src/coach/videos/service.ts` (voice annotations)
+  - Auth env var: `OPENAI_API_KEY` (backend + web)
+
+**Email:**
+- **Resend** — transactional email delivery
+  - SDK: `resend` ^6.12.3
+  - Templates: `@ziko/email` package using `@react-email/components`
+  - Used by: `backend/api/src/coach/ai/service.ts` for weekly digest emails
+  - Auth env var: not surfaced in explored files (set in Vercel environment)
+
+**Error Monitoring:**
+- **Sentry** — mobile crash and error tracking
+  - SDK: `@sentry/react-native` ~7.2.0
+  - Registered as Expo plugin in `apps/mobile/app.json`
+  - Auth env var: configured via Sentry Expo plugin (DSN typically in `app.json` or env)
 
 ## Data Storage
 
-**Database:**
-- Provider: Supabase (PostgreSQL 15+)
-- Connection: `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`
-- Client: @supabase/supabase-js ^2.47+ (supports auto-refresh on mobile, stateless on backend)
-- Authentication: Supabase JWT (issued via Supabase auth.users table)
+**Databases:**
+- **Supabase PostgreSQL** — primary database
+  - Client: `@supabase/supabase-js` (^2.47.0 mobile, ^2.50.0 backend, ^2.100.1 web)
+  - Web SSR client: `@supabase/ssr` ^0.10.3
+  - 21 SQL migrations in `supabase/migrations/`
+  - RLS enabled on every table
+  - Mobile env vars: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY`
+  - Web env vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL` (server), `SUPABASE_SERVICE_ROLE_KEY` (admin — `apps/web/src/lib/supabase/admin.ts` only)
+  - Backend env vars: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_KEY` (for admin client bypassing RLS)
 
-**Key Tables (21 migrations total):**
-- `auth.users` - Supabase built-in auth users
-- `user_profiles` - Extended user data (age, weight, height, goal, units)
-- `exercises` - Exercise library (name, category, muscle_groups[], instructions)
-- `workout_programs`, `workout_sessions`, `session_sets` - Workout tracking
-- `ai_conversations`, `ai_messages` - Chat history persistence
-- `plugins_registry` - Plugin manifests & bundle URLs
-- `user_plugins` - User's installed/enabled plugins
-- `habits`, `habit_logs` - Daily habit tracking (002_habits_schema.sql)
-- `nutrition_logs` - Meal entries with macros (003_nutrition_schema.sql)
-- `stretching_logs`, `stretching_routines` - Mobility sessions (012, 013)
-- `sleep_logs` - Sleep quality tracking (012)
-- `body_measurements` - Weight, body fat, limb measurements (012)
-- `timer_presets` - User custom HIIT/Tabata timers with exercises (012, 020)
-- `ai_generated_programs` - AI-created workout plans (012)
-- `journal_entries` - Mood/energy/stress journaling (012)
-- `hydration_logs` - Daily water intake (012)
-- `cardio_sessions` - Running/cycling with GPS route data (012, 021)
-- `wearable_daily_summary`, `health_sync_log` - Apple Health/Health Connect sync (014)
-- `bug_reports` - In-app bug report database (015)
-- `supplement_brands`, `supplement_categories`, `supplements`, `supplement_prices` - Supplement catalog (018)
+**Caching / Rate Limiting:**
+- **Upstash Redis** — serverless Redis for rate limiting and caching
+  - SDKs: `@upstash/redis` ^1.37.0, `@upstash/ratelimit` ^2.0.8
+  - Implementation: `backend/api/src/lib/redis.ts` (single `redis` export)
+  - Used in: web (`apps/web`) and backend API
+  - Env vars: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
 
-**Local Storage:**
-- Mobile: MMKV (react-native-mmkv v3) - Fast key-value storage via Zustand stores
-- Auth session: AsyncStorage @react-native-async-storage/async-storage ^2.2.0
-- Secure tokens: expo-secure-store ^15.0.8
+**File Storage:**
+- **Supabase Storage** — media/file uploads (exercise media, avatars, coach branding assets)
+  - Route: `backend/api/src/routes/storage.ts` (upload + cron cleanup)
+  - Cron: `POST /storage/cron/cleanup` — daily at 04:00 UTC (`backend/api/vercel.json`)
 
-**Caching:**
-- Server state: TanStack React Query v5.62.0 (query caching)
-- Global state: Zustand v5.0.0 (in-memory stores)
+**Local Storage (mobile):**
+- **MMKV** (`react-native-mmkv` ^3.0.0) — fast key-value store
+- **Expo SecureStore** (~15.0.8) — secure credential storage
+- **AsyncStorage** (`@react-native-async-storage/async-storage` ^2.2.0) — fallback persistent storage
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Supabase Auth (built-in PostgreSQL auth extension)
-- JWT token-based (Bearer token in Authorization header)
-- Email/password signup & login (auth.users table)
-- Auto-token refresh on mobile (`autoRefreshToken: true`)
+- **Supabase Auth** — JWT-based authentication
+  - Mobile: session managed by `authStore.ts` (`apps/mobile/src/stores/authStore.ts`) via `onAuthStateChange`
+  - Web: SSR cookies via `@supabase/ssr` middleware
+  - Backend: Supabase Bearer token validated in `backend/api/src/middleware/auth.ts` via `adminClient.auth.getUser(token)`
+  - All API routes require `Authorization: Bearer <supabase-jwt>` header
 
-**Session Management:**
-- Mobile: Supabase client auto-refresh via AsyncStorage persistence
-- Backend: Stateless JWT validation (no session storage)
-- Token validation: `adminClient.auth.getUser(token)` in auth middleware (`backend/api/src/middleware/auth.ts`)
+**Auth Flow:**
+- Unauthenticated → `/(auth)/login` (mobile) or locale login page (web)
+- Authenticated → `/(app)/` (mobile) or `/(coach)/` (web)
+- Onboarding: `/(auth)/onboarding/step-1` through `step-5` (mobile)
 
-**Permission Model:**
-- Row Level Security (RLS) policies on all user tables
-- Policies enforce: `auth.uid() = user_id` for all CRUD operations
-- Mobile app receives user ID from Supabase auth context
-- Backend extracts user ID from JWT token
+## Push Notifications
 
-## Health & Wearable Data
+**Expo Push Notifications:**
+- SDK: `expo-notifications` ~0.32.16 + `expo-server-sdk` ^6.1.0 (backend)
+- Registration: `POST /notifications/token` — registers `ExponentPushToken[...]` per device (`backend/api/src/routes/notifications.ts`)
+- Token table: `notification_tokens` in Supabase
+- Service: `backend/api/src/services/notificationService.ts` — quiet hours logic, batch dispatch
+- Auth env var (optional): `EXPO_ACCESS_TOKEN`
+- Background notifications enabled: `UIBackgroundModes: ["remote-notification", "fetch"]` in `app.json`
+- Android: `POST_NOTIFICATIONS` permission declared
+
+**Notification Crons (`backend/api/vercel.json`):**
+- `POST /notifications/cron/streak-at-risk` — daily at 21:00 UTC
+- `POST /notifications/cron/check-receipts` — every 15 minutes
+- `POST /notifications/cron/weekly-digest` — Sundays at 09:00 UTC
+
+## Wearables & Health
 
 **Apple Health (iOS):**
-- SDK: react-native-health ^1.19.0
-- Data types read: steps, heart rate, sleep, distance, total/active calories, exercise sessions, weight, body fat
-- Data types write: exercise sessions, steps
-- Permissions: Declared in app.json iOS infoPlist
-  - `NSHealthShareUsageDescription` - Read permission
-  - `NSHealthUpdateUsageDescription` - Write permission
-  - `com.apple.developer.healthkit` + background-delivery entitlements
+- SDK: `react-native-health` ^1.19.0
+- Entitlements: `com.apple.developer.healthkit`, `com.apple.developer.healthkit.background-delivery`
+- Permissions declared in `apps/mobile/app.json` (read/write steps, heart rate, sleep, workouts, weight, body fat)
 
-**Health Connect (Android):**
-- SDK: react-native-health-connect ^3.5.0 (v3.5.0 compatible with migration 020)
-- Data types: Steps, HeartRate, SleepSession, Distance, TotalCaloriesBurned, ActiveCaloriesBurned, ExerciseSession, Weight, BodyFat
-- Read/write permissions configured in app.json Expo plugin config
-- Supabase tables: `wearable_daily_summary`, `health_sync_log` (migration 014) - synced daily summaries only
+**Android Health Connect:**
+- SDK: `react-native-health-connect` ^3.5.0
+- Registered as Expo plugin in `apps/mobile/app.json` with explicit read/write permission list
+- Android permissions: `android.permission.health.*` (steps, heart rate, sleep, calories, exercise, weight, body fat)
 
-**GPS Tracking (Cardio):**
-- SDK: expo-location ~19.0.8
-- Permission: `NSLocationWhenInUseUsageDescription` (iOS foreground), `NSLocationAlwaysAndWhenInUseUsageDescription` (iOS background)
-- Android: `android.permission.ACCESS_FINE_LOCATION`, `android.permission.ACCESS_COARSE_LOCATION`, foreground service permissions
-- Implementation: `CardioTracker.tsx` captures live latitude/longitude with accuracy filter (noise <5m discarded)
-- Storage: `cardio_sessions.route_data` JSONB array (RoutePoint[]) with lat/lng/timestamp/altitude/accuracy
+## GPS / Location
 
-## Monitoring & Observability
+**Expo Location:**
+- SDK: `expo-location` ~19.0.8
+- Used by cardio plugin (`plugins/cardio/`) for live GPS session tracking
+- Permissions in `app.json`: `NSLocationWhenInUseUsageDescription`, `NSLocationAlwaysAndWhenInUseUsageDescription` (iOS); `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION` (Android)
+- Background task: `expo-task-manager` ~14.0.9
 
-**Error Tracking:**
-- Not detected in primary integrations
-- Backend error handler in `backend/api/src/app.ts`: logs to console + returns 500 response
-
-**Logs:**
-- Mobile: console.log via Expo dev tools or device logs
-- Backend: Hono logger middleware (`app.use('*', logger())`) outputs to stdout
-- Supabase: Query logs available in dashboard (not directly queried)
-
-**Debugging:**
-- React Native: Expo SDK provides debugger + Fast Refresh
-- TypeScript: Full type checking via `npm run type-check`
-
-## CI/CD & Deployment
+## Deployment & CI/CD
 
 **Hosting:**
-- Frontend: Expo cloud (EAS Build)
-  - iOS distribution via App Store Connect (TestFlight/production)
-  - Android distribution via Google Play (TestFlight/production)
-  - Development: Local Expo dev server + USB/LAN preview
-- Backend: Vercel serverless functions
-  - Deployment trigger: git push to main
-  - Auto-builds & deploys via Vercel GitHub integration
-  - Production URL: https://ziko-api-lilac.vercel.app
+- **Vercel** — backend API (`ziko-api-lilac.vercel.app`) and web app (`ziko-app.com`)
+  - Backend: serverless handlers exported from `backend/api/src/app.ts` (`GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`)
+  - 7 Vercel cron jobs configured in `backend/api/vercel.json`
+  - SDK: `@vercel/functions` ^3.6.0
+
+- **EAS (Expo Application Services)** — mobile builds and OTA updates
+  - CLI version: >=18.4.0
+  - Project ID: `9b672c1a-10c4-4d66-882c-b9a08294650f`
+  - OTA updates: `expo-updates` ~29.0.17
 
 **CI Pipeline:**
-- Not detected (no GitHub Actions, CircleCI, or similar)
-- TypeScript type checking: `npm run type-check` (manual)
-- Linting: `npm run lint` (ESLint ^9.0.0, manual)
+- GitHub Actions (`.github/workflows/`)
+  - `ci.yml` — on push/PR to `main`: type-check + lint + Vitest tests + Supabase migration push + security guards
+  - `publish-coach-sdk.yml` — publishes `@ziko/coach-sdk` to npm
+  - `release.yml` — release automation
+  - `test-rls.yml` — RLS-specific test suite
+- Node 20 in CI (`actions/setup-node@v4`)
+- Supabase migrations applied via `supabase db push` on push to `main`
 
-**Build Commands:**
-- Mobile: `npx eas build --platform [android|ios] --profile production`
-- Backend: `npm run build` (tsc) + automatic Vercel deployment
-- Monorepo: `npm run build` (Turbo orchestrates all workspaces)
+**Security Guards in CI:**
+- No `SERVICE_ROLE` references under `backend/api/src/coach/` (ARCH-02)
+- No `react-native` leaking into web bundle (D-02, bundle analyzer)
+- Zod single-instance check — `@ziko/coach-sdk` must resolve same zod as root (D-08)
 
-**Environment Configuration:**
-- Mobile: `.env` file (not committed, .gitignore pattern: `.env*`)
-- Backend: `.env` file loaded via tsx `--env-file=.env` (not committed)
-- Secrets: Vercel dashboard (backend) + Expo secrets (mobile builds)
+## Supplements Scraper
 
-## Cron Jobs & Scheduled Tasks
+**Vercel Cron:**
+- `POST /supplements/cron/scrape` — Mondays at 03:00 UTC (`backend/api/vercel.json`)
+- Implementation: `backend/api/src/routes/supplements.ts` + `backend/api/src/scrapers/`
+- Scrapes supplement prices across brands/sources into Supabase tables (`supplement_prices`)
 
-**Supplements Price Scraper:**
-- Route: `POST /supplements/cron/scrape`
-- Schedule: Mondays 3:00 AM UTC (vercel.json: `"schedule": "0 3 * * 1"`)
-- Purpose: Weekly scraping of supplement prices from external sources (backend/api/src/scrapers/)
-- Implementation: Vercel Cron via serverless function
+## Coach AI Monitoring
 
-## Webhooks & Callbacks
+**Vercel Cron:**
+- `POST /coach/ai/monitor-cron` — daily at 07:00 UTC
+- Implementation: `backend/api/src/coach/ai/service.ts`
+- Sends weekly digest emails via Resend using `@ziko/email/templates/WeeklyDigest`
 
-**Incoming:**
-- Supabase webhooks: `backend/api/src/routes/webhooks.ts`
-  - Listens for database events (INSERT/UPDATE/DELETE)
-  - Triggered by: Supabase Real-Time subscriptions
+## Forms Cron
 
-**Outgoing:**
-- None detected at time of analysis (app uses request-response only)
+**Vercel Cron:**
+- `POST /forms/cron/trigger-fixed-date` — daily at 06:00 UTC
+- Implementation: `backend/api/src/routes/forms.ts`
 
-## Environment Configuration
+## Environment Variable Requirements
 
-**Required env vars (Mobile - apps/mobile/.env):**
-- `EXPO_PUBLIC_SUPABASE_URL` - Project URL from Supabase dashboard
-- `EXPO_PUBLIC_SUPABASE_KEY` - Publishable API key (NOT anon/service key)
-- `EXPO_PUBLIC_API_URL` - Backend API base (e.g., https://ziko-api-lilac.vercel.app)
+### Mobile (`apps/mobile/.env`)
+| Variable | Purpose |
+|----------|---------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_KEY` | Supabase publishable key (NOT anon key) |
+| `EXPO_PUBLIC_API_URL` | Hono API base URL |
 
-**Required env vars (Backend - backend/api/.env):**
-- `SUPABASE_URL` - Project URL
-- `SUPABASE_PUBLISHABLE_KEY` - Publishable API key
-- `ANTHROPIC_API_KEY` - Claude API key from Anthropic dashboard
+### Web (`apps/web/.env.local`)
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (client-side) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable key (client-side) |
+| `SUPABASE_URL` | Supabase URL (server-side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (admin only — `src/lib/supabase/admin.ts`) |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis auth token |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL (https://ziko-app.com) |
+| `OPENAI_API_KEY` | OpenAI API key |
 
-**Secrets location:**
-- Mobile: Local `.env` file (auto-loaded by Expo)
-- Backend: Vercel dashboard Environment Variables (production) + local `.env` (development)
-- Backup: .env.example files (if available, not committed)
-
-## Third-Party Dependencies at Scale
-
-**Data Parsing & Validation:**
-- zod ^4.3.6 - Runtime schema validation (root workspace)
-- base64-arraybuffer ^1.0.2 - Binary encoding for health data
-
-**HTTP & Networking:**
-- Vercel AI SDK handles HTTP to Anthropic via @ai-sdk/anthropic
-- Supabase SDK handles PostgreSQL connection pooling
-- Hono built-in fetch API for CORS handling
-
-**No Detected Integrations:**
-- Payment processing (Stripe, PayPal) - not implemented
-- Analytics (Sentry, Datadog, Segment) - not integrated
-- Social login (Google, Apple, Facebook) - using Supabase auth only
-- Third-party APIs (Strava, MyFitnessPal, USDA nutrition DB) - locally implemented equivalents
-- SMS/Email delivery (Twilio, SendGrid) - not integrated
+### Backend API (`backend/api/.env.local`)
+| Variable | Purpose |
+|----------|---------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
+| `SUPABASE_SERVICE_KEY` | Supabase service key (admin client — bypasses RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Used in tests only |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key |
+| `OPENAI_API_KEY` | OpenAI Whisper API key |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis auth token |
+| `EXPO_ACCESS_TOKEN` | Expo push notification access token (optional) |
+| `PORT` | Local dev server port (default 3000; dev uses 8080) |
+| `APP_ORIGIN` | Allowed CORS origin override |
 
 ---
 
-*Integration audit: 2026-03-26*
+*Integration audit: 2026-05-28*

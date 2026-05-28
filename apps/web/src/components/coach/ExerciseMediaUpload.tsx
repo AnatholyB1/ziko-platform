@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { IoVideocam, IoImage, IoCheckmarkCircle, IoAlertCircle } from 'react-icons/io5';
+import { IoVideocam, IoImage, IoCheckmarkCircle, IoAlertCircle, IoFilm } from 'react-icons/io5';
 
 const VIDEO_TYPES = 'video/mp4,video/quicktime,video/webm';
 const PHOTO_TYPES = 'image/jpeg,image/png,image/webp';
+const GIF_TYPES = 'image/gif';
 const VIDEO_MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 const PHOTO_MAX_BYTES = 10 * 1024 * 1024;  // 10 MB
+const GIF_MAX_BYTES = 20 * 1024 * 1024;    // 20 MB
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'error';
 
@@ -209,10 +211,13 @@ interface ExerciseMediaUploadProps {
   jwt: string;
   videoPath: string | null;
   photoPath: string | null;
+  gifPath: string | null;
   onVideoUploaded: (path: string) => void;
   onPhotoUploaded: (path: string) => void;
+  onGifUploaded: (path: string) => void;
   onVideoRemoved: () => void;
   onPhotoRemoved: () => void;
+  onGifRemoved: () => void;
   disabled?: boolean;
 }
 
@@ -221,10 +226,13 @@ export function ExerciseMediaUpload({
   jwt,
   videoPath,
   photoPath,
+  gifPath,
   onVideoUploaded,
   onPhotoUploaded,
+  onGifUploaded,
   onVideoRemoved,
   onPhotoRemoved,
+  onGifRemoved,
   disabled = false,
 }: ExerciseMediaUploadProps) {
   return (
@@ -240,6 +248,20 @@ export function ExerciseMediaUpload({
         existingPath={videoPath}
         onUploaded={onVideoUploaded}
         onRemoved={onVideoRemoved}
+        userId={userId}
+        jwt={jwt}
+        disabled={disabled}
+      />
+
+      <UploadRow
+        label="Ajouter un GIF"
+        icon={<IoFilm className="text-base" />}
+        accept={GIF_TYPES}
+        maxBytes={GIF_MAX_BYTES}
+        maxLabel="20 Mo"
+        existingPath={gifPath}
+        onUploaded={onGifUploaded}
+        onRemoved={onGifRemoved}
         userId={userId}
         jwt={jwt}
         disabled={disabled}

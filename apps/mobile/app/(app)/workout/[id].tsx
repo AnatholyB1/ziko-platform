@@ -113,12 +113,14 @@ export default function ProgramDetailScreen() {
   const [mediaExerciseName, setMediaExerciseName] = useState('');
   const [mediaVideoUrl, setMediaVideoUrl] = useState<string | null>(null);
   const [mediaPhotoUrl, setMediaPhotoUrl] = useState<string | null>(null);
+  const [mediaGifUrl, setMediaGifUrl] = useState<string | null>(null);
   const [mediaLoading, setMediaLoading] = useState(false);
 
   const fetchAndOpenMedia = async (coachExerciseId: string, exerciseName: string) => {
     setMediaExerciseName(exerciseName);
     setMediaVideoUrl(null);
     setMediaPhotoUrl(null);
+    setMediaGifUrl(null);
     setMediaLoading(true);
     setShowMediaModal(true);
     try {
@@ -131,6 +133,7 @@ export default function ProgramDetailScreen() {
         const json = await res.json();
         setMediaVideoUrl(json.video_url ?? null);
         setMediaPhotoUrl(json.photo_url ?? null);
+        setMediaGifUrl(json.gif_url ?? null);
       }
     } catch {
       // graceful degradation — modal shows name only
@@ -1089,6 +1092,12 @@ export default function ProgramDetailScreen() {
                 useNativeControls
                 resizeMode={ResizeMode.CONTAIN}
                 shouldPlay={false}
+              />
+            ) : mediaGifUrl ? (
+              <Image
+                source={{ uri: mediaGifUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                resizeMode="contain"
               />
             ) : mediaPhotoUrl ? (
               <Image

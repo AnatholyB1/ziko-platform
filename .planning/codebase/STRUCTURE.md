@@ -1,347 +1,362 @@
+<!-- refreshed: 2026-05-28 -->
 # Codebase Structure
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-05-28
 
 ## Directory Layout
 
 ```
-ziko-platform/
+ziko-platform/                        # Turborepo monorepo root
 ├── apps/
-│   └── mobile/                      # Expo SDK 54 + React Native app
-│       ├── app/                     # Expo Router v4 file-based routes
-│       │   ├── _layout.tsx          # Root layout (auth init, QueryClient, PluginLoader)
-│       │   ├── (auth)/              # Authentication routes group
-│       │   │   ├── _layout.tsx      # Auth redirect logic
-│       │   │   ├── login/
-│       │   │   ├── register/
-│       │   │   └── onboarding/      # 5-step onboarding screens
-│       │   └── (app)/               # Main app routes (requires auth)
-│       │       ├── _layout.tsx      # Tabs layout with dynamic plugin tabs
-│       │       ├── (plugins)/       # Dynamic plugin screens
-│       │       │   ├── habits/
-│       │       │   ├── nutrition/
-│       │       │   ├── cardio/
-│       │       │   ├── timer/
-│       │       │   ├── stats/
-│       │       │   └── [12 more plugins]
-│       │       ├── ai/              # AI chat screens
-│       │       ├── profile/         # User profile edit
-│       │       ├── store/           # Plugin store / shop
-│       │       └── workout/         # Workout session tracking
-│       ├── src/
-│       │   ├── components/          # Shared UI components
-│       │   ├── lib/
-│       │   │   ├── supabase.ts      # Supabase client init
-│       │   │   ├── ai.ts            # AIBridge instance
-│       │   │   └── PluginLoader.tsx # Plugin registry + loading
-│       │   └── stores/              # Zustand stores
-│       │       ├── authStore.ts     # Auth state + session management
-│       │       ├── aiStore.ts       # AI chat messages
-│       │       ├── themeStore.ts    # Theme + banner
-│       │       └── workoutStore.ts  # Active workout session
-│       └── package.json
-│
+│   ├── mobile/                       # Expo SDK 54 mobile app (iOS + Android)
+│   └── web/                          # Next.js 15 coach web portal
 ├── backend/
-│   └── api/                         # Hono v4 REST API
-│       ├── src/
-│       │   ├── index.ts             # Server entry point (Node.js + Vercel)
-│       │   ├── app.ts               # Hono app setup (routes, middleware, error handling)
-│       │   ├── context/             # Three-layer context assembly
-│       │   │   ├── user.ts          # fetchUserContext() — profile, habits, nutrition, workouts, plugins
-│       │   │   └── conversation.ts  # getOrCreateConversation(), appendMessages()
-│       │   ├── middleware/
-│       │   │   └── auth.ts          # authMiddleware — validates JWT, sets userId
-│       │   ├── routes/              # HTTP route handlers
-│       │   │   ├── ai.ts            # POST /chat/stream, POST /chat, GET /tools, POST /tools/execute
-│       │   │   ├── plugins.ts       # GET /plugins (registry)
-│       │   │   ├── webhooks.ts      # POST /webhooks (Supabase triggers)
-│       │   │   ├── bugs.ts          # POST /bugs (bug reports)
-│       │   │   └── supplements.ts   # GET /supplements/*, POST /cron/scrape
-│       │   ├── tools/               # AI tool implementations (one per plugin)
-│       │   │   ├── registry.ts      # allToolSchemas, getToolExecutor()
-│       │   │   ├── habits.ts        # habits_get_today, habits_log, habits_create, habits_get_streaks
-│       │   │   ├── nutrition.ts     # nutrition_log_meal, nutrition_get_today, nutrition_get_tdee
-│       │   │   ├── stretching.ts    # stretching_log_session, stretching_get_routines
-│       │   │   ├── sleep.ts         # sleep_log, sleep_get_history, sleep_get_recovery_score
-│       │   │   ├── measurements.ts  # measurements_log, measurements_get_history
-│       │   │   ├── timer.ts         # timer_get_presets, timer_create_preset
-│       │   │   ├── ai-programs.ts   # ai_programs_generate, ai_programs_list
-│       │   │   ├── journal.ts       # journal_log_mood, journal_get_trends
-│       │   │   ├── hydration.ts     # hydration_log, hydration_get_today
-│       │   │   ├── cardio.ts        # cardio_log_session, cardio_get_history
-│       │   │   ├── wearables.ts     # wearables_get_steps, wearables_sync_status
-│       │   │   └── navigation.ts    # app_navigate (for agent to direct user to screens)
-│       │   └── scrapers/            # Supplement price scraping (cron jobs)
-│       │       ├── index.ts         # Main scraper coordinator
-│       │       ├── brands/          # Per-brand scrapers (myprotein, optimum-nutrition, etc.)
-│       │       └── utils/           # HTML parsers, category mappers
-│       └── package.json
-│
+│   └── api/                          # Hono v4 REST + AI API (Vercel serverless)
 ├── packages/
-│   ├── plugin-sdk/                  # Shared plugin development kit
-│   │   └── src/
-│   │       ├── index.ts             # Public API exports
-│   │       ├── types.ts             # PluginManifest, AITool, Permission, UserProfile
-│   │       ├── hooks.ts             # usePluginRegistry, usePermission, useAlertStore
-│   │       ├── theme.ts             # useThemeStore (7 themes + banners)
-│   │       ├── i18n.ts              # useTranslation() hook
-│   │       └── alert.ts             # useAlertStore, showAlert() custom alert system
-│   │
-│   ├── ai-client/                   # Client-side AI orchestration
-│   │   └── src/
-│   │       ├── index.ts             # Exports AIBridge
-│   │       └── AIBridge.ts          # Plugin registration, skill management, system prompt assembly
-│   │
-│   └── ui/                          # Reusable React Native components
-│       └── src/
-│           └── components.tsx       # Button, Card, Input, etc.
-│
-├── plugins/                         # 17 fitness plugins (each is a package)
+│   ├── plugin-sdk/                   # Shared types, hooks, i18n, theme, alert
+│   ├── ai-client/                    # AIBridge — SSE streaming AI client
+│   ├── ui/                           # Shared React Native component library
+│   ├── coach-sdk/                    # Coach-specific schemas, types, components
+│   └── email/                        # React Email templates
+├── plugins/                          # 19 plugin packages (one per feature)
 │   ├── habits/
-│   │   └── src/
-│   │       ├── manifest.ts          # Plugin metadata (must be default export)
-│   │       ├── store.ts             # useHabitsStore (Zustand)
-│   │       ├── index.tsx            # Main screen component
-│   │       ├── screens/             # Feature screens (dashboard, create, etc.)
-│   │       └── components/          # Plugin-specific UI components
-│   │
-│   ├── nutrition/                   # Similar structure
+│   ├── nutrition/
 │   ├── cardio/
-│   │   └── src/
-│   │       ├── manifest.ts
-│   │       ├── store.ts             # useCardioStore with GPS route data
-│   │       ├── CardioTracker.tsx    # Live GPS tracking screen
-│   │       ├── CardioDetail.tsx     # Post-session detail + RouteVisualizer
-│   │       └── CardioDashboard.tsx  # Strava-like feed with weekly stats
-│   │
-│   ├── timer/
-│   │   └── src/
-│   │       ├── TimerDashboard.tsx   # Main timer UI
-│   │       ├── TimerEditor.tsx      # Create/edit presets with exercise picker
-│   │       └── types.ts             # TimerExercise, TimerPreset
-│   │
-│   ├── rpe/
-│   │   └── src/
-│   │       ├── manifest.ts
-│   │       ├── index.ts             # formulas: rpeToPercent(), calc1RM(), rpeToRIR()
-│   │       └── RPECalculatorScreen.tsx
-│   │
-│   ├── stretching/
-│   ├── sleep/
-│   ├── measurements/
-│   ├── ai-programs/
-│   ├── journal/
-│   ├── hydration/
-│   ├── wearables/
-│   ├── supplements/
-│   ├── stats/
-│   ├── gamification/
-│   ├── community/
-│   └── persona/                     # AI coaching style / personality
-│
+│   ├── coach/
+│   └── … (15 more)
 ├── supabase/
-│   ├── migrations/                  # 21 PostgreSQL migrations
-│   │   ├── 001_initial_schema.sql   # user_profiles, exercises, workout_*, habits, nutrition_logs, ai_*
-│   │   ├── 002_habits_schema.sql
-│   │   ├── 003_nutrition_schema.sql
-│   │   ├── 007_gamification_schema.sql
-│   │   ├── 009_community_schema.sql
-│   │   ├── 012_new_plugins_schema.sql
-│   │   ├── 014_wearables_schema.sql
-│   │   ├── 018_supplements_schema.sql
-│   │   ├── 020_timer_exercises_hyrox.sql
-│   │   └── 021_cardio_gps.sql
-│   └── seed.sql                     # Initial data: exercises, food database, plugins_registry
-│
-├── .planning/
-│   └── codebase/                    # GSD mapping documents
-│       ├── ARCHITECTURE.md
-│       ├── STRUCTURE.md
-│       ├── CONVENTIONS.md           # (if quality focus)
-│       ├── TESTING.md               # (if quality focus)
-│       ├── CONCERNS.md              # (if concerns focus)
-│       ├── STACK.md                 # (if tech focus)
-│       └── INTEGRATIONS.md          # (if tech focus)
-│
-├── .env                             # (git-ignored, not committed)
-├── package.json                     # Root Turborepo
-├── tsconfig.json
-├── turbo.json
-└── CLAUDE.md                        # Project instructions
+│   ├── migrations/                   # 69 SQL migration files (RLS, schema, triggers)
+│   └── seed.sql                      # Exercises, plugin registry, food DB seed
+├── .planning/                        # GSD planning docs (not shipped)
+├── .claude/                          # Claude agent skills
+├── package.json                      # Turborepo workspace root
+├── turbo.json                        # Turborepo task pipeline
+└── tsconfig.base.json                # Shared TypeScript base config
 ```
 
-## Directory Purposes
+## Mobile App Structure (`apps/mobile/`)
 
-**apps/mobile:**
-- Purpose: Expo-based React Native fitness app
-- Contains: Route files, Zustand stores, Supabase + AI client initialization, PluginLoader
-- Key files: `_layout.tsx` (root), `(app)/_layout.tsx` (tabs), `(auth)/_layout.tsx` (auth flow)
+```
+apps/mobile/
+├── app/                              # Expo Router file-based routes (root)
+│   ├── _layout.tsx                   # Root layout: auth init, QueryClient, PluginLoader
+│   ├── index.tsx                     # Redirect to /(app) or /(auth)
+│   ├── (auth)/                       # Unauthenticated screens
+│   │   ├── _layout.tsx
+│   │   ├── login.tsx
+│   │   ├── register.tsx
+│   │   ├── welcome.tsx
+│   │   ├── forgot.tsx
+│   │   └── onboarding/               # step-1.tsx … step-7.tsx
+│   └── (app)/                        # Authenticated screens (tab navigation)
+│       ├── _layout.tsx               # Tab bar, notification listeners, auth guard
+│       ├── index.tsx                 # Home dashboard
+│       ├── workout/                  # Workout screens (index, session, history, [id])
+│       ├── profile/                  # Profile screens
+│       ├── ai/                       # AI chat screens (index, chat)
+│       ├── store/                    # Plugin store / marketplace
+│       ├── calendar.tsx
+│       ├── notifications.tsx
+│       ├── referral.tsx
+│       └── (plugins)/                # Plugin route wrappers
+│           ├── _layout.tsx           # Plugin layout (invisible, no headers)
+│           ├── habits/               # dashboard.tsx, log.tsx
+│           ├── nutrition/            # dashboard.tsx, log.tsx, tdee.tsx
+│           ├── cardio/               # dashboard.tsx, tracker.tsx, [id].tsx
+│           ├── coach/                # dashboard.tsx, forms/, …
+│           └── … (16 more plugin dirs)
+├── src/
+│   ├── lib/
+│   │   ├── PluginLoader.tsx          # Loads + registers manifests from user_plugins
+│   │   ├── supabase.ts               # Supabase singleton client
+│   │   ├── ai.ts                     # AIBridge singleton instance
+│   │   ├── sentry.ts                 # Sentry init + user context helpers
+│   │   ├── storage.ts                # MMKV wrappers
+│   │   └── earnCredits.ts            # Credit earn API calls
+│   ├── stores/
+│   │   ├── authStore.ts              # Supabase session + profile + onAuthStateChange
+│   │   ├── workoutStore.ts           # Active workout session state + MMKV persistence
+│   │   ├── aiStore.ts                # AI chat messages, streaming state, conversations
+│   │   ├── themeStore.ts             # Active theme + coach branding override
+│   │   ├── notificationStore.ts      # Unread badge count + sync
+│   │   ├── creditStore.ts            # Credit balance state
+│   │   ├── userPrefsStore.ts         # Units, language, region prefs
+│   │   └── clipboardStore.ts         # Clipboard utility store
+│   ├── components/                   # Global shared UI components
+│   ├── hooks/                        # Shared hooks (useNotificationSetup, …)
+│   ├── tasks/                        # Background tasks (notificationTask.ts)
+│   └── types/                        # App-level TypeScript types
+├── assets/                           # Images, icons, fonts
+├── android/                          # Native Android project (Gradle)
+├── app.json                          # Expo app config
+├── babel.config.js
+├── metro.config.js
+├── tailwind.config.js
+└── package.json
+```
 
-**apps/mobile/app/(auth):**
-- Purpose: Authentication and onboarding flows
-- Contains: Login, register, 5-step onboarding screens
-- Redirect logic: Authenticated users with `onboarding_done: true` redirect to `/(app)`
+## Web App Structure (`apps/web/`)
 
-**apps/mobile/app/(app):**
-- Purpose: Main authenticated app UI
-- Contains: Tab bar with dynamic plugin tabs, AI chat, profile, store, workout screens
-- Tab sources: `usePluginRegistry.enabledPlugins` drives Tabs.Screen generation
+```
+apps/web/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── layout.tsx                # Root HTML layout
+│   │   ├── api/                      # Next.js API routes
+│   │   │   ├── coach/[...path]/      # Proxy to Hono /coach/* (route.ts)
+│   │   │   ├── credits/balance/
+│   │   │   ├── photo/
+│   │   │   └── storage/upload-url/
+│   │   └── [locale]/                 # Locale-prefixed routes
+│   │       ├── (coach)/              # Coach-authenticated group
+│   │       │   └── coach/
+│   │       │       ├── dashboard/
+│   │       │       ├── clients/      # List + [id]/ (dashboard, programs, habits, …)
+│   │       │       ├── programs/     # List + new/ + [id]/
+│   │       │       ├── forms/        # List + new/ + [id]/
+│   │       │       ├── invitations/
+│   │       │       ├── exercises/
+│   │       │       ├── imports/
+│   │       │       ├── branding/
+│   │       │       ├── settings/
+│   │       │       ├── ai/
+│   │       │       └── dashboards/
+│   │       ├── (marketing)/          # Public marketing pages (cgu, coachs, …)
+│   │       ├── coach/onboarding/     # Coach onboarding flow
+│   │       ├── login/
+│   │       ├── redeem/               # Credit redemption
+│   │       └── r/[code]/             # Referral code redirect
+│   ├── components/
+│   │   ├── coach/                    # Coach-specific components
+│   │   ├── account/                  # Account management
+│   │   ├── layout/                   # Layout wrappers, sidebars
+│   │   ├── marketing/                # Landing page components
+│   │   └── seo/                      # SEO helpers
+│   ├── lib/
+│   │   ├── supabase/                 # Supabase client helpers (server + client)
+│   │   ├── coach/                    # Coach business logic helpers
+│   │   ├── dashboard/                # Dashboard data helpers
+│   │   └── redeem/                   # Redemption helpers
+│   ├── hooks/                        # React hooks (useCoachClients, useDashboardConfig, …)
+│   ├── actions/                      # Next.js server actions
+│   ├── i18n/                         # next-intl translations
+│   └── types/                        # TypeScript types for web
+├── middleware.ts                      # Next.js middleware (locale + auth routing)
+├── next.config.ts
+├── tailwind.config.js
+└── package.json
+```
 
-**apps/mobile/app/(app)/(plugins):**
-- Purpose: Dynamic plugin screen registration
-- Pattern: Thin wrapper files `[plugin]/[screen].tsx` import plugin component + pass Supabase client
-- Example: `apps/mobile/app/(app)/(plugins)/habits/index.tsx` → imports `@ziko/plugin-habits` screen
+## Backend API Structure (`backend/api/`)
 
-**apps/mobile/src/stores:**
-- Purpose: Zustand global state
-- Pattern: Each store exports a `useXStore` hook; auth + theme required; plugins add own stores
-- Key store: `authStore` must store `_authSubscription` to prevent memory leaks
+```
+backend/api/
+├── src/
+│   ├── app.ts                        # Hono app factory — all routes mounted here
+│   ├── index.ts                      # Vercel serverless entry (exports app)
+│   ├── config/
+│   │   └── models.ts                 # AGENT_MODEL, VISION_MODEL constants
+│   ├── middleware/
+│   │   ├── auth.ts                   # Supabase JWT validation → sets c.var.auth
+│   │   ├── creditGate.ts             # Credit check + deduct before AI calls
+│   │   └── rateLimiter.ts            # Per-user rate limiting
+│   ├── context/
+│   │   ├── user.ts                   # fetchUserContext() — 6 parallel Supabase queries
+│   │   └── conversation.ts           # getOrCreateConversation(), appendMessages()
+│   ├── routes/                       # Mobile-facing API routes
+│   │   ├── ai.ts                     # /ai/chat/stream, /ai/chat, /ai/tools
+│   │   ├── forms.ts                  # /forms — coach forms delivery to athletes
+│   │   ├── notifications.ts          # /notifications — push token, send
+│   │   ├── notifications-cron.ts     # /notifications/cron — scheduled sends
+│   │   ├── credits.ts                # /credits — balance, earn, deduct
+│   │   ├── plugins.ts                # /plugins — registry endpoint
+│   │   ├── supplements.ts            # /supplements — catalog
+│   │   ├── storage.ts                # /storage — presigned URLs
+│   │   ├── referral.ts               # /referral, /promo
+│   │   ├── bugs.ts                   # /bugs — in-app bug reports
+│   │   ├── webhooks.ts               # /webhooks — Supabase webhook handlers
+│   │   ├── push-events.ts            # /push-events
+│   │   └── pantry-recipes.ts         # /pantry — recipe data
+│   ├── coach/                        # Coach-facing modules (each has db.ts + service.ts + types.ts)
+│   │   ├── identity/                 # /coach/identity — coach profile
+│   │   ├── invitations/              # /coach/invitations — invite clients
+│   │   ├── clients/                  # /coach/clients — client management + link status
+│   │   ├── programs/                 # /coach/programs — workout program builder
+│   │   ├── exercises/                # /coach/exercises — custom exercise library
+│   │   ├── branding/                 # /coach/branding — custom colors, logo
+│   │   ├── dashboards/               # /coach/dashboards — client widget config
+│   │   ├── forms/                    # (via routes/forms.ts)
+│   │   ├── imports/                  # /coach/imports — bulk client import
+│   │   ├── ai/                       # /coach/ai — coach AI assistant
+│   │   ├── voice/                    # /coach/voice — voice message
+│   │   └── videos/                   # /coach/videos — video library
+│   ├── tools/                        # AI tool implementations
+│   │   ├── registry.ts               # Central tool registry — allToolSchemas + getToolExecutor
+│   │   ├── habits.ts                 # habits_list, habits_log, habits_create, habits_today
+│   │   ├── nutrition.ts              # nutrition_log_meal, nutrition_today, nutrition_history
+│   │   ├── sleep.ts                  # sleep_log, sleep_get_history, sleep_get_recovery_score
+│   │   ├── hydration.ts              # hydration_log, hydration_get_today, hydration_set_goal
+│   │   ├── cardio.ts                 # cardio_log_session, cardio_get_history, cardio_get_stats
+│   │   ├── journal.ts                # journal_log_mood, journal_get_history, journal_get_trends
+│   │   ├── measurements.ts           # measurements_log, measurements_get_history
+│   │   ├── stretching.ts             # stretching_get_routines, stretching_log_session
+│   │   ├── timer.ts                  # timer_get_presets, timer_create_preset
+│   │   ├── ai-programs.ts            # ai_programs_generate, ai_programs_list, ai_programs_adjust
+│   │   ├── wearables.ts              # wearables_get_steps, wearables_get_heart_rate, …
+│   │   ├── navigation.ts             # app_navigate tool
+│   │   ├── pantry.ts                 # pantry search/recommend tools
+│   │   ├── coach.ts                  # coach-related tools
+│   │   └── db.ts                     # clientForUser() — Supabase client factory
+│   ├── services/
+│   │   ├── creditService.ts          # Credit balance business logic
+│   │   └── notificationService.ts    # Push notification delivery
+│   ├── scrapers/                     # Supplement price scraper
+│   └── lib/                          # Backend utility helpers
+├── api/                              # Vercel API directory (serverless functions entry)
+├── vercel.json                       # Vercel deployment config
+└── package.json
+```
 
-**backend/api/src/tools:**
-- Purpose: AI tool implementations (function calling)
-- Pattern: Each tool module exports schema + async executor; registry maps names to executors
-- Executor pattern: `async (params: Record<string, unknown>, userId: string) => Promise<unknown>`
-- Responsibility: Read/write Supabase filtered by RLS; return structured result to agent
+## Plugin Package Structure (`plugins/<name>/`)
 
-**backend/api/src/routes:**
-- Purpose: HTTP endpoint handlers
-- Main route: `/ai/chat/stream` orchestrates agent with context + streaming
-- Pattern: Fetch context, build system prompt, run agent loop, stream SSE, persist conversation
+```
+plugins/habits/                       # Example: habits plugin
+├── src/
+│   ├── manifest.ts                   # Plugin manifest — MUST use `export default`
+│   ├── store.ts                      # Zustand store for plugin state
+│   ├── index.ts                      # Plugin entry (exports store, types, helpers)
+│   ├── notifications.ts              # Optional: plugin-specific notification logic
+│   └── screens/
+│       ├── HabitsPlugin.tsx          # Main dashboard screen component
+│       └── HabitLogScreen.tsx        # Additional screen components
+└── package.json                      # name: "@ziko/plugin-habits"
+```
 
-**backend/api/src/context:**
-- Purpose: Dynamic context assembly for AI agent requests
-- User context: Profile, today's habits/nutrition, recent workouts, installed plugins
-- Conversation context: Load history, persist messages, auto-title
-- Pattern: Parallel queries; passed to `buildSystemPrompt()` for dynamic injection
+**Expo Router wrapper pattern** (thin file in mobile app):
+```
+apps/mobile/app/(app)/(plugins)/habits/
+├── dashboard.tsx    → imports HabitsPlugin from @ziko/plugin-habits/screens/HabitsPlugin
+└── log.tsx          → imports HabitLogScreen from @ziko/plugin-habits/screens/HabitLogScreen
+```
 
-**supabase/migrations:**
-- Purpose: Database schema version control
-- Pattern: Numbered files (001, 002, etc.) applied in order
-- Each migration: CREATE TABLE, ALTER, CREATE POLICY (RLS), INSERT seed data
-- RLS pattern: Every table has policy `WHERE auth.uid() = user_id` or `USING (auth.uid() = user_id)`
+Each wrapper is ~7 lines: imports the screen component and the `supabase` singleton, renders `<ScreenComponent supabase={supabase} />`.
 
-**plugins/[name]/src:**
-- Purpose: Single plugin package
-- Must export: `manifest.ts` as default export
-- May export: Store (Zustand), screen components, helper utilities
-- Convention: Plugin route paths use pattern `/(plugins)/[plugin]/[screen]`
+## Shared Packages Structure
 
-## Key File Locations
-
-**Entry Points:**
-- `apps/mobile/app/_layout.tsx`: Mobile root layout (auth init, PluginLoader wrapper)
-- `backend/api/src/index.ts`: API server entry (Node.js) or Vercel export
-- `backend/api/src/app.ts`: Hono app definition (routes, middleware, error handling)
-
-**Configuration:**
-- `apps/mobile/.env`: Environment for mobile (EXPO_PUBLIC_* prefix required)
-- `backend/api/.env`: Environment for backend (Supabase + Anthropic keys)
-- `package.json` (root): Turborepo workspace configuration
-
-**Core Logic:**
-- `backend/api/src/routes/ai.ts`: Orchestrator agent + streaming implementation
-- `backend/api/src/context/user.ts`: User context assembly (profile, habits, nutrition, workouts)
-- `backend/api/src/tools/registry.ts`: Tool schema + executor registry
-- `apps/mobile/src/lib/PluginLoader.tsx`: Dynamic plugin loading + registration
-- `apps/mobile/src/stores/authStore.ts`: Session management + profile fetching
-
-**Testing:**
-- Not currently detected in repo (no Jest/Vitest config found)
+```
+packages/
+├── plugin-sdk/src/
+│   ├── types.ts          # PluginManifest, UserProfile, Exercise, WorkoutSession, AITool, …
+│   ├── hooks.ts          # usePluginRegistry(), useTranslation(), useThemeStore()
+│   ├── theme.ts          # Theme tokens, 7 themes, coachStorage
+│   ├── i18n.ts           # ~500 keys per locale (fr, en)
+│   ├── alert.ts          # showAlert() — Custom Alert API (replaces Alert.alert)
+│   └── index.ts          # Re-exports all public API
+├── ai-client/src/
+│   ├── AIBridge.ts       # SSE streaming client, plugin skill/tool registry
+│   └── index.ts
+├── ui/src/
+│   ├── components/       # Shared RN components (BugFab, BugSheet, …)
+│   ├── components.tsx    # Component exports
+│   └── design-system.ts  # Design tokens
+├── coach-sdk/src/
+│   ├── schemas/          # Zod schemas for coach domain
+│   ├── types/            # TypeScript types
+│   └── index.ts
+└── email/src/
+    └── templates/        # React Email templates
+```
 
 ## Naming Conventions
 
 **Files:**
-- Route files: `index.tsx`, `[dynamic].tsx`, `_layout.tsx` (Expo Router standard)
-- Component files: PascalCase (e.g., `CardioTracker.tsx`, `BugReportModal.tsx`)
-- Store files: `store.ts` in each plugin root; `authStore.ts`, `themeStore.ts` in mobile/stores
-- Tool files: `[plugin-name].ts` in backend/api/src/tools (e.g., `habits.ts`, `nutrition.ts`)
-- Migration files: `NNN_snake_case_description.sql` (e.g., `021_cardio_gps.sql`)
+- React components: `PascalCase.tsx` (e.g., `HabitsPlugin.tsx`, `BrandingPreviewCard.tsx`)
+- Non-component TypeScript: `camelCase.ts` (e.g., `authStore.ts`, `creditGate.ts`)
+- Route files: kebab-case or Expo Router special syntax (e.g., `[id].tsx`, `_layout.tsx`)
+- Backend modules: `camelCase.ts` (e.g., `registry.ts`, `notificationService.ts`)
 
 **Directories:**
-- Packages: kebab-case (e.g., `plugin-sdk`, `ai-client`)
-- Plugins: kebab-case short names (e.g., `ai-programs`, `nutrition`, `cardio`)
-- Routes: kebab-case in paths, but can use parentheses groups for layout organization (e.g., `(app)`, `(auth)`, `(plugins)`)
-- Feature subdirs: lowercase descriptive names (e.g., `screens/`, `components/`, `utils/`)
+- Mobile route groups: Expo Router convention — `(app)/`, `(auth)/`, `(plugins)/`
+- Web route groups: `(coach)/`, `(marketing)/`
+- Plugin packages: kebab-case IDs matching `PluginManifest.id` (e.g., `ai-programs`, `habits`)
+- Package names: `@ziko/<name>` (e.g., `@ziko/plugin-sdk`, `@ziko/plugin-habits`)
 
-**TypeScript/Variables:**
-- Interfaces: PascalCase, prefix with `I` if convention used (not consistent in codebase; examples: `PluginManifest`, `UserProfile`, `AITool`)
-- Functions: camelCase (e.g., `fetchUserContext()`, `buildSystemPrompt()`, `registerPlugin()`)
-- Constants: UPPER_SNAKE_CASE (e.g., `PLUGIN_LOADERS`, `BASE_SYSTEM`, `AGENT_MODEL`)
-- Hooks: camelCase with `use` prefix (e.g., `useAuthStore`, `usePluginRegistry`, `useTranslation()`)
+**Stores:**
+- Named `use<Name>Store` (e.g., `useAuthStore`, `useWorkoutStore`, `useAIStore`)
+- File: `<name>Store.ts` in `apps/mobile/src/stores/` or `plugins/<name>/src/store.ts`
+
+## Package Boundaries and Ownership
+
+| Package | Owned by | Can import from |
+|---------|----------|-----------------|
+| `apps/mobile` | Mobile team | `packages/*`, `plugins/*` |
+| `apps/web` | Web team | `packages/coach-sdk`, `packages/ui` |
+| `backend/api` | Backend team | External packages only (no internal packages) |
+| `plugins/<name>` | Plugin owner | `packages/plugin-sdk` only |
+| `packages/plugin-sdk` | Core team | External packages only |
+| `packages/ai-client` | Core team | `packages/plugin-sdk` |
+| `packages/ui` | Core team | External packages only |
+| `packages/coach-sdk` | Web team | External packages only |
 
 ## Where to Add New Code
 
-**New Plugin:**
-1. Create directory: `plugins/[plugin-id]/src/`
-2. Create manifest: `plugins/[plugin-id]/src/manifest.ts` — must export default
-3. Create screen components in `plugins/[plugin-id]/src/screens/` or directly in index.tsx
-4. Create store if needed: `plugins/[plugin-id]/src/store.ts` (Zustand)
-5. Register in PluginLoader: Add static import to `PLUGIN_LOADERS` map in `apps/mobile/src/lib/PluginLoader.tsx`
-6. Add route wrapper: Create thin wrapper at `apps/mobile/app/(app)/(plugins)/[plugin]/index.tsx`
-7. Add tool implementations if needed: `backend/api/src/tools/[plugin].ts`
-8. Register tools: Export from tool module, add to `registry.ts` `allToolSchemas` array
+**New plugin:**
+1. Create `plugins/<plugin-id>/src/` with `manifest.ts` (default export), `store.ts`, `index.ts`, `screens/`
+2. Add `package.json` with `name: "@ziko/plugin-<plugin-id>"`
+3. Add to static `PLUGIN_LOADERS` map in `apps/mobile/src/lib/PluginLoader.tsx`
+4. Create route wrapper files in `apps/mobile/app/(app)/(plugins)/<plugin-id>/`
+5. Add AI tool implementations to `backend/api/src/tools/<plugin-id>.ts` and register in `backend/api/src/tools/registry.ts`
 
-**New Feature Screen (in existing plugin):**
-1. Create component: `plugins/[plugin]/src/screens/[ScreenName].tsx`
-2. Add route: `plugins/[plugin]/src/manifest.ts` → add entry to `routes` array with path, icon, showInTabBar
-3. Export from plugin index
-4. No API changes needed if using existing tools
+**New backend route (mobile-facing):**
+- Add `backend/api/src/routes/<name>.ts`, mount in `backend/api/src/app.ts`
 
-**New API Endpoint:**
-1. Create handler: `backend/api/src/routes/[feature].ts` (or add to existing file)
-2. Register in `backend/api/src/app.ts`: `app.route('[path]', featureRouter)`
-3. If auth required: Wrap route handlers with `router.use('*', authMiddleware)`
-4. If new tool: Also create in `backend/api/src/tools/` and register in registry
+**New backend coach module:**
+- Create `backend/api/src/coach/<module>/` with `service.ts`, `db.ts`, `types.ts`
+- Mount in `backend/api/src/app.ts` as `app.route('/coach/<module>', <module>Router)`
 
-**New AI Tool:**
-1. Add schema: `backend/api/src/tools/registry.ts` → add to relevant plugin's `ToolSchema[]` array
-2. Add executor: `backend/api/src/tools/[plugin].ts` → export schema + async executor function
-3. Register in registry: Add to `allToolSchemas`, map in tool executor function
-4. Optional: Add to plugin manifest: `plugins/[plugin]/src/manifest.ts` → add to `aiTools` array (for documentation)
+**New mobile screen (core, not plugin):**
+- Add file to `apps/mobile/app/(app)/` (tab-accessible) or a subdirectory
+- Add `<Tabs.Screen name="..." options={{ href: null }} />` in `apps/mobile/app/(app)/_layout.tsx` if not in tab bar
 
-**Utility Functions:**
-- Shared helpers: `packages/ui/src/` or create new package
-- Plugin-specific helpers: `plugins/[plugin]/src/utils/` or `lib/`
-- Backend helpers: Create in `backend/api/src/utils/` or task-specific file
+**New web coach page:**
+- Add directory under `apps/web/src/app/[locale]/(coach)/coach/<section>/`
+- Page file: `page.tsx`; client component: `<Section>Client.tsx` co-located
 
-**Database Changes:**
-1. Create migration: `supabase/migrations/NNN_description.sql`
-2. Create TABLE / ALTER TABLE with CREATE POLICY (RLS required)
-3. If initial data: Add INSERT statements to seed.sql
-4. Apply to local Supabase: `supabase db push` (requires local setup)
+**New Zustand store (mobile):**
+- Add `apps/mobile/src/stores/<name>Store.ts`
+- Follow pattern: `create<State>()((set, get) => ({ ... }))`
+
+**New Supabase table:**
+- Create `supabase/migrations/<NNN>_<description>.sql` with table definition + RLS policy
+- Use `auth.uid() = user_id` policy pattern
 
 ## Special Directories
 
-**apps/mobile/.expo:**
-- Purpose: Expo metadata and web cache
+**`.planning/`:**
+- Purpose: GSD planning documents, workstream tracking, phase plans
+- Generated: No (human-authored + AI-assisted)
+- Committed: Yes
+
+**`supabase/migrations/`:**
+- Purpose: Sequential SQL migrations (69 files as of 2026-05-28)
+- Generated: No
+- Committed: Yes — never edit existing migration files; always add a new one
+
+**`apps/mobile/android/`:**
+- Purpose: Native Android project (Gradle, Kotlin)
+- Generated: Partially (Expo prebuild)
+- Committed: Yes — native modifications tracked
+
+**`.expo/`:**
+- Purpose: Expo tooling cache
 - Generated: Yes
-- Committed: No (git-ignored)
+- Committed: No
 
-**backend/api/dist:**
-- Purpose: TypeScript compiled output
-- Generated: Yes
-- Committed: No (git-ignored)
-
-**node_modules (all workspaces):**
-- Purpose: Installed dependencies
-- Generated: Yes (by npm install)
-- Committed: No (git-ignored)
-
-**.planning/codebase:**
-- Purpose: GSD analysis documents
-- Generated: Yes (by `/gsd:map-codebase` command)
-- Committed: Yes (reference for future phases)
-
-**supabase/migrations:**
-- Purpose: Database schema version control
-- Generated: No (manually created)
-- Committed: Yes (required for Supabase sync)
-
-**plugins/*/src:**
-- Purpose: Plugin source code
-- Generated: No (manually created)
-- Committed: Yes (plugins are checked in, not dynamically fetched from registry)
+**`patches/`:**
+- Purpose: `patch-package` patches for dependency overrides
+- Generated: Semi (via `npx patch-package <package>`)
+- Committed: Yes
 
 ---
 
-*Structure analysis: 2026-03-26*
+*Structure analysis: 2026-05-28*

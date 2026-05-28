@@ -724,7 +724,10 @@ export async function listCompareData(
   return result;
 }
 
-// ----- GET /:id/programs — programs assigned to a client by this coach (PROG-06) -----
+// ----- GET /:id/programs — programs assigned to OR owned by a client (PROG-06) -----
+// Fetches both coach-assigned programs (assigned_to_user_id = clientId) and
+// programs the athlete created themselves (user_id = clientId, assigned_to_user_id = NULL).
+// The new RLS policy 059 allows coaches to SELECT programs where is_coach_of(coach, user_id).
 export async function getProgramsForClient(
   jwt: string,
   coachId: string,
@@ -735,7 +738,7 @@ export async function getProgramsForClient(
   const { data: programs, error } = await db
     .from('workout_programs')
     .select('id, name, description, goal, weeks_count, is_template, created_by_coach_id, assigned_to_user_id, template_source_id, start_date, weeks_data')
-    .eq('assigned_to_user_id', clientId)
+    .or(`assigned_to_user_id.eq.${clientId},and(user_id.eq.${clientId},assigned_to_user_id.is.null)`)
     .order('start_date', { ascending: false, nullsFirst: false });
 
   if (error) throw new Error(error.message);
@@ -799,9 +802,11 @@ export async function getProgramsForClient(
   }
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const activeProgram = enriched.find(
-    (prog) => prog.start_date !== null && prog.start_date <= todayStr,
-  ) ?? null;
+  // Active = first program with start_date <= today, or if none have a start_date, the most recent one
+  const activeProgram =
+    enriched.find((prog) => prog.start_date !== null && prog.start_date <= todayStr) ??
+    enriched[0] ??
+    null;
   const history = enriched.filter((prog) => prog !== activeProgram);
   return { active: activeProgram ?? null, history };
 }

@@ -483,22 +483,13 @@ app.route('/notifications', notificationsCronRouter);   // new — CRON_SECRET a
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Vercel Plan Tier**
-   - What we know: vercel.json has 4 existing cron entries, `@vercel/functions ^3.6.0` installed
-   - What's unclear: whether the account is on Hobby (1h minimum) or Pro (1min minimum)
-   - Recommendation: Planner should add a verification note — check Vercel dashboard. If Hobby, set receipt-check to `0 * * * *`.
+1. **Vercel Plan Tier** — RESOLVED: Plan defaults to `*/15 * * * *` (Pro). 04-02 Task 2 action includes fallback note: change to `0 * * * *` if on Hobby plan.
 
-2. **Streak SQL — consecutive vs. 3-of-7**
-   - What we know: requirement says "streak ≥ 3 jours" (consecutive implied by "streak" semantics)
-   - What's unclear: whether strict consecutive-day detection is needed or whether a looser count is acceptable
-   - Recommendation: Use the strict window-function approach. It matches the streak concept already shown in `user_gamification.current_streak`.
+2. **Streak SQL — consecutive vs. 3-of-7** — RESOLVED: Multi-query JS approach used in 04-01 Task 2 (3 of last 7 days with log, no log today). Strict LAG-based SQL avoided due to Supabase JS client limitation with multi-CTE window functions.
 
-3. **habits plugin filter for CRON-01**
-   - What we know: `user_plugins(user_id, plugin_id, is_enabled)` exists with UNIQUE(user_id, plugin_id)
-   - What's unclear: whether users without the habits plugin could have habit_logs entries (they could if they were installed previously and then uninstalled)
-   - Recommendation: Filter on `user_plugins WHERE plugin_id='habits' AND is_enabled=true` to avoid notifying users who have disabled the plugin.
+3. **habits plugin filter for CRON-01** — RESOLVED: 04-01 Task 2 action includes JOIN on `user_plugins WHERE plugin_id='habits' AND is_enabled=true`.
 
 ---
 

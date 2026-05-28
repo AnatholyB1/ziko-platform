@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { IoColorPaletteOutline } from 'react-icons/io5';
 
 const HEX_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -14,6 +15,7 @@ export interface ColorPickerInputProps {
 export function ColorPickerInput({ value, onChange }: ColorPickerInputProps) {
   const isValid = HEX_REGEX.test(value);
   const prevValidRef = useRef<boolean>(false);
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const wasValid = prevValidRef.current;
@@ -46,16 +48,35 @@ export function ColorPickerInput({ value, onChange }: ColorPickerInputProps) {
       </p>
 
       <div className="flex items-center gap-3">
-        <div
+        {/* Hidden native color picker */}
+        <input
+          ref={colorInputRef}
+          type="color"
+          className="sr-only"
+          value={isValid ? value : '#FF5C1A'}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label="Ouvrir le sélecteur de couleur"
+        />
+
+        {/* Clickable swatch — triggers the hidden input */}
+        <button
+          type="button"
+          onClick={() => colorInputRef.current?.click()}
           className={
-            'color-swatch w-10 h-10 rounded-lg border flex-shrink-0 transition-colors duration-150' +
+            'color-swatch relative w-12 h-12 rounded-xl border-2 flex-shrink-0 transition-all duration-150 overflow-hidden group cursor-pointer' +
             (isValid
               ? ' ring-2 ring-offset-1 ring-primary border-transparent'
               : ' border-border')
           }
           style={{ backgroundColor: isValid ? value : '#F0EFE9' }}
-          aria-hidden="true"
-        />
+          aria-label="Choisir une couleur"
+        >
+          {/* Overlay icon — visible on hover */}
+          <span className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+            <IoColorPaletteOutline size={18} className="text-white" />
+          </span>
+        </button>
+
         <input
           type="text"
           className="h-11 w-36 px-3 bg-white border border-border rounded-xl text-sm font-normal text-text placeholder:text-muted font-mono"

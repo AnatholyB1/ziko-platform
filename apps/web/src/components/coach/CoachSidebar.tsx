@@ -11,7 +11,6 @@ import {
   IoColorPaletteOutline,
   IoSettingsOutline,
 } from 'react-icons/io5';
-import { useLocale } from 'next-intl';
 import { NavItem } from './NavItem';
 
 function getNavItems(locale: string) {
@@ -30,11 +29,11 @@ function getNavItems(locale: string) {
 }
 
 interface CoachSidebarProps {
+  locale: string;
   unreadAlertCount?: number;
 }
 
-export function CoachSidebar({ unreadAlertCount }: CoachSidebarProps) {
-  const locale = useLocale();
+export function CoachSidebar({ locale, unreadAlertCount }: CoachSidebarProps) {
   const navItems = getNavItems(locale);
 
   return (

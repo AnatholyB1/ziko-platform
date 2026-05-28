@@ -30,6 +30,7 @@ export function ExerciseSlideOver({
   const [muscleGroups, setMuscleGroups] = useState<string[]>([]);
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [gifPath, setGifPath] = useState<string | null>(null);
 
   // Validation errors
   const [nameError, setNameError] = useState('');
@@ -54,6 +55,7 @@ export function ExerciseSlideOver({
         setMuscleGroups(exercise.muscle_groups ?? []);
         setVideoPath(exercise.video_path);
         setPhotoPath(exercise.photo_path);
+        setGifPath(exercise.gif_path);
       } else {
         setName('');
         setDescription('');
@@ -61,6 +63,7 @@ export function ExerciseSlideOver({
         setMuscleGroups([]);
         setVideoPath(null);
         setPhotoPath(null);
+        setGifPath(null);
       }
       setNameError('');
       setCategoryError('');
@@ -135,6 +138,7 @@ export function ExerciseSlideOver({
         muscle_groups: muscleGroups,
         video_path: videoPath,
         photo_path: photoPath,
+        gif_path: gifPath,
       };
       await onSave(data);
       onClose();
@@ -309,10 +313,13 @@ export function ExerciseSlideOver({
               jwt={jwt}
               videoPath={videoPath}
               photoPath={photoPath}
+              gifPath={gifPath}
               onVideoUploaded={(path) => setVideoPath(path)}
               onPhotoUploaded={(path) => setPhotoPath(path)}
+              onGifUploaded={(path) => setGifPath(path)}
               onVideoRemoved={() => setVideoPath(null)}
               onPhotoRemoved={() => setPhotoPath(null)}
+              onGifRemoved={() => setGifPath(null)}
               disabled={isSaving}
             />
           </div>

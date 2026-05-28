@@ -4,6 +4,8 @@
 // Returns a recorder object with start(), stop(), and mimeType.
 // Works both as a plain factory (for tests) and as a custom hook (for components).
 
+import { useRef } from 'react';
+
 const MIME_TYPE_CANDIDATES = [
   'audio/webm;codecs=opus',
   'audio/webm',
@@ -30,27 +32,31 @@ export function useVocalRecorder(): VocalRecorder {
   // Negotiate mimeType eagerly at construction time (so tests can spy on isTypeSupported)
   const mimeType = getSupportedMimeType();
 
-  let recorderRef: MediaRecorder | null = null;
-  let chunksRef: BlobPart[] = [];
-  let currentMimeType: string = mimeType;
+  // useRef keeps these stable across re-renders — plain `let` resets to null on every render
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const currentMimeTypeRef = useRef<string>(mimeType);
 
   const start = async (): Promise<void> => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Microphone access requires a secure context (HTTPS or localhost).');
+    }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    chunksRef = [];
+    chunksRef.current = [];
 
     // Re-negotiate in case mimeType state has changed (edge case for mobile)
-    currentMimeType = getSupportedMimeType();
+    currentMimeTypeRef.current = getSupportedMimeType();
 
-    const options: MediaRecorderOptions = currentMimeType
-      ? { mimeType: currentMimeType }
+    const options: MediaRecorderOptions = currentMimeTypeRef.current
+      ? { mimeType: currentMimeTypeRef.current }
       : {};
 
     const recorder = new MediaRecorder(stream, options);
-    recorderRef = recorder;
+    recorderRef.current = recorder;
 
     recorder.ondataavailable = (event: BlobEvent) => {
       if (event.data && event.data.size > 0) {
-        chunksRef.push(event.data);
+        chunksRef.current.push(event.data);
       }
     };
 
@@ -59,14 +65,14 @@ export function useVocalRecorder(): VocalRecorder {
 
   const stop = (): Promise<{ blob: Blob; mimeType: string }> => {
     return new Promise((resolve, reject) => {
-      if (!recorderRef) {
+      if (!recorderRef.current) {
         reject(new Error('No recorder active'));
         return;
       }
 
-      const recorder = recorderRef;
-      const chunks = chunksRef;
-      const resolvedMimeType = currentMimeType;
+      const recorder = recorderRef.current;
+      const chunks = chunksRef.current;
+      const resolvedMimeType = currentMimeTypeRef.current;
 
       recorder.onstop = () => {
         // Release mic tracks

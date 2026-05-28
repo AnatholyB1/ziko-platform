@@ -6,10 +6,17 @@ import { getCachedCoachUser, getCachedAlertCount } from '@/lib/coach/auth';
 import { CoachSidebar } from '@/components/coach/CoachSidebar';
 import { MobileNav } from '@/components/coach/MobileNav';
 
-export default async function CoachLayout({ children }: { children: React.ReactNode }) {
-  const [{ user }, unreadAlertCount] = await Promise.all([
+export default async function CoachLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const [{ user }, unreadAlertCount, { locale }] = await Promise.all([
     getCachedCoachUser(),
     getCachedAlertCount(),
+    params,
   ]);
 
   // user is guaranteed non-null here — getCachedCoachUser redirects if not authed/coach
@@ -17,7 +24,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-background">
-      <CoachSidebar unreadAlertCount={unreadAlertCount} />
+      <CoachSidebar locale={locale} unreadAlertCount={unreadAlertCount} />
       <main className="flex-1 flex flex-col overflow-hidden h-screen">
         <div className="lg:hidden flex items-center h-14 px-4 border-b border-border bg-white flex-shrink-0">
           <span className="text-2xl font-bold text-primary">ZIKO</span>

@@ -3,22 +3,22 @@ import gsap from 'gsap';
 
 const TONES = [
   {
-    id: 'motivant',
+    id: 'Motivant',
     name: 'Motivant',
     description: 'Encourage, célèbre les progrès, ton positif',
   },
   {
-    id: 'analytique',
+    id: 'Analytique',
     name: 'Analytique',
     description: 'Données précises, feedback objectif, ton factuel',
   },
   {
-    id: 'bienveillant',
+    id: 'Bienveillant',
     name: 'Bienveillant',
     description: 'Empathique, soutenant, ton doux',
   },
   {
-    id: 'exigeant',
+    id: 'Exigeant',
     name: 'Exigeant',
     description: 'Standards élevés, direct, ton assertif',
   },

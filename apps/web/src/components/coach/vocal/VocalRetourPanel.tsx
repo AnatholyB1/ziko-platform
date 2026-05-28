@@ -145,7 +145,13 @@ export function VocalRetourPanel({ clientId }: { clientId: string }): React.Reac
   }, [state.status]);
 
   async function handleStart() {
-    await recorderStart();
+    try {
+      await recorderStart();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Microphone unavailable';
+      dispatch({ type: 'TRANSCRIPTION_ERROR', message });
+      return;
+    }
     dispatch({ type: 'START_RECORDING' });
     timer.start();
     startElapsedTracking();

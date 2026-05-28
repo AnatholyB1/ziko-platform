@@ -67,7 +67,7 @@ export function VideoListClient({ clientId }: VideoListClientProps) {
       const jwt = session?.access_token ?? '';
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
-      const res = await fetch(`${apiUrl}/coach/clients/${clientId}/videos`, {
+      const res = await fetch(`${apiUrl}/coach/videos/clients/${clientId}/videos`, {
         headers: { Authorization: `Bearer ${jwt}` },
         cache: 'no-store',
       });

@@ -185,13 +185,13 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
 
   // Fetch goal from user_profiles
   const { data: goalMl = DEFAULT_GOAL } = useQuery<number>({
-    queryKey: ['hydration_goal', userId],
+    queryKey: ['hydration_goals', userId],
     queryFn: async () => {
       if (!userId) return DEFAULT_GOAL;
       const { data } = await supabase
         .from('user_profiles')
         .select('settings')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
       return data?.settings?.hydration_goal_ml ?? DEFAULT_GOAL;
     },
@@ -228,17 +228,17 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       const { data: existing } = await supabase
         .from('user_profiles')
         .select('settings')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
       const newSettings = { ...(existing?.settings ?? {}), hydration_goal_ml: newGoal };
       const { error } = await supabase
         .from('user_profiles')
         .update({ settings: newSettings })
-        .eq('user_id', userId);
+        .eq('id', userId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hydration_goal', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration_goals', userId] });
       setShowGoalSheet(false);
     },
     onError: (err: any) => {

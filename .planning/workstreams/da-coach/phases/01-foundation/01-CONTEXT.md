@@ -38,7 +38,7 @@ DB migration for `coach_branding` table + public bucket setup; Hono endpoints `P
 - **D-14:** Migration number: `054_coach_branding.sql` (last applied is 053).
 - **D-15:** `coach_branding` table separate from `coach_profiles` (different lifecycle — branding changes often, profile rarely). Already decided in STATE.md.
 - **D-16:** Logo bucket: `coach-logos` (public bucket — no signed URLs; RN image cache friendly). Already decided in STATE.md.
-- **D-17:** RLS: coach owns their row (`auth.uid() = coach_id`); linked athletes can read via `is_coach_of(auth.uid(), coach_id)`. Signature: coach_id first, athlete second (migration 035 pattern).
+- **D-17:** RLS: coach owns their row (`auth.uid() = coach_id`); linked athletes can read via `is_coach_of(coach_id, auth.uid())`. Signature: coach_id first, athlete second (migration 035 pattern).
 
 ### Claude's Discretion
 - Hex CHECK constraint format in the migration (standard PostgreSQL `~` regex operator or explicit `CHECK (primary_color ~ '^#[0-9A-Fa-f]{6}$')`) — Claude's call, consistent with codebase patterns.

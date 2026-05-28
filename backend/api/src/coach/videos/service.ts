@@ -159,7 +159,7 @@ videosRouter.post('/:videoId/complete', async (c) => {
 // ── Phase 46: video list + annotation CRUD + signed-url + send-feedback ───────
 
 /**
- * GET /coach/clients/:clientId/videos
+ * GET /coach/videos/clients/:clientId/videos
  * Returns videos uploaded by the given client for the calling coach.
  * Coach ownership is enforced via getVideosForClient filter (coach_id = auth.userId).
  */

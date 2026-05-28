@@ -36,7 +36,7 @@ export function createAdminClient() {
 export async function getMediaUrls(
   exerciseId: string,
   athleteUserId: string,
-): Promise<{ video_url: string | null; photo_url: string | null }> {
+): Promise<{ video_url: string | null; photo_url: string | null; gif_url: string | null }> {
   const adminDb = createAdminClient();
 
   // Step 1: Fetch the exercise row — coach_id derived server-side (IDOR prevention)
@@ -48,11 +48,10 @@ export async function getMediaUrls(
 
   if (exerciseErr) {
     console.warn('[coach/exercises] getMediaUrls exercise fetch error:', exerciseErr.message);
-    return { video_url: null, photo_url: null };
+    return { video_url: null, photo_url: null, gif_url: null };
   }
   if (!exercise) {
-    // Exercise not found — caller should return 404
-    return { video_url: null, photo_url: null };
+    return { video_url: null, photo_url: null, gif_url: null };
   }
 
   // Step 2: Validate active coach-athlete relationship via coach_client_links
@@ -66,16 +65,16 @@ export async function getMediaUrls(
 
   if (linkErr) {
     console.warn('[coach/exercises] getMediaUrls link validation error:', linkErr.message);
-    return { video_url: null, photo_url: null };
+    return { video_url: null, photo_url: null, gif_url: null };
   }
   if (!link) {
-    // No active coach-athlete relationship — graceful degradation (D-13)
-    return { video_url: null, photo_url: null };
+    return { video_url: null, photo_url: null, gif_url: null };
   }
 
   // Step 3: Generate signed URLs (3600s = 1 hour) for non-null paths
   let video_url: string | null = null;
   let photo_url: string | null = null;
+  let gif_url: string | null = null;
 
   if (exercise.video_path) {
     const { data: videoSigned, error: videoErr } = await adminDb.storage
@@ -99,7 +98,18 @@ export async function getMediaUrls(
     }
   }
 
-  return { video_url, photo_url };
+  if ((exercise as any).gif_path) {
+    const { data: gifSigned, error: gifErr } = await adminDb.storage
+      .from('coach-exercises')
+      .createSignedUrl((exercise as any).gif_path, 3600);
+    if (gifErr) {
+      console.warn('[coach/exercises] getMediaUrls gif sign error:', gifErr.message);
+    } else {
+      gif_url = gifSigned?.signedUrl ?? null;
+    }
+  }
+
+  return { video_url, photo_url, gif_url };
 }
 
 // ----- GET / — list coach's custom exercises (RLS + explicit coach_id filter) -----
@@ -134,6 +144,7 @@ export async function createExercise(
       muscle_groups: body.muscle_groups ?? [],
       video_path: body.video_path ?? null,
       photo_path: body.photo_path ?? null,
+      gif_path: body.gif_path ?? null,
     })
     .select()
     .single();
@@ -156,6 +167,7 @@ export async function updateExercise(
   if (body.muscle_groups !== undefined) updates.muscle_groups = body.muscle_groups;
   if (body.video_path !== undefined) updates.video_path = body.video_path;
   if (body.photo_path !== undefined) updates.photo_path = body.photo_path;
+  if (body.gif_path !== undefined) updates.gif_path = body.gif_path;
 
   const { data, error } = await db
     .from('coach_exercises')
@@ -179,7 +191,7 @@ export async function deleteExercise(
   // Step 1: Fetch the row to get storage paths (IDOR guard: coach_id filter)
   const { data: row, error: fetchErr } = await db
     .from('coach_exercises')
-    .select('video_path, photo_path')
+    .select('video_path, photo_path, gif_path')
     .eq('id', id)
     .eq('coach_id', coachId)
     .maybeSingle();
@@ -194,6 +206,9 @@ export async function deleteExercise(
   }
   if (row.photo_path) {
     await db.storage.from('coach-exercises').remove([row.photo_path]);
+  }
+  if ((row as any).gif_path) {
+    await db.storage.from('coach-exercises').remove([(row as any).gif_path]);
   }
 
   // Step 4: Delete the DB row

@@ -121,6 +121,13 @@ async function initializeHealthConnect(): Promise<boolean> {
 async function requestHealthConnectPermissions(): Promise<boolean> {
   try {
     const HC = require('react-native-health-connect');
+    // getSdkStatus() must return SDK_AVAILABLE before requestPermission can be called.
+    // Calling requestPermission when the ActivityResultLauncher is not yet registered
+    // in MainActivity.onCreate causes a fatal UninitializedPropertyAccessException
+    // on the Kotlin coroutine thread (ZIKO-MOBILE-4). Guard with SDK status check first.
+    const status = await HC.getSdkStatus();
+    if (status !== HC.SdkAvailabilityStatus.SDK_AVAILABLE) return false;
+
     const granted = await HC.requestPermission([
       { accessType: 'read', recordType: 'Steps' },
       { accessType: 'read', recordType: 'HeartRate' },

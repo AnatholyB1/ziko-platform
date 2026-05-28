@@ -60,6 +60,8 @@ export async function createProgram(
 }
 
 // ----- GET /:id — single program (RLS handles visibility) -----
+// If weeks_data is null (old mobile AI format), builds it from program_workouts + program_exercises.
+// All workouts are placed in week 1 since the old format has no week concept.
 export async function getProgram(
   jwt: string,
   _coachId: string,
@@ -72,7 +74,53 @@ export async function getProgram(
     .eq('id', id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data ?? null;
+  if (!data) return null;
+
+  // weeks_data already present — return as-is
+  if (data.weeks_data !== null && data.weeks_data !== undefined) return data;
+
+  // Build weeks_data from legacy program_workouts + program_exercises tables
+  const { data: workouts, error: woErr } = await db
+    .from('program_workouts')
+    .select('id, name, day_of_week, order_index')
+    .eq('program_id', id)
+    .order('order_index', { ascending: true });
+  if (woErr) throw new Error(woErr.message);
+  if (!workouts || workouts.length === 0) return { ...data, weeks_data: [] };
+
+  const workoutIds = workouts.map((w: any) => w.id);
+  const { data: exercises, error: exErr } = await db
+    .from('program_exercises')
+    .select('workout_id, exercise_id, sets, reps, rest_seconds, notes, order_index, exercises(name)')
+    .in('workout_id', workoutIds)
+    .order('order_index', { ascending: true });
+  if (exErr) throw new Error(exErr.message);
+
+  const exByWorkout: Record<string, any[]> = {};
+  for (const ex of (exercises ?? [])) {
+    if (!exByWorkout[ex.workout_id]) exByWorkout[ex.workout_id] = [];
+    exByWorkout[ex.workout_id].push({
+      exercise_id: ex.exercise_id ?? null,
+      exercise_name: (ex.exercises as any)?.name ?? '',
+      sets: ex.sets ?? 1,
+      reps: ex.reps ?? null,
+      duration_seconds: null,
+      target_rpe: null,
+      target_rir: null,
+      rest_seconds: ex.rest_seconds ?? null,
+      notes: ex.notes ?? null,
+    });
+  }
+
+  const sessions = workouts.map((w: any) => ({
+    session_id: w.id,
+    session_name: w.name,
+    day_of_week: w.day_of_week ?? 1,
+    exercises: exByWorkout[w.id] ?? [],
+  }));
+
+  const weeksData = [{ week_number: 1, sessions }];
+  return { ...data, weeks_data: weeksData, weeks_count: data.weeks_count ?? 1 };
 }
 
 // ----- PUT /:id — update a program (coach can only edit their own) -----
@@ -91,11 +139,12 @@ export async function updateProgram(
   if (body.folder_id !== undefined) updates.folder_id = body.folder_id;
   if (body.weeks_data !== undefined) updates.weeks_data = body.weeks_data;
 
+  // Allow update if coach created it OR if it's a client's own program (is_coach_of via RLS 059)
   const { data, error } = await db
     .from('workout_programs')
     .update(updates)
     .eq('id', id)
-    .eq('created_by_coach_id', coachId)
+    .or(`created_by_coach_id.eq.${coachId},created_by_coach_id.is.null`)
     .select()
     .maybeSingle();
   if (error) throw new Error(error.message);

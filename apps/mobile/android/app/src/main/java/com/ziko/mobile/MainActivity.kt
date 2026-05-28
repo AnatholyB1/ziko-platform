@@ -21,7 +21,18 @@ class MainActivity : ReactActivity() {
     // @generated begin expo-splashscreen - expo prebuild (DO NOT MODIFY) sync-f3ff59a738c56c9a6119210cb55f0b613eb8b6af
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
-    HealthConnectPermissionDelegate.setPermissionDelegate(this)
+
+    // On Android 14+ (API 34+), Health Connect is built into the OS — the standalone
+    // "com.google.android.apps.healthdata" package does not exist. Pass the system provider
+    // so PermissionController.createRequestPermissionResultContract resolves correctly.
+    // On older Android, fall back to the default standalone app package.
+    // See: ZIKO-MOBILE-4 (UninitializedPropertyAccessException on SM-S926B / Android 16)
+    val hcProviderPackage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      "com.google.android.healthconnect.controller"
+    } else {
+      "com.google.android.apps.healthdata"
+    }
+    HealthConnectPermissionDelegate.setPermissionDelegate(this, hcProviderPackage)
     super.onCreate(null)
   }
 

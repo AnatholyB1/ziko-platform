@@ -14,7 +14,7 @@
 - [x] **DASH-01**: Coach can view a full-screen dashboard tab on each client detail page
 - [x] **DASH-02**: Dashboard loads a default config (3–4 pre-built widgets) on first access for a coach+athlete pair
 - [x] **DASH-03**: Coach can drag and resize widgets to reorder the layout (react-grid-layout, locked in view mode)
-- [ ] **DASH-04**: Dashboard config persists per coach+athlete pair in Supabase
+- [x] **DASH-04**: Dashboard config persists per coach+athlete pair in Supabase
 
 ### Widgets — Closed Set of 7 Types (WIDGET)
 
@@ -76,7 +76,7 @@
 | DASH-01 | Phase 02 | Complete |
 | DASH-02 | Phase 02 | Complete |
 | DASH-03 | Phase 02 | Complete |
-| DASH-04 | Phase 01 | Pending |
+| DASH-04 | Phase 01 | Complete |
 | WIDGET-01 | Phase 02 | Pending |
 | WIDGET-02 | Phase 02 | Pending |
 | WIDGET-03 | Phase 02 | Pending |
