@@ -122,12 +122,28 @@ export interface DashboardConfigRow {
   created_at: string
 }
 
+export interface CoachMemoryPreferences {
+  preferred_period?: '7d' | '30d' | '90d'
+  preferred_widgets?: string[]
+  preferred_chart_type?: 'line' | 'bar'
+}
+
+export interface CoachMemoryTemplate {
+  id: string
+  name: string
+  widgets: Widget[]
+  created_at: string
+}
+
+export interface CoachMemoryData {
+  preferences: CoachMemoryPreferences
+  templates: CoachMemoryTemplate[]
+  recent_actions: string[]
+}
+
 export interface CoachMemoryRow {
   id: string
   coach_id: string
-  memory: {
-    templates: unknown[]
-    preferences: Record<string, unknown>
-  }
+  memory: CoachMemoryData
   updated_at: string
 }

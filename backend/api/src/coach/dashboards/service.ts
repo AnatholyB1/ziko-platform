@@ -8,7 +8,7 @@ import { AGENT_MODEL } from '../../config/models.js'
 import { getDashboardConfig, upsertDashboardConfig, deleteDashboardConfig, getCoachMemory, upsertCoachMemory } from './db.js'
 import { WidgetSchema, DEFAULT_WIDGETS } from './schemas.js'
 import { buildDashboardSDKTools } from './tools.js'
-import type { Widget } from './types.js'
+import type { Widget, CoachMemoryTemplate, CoachMemoryPreferences } from './types.js'
 
 export const dashboardsRouter = new Hono()
 dashboardsRouter.use('*', authMiddleware)
@@ -20,8 +20,12 @@ dashboardsRouter.get('/memory', async (c) => {
     const { userId } = c.get('auth')
     const jwt = c.req.header('Authorization')!.slice(7)
     const row = await getCoachMemory(jwt, userId)
-    if (!row) return c.json({ memory: { templates: [], preferences: {} } })
-    return c.json({ memory: row.memory })
+    if (!row) return c.json({ preferences: {}, templates: [], recent_actions: [] })
+    return c.json({
+      preferences: row.memory.preferences ?? {},
+      templates: row.memory.templates ?? [],
+      recent_actions: (row.memory as any).recent_actions ?? [],
+    })
   } catch (err: any) {
     return c.json({ error: err.message }, 500)
   }
@@ -31,9 +35,42 @@ dashboardsRouter.put('/memory', async (c) => {
   try {
     const { userId } = c.get('auth')
     const jwt = c.req.header('Authorization')!.slice(7)
-    const body = await c.req.json()
-    const row = await upsertCoachMemory(jwt, userId, body.memory)
-    return c.json({ memory: row.memory })
+    const body = await c.req.json() as {
+      templates?: CoachMemoryTemplate[]
+      preferences?: CoachMemoryPreferences
+      recent_actions?: string[]
+    }
+
+    // Load existing memory to deep-merge
+    const existingRow = await getCoachMemory(jwt, userId)
+    const existing = existingRow?.memory ?? { templates: [], preferences: {}, recent_actions: [] }
+
+    // 409 duplicate name check: reject if body adds a template whose name already exists
+    // (detected by: new id not in existing ids, but name matches an existing name)
+    if (body.templates) {
+      const existingIds = new Set((existing.templates ?? []).map((t: CoachMemoryTemplate) => t.id))
+      const existingNames = new Set((existing.templates ?? []).map((t: CoachMemoryTemplate) => t.name))
+      const duplicateNameEntry = body.templates.find(
+        (t) => !existingIds.has(t.id) && existingNames.has(t.name),
+      )
+      if (duplicateNameEntry) {
+        return c.json({ error: 'Template name already exists' }, 409)
+      }
+    }
+
+    // Deep-merge: apply only the partial fields provided in body
+    const merged = {
+      preferences: body.preferences !== undefined
+        ? { ...existing.preferences, ...body.preferences }
+        : existing.preferences ?? {},
+      templates: body.templates !== undefined ? body.templates : existing.templates ?? [],
+      recent_actions: body.recent_actions !== undefined
+        ? body.recent_actions
+        : (existing as any).recent_actions ?? [],
+    }
+
+    await upsertCoachMemory(jwt, userId, merged)
+    return c.json({ ok: true })
   } catch (err: any) {
     return c.json({ error: err.message }, 400)
   }
