@@ -176,6 +176,86 @@ dashboardsRouter.post(
   },
 )
 
+// ─── GET /:clientId/thresholds — List thresholds for a client (D-11) ─────────
+dashboardsRouter.get('/:clientId/thresholds', async (c) => {
+  try {
+    const coachId = c.get('auth').userId
+    const jwt = c.req.header('Authorization')!.slice(7)
+    const clientId = c.req.param('clientId')
+    const sport = c.req.query('sport')
+
+    const db = createUserClient(jwt)
+    let query = db
+      .from('coach_metric_thresholds')
+      .select('*')
+      .eq('coach_id', coachId)
+      .eq('client_id', clientId)
+
+    if (sport) {
+      query = query.eq('sport_type', sport)
+    }
+
+    const { data, error } = await query
+    if (error) return c.json({ error: error.message }, 500)
+    return c.json({ thresholds: data ?? [] })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
+// ─── POST /:clientId/thresholds — Create a threshold (D-11/D-12) ─────────────
+dashboardsRouter.post('/:clientId/thresholds', async (c) => {
+  try {
+    const coachId = c.get('auth').userId
+    const jwt = c.req.header('Authorization')!.slice(7)
+    const clientId = c.req.param('clientId')
+
+    const body = await c.req.json<Omit<CoachMetricThreshold, 'id' | 'coach_id' | 'client_id' | 'created_at' | 'updated_at'>>()
+
+    if (body.operator !== '>' && body.operator !== '<') {
+      return c.json({ error: 'operator must be > or <' }, 400)
+    }
+    if (typeof body.threshold_value !== 'number') {
+      return c.json({ error: 'threshold_value must be numeric' }, 400)
+    }
+
+    const db = createUserClient(jwt)
+    const { data, error } = await db
+      .from('coach_metric_thresholds')
+      .insert({ ...body, coach_id: coachId, client_id: clientId })
+      .select('*')
+      .single()
+
+    if (error) return c.json({ error: error.message }, 400)
+    return c.json({ threshold: data })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 400)
+  }
+})
+
+// ─── DELETE /:clientId/thresholds/:thresholdId — Remove a threshold (D-12) ───
+dashboardsRouter.delete('/:clientId/thresholds/:thresholdId', async (c) => {
+  try {
+    const coachId = c.get('auth').userId
+    const jwt = c.req.header('Authorization')!.slice(7)
+    const clientId = c.req.param('clientId')
+    const thresholdId = c.req.param('thresholdId')
+
+    const db = createUserClient(jwt)
+    const { error } = await db
+      .from('coach_metric_thresholds')
+      .delete()
+      .eq('id', thresholdId)
+      .eq('coach_id', coachId)
+      .eq('client_id', clientId)
+
+    if (error) return c.json({ error: error.message }, 500)
+    return c.json({ deleted: true })
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500)
+  }
+})
+
 dashboardsRouter.get('/:clientId', async (c) => {
   try {
     const { userId } = c.get('auth')
