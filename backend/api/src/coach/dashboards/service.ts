@@ -1,14 +1,15 @@
 import { Hono } from 'hono'
 import { stream } from 'hono/streaming'
-import { streamText, stepCountIs } from 'ai'
+import { streamText, stepCountIs, generateText } from 'ai'
 import { authMiddleware } from '../../middleware/auth.js'
 import { creditCheck, creditDeduct } from '../../middleware/creditGate.js'
 import { getOrCreateConversation, appendMessages } from '../../context/conversation.js'
 import { AGENT_MODEL } from '../../config/models.js'
-import { getDashboardConfig, upsertDashboardConfig, deleteDashboardConfig, getCoachMemory, upsertCoachMemory } from './db.js'
+import { getDashboardConfig, upsertDashboardConfig, deleteDashboardConfig, getCoachMemory, upsertCoachMemory, createUserClient } from './db.js'
 import { WidgetSchema, DEFAULT_WIDGETS } from './schemas.js'
 import { buildDashboardSDKTools } from './tools.js'
 import type { Widget, CoachMemoryTemplate, CoachMemoryPreferences } from './types.js'
+import type { InsightsResponse, ThresholdAlert, CoachMetricThreshold } from '../ai/types.js'
 
 export const dashboardsRouter = new Hono()
 dashboardsRouter.use('*', authMiddleware)
@@ -75,6 +76,105 @@ dashboardsRouter.put('/memory', async (c) => {
     return c.json({ error: err.message }, 400)
   }
 })
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function buildInsightsPrompt(sport: string, period: string, chartData: Record<string, unknown>): string {
+  const chartKeys = Object.keys(chartData).join(', ')
+  return `Tu es un assistant coach sportif expert. Analyse les données du tableau de bord suivant et génère des insights concis et actionnables.
+
+Sport: ${sport}
+Période: ${period}
+
+Données des graphiques:
+${JSON.stringify(chartData, null, 2)}
+
+Réponds UNIQUEMENT avec du JSON valide dans ce format exact:
+{
+  "chartInsights": {
+    "<chart_key>": "<insight en une ligne, max 80 caractères>"
+  },
+  "narrative": "<un paragraphe de synthèse, max 200 caractères>"
+}
+
+Clés de graphiques disponibles: ${chartKeys}
+Langue: français, concis et actionnable.`
+}
+
+// ─── POST /:clientId/insights — Batch AI insights endpoint (D-06/D-07/D-13) ─
+// Generates per-chart insight chips, a narrative summary, and evaluates threshold
+// crossings in a single Claude round-trip. Must be registered before GET /:clientId
+// to avoid Hono route-param shadowing (L-05 pattern).
+dashboardsRouter.post(
+  '/:clientId/insights',
+  creditCheck('coach_chat'),
+  creditDeduct('coach_chat'),
+  async (c) => {
+    try {
+      const coachId = c.get('auth').userId
+      const jwt = c.req.header('Authorization')!.slice(7)
+      const clientId = c.req.param('clientId')
+
+      const body = await c.req.json<{
+        sport: string
+        period: string
+        chartData: Record<string, unknown>
+      }>()
+
+      const db = createUserClient(jwt)
+
+      // Fetch active thresholds for this coach/client/sport
+      const { data: thresholds, error: thresholdError } = await db
+        .from('coach_metric_thresholds')
+        .select('*')
+        .eq('coach_id', coachId)
+        .eq('client_id', clientId)
+        .eq('sport_type', body.sport)
+        .eq('is_active', true)
+
+      if (thresholdError) throw new Error(thresholdError.message)
+
+      // Single AI round-trip: generate chartInsights + narrative
+      const { text } = await generateText({
+        model: AGENT_MODEL,
+        messages: [{ role: 'user', content: buildInsightsPrompt(body.sport, body.period, body.chartData) }],
+      })
+
+      // Strip markdown fences if Claude wraps the response
+      const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
+
+      let parsed: { chartInsights: Record<string, string>; narrative: string }
+      try {
+        parsed = JSON.parse(cleaned)
+      } catch {
+        parsed = { chartInsights: {}, narrative: '' }
+      }
+
+      // Evaluate threshold crossings inline
+      const crossedThresholds: ThresholdAlert[] = []
+      if (thresholds) {
+        for (const t of thresholds as CoachMetricThreshold[]) {
+          const currentVal = body.chartData[t.metric_key]
+          if (typeof currentVal === 'number') {
+            const crossed = t.operator === '>' ? currentVal > t.threshold_value : currentVal < t.threshold_value
+            if (crossed) {
+              crossedThresholds.push({
+                metric_key: t.metric_key,
+                operator: t.operator,
+                threshold_value: t.threshold_value,
+                current_value: currentVal,
+              })
+            }
+          }
+        }
+      }
+
+      return c.json({ ...parsed, crossedThresholds } satisfies InsightsResponse)
+    } catch (err: any) {
+      return c.json({ error: err.message }, 500)
+    }
+  },
+)
 
 dashboardsRouter.get('/:clientId', async (c) => {
   try {
