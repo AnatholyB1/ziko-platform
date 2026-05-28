@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../src/lib/supabase';
 import { useAuthStore } from '../../src/stores/authStore';
 import { EmptyState } from '@ziko/ui';
+import * as Updates from 'expo-updates';
 
 // ── Types ─────────────────────────────────────────────────
 type NotifType = 'coach_ai' | 'community' | 'records' | 'system';
@@ -138,12 +139,60 @@ function NFItem({ id, type, title, body, read, created_at, action_url, onPress }
   );
 }
 
+// ── OTAUpdateCard ──────────────────────────────────────────
+function OTAUpdateCard({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        backgroundColor: SURFACE,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: BORDER,
+        marginBottom: 8,
+        padding: 14,
+        flexDirection: 'row',
+        gap: 12,
+        ...SHADOW,
+      }}
+    >
+      {/* Icon */}
+      <View style={{
+        width: 40, height: 40, borderRadius: 12,
+        backgroundColor: '#6B696324',
+        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <Ionicons name="refresh-circle-outline" size={20} color={MUTED} />
+      </View>
+
+      {/* Content */}
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT, lineHeight: 20 }}>
+          Mise à jour disponible
+        </Text>
+        <Text style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 18 }}>
+          Une nouvelle version de l'app est prête.
+        </Text>
+        <Text style={{ fontSize: 12, fontWeight: '700', color: PRIMARY, marginTop: 6 }}>
+          Mettre à jour
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // ── Main Screen ────────────────────────────────────────────
 export default function NotificationsScreen() {
   const router = useRouter();
   const userId = useAuthStore((s) => s.user?.id);
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState('all');
+
+  // ── OTA update card ────────────────────────────────────
+  const { isUpdateAvailable } = Updates.useUpdates();
+  const debugShowOTA = __DEV__ && false; // flip to true for local UI testing
+  const showOTACard = isUpdateAvailable || debugShowOTA;
 
   // ── Fetch notifications ────────────────────────────────
   const { data, isLoading, isError } = useQuery<Notification[]>({
@@ -307,6 +356,15 @@ export default function NotificationsScreen() {
           />
         )}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        ListHeaderComponent={
+          showOTACard ? (
+            <OTAUpdateCard
+              onPress={async () => {
+                await Updates.reloadAsync();
+              }}
+            />
+          ) : null
+        }
         ListEmptyComponent={renderEmpty}
       />
     </SafeAreaView>
