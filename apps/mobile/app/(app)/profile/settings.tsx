@@ -179,7 +179,55 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
             <Ionicons name="chevron-forward-outline" size={16} color="#6B6963" />
           </TouchableOpacity>
         )}
-        {/* TODO Plan 02: master switch, category toggles, quiet hours */}
+        <STGroup>
+          <STRow
+            icon="notifications-outline"
+            tint="#FF5C1A"
+            label="Toutes les notifications"
+            toggleValue={s.push_enabled}
+            onToggle={(v) => handleChange({ push_enabled: v })}
+          />
+        </STGroup>
+
+        <View style={{ opacity: s.push_enabled ? 1 : 0.4 }} pointerEvents={s.push_enabled ? 'auto' : 'none'}>
+          <STGroup title="Catégories">
+            <STRow
+              icon="person-outline"
+              tint="#FF5C1A"
+              label="Coach"
+              toggleValue={s.coach_enabled}
+              onToggle={(v) => handleChange({ coach_enabled: v })}
+            />
+            <STRow
+              icon="barbell-outline"
+              tint="#E94B3C"
+              label="Workout"
+              toggleValue={s.workout_enabled}
+              onToggle={(v) => handleChange({ workout_enabled: v })}
+            />
+            <STRow
+              icon="trophy-outline"
+              tint="#E8A33A"
+              label="Gamification"
+              toggleValue={s.gamification_enabled}
+              onToggle={(v) => handleChange({ gamification_enabled: v })}
+            />
+            <STRow
+              icon="heart-outline"
+              tint="#22C55E"
+              label="Santé & Habitudes"
+              toggleValue={s.health_enabled}
+              onToggle={(v) => handleChange({ health_enabled: v })}
+            />
+            <STRow
+              icon="phone-portrait-outline"
+              tint="#6B6963"
+              label="App"
+              toggleValue={s.system_enabled}
+              onToggle={(v) => handleChange({ system_enabled: v })}
+            />
+          </STGroup>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
