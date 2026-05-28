@@ -1,8 +1,9 @@
 'use client'
 
-import { use, useState, useRef } from 'react'
+import { use, useState, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDashboardConfig } from '@/hooks/useDashboardConfig'
+import { useExportPDF } from '@/hooks/useExportPDF'
 import { DashboardGrid } from '@/components/coach/dashboard/DashboardGrid'
 import { DashboardLoadingState } from '@/components/coach/dashboard/DashboardLoadingState'
 import { DashboardEditOverlay } from '@/components/coach/dashboard/DashboardEditOverlay'
@@ -14,6 +15,7 @@ import { HyroxDashboard } from '@/components/coach/dashboard/HyroxDashboard'
 import { RunningDashboard } from '@/components/coach/dashboard/RunningDashboard'
 import { BodybuildingDashboard } from '@/components/coach/dashboard/BodybuildingDashboard'
 import { WeightLossDashboard } from '@/components/coach/dashboard/WeightLossDashboard'
+import { FileDown, Loader2, Check } from 'lucide-react'
 
 type SportType = 'powerlifting' | 'hyrox' | 'running' | 'bodybuilding' | 'weightloss'
 
@@ -26,6 +28,8 @@ export default function DashboardPage({
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const previousConfigRef = useRef<Widget[]>([])
+  const sportDashboardRef = useRef<HTMLDivElement>(null)
+  const widgetDashboardRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
   const { data: config, isLoading, error } = useDashboardConfig(clientId)
 
@@ -38,7 +42,34 @@ export default function DashboardPage({
   const [compareSubMode, setCompareSubMode] = useState<'client' | 'period'>('client')
   const [compareClientId, setCompareClientId] = useState<string | null>(null)
   const [comparePeriod, setComparePeriod] = useState<'week' | 'month' | '3m' | null>(null)
-  const [pdfExportState, setPdfExportState] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
+
+  // PDF export hook — D-12 through D-15
+  const { exportPDF, exportState } = useExportPDF()
+  // TODO: replace clientId with client name when available from config
+  const clientName = (config as { client_name?: string } | undefined)?.client_name ?? clientId
+
+  const handleExportPDF = useCallback(async () => {
+    if (activeTab === 'sport' && sportDashboardRef.current) {
+      const slug = clientName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+      const today = new Date().toISOString().slice(0, 10)
+      const segment = sport ?? 'sport'
+      await exportPDF(sportDashboardRef.current, `${slug}-${segment}-dashboard-${today}.pdf`)
+    } else if (activeTab === 'widget' && widgetDashboardRef.current) {
+      const slug = clientName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+      const today = new Date().toISOString().slice(0, 10)
+      await exportPDF(widgetDashboardRef.current, `${slug}-personnalise-dashboard-${today}.pdf`)
+    }
+  }, [activeTab, sport, exportPDF, clientName])
 
   if (isLoading) return <DashboardLoadingState />
 
@@ -109,85 +140,111 @@ export default function DashboardPage({
                 currentClientId={clientId}
                 compareLoading={false}
                 compareError={false}
-                exportState={pdfExportState}
-                onExportPDF={() => { /* no-op — wired in 040-04 */ }}
+                exportState={exportState}
+                onExportPDF={handleExportPDF}
               />
             </div>
-            {sport === 'powerlifting' && (
-              <PowerliftingDashboard
-                clientId={clientId}
-                sport={sport}
-                dateRange={dateRange}
-                compareMode={compareMode}
-                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
-                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
-              />
-            )}
-            {sport === 'hyrox' && (
-              <HyroxDashboard
-                clientId={clientId}
-                sport={sport}
-                dateRange={dateRange}
-                compareMode={compareMode}
-                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
-                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
-              />
-            )}
-            {sport === 'running' && (
-              <RunningDashboard
-                clientId={clientId}
-                sport={sport}
-                dateRange={dateRange}
-                compareMode={compareMode}
-                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
-                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
-              />
-            )}
-            {sport === 'bodybuilding' && (
-              <BodybuildingDashboard
-                clientId={clientId}
-                sport={sport}
-                dateRange={dateRange}
-                compareMode={compareMode}
-                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
-                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
-              />
-            )}
-            {sport === 'weightloss' && (
-              <WeightLossDashboard
-                clientId={clientId}
-                sport={sport}
-                dateRange={dateRange}
-                compareMode={compareMode}
-                compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
-                comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
-              />
-            )}
-            {sport === null && <DashboardEmptyState />}
+            {/* Sport tab chart area — captured by PDF export. Sub-tab strip and ControlBar are excluded via pdf-exclude class */}
+            <div ref={sportDashboardRef}>
+              {sport === 'powerlifting' && (
+                <PowerliftingDashboard
+                  clientId={clientId}
+                  sport={sport}
+                  dateRange={dateRange}
+                  compareMode={compareMode}
+                  compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                  comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                />
+              )}
+              {sport === 'hyrox' && (
+                <HyroxDashboard
+                  clientId={clientId}
+                  sport={sport}
+                  dateRange={dateRange}
+                  compareMode={compareMode}
+                  compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                  comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                />
+              )}
+              {sport === 'running' && (
+                <RunningDashboard
+                  clientId={clientId}
+                  sport={sport}
+                  dateRange={dateRange}
+                  compareMode={compareMode}
+                  compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                  comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                />
+              )}
+              {sport === 'bodybuilding' && (
+                <BodybuildingDashboard
+                  clientId={clientId}
+                  sport={sport}
+                  dateRange={dateRange}
+                  compareMode={compareMode}
+                  compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                  comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                />
+              )}
+              {sport === 'weightloss' && (
+                <WeightLossDashboard
+                  clientId={clientId}
+                  sport={sport}
+                  dateRange={dateRange}
+                  compareMode={compareMode}
+                  compareClientId={compareMode && compareSubMode === 'client' ? compareClientId : null}
+                  comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
+                />
+              )}
+              {sport === null && <DashboardEmptyState />}
+            </div>
           </>
         )}
         {activeTab === 'widget' && (
           <>
-            {/* Personnalisé tab header — per D-19 */}
+            {/* Personnalisé tab header — per D-19, D-15 */}
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-semibold text-text">Tableau de bord personnalisé</h2>
                 <p className="text-sm text-muted mt-0.5">Vue personnalisée pour ce client</p>
               </div>
               <div className="flex items-center gap-2">
+                {/* PDF export button — D-15 Personnalisé tab */}
                 <button
-                  onClick={() => {
-                    if (!isEditMode) { previousConfigRef.current = config.widgets }
-                    setIsEditMode(prev => !prev)
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-normal transition-colors ${isEditMode ? 'bg-primary text-white' : 'bg-white border border-border text-text hover:bg-[#F7F6F3]'}`}
+                  onClick={handleExportPDF}
+                  disabled={exportState === 'generating'}
+                  className={
+                    exportState === 'generating'
+                      ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white opacity-70 cursor-not-allowed'
+                      : exportState === 'done'
+                      ? 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-[#15803D] border border-[#22C55E]/30 rounded-lg bg-[#DCFCE7] transition-colors'
+                      : 'h-9 px-3 flex items-center gap-1.5 text-sm font-medium text-text border border-border rounded-lg bg-white hover:bg-[#F0EFE9] transition-colors'
+                  }
                 >
-                  {isEditMode ? 'Terminer' : 'Éditer'}
+                  {exportState === 'generating' && <Loader2 className="w-4 h-4 animate-spin text-muted" />}
+                  {exportState === 'done' && <Check className="w-4 h-4 text-[#15803D]" />}
+                  {(exportState === 'idle' || exportState === 'error') && <FileDown className="w-4 h-4 text-muted" />}
+                  {exportState === 'generating' ? 'Génération en cours…' : exportState === 'done' ? 'PDF exporté' : exportState === 'error' ? "Erreur d'export. Réessayez." : 'Exporter PDF'}
                 </button>
+                {/* Éditer button — pdf-exclude so it is not captured in PDF */}
+                <div className="pdf-exclude">
+                  <button
+                    onClick={() => {
+                      if (!isEditMode) { previousConfigRef.current = config.widgets }
+                      setIsEditMode(prev => !prev)
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-normal transition-colors ${isEditMode ? 'bg-primary text-white' : 'bg-white border border-border text-text hover:bg-[#F7F6F3]'}`}
+                  >
+                    {isEditMode ? 'Terminer' : 'Éditer'}
+                  </button>
+                </div>
               </div>
             </div>
-            {isEditMode && <p className="text-xs text-muted mb-3">Faites glisser les widgets pour réorganiser...</p>}
-            <DashboardGrid widgets={config.widgets} clientId={clientId} isEditMode={isEditMode} />
+            {/* Widget grid area — captured by PDF export */}
+            <div ref={widgetDashboardRef}>
+              {isEditMode && <p className="text-xs text-muted mb-3">Faites glisser les widgets pour réorganiser...</p>}
+              <DashboardGrid widgets={config.widgets} clientId={clientId} isEditMode={isEditMode} />
+            </div>
             {isEditing && (
               <DashboardEditOverlay
                 clientId={clientId}
