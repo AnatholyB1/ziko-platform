@@ -84,7 +84,13 @@ Plans:
   2. Each chart card on the dashboard displays a one-line AI insight chip (e.g. "Fatigue trending up this week") that updates when the date filter changes
   3. A narrative summary card appears at the top of the dashboard with a one-paragraph AI-generated overview of the client's overall performance for the selected period
   4. Coach can open an "Alerts" panel per client, define a numeric threshold for any metric (e.g. RPE avg > 8.5), and the system flags the coach — visually on the dashboard or via notification — when the threshold is crossed
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 041-01-PLAN.md — Migration 062 + coach AI types and buildCoachSystemPrompt extension (AI-01/AI-04)
+- [ ] 041-02-PLAN.md — Insights and thresholds CRUD routes in dashboardsRouter (AI-02/AI-03/AI-04)
+- [ ] 041-03-PLAN.md — useInsights hook, NarrativeSummaryCard, DashboardChatDrawer (AI-01/AI-02/AI-03)
+- [ ] 041-04-PLAN.md — AlertesModal and ChartCard badge extension (AI-04)
+- [ ] 041-05-PLAN.md — Dashboard page wiring + ControlBar extension + human verify (AI-01/AI-02/AI-03/AI-04)
 **UI hint**: yes
 
 ---
@@ -97,7 +103,7 @@ Plans:
 | 38. Dashboard Foundation + Powerlifting | 4/4 | ✅ Complete | 2026-05-26 |
 | 39. Four Sport Dashboards | 5/5 | ✅ Complete | 2026-05-27 |
 | 40. Advanced Dashboard Features | 4/4 | ✅ Complete | 2026-05-28 |
-| 41. AI Context Injection | 0/0 | Not started | - |
+| 41. AI Context Injection | 0/5 | Not started | - |
 
 ---
 
