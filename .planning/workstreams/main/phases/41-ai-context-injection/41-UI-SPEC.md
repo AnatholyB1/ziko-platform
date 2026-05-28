@@ -54,13 +54,15 @@ Source: DESIGN.md spacing tokens + existing ChartCard (`p-6`) + DashboardControl
 | Body | 14px (text-sm / 0.875rem) | 400 | 1.6 |
 | Label | 12px (text-xs / 0.75rem) | 700 | 1.4 |
 | Title | 20px (text-xl / 1.25rem) | 700 | 1.3 |
-| Heading | 15px (text-[15px]) | 600 (semibold) | 1.3 |
+| Heading | 15px (text-[15px]) | 700 (bold) — matches existing ChartCard component; not a new token | 1.3 |
 
 Notes:
 - Body (14px/400/1.6): AI insight chips, narrative card paragraph, drawer message bubbles, threshold modal rows
 - Label (12px/700): insight chip text in ChartCard footer, "Alertes" badge count, drawer timestamp, table headers in threshold modal
 - Title (20px/700): narrative card section heading, drawer panel header "IA Coach"
-- Heading (15px/600): chart card titles — matches existing ChartCard `text-[15px] font-semibold`
+- Heading (15px/700): chart card titles — existing ChartCard uses `text-[15px] font-semibold`; weight promoted to `font-bold` (700) to maintain 2-weight contract
+
+Two weights only: **400** (body) and **700** (all emphasis — labels, titles, headings).
 
 Source: DESIGN.md typography scale. ChartCard heading value extracted from existing component.
 
@@ -99,9 +101,9 @@ Four new components in this phase. All use existing patterns — no new design p
 - **Surface:** Fixed right-side panel, 420px wide, full viewport height, white background (#FFFFFF), 1px left border (border-border), z-index above dashboard content
 - **Backdrop:** Semi-transparent overlay on the dashboard area behind the drawer — `bg-black/20` (20% opacity), not full-screen block
 - **Animation:** CSS `translate-x-full` → `translate-x-0` transition, 200ms ease-out. Mirrors DashboardEditOverlay GSAP entrance pattern in spirit; implementation uses CSS transition (no GSAP dependency for a simpler slide)
-- **Header:** 56px tall, white bg, bottom border (border-border). Left: "IA Coach" title (text-xl font-bold text-text). Right: X close button (lucide `X`, 20px, text-muted, hover:text-text)
+- **Header:** 56px tall, white bg, bottom border (border-border). Left: "IA Coach" title (text-xl font-bold text-text). Right: X close button (lucide `X`, 20px, text-muted, hover:text-text, aria-label="Fermer")
 - **Message area:** Scrollable, bg-background (#F7F6F3), no card wrapping individual messages — same pattern as existing AI chat
-- **Input bar:** Fixed bottom of drawer panel, white bg, top border. Textarea (bg-background, border-border, grows to max-h-[120px], rounded-xl), Send button (bg-primary, rounded-lg, 10px radius)
+- **Input bar:** Fixed bottom of drawer panel, white bg, top border. Textarea (bg-background, border-border, grows to max-h-[120px], rounded-xl), Send button (bg-primary, rounded-lg, 10px radius, aria-label="Envoyer")
 - **Streaming cursor:** Blinking `|` in Sprint Orange (#FF5C1A) after last streamed character
 - **Error state:** `bg-red-50 border border-red-200 rounded-lg` inline. "Réessayer" in text-primary. Not a modal.
 
@@ -131,7 +133,7 @@ Four new components in this phase. All use existing patterns — no new design p
 - **Modal overlay:** `fixed inset-0 bg-black/40 z-50 flex items-center justify-center`
 - **Panel:** `bg-white rounded-2xl border border-border p-6 w-[480px] max-h-[80vh] overflow-y-auto shadow-lg`
 - **Panel header:** "Alertes seuils" (text-xl font-bold text-text) + X button (lucide X, text-muted)
-- **Threshold row:** metric label (text-sm text-text) + operator chip (`>` / `<`, text-xs font-bold) + value input (h-9, w-20, border-border, rounded-lg, text-sm text-center) + delete button (lucide Trash2, text-muted hover:text-red-400)
+- **Threshold row:** metric label (text-sm text-text) + operator chip (`>` / `<`, text-xs font-bold) + value input (h-9, w-20, border-border, rounded-lg, text-sm text-center) + delete button (lucide Trash2, text-muted hover:text-red-400, aria-label="Supprimer ce seuil")
 - **Crossed threshold indicator:** Sprint Orange dot (8px) left of metric label when crossed
 - **Add threshold:** "+ Ajouter un seuil" text button (text-primary text-sm font-bold, bottom of list)
 - **Save button:** Primary (bg-primary text-white font-bold, full-width bottom of modal, h-11 rounded-xl)
@@ -168,13 +170,16 @@ Four new components in this phase. All use existing patterns — no new design p
 | Alerts modal empty state heading | "Aucun seuil configuré" |
 | Alerts modal empty state body | "Définissez des seuils numériques pour être alerté quand un indicateur dépasse une limite." |
 | Alerts modal add button | "+ Ajouter un seuil" |
-| Alerts modal save button | "Enregistrer" |
+| Alerts modal save button | "Enregistrer les seuils" |
 | Threshold delete confirmation | No modal — immediate delete with undo toast: "Seuil supprimé. Annuler ?" (3s timeout) |
 | Threshold crossed badge | "{metric_key} {operator} {value}" e.g. "RPE > 8.5" |
 | Currently crossed alert in modal | "Valeur actuelle : {value}" (text-xs text-muted under threshold row) |
 | Drawer error state | "Impossible d'envoyer le message. Réessayer." |
 | Insights fetch error | (silent — no UI, existing placeholder text shows) |
 | Thresholds save error | "Erreur lors de l'enregistrement. Réessayez." (inline below save button, text-red-500 text-sm) |
+| X close button (drawer header) | aria-label="Fermer" |
+| Trash2 delete (threshold row) | aria-label="Supprimer ce seuil" |
+| Send button (input bar) | aria-label="Envoyer" |
 
 Destructive actions:
 - **Delete threshold:** No confirmation modal. Immediate delete + undo toast. Rationale: thresholds are easily re-created; a modal for a single-row delete creates friction in a configuration panel.
