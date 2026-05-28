@@ -72,7 +72,7 @@ Plans:
 - [x] 03-02-PLAN.md — POST /:clientId/ai-edit SSE endpoint in service.ts (streamText + onStepFinish + creditGate)
 - [x] 03-03-PLAN.md — DashboardEditOverlay + EditChatPanel + TypingIndicator + PreviewLoadingOverlay + SaveToast
 - [x] 03-04-PLAN.md — dashboard/page.tsx: Personnaliser button + isEditing state + overlay wiring
-- [ ] 03-05-PLAN.md — Unit tests + two-turn integration test (D-18) + PITFALLS checklist clearance
+- [x] 03-05-PLAN.md — Unit tests + two-turn integration test (D-18) + PITFALLS checklist clearance
 
 ### Phase 04: Polish + Coach Memory
 **Goal**: Coaches can save dashboard templates and have their widget preferences remembered across athletes
@@ -101,16 +101,16 @@ Plans:
 | WIDGET-05 | Phase 02 | Pending |
 | WIDGET-06 | Phase 02 | Pending |
 | WIDGET-07 | Phase 02 | Pending |
-| EDIT-01 | Phase 03 | Pending |
-| EDIT-02 | Phase 03 | Pending |
-| EDIT-03 | Phase 03 | Pending |
-| EDIT-04 | Phase 03 | Pending |
-| EDIT-05 | Phase 03 | Pending |
+| EDIT-01 | Phase 03 | Complete |
+| EDIT-02 | Phase 03 | Complete |
+| EDIT-03 | Phase 03 | Complete |
+| EDIT-04 | Phase 03 | Complete |
+| EDIT-05 | Phase 03 | Complete |
 | MEM-01 | Phase 04 | Pending |
 | MEM-02 | Phase 04 | Pending |
 | INFRA-01 | Phase 01 | Pending |
 | INFRA-02a | Phase 01 | Pending |
-| INFRA-02b | Phase 03 | Pending |
+| INFRA-02b | Phase 03 | Complete |
 | INFRA-03 | Phase 01 | Pending |
 | INFRA-04 | Phase 01 | Pending |
 
@@ -124,5 +124,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 01. DB + API Foundation | 0/5 | Not started | - |
 | 02. Widget Renderers + Static Dashboard | 0/TBD | Not started | - |
-| 03. AI Edit Session | 4/5 | In Progress|  |
+| 03. AI Edit Session | 5/5 | Complete | 2026-05-28 |
 | 04. Polish + Coach Memory | 0/TBD | Not started | - |
