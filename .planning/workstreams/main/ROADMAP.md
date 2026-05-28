@@ -59,14 +59,20 @@ Plans:
 **UI hint**: yes
 
 ### Phase 40: Advanced Dashboard Features
-**Goal**: Coach can perform deep analysis by comparing two clients or two periods, and can produce a shareable PDF snapshot of any active dashboard
+**Goal**: Coach can perform deep analysis by comparing two clients or two periods, and can produce a shareable PDF snapshot of any active dashboard. The dashboard page also gets a sub-tab strip so the Sport view (Phase 38/39) and the Personnalisé view (custom-widget system) coexist.
 **Depends on**: Phase 38
 **Requirements**: DASH-04, DASH-05
 **Success Criteria** (what must be TRUE):
   1. Coach can select "Compare" mode and choose a second client (or a second date period) — both datasets render side-by-side on the same chart axes with visually distinct colors
-  2. Coach can click "Export PDF" and a PDF is generated client-side or server-side containing the currently visible dashboard charts and client name/date range header
+  2. Coach can click "Export PDF" and a PDF is generated client-side containing the currently visible dashboard charts and client name/date range header
   3. The exported PDF renders legibly — chart lines, labels, and axis ticks are not blurred or cut off
-**Plans**: TBD
+  4. Dashboard page has a sub-tab strip: Sport tab restores DashboardControlBar + sport-specific charts; Personnalisé tab shows DashboardGrid
+**Plans**: 4 plans
+Plans:
+- [ ] 040-01-PLAN.md — Sub-tab strip + dashboard page restructure
+- [ ] 040-02-PLAN.md — Compare mode: UI controls + data
+- [ ] 040-03-PLAN.md — Dual-series chart widgets
+- [ ] 040-04-PLAN.md — PDF export (html2canvas + jsPDF)
 **UI hint**: yes
 
 ### Phase 41: AI Context Injection
@@ -90,7 +96,7 @@ Plans:
 | 37. UI Design Contract | 0/0 | Not started | - |
 | 38. Dashboard Foundation + Powerlifting | 0/0 | Not started | - |
 | 39. Four Sport Dashboards | 0/0 | Not started | - |
-| 40. Advanced Dashboard Features | 0/0 | Not started | - |
+| 40. Advanced Dashboard Features | 0/4 | Not started | - |
 | 41. AI Context Injection | 0/0 | Not started | - |
 
 ---
