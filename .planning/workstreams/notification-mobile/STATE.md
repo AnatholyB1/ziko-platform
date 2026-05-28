@@ -7,28 +7,28 @@ last_updated: "2026-05-28T00:00:00.000Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 13
+  percent: 67
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 3 — In-app Notification Center
-Plan: 03-02 complete
-Status: Wave 2 partiel — 03-02 done, 03-03 remaining
-Last activity: 2026-05-28 — 03-02 complete (deep-link navigation + useRouter)
+Phase: 5 — Notification Preferences UI 📋 NOT STARTED
+Plan: TBD
+Status: Ready to plan Phase 5
+Last activity: 2026-05-28 — Phase 4 complete (notifications-cron.ts + app.ts mount + vercel.json cron schedules)
 
 ## Progress
 
-**Phases Complete:** 1 / 6
+**Phases Complete:** 3 / 6
 **Current Plan:** N/A
 
 ```
-[##        ] 17%
+[#####     ] 67%
 ```
 
 ## Accumulated Context
@@ -63,8 +63,13 @@ Last activity: 2026-05-28 — 03-02 complete (deep-link navigation + useRouter)
 - `WEBHOOK_SECRET` added as new env var in Vercel + Supabase webhook header
 - All four pushes proven end-to-end: Supabase/Hono → waitUntil → notificationService → Expo Push → device
 
+### Phase 3 Decisions (2026-05-28)
+- notifications.tsx was already migrated (no INITIAL_ITEMS) — only deep-link navigation (useRouter) was missing
+- Supabase Realtime channel named `notifications_${userId}` (per-user, avoids stale subs on logout/login)
+- AppState 'active' → syncUnreadCount(userId) — badge refreshes on foreground
+
 ## Session Continuity
 
-**Stopped At:** Phase 3, Plan 02 complete
-**Resume File:** .planning/workstreams/notification-mobile/phases/03-in-app-notification-center/03-03-PLAN.md
-**Next Action:** Exécuter 03-03 (Wave 2 restant)
+**Stopped At:** Phase 4 complete
+**Resume File:** .planning/workstreams/notification-mobile/phases/05-*/
+**Next Action:** `/gsd:plan-phase 5 notification-mobile` — plan Phase 5 (Notification Preferences UI)

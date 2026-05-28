@@ -16,7 +16,7 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 - [x] **Phase 1: Infrastructure & Configuration** — Establish the push token pipeline, Supabase schema, and backend send service so all subsequent phases have a working delivery foundation
 - [x] **Phase 2: Action-triggered Push Notifications** — Wire the highest-value server-side push events (program assignment, invitations, post-session summary, level-up) to prove the end-to-end pipeline
 - [x] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
-- [ ] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
+- [x] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
 - [ ] **Phase 5: Notification Preferences UI** — Expose master switch, per-category toggles, quiet hours, and OS Settings deep-link in a Paramètres > Notifications screen with auto-save
 - [ ] **Phase 6: Local Reminders & App Updates** — Schedule per-habit local reminders and workout-day reminders via `scheduleNotificationAsync`, plus OTA update card in the in-app center
 
@@ -91,8 +91,8 @@ Cross-cutting constraints:
   3. On Sunday at 09:00 UTC, users who have opted in to the weekly digest receive a push summarizing their week's sessions, XP earned, and current streak
 **Plans:** 2 plans
 Plans:
-- [ ] 04-01-PLAN.md — notifications-cron.ts: three cron handlers (CRON-01 streak-at-risk, CRON-02 receipt poll + dead-token cleanup, CRON-03 weekly digest) · Wave 1
-- [ ] 04-02-PLAN.md — app.ts mount + vercel.json cron entries (3 new schedules) · Wave 2
+- [x] 04-01-PLAN.md — notifications-cron.ts: three cron handlers (CRON-01 streak-at-risk, CRON-02 receipt poll + dead-token cleanup, CRON-03 weekly digest) · Wave 1
+- [x] 04-02-PLAN.md — app.ts mount + vercel.json cron entries (3 new schedules) · Wave 2
 
 ### Phase 5: Notification Preferences UI
 **Goal:** Give users full control over which notifications they receive via a master switch, per-category toggles, quiet hours, and an OS Settings escape hatch — all auto-saved.
@@ -127,6 +127,6 @@ Plans:
 | 1. Infrastructure & Configuration | 4/4 | Complete | 2026-05-26 |
 | 2. Action-triggered Push Notifications | 4/4 | Complete | 2026-05-27 |
 | 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
-| 4. Cron / Scheduled Notifications | 0/2 | Not started | - |
+| 4. Cron / Scheduled Notifications | 2/2 | Complete | 2026-05-28 |
 | 5. Notification Preferences UI | 0/0 | Not started | - |
 | 6. Local Reminders & App Updates | 0/0 | Not started | - |
