@@ -96,7 +96,11 @@ Plans:
   3. When the AI coach orchestrator processes a chat request for an athlete, it automatically receives the last 5 submitted form responses injected into the system prompt — no manual action needed
   4. The injected context block is formatted as readable text: form title, submission date, and each question paired with its answer
   5. A new pending form in the "Formulaires" tab does not appear as submitted — it shows the "En attente" badge until the athlete fills it
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 05-01-PLAN.md — Hono route GET /coach/clients/:clientId/forms in clientsRouter: pre-joined FormInstance[] with Q&A resolved server-side
+- [ ] 05-02-PLAN.md — Web UI: ClientTabStrip + FormStatusBadge extension + forms/page.tsx server page + ClientFormsContent accordion
+- [ ] 05-03-PLAN.md — Claude context injection: extend fetchUserContext() with recentFormResponses + formsSection in system prompt
 **UI hint**: yes
 
 ---
@@ -109,7 +113,7 @@ Plans:
 | 02. Trigger Engine | 0/4 | Planned | - |
 | 03. Coach Form Builder (Web) | 0/4 | Planned | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/3 | Planned | - |
-| 05. Response Viewer & Claude Injection | 0/? | Not started | - |
+| 05. Response Viewer & Claude Injection | 0/3 | Planned | - |
 
 ---
 
