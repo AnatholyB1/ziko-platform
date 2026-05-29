@@ -51,7 +51,7 @@ export function PendingFormsOverlay() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/athlete/forms/pending`,
+        `${process.env.EXPO_PUBLIC_API_URL}/forms/athlete/forms/pending`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (!res.ok) throw new Error('fetch failed');
@@ -143,7 +143,7 @@ export function PendingFormsOverlay() {
         value: answers[q.id],
       }));
       const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/athlete/forms/${currentForm.instance_id}/submit`,
+        `${process.env.EXPO_PUBLIC_API_URL}/forms/athlete/forms/${currentForm.instance_id}/submit`,
         {
           method: 'POST',
           headers: {
