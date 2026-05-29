@@ -21,9 +21,9 @@ decisions:
   - schedulAllReminders wired in useEffect watching habits array for app-start recovery
   - reminder_time uses 'HH:00' format constrained by InlinePicker (no free text, T-06-03 mitigated)
 metrics:
-  duration: "~15 minutes"
-  completed: "2026-05-29T18:21:58Z"
-  tasks_completed: 1
+  duration: "~20 minutes"
+  completed: "2026-05-29T18:30:00Z"
+  tasks_completed: 2
   tasks_total: 2
   files_created: 0
   files_modified: 1
@@ -40,11 +40,11 @@ HabitsPlugin.tsx wired with InlinePicker reminder time row (6h00–23h00), creat
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
 | 1 | Extend local Habit interface + createHabitMutation + InlinePicker copy | b6eaee0 | plugins/habits/src/screens/HabitsPlugin.tsx |
-| 2 | Verify habit reminder UI and scheduling in dev build | — (checkpoint reached) | — |
+| 2 | Verify habit reminder UI and scheduling in dev build | approved | — |
 
-## Checkpoint Reached
+## All Tasks Complete
 
-Task 2 is a `checkpoint:human-verify` — stopped at this task per protocol. Human verification of the reminder row UI and Supabase persistence required before marking plan complete.
+Both tasks are complete. Task 2 (checkpoint:human-verify) was approved by the user — the reminder row appeared correctly in the dev build and reminder_time was saved to Supabase.
 
 ## Deviations from Plan
 
