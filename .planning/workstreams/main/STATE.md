@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Sport Dashboards
-status: milestone_complete
-last_updated: 2026-05-28T23:15:01.336Z
-last_activity: 2026-05-28 -- Phase 41 execution started
+status: executing
+last_updated: "2026-05-29T22:42:52.218Z"
+last_activity: 2026-05-29 -- Phase 41.1 planning complete
 progress:
-  total_phases: 5
-  completed_phases: 4
-  total_plans: 19
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 20
   completed_plans: 19
-  percent: 80
-stopped_at: Milestone complete (Phase 41 was final phase)
+  percent: 83
 ---
 
 # Project State — v1.8 Sport Dashboards
@@ -28,10 +27,10 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 
 ## Current Position
 
-Phase: 41
+Phase: 41.1
 Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-28
+Status: Ready to execute
+Last activity: 2026-05-29 -- Phase 41.1 planning complete
 
 ---
 
@@ -45,6 +44,10 @@ Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [✅] → Phas
 ---
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 41.1 inserted after Phase 41: Close gap: AI-04 — ChartCard threshold badge prop threading (URGENT)
 
 ### Decisions
 
