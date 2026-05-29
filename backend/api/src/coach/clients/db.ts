@@ -914,7 +914,7 @@ export async function getFormsForClient(
           question_id: a.question_id,
           question_label: q?.label ?? a.question_id,
           question_type: (q?.type ?? 'text') as FormAnswer['question_type'],
-          answer_value: a.answer_value,
+          answer_value: a.value,
         };
       });
     }
