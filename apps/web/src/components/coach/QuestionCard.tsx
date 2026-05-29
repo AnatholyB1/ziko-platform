@@ -16,7 +16,7 @@ import type { FormQuestion, QuestionType } from './FormStatusBadge';
 const TYPE_LABELS: Record<QuestionType, string> = {
   text: 'Texte libre',
   scale: 'Échelle 1-10',
-  yesno: 'Oui / Non',
+  yes_no: 'Oui / Non',
   choice: 'Choix unique',
 };
 
@@ -131,7 +131,7 @@ export default function QuestionCard({
           >
             <option value="text">Texte libre</option>
             <option value="scale">Échelle 1-10</option>
-            <option value="yesno">Oui / Non</option>
+            <option value="yes_no">Oui / Non</option>
             <option value="choice">Choix unique</option>
           </select>
         </div>

@@ -2,7 +2,7 @@
 
 // ─── TypeScript interfaces for Coach Forms (exported for downstream use) ──────
 
-export type QuestionType = 'text' | 'scale' | 'yesno' | 'choice';
+export type QuestionType = 'text' | 'scale' | 'yes_no' | 'choice';
 
 export interface FormQuestion {
   id: string;
