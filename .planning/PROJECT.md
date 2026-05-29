@@ -46,24 +46,33 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 ---
 
-## Current Milestone: v1.8 Sport Dashboards (main — web/coach)
+<details>
+<summary>✅ v1.8 Sport Dashboards (main — web/coach) — SHIPPED 2026-05-30</summary>
 
 **Goal:** Fournir aux coachs des dashboards pré-construits par type de sport — élimine le blank-page problem et permet une analyse client immédiate sans configuration.
 
-**Target features:**
-- Onglet "Dashboard" dans la vue client detail — sélecteur sport + courbes instantanées
-- Dashboard Powerlifting en premier (1RM SBD, Fatigue RPE, Tonnage hebdo, Intensité %) — semaine 1
-- 4 dashboards restants en parallèle semaine 2 : Hyrox, Running/Cardio, Bodybuilding/Hypertrophie, Perte de poids/Retour de blessure
-- Point de départ pour customisation AI chat coach (contexte dashboard injecté)
+**What shipped:**
+- Dashboard tab in coach client detail view — sport selector dropdown + date range filter (week/month/3 months)
+- Powerlifting dashboard: 1RM SBD progression, RPE fatigue trend, weekly tonnage, intensity % (4 Recharts charts)
+- 4 additional sport dashboards: Hyrox (station splits, finish times, weekly volume), Running/Cardio (pace, distance, VO2max), Bodybuilding (volume per muscle group, overload, bodyweight), Weight Loss/Injury Return (bodyweight curve, calorie compliance, load progression)
+- Side-by-side compare mode (second client or second period, dual-series charts)
+- PDF export (html2canvas + jsPDF, dynamic import for SSR safety)
+- AI context injection: dashboard metrics → coach chat system prompt (AI-01); insight chips per chart card (AI-02); narrative summary card (AI-03); numeric threshold alerts + ChartCard badge (AI-04, gap closed in Phase 41.1)
 
-**Shipped parallel milestone:** ✅ v1.7 Mobile UX v2 (workstream `milestone-mobile`) — SHIPPED 2026-05-28. See `.planning/milestones/v1.7-ROADMAP.md`.
+**Phases:** 37–41.1 (6 phases, 20 plans)
+**Archive:** `.planning/milestones/v1.8-ROADMAP.md` · `.planning/milestones/v1.8-REQUIREMENTS.md`
+
+</details>
+
+## Active Parallel Workstreams
+
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
 **Parallel workstream:** v1.10 Custom Coach Exercises (`custom-coach`) — coach crée ses propres exercices (vidéo + photo), disponibles dans les programmes de ses athlètes.
 **Parallel workstream:** v1.11 Notification System (`notification-mobile`) — push + in-app notifications mobile (Expo Push, APNs/FCM), Hono-triggered, préférences par catégorie.
 **Parallel workstream:** v1.12 DA Coach (`da-coach`) — coach définit sa direction artistique (couleurs, logo, ton) → app des athlètes liés affiche la DA automatiquement au refresh. Différenciateur Pro 29€/mois.
-**Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé). Retour webcam coach reporté v1.x+1.
-**Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions (premier contact, fin de cycle, date fixe, envoi manuel) ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
-**Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save, mémoire long terme coach). Critère : personnalisation en 30s.
+**Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé).
+**Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
+**Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
 
 ---
 
@@ -186,6 +195,20 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 - [x] Per-call token logging to `ai_cost_log`; monthly cost ≤ €0.75 verified (COST-02, COST-03)
 - [x] `user_profiles.tier` column (free/premium); middleware bypasses deduction for premium (PREM-01, PREM-02)
 
+### Validated (v1.8 — Sport Dashboards)
+
+- [x] Dashboard tab in coach client detail view — sport selector + date range filter (DASH-01, DASH-02, DASH-03) — v1.8
+- [x] Powerlifting dashboard: 1RM SBD progression, RPE fatigue trend, weekly tonnage, intensity % (PL-01–04) — v1.8
+- [x] Hyrox dashboard: station splits, finish times, weekly training volume (HYR-01) — v1.8
+- [x] Running/Cardio dashboard: pace trend, distance, VO2max estimate, weekly km (RUN-01) — v1.8
+- [x] Bodybuilding dashboard: muscle volume, progressive overload, bodyweight trend (BB-01) — v1.8
+- [x] Weight Loss/Injury Return dashboard: bodyweight curve, calorie compliance, load progression (WL-01) — v1.8
+- [x] Side-by-side compare mode (two clients or two periods, dual-series charts) (DASH-04) — v1.8
+- [x] PDF export — html2canvas + jsPDF, dynamic import for SSR safety (DASH-05) — v1.8
+- [x] Dashboard metrics injected into coach chat system prompt (AI-01) — v1.8
+- [x] AI insight chips per chart card; narrative summary card (AI-02, AI-03) — v1.8
+- [x] Numeric threshold alerts + ChartCard badge (prop chain completed in Phase 41.1) (AI-04) — v1.8
+
 ### Validated (v1.5 — Coach Platform & CRM)
 
 - [x] `is_coach_of()` SECURITY DEFINER STABLE function + 11 cross-user SELECT policies — coach reads, never writes — v1.5
@@ -225,7 +248,7 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 
 ## Context
 
-- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.5 (Coach Platform & CRM — 2026-05-22), v1.6 (Mon coach plugin mobile — 2026-05-21)
+- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.5 (Coach Platform & CRM — 2026-05-22), v1.6 (Mon coach plugin mobile — 2026-05-21), v1.7 (Mobile UX v2 — 2026-05-28), v1.8 (Sport Dashboards — 2026-05-30)
 - **Mobile app state**: 18 plugins, 26 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
 - **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup, centralized model config (`backend/api/src/config/models.ts`)
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
@@ -281,7 +304,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-24 after v1.5 milestone — Coach Platform & CRM (Phases 22–31 + 36) archived; v1.5 validated requirements added; Strava (STRAVA-01–07) deferred to v1.6.*
+*Last updated: 2026-05-30 after v1.8 milestone — Sport Dashboards (Phases 37–41.1) archived; v1.8 validated requirements added; threshold alerts gap (AI-04) confirmed closed.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
@@ -290,3 +313,8 @@ This document evolves at phase transitions and milestone boundaries.
 | 3-tab nav (Accueil/Séance/Profil) replacing 4-tab structure | `app.jsx` mockup has 3 tabs; PluginsDrawer on home replaces separate plugin tab | v1.7 Phase 32 |
 | New shared components in `packages/ui/` | FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip shared across all plugins | v1.7 Phase 32 |
 | Rule-based AICoachInline tips (not AI chat) | Mockup shows rotating contextual tips, not a chat UI; saves AI credits for real coach interactions | v1.7 Phase 33 |
+| UI design contract mandatory before any dashboard code (ui_safety_gate: true) | Prevents UI drift between spec and implementation; all 11 surfaces + data shapes locked before Phase 38 | v1.8 Phase 37 ✓ |
+| Recharts v3 for dashboard charts (already installed in ComparisonChart.tsx) | No new dependency; consistent with existing chart patterns in codebase | v1.8 Phase 37 ✓ |
+| Existing Supabase tables only — no new data collection for dashboards | session_sets + cardio_sessions + body_measurements + nutrition_logs cover all 6 sport dashboards | v1.8 Phase 38 ✓ |
+| is_coach_of() SECURITY DEFINER function for cross-user data access | Coach reads athlete data without bypassing RLS; athlete cannot access coach data | v1.8 Phase 38 ✓ |
+| Inline ThresholdAlert type (not imported) for crossedThresholds prop | Matches existing ChartCard.tsx pattern — avoids creating a type just for one optional prop | v1.8 Phase 41.1 ✓ |

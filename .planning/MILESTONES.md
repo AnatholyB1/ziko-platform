@@ -1,5 +1,21 @@
 # Milestones
 
+## v1.8 Sport Dashboards (Shipped: 2026-05-30)
+
+**Phases completed:** 6 phases, 20 plans (Phases 37–41.1, workstream: main / web-coach)
+**Known deferred items at close:** 0 blockers. Tech debt: missing VERIFICATION.md for phases 37–40 (docs only), Hyrox station splits proxied from duration, pdf filename UUID fallback, null dashboard context on first AI chat message.
+
+**Key accomplishments:**
+
+1. **Dashboard Tab + Sport Selector** — "Dashboard" tab added to coach client detail view; sport dropdown (Powerlifting/Hyrox/Running/Bodybuilding/Weight Loss) + date range filter (Semaine/Mois/3 Mois) — coach sees relevant charts instantly with zero configuration
+2. **Powerlifting Dashboard** — 4 Recharts charts live from Supabase: 1RM SBD progression (multi-series LineChart), RPE fatigue trend (AreaChart), weekly tonnage (BarChart), intensity % (LineChart); stagger animations; empty states
+3. **Four Additional Sport Dashboards** — Hyrox (station splits, finish time trend, weekly volume), Running/Cardio (pace, distance, VO2max estimate), Bodybuilding (muscle volume, progressive overload, bodyweight), Weight Loss/Injury Return (bodyweight curve, calorie compliance, load progression) — all from existing Supabase tables
+4. **Compare Mode + PDF Export** — Side-by-side dual-series charts (second client or period); html2canvas + jsPDF PDF export with SSR-safe dynamic imports; Sport/Personnalisé sub-tab strip
+5. **AI Context Injection** — Dashboard metrics injected into coach chat system prompt (AI-01); AI insight chips per chart card via useInsights + backend `/insights` route (AI-02); NarrativeSummaryCard one-paragraph overview (AI-03); AlertesModal CRUD + threshold evaluation + ChartCard orange/red pill badge (AI-04)
+6. **AI-04 Gap Closure (Phase 41.1)** — Audit-identified disconnected prop chain (crossedThresholds never reached ChartCard) fixed: `crossedThresholds?: ThresholdAlert[]` added to all 5 sport dashboard interfaces; prop threaded from page.tsx through each dashboard to every ChartCard `metricKey` + `crossedThresholds`
+
+---
+
 ## v1.7 Mobile UX v2 (Shipped: 2026-05-28)
 
 **Phases completed:** 10 phases, 36 plans (Phases 32–41, workstream: milestone-mobile)  

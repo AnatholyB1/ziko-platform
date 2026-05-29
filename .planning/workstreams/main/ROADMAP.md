@@ -1,97 +1,26 @@
-# ROADMAP — v1.8 Sport Dashboards
+# ROADMAP — main (web/coach — Next.js)
 
-**Workstream:** main (web/coach — Next.js)
-**Milestone:** v1.8 Sport Dashboards
-**Granularity:** Standard
-**Coverage:** 17/17 requirements mapped
+## Milestones
+
+- ✅ **v1.8 Sport Dashboards** — Phases 37–41.1 (shipped 2026-05-30)
 
 ---
 
 ## Phases
 
-- [x] **Phase 37: UI Design Contract** - Design all dashboard surfaces, sport selector, and chart layouts before any implementation
-- [x] **Phase 38: Dashboard Foundation + Powerlifting** - Dashboard tab shell, sport selector, date filter, and complete Powerlifting dashboard (4 charts)
-- [x] **Phase 39: Four Sport Dashboards** - Hyrox, Running/Cardio, Bodybuilding, and Weight Loss/Injury Return dashboards
-- [x] **Phase 40: Advanced Dashboard Features** - Side-by-side comparison and PDF export
-- [x] **Phase 41: AI Context Injection** - Dashboard metrics injected into coach chat, insight chips, narrative summary, alert thresholds (completed 2026-05-28)
+<details>
+<summary>✅ v1.8 Sport Dashboards (Phases 37–41.1) — SHIPPED 2026-05-30</summary>
 
----
+- [x] Phase 37: UI Design Contract (1/1 plans) — completed 2026-05-25
+- [x] Phase 38: Dashboard Foundation + Powerlifting (4/4 plans) — completed 2026-05-26
+- [x] Phase 39: Four Sport Dashboards (5/5 plans) — completed 2026-05-27
+- [x] Phase 40: Advanced Dashboard Features (4/4 plans) — completed 2026-05-28
+- [x] Phase 41: AI Context Injection (5/5 plans) — completed 2026-05-28
+- [x] Phase 41.1: Close gap: AI-04 ChartCard badge threading (1/1 plans) — completed 2026-05-30
 
-## Phase Details
+Archive: `.planning/milestones/v1.8-ROADMAP.md`
 
-### Phase 37: UI Design Contract
-**Goal**: Coach and builder share an unambiguous visual contract for every dashboard surface before any code is written
-**Depends on**: Nothing (first phase)
-**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, PL-01, PL-02, PL-03, PL-04, HYR-01, RUN-01, BB-01, WL-01, AI-02, AI-03
-**Success Criteria** (what must be TRUE):
-  1. UI-SPEC.md exists and covers every dashboard surface: tab shell, sport type selector dropdown, date range filter, all 4 Powerlifting chart layouts, Hyrox/Running/Bodybuilding/Weight Loss layouts, comparison mode layout, PDF export trigger, AI insight chips placement, and narrative summary card
-  2. Figma file contains annotated mockups for each surface with exact color tokens (#FF5C1A primary, #F7F6F3 background), typography, and spacing
-  3. Chart library selection is documented (component name, import path) with a rationale note
-  4. Every chart variant (line, bar, multi-series) is represented with sample data shapes matching the actual Supabase table columns queried
-**Plans**: 1 plan
-Plans:
-- [x] 037-01-PLAN.md — Verify and finalize the UI design contract (037-UI-SPEC.md)
-**UI hint**: yes
-
-### Phase 38: Dashboard Foundation + Powerlifting
-**Goal**: Coach can open any client's Dashboard tab, select Powerlifting, filter by date range, and immediately see four meaningful charts — no configuration required
-**Depends on**: Phase 37
-**Requirements**: DASH-01, DASH-02, DASH-03, PL-01, PL-02, PL-03, PL-04
-**Success Criteria** (what must be TRUE):
-  1. Coach navigates to any client detail view and sees a "Dashboard" tab alongside the existing tabs
-  2. Coach opens the tab, selects "Powerlifting" from the sport dropdown, and four chart cards render instantly: 1RM SBD progression, RPE trend, weekly tonnage, intensity %
-  3. Coach selects Week / Month / 3 Months from the date filter and all four charts re-render to match the selected range
-  4. Charts show empty-state messaging (not a crash) when the client has no session data in the selected range
-**Plans**: TBD
-**UI hint**: yes
-
-### Phase 39: Four Sport Dashboards
-**Goal**: Coach can switch the sport selector to any of four additional sports and see a relevant, data-driven dashboard for that client
-**Depends on**: Phase 38
-**Requirements**: HYR-01, RUN-01, BB-01, WL-01
-**Success Criteria** (what must be TRUE):
-  1. Selecting "Hyrox" renders station splits, finish time trend, and weekly training volume sourced from cardio_sessions
-  2. Selecting "Running / Cardio" renders pace trend, weekly distance, VO2max estimate, and distance chart from cardio_sessions
-  3. Selecting "Bodybuilding" renders volume per muscle group, progressive overload tracking, and bodyweight trend from session_sets and body_measurements
-  4. Selecting "Weight Loss / Injury Return" renders bodyweight curve, calorie compliance, and load progression sourced from body_measurements, nutrition_logs, and session_sets
-  5. All four dashboards respect the date range filter already built in Phase 38
-**Plans**: TBD
-**UI hint**: yes
-
-### Phase 40: Advanced Dashboard Features
-**Goal**: Coach can perform deep analysis by comparing two clients or two periods, and can produce a shareable PDF snapshot of any active dashboard. The dashboard page also gets a sub-tab strip so the Sport view (Phase 38/39) and the Personnalisé view (custom-widget system) coexist.
-**Depends on**: Phase 38
-**Requirements**: DASH-04, DASH-05
-**Success Criteria** (what must be TRUE):
-  1. Coach can select "Compare" mode and choose a second client (or a second date period) — both datasets render side-by-side on the same chart axes with visually distinct colors
-  2. Coach can click "Export PDF" and a PDF is generated client-side containing the currently visible dashboard charts and client name/date range header
-  3. The exported PDF renders legibly — chart lines, labels, and axis ticks are not blurred or cut off
-  4. Dashboard page has a sub-tab strip: Sport tab restores DashboardControlBar + sport-specific charts; Personnalisé tab shows DashboardGrid
-**Plans**: 4 plans
-Plans:
-- [x] 040-01-PLAN.md — Sub-tab strip + dashboard page restructure
-- [x] 040-02-PLAN.md — Compare mode: UI controls + data
-- [x] 040-03-PLAN.md — Dual-series chart widgets
-- [x] 040-04-PLAN.md — PDF export (html2canvas + jsPDF)
-**UI hint**: yes
-
-### Phase 41: AI Context Injection
-**Goal**: The coach's AI chat is aware of what the dashboard is showing, each chart surface displays an AI-generated insight, and the coach can configure numeric alerts that the AI monitors
-**Depends on**: Phase 38
-**Requirements**: AI-01, AI-02, AI-03, AI-04
-**Success Criteria** (what must be TRUE):
-  1. When the coach sends a message in the coach chat while a client's dashboard is open, the active sport type and top-3 chart metrics (latest values) are included in the system prompt — the AI can reference them without the coach re-explaining
-  2. Each chart card on the dashboard displays a one-line AI insight chip (e.g. "Fatigue trending up this week") that updates when the date filter changes
-  3. A narrative summary card appears at the top of the dashboard with a one-paragraph AI-generated overview of the client's overall performance for the selected period
-  4. Coach can open an "Alerts" panel per client, define a numeric threshold for any metric (e.g. RPE avg > 8.5), and the system flags the coach — visually on the dashboard or via notification — when the threshold is crossed
-**Plans**: 5 plans
-Plans:
-- [x] 041-01-PLAN.md — Migration 062 + coach AI types and buildCoachSystemPrompt extension (AI-01/AI-04)
-- [x] 041-02-PLAN.md — Insights and thresholds CRUD routes in dashboardsRouter (AI-02/AI-03/AI-04)
-- [x] 041-03-PLAN.md — useInsights hook, NarrativeSummaryCard, DashboardChatDrawer (AI-01/AI-02/AI-03)
-- [x] 041-04-PLAN.md — AlertesModal and ChartCard badge extension (AI-04)
-- [x] 041-05-PLAN.md — Dashboard page wiring + ControlBar extension + human verify (AI-01/AI-02/AI-03/AI-04)
-**UI hint**: yes
+</details>
 
 ---
 
@@ -103,18 +32,10 @@ Plans:
 | 38. Dashboard Foundation + Powerlifting | 4/4 | ✅ Complete | 2026-05-26 |
 | 39. Four Sport Dashboards | 5/5 | ✅ Complete | 2026-05-27 |
 | 40. Advanced Dashboard Features | 4/4 | ✅ Complete | 2026-05-28 |
-| 41. AI Context Injection | 5/5 | Complete    | 2026-05-28 |
+| 41. AI Context Injection | 5/5 | ✅ Complete | 2026-05-28 |
+| 41.1. AI-04 gap closure | 1/1 | ✅ Complete | 2026-05-30 |
 
 ---
 
 *Created: 2026-05-25 — Milestone v1.8 Sport Dashboards*
-
-### Phase 41.1: Close gap: AI-04 — ChartCard threshold badge prop threading (INSERTED)
-
-**Goal:** Thread `crossedThresholds` from dashboard/page.tsx through all 5 sport dashboards to each ChartCard instance, enabling the orange/red pill badge to render when coach-configured thresholds are crossed.
-**Requirements**: AI-04
-**Depends on:** Phase 41
-**Plans:** 1 plan | **Status:** Complete ✅ 2026-05-30
-
-Plans:
-- [x] 41.1-01: Thread crossedThresholds prop through page → 5 sport dashboards → ChartCard (2026-05-30)
+*Archived: 2026-05-30*
