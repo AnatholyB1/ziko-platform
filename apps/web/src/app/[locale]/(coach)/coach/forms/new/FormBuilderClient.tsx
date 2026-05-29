@@ -19,7 +19,7 @@ import ArchiveModal from '@/components/coach/ArchiveModal';
 const Q_TYPE_LABELS: Record<string, string> = {
   text: 'Texte libre',
   scale: 'Échelle 1-10',
-  yesno: 'Oui / Non',
+  yes_no: 'Oui / Non',
   choice: 'Choix unique',
 };
 
