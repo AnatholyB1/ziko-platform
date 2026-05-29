@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Sport Dashboards
 status: executing
-last_updated: "2026-05-29T22:42:52.218Z"
-last_activity: 2026-05-29 -- Phase 41.1 planning complete
+last_updated: "2026-05-30T00:00:00.000Z"
+last_activity: 2026-05-30 -- Phase 41.1 plan 01 executed — ChartCard threshold badge prop threading
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 20
-  completed_plans: 19
-  percent: 83
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State — v1.8 Sport Dashboards
@@ -28,17 +28,17 @@ For mobile redesign (v1.7), see: `.planning/workstreams/milestone-mobile/STATE.m
 ## Current Position
 
 Phase: 41.1
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-29 -- Phase 41.1 planning complete
+Plan: 01 (complete)
+Status: Phase complete
+Last activity: 2026-05-30 -- Phase 41.1 plan 01 executed — ChartCard threshold badge prop threading
 
 ---
 
 ## Progress Bar
 
 ```
-Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [✅] → Phase 41 [ ]
-80% complete
+Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [✅] → Phase 41 [✅] → Phase 41.1 [✅]
+100% complete
 ```
 
 ---
@@ -59,6 +59,7 @@ Phase 37 [✅] → Phase 38 [✅] → Phase 39 [✅] → Phase 40 [✅] → Phas
 - Dashboard injecte son contexte dans l'AI chat coach (point de départ customisation, anti-blank-page)
 - UI design contract obligatoire en Phase 37 avant tout code (ui_safety_gate: true dans config.json)
 - Phases 37–41 : phase numbering continue depuis v1.5 (last used = 36)
+- Inline type utilisé pour crossedThresholds prop (pas d'import ThresholdAlert) pour correspondre au pattern existant de ChartCard.tsx
 
 ### Phase Map
 
