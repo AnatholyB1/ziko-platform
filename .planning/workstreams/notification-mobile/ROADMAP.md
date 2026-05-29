@@ -18,7 +18,7 @@ The v1.11 Notification System delivers end-to-end push and in-app notifications 
 - [x] **Phase 3: In-app Notification Center** — Replace mock data in the existing notification center shell with real TanStack Query data, mark-read, badge count, deep links, and Supabase Realtime
 - [x] **Phase 4: Cron / Scheduled Notifications** — Add three Vercel cron jobs: streak-at-risk daily alert, receipt polling for dead-token cleanup, and opt-in weekly digest
 - [x] **Phase 5: Notification Preferences UI** — Expose master switch, per-category toggles, quiet hours, and OS Settings deep-link in a Paramètres > Notifications screen with auto-save
-- [ ] **Phase 6: Local Reminders & App Updates** — Schedule per-habit local reminders and workout-day reminders via `scheduleNotificationAsync`, plus OTA update card in the in-app center
+- [x] **Phase 6: Local Reminders & App Updates** — Schedule per-habit local reminders and workout-day reminders via `scheduleNotificationAsync`, plus OTA update card in the in-app center (completed 2026-05-29)
 
 ---
 
@@ -118,7 +118,7 @@ Plans:
   2. User can enable workout-day reminders based on their coach program or personal plan schedule; reminders appear on the correct days
   3. When a habit reminder time changes or a program day changes, previously scheduled local notifications are cancelled and rescheduled automatically — no stale reminders fire
   4. When an OTA app update is available, a card appears in the in-app notification center under the "App" category — no native push is sent for updates
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 06-01-PLAN.md — Migration 062 (workout_reminder_days + workout_reminder_time) + supabase db push [BLOCKING] · Wave 1
 - [x] 06-02-PLAN.md — LOCAL-01/LOCAL-03: Habit reminder wiring in HabitsPlugin.tsx (InlinePicker, createHabitMutation, scheduleHabitReminder, schedulAllReminders) · Wave 2
@@ -137,4 +137,4 @@ Plans:
 | 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
 | 4. Cron / Scheduled Notifications | 2/2 | Complete | 2026-05-28 |
 | 5. Notification Preferences UI | 2/2 | Complete | 2026-05-28 |
-| 6. Local Reminders & App Updates | 3/4 | Executing (06-04 checkpoint:human-verify) | - |
+| 6. Local Reminders & App Updates | 4/4 | Complete    | 2026-05-29 |

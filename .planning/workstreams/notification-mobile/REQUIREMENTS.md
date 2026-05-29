@@ -106,7 +106,7 @@
 | PREF-02 | Phase 5 | Pending |
 | PREF-03 | Phase 5 | Pending |
 | PREF-04 | Phase 5 | Pending |
-| LOCAL-01 | Phase 6 | Pending |
-| LOCAL-02 | Phase 6 | Pending |
-| LOCAL-03 | Phase 6 | Pending |
-| APP-01 | Phase 6 | Pending |
+| LOCAL-01 | Phase 6 | Complete |
+| LOCAL-02 | Phase 6 | Complete |
+| LOCAL-03 | Phase 6 | Complete |
+| APP-01 | Phase 6 | Complete |
