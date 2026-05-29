@@ -2,34 +2,34 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
-current_plan: 06-01
-status: Ready to execute
-last_updated: "2026-05-28T00:00:00Z"
-last_activity: 2026-05-28 — Phase 6 planned (4 plans in 2 waves)
+current_plan: 2
+status: executing
+last_updated: "2026-05-29T18:21:58Z"
+last_activity: 2026-05-29 -- Phase 06 Plan 02 Task 1 complete; checkpoint:human-verify reached
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 5
   total_plans: 19
-  completed_plans: 15
-  percent: 83
+  completed_plans: 16
+  percent: 74
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 6 — Local Reminders & App Updates 📋 PLANNED (4 plans, 2 waves)
-Plan: 06-01 (next to execute)
-Status: Ready to execute Phase 6
-Last activity: 2026-05-28 — Phase 6 planned (4 plans in 2 waves)
+Phase: 06 (local-reminders-app-updates) — EXECUTING
+Plan: 2 of 4
+Status: Executing Phase 06 — stopped at checkpoint:human-verify (Task 2)
+Last activity: 2026-05-29 -- Phase 06 Plan 02 Task 1 complete; awaiting human verification
 
 ## Progress
 
 **Phases Complete:** 5 / 6
-**Current Plan:** N/A
+**Current Plan:** 2
 
 ```
-[########  ] 83%
+[#########░] 74%
 ```
 
 ## Accumulated Context
@@ -91,8 +91,16 @@ Last activity: 2026-05-28 — Phase 6 planned (4 plans in 2 waves)
 - schedulAllReminders() wired in HabitsPlugin.tsx useEffect (not global _layout.tsx — avoids plugin coupling)
 - OTA card client-side only (useUpdates hook), no notification_log write, `__DEV__` guard on debug override
 
+### Phase 6 Plan 02 Decisions (2026-05-29)
+
+- InlinePicker copied inline in HabitsPlugin.tsx (not imported) — unexported component from settings.tsx
+- HABIT_HOUR_ITEMS produces 18 items (id='6'..'23', label='6h00'..'23h00')
+- scheduleHabitReminder called in createHabitMutation onSuccess (data available with habit id)
+- schedulAllReminders wired in useEffect watching habits array for app-start recovery
+- reminder_time uses 'HH:00' format constrained by InlinePicker (T-06-03 mitigated)
+
 ## Session Continuity
 
-**Stopped At:** Phase 6 planning complete — verification passed
+**Stopped At:** 06-02 Task 1 committed (b6eaee0) — checkpoint:human-verify reached at Task 2
 **Resume File:** .planning/workstreams/notification-mobile/phases/06-local-reminders-app-updates/
-**Next Action:** `/gsd-execute-phase 6 --ws notification-mobile` — execute Wave 1 (06-01 + 06-04 in parallel)
+**Next Action:** After human verification — type "approved" to continue to 06-03 (workout reminders)
