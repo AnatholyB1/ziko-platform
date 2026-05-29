@@ -108,3 +108,13 @@ Plans:
 ---
 
 *Created: 2026-05-25 — Milestone v1.8 Sport Dashboards*
+
+### Phase 41.1: Close gap: AI-04 — ChartCard threshold badge prop threading (INSERTED)
+
+**Goal:** Thread `crossedThresholds` from dashboard/page.tsx through all 5 sport dashboards to each ChartCard instance, enabling the orange/red pill badge to render when coach-configured thresholds are crossed.
+**Requirements**: AI-04
+**Depends on:** Phase 41
+**Plans:** 1 plan | **Status:** Complete ✅ 2026-05-30
+
+Plans:
+- [x] 41.1-01: Thread crossedThresholds prop through page → 5 sport dashboards → ChartCard (2026-05-30)
