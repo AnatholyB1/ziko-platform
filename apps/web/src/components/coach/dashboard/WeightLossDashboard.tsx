@@ -60,6 +60,7 @@ export function WeightLossDashboard({
   comparePeriod,
   onDataReady,
   chartInsights,
+  crossedThresholds,
 }: {
   clientId: string;
   sport: string | null;
@@ -69,6 +70,7 @@ export function WeightLossDashboard({
   comparePeriod?: 'week' | 'month' | '3m' | null;
   onDataReady?: (summary: Record<string, unknown>) => void;
   chartInsights?: Record<string, string>;
+  crossedThresholds?: Array<{ metric_key: string; operator: string; threshold_value: number; current_value: number }>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['weightloss', clientId, sport, dateRange],
@@ -143,7 +145,7 @@ export function WeightLossDashboard({
         className="col-span-2 opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '0ms' }}
       >
-        <ChartCard title="Evolution du Poids" aiInsight={chartInsights?.['poids_actuel']}>
+        <ChartCard title="Evolution du Poids" aiInsight={chartInsights?.['poids_actuel']} metricKey="poids_actuel" crossedThresholds={crossedThresholds}>
           {isActive && mergedBwCurve ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedBwCurve} margin={CHART_MARGIN}>
@@ -203,7 +205,7 @@ export function WeightLossDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '50ms' }}
       >
-        <ChartCard title="Conformite Calorique" aiInsight={chartInsights?.['calories_avg']}>
+        <ChartCard title="Conformite Calorique" aiInsight={chartInsights?.['calories_avg']} metricKey="calories_avg" crossedThresholds={crossedThresholds}>
           {isActive && mergedCalories ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={mergedCalories} margin={CHART_MARGIN}>
@@ -244,7 +246,7 @@ export function WeightLossDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '100ms' }}
       >
-        <ChartCard title="Progression de Charge" aiInsight={chartInsights?.['series_total']}>
+        <ChartCard title="Progression de Charge" aiInsight={chartInsights?.['series_total']} metricKey="series_total" crossedThresholds={crossedThresholds}>
           {isActive && mergedLoad ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedLoad} margin={CHART_MARGIN}>

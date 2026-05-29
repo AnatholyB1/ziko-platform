@@ -61,6 +61,7 @@ export function BodybuildingDashboard({
   comparePeriod,
   onDataReady,
   chartInsights,
+  crossedThresholds,
 }: {
   clientId: string;
   sport: string | null;
@@ -70,6 +71,7 @@ export function BodybuildingDashboard({
   comparePeriod?: 'week' | 'month' | '3m' | null;
   onDataReady?: (summary: Record<string, unknown>) => void;
   chartInsights?: Record<string, string>;
+  crossedThresholds?: Array<{ metric_key: string; operator: string; threshold_value: number; current_value: number }>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['bodybuilding', clientId, sport, dateRange],
@@ -136,7 +138,7 @@ export function BodybuildingDashboard({
         className="col-span-2 opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '0ms' }}
       >
-        <ChartCard title="Volume par Groupe Musculaire" aiInsight={chartInsights?.['volume_total']}>
+        <ChartCard title="Volume par Groupe Musculaire" aiInsight={chartInsights?.['volume_total']} metricKey="volume_total" crossedThresholds={crossedThresholds}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
               layout="vertical"
@@ -172,7 +174,7 @@ export function BodybuildingDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '50ms' }}
       >
-        <ChartCard title="Surcharge Progressive" aiInsight={chartInsights?.['series_hebdo']}>
+        <ChartCard title="Surcharge Progressive" aiInsight={chartInsights?.['series_hebdo']} metricKey="series_hebdo" crossedThresholds={crossedThresholds}>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={data.progressiveOverload} margin={CHART_MARGIN}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E0DA" />
@@ -206,7 +208,7 @@ export function BodybuildingDashboard({
         className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
         style={{ animationDelay: '100ms' }}
       >
-        <ChartCard title="Poids Corporel" aiInsight={chartInsights?.['poids_corps']}>
+        <ChartCard title="Poids Corporel" aiInsight={chartInsights?.['poids_corps']} metricKey="poids_corps" crossedThresholds={crossedThresholds}>
           {isActive && mergedBodyweight ? (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={mergedBodyweight} margin={CHART_MARGIN}>
