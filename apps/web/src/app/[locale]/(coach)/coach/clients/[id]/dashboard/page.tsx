@@ -210,6 +210,7 @@ export default function DashboardPage({
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
                   onDataReady={handleDataReady}
                   chartInsights={insights?.chartInsights}
+                  crossedThresholds={insights?.crossedThresholds}
                 />
               )}
               {sport === 'hyrox' && (
@@ -222,6 +223,7 @@ export default function DashboardPage({
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
                   onDataReady={handleDataReady}
                   chartInsights={insights?.chartInsights}
+                  crossedThresholds={insights?.crossedThresholds}
                 />
               )}
               {sport === 'running' && (
@@ -234,6 +236,7 @@ export default function DashboardPage({
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
                   onDataReady={handleDataReady}
                   chartInsights={insights?.chartInsights}
+                  crossedThresholds={insights?.crossedThresholds}
                 />
               )}
               {sport === 'bodybuilding' && (
@@ -246,6 +249,7 @@ export default function DashboardPage({
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
                   onDataReady={handleDataReady}
                   chartInsights={insights?.chartInsights}
+                  crossedThresholds={insights?.crossedThresholds}
                 />
               )}
               {sport === 'weightloss' && (
@@ -258,6 +262,7 @@ export default function DashboardPage({
                   comparePeriod={compareMode && compareSubMode === 'period' ? (comparePeriod ?? dateRange) : null}
                   onDataReady={handleDataReady}
                   chartInsights={insights?.chartInsights}
+                  crossedThresholds={insights?.crossedThresholds}
                 />
               )}
               {sport === null && <DashboardEmptyState />}
