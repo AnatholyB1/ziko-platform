@@ -59,6 +59,7 @@ export function RunningDashboard({
   comparePeriod,
   onDataReady,
   chartInsights,
+  crossedThresholds,
 }: {
   clientId: string;
   sport: string | null;
@@ -68,6 +69,7 @@ export function RunningDashboard({
   comparePeriod?: 'week' | 'month' | '3m' | null;
   onDataReady?: (summary: Record<string, unknown>) => void;
   chartInsights?: Record<string, string>;
+  crossedThresholds?: Array<{ metric_key: string; operator: string; threshold_value: number; current_value: number }>;
 }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['running', clientId, sport, dateRange],
@@ -323,7 +325,7 @@ export function RunningDashboard({
           className="opacity-0 animate-[fadeInUp_200ms_ease-out_forwards]"
           style={{ animationDelay: `${i * 50}ms` }}
         >
-          <ChartCard title={card.title} aiInsight={chartInsights?.[card.chartKey]}>{card.chart}</ChartCard>
+          <ChartCard title={card.title} aiInsight={chartInsights?.[card.chartKey]} metricKey={card.chartKey} crossedThresholds={crossedThresholds}>{card.chart}</ChartCard>
         </div>
       ))}
     </div>
