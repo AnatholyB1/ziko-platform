@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Notification System
 current_plan: 3
-status: executing
-last_updated: "2026-05-29T18:30:00Z"
-last_activity: 2026-05-29 -- Phase 06 Plan 02 complete (approved by user)
+status: checkpoint
+last_updated: "2026-05-29T19:16:00Z"
+last_activity: 2026-05-29 -- Phase 06 Plan 03 Tasks 1+2 complete; stopped at checkpoint:human-verify Task 3
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 19
   completed_plans: 17
-  percent: 79
+  percent: 82
 ---
 
 # Project State
@@ -20,8 +20,8 @@ progress:
 
 Phase: 06 (local-reminders-app-updates) — EXECUTING
 Plan: 3 of 4
-Status: Executing Phase 06 — 06-02 complete, ready for 06-03
-Last activity: 2026-05-29 -- Phase 06 Plan 02 complete (human-verified)
+Status: Stopped at checkpoint:human-verify (06-03 Task 3) — awaiting visual verification
+Last activity: 2026-05-29 -- Phase 06 Plan 03 Tasks 1+2 complete (commit 76b75aa); checkpoint:human-verify reached
 
 ## Progress
 
@@ -29,7 +29,7 @@ Last activity: 2026-05-29 -- Phase 06 Plan 02 complete (human-verified)
 **Current Plan:** 3
 
 ```
-[##########] 79%
+[##########] 82%
 ```
 
 ## Accumulated Context
@@ -99,8 +99,17 @@ Last activity: 2026-05-29 -- Phase 06 Plan 02 complete (human-verified)
 - schedulAllReminders wired in useEffect watching habits array for app-start recovery
 - reminder_time uses 'HH:00' format constrained by InlinePicker (T-06-03 mitigated)
 
+### Phase 6 Plan 03 Decisions (2026-05-29)
+
+- InlinePicker copied inline in workout/[id].tsx (not imported — unexported from settings.tsx)
+- expo-notifications imported directly as ExpoNotifications (not via lazy N() guard — app shell)
+- DAY_TO_EXPO_WEEKDAY explicit dict: sunday:1, monday:2, ..., saturday:7 (T-06-06 mitigated)
+- Cancel loop filters data.workoutReminder===true tags before each reschedule (T-06-07 mitigated)
+- Weekdays sourced exclusively from user chip selection — days_per_week ignored (D-04)
+- WORKOUT_HOUR_ITEMS: 18 items (id='6'..'23', label='6h00'..'23h00')
+
 ## Session Continuity
 
-**Stopped At:** 06-02 complete — all tasks approved
-**Resume File:** .planning/workstreams/notification-mobile/phases/06-local-reminders-app-updates/
-**Next Action:** `/gsd-execute-phase 6 --ws notification-mobile` — execute 06-03 (workout reminder UI)
+**Stopped At:** 06-03 Task 3 — checkpoint:human-verify reached after Tasks 1+2 complete
+**Resume File:** .planning/workstreams/notification-mobile/phases/06-local-reminders-app-updates/06-03-SUMMARY.md
+**Next Action:** Verify workout reminder UI in Expo dev server, then type "approved" to continue to 06-04

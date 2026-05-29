@@ -122,7 +122,7 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Migration 062 (workout_reminder_days + workout_reminder_time) + supabase db push [BLOCKING] · Wave 1
 - [x] 06-02-PLAN.md — LOCAL-01/LOCAL-03: Habit reminder wiring in HabitsPlugin.tsx (InlinePicker, createHabitMutation, scheduleHabitReminder, schedulAllReminders) · Wave 2
-- [ ] 06-03-PLAN.md — LOCAL-02/LOCAL-03: Workout reminder UI in workout/[id].tsx (weekday chips, time picker, WEEKLY scheduling, 600ms UPSERT) · Wave 2
+- [~] 06-03-PLAN.md — LOCAL-02/LOCAL-03: Workout reminder UI in workout/[id].tsx (weekday chips, time picker, WEEKLY scheduling, 600ms UPSERT) · Wave 2 [Tasks 1+2 done; checkpoint:human-verify pending]
 - [ ] 06-04-PLAN.md — APP-01: OTA update card in notifications.tsx (useUpdates, ListHeaderComponent, __DEV__ debug flag) · Wave 1
 **UI hint:** yes
 
@@ -137,4 +137,4 @@ Plans:
 | 3. In-app Notification Center | 3/3 | Complete | 2026-05-28 |
 | 4. Cron / Scheduled Notifications | 2/2 | Complete | 2026-05-28 |
 | 5. Notification Preferences UI | 2/2 | Complete | 2026-05-28 |
-| 6. Local Reminders & App Updates | 2/4 | Executing (06-03 next) | - |
+| 6. Local Reminders & App Updates | 2/4 | Executing (06-03 checkpoint, 06-04 pending) | - |
