@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
+import { scheduleHabitReminder, cancelHabitReminder, schedulAllReminders } from '../notifications';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ interface Habit {
   emoji: string;
   color: string;
   created_at?: string;
+  reminder_time: string | null;
+  is_active: boolean;
 }
 
 interface HabitLog {
@@ -86,6 +89,71 @@ const habitIcon = (emoji: string): string =>
     barbell: 'barbell-outline',
   }[emoji] ?? 'checkmark-outline') as string;
 
+// ─── InlinePicker (copied from apps/mobile/app/(app)/profile/settings.tsx) ────
+
+type PickerItem = { id: string; label: string };
+
+const HABIT_HOUR_ITEMS: PickerItem[] = Array.from({ length: 18 }, (_, i) => {
+  const hour = i + 6;
+  return { id: String(hour), label: `${hour}h00` };
+});
+
+function InlinePicker({
+  visible,
+  items,
+  selectedId,
+  onSelect,
+  onClose,
+  theme,
+}: {
+  visible: boolean;
+  items: PickerItem[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+  theme: any;
+}) {
+  if (!visible) return null;
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <View style={{
+          backgroundColor: theme.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+          paddingBottom: 32, paddingTop: 8,
+        }}>
+          <View style={{
+            width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E0DA',
+            alignSelf: 'center', marginBottom: 16,
+          }} />
+          {items.map((item, i) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => { onSelect(item.id); onClose(); }}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 14, paddingHorizontal: 20,
+                borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#E2E0DA',
+              }}
+            >
+              <Text style={{ fontSize: 16, color: theme.text, fontWeight: item.id === selectedId ? '700' : '400' }}>
+                {item.label}
+              </Text>
+              {item.id === selectedId && (
+                <Ionicons name="checkmark" size={18} color="#FF5C1A" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
 function getStreak(habitId: string, monthLogs: HabitLog[]): number {
   const today = new Date();
   let streak = 0;
@@ -136,6 +204,13 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     },
     enabled: !!userId,
   });
+
+  // ── App-start recovery: reschedule all reminders when habits load ────────────
+  useEffect(() => {
+    if (habits && habits.length > 0) {
+      schedulAllReminders(habits as any, 'Ziko');
+    }
+  }, [habits]);
 
   // ── Today's logs ─────────────────────────────────────────
   const { data: todayLogs = [] } = useQuery<HabitLog[]>({
@@ -225,23 +300,29 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     },
   });
 
-  // ── Create habit mutation (templates) ────────────────────
+  // ── Create habit mutation (templates + custom) ────────────────────
   const createHabitMutation = useMutation({
-    mutationFn: async ({ name, color, emoji }: { name: string; color: string; emoji: string }) => {
+    mutationFn: async ({ name, color, emoji, reminder_time }: { name: string; color: string; emoji: string; reminder_time?: string | null }) => {
       if (!userId) throw new Error('Not authenticated');
-      const { error } = await supabase.from('habits').insert({
+      const { data, error } = await supabase.from('habits').insert({
         user_id: userId,
         name: name.trim(),
         type: 'boolean',
         target: 1,
         color,
         emoji,
-      });
+        reminder_time: reminder_time ?? null,
+        is_active: true,
+      }).select('*').single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: (_data, vars) => {
+    onSuccess: (data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['habits', userId] });
       showAlert('Habitude ajoutée', `"${vars.name}" a été ajoutée à vos habitudes.`);
+      if (data && vars.reminder_time) {
+        scheduleHabitReminder(data as any, 'Ziko');
+      }
     },
     onError: (err: any) => {
       showAlert('Erreur', err.message ?? 'Impossible de créer cette habitude.');
@@ -554,6 +635,8 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
   const [newHabitFrequency, setNewHabitFrequency] = useState<'daily' | 'weekdays'>('daily');
+  const [newHabitReminderTime, setNewHabitReminderTime] = useState<string | null>(null);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
 
   function handleAddTemplate(template: { name: string; color: string; emoji: string }) {
     createHabitMutation.mutate({
@@ -577,8 +660,11 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       name: trimmed,
       color: 'primary',
       emoji: 'barbell',
+      reminder_time: newHabitReminderTime,
     });
     setNewHabitName('');
+    setNewHabitReminderTime(null);
+    setShowReminderPicker(false);
     setShowCreateModal(false);
   }
 
@@ -769,6 +855,66 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
                 ))}
               </View>
 
+              {/* Reminder time row */}
+              <Text
+                style={{
+                  color: '#6B6963',
+                  fontSize: 13,
+                  fontWeight: '500',
+                  marginBottom: 10,
+                }}
+              >
+                Rappel quotidien
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 10 }}>
+                <TouchableOpacity
+                  onPress={() => setShowReminderPicker(true)}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    backgroundColor: '#F7F6F3',
+                    borderWidth: 1,
+                    borderColor: newHabitReminderTime ? '#FF5C1A' : '#E2E0DA',
+                  }}
+                >
+                  <Ionicons
+                    name="alarm-outline"
+                    size={18}
+                    color={newHabitReminderTime ? '#FF5C1A' : '#6B6963'}
+                  />
+                  <Text style={{ color: newHabitReminderTime ? '#FF5C1A' : '#6B6963', fontWeight: '600', fontSize: 14 }}>
+                    {newHabitReminderTime
+                      ? `${parseInt(newHabitReminderTime)}h00`
+                      : 'Aucun'}
+                  </Text>
+                </TouchableOpacity>
+                {newHabitReminderTime && (
+                  <TouchableOpacity
+                    onPress={() => setNewHabitReminderTime(null)}
+                    style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+                  >
+                    <Text style={{ color: '#6B6963', fontSize: 13 }}>Supprimer</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <InlinePicker
+                visible={showReminderPicker}
+                items={HABIT_HOUR_ITEMS}
+                selectedId={newHabitReminderTime ? String(parseInt(newHabitReminderTime)) : '9'}
+                onSelect={(id) => {
+                  const h = id.padStart(2, '0');
+                  setNewHabitReminderTime(`${h}:00`);
+                }}
+                onClose={() => setShowReminderPicker(false)}
+                theme={{ surface: '#FFFFFF', text: '#1C1A17' }}
+              />
+
               <TouchableOpacity
                 onPress={handleCreateCustom}
                 disabled={createHabitMutation.isPending}
@@ -789,6 +935,8 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
               <TouchableOpacity
                 onPress={() => {
                   setNewHabitName('');
+                  setNewHabitReminderTime(null);
+                  setShowReminderPicker(false);
                   setShowCreateModal(false);
                 }}
                 style={{ paddingVertical: 14, alignItems: 'center' }}
