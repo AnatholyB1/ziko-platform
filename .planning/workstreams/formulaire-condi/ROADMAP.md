@@ -103,6 +103,18 @@ Plans:
 - [x] 05-03-PLAN.md — Claude context injection: extend fetchUserContext() with recentFormResponses + formsSection in system prompt
 **UI hint**: yes
 
+### Phase 05.1: Close audit gaps: 5 integration blockers (INSERTED)
+**Goal**: Fix the 5 integration blockers identified in the v1.14 milestone audit so the E2E done-criterion flow works end-to-end
+**Requirements**: FORM-02, FORM-04, TRIGGER-02, MOBILE-01, MOBILE-02, MOBILE-03, MOBILE-04, MOBILE-05, RESPONSES-02, CLAUDE-02
+**Depends on:** Phase 05
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05.1-01-PLAN.md — BLOCKER-04: fix QuestionCard.tsx option value 'yesno' → 'yes_no' + update FormStatusBadge.tsx QuestionType union
+- [ ] 05.1-02-PLAN.md — BLOCKER-01: fix PendingFormsOverlay.tsx fetch and submit URLs — prepend /forms prefix
+- [ ] 05.1-03-PLAN.md — BLOCKER-02 + BLOCKER-03: fix db.ts answer reader a.answer_value → a.value; verify ai.ts yes_no check
+- [ ] 05.1-04-PLAN.md — BLOCKER-05: new migration 20260529_fix_trigger_n_sessions.sql — SQL reads n_sessions not n
+
 ---
 
 ## Progress Table
@@ -114,6 +126,7 @@ Plans:
 | 03. Coach Form Builder (Web) | 0/4 | Planned | - |
 | 04. Athlete Blocking Overlay (Mobile) | 0/3 | Planned | - |
 | 05. Response Viewer & Claude Injection | 3/3 | Complete    | 2026-05-28 |
+| 05.1. Close audit gaps: 5 integration blockers | 0/4 | Planned | - |
 
 ---
 
