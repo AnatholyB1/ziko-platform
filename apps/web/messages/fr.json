@@ -134,7 +134,10 @@
     "kycIdDocumentCta": "Ajouter une pièce d'identité",
     "kycOtherCta": "Ajouter un autre document",
     "step3Skip": "Passer cette étape",
-    "step3Cta": "Terminer la configuration"
+    "step3Cta": "Terminer la configuration",
+    "step4Heading": "Importer vos documents",
+    "step4Subtitle": "Vous pourrez importer vos programmes et fiches clients une fois le compte créé.",
+    "step4Skip": "Ignorer pour l'instant"
   },
   "Dashboard": {
     "welcome": "Bonjour, {displayName} 👋",

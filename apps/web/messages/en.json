@@ -134,7 +134,10 @@
     "kycIdDocumentCta": "Add an ID document",
     "kycOtherCta": "Add another document",
     "step3Skip": "Skip this step",
-    "step3Cta": "Complete setup"
+    "step3Cta": "Complete setup",
+    "step4Heading": "Import your documents",
+    "step4Subtitle": "You'll be able to import your programs and client files once your account is created.",
+    "step4Skip": "Skip for now"
   },
   "Dashboard": {
     "welcome": "Hello, {displayName} 👋",
