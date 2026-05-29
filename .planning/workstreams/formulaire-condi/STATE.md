@@ -2,27 +2,26 @@
 gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: Formulaires Conditionnels
-current_plan: 1
-status: milestone_complete
-last_updated: 2026-05-28T22:07:12.087Z
-last_activity: 2026-05-28 -- Phase 05 execution started
+current_plan: All plans complete — pending verification
+status: in_progress
+last_updated: "2026-05-29T00:00:00.000Z"
+last_activity: 2026-05-29
 progress:
-  total_phases: 5
-  completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
-  percent: 80
-stopped_at: Milestone complete (Phase 05 was final phase)
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 24
+  completed_plans: 20
+  percent: 95
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 05
-Plan: 1 of 3
-Status: Milestone complete
-Last activity: 2026-05-28
+Phase: 05.1
+Plan: Not started
+Status: Urgent insertion pending
+Last activity: 2026-05-29
 
 ## Progress
 
@@ -44,6 +43,10 @@ Last activity: 2026-05-28
 | 05. Response Viewer & Claude Injection | Coach reads submissions; Claude gets last 5 as context | RESPONSES-01–03 · CLAUDE-01–02 | Not started |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 05.1 inserted after Phase 05: Close audit gaps: 5 integration blockers (URGENT)
 
 ### Key Decisions
 
@@ -69,6 +72,6 @@ None currently.
 
 ## Session Continuity
 
-**Stopped At:** Phase 04 fully executed
+**Stopped At:** Phase 05.1 execution complete — 4/4 plans done; all 5 blockers fixed
 **Resume File:** `.planning/workstreams/formulaire-condi/STATE.md`
-**Next Action:** `/gsd:plan-phase 05 --ws formulaire-condi`
+**Next Action:** `/gsd-execute-phase 05 --ws formulaire-condi` (Phase 05: Response Viewer & Claude Injection)
