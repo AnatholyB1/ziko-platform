@@ -50,14 +50,17 @@ export function WizardStep4Import({
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const pipelineStartedRef = useRef<Set<string>>(new Set());
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
   const isCapHit = fileStates.length >= 4;
 
-  // Cleanup all polling intervals on unmount
+  // Cleanup all polling intervals and abort controllers on unmount
   useEffect(() => {
     return () => {
       intervalsRef.current.forEach(clearInterval);
       intervalsRef.current.clear();
+      abortControllersRef.current.forEach((ctrl) => ctrl.abort());
+      abortControllersRef.current.clear();
     };
   }, []);
 
@@ -118,6 +121,8 @@ export function WizardStep4Import({
 
   async function runPipeline(fileState: FileState): Promise<void> {
     const fileId = fileState.id;
+    const controller = new AbortController();
+    abortControllersRef.current.set(fileId, controller);
 
     // Step 1 — Create import record
     let importId: string;
@@ -125,6 +130,7 @@ export function WizardStep4Import({
     try {
       const res = await fetch(`${apiUrl}/coach/imports`, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${jwt}`,
@@ -165,6 +171,7 @@ export function WizardStep4Import({
     try {
       const uploadRes = await fetch(signedUploadUrl, {
         method: 'PUT',
+        signal: controller.signal,
         body: fileState.file,
         headers: { 'Content-Type': fileState.file.type },
       });
@@ -191,6 +198,7 @@ export function WizardStep4Import({
     try {
       const statusRes = await fetch(`${apiUrl}/coach/imports/${importId}/status`, {
         method: 'PUT',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${jwt}`,
@@ -220,6 +228,7 @@ export function WizardStep4Import({
     try {
       const parseRes = await fetch(`${apiUrl}/coach/imports/${importId}/parse`, {
         method: 'POST',
+        signal: controller.signal,
         headers: { Authorization: `Bearer ${jwt}` },
       });
       if (!parseRes.ok) {
@@ -286,6 +295,9 @@ export function WizardStep4Import({
       clearInterval(interval);
       intervalsRef.current.delete(id);
     }
+    const controller = abortControllersRef.current.get(id);
+    controller?.abort();
+    abortControllersRef.current.delete(id);
     pipelineStartedRef.current.delete(id);
     setFileStates((prev) => prev.filter((f) => f.id !== id));
   }
