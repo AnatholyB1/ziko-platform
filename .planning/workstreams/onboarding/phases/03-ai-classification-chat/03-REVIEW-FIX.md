@@ -2,99 +2,58 @@
 phase: 03-ai-classification-chat
 fixed_at: 2026-05-30T00:00:00Z
 review_path: .planning/workstreams/onboarding/phases/03-ai-classification-chat/03-REVIEW.md
-iteration: 1
-fix_scope: critical_warning
-findings_in_scope: 8
-fixed: 8
+iteration: 2
+findings_in_scope: 5
+fixed: 5
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 03: Code Review Fix Report
 
-**Fixed at:** 2026-05-30
+**Fixed at:** 2026-05-30T00:00:00Z
 **Source review:** `.planning/workstreams/onboarding/phases/03-ai-classification-chat/03-REVIEW.md`
-**Iteration:** 1
+**Iteration:** 2
 
 **Summary:**
-- Findings in scope: 8 (3 Critical + 5 Warning; 1 Info excluded from scope)
-- Fixed: 8
+- Findings in scope: 5 (3 Warning + 2 Info; fix_scope=all)
+- Fixed: 5
 - Skipped: 0
-
----
 
 ## Fixed Issues
 
-### CR-01: Missing confidence score auto-classifies as `da_coach` instead of ambiguous
+### WR-01: `canAdvance` ignores files still in `uploading`/`parsing`
 
 **Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `046a8e9`
-**Applied fix:** Split the original `if (confidence == null || confidence < 0.4)` branch into two separate branches. The `null` case now routes to the ambiguous bucket (sets `clarificationPending: true`, pushes `ia-ambiguous` chat message). The `< 0.4` case (low confidence) now explicitly classifies as `da_coach`. The boundary logic now matches the intent described in the review.
+**Commit:** 6c66e68
+**Applied fix:** Replaced the `canAdvance` expression (lines 68-72). Previously it evaluated to `true` as soon as at least one ready file had a confirmed `docType`, allowing the user to advance while other files were still in `uploading` or `parsing` state. The new expression requires every file to be in a terminal state (`failed`, or `ready` with `Boolean(f.docType) && !f.clarificationPending`), plus at least one file must be `ready`. This prevents silently abandoning in-progress uploads when the wizard advances.
 
----
-
-### CR-02: Race condition allows exceeding 4-file cap on rapid drops
+### WR-02: Catch blocks do not guard against `AbortError`
 
 **Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `4465131`
-**Applied fix:** Moved the `remaining = 4 - fileStates.length` computation and the `toAdd` slice inside the `setFileStates` functional updater. The updater now reads `prev.length` (authoritative current length) so concurrent state update batches correctly enforce the cap even under rapid successive file drops.
+**Commit:** 829b75d
+**Applied fix:** Added `if (err instanceof DOMException && err.name === 'AbortError') return;` as the first statement in all four catch blocks in `runPipeline` (steps 1–4). This prevents the removed-file `failed` state update from racing with the `removeFile` filter call under React 18 concurrent mode when the user removes a file mid-pipeline. Combined with IN-02 fix in the same commit (see below).
 
----
-
-### CR-03: Unchecked cast of server status crashes `StatusPill`
+### IN-02: Raw network error messages from catch blocks reach the UI
 
 **Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `7d5d76c`
-**Applied fix:** Added `const VALID_FILE_STATUSES = new Set<string>(['uploading', 'parsing', 'ready', 'failed'])` at module level. In the polling else-branch, replaced `importRow.status as FileStatus` with a validated cast: unknown statuses fall back to `'failed'` instead of crashing `StatusPill`'s config lookup.
+**Commit:** 829b75d
+**Applied fix:** Replaced `const msg = err instanceof Error ? err.message : '...'` with `const msg = t('step4ErrorServer')` in all four catch blocks. Network-level errors now use the same localized `step4ErrorServer` key as HTTP non-2xx responses, preventing browser-internal strings such as "Failed to fetch" from appearing in the file list error row.
 
----
-
-### WR-01: Raw server error text surfaced to users
+### WR-03: `file.type` is empty string for `.xlsx`/`.xls`
 
 **Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `e7ad7ba`
-**Applied fix:** Replaced all four occurrences of `res.status >= 500 ? t('step4ErrorServer') : await res.text()` (one per pipeline step) with `t('step4ErrorServer')` unconditionally. All API error paths now use the i18n key, removing raw server text from user-visible output.
+**Commit:** f4c4f88
+**Applied fix:** Added a `getMimeType(file: File): string` helper function at module level (after `VALID_FILE_STATUSES`). Returns `file.type` when non-empty; otherwise derives MIME type from the file extension using a lookup map covering xlsx, xls, docx, and pdf, with `application/octet-stream` as fallback. Replaced both `fileState.file.type` usages with `getMimeType(fileState.file)`: the `mime_type` field in the import creation POST body (step 1) and the `Content-Type` header in the signed URL PUT request (step 2).
+
+### IN-01: British English spellings in `en.json`
+
+**Files modified:** `apps/web/messages/en.json`
+**Commit:** b8d6c56
+**Applied fix:** Standardized three AI chat bubble string values to American English: `analysed` → `analyzed` and `programme` → `program` in `step4AiTemplateSummary`, `step4AiTemplateSummaryShort`, and `step4AiAmbiguous`.
 
 ---
 
-### WR-02: `startPolling` stale closure over `jwt`/`apiUrl`
-
-**Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `1a03d4e`
-**Applied fix:** Removed the standalone `startPolling` function and moved all polling logic inline at the end of `runPipeline`'s `useCallback`. The inline closure captures `jwt`, `apiUrl`, and `t` from the same closure as the rest of the pipeline, ensuring consistency if any of those values change. Updated `runPipeline`'s deps to `[jwt, apiUrl, t]`. This also resolves WR-04 and WR-05 (see below).
-
----
-
-### WR-03: Array index used as React key in chat message list
-
-**Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `c4d8764`
-**Applied fix:** Added `id: string` to all five `ChatMessage` union variants. Added `id: crypto.randomUUID()` to each `setChatMessages` push site (6 total: 2 in confidence null branch, 1 for da_coach, 1 for template, 1 each in `handleClarification`). Updated the `.map((msg, i) =>` to `.map((msg) =>` and replaced all `key={\`${msg.fileId}-${i}\`}` with `key={msg.id}`.
-
----
-
-### WR-04: `userId` unused in `runPipeline` dependency array
-
-**Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `1a03d4e` (resolved as part of WR-02)
-**Applied fix:** When `runPipeline` was rewritten to inline the polling logic, the deps were set to `[jwt, apiUrl, t]`. `userId` was not included since it is not referenced anywhere inside `runPipeline`.
-
----
-
-### WR-05: Off-by-one in polling max attempts check
-
-**Files modified:** `apps/web/src/components/coach/WizardStep4Import.tsx`
-**Commit:** `1a03d4e` (resolved as part of WR-02)
-**Applied fix:** When the polling logic was moved inline, the timeout check was written as `if (attempts > MAX_ATTEMPTS)` (strict greater-than), allowing exactly 60 poll requests before timing out, matching the "3 min at 3s interval" comment.
-
----
-
-## Skipped Issues
-
-None — all 8 in-scope findings were fixed.
-
----
-
-_Fixed: 2026-05-30_
+_Fixed: 2026-05-30T00:00:00Z_
 _Fixer: Claude (gsd-code-fixer)_
-_Iteration: 1_
+_Iteration: 2_
