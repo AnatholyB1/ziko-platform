@@ -51,13 +51,13 @@ Plans:
 **Depends on**: Phase 2
 **Requirements**: PARSE-01, PARSE-02, PARSE-03
 **Success Criteria** (what must be TRUE):
-  1. Each parsed doc is labelled as DA coach / template programme / données client
+  1. Each parsed doc is labelled as DA coach or template programme (données client deferred — no target table in v1.0, per CONTEXT.md D-02)
   2. The IA chat displays a plain-language summary of what it extracted from each doc
   3. When doc type is ambiguous, the IA sends a clarification question before proceeding
   4. Coach can reply in the chat to resolve ambiguity and see the label update
 **Plans:** 2 plans
 Plans:
-- [ ] 03-01-PLAN.md -- Logic layer: DocType, ChatMessage union, classification in startPolling, handleClarification, canAdvance
+- [x] 03-01-PLAN.md -- Logic layer: DocType, ChatMessage union, classification in startPolling, handleClarification, canAdvance (completed 2026-05-30)
 - [ ] 03-02-PLAN.md -- Rendering layer: chat message UI, docType badge, Continue button, i18n keys
 **UI hint**: yes
 
@@ -82,5 +82,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
 | 2. Upload UX & Pipeline | 2/2 | Complete    | 2026-05-30 |
-| 3. AI Classification & Chat | 0/2 | Not started | - |
+| 3. AI Classification & Chat | 1/2 | In progress | - |
 | 4. Review & Commit | 0/TBD | Not started | - |
