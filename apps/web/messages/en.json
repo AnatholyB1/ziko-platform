@@ -150,7 +150,17 @@
     "step4ErrorServer": "Server error. Please try again.",
     "unitBytes": "B",
     "unitKB": "KB",
-    "unitMB": "MB"
+    "unitMB": "MB",
+    "step4AiTemplateSummary": "I analysed {name} — it looks like a {weeks}-week programme with {sessions} sessions per week.",
+    "step4AiTemplateSummaryShort": "I analysed {name} — it looks like a {weeks}-week programme.",
+    "step4AiDaCoachSummary": "I received {filename} — this document looks like a coaching methodology or DA file.",
+    "step4AiAmbiguous": "I'm not sure about the type of {filename}. Is it a programme template or a coaching DA?",
+    "step4PillTemplate": "Programme template",
+    "step4PillDaCoach": "Coaching DA",
+    "step4AiConfirmation": "Got it — I've updated the type.",
+    "step4DocTypeTemplate": "Template",
+    "step4DocTypeDaCoach": "Coaching DA",
+    "step4Continue": "Continue →"
   },
   "Dashboard": {
     "welcome": "Hello, {displayName} 👋",
