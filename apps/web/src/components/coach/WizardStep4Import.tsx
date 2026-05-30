@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline } from 'react-icons/io5';
 
@@ -72,8 +72,7 @@ export function WizardStep4Import({
         runPipeline(fs);
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileStates]);
+  }, [fileStates, runPipeline]);
 
   function startPolling(importId: string, fileId: string): void {
     let attempts = 0;
@@ -119,7 +118,7 @@ export function WizardStep4Import({
     intervalsRef.current.set(fileId, handle);
   }
 
-  async function runPipeline(fileState: FileState): Promise<void> {
+  const runPipeline = useCallback(async (fileState: FileState): Promise<void> => {
     const fileId = fileState.id;
     const controller = new AbortController();
     abortControllersRef.current.set(fileId, controller);
@@ -256,7 +255,7 @@ export function WizardStep4Import({
 
     // Step 5 — Start polling
     startPolling(importId, fileId);
-  }
+  }, [jwt, apiUrl, userId]);
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024) return `${bytes} o`;
