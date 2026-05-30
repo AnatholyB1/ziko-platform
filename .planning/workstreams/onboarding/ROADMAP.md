@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. `WizardProgress` renders 4 step indicators instead of 3
   2. Completing KYC (Step 3) navigates to `?step=4` instead of the dashboard
   3. `OnboardingWizard` renders `WizardStep4Import` when `step === 4`
-  4. Step 4 is visually reachable and does not break the existing Step 1–3 flow
+  4. Step 4 is visually reachable and does not break the existing Step 1-3 flow
 **Plans**: TBD
 **UI hint**: yes
 
@@ -36,11 +36,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Phase 1
 **Requirements**: UPLOAD-01, UPLOAD-02, UPLOAD-03
 **Success Criteria** (what must be TRUE):
-  1. An IA opening message ("Envoie-moi tes docs…") greets the coach on Step 4 load
+  1. An IA opening message ("Envoie-moi tes docs...") greets the coach on Step 4 load
   2. Coach can select up to 4 PDF / Excel / Word files via drag-and-drop or file picker
-  3. Each file automatically triggers create → upload → status → parse without manual action
+  3. Each file automatically triggers create -> upload -> status -> parse without manual action
   4. A per-file progress indicator shows upload and parse state (loading, done, error)
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md -- Chat bubble, drop zone UI, file cards, i18n keys
+- [ ] 02-02-PLAN.md -- Pipeline orchestration (create -> upload -> status -> parse -> poll)
 **UI hint**: yes
 
 ### Phase 3: AI Classification & Chat
@@ -70,11 +73,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ## Progress
 
-**Execution Order:** 1 → 2 → 3 → 4
+**Execution Order:** 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Wizard Integration | 0/TBD | Not started | - |
-| 2. Upload UX & Pipeline | 0/TBD | Not started | - |
+| 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
+| 2. Upload UX & Pipeline | 0/2 | Planning done | - |
 | 3. AI Classification & Chat | 0/TBD | Not started | - |
 | 4. Review & Commit | 0/TBD | Not started | - |
