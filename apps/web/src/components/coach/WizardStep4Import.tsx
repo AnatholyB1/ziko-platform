@@ -259,8 +259,19 @@ export function WizardStep4Import({
           intervalsRef.current.delete(fileId);
           if (importRow.status === 'ready') {
             const confidence = (importRow.parsed_data as any)?.overall_confidence as number | undefined | null;
-            if (confidence == null || confidence < 0.4) {
-              // Confident: da_coach
+            if (confidence == null) {
+              // Unknown confidence — treat as ambiguous, require user clarification
+              setFileStates((prev) =>
+                prev.map((f) =>
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                ),
+              );
+              setChatMessages((prev) => [
+                ...prev,
+                { kind: 'ia-ambiguous', fileId, filename },
+              ]);
+            } else if (confidence < 0.4) {
+              // Low confidence for template → classify as da_coach
               setFileStates((prev) =>
                 prev.map((f) =>
                   f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach' } : f,
