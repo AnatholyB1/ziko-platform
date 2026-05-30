@@ -146,7 +146,8 @@
     "step4FileParsing": "Analyse\u2026",
     "step4FileReady": "\u2713 Prêt",
     "step4FileFailed": "Erreur",
-    "step4RemoveFile": "Supprimer le fichier"
+    "step4RemoveFile": "Supprimer le fichier",
+    "step4ErrorServer": "Erreur serveur. Veuillez réessayer."
   },
   "Dashboard": {
     "welcome": "Bonjour, {displayName} 👋",
