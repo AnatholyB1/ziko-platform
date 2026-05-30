@@ -137,7 +137,16 @@
     "step3Cta": "Terminer la configuration",
     "step4Heading": "Importer vos documents",
     "step4Subtitle": "Vous pourrez importer vos programmes et fiches clients une fois le compte créé.",
-    "step4Skip": "Ignorer pour l'instant"
+    "step4Skip": "Ignorer pour l'instant",
+    "step4AiGreeting": "Envoie-moi tes docs et je m'occupe du reste.",
+    "step4DropZoneLabel": "Glisse tes fichiers ici ou",
+    "step4BrowseFiles": "Parcourir les fichiers",
+    "step4CapReached": "Maximum de 4 fichiers atteint",
+    "step4FileUploading": "Envoi\u2026",
+    "step4FileParsing": "Analyse\u2026",
+    "step4FileReady": "\u2713 Prêt",
+    "step4FileFailed": "Erreur",
+    "step4RemoveFile": "Supprimer le fichier"
   },
   "Dashboard": {
     "welcome": "Bonjour, {displayName} 👋",
