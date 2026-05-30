@@ -78,6 +78,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
-| 2. Upload UX & Pipeline | 2/2 | Complete   | 2026-05-30 |
+| 2. Upload UX & Pipeline | 2/2 | Complete    | 2026-05-30 |
 | 3. AI Classification & Chat | 0/TBD | Not started | - |
 | 4. Review & Commit | 0/TBD | Not started | - |

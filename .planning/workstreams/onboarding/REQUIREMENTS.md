@@ -16,9 +16,9 @@
 
 ### UPLOAD — Upload de fichiers
 
-- [ ] **UPLOAD-01**: Le coach peut uploader jusqu'à 4 fichiers (PDF, Excel, Word) depuis Step 4
-- [ ] **UPLOAD-02**: L'IA ouvre la conversation avec un message d'invite explicite ("Envoie-moi tes docs…")
-- [ ] **UPLOAD-03**: Chaque fichier sélectionné déclenche automatiquement le pipeline Phase 28 (create → upload → status → parse)
+- [x] **UPLOAD-01**: Le coach peut uploader jusqu'à 4 fichiers (PDF, Excel, Word) depuis Step 4
+- [x] **UPLOAD-02**: L'IA ouvre la conversation avec un message d'invite explicite ("Envoie-moi tes docs…")
+- [x] **UPLOAD-03**: Chaque fichier sélectionné déclenche automatiquement le pipeline Phase 28 (create → upload → status → parse)
 
 ### PARSE — Orchestration et classification IA
 
@@ -64,9 +64,9 @@
 | WIZARD-01 | Phase 1 | Pending |
 | WIZARD-02 | Phase 1 | Pending |
 | WIZARD-03 | Phase 1 | Pending |
-| UPLOAD-01 | Phase 2 | Pending |
-| UPLOAD-02 | Phase 2 | Pending |
-| UPLOAD-03 | Phase 2 | Pending |
+| UPLOAD-01 | Phase 2 | Complete |
+| UPLOAD-02 | Phase 2 | Complete |
+| UPLOAD-03 | Phase 2 | Complete |
 | PARSE-01 | Phase 3 | Pending |
 | PARSE-02 | Phase 3 | Pending |
 | PARSE-03 | Phase 3 | Pending |
