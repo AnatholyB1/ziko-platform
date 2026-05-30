@@ -356,15 +356,17 @@ export function WizardStep4Import({
       const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
       return ALLOWED_EXTENSIONS.has(ext) && file.size <= MAX_FILE_BYTES;
     });
-    const remaining = 4 - fileStates.length;
-    if (remaining <= 0) return;
-    const toAdd = incoming.slice(0, remaining);
-    const newStates: FileState[] = toAdd.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      status: 'uploading',
-    }));
-    setFileStates((prev) => [...prev, ...newStates]);
+    setFileStates((prev) => {
+      const remaining = 4 - prev.length;
+      if (remaining <= 0) return prev;
+      const toAdd = incoming.slice(0, remaining);
+      const newStates: FileState[] = toAdd.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        status: 'uploading',
+      }));
+      return [...prev, ...newStates];
+    });
   }
 
   function removeFile(id: string): void {
