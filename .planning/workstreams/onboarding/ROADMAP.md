@@ -13,7 +13,7 @@ A conversational Step 4 is added to the existing 3-step coach onboarding wizard.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Wizard Integration** - Wire Step 4 into the existing 3-step wizard shell
-- [ ] **Phase 2: Upload UX & Pipeline** - File drop UI + Phase 28 orchestration per file
+- [x] **Phase 2: Upload UX & Pipeline** - File drop UI + Phase 28 orchestration per file (completed 2026-05-30)
 - [ ] **Phase 3: AI Classification & Chat** - Conversational IA layer (classify, summarise, clarify)
 - [ ] **Phase 4: Review & Commit** - Consolidated review, type correction, commit, and exit flows
 
@@ -40,10 +40,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Coach can select up to 4 PDF / Excel / Word files via drag-and-drop or file picker
   3. Each file automatically triggers create -> upload -> status -> parse without manual action
   4. A per-file progress indicator shows upload and parse state (loading, done, error)
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 02-01-PLAN.md -- Chat bubble, drop zone UI, file cards, i18n keys
-- [ ] 02-02-PLAN.md -- Pipeline orchestration (create -> upload -> status -> parse -> poll)
+- [x] 02-01-PLAN.md -- Chat bubble, drop zone UI, file cards, i18n keys
+- [x] 02-02-PLAN.md -- Pipeline orchestration (create -> upload -> status -> parse -> poll)
 **UI hint**: yes
 
 ### Phase 3: AI Classification & Chat
@@ -78,6 +78,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
-| 2. Upload UX & Pipeline | 0/2 | Planning done | - |
+| 2. Upload UX & Pipeline | 2/2 | Complete   | 2026-05-30 |
 | 3. AI Classification & Chat | 0/TBD | Not started | - |
 | 4. Review & Commit | 0/TBD | Not started | - |
