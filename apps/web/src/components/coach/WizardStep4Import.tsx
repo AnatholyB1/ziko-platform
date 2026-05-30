@@ -403,6 +403,79 @@ export function WizardStep4Import({
             {t('step4AiGreeting')}
           </div>
         </div>
+        {chatMessages.map((msg, i) => {
+          if (msg.kind === 'ia-template-summary') {
+            const summaryText =
+              msg.sessions != null && msg.sessions > 0
+                ? t('step4AiTemplateSummary', { name: msg.name, weeks: msg.weeks, sessions: msg.sessions })
+                : t('step4AiTemplateSummaryShort', { name: msg.name, weeks: msg.weeks });
+            return (
+              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+                <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
+                <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">{summaryText}</div>
+              </div>
+            );
+          }
+          if (msg.kind === 'ia-da-coach-summary') {
+            return (
+              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+                <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
+                <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
+                  {t('step4AiDaCoachSummary', { filename: msg.filename })}
+                </div>
+              </div>
+            );
+          }
+          if (msg.kind === 'ia-ambiguous') {
+            const fileState = fileStates.find((f) => f.id === msg.fileId);
+            const isPending = fileState?.clarificationPending ?? false;
+            return (
+              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+                <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
+                <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
+                  {t('step4AiAmbiguous', { filename: msg.filename })}
+                  {isPending && (
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleClarification(msg.fileId, 'template_programme')}
+                        className="px-3 py-2 rounded-full border border-border text-sm font-bold text-text hover:border-primary hover:text-primary transition-colors"
+                      >
+                        {t('step4PillTemplate')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleClarification(msg.fileId, 'da_coach')}
+                        className="px-3 py-2 rounded-full border border-border text-sm font-bold text-text hover:border-primary hover:text-primary transition-colors"
+                      >
+                        {t('step4PillDaCoach')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+          if (msg.kind === 'coach-reply') {
+            const label = msg.docType === 'template_programme' ? t('step4PillTemplate') : t('step4PillDaCoach');
+            return (
+              <div key={`${msg.fileId}-${i}`} className="flex justify-end">
+                <div className="bg-primary/10 rounded-xl rounded-tr-none px-4 py-3 text-sm text-text max-w-xs">{label}</div>
+              </div>
+            );
+          }
+          if (msg.kind === 'ia-confirmation') {
+            return (
+              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+                <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
+                <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
+                  {t('step4AiConfirmation')}
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })}
       </div>
 
       {/* Section 2 — Drop Zone */}
@@ -453,6 +526,11 @@ export function WizardStep4Import({
                 )}
               </div>
               <StatusPill status={fileState.status} t={t} />
+              {fileState.docType && (
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-surface-alt text-text border border-border">
+                  {fileState.docType === 'template_programme' ? t('step4DocTypeTemplate') : t('step4DocTypeDaCoach')}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => removeFile(fileState.id)}
@@ -474,6 +552,15 @@ export function WizardStep4Import({
         >
           {t('step4Skip')}
         </button>
+        {canAdvance && (
+          <button
+            type="button"
+            onClick={onSuccess}
+            className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity"
+          >
+            {t('step4Continue')}
+          </button>
+        )}
       </div>
     </div>
   );
