@@ -2,12 +2,12 @@
 
 ## Milestones
 
-- ✅ **v1.14 Formulaires Conditionnels** — Phases 01–05.1 (shipped 2026-05-30)
+- ✅ **v1.14 Formulaires Conditionnels** — Phases 01–05.1 (shipped 2026-05-30, archived 2026-05-30)
 
 ## Phases
 
 <details>
-<summary>✅ v1.14 Formulaires Conditionnels — SHIPPED 2026-05-30</summary>
+<summary>✅ v1.14 Formulaires Conditionnels — SHIPPED 2026-05-30 | ARCHIVED 2026-05-30</summary>
 
 - [x] Phase 01: DB Schema & Backend API (2/2 plans) — completed 2026-05-25
 - [x] Phase 02: Trigger Engine (4/4 plans) — completed 2026-05-26
