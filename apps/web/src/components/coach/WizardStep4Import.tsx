@@ -66,10 +66,13 @@ export function WizardStep4Import({
   const isCapHit = fileStates.length >= 4;
 
   const canAdvance =
-    fileStates.some((f) => f.status === 'ready') &&
-    fileStates
-      .filter((f) => f.status === 'ready')
-      .every((f) => Boolean(f.docType) && !f.clarificationPending);
+    fileStates.length > 0 &&
+    fileStates.every(
+      (f) =>
+        f.status === 'failed' ||
+        (f.status === 'ready' && Boolean(f.docType) && !f.clarificationPending),
+    ) &&
+    fileStates.some((f) => f.status === 'ready');
 
   // Cleanup all polling intervals and abort controllers on unmount
   useEffect(() => {
