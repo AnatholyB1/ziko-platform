@@ -105,7 +105,7 @@ export function WizardStep4Import({
         }),
       });
       if (!res.ok) {
-        const errText = res.status >= 500 ? t('step4ErrorServer') : await res.text();
+        const errText = t('step4ErrorServer');
         setFileStates((prev) =>
           prev.map((f) =>
             f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
@@ -138,7 +138,7 @@ export function WizardStep4Import({
         headers: { 'Content-Type': fileState.file.type },
       });
       if (!uploadRes.ok) {
-        const errText = uploadRes.status >= 500 ? t('step4ErrorServer') : await uploadRes.text();
+        const errText = t('step4ErrorServer');
         setFileStates((prev) =>
           prev.map((f) =>
             f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
@@ -168,7 +168,7 @@ export function WizardStep4Import({
         body: JSON.stringify({ status: 'uploaded' }),
       });
       if (!statusRes.ok) {
-        const errText = statusRes.status >= 500 ? t('step4ErrorServer') : await statusRes.text();
+        const errText = t('step4ErrorServer');
         setFileStates((prev) =>
           prev.map((f) =>
             f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
@@ -197,7 +197,7 @@ export function WizardStep4Import({
         },
       });
       if (!parseRes.ok) {
-        const errText = parseRes.status >= 500 ? t('step4ErrorServer') : await parseRes.text();
+        const errText = t('step4ErrorServer');
         setFileStates((prev) =>
           prev.map((f) =>
             f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
