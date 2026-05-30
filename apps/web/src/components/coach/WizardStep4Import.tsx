@@ -64,6 +64,12 @@ export function WizardStep4Import({
 
   const isCapHit = fileStates.length >= 4;
 
+  const canAdvance =
+    fileStates.some((f) => f.status === 'ready') &&
+    fileStates
+      .filter((f) => f.status === 'ready')
+      .every((f) => Boolean(f.docType) && !f.clarificationPending);
+
   // Cleanup all polling intervals and abort controllers on unmount
   useEffect(() => {
     return () => {
@@ -84,7 +90,7 @@ export function WizardStep4Import({
     });
   }, [fileStates, runPipeline]);
 
-  function startPolling(importId: string, fileId: string): void {
+  function startPolling(importId: string, fileId: string, filename: string): void {
     let attempts = 0;
     const MAX_ATTEMPTS = 60; // 3 min at 3s interval
     const handle = setInterval(async () => {
@@ -104,28 +110,77 @@ export function WizardStep4Import({
           headers: { Authorization: `Bearer ${jwt}` },
         });
         if (!res.ok) return; // transient error — keep polling
-        const data = await res.json() as { import: { status: string; error_message: string | null } };
+        const data = await res.json() as { import: { status: string; error_message: string | null; parsed_data: Record<string, unknown> | null } };
         const importRow = data.import;
         if (importRow.status === 'ready' || importRow.status === 'failed') {
           clearInterval(handle);
           intervalsRef.current.delete(fileId);
-          setFileStates((prev) =>
-            prev.map((f) =>
-              f.id === fileId
-                ? {
-                    ...f,
-                    status: importRow.status as FileStatus,
-                    errorMessage: importRow.error_message ?? undefined,
-                  }
-                : f,
-            ),
-          );
+          if (importRow.status === 'ready') {
+            const confidence = (importRow.parsed_data as any)?.overall_confidence as number | undefined | null;
+            if (confidence == null || confidence < 0.4) {
+              // Confident: da_coach
+              setFileStates((prev) =>
+                prev.map((f) =>
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach' } : f,
+                ),
+              );
+              setChatMessages((prev) => [
+                ...prev,
+                { kind: 'ia-da-coach-summary', fileId, filename },
+              ]);
+            } else if (confidence >= 0.6) {
+              // Confident: template_programme
+              const name = (importRow.parsed_data as any)?.name as string | undefined ?? fileId;
+              const weeks = ((importRow.parsed_data as any)?.weeks as unknown[] | undefined)?.length ?? 0;
+              const sessions = ((importRow.parsed_data as any)?.weeks as any[] | undefined)?.[0]?.sessions?.length ?? null;
+              setFileStates((prev) =>
+                prev.map((f) =>
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme' } : f,
+                ),
+              );
+              setChatMessages((prev) => [
+                ...prev,
+                { kind: 'ia-template-summary', fileId, name, weeks, sessions: sessions === 0 ? null : sessions },
+              ]);
+            } else {
+              // Ambiguous: 0.4 <= confidence < 0.6
+              setFileStates((prev) =>
+                prev.map((f) =>
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                ),
+              );
+              setChatMessages((prev) => [
+                ...prev,
+                { kind: 'ia-ambiguous', fileId, filename },
+              ]);
+            }
+          } else {
+            // failed
+            setFileStates((prev) =>
+              prev.map((f) =>
+                f.id === fileId ? { ...f, status: importRow.status as FileStatus, errorMessage: importRow.error_message ?? undefined } : f,
+              ),
+            );
+          }
         }
       } catch {
         // network error — keep polling
       }
     }, 3000);
     intervalsRef.current.set(fileId, handle);
+  }
+
+  function handleClarification(fileId: string, chosenType: DocType): void {
+    setFileStates((prev) =>
+      prev.map((f) =>
+        f.id === fileId ? { ...f, docType: chosenType, clarificationPending: false } : f,
+      ),
+    );
+    setChatMessages((prev) => [
+      ...prev,
+      { kind: 'coach-reply', fileId, docType: chosenType },
+      { kind: 'ia-confirmation', fileId },
+    ]);
   }
 
   const runPipeline = useCallback(async (fileState: FileState): Promise<void> => {
@@ -267,7 +322,7 @@ export function WizardStep4Import({
     }
 
     // Step 5 — Start polling
-    startPolling(importId, fileId);
+    startPolling(importId, fileId, fileState.file.name);
   }, [jwt, apiUrl, userId]);
 
   function formatBytes(bytes: number): string {
