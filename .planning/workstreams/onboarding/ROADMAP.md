@@ -55,7 +55,10 @@ Plans:
   2. The IA chat displays a plain-language summary of what it extracted from each doc
   3. When doc type is ambiguous, the IA sends a clarification question before proceeding
   4. Coach can reply in the chat to resolve ambiguity and see the label update
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md -- Logic layer: DocType, ChatMessage union, classification in startPolling, handleClarification, canAdvance
+- [ ] 03-02-PLAN.md -- Rendering layer: chat message UI, docType badge, Continue button, i18n keys
 **UI hint**: yes
 
 ### Phase 4: Review & Commit
@@ -79,5 +82,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
 | 2. Upload UX & Pipeline | 2/2 | Complete    | 2026-05-30 |
-| 3. AI Classification & Chat | 0/TBD | Not started | - |
+| 3. AI Classification & Chat | 0/2 | Not started | - |
 | 4. Review & Commit | 0/TBD | Not started | - |
