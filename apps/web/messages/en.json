@@ -147,7 +147,10 @@
     "step4FileReady": "\u2713 Ready",
     "step4FileFailed": "Error",
     "step4RemoveFile": "Remove file",
-    "step4ErrorServer": "Server error. Please try again."
+    "step4ErrorServer": "Server error. Please try again.",
+    "unitBytes": "B",
+    "unitKB": "KB",
+    "unitMB": "MB"
   },
   "Dashboard": {
     "welcome": "Hello, {displayName} 👋",

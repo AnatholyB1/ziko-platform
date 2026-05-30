@@ -147,7 +147,10 @@
     "step4FileReady": "\u2713 Prêt",
     "step4FileFailed": "Erreur",
     "step4RemoveFile": "Supprimer le fichier",
-    "step4ErrorServer": "Erreur serveur. Veuillez réessayer."
+    "step4ErrorServer": "Erreur serveur. Veuillez réessayer.",
+    "unitBytes": "o",
+    "unitKB": "Ko",
+    "unitMB": "Mo"
   },
   "Dashboard": {
     "welcome": "Bonjour, {displayName} 👋",
