@@ -15,11 +15,11 @@ type FileState = {
   clarificationPending?: boolean;
 };
 type ChatMessage =
-  | { kind: 'ia-template-summary'; fileId: string; name: string; weeks: number; sessions: number | null }
-  | { kind: 'ia-da-coach-summary'; fileId: string; filename: string }
-  | { kind: 'ia-ambiguous'; fileId: string; filename: string }
-  | { kind: 'coach-reply'; fileId: string; docType: DocType }
-  | { kind: 'ia-confirmation'; fileId: string };
+  | { id: string; kind: 'ia-template-summary'; fileId: string; name: string; weeks: number; sessions: number | null }
+  | { id: string; kind: 'ia-da-coach-summary'; fileId: string; filename: string }
+  | { id: string; kind: 'ia-ambiguous'; fileId: string; filename: string }
+  | { id: string; kind: 'coach-reply'; fileId: string; docType: DocType }
+  | { id: string; kind: 'ia-confirmation'; fileId: string };
 
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'xlsx', 'xls', 'docx']);
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -256,7 +256,7 @@ export function WizardStep4Import({
               );
               setChatMessages((prev) => [
                 ...prev,
-                { kind: 'ia-ambiguous', fileId, filename },
+                { id: crypto.randomUUID(), kind: 'ia-ambiguous', fileId, filename },
               ]);
             } else if (confidence < 0.4) {
               // Low confidence for template → classify as da_coach
@@ -267,7 +267,7 @@ export function WizardStep4Import({
               );
               setChatMessages((prev) => [
                 ...prev,
-                { kind: 'ia-da-coach-summary', fileId, filename },
+                { id: crypto.randomUUID(), kind: 'ia-da-coach-summary', fileId, filename },
               ]);
             } else if (confidence >= 0.6) {
               // Confident: template_programme
@@ -281,7 +281,7 @@ export function WizardStep4Import({
               );
               setChatMessages((prev) => [
                 ...prev,
-                { kind: 'ia-template-summary', fileId, name, weeks, sessions: sessions === 0 ? null : sessions },
+                { id: crypto.randomUUID(), kind: 'ia-template-summary', fileId, name, weeks, sessions: sessions === 0 ? null : sessions },
               ]);
             } else {
               // Ambiguous: 0.4 <= confidence < 0.6
@@ -292,7 +292,7 @@ export function WizardStep4Import({
               );
               setChatMessages((prev) => [
                 ...prev,
-                { kind: 'ia-ambiguous', fileId, filename },
+                { id: crypto.randomUUID(), kind: 'ia-ambiguous', fileId, filename },
               ]);
             }
           } else {
@@ -333,8 +333,8 @@ export function WizardStep4Import({
     );
     setChatMessages((prev) => [
       ...prev,
-      { kind: 'coach-reply', fileId, docType: chosenType },
-      { kind: 'ia-confirmation', fileId },
+      { id: crypto.randomUUID(), kind: 'coach-reply', fileId, docType: chosenType },
+      { id: crypto.randomUUID(), kind: 'ia-confirmation', fileId },
     ]);
   }
 
@@ -418,14 +418,14 @@ export function WizardStep4Import({
             {t('step4AiGreeting')}
           </div>
         </div>
-        {chatMessages.map((msg, i) => {
+        {chatMessages.map((msg) => {
           if (msg.kind === 'ia-template-summary') {
             const summaryText =
               msg.sessions != null && msg.sessions > 0
                 ? t('step4AiTemplateSummary', { name: msg.name, weeks: msg.weeks, sessions: msg.sessions })
                 : t('step4AiTemplateSummaryShort', { name: msg.name, weeks: msg.weeks });
             return (
-              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+              <div key={msg.id} className="flex items-start gap-2">
                 <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
                 <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">{summaryText}</div>
               </div>
@@ -433,7 +433,7 @@ export function WizardStep4Import({
           }
           if (msg.kind === 'ia-da-coach-summary') {
             return (
-              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+              <div key={msg.id} className="flex items-start gap-2">
                 <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
                 <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
                   {t('step4AiDaCoachSummary', { filename: msg.filename })}
@@ -445,7 +445,7 @@ export function WizardStep4Import({
             const fileState = fileStates.find((f) => f.id === msg.fileId);
             const isPending = fileState?.clarificationPending ?? false;
             return (
-              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+              <div key={msg.id} className="flex items-start gap-2">
                 <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
                 <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
                   {t('step4AiAmbiguous', { filename: msg.filename })}
@@ -474,14 +474,14 @@ export function WizardStep4Import({
           if (msg.kind === 'coach-reply') {
             const label = msg.docType === 'template_programme' ? t('step4PillTemplate') : t('step4PillDaCoach');
             return (
-              <div key={`${msg.fileId}-${i}`} className="flex justify-end">
+              <div key={msg.id} className="flex justify-end">
                 <div className="bg-primary/10 rounded-xl rounded-tr-none px-4 py-3 text-sm text-text max-w-xs">{label}</div>
               </div>
             );
           }
           if (msg.kind === 'ia-confirmation') {
             return (
-              <div key={`${msg.fileId}-${i}`} className="flex items-start gap-2">
+              <div key={msg.id} className="flex items-start gap-2">
                 <div className="bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">IA</div>
                 <div className="bg-surface-alt rounded-xl rounded-tl-none px-4 py-3 text-sm text-text max-w-xs">
                   {t('step4AiConfirmation')}
