@@ -4,13 +4,22 @@ import { useTranslations } from 'next-intl';
 import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline } from 'react-icons/io5';
 
 type FileStatus = 'uploading' | 'parsing' | 'ready' | 'failed';
+type DocType = 'da_coach' | 'template_programme';
 type FileState = {
   id: string;
   file: File;
   importId?: string;
   status: FileStatus;
   errorMessage?: string;
+  docType?: DocType;
+  clarificationPending?: boolean;
 };
+type ChatMessage =
+  | { kind: 'ia-template-summary'; fileId: string; name: string; weeks: number; sessions: number | null }
+  | { kind: 'ia-da-coach-summary'; fileId: string; filename: string }
+  | { kind: 'ia-ambiguous'; fileId: string; filename: string }
+  | { kind: 'coach-reply'; fileId: string; docType: DocType }
+  | { kind: 'ia-confirmation'; fileId: string };
 
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'xlsx', 'xls', 'docx']);
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -46,6 +55,7 @@ export function WizardStep4Import({
 }) {
   const t = useTranslations('Onboarding');
   const [fileStates, setFileStates] = useState<FileState[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
