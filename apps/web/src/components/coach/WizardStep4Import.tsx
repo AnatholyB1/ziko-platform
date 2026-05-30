@@ -25,6 +25,18 @@ const ALLOWED_EXTENSIONS = new Set(['pdf', 'xlsx', 'xls', 'docx']);
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
 const VALID_FILE_STATUSES = new Set<string>(['uploading', 'parsing', 'ready', 'failed']);
 
+function getMimeType(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    pdf: 'application/pdf',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+
 function StatusPill({ status, t }: { status: FileStatus; t: (key: string) => string }) {
   const config: Record<FileStatus, { colorClasses: string; labelKey: string; hasSpinner: boolean }> = {
     uploading: { colorClasses: 'bg-blue-50 text-blue-600', labelKey: 'step4FileUploading', hasSpinner: true },
@@ -102,7 +114,7 @@ export function WizardStep4Import({
         },
         body: JSON.stringify({
           filename: fileState.file.name,
-          mime_type: fileState.file.type,
+          mime_type: getMimeType(fileState.file),
           size_bytes: fileState.file.size,
           mode: 'coach_template',
         }),
@@ -139,7 +151,7 @@ export function WizardStep4Import({
         method: 'PUT',
         signal: controller.signal,
         body: fileState.file,
-        headers: { 'Content-Type': fileState.file.type },
+        headers: { 'Content-Type': getMimeType(fileState.file) },
       });
       if (!uploadRes.ok) {
         const errText = t('step4ErrorServer');
