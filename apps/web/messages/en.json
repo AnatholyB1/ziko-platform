@@ -137,7 +137,16 @@
     "step3Cta": "Complete setup",
     "step4Heading": "Import your documents",
     "step4Subtitle": "You'll be able to import your programs and client files once your account is created.",
-    "step4Skip": "Skip for now"
+    "step4Skip": "Skip for now",
+    "step4AiGreeting": "Send me your docs and I'll handle the rest.",
+    "step4DropZoneLabel": "Drop your files here or",
+    "step4BrowseFiles": "Browse files",
+    "step4CapReached": "Maximum of 4 files reached",
+    "step4FileUploading": "Uploading\u2026",
+    "step4FileParsing": "Analyzing\u2026",
+    "step4FileReady": "\u2713 Ready",
+    "step4FileFailed": "Error",
+    "step4RemoveFile": "Remove file"
   },
   "Dashboard": {
     "welcome": "Hello, {displayName} 👋",
