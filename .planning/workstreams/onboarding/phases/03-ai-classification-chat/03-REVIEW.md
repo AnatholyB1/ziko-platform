@@ -1,6 +1,6 @@
 ---
 phase: 03-ai-classification-chat
-reviewed: 2026-05-30T00:00:00Z
+reviewed: 2026-05-31T00:00:00Z
 depth: standard
 files_reviewed: 3
 files_reviewed_list:
@@ -8,214 +8,132 @@ files_reviewed_list:
   - apps/web/messages/fr.json
   - apps/web/messages/en.json
 findings:
-  critical: 3
-  warning: 5
-  info: 1
-  total: 9
+  critical: 0
+  warning: 3
+  info: 2
+  total: 5
 status: issues_found
 ---
 
-# Phase 03: Code Review Report
+# Phase 03: Code Review Report (Re-Review)
 
-**Reviewed:** 2026-05-30T00:00:00Z
+**Reviewed:** 2026-05-31T00:00:00Z
 **Depth:** standard
 **Files Reviewed:** 3
 **Status:** issues_found
 
 ## Summary
 
-The implementation covers the file-import wizard step (WizardStep4Import) along with both locale files (fr.json, en.json). The component handles a multi-step upload pipeline (create import record → signed URL upload → mark uploaded → trigger parse → poll for result → classify), plus a chat-bubble UI for AI feedback and user clarification.
+Re-review after 8 prior fixes (CR-01 through WR-05). All previously-reported fixes have landed correctly: null confidence routes to the ambiguous bucket, polling is inline capturing fresh jwt/apiUrl, ChatMessage has stable UUID keys, the 4-file cap guard is inside the functional updater, the server status cast is validated via VALID_FILE_STATUSES, all API error paths use the t('step4ErrorServer') key, userId was removed from the runPipeline dependency array, and polling uses `> MAX_ATTEMPTS`. i18n key parity between en.json and fr.json is clean.
 
-Three blockers were found. The most serious inverts the confidence classification logic: files with a missing `overall_confidence` score are silently auto-classified as `da_coach` instead of falling into the ambiguous bucket, and the boundary condition between `da_coach` and `template_programme` is logically backwards vs. the comment. Two additional blockers cover a race condition that can push the file count beyond the 4-file cap, and an unchecked status cast that can crash the `StatusPill` component. Five warnings cover raw error text exposure to users, stale closure over `startPolling`, an unstable React key pattern, an unused `useCallback` dependency, and the off-by-one in the polling timeout. One info item flags a spelling inconsistency in the English locale.
-
----
-
-## Critical Issues
-
-### CR-01: Missing confidence score auto-classifies as `da_coach` instead of ambiguous
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:261-263`
-
-**Issue:** When `parsed_data` is absent or `overall_confidence` is not present in the server response, `confidence` is `undefined`, which satisfies `confidence == null`. This triggers the first branch, which silently auto-classifies the file as `da_coach` with the comment "Confident: da_coach". A missing confidence score is not a confident classification — it should fall into the ambiguous bucket requiring user clarification. Additionally the boundary semantics are arguably inverted: the first branch fires on `< 0.4` (low confidence), yet the comment and intent appear to treat this as a confident `da_coach` result. If the model returns a score of 0.1 because it found some coach-style text but is mostly unsure, the file is classified as da_coach with no user prompt.
-
-**Fix:**
-```typescript
-if (confidence == null) {
-  // Unknown confidence — treat as ambiguous
-  setFileStates((prev) =>
-    prev.map((f) =>
-      f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
-    ),
-  );
-  setChatMessages((prev) => [
-    ...prev,
-    { kind: 'ia-ambiguous', fileId, filename },
-  ]);
-} else if (confidence < 0.4) {
-  // Low confidence for template → classify as da_coach
-  setFileStates(...)
-  setChatMessages(...)
-} else if (confidence >= 0.6) {
-  // High confidence for template_programme
-  ...
-} else {
-  // Ambiguous: 0.4 <= confidence < 0.6
-  ...
-}
-```
-
----
-
-### CR-02: Race condition allows exceeding the 4-file cap on rapid successive drops/selections
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:348-356`
-
-**Issue:** `handleFiles` computes `remaining = 4 - fileStates.length` using the closure-captured `fileStates` snapshot at call time, then calls `setFileStates((prev) => [...prev, ...newStates])`. If two drop events fire in quick succession before React commits the first state update, both invocations see the same stale `fileStates.length` (e.g., `0`) and both compute `remaining = 4`, allowing up to 8 files to be added. The CSS `pointer-events-none` guard only applies when `isCapHit` is already true at render time and does not protect against this race.
-
-**Fix:** Move the cap guard inside the functional state updater so it reads the authoritative current length:
-```typescript
-function handleFiles(fileList: FileList | null): void {
-  if (!fileList) return;
-  const incoming = Array.from(fileList).filter((file) => {
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-    return ALLOWED_EXTENSIONS.has(ext) && file.size <= MAX_FILE_BYTES;
-  });
-  setFileStates((prev) => {
-    const remaining = 4 - prev.length;
-    if (remaining <= 0) return prev;
-    const toAdd = incoming.slice(0, remaining);
-    const newStates: FileState[] = toAdd.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      status: 'uploading',
-    }));
-    return [...prev, ...newStates];
-  });
-}
-```
-
----
-
-### CR-03: Unchecked cast of server `status` to `FileStatus` can crash `StatusPill`
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:302-303`
-
-**Issue:** `importRow.status as FileStatus` performs an unchecked cast. If the backend returns an unexpected status value (e.g., `'processing'`, `'cancelled'`, `'error'`), the value is cast to `FileStatus` silently and stored in state. `StatusPill` then performs `config[status]` at line 34, which returns `undefined` for any key not in `{ uploading, parsing, ready, failed }`. The immediately following destructure `const { colorClasses, labelKey, hasSpinner } = config[status]` throws `TypeError: Cannot destructure property 'colorClasses' of undefined`, crashing the component.
-
-**Fix:**
-```typescript
-const VALID_FILE_STATUSES = new Set<string>(['uploading', 'parsing', 'ready', 'failed']);
-
-// In the polling callback:
-const rawStatus = importRow.status;
-const safeStatus: FileStatus = VALID_FILE_STATUSES.has(rawStatus)
-  ? (rawStatus as FileStatus)
-  : 'failed';
-setFileStates((prev) =>
-  prev.map((f) =>
-    f.id === fileId
-      ? { ...f, status: safeStatus, errorMessage: importRow.error_message ?? undefined }
-      : f,
-  ),
-);
-```
+Three new warnings and two info items were found. The most impactful is WR-01: `canAdvance` gates on "at least one ready file has a docType" while ignoring files still in `uploading` or `parsing` state, allowing the user to advance mid-pipeline and silently abandon in-progress uploads.
 
 ---
 
 ## Warnings
 
-### WR-01: Raw server error text surfaced directly to users
+### WR-01: `canAdvance` ignores files still in `uploading`/`parsing` — user can advance mid-pipeline
 
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:107, 140, 170, 199`
+**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:68-72`
 
-**Issue:** On non-5xx API failures, `await res.text()` is used verbatim as `errorMessage`. This text is rendered directly in the file list row (lines 522-525). Depending on the backend implementation, this may expose stack traces, JSON error payloads, or HTML error pages to the user. It also makes error messages non-localizable.
+**Issue:** `canAdvance` evaluates to `true` as soon as at least one file is `ready` with a confirmed `docType`, without requiring all other files to reach a terminal state. Scenario: user drops two files; the first completes classification (`ready`, docType set) while the second is still `parsing`. `canAdvance` becomes `true` and the Continue button appears. When the user clicks it, `onSuccess` fires, the wizard advances, and the component unmounts. The cleanup effect at line 75 aborts the second file's controller and clears its polling interval, but the second file was never persisted as `ready` on the server — the user silently loses it with no error message.
 
-**Fix:** Replace each occurrence with a generic localizable error or a short sanitized extract:
-```typescript
-// Instead of: const errText = res.status >= 500 ? t('step4ErrorServer') : await res.text();
-const errText = t('step4ErrorServer'); // use a single i18n key for all API errors
-// or cap length and strip HTML: (await res.text()).replace(/<[^>]+>/g, '').slice(0, 120)
+**Fix:** Require every file to have reached a terminal state before enabling advance:
+
+```ts
+const canAdvance =
+  fileStates.length > 0 &&
+  fileStates.every(
+    (f) =>
+      f.status === 'failed' ||
+      (f.status === 'ready' && Boolean(f.docType) && !f.clarificationPending),
+  ) &&
+  fileStates.some((f) => f.status === 'ready');
 ```
 
 ---
 
-### WR-02: `startPolling` closure over `apiUrl`/`jwt` is not captured at pipeline start time
+### WR-02: Catch blocks do not guard against `AbortError` — state mutation on intentional cancellation
 
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:83, 222, 235`
+**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:122-130, 149-157, 179-186, 212-219`
 
-**Issue:** `startPolling` is a plain function declaration inside the component, not memoized with `useCallback`. It closes over `apiUrl` and `jwt` from the enclosing render scope. `runPipeline` (a `useCallback`) calls `startPolling(...)` at step 5, but `startPolling` itself is not in `runPipeline`'s dependency array. If `jwt` rotates between the pipeline start and the point where polling begins, polling will use the stale token from the render when `runPipeline` was last created, not from when `startPolling` was called.
+**Issue:** When `removeFile(id)` is called while `runPipeline` is mid-flight, `controller.abort()` fires (line 381), causing the active `fetch()` to throw a `DOMException` with `name === 'AbortError'`. None of the four catch blocks in `runPipeline` (steps 1–4) check for `AbortError` before proceeding. Each catch calls `setFileStates` to mark the file as `failed`, racing with `removeFile`'s own `setFileStates` filter call. Under React 18 concurrent mode the ordering of these two updates is not guaranteed: the `failed` map can be applied after the filter, causing the removed file to transiently re-appear with status `failed`. Additionally, if the timing works out, the raw `DOMException.message` ("The user aborted a request." or browser equivalent) is rendered in the error display at lines 537–540.
 
-**Fix:** Either include `startPolling` in `runPipeline`'s `useCallback` deps (which requires memoizing `startPolling` too), or move the polling logic inline into `runPipeline` to ensure it captures the current `jwt` at invocation time.
+**Fix:** Add an `AbortError` guard at the top of every catch block in `runPipeline`:
 
----
-
-### WR-03: Chat message list uses array index in React key, risking reconciliation bugs
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:413, 421, 433, 462, 469`
-
-**Issue:** Keys are constructed as `` `${msg.fileId}-${i}` `` where `i` is the array index from `chatMessages.map`. If a message is ever removed from the middle of the array (e.g., after removing a file), React will incorrectly reuse DOM nodes for the wrong messages. This is particularly relevant for the `ia-ambiguous` message which renders interactive buttons.
-
-**Fix:** Assign a stable unique ID to each `ChatMessage` at the time it is created and use that as the key:
-```typescript
-type ChatMessage =
-  | { id: string; kind: 'ia-template-summary'; fileId: string; ... }
-  | ...
-
-// When pushing to chatMessages:
-{ id: crypto.randomUUID(), kind: 'ia-da-coach-summary', fileId, filename }
-
-// In JSX:
-{chatMessages.map((msg) => {
-  // use msg.id as key
-  ...
-  return <div key={msg.id} ...>
-```
-
----
-
-### WR-04: `userId` is listed as a `useCallback` dependency but never used inside `runPipeline`
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:223`
-
-**Issue:** `useCallback(..., [jwt, apiUrl, userId])` — `userId` appears in the dependency array but is not referenced anywhere inside the `runPipeline` function body. This is dead dependency that adds a misleading signal to future readers (suggesting `userId` is sent somewhere in the pipeline, when it is not).
-
-**Fix:** Remove `userId` from the dependency array:
-```typescript
-}, [jwt, apiUrl]);
-```
-
----
-
-### WR-05: Off-by-one in polling max attempts check
-
-**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:239-249`
-
-**Issue:** `attempts` is incremented to 1 on the first tick, then checked `if (attempts >= MAX_ATTEMPTS)`. With `MAX_ATTEMPTS = 60`, the interval fires 60 times total: on tick 60, the check `60 >= 60` is true and the timeout triggers — but the network request for that tick never executes. Only 59 actual poll requests are made, not 60 (2 minutes 57 seconds of effective polling, not 3 minutes as the comment states).
-
-**Fix:** Either check `> MAX_ATTEMPTS` (allowing exactly 60 requests), or increment after the request:
-```typescript
-if (attempts > MAX_ATTEMPTS) {
-  // timeout
+```ts
+} catch (err) {
+  if (err instanceof DOMException && err.name === 'AbortError') return;
+  const msg = err instanceof Error ? err.message : 'Network error';
+  setFileStates((prev) =>
+    prev.map((f) =>
+      f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
+    ),
+  );
   return;
 }
-// ... do the fetch ...
-attempts += 1;
 ```
+
+Apply this guard at lines 122, 149, 179, and 212.
+
+---
+
+### WR-03: `file.type` is empty string for `.xlsx`/`.xls` in most browsers
+
+**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:102, 138`
+
+**Issue:** In Chrome, Firefox, and Safari on both Windows and macOS, `File.type` is an empty string for `.xlsx` and `.xls` files — the browser does not reliably populate MIME type for these extensions. This causes two concrete problems:
+
+1. Line 102: `mime_type: fileState.file.type` sends `mime_type: ""` in the import creation request. If the server uses this field to determine parse strategy, it will receive no useful type hint for Excel files.
+2. Line 138: `headers: { 'Content-Type': fileState.file.type }` sends `Content-Type: ""` to the signed storage URL. S3 and GCS signed upload URLs that encode an expected `Content-Type` in their signature will reject the PUT request if the header does not match, returning a 403. Even without signature enforcement, an empty Content-Type header violates the PUT contract for most storage providers.
+
+**Fix:** Derive a fallback MIME type from the file extension when `file.type` is empty:
+
+```ts
+function getMimeType(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    pdf: 'application/pdf',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+```
+
+Replace `fileState.file.type` with `getMimeType(fileState.file)` at both lines 102 and 138.
 
 ---
 
 ## Info
 
-### IN-01: British spelling "analysed" inconsistency in English locale
+### IN-01: British English spellings in `en.json` ("analysed", "programme") — carried from previous pass
 
-**File:** `apps/web/messages/en.json:154-155`
+**File:** `apps/web/messages/en.json:154-155, 157`
 
-**Issue:** `step4AiTemplateSummary` and `step4AiTemplateSummaryShort` use `"I analysed"` (British English). The rest of the English copy uses American English conventions (e.g., `"Analyze"`, `"analyze"`). This is a minor inconsistency in copy tone.
+**Issue:** Three string values use British English spellings that are inconsistent with the rest of the English locale:
+- `step4AiTemplateSummary`: "I **analysed** {name} — it looks like a {weeks}-week **programme**…"
+- `step4AiTemplateSummaryShort`: "I **analysed** {name} — it looks like a {weeks}-week **programme**."
+- `step4AiAmbiguous`: "Is it a **programme** template or a coaching DA?"
 
-**Fix:** Standardize to `"I analyzed"` to match the rest of the English locale copy.
+These strings are rendered in user-visible AI chat bubbles.
+
+**Fix:** Standardize to American English: `analysed` → `analyzed`, `programme` → `program` in all three values.
 
 ---
 
-_Reviewed: 2026-05-30T00:00:00Z_
+### IN-02: Raw network error messages from catch blocks reach the UI
+
+**File:** `apps/web/src/components/coach/WizardStep4Import.tsx:123, 150, 180, 213`
+
+**Issue:** The four catch blocks for network-level errors (steps 1–4) set `errorMessage` to `err.message`. For real network failures this produces browser-generated strings such as "Failed to fetch", "NetworkError when attempting to fetch resource", or "Load failed" — none of which are localized or user-friendly. These strings are rendered directly in the file list error row (lines 537–540). The `step4ErrorServer` i18n key is already used for HTTP non-2xx responses but not for thrown errors, creating an inconsistency.
+
+**Fix:** Replace `err.message` with `t('step4ErrorServer')` in all four catch blocks to maintain consistency with the HTTP error path and avoid leaking browser-internal error strings. (This fix also becomes mandatory when WR-02's AbortError guard is added, since the guard returns early and the remaining path should always produce a localized message.)
+
+---
+
+_Reviewed: 2026-05-31T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
