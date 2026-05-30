@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline } from 'react-icons/io5';
 
@@ -46,8 +46,192 @@ export function WizardStep4Import({
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+  const pipelineStartedRef = useRef<Set<string>>(new Set());
 
   const isCapHit = fileStates.length >= 4;
+
+  // Cleanup all polling intervals on unmount
+  useEffect(() => {
+    return () => {
+      intervalsRef.current.forEach(clearInterval);
+      intervalsRef.current.clear();
+    };
+  }, []);
+
+  // Pipeline trigger: fire for any new file with status 'uploading' and no importId yet
+  useEffect(() => {
+    fileStates.forEach((fs) => {
+      if (fs.status === 'uploading' && !fs.importId && !pipelineStartedRef.current.has(fs.id)) {
+        pipelineStartedRef.current.add(fs.id);
+        runPipeline(fs);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileStates]);
+
+  function startPolling(importId: string, fileId: string): void {
+    const handle = setInterval(async () => {
+      try {
+        const res = await fetch(`${apiUrl}/coach/imports/${importId}`, {
+          headers: { Authorization: `Bearer ${jwt}` },
+        });
+        if (!res.ok) return; // transient error — keep polling
+        const data = await res.json() as { import: { status: string; error_message: string | null } };
+        const importRow = data.import;
+        if (importRow.status === 'ready' || importRow.status === 'failed') {
+          clearInterval(handle);
+          intervalsRef.current.delete(fileId);
+          setFileStates((prev) =>
+            prev.map((f) =>
+              f.id === fileId
+                ? {
+                    ...f,
+                    status: importRow.status as FileStatus,
+                    errorMessage: importRow.error_message ?? undefined,
+                  }
+                : f,
+            ),
+          );
+        }
+      } catch {
+        // network error — keep polling
+      }
+    }, 3000);
+    intervalsRef.current.set(fileId, handle);
+  }
+
+  async function runPipeline(fileState: FileState): Promise<void> {
+    const fileId = fileState.id;
+
+    // Step 1 — Create import record
+    let importId: string;
+    let signedUploadUrl: string;
+    try {
+      const res = await fetch(`${apiUrl}/coach/imports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({
+          filename: fileState.file.name,
+          mime_type: fileState.file.type,
+          size_bytes: fileState.file.size,
+          mode: 'coach_template',
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
+          ),
+        );
+        return;
+      }
+      const data = await res.json() as { import_id: string; signed_upload_url: string };
+      importId = data.import_id;
+      signedUploadUrl = data.signed_upload_url;
+      setFileStates((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, importId } : f)),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
+        ),
+      );
+      return;
+    }
+
+    // Step 2 — Upload file to signed URL (no Authorization header — self-authenticating)
+    try {
+      const uploadRes = await fetch(signedUploadUrl, {
+        method: 'PUT',
+        body: fileState.file,
+        headers: { 'Content-Type': fileState.file.type },
+      });
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text();
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
+          ),
+        );
+        return;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Storage upload failed';
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
+        ),
+      );
+      return;
+    }
+
+    // Step 3 — Mark as uploaded
+    try {
+      const statusRes = await fetch(`${apiUrl}/coach/imports/${importId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({ status: 'uploaded' }),
+      });
+      if (!statusRes.ok) {
+        const errText = await statusRes.text();
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
+          ),
+        );
+        return;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Status update failed';
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
+        ),
+      );
+      return;
+    }
+
+    // Step 4 — Trigger parse
+    try {
+      const parseRes = await fetch(`${apiUrl}/coach/imports/${importId}/parse`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      if (!parseRes.ok) {
+        const errText = await parseRes.text();
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: errText } : f,
+          ),
+        );
+        return;
+      }
+      // 202 accepted — immediately update local status to 'parsing' (don't wait for polling)
+      setFileStates((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, status: 'parsing' } : f)),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Parse trigger failed';
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
+        ),
+      );
+      return;
+    }
+
+    // Step 5 — Start polling
+    startPolling(importId, fileId);
+  }
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024) return `${bytes} o`;
@@ -83,6 +267,7 @@ export function WizardStep4Import({
       clearInterval(interval);
       intervalsRef.current.delete(id);
     }
+    pipelineStartedRef.current.delete(id);
     setFileStates((prev) => prev.filter((f) => f.id !== id));
   }
 
