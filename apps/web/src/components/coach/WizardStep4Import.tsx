@@ -73,7 +73,20 @@ export function WizardStep4Import({
   }, [fileStates]);
 
   function startPolling(importId: string, fileId: string): void {
+    let attempts = 0;
+    const MAX_ATTEMPTS = 60; // 3 min at 3s interval
     const handle = setInterval(async () => {
+      attempts = attempts + 1;
+      if (attempts >= MAX_ATTEMPTS) {
+        clearInterval(handle);
+        intervalsRef.current.delete(fileId);
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: 'Timeout' } : f,
+          ),
+        );
+        return;
+      }
       try {
         const res = await fetch(`${apiUrl}/coach/imports/${importId}`, {
           headers: { Authorization: `Bearer ${jwt}` },
