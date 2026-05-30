@@ -33,7 +33,7 @@ Inherits from Phase 1. No new scale values introduced. All values are multiples 
 
 | Token | Value | Tailwind | Usage in this phase |
 |-------|-------|----------|---------------------|
-| xs | 4px | `gap-1` | File icon ↔ filename gap |
+| xs | 4px | `gap-1` | File icon ↔ filename gap; status pill icon ↔ label gap |
 | sm | 8px | `gap-2` / `p-2` | Avatar ↔ bubble gap; status pill internal padding |
 | md | 16px | `p-4` / `gap-4` | File card row padding; drop zone button margin |
 | lg | 24px | `p-6` / `gap-6` | Chat bubble container bottom margin before drop zone |
@@ -45,6 +45,7 @@ Exceptions:
 - Avatar: `w-8 h-8` (32px square) — prescribed exactly in D-02.
 - Drop zone min-height: `min-h-[120px]` — fits comfortably within the `p-8` card without overflow.
 - Touch/click target on × remove button: `w-8 h-8` (32px) minimum.
+- Status pill horizontal padding: `px-3` (12px) — nearest 4px multiple to a compact pill shape.
 
 ---
 
@@ -52,14 +53,16 @@ Exceptions:
 
 Inherits Phase 1 type scale. Two new roles added for file card micro-text.
 
+Maximum 2 font weights in this phase: **400 (normal)** for all body and label text, **700 (bold)** for headings and badge labels. Weight 500 (medium) is not used.
+
 | Role | Size | Weight | Line Height | Tailwind Classes | Usage |
 |------|------|--------|-------------|------------------|-------|
 | Step heading | 20px (xl) | 700 (bold) | 1.4 | `text-xl font-bold text-text` | Card H2 (unchanged from Phase 1) |
 | Step subtitle | 14px (sm) | 400 (normal) | 1.5 | `text-sm font-normal text-muted` | Card body copy (unchanged) |
 | Chat bubble body | 14px (sm) | 400 (normal) | 1.5 | `text-sm text-text` | AI opening message text |
-| File card filename | 14px (sm) | 500 (medium) | 1.4 | `text-sm font-medium text-text` | Filename in file card row |
-| File card meta | 12px (xs) | 400 (normal) | 1.4 | `text-xs text-muted` | File size, inline error message |
-| Status pill label | 12px (xs) | 500 (medium) | 1.0 | `text-xs font-medium` | State label inside pill |
+| File card filename | 14px (sm) | 400 (normal) | 1.4 | `text-sm font-normal text-text` | Filename in file card row |
+| File card meta | 12px (xs) | 400 (normal) | 1.4 | `text-xs text-muted` | File size, inline error message — 12px is intentionally smaller than 14px body to establish a secondary hierarchy within the card row; executor must not merge these two sizes |
+| Status pill label | 12px (xs) | 700 (bold) | 1.0 | `text-xs font-bold` | State label inside pill — bold at 12px because the pill is the primary status signal and needs contrast at small size; 12px here vs 14px body is a deliberate distinct role, not a rounding choice |
 | Drop zone label | 14px (sm) | 400 (normal) | 1.5 | `text-sm text-muted` | Drop zone instructions |
 | Avatar initials | 12px (xs) | 700 (bold) | 1.0 | `text-xs font-bold` | "IA" inside avatar circle |
 | Button label (ghost) | 14px (sm) | 400 (normal) | n/a | `text-sm font-normal text-muted` | Skip button (unchanged) |
@@ -92,6 +95,12 @@ Accent (`#FF5C1A`) reserved for:
 3. Drop zone drag-over background tint (`bg-primary/5`)
 
 No other elements use accent in this phase. Status pills use their own semantic colors from Tailwind's blue/orange/green/red scale — they do NOT use the primary accent.
+
+---
+
+## Visuals
+
+**Primary focal point:** the IA avatar circle (`bg-primary`) — the only orange element inside the card, establishing visual hierarchy for the chat container. All other elements use neutral or semantic colors; the orange avatar is the single anchor that draws the eye first.
 
 ---
 
@@ -185,7 +194,7 @@ No other elements use accent in this phase. Status pills use their own semantic 
     {fileTypeIcon}               ← see File Type Icons section below
   </div>
   <div class="flex-1 min-w-0">
-    <p class="text-sm font-medium text-text truncate">{file.name}</p>
+    <p class="text-sm font-normal text-text truncate">{file.name}</p>
     <p class="text-xs text-muted">{formatBytes(file.size)}</p>
     {status === 'failed' && errorMessage && (
       <p class="text-xs text-red-500 mt-0.5 truncate" title={errorMessage}>
@@ -223,7 +232,7 @@ No other elements use accent in this phase. Status pills use their own semantic 
 
 **DOM structure:**
 ```
-<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {colorClasses}">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold {colorClasses}">
   {hasSpinner && <span class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />}
   {label}
 </span>
