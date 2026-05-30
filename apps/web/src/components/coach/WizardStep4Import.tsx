@@ -123,7 +123,8 @@ export function WizardStep4Import({
         prev.map((f) => (f.id === fileId ? { ...f, importId } : f)),
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Network error';
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = t('step4ErrorServer');
       setFileStates((prev) =>
         prev.map((f) =>
           f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
@@ -150,7 +151,8 @@ export function WizardStep4Import({
         return;
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Storage upload failed';
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = t('step4ErrorServer');
       setFileStates((prev) =>
         prev.map((f) =>
           f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
@@ -180,7 +182,8 @@ export function WizardStep4Import({
         return;
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Status update failed';
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = t('step4ErrorServer');
       setFileStates((prev) =>
         prev.map((f) =>
           f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
@@ -213,7 +216,8 @@ export function WizardStep4Import({
         prev.map((f) => (f.id === fileId ? { ...f, status: 'parsing' } : f)),
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Parse trigger failed';
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      const msg = t('step4ErrorServer');
       setFileStates((prev) =>
         prev.map((f) =>
           f.id === fileId ? { ...f, status: 'failed', errorMessage: msg } : f,
