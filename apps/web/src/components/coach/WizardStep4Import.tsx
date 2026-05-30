@@ -228,7 +228,10 @@ export function WizardStep4Import({
       const parseRes = await fetch(`${apiUrl}/coach/imports/${importId}/parse`, {
         method: 'POST',
         signal: controller.signal,
-        headers: { Authorization: `Bearer ${jwt}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
       });
       if (!parseRes.ok) {
         const errText = parseRes.status >= 500 ? t('step4ErrorServer') : await parseRes.text();
