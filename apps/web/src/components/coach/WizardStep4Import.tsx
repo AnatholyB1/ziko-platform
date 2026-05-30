@@ -23,6 +23,7 @@ type ChatMessage =
 
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'xlsx', 'xls', 'docx']);
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+const VALID_FILE_STATUSES = new Set<string>(['uploading', 'parsing', 'ready', 'failed']);
 
 function StatusPill({ status, t }: { status: FileStatus; t: (key: string) => string }) {
   const config: Record<FileStatus, { colorClasses: string; labelKey: string; hasSpinner: boolean }> = {
@@ -308,10 +309,14 @@ export function WizardStep4Import({
               ]);
             }
           } else {
-            // failed
+            // failed or unexpected status — validate before cast to prevent StatusPill crash
+            const rawStatus = importRow.status;
+            const safeStatus: FileStatus = VALID_FILE_STATUSES.has(rawStatus)
+              ? (rawStatus as FileStatus)
+              : 'failed';
             setFileStates((prev) =>
               prev.map((f) =>
-                f.id === fileId ? { ...f, status: importRow.status as FileStatus, errorMessage: importRow.error_message ?? undefined } : f,
+                f.id === fileId ? { ...f, status: safeStatus, errorMessage: importRow.error_message ?? undefined } : f,
               ),
             );
           }
