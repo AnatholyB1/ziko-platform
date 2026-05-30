@@ -219,31 +219,18 @@ export function WizardStep4Import({
       return;
     }
 
-    // Step 5 — Start polling
-    startPolling(importId, fileId, fileState.file.name);
-  }, [jwt, apiUrl, userId]);
-
-  // Pipeline trigger: fire for any new file with status 'uploading' and no importId yet
-  useEffect(() => {
-    fileStates.forEach((fs) => {
-      if (fs.status === 'uploading' && !fs.importId && !pipelineStartedRef.current.has(fs.id)) {
-        pipelineStartedRef.current.add(fs.id);
-        runPipeline(fs);
-      }
-    });
-  }, [fileStates, runPipeline]);
-
-  function startPolling(importId: string, fileId: string, filename: string): void {
+    // Step 5 — Start polling (inline so closure captures same jwt/apiUrl as above steps)
+    const filename = fileState.file.name;
     let attempts = 0;
     const MAX_ATTEMPTS = 60; // 3 min at 3s interval
     const handle = setInterval(async () => {
       attempts = attempts + 1;
-      if (attempts >= MAX_ATTEMPTS) {
+      if (attempts > MAX_ATTEMPTS) {
         clearInterval(handle);
         intervalsRef.current.delete(fileId);
         setFileStates((prev) =>
           prev.map((f) =>
-            f.id === fileId ? { ...f, status: 'failed', errorMessage: 'Timeout' } : f,
+            f.id === fileId ? { ...f, status: 'failed', errorMessage: t('step4ErrorServer') } : f,
           ),
         );
         return;
@@ -326,7 +313,17 @@ export function WizardStep4Import({
       }
     }, 3000);
     intervalsRef.current.set(fileId, handle);
-  }
+  }, [jwt, apiUrl, t]);
+
+  // Pipeline trigger: fire for any new file with status 'uploading' and no importId yet
+  useEffect(() => {
+    fileStates.forEach((fs) => {
+      if (fs.status === 'uploading' && !fs.importId && !pipelineStartedRef.current.has(fs.id)) {
+        pipelineStartedRef.current.add(fs.id);
+        runPipeline(fs);
+      }
+    });
+  }, [fileStates, runPipeline]);
 
   function handleClarification(fileId: string, chosenType: DocType): void {
     setFileStates((prev) =>
