@@ -12,6 +12,9 @@ type FileState = {
   errorMessage?: string;
 };
 
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'xlsx', 'xls', 'docx']);
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 function StatusPill({ status, t }: { status: FileStatus; t: (key: string) => string }) {
   const config: Record<FileStatus, { colorClasses: string; labelKey: string; hasSpinner: boolean }> = {
     uploading: { colorClasses: 'bg-blue-50 text-blue-600', labelKey: 'step4FileUploading', hasSpinner: true },
@@ -249,7 +252,10 @@ export function WizardStep4Import({
 
   function handleFiles(fileList: FileList | null): void {
     if (!fileList) return;
-    const incoming = Array.from(fileList);
+    const incoming = Array.from(fileList).filter((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+      return ALLOWED_EXTENSIONS.has(ext) && file.size <= MAX_FILE_BYTES;
+    });
     const remaining = 4 - fileStates.length;
     if (remaining <= 0) return;
     const toAdd = incoming.slice(0, remaining);
