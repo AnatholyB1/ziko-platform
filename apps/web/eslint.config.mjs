@@ -41,10 +41,11 @@ const eslintConfig = [
     },
   },
 
-  // ─── D-11 Allowlist: Legacy admin client + tests ──────────────────────
+  // ─── D-11 Allowlist: Legacy admin client + tests + dashboard helpers ─────
   {
     files: [
       'src/lib/supabase/admin.ts',
+      'src/lib/dashboard/**',
       '**/*.test.{ts,tsx}',
       '**/*.spec.{ts,tsx}',
     ],

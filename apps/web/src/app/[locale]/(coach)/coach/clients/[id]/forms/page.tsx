@@ -6,7 +6,7 @@ import { ClientFormsContent } from './ClientFormsContent';
 interface FormAnswer {
   question_id: string;
   question_label: string;
-  question_type: string;
+  question_type: 'text' | 'scale' | 'yes_no' | 'choice';
   answer_value: string | number;
 }
 
@@ -56,5 +56,5 @@ export default async function ClientFormsPage({
     }
   }
 
-  return <ClientFormsContent forms={formsData.forms as any} locale={locale} />;
+  return <ClientFormsContent forms={formsData.forms} locale={locale} />;
 }

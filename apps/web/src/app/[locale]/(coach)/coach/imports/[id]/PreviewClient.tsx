@@ -658,8 +658,7 @@ export function PreviewClient({ importRow, locale, accessToken }: PreviewClientP
     setEditedProgram((prev) => {
       if (!prev) return prev;
       const next = deepClone(prev);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (next.weeks[weekIdx].sessions[sessionIdx].exercises[exIdx] as any)[field] = value;
+      (next.weeks[weekIdx].sessions[sessionIdx].exercises[exIdx] as unknown as Record<string, unknown>)[field as string] = value;
       return next;
     });
   }

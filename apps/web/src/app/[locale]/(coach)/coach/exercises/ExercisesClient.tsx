@@ -193,7 +193,7 @@ export function ExercisesClient({
         <div className="flex flex-col items-center py-16 text-center">
           <IoBarbell className="text-5xl text-muted" />
           <h2 className="text-xl font-bold text-text mt-4">
-            Aucun exercice pour l'instant
+            Aucun exercice pour l&apos;instant
           </h2>
           <p className="text-sm text-muted mt-2 max-w-xs">
             Créez votre premier exercice custom et attachez-y une vidéo ou photo

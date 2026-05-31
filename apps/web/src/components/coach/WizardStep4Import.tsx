@@ -259,13 +259,14 @@ export function WizardStep4Import({
           headers: { Authorization: `Bearer ${jwt}` },
         });
         if (!res.ok) return; // transient error — keep polling
-        const data = await res.json() as { import: { status: string; error_message: string | null; parsed_data: Record<string, unknown> | null } };
+        type ParsedData = { overall_confidence?: number | null; name?: string; weeks?: Array<{ sessions?: unknown[] }> } | null;
+        const data = await res.json() as { import: { status: string; error_message: string | null; parsed_data: ParsedData } };
         const importRow = data.import;
         if (importRow.status === 'ready' || importRow.status === 'failed') {
           clearInterval(handle);
           intervalsRef.current.delete(fileId);
           if (importRow.status === 'ready') {
-            const confidence = (importRow.parsed_data as any)?.overall_confidence as number | undefined | null;
+            const confidence = importRow.parsed_data?.overall_confidence;
             if (confidence == null) {
               // Unknown confidence — treat as ambiguous, require user clarification
               setFileStates((prev) =>
@@ -290,9 +291,9 @@ export function WizardStep4Import({
               ]);
             } else if (confidence >= 0.6) {
               // Confident: template_programme
-              const name = (importRow.parsed_data as any)?.name as string | undefined ?? fileId;
-              const weeks = ((importRow.parsed_data as any)?.weeks as unknown[] | undefined)?.length ?? 0;
-              const sessions = ((importRow.parsed_data as any)?.weeks as any[] | undefined)?.[0]?.sessions?.length ?? null;
+              const name = importRow.parsed_data?.name ?? fileId;
+              const weeks = importRow.parsed_data?.weeks?.length ?? 0;
+              const sessions = importRow.parsed_data?.weeks?.[0]?.sessions?.length ?? null;
               setFileStates((prev) =>
                 prev.map((f) =>
                   f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme' } : f,

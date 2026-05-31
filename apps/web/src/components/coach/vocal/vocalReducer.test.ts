@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { vocalReducer, StructuredCard, CardSection, TagKey } from './vocalReducer';
+import { vocalReducer, StructuredCard, CardSection, TagKey, VocalState } from './vocalReducer';
 
 const mockBlob = new Blob(['audio'], { type: 'audio/webm' });
 const mimeType = 'audio/webm';
@@ -64,7 +64,7 @@ describe('vocalReducer state transitions', () => {
       { type: 'VALIDATE' }
     );
     expect(next.status).toBe('structuring');
-    expect((next as any).transcript).toBe('Hello');
+    expect((next as Extract<VocalState, { status: 'structuring' }>).transcript).toBe('Hello');
   });
 
   it('structuring → card-ready on STRUCTURE_SUCCESS', () => {
@@ -73,8 +73,8 @@ describe('vocalReducer state transitions', () => {
       { type: 'STRUCTURE_SUCCESS', card: mockCard }
     );
     expect(next.status).toBe('card-ready');
-    expect((next as any).card.context).toBe('ctx');
-    expect((next as any).editedCard.context).toBe('ctx');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).card.context).toBe('ctx');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).editedCard.context).toBe('ctx');
   });
 
   it('structuring → structuring-error on STRUCTURE_ERROR', () => {
@@ -83,8 +83,8 @@ describe('vocalReducer state transitions', () => {
       { type: 'STRUCTURE_ERROR', message: 'err msg' }
     );
     expect(next.status).toBe('structuring-error');
-    expect((next as any).message).toBe('err msg');
-    expect((next as any).transcript).toBe('Hello');
+    expect((next as Extract<VocalState, { status: 'structuring-error' }>).message).toBe('err msg');
+    expect((next as Extract<VocalState, { status: 'structuring-error' }>).transcript).toBe('Hello');
   });
 
   it('card-ready + SECTION_EDIT updates editedCard', () => {
@@ -93,8 +93,8 @@ describe('vocalReducer state transitions', () => {
       { type: 'SECTION_EDIT', section: 'context' as CardSection, value: 'edited' }
     );
     expect(next.status).toBe('card-ready');
-    expect((next as any).editedCard.context).toBe('edited');
-    expect((next as any).card.context).toBe('ctx');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).editedCard.context).toBe('edited');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).card.context).toBe('ctx');
   });
 
   it('card-ready + TAG_TOGGLE adds absent tag', () => {
@@ -103,7 +103,7 @@ describe('vocalReducer state transitions', () => {
       { type: 'TAG_TOGGLE', tag: 'force' as TagKey }
     );
     expect(next.status).toBe('card-ready');
-    expect((next as any).editedCard.tags).toContain('force');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).editedCard.tags).toContain('force');
   });
 
   it('card-ready + TAG_TOGGLE removes present tag', () => {
@@ -113,7 +113,7 @@ describe('vocalReducer state transitions', () => {
       { type: 'TAG_TOGGLE', tag: 'force' as TagKey }
     );
     expect(next.status).toBe('card-ready');
-    expect((next as any).editedCard.tags).not.toContain('force');
+    expect((next as Extract<VocalState, { status: 'card-ready' }>).editedCard.tags).not.toContain('force');
   });
 
   it('card-ready → card-saving on START_SAVING', () => {
@@ -122,7 +122,7 @@ describe('vocalReducer state transitions', () => {
       { type: 'START_SAVING' }
     );
     expect(next.status).toBe('card-saving');
-    expect((next as any).editedCard).toBeDefined();
+    expect((next as Extract<VocalState, { status: 'card-saving' }>).editedCard).toBeDefined();
   });
 
   it('card-saving → card-saved on SAVE_COMPLETE', () => {

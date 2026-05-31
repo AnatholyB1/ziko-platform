@@ -22,7 +22,7 @@ export function useVocalTimer({ onAutoStop }: VocalTimerOptions): VocalTimerHand
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let elapsedSeconds = 0;
   // Keep a stable reference to the latest onAutoStop callback
-  let onAutoStopRef = onAutoStop;
+  const onAutoStopRef = onAutoStop;
 
   const formatElapsed = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)

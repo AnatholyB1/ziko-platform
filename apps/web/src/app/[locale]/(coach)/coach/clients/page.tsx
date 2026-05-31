@@ -20,7 +20,7 @@ export default async function ClientsPage() {
   const weekStartIso = weekStart.toISOString();
   const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  let clients: {
+  const clients: {
     id: string;
     name: string | null;
     avatar_url: string | null;
@@ -39,7 +39,7 @@ export default async function ClientsPage() {
       .eq('coach_id', coachId)
       .is('revoked_at', null);
 
-    const clientIds = (links ?? []).map((l: any) => l.client_id as string);
+    const clientIds = (links ?? []).map((l: { client_id: string }) => l.client_id);
 
     for (const clientId of clientIds) {
       const [
@@ -64,14 +64,14 @@ export default async function ClientsPage() {
 
       let signalMood = false;
       if (moodEntries && moodEntries.length >= 6) {
-        const last3Avg = moodEntries.slice(0, 3).reduce((a: number, e: any) => a + Number(e.mood), 0) / 3;
-        const prev3Avg = moodEntries.slice(3, 6).reduce((a: number, e: any) => a + Number(e.mood), 0) / 3;
+        const last3Avg = moodEntries.slice(0, 3).reduce((a: number, e: { mood: unknown }) => a + Number(e.mood), 0) / 3;
+        const prev3Avg = moodEntries.slice(3, 6).reduce((a: number, e: { mood: unknown }) => a + Number(e.mood), 0) / 3;
         signalMood = last3Avg < prev3Avg;
       }
 
       let habitsPct: number | null = null;
       if (habits && habits.length > 0 && habitLogs) {
-        const completed = habitLogs.filter((l: any) => l.value > 0).length;
+        const completed = habitLogs.filter((l: { value: number }) => l.value > 0).length;
         habitsPct = Math.round((completed / (habits.length * 7)) * 100);
       }
 

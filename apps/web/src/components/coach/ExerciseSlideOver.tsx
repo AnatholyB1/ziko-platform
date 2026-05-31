@@ -216,7 +216,7 @@ export function ExerciseSlideOver({
                 htmlFor="exercise-name"
                 className="block text-xs font-bold text-muted uppercase tracking-wide mb-1"
               >
-                Nom de l'exercice *
+                Nom de l&apos;exercice *
               </label>
               <input
                 ref={nameInputRef}

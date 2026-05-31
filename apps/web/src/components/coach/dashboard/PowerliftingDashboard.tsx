@@ -339,8 +339,7 @@ export function PowerliftingDashboard({
             />
             <Tooltip
               {...TOOLTIP_STYLE}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => [`${v}%`, 'Intensité']}
+              formatter={(v) => [`${v}%`, 'Intensité']}
             />
             <Area
               type="monotone"
