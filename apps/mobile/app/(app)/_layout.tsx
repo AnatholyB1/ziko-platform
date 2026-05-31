@@ -4,7 +4,18 @@ import { AppState } from 'react-native';
 import { Tabs, Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsType from 'expo-notifications';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
@@ -16,17 +27,11 @@ import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
 import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 
-// Set foreground notification display behavior at module scope (required by Expo SDK 54)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// setNotificationHandler is called inside AppLayout's useEffect to avoid
+// requiring expo-notifications at module load time (crashes when
+// ExpoTopicSubscriptionModule native module is not linked — Expo Go / older dev builds).
 
-function handleNotificationResponse(response: Notifications.NotificationResponse) {
+function handleNotificationResponse(response: NotificationsType.NotificationResponse) {
   const url = response.notification.request.content.data?.url as string | undefined;
   if (url) {
     router.push(url as any);
@@ -95,6 +100,19 @@ export default function AppLayout() {
 
   const { showModal, onActivate, onSkip } = useNotificationSetup(userId, session);
 
+  // Foreground notification handler — deferred to mount to avoid module-level require crash.
+  useEffect(() => {
+    const n = N();
+    n?.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  }, []);
+
   useEffect(() => {
     if (!userId) return;
     supabase
@@ -117,16 +135,18 @@ export default function AppLayout() {
   useEffect(() => {
     if (!session || !userId) return;
 
+    const n = N();
+
     // Handle last response for the killed → opened case
-    const lastResponse = Notifications.getLastNotificationResponse();
+    const lastResponse = n?.getLastNotificationResponse();
     if (lastResponse) {
       handleNotificationResponse(lastResponse);
     }
 
     // Subscribe to notification taps while app is running
-    const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    const sub = n?.addNotificationResponseReceivedListener(handleNotificationResponse);
 
-    return () => sub.remove();
+    return () => sub?.remove();
   }, [session, userId]);
 
   useEffect(() => {

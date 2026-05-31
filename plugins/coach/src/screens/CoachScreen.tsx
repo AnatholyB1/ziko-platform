@@ -11,7 +11,18 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsType from 'expo-notifications';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -265,7 +276,10 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
 
     async function registerToken() {
       try {
-        const perm = await Notifications.requestPermissionsAsync() as any;
+        const n = N();
+        if (!n) return;
+
+        const perm = await n.requestPermissionsAsync() as any;
         if (perm.status !== 'granted') return;
 
         const projectId =
@@ -273,7 +287,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
           (Constants as any)?.easConfig?.projectId ??
           '9b672c1a-10c4-4d66-882c-b9a08294650f';
 
-        const expoPushToken = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+        const expoPushToken = (await n.getExpoPushTokenAsync({ projectId })).data;
         const deviceId = getOrCreateDeviceId();
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) return;

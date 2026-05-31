@@ -779,20 +779,48 @@ async function incrementStat(supabase: any, userId: string, field: string, amoun
   }
 }
 
-// ── Search users (for adding friends) ───────────────────
+// ── Search users (for adding friends) ───────
+
+/**
+ * Normalises a string for accent-insensitive client-side comparison.
+ * Fallback when the unaccent RPC is unavailable.
+ */
+function normaliseForSearch(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
 
 export async function searchUsers(supabase: any, query: string): Promise<FriendProfile[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // Primary: accent-insensitive RPC (migration 064_unaccent_user_search)
+  const { data: rpcData, error: rpcError } = await supabase.rpc('search_users_fuzzy', {
+    search_query: query.trim(),
+    calling_user_id: user.id,
+    result_limit: 20,
+  });
+
+  if (!rpcError && rpcData) {
+    return rpcData as FriendProfile[];
+  }
+
+  // Fallback: ilike (case-insensitive) + client-side accent normalisation
   const { data } = await supabase
     .from('user_profiles')
     .select('id, name, avatar_url, goal')
     .neq('id', user.id)
     .ilike('name', `%${query}%`)
-    .limit(20);
+    .limit(60);
 
-  return data ?? [];
+  if (!data) return [];
+
+  const normQuery = normaliseForSearch(query.trim());
+  return (data as FriendProfile[])
+    .filter((u) => u.name && normaliseForSearch(u.name).includes(normQuery))
+    .slice(0, 20);
 }
 
 // ── Feed ─────────────────────────────────────────────────────

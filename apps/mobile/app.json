@@ -32,6 +32,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/image/adaptive-icon.png",
         "backgroundColor": "#F7F6F3"
@@ -56,8 +57,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.POST_NOTIFICATIONS"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "web": {
       "bundler": "metro",

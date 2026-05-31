@@ -277,6 +277,13 @@ export default function ProgramDetailScreen() {
     })();
   }, [id]);
 
+  // ── Cleanup reminder debounce on unmount ─────────────────
+  useEffect(() => {
+    return () => {
+      if (reminderDebounceRef.current) clearTimeout(reminderDebounceRef.current);
+    };
+  }, []);
+
   // ── Day used check ──────────────────────────────────────
   const usedDays = workouts.map((w) => w.day_of_week).filter(Boolean) as number[];
 
@@ -604,6 +611,10 @@ export default function ProgramDetailScreen() {
 
       // Schedule new WEEKLY trigger per selected weekday
       if (time && days.length > 0) {
+        if (!/^\d{2}:\d{2}$/.test(time)) {
+          console.warn('[Workout] Invalid reminder time format, skipping scheduling:', time);
+          return;
+        }
         const parts = time.split(':').map(Number);
         const h = parts[0] ?? 9;
         const m = parts[1] ?? 0;
@@ -613,7 +624,7 @@ export default function ProgramDetailScreen() {
           await ExpoNotifications.scheduleNotificationAsync({
             content: {
               title: "Séance du jour 💪",
-              body: "C'est ton jour d'entraînement — let's go!",
+              body: "C'est ton jour d'entraînement — allez !",
               data: { workoutReminder: true },
             },
             trigger: {

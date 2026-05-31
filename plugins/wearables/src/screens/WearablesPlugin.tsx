@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { useWearablesStore } from '../store';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -117,6 +118,60 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(TABS[0]);
   const today = getToday();
+
+  const {
+    syncStatus,
+    isLoading: storeLoading,
+    error: storeError,
+    initialize,
+    requestPermissions,
+    syncAll,
+  } = useWearablesStore();
+
+  // Auto-initialize on Android when entering Connexion tab
+  useEffect(() => {
+    if (activeTab === TABS[1] && Platform.OS === 'android' && !syncStatus.isConnected) {
+      initialize();
+    }
+  }, [activeTab]);
+
+  async function handleHealthConnectConnect() {
+    await initialize();
+    // re-read store state after initialize
+    const { syncStatus: s } = useWearablesStore.getState();
+    if (!s.isConnected) return; // storeError is already set
+    const granted = await requestPermissions();
+    if (granted) {
+      showAlert('Health Connect', 'Permissions accordées. Synchronisation en cours…');
+      syncAll();
+    } else {
+      showAlert(
+        'Health Connect',
+        'Permissions refusées. Ouvre les paramètres Health Connect pour les accorder manuellement.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Ouvrir les paramètres',
+            onPress: () => {
+              try {
+                const HC = require('react-native-health-connect');
+                HC.openHealthConnectSettings();
+              } catch {
+                // fallback: open HC package via Linking
+                const { Linking } = require('react-native');
+                Linking.openURL('package:com.google.android.apps.healthdata').catch(() => {});
+              }
+            },
+          },
+        ],
+      );
+    }
+  }
+
+  async function handleSync() {
+    await syncAll();
+    showAlert('Synchronisation', 'Données mises à jour.');
+  }
 
   // ─── Auth query ─────────────────────────────────────────────────────────────
 
@@ -256,72 +311,11 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
         {/* ─── Tab: Connexion ───────────────────────────────────────── */}
         {activeTab === TABS[1] && (
           <View>
-            {loadingSync ? (
+            {storeLoading ? (
               <ActivityIndicator color={ACCENT} style={{ marginTop: 32 }} />
-            ) : syncLogs.length > 0 ? (
-              /* Connected: show each platform */
+            ) : syncStatus.isConnected ? (
+              /* Connected: store status */
               <>
-                {syncLogs.map((log, idx) => (
-                  <View
-                    key={idx}
-                    style={{
-                      ...CARD_SHADOW,
-                      backgroundColor: theme.surface,
-                      borderRadius: 14,
-                      padding: 16,
-                      marginBottom: 12,
-                      borderWidth: 1,
-                      borderColor: theme.border,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <View style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      backgroundColor: '#2E9E5B24',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      <Ionicons name="checkmark-circle" size={20} color="#2E9E5B" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
-                        {platformDisplayName(log.platform)}
-                      </Text>
-                      <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>
-                        Dernière sync : {formatSyncTime(log.last_sync_at)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        showAlert(
-                          'Déconnecter',
-                          'Confirmer la déconnexion ?',
-                          [
-                            { text: 'Annuler', style: 'cancel' },
-                            {
-                              text: 'Déconnecter',
-                              style: 'destructive',
-                              onPress: () => {},
-                            },
-                          ]
-                        );
-                      }}
-                    >
-                      <Text style={{ color: '#E94B3C', fontSize: 12, fontWeight: '600' }}>
-                        Déconnecter
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            ) : (
-              /* Not connected: show CTA cards */
-              <>
-                {/* Apple Health */}
                 <View style={{
                   ...CARD_SHADOW,
                   backgroundColor: theme.surface,
@@ -333,6 +327,93 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 12,
+                }}>
+                  <View style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    backgroundColor: '#2E9E5B24',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Ionicons name="checkmark-circle" size={20} color="#2E9E5B" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
+                      {platformDisplayName(syncStatus.platform)}
+                    </Text>
+                    <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>
+                      {syncStatus.permissionsGranted ? 'Permissions accordées' : 'Permissions en attente'}
+                      {syncStatus.lastSyncAt ? ` · Sync : ${formatSyncTime(syncStatus.lastSyncAt)}` : ''}
+                    </Text>
+                  </View>
+                  {!syncStatus.permissionsGranted ? (
+                    <TouchableOpacity onPress={handleHealthConnectConnect}>
+                      <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '600' }}>Autoriser</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={handleSync}>
+                      <Text style={{ color: ACCENT, fontSize: 12, fontWeight: '600' }}>Sync</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {/* DB sync logs */}
+                {syncLogs.map((log, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      ...CARD_SHADOW,
+                      backgroundColor: theme.surface,
+                      borderRadius: 14,
+                      padding: 14,
+                      marginBottom: 10,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    <Ionicons name="cloud-done-outline" size={18} color="#2E9E5B" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.muted, fontSize: 12 }}>
+                        Dernière sync BD : {formatSyncTime(log.last_sync_at)} · {log.status}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            ) : (
+              /* Not connected */
+              <>
+                {storeError && (
+                  <View style={{
+                    backgroundColor: '#E94B3C18',
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}>
+                    <Ionicons name="warning-outline" size={18} color="#E94B3C" />
+                    <Text style={{ color: '#E94B3C', fontSize: 12, flex: 1 }}>{storeError}</Text>
+                  </View>
+                )}
+
+                {/* Apple Health — iOS only, informational */}
+                <View style={{
+                  ...CARD_SHADOW,
+                  backgroundColor: theme.surface,
+                  borderRadius: 14,
+                  padding: 16,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  opacity: Platform.OS === 'ios' ? 1 : 0.4,
                 }}>
                   <View style={{
                     width: 36,
@@ -345,29 +426,30 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
                     <Ionicons name="phone-portrait-outline" size={18} color={ACCENT} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
-                      Apple Health
-                    </Text>
-                    <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>
-                      iOS uniquement
-                    </Text>
+                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>Apple Health</Text>
+                    <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>iOS uniquement</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={theme.muted} />
                 </View>
 
-                {/* Health Connect */}
-                <View style={{
-                  ...CARD_SHADOW,
-                  backgroundColor: theme.surface,
-                  borderRadius: 14,
-                  padding: 16,
-                  marginBottom: 12,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                }}>
+                {/* Health Connect — Android, tappable */}
+                <TouchableOpacity
+                  style={{
+                    ...CARD_SHADOW,
+                    backgroundColor: theme.surface,
+                    borderRadius: 14,
+                    padding: 16,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: Platform.OS === 'android' ? ACCENT + '44' : theme.border,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    opacity: Platform.OS === 'android' ? 1 : 0.4,
+                  }}
+                  onPress={Platform.OS === 'android' ? handleHealthConnectConnect : undefined}
+                  activeOpacity={0.75}
+                >
                   <View style={{
                     width: 36,
                     height: 36,
@@ -379,15 +461,13 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
                     <Ionicons name="logo-android" size={18} color={ACCENT} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>
-                      Health Connect
-                    </Text>
+                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '700' }}>Health Connect</Text>
                     <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>
-                      Android uniquement
+                      {Platform.OS === 'android' ? 'Appuie pour connecter' : 'Android uniquement'}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-                </View>
+                  <Ionicons name="chevron-forward" size={16} color={Platform.OS === 'android' ? ACCENT : theme.muted} />
+                </TouchableOpacity>
 
                 <Text style={{
                   color: theme.muted,

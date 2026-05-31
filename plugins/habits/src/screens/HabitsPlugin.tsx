@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
-import { scheduleHabitReminder, cancelHabitReminder, schedulAllReminders } from '../notifications';
+import { scheduleHabitReminder, cancelHabitReminder, scheduleAllReminders } from '../notifications';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   // ── App-start recovery: reschedule all reminders when habits load ────────────
   useEffect(() => {
     if (habits && habits.length > 0) {
-      schedulAllReminders(habits as any, 'Ziko');
+      scheduleAllReminders(habits as any, 'Ziko');
     }
   }, [habits]);
 

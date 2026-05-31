@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/StatsPlugin": "./src/screens/StatsPlugin.tsx",
     "./screens/StatsDashboard": "./src/screens/StatsDashboard.tsx",
     "./screens/ExerciseStats": "./src/screens/ExerciseStats.tsx",
     "./screens/SessionDetail": "./src/screens/SessionDetail.tsx"

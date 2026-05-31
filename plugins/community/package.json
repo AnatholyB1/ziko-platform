@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/CommunityPlugin": "./src/screens/CommunityPlugin.tsx",
     "./screens/CommunityDashboard": "./src/screens/CommunityDashboard.tsx",
     "./screens/FriendsScreen": "./src/screens/FriendsScreen.tsx",
     "./screens/ChatListScreen": "./src/screens/ChatListScreen.tsx",

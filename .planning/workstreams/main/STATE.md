@@ -2,9 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Sport Dashboards
-status: archived
-last_updated: "2026-05-30"
-last_activity: 2026-05-30 — v1.8 milestone archived
+status: ✅ ARCHIVED 2026-05-30
+last_updated: "2026-05-30T20:19:08.254Z"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -21,6 +20,7 @@ This workstream tracked **main branch** work only (v1.8 Sport Dashboards).
 **Status:** ✅ ARCHIVED 2026-05-30
 
 **Archive:**
+
 - `.planning/milestones/v1.8-ROADMAP.md`
 - `.planning/milestones/v1.8-REQUIREMENTS.md`
 - `.planning/milestones/v1.8-MILESTONE-AUDIT.md`

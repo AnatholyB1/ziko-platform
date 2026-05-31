@@ -1,6 +1,17 @@
 import { create } from 'zustand';
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsType from 'expo-notifications';
 import { supabase } from '../lib/supabase';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 
 interface NotificationState {
   unreadCount: number;
@@ -12,7 +23,7 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
   unreadCount: 0,
   setUnreadCount: (count) => {
     set({ unreadCount: count });
-    Notifications.setBadgeCountAsync(count); // fire-and-forget
+    N()?.setBadgeCountAsync(count); // fire-and-forget
   },
   syncUnreadCount: async (userId) => {
     const { count, error } = await supabase
@@ -25,6 +36,6 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
       return;
     }
     set({ unreadCount: count ?? 0 });
-    Notifications.setBadgeCountAsync(count ?? 0); // fire-and-forget
+    N()?.setBadgeCountAsync(count ?? 0); // fire-and-forget
   },
 }));

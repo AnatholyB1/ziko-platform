@@ -12,34 +12,38 @@ import { EmptyState } from '@ziko/ui';
 import * as Updates from 'expo-updates';
 
 // ── Types ─────────────────────────────────────────────────
-type NotifType = 'coach_ai' | 'community' | 'records' | 'system';
+type NotifCategory = 'coach' | 'gamification' | 'workout' | 'health' | 'system' | 'community';
 
 interface Notification {
   id: string;
   user_id: string;
-  type: NotifType;
+  category: NotifCategory;
+  type: string;
   title: string;
   body: string;
-  read: boolean;
+  read_at: string | null;
   created_at: string;
-  action_url?: string | null;
+  data?: { deep_link?: string } | null;
 }
 
 // ── Constants ─────────────────────────────────────────────
 const FILTERS = [
-  { id: 'all', label: 'Tout' },
-  { id: 'coach_ai', label: 'Coach IA' },
-  { id: 'community', label: 'Communauté' },
-  { id: 'records', label: 'Records' },
-  { id: 'system', label: 'Système' },
+  { id: 'all',          label: 'Tout' },
+  { id: 'coach',        label: 'Coach IA' },
+  { id: 'gamification', label: 'Récompenses' },
+  { id: 'workout',      label: 'Séances' },
+  { id: 'health',       label: 'Santé' },
+  { id: 'system',       label: 'Système' },
 ];
 
 const TYPE_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; tint: string }> = {
-  coach_ai:  { icon: 'sparkles-outline',      tint: '#FF5C1A' },
-  community: { icon: 'people-outline',         tint: '#7B5BD0' },
-  records:   { icon: 'trophy-outline',         tint: '#F59E0B' },
-  system:    { icon: 'settings-outline',       tint: '#6B6963' },
-  default:   { icon: 'notifications-outline',  tint: '#2E7BF6' },
+  coach:        { icon: 'sparkles-outline',     tint: '#FF5C1A' },
+  gamification: { icon: 'trophy-outline',        tint: '#F59E0B' },
+  workout:      { icon: 'barbell-outline',       tint: '#2E7BF6' },
+  health:       { icon: 'heart-outline',         tint: '#EF4444' },
+  community:    { icon: 'people-outline',        tint: '#7B5BD0' },
+  system:       { icon: 'settings-outline',      tint: '#6B6963' },
+  default:      { icon: 'notifications-outline', tint: '#2E7BF6' },
 };
 
 const SURFACE = '#FFFFFF';
@@ -73,17 +77,17 @@ function relativeDate(iso: string): string {
 // ── NFItem ─────────────────────────────────────────────────
 interface NFItemProps {
   id: string;
-  type: NotifType;
+  category: NotifCategory;
   title: string;
   body: string;
-  read: boolean;
+  read_at: string | null;
   created_at: string;
-  action_url?: string | null;
+  data?: { deep_link?: string } | null;
   onPress: () => void;
 }
 
-function NFItem({ id, type, title, body, read, created_at, action_url, onPress }: NFItemProps) {
-  const meta = TYPE_META[type] ?? TYPE_META.default;
+function NFItem({ id, category, title, body, read_at, created_at, data, onPress }: NFItemProps) {
+  const meta = TYPE_META[category] ?? TYPE_META.default;
 
   return (
     <TouchableOpacity
@@ -121,7 +125,7 @@ function NFItem({ id, type, title, body, read, created_at, action_url, onPress }
         <Text style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
           {relativeDate(created_at)}
         </Text>
-        {action_url ? (
+        {data?.deep_link ? (
           <Text style={{ fontSize: 12, fontWeight: '700', color: PRIMARY, marginTop: 6 }}>
             Voir
           </Text>
@@ -129,7 +133,7 @@ function NFItem({ id, type, title, body, read, created_at, action_url, onPress }
       </View>
 
       {/* Unread dot */}
-      {!read ? (
+      {read_at === null ? (
         <View style={{
           width: 8, height: 8, borderRadius: 4,
           backgroundColor: PRIMARY, alignSelf: 'flex-start', marginTop: 3,
@@ -200,13 +204,13 @@ export default function NotificationsScreen() {
     queryFn: async () => {
       if (!userId) return [];
       let q = supabase
-        .from('notifications')
-        .select('*')
+        .from('notification_log')
+        .select('id, user_id, category, type, title, body, read_at, created_at, data')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(50);
       if (activeFilter !== 'all') {
-        q = q.eq('type', activeFilter);
+        q = q.eq('category', activeFilter);
       }
       const { data: rows, error } = await q;
       if (error) throw error;
@@ -219,8 +223,8 @@ export default function NotificationsScreen() {
   const markReadMutation = useMutation({
     mutationFn: async (notifId: string) => {
       const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
+        .from('notification_log')
+        .update({ read_at: new Date().toISOString() })
         .eq('id', notifId);
       if (error) throw error;
     },
@@ -229,7 +233,7 @@ export default function NotificationsScreen() {
       await queryClient.cancelQueries({ queryKey: key });
       const prev = queryClient.getQueryData<Notification[]>(key);
       queryClient.setQueryData<Notification[]>(key, (old) =>
-        (old ?? []).map((n) => n.id === notifId ? { ...n, read: true } : n)
+        (old ?? []).map((n) => n.id === notifId ? { ...n, read_at: new Date().toISOString() } : n)
       );
       return { prev };
     },
@@ -248,10 +252,10 @@ export default function NotificationsScreen() {
     mutationFn: async () => {
       if (!userId) return;
       const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
+        .from('notification_log')
+        .update({ read_at: new Date().toISOString() })
         .eq('user_id', userId)
-        .eq('read', false);
+        .is('read_at', null);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -260,11 +264,11 @@ export default function NotificationsScreen() {
   });
 
   const notifications = data ?? [];
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => n.read_at === null).length;
 
   const handlePress = (item: Notification) => {
-    if (!item.read) markReadMutation.mutate(item.id);
-    if (item.action_url) router.push(item.action_url as any);
+    if (item.read_at === null) markReadMutation.mutate(item.id);
+    if (item.data?.deep_link) router.push(item.data.deep_link as any);
   };
 
   // ── Render ─────────────────────────────────────────────

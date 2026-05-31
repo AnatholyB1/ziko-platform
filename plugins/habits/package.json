@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/HabitsPlugin": "./src/screens/HabitsPlugin.tsx",
     "./screens/HabitsDashboardScreen": "./src/screens/HabitsDashboardScreen.tsx",
     "./screens/HabitLogScreen": "./src/screens/HabitLogScreen.tsx"
   },

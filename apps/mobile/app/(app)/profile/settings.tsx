@@ -2,7 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Modal,
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsType from 'expo-notifications';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,7 +67,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
   const [endPickerVisible, setEndPickerVisible] = useState(false);
 
   useEffect(() => {
-    Notifications.getPermissionsAsync().then(({ canAskAgain, status }) => {
+    N()?.getPermissionsAsync().then(({ canAskAgain, status }) => {
       setNotifDenied(status === 'denied' && !canAskAgain);
     });
   }, []);

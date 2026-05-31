@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
@@ -11,17 +11,45 @@ export default function PublicProfileScreen() {
   const [following, setFollowing] = useState(false);
   const [profile, setProfile] = useState<{ name: string; goal: string; totalWorkouts: number } | null>(null);
 
-  useEffect(() => {
-    if (!userId) return;
+  // Extracted fetch logic so it can be called from both useEffect and useFocusEffect.
+  const fetchProfile = useCallback((id: string) => {
+    let cancelled = false;
+
+    setProfile(null);
+    setFollowing(false);
+
     supabase
       .from('user_profiles')
       .select('name, goal, total_workouts')
-      .eq('id', userId)
+      .eq('id', id)
       .single()
       .then(({ data }) => {
+        if (cancelled) return;
         if (data) setProfile({ name: data.name, goal: data.goal, totalWorkouts: (data as any).total_workouts ?? 0 });
       });
-  }, [userId]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Primary effect: re-fetch when userId param changes (normal navigation).
+  useEffect(() => {
+    if (!userId) return;
+    return fetchProfile(userId);
+  }, [userId, fetchProfile]);
+
+  // Secondary effect: re-fetch on every screen focus.
+  // This handles the case where the stack screen is already mounted with the
+  // same userId param — router.push() with an identical param value does not
+  // trigger useEffect, but useFocusEffect always fires on arrival regardless
+  // of whether the component was remounted or just brought back into view.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      return fetchProfile(userId);
+    }, [userId, fetchProfile]),
+  );
 
   const initials = profile?.name
     ? profile.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()

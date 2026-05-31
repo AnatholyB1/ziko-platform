@@ -2,19 +2,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, KeyboardAvoidingView, ActivityIndicator, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useThemeStore } from '../stores/themeStore';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { EmptyState } from '@ziko/ui';
+import { showAlert } from '@ziko/plugin-sdk';
 
 // ── Main component ─────────────────────────────────────────
 
 export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const theme = useThemeStore((s) => s.theme);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -29,6 +33,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     if (visible) {
       setQuery('');
       setDebouncedQuery('');
+      setSentIds(new Set());
       const t = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(t);
     }
@@ -65,13 +70,23 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     enabled: debouncedQuery.length >= 2 && !!userId,
   });
 
-  // Section 3 — Users
+  // Section 3 — Users (accent + case insensitive via RPC, fallback to ilike)
   const { data: users, isLoading: loadingUsers } = useQuery({
     queryKey: ['search_users', debouncedQuery],
     queryFn: async () => {
+      if (!userId) return [];
+      // Try RPC first (migration 064 — accent-insensitive)
+      const { data: rpcData, error: rpcError } = await supabase.rpc('search_users_fuzzy', {
+        search_query: debouncedQuery.trim(),
+        calling_user_id: userId,
+        result_limit: 5,
+      });
+      if (!rpcError && rpcData) return rpcData as { id: string; name: string; avatar_url: string | null }[];
+      // Fallback: ilike
       const { data, error } = await supabase
         .from('user_profiles')
         .select('id, name, avatar_url')
+        .neq('id', userId)
         .ilike('name', `%${debouncedQuery}%`)
         .limit(5);
       if (error) throw error;
@@ -296,46 +311,66 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                       overflow: 'hidden',
                     }}
                   >
-                    {users.map((u, i) => (
-                      <View
-                        key={u.id}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          padding: 12,
-                          gap: 12,
-                          borderTopWidth: i > 0 ? 1 : 0,
-                          borderTopColor: '#E2E0DA',
-                        }}
-                      >
-                        {u.avatar_url ? (
-                          <Image
-                            source={{ uri: u.avatar_url }}
-                            style={{ width: 36, height: 36, borderRadius: 18 }}
-                          />
-                        ) : (
-                          <View
-                            style={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 18,
-                              backgroundColor: '#FF5C1A24',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Text style={{ fontSize: 14, fontWeight: '700', color: '#FF5C1A' }}>
-                              {u.name ? u.name.charAt(0).toUpperCase() : '?'}
-                            </Text>
-                          </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 13, fontWeight: '600', color: '#1C1A17' }}>
-                            {u.name}
-                          </Text>
+                    {users.map((u, i) => {
+                      const alreadySent = sentIds.has(u.id);
+                      return (
+                        <View
+                          key={u.id}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            padding: 12,
+                            gap: 12,
+                            borderTopWidth: i > 0 ? 1 : 0,
+                            borderTopColor: '#E2E0DA',
+                          }}
+                        >
+                          {/* Avatar */}
+                          <TouchableOpacity onPress={() => { onClose(); router.push(`/(app)/profile/${u.id}` as any); }}>
+                            {u.avatar_url ? (
+                              <Image source={{ uri: u.avatar_url }} style={{ width: 36, height: 36, borderRadius: 18 }} />
+                            ) : (
+                              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF5C1A24', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FF5C1A' }}>
+                                  {u.name ? u.name.charAt(0).toUpperCase() : '?'}
+                                </Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+
+                          {/* Name */}
+                          <TouchableOpacity style={{ flex: 1 }} onPress={() => { onClose(); router.push(`/(app)/profile/${u.id}` as any); }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#1C1A17' }}>{u.name}</Text>
+                          </TouchableOpacity>
+
+                          {/* Add friend button */}
+                          {alreadySent ? (
+                            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F7F6F3', borderWidth: 1, borderColor: '#E2E0DA' }}>
+                              <Text style={{ fontSize: 11, fontWeight: '600', color: '#6B6963' }}>Envoy\u00e9</Text>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={async () => {
+                                try {
+                                  const { error } = await supabase.from('friendships').insert({
+                                    requester_id: userId,
+                                    addressee_id: u.id,
+                                    status: 'pending',
+                                  });
+                                  if (error) throw error;
+                                  setSentIds((prev) => new Set([...prev, u.id]));
+                                } catch {
+                                  showAlert('Erreur', 'Impossible d\'envoyer la demande');
+                                }
+                              }}
+                              style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Ionicons name="person-add-outline" size={16} color="#FF5C1A" />
+                            </TouchableOpacity>
+                          )}
                         </View>
-                      </View>
-                    ))}
+                      );
+                    })}
                   </View>
                 ) : (
                   <View style={{ height: 80 }}>

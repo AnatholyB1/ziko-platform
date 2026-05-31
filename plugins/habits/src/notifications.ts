@@ -1,15 +1,12 @@
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import type * as NotificationsType from 'expo-notifications';
 import type { Habit } from './store';
 
-// expo-notifications throws at native module init time on Expo Go Android (SDK 53+).
-// Use require() lazily so the native module is never loaded in that environment.
-const isExpoGoAndroid =
-  Constants.appOwnership === 'expo' && Platform.OS === 'android';
-
+// expo-notifications v56+ requires ExpoTopicSubscriptionModule native module.
+// This module may not be present in Expo Go or older dev builds.
+// NEVER call N() at module load time — only call inside exported functions at runtime.
 function N(): typeof NotificationsType | null {
-  if (isExpoGoAndroid || Platform.OS === 'web') return null;
+  if (Platform.OS === 'web') return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('expo-notifications');
@@ -18,11 +15,12 @@ function N(): typeof NotificationsType | null {
   }
 }
 
-// Initialise the foreground notification handler once at module load,
-// only when the native module is actually available.
-const mod = N();
-if (mod) {
-  mod.setNotificationHandler({
+// Lazy one-time notification handler setup (called at runtime, not module load time).
+let _handlerSet = false;
+function ensureHandler(n: typeof NotificationsType): void {
+  if (_handlerSet) return;
+  _handlerSet = true;
+  n.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
@@ -36,6 +34,7 @@ if (mod) {
 export async function requestNotificationPermission(): Promise<boolean> {
   const n = N();
   if (!n) return false;
+  ensureHandler(n);
   try {
     const existing = await n.getPermissionsAsync() as any;
     if (existing.granted) return true;
@@ -53,6 +52,7 @@ export async function scheduleHabitReminder(
   if (!habit.reminder_time) return;
   const n = N();
   if (!n) return;
+  ensureHandler(n);
   try {
     const [h, m] = habit.reminder_time.split(':').map(Number);
     await cancelHabitReminder(habit.id);
@@ -88,7 +88,7 @@ export async function cancelHabitReminder(habitId: string): Promise<void> {
   }
 }
 
-export async function schedulAllReminders(
+export async function scheduleAllReminders(
   habits: Habit[],
   agentName: string,
 ): Promise<void> {
