@@ -11,6 +11,8 @@ const analyzer = withBundleAnalyzer({
   analyzerMode: 'json',
 });
 
-const nextConfig = {};
+const nextConfig = {
+  transpilePackages: ['@vidstack/react'],
+};
 
 export default analyzer(withNextIntl(nextConfig));

@@ -7,9 +7,10 @@ interface PluginHeaderProps {
   title: string;
   onBack: () => void;
   right?: React.ReactNode;
+  dark?: boolean;
 }
 
-export function PluginHeader({ title, onBack, right }: PluginHeaderProps) {
+export function PluginHeader({ title, onBack, right, dark = false }: PluginHeaderProps) {
   const theme = useThemeStore((s) => s.theme);
 
   return (

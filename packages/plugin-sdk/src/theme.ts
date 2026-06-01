@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { MMKV } from 'react-native-mmkv';
 
 // ── Theme Palette ────────────────────────────────────────
 export interface ThemePalette {
@@ -8,7 +9,9 @@ export interface ThemePalette {
   surface: string;
   border: string;
   primary: string;
-  primaryLight: string;
+  primaryLight: string;   // 8%  — badge bg, overlays
+  primarySubtle: string;  // 5%  — very light background
+  primaryBorder: string;  // 20% — borders, rings, dividers
   text: string;
   muted: string;
   tabBarBg: string;
@@ -42,6 +45,8 @@ export const DEFAULT_THEME: ThemePalette = {
   border: '#E2E0DA',
   primary: '#FF5C1A',
   primaryLight: '#FF5C1A15',
+  primarySubtle: '#FF5C1A0D',
+  primaryBorder: '#FF5C1A33',
   text: '#1C1A17',
   muted: '#6B6963',
   tabBarBg: '#FFFFFF',
@@ -68,7 +73,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Bleu Océan': {
     id: 'Bleu Océan', name: 'Bleu Océan',
     background: '#EFF6FF', surface: '#FFFFFF', border: '#BFDBFE',
-    primary: '#2563EB', primaryLight: '#2563EB15', text: '#1E293B', muted: '#64748B',
+    primary: '#2563EB', primaryLight: '#2563EB15', primarySubtle: '#2563EB0D', primaryBorder: '#2563EB33', text: '#1E293B', muted: '#64748B',
     tabBarBg: '#FFFFFF', tabBarBorder: '#BFDBFE', tabBarActive: '#2563EB', tabBarInactive: '#94A3B8',
     statusBarStyle: 'dark', statusBarBg: '#EFF6FF',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -79,7 +84,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Violet Royal': {
     id: 'Violet Royal', name: 'Violet Royal',
     background: '#F5F3FF', surface: '#FFFFFF', border: '#C4B5FD',
-    primary: '#7C3AED', primaryLight: '#7C3AED15', text: '#1E1B4B', muted: '#6B7280',
+    primary: '#7C3AED', primaryLight: '#7C3AED15', primarySubtle: '#7C3AED0D', primaryBorder: '#7C3AED33', text: '#1E1B4B', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#C4B5FD', tabBarActive: '#7C3AED', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#F5F3FF',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -90,7 +95,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Vert Forêt': {
     id: 'Vert Forêt', name: 'Vert Forêt',
     background: '#F0FDF4', surface: '#FFFFFF', border: '#BBF7D0',
-    primary: '#16A34A', primaryLight: '#16A34A15', text: '#14532D', muted: '#6B7280',
+    primary: '#16A34A', primaryLight: '#16A34A15', primarySubtle: '#16A34A0D', primaryBorder: '#16A34A33', text: '#14532D', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#BBF7D0', tabBarActive: '#16A34A', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#F0FDF4',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -101,7 +106,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Rouge Feu': {
     id: 'Rouge Feu', name: 'Rouge Feu',
     background: '#FEF2F2', surface: '#FFFFFF', border: '#FECACA',
-    primary: '#DC2626', primaryLight: '#DC262615', text: '#450A0A', muted: '#6B7280',
+    primary: '#DC2626', primaryLight: '#DC262615', primarySubtle: '#DC26260D', primaryBorder: '#DC262633', text: '#450A0A', muted: '#6B7280',
     tabBarBg: '#FFFFFF', tabBarBorder: '#FECACA', tabBarActive: '#DC2626', tabBarInactive: '#9CA3AF',
     statusBarStyle: 'dark', statusBarBg: '#FEF2F2',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -112,7 +117,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Or Prestige': {
     id: 'Or Prestige', name: 'Or Prestige',
     background: '#FFFBEB', surface: '#FFFFFF', border: '#FDE68A',
-    primary: '#D97706', primaryLight: '#D9770615', text: '#451A03', muted: '#78716C',
+    primary: '#D97706', primaryLight: '#D9770615', primarySubtle: '#D977060D', primaryBorder: '#D9770633', text: '#451A03', muted: '#78716C',
     tabBarBg: '#FFFFFF', tabBarBorder: '#FDE68A', tabBarActive: '#D97706', tabBarInactive: '#A8A29E',
     statusBarStyle: 'dark', statusBarBg: '#FFFBEB',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -123,7 +128,7 @@ export const THEME_REGISTRY: Record<string, ThemePalette> = {
   'Noir Carbone': {
     id: 'Noir Carbone', name: 'Noir Carbone',
     background: '#0F0F0F', surface: '#1A1A1A', border: '#333333',
-    primary: '#FF5C1A', primaryLight: '#FF5C1A20', text: '#F5F5F5', muted: '#A3A3A3',
+    primary: '#FF5C1A', primaryLight: '#FF5C1A20', primarySubtle: '#FF5C1A0D', primaryBorder: '#FF5C1A33', text: '#F5F5F5', muted: '#A3A3A3',
     tabBarBg: '#1A1A1A', tabBarBorder: '#333333', tabBarActive: '#FF5C1A', tabBarInactive: '#737373',
     statusBarStyle: 'light', statusBarBg: '#0F0F0F',
     success: '#2E9E5B', info: '#2E7BF6', violet: '#7B5BD0', warn: '#E8A33A', danger: '#EF4444',
@@ -152,6 +157,9 @@ export const BANNER_REGISTRY: Record<string, BannerDef> = {
   'Diamant Noir':     { id: 'Diamant Noir',     name: 'Diamant Noir',     colors: ['#1C1A17', '#525252', '#D4D4D4'], style: 'gradient' },
 };
 
+// ── Coach Storage (MMKV) ────────────────────────────────
+export const coachStorage = new MMKV({ id: 'coach-storage' });
+
 // ── Store ────────────────────────────────────────────────
 interface ThemeState {
   theme: ThemePalette;
@@ -159,10 +167,33 @@ interface ThemeState {
   setTheme: (themeId: string) => void;
   setBanner: (bannerId: string | null) => void;
   resetTheme: () => void;
+  setCustomTheme: (overrides: Partial<ThemePalette>) => void;
+  clearCoachTheme: () => void;
 }
 
-export const useThemeStore = create<ThemeState>()((set) => ({
-  theme: DEFAULT_THEME,
+export const useThemeStore = create<ThemeState>()((set, get) => {
+  const initialTheme = (() => {
+    try {
+      const raw = coachStorage.getString('coach:branding');
+      if (!raw) return DEFAULT_THEME;
+      const branding = JSON.parse(raw) as { primary_color?: string };
+      if (!branding?.primary_color) return DEFAULT_THEME;
+      const primary = branding.primary_color;
+      return {
+        ...DEFAULT_THEME,
+        primary,
+        primaryLight: primary + '15',
+        primarySubtle: primary + '0D',
+        primaryBorder: primary + '33',
+        tabBarActive: primary,
+      };
+    } catch {
+      return DEFAULT_THEME;
+    }
+  })();
+
+  return {
+  theme: initialTheme,
   equippedBanner: null,
 
   setTheme: (themeId) => {
@@ -177,4 +208,16 @@ export const useThemeStore = create<ThemeState>()((set) => ({
   },
 
   resetTheme: () => set({ theme: DEFAULT_THEME, equippedBanner: null }),
-}));
+
+  setCustomTheme: (overrides) => {
+    const primary = overrides.primary ?? DEFAULT_THEME.primary;
+    const primaryLight = primary + '15';
+    const primarySubtle = primary + '0D';
+    const primaryBorder = primary + '33';
+    const tabBarActive = primary;
+    set({ theme: { ...DEFAULT_THEME, ...overrides, primaryLight, primarySubtle, primaryBorder, tabBarActive } });
+  },
+
+  clearCoachTheme: () => get().resetTheme(),
+  };
+});

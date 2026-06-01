@@ -1,7 +1,7 @@
 import React from 'react';
-import WearablesDashboard from '@ziko/plugin-wearables/screens/WearablesDashboard';
+import WearablesPlugin from '@ziko/plugin-wearables/screens/WearablesPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function WearablesDashboardRoute() {
-  return <WearablesDashboard supabase={supabase} />;
+  return <WearablesPlugin supabase={supabase} />;
 }

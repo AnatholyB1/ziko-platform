@@ -1,0 +1,43 @@
+diff --git a/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/HealthConnectManager.kt b/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/HealthConnectManager.kt
+index 38c9dfd..a201a80 100644
+--- a/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/HealthConnectManager.kt
++++ b/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/HealthConnectManager.kt
+@@ -69,8 +69,17 @@ class HealthConnectManager(private val applicationContext: ReactApplicationConte
+   ) {
+     throwUnlessClientIsAvailable(promise) {
+       coroutineScope.launch {
+-        val granted = HealthConnectPermissionDelegate.launchPermissionsDialog(PermissionUtils.parsePermissions(reactPermissions))
+-        promise.resolve(PermissionUtils.mapPermissionResult(granted))
++        try {
++          val granted = HealthConnectPermissionDelegate.launchPermissionsDialog(PermissionUtils.parsePermissions(reactPermissions))
++          promise.resolve(PermissionUtils.mapPermissionResult(granted))
++        } catch (e: UninitializedPropertyAccessException) {
++          // HealthConnectPermissionDelegate.requestPermission lateinit not initialized.
++          // This happens when setPermissionDelegate() was not called before requestPermission,
++          // typically on Activity recreation or Android 14+ compatibility issues (ZIKO-MOBILE-4).
++          promise.reject("PERMISSION_DELEGATE_NOT_INITIALIZED", "Health Connect permission delegate not initialized. Ensure setPermissionDelegate() is called in MainActivity.onCreate().", e)
++        } catch (e: Exception) {
++          promise.rejectWithException(e)
++        }
+       }
+     }
+   }
+diff --git a/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/permissions/HealthConnectPermissionDelegate.kt b/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/permissions/HealthConnectPermissionDelegate.kt
+index 5ec3641..6778b0c 100644
+--- a/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/permissions/HealthConnectPermissionDelegate.kt
++++ b/node_modules/react-native-health-connect/android/src/main/java/dev/matinzd/healthconnect/permissions/HealthConnectPermissionDelegate.kt
+@@ -42,6 +42,14 @@ object HealthConnectPermissionDelegate {
+   }
+ 
+   suspend fun launchPermissionsDialog(permissions: Set<String>): Set<String> {
++    // Guard against uninitialized launcher — setPermissionDelegate() must be called in
++    // MainActivity.onCreate() before this method is invoked (ZIKO-MOBILE-4).
++    if (!::requestPermission.isInitialized) {
++      throw UninitializedPropertyAccessException(
++        "requestPermission ActivityResultLauncher is not initialized. " +
++        "Call HealthConnectPermissionDelegate.setPermissionDelegate(activity) in MainActivity.onCreate()."
++      )
++    }
+     requestPermission.launch(permissions)
+     return permissionsChannel.receive()
+   }

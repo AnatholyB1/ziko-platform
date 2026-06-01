@@ -7,6 +7,7 @@ import { WizardProgress } from '@/components/coach/WizardProgress';
 import { WizardStep1Role } from '@/components/coach/WizardStep1Role';
 import { WizardStep2Profile } from '@/components/coach/WizardStep2Profile';
 import { WizardStep3Kyc } from '@/components/coach/WizardStep3Kyc';
+import { WizardStep4Import } from '@/components/coach/WizardStep4Import';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -14,7 +15,7 @@ export function OnboardingWizard() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const locale = useLocale();
-  const step = Math.min(3, Math.max(1, parseInt(searchParams.get('step') ?? '1', 10)));
+  const step = Math.min(4, Math.max(1, parseInt(searchParams.get('step') ?? '1', 10)));
 
   const [userId, setUserId] = useState<string | null>(null);
   const [jwt, setJwt] = useState<string | null>(null);
@@ -65,7 +66,7 @@ export function OnboardingWizard() {
     <div className="max-w-lg w-full mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold text-primary text-center mb-8">ZIKO</h1>
       <p className="text-xl font-bold text-text text-center mb-6">Devenir coach Ziko</p>
-      <WizardProgress currentStep={step} totalSteps={3} />
+      <WizardProgress currentStep={step} totalSteps={4} />
       {step === 1 && (
         <WizardStep1Role
           currentRole={currentRole}
@@ -82,6 +83,15 @@ export function OnboardingWizard() {
       )}
       {step === 3 && (
         <WizardStep3Kyc
+          userId={userId}
+          apiUrl={API_URL}
+          jwt={jwt}
+          onSuccess={() => goToStep(4)}
+          onSkip={() => router.push(`/${locale}/coach/dashboard`)}
+        />
+      )}
+      {step === 4 && (
+        <WizardStep4Import
           userId={userId}
           apiUrl={API_URL}
           jwt={jwt}

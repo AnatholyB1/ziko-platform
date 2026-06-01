@@ -2,13 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "../..",
+    "rootDir": "src",
     "jsx": "react-native"
   },
-  "include": [
-    "src",
-    "../../apps/mobile/src/stores/creditStore.ts",
-    "../../apps/mobile/src/stores/userPrefsStore.ts",
-    "../../apps/mobile/src/hooks/useUnits.ts"
-  ]
+  "include": ["src"]
 }

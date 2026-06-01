@@ -197,7 +197,7 @@ export function useActiveAIProgram() {
       return data ?? null;
     },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 10, // 10 min
+    staleTime: 1000 * 60 * 2, // 2 min
   });
 }
 

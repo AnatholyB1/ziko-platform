@@ -4,7 +4,7 @@ import { useThemeStore } from '@ziko/plugin-sdk';
 import { shadow } from '../design-system';
 
 interface STGroupProps {
-  title: string;
+  title?: string;
   children: React.ReactNode;
 }
 
@@ -13,20 +13,22 @@ export function STGroup({ title, children }: STGroupProps) {
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: '700',
-          letterSpacing: 1.1,
-          textTransform: 'uppercase',
-          color: theme.muted,
-          paddingHorizontal: 4,
-          paddingBottom: 8,
-          paddingTop: 4,
-        }}
-      >
-        {title}
-      </Text>
+      {title !== undefined && (
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: '700',
+            letterSpacing: 1.1,
+            textTransform: 'uppercase',
+            color: theme.muted,
+            paddingHorizontal: 4,
+            paddingBottom: 8,
+            paddingTop: 4,
+          }}
+        >
+          {title}
+        </Text>
+      )}
       <View
         style={{
           backgroundColor: theme.surface,

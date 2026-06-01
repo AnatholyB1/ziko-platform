@@ -6,13 +6,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
-    "./screens/RPECalculatorScreen": "./src/screens/RPECalculatorScreen.tsx"
+    "./screens/RPEPlugin": "./src/screens/RPEPlugin.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@ziko/plugin-sdk": "*"
+    "@ziko/plugin-sdk": "*",
+    "@ziko/ui": "*",
+    "zustand": "*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

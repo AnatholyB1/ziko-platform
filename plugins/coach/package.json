@@ -6,7 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
-    "./screens/CoachScreen": "./src/screens/CoachScreen.tsx"
+    "./screens/CoachScreen": "./src/screens/CoachScreen.tsx",
+    "./screens/VideoListScreen": "./src/screens/VideoListScreen.tsx",
+    "./screens/VideoUploadSheet": "./src/screens/VideoUploadSheet.tsx",
+    "./screens/VideoPlayerScreen": "./src/screens/VideoPlayerScreen.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"

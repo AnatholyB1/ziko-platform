@@ -4,7 +4,8 @@ import { createServerSupabase } from '@/lib/supabase/server';
 import { getCachedCoachUser } from '@/lib/coach/auth';
 import { ClientDetailHeader } from '@/components/coach/ClientDetailHeader';
 import { ClientTabStrip } from '@/components/coach/ClientTabStrip';
-import { ClientNotesPanel } from '@/components/coach/ClientNotesPanel';
+import { ClientNotesPanelConditional } from '@/components/coach/videos/ClientNotesPanelConditional';
+import { QueryProvider } from '@/components/coach/QueryProvider';
 
 export default async function ClientDetailLayout({
   children,
@@ -63,11 +64,13 @@ export default async function ClientDetailLayout({
       {/* Flex layout: tab content (flex-1) + notes panel (w-72 on lg+) */}
       <div className="flex gap-6 p-8 pt-6">
         <div className="flex-1 min-w-0" id="tab-panel">
-          {children}
+          <QueryProvider>
+            {children}
+          </QueryProvider>
         </div>
         <div className="hidden lg:block w-72 shrink-0">
           <div className="sticky top-8">
-            <ClientNotesPanel
+            <ClientNotesPanelConditional
               clientId={id}
               initialNote={noteData?.content ?? ''}
               initialTags={(tagsData ?? []).map((t: { id: string; tag: string }) => ({ id: t.id, tag: t.tag }))}

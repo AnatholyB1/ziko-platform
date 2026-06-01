@@ -14,6 +14,7 @@ import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 import { playSound, playCountdownBeep, isSoundEnabled, setSoundEnabled } from '../../../src/lib/sounds';
+import RestTimer from '../../../src/components/RestTimer';
 
 let useHydrationStore: any = null;
 try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
@@ -323,11 +324,51 @@ export default function WorkoutSessionScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ── Last session weights per exercise ─────────────────
+  const [lastSets, setLastSets] = useState<Map<string, { weight_kg: number | null; reps: number | null }[]>>(new Map());
+
   useEffect(() => {
     if (exercises.length === 0) loadExercises();
     // Start a free session if no guided workout
     if (!isGuided && !currentSession) {
       startSession(undefined, t('workout.quickStart'));
+    }
+    // Fetch last session sets for guided exercises
+    if (isGuided && workoutExercises.length > 0) {
+      const exerciseIds = workoutExercises.map((e) => e.exercise_id).filter(Boolean) as string[];
+      if (exerciseIds.length > 0) {
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            // Get the last completed session (excluding current)
+            const { data: lastSession } = await supabase
+              .from('workout_sessions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('completed', true)
+              .order('ended_at', { ascending: false })
+              .limit(1)
+              .single();
+            if (!lastSession) return;
+            const { data: sets } = await supabase
+              .from('session_sets')
+              .select('exercise_id, set_number, weight_kg, reps')
+              .eq('session_id', lastSession.id)
+              .in('exercise_id', exerciseIds)
+              .eq('completed', true)
+              .order('set_number', { ascending: true });
+            if (!sets) return;
+            const map = new Map<string, { weight_kg: number | null; reps: number | null }[]>();
+            for (const s of sets) {
+              const arr = map.get(s.exercise_id) ?? [];
+              arr.push({ weight_kg: s.weight_kg, reps: s.reps });
+              map.set(s.exercise_id, arr);
+            }
+            setLastSets(map);
+          } catch {}
+        })();
+      }
     }
   }, []);
 
@@ -1200,6 +1241,20 @@ export default function WorkoutSessionScreen() {
                       {t('workout.cycleWeekLabel', { current: String(cycleConfig.current_cycle_week), total: String(cycleConfig.cycle_weeks) })} · {t('workout.baseWeight')}: {currentEx.weight_kg}kg
                     </Text>
                   )}
+                  {(() => {
+                    const prev = lastSets.get(currentEx.exercise_id ?? '');
+                    const setData = prev?.[currentSetIdx] ?? prev?.[prev.length - 1];
+                    if (!setData) return null;
+                    const parts: string[] = [];
+                    if (setData.weight_kg != null) parts.push(`${setData.weight_kg}kg`);
+                    if (setData.reps != null) parts.push(`×${setData.reps}`);
+                    if (parts.length === 0) return null;
+                    return (
+                      <Text style={{ color: theme.muted, fontSize: 10, marginTop: 1 }}>
+                        Dernière: {parts.join(' ')}
+                      </Text>
+                    );
+                  })()}
                 </View>
                 <TextInput
                   value={editWeight}
@@ -1391,6 +1446,15 @@ export default function WorkoutSessionScreen() {
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Skip Rest</Text>
             </TouchableOpacity>
           </View>
+          <RestTimer
+            visible={true}
+            remaining={restTimer}
+            duration={restTimerMax}
+            nextLabel={nextLabel}
+            onSkip={skipRest}
+            onClose={skipRest}
+            onAdjust={(delta) => setRestTimer((t) => Math.max(0, t + delta))}
+          />
         </SafeAreaView>
       );
     }

@@ -23,7 +23,7 @@ export {
   createInvite,
   searchUsers,
 } from './store';
-export { default as CommunityDashboard } from './screens/CommunityDashboard';
+export { default as CommunityPlugin } from './screens/CommunityPlugin';
 export { default as FriendsScreen } from './screens/FriendsScreen';
 export { default as ChatListScreen } from './screens/ChatListScreen';
 export { default as ConversationScreen } from './screens/ConversationScreen';

@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList,
+  View, Text, ScrollView, TouchableOpacity, TextInput, Modal, FlatList, Image,
 } from 'react-native';
+import * as ExpoNotifications from 'expo-notifications';
+import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +35,7 @@ interface WorkoutDay {
   day_of_week: number | null;
   name: string;
   order_index: number;
-  program_exercises: (ProgramExercise & { exercises?: { name: string; name_fr?: string | null; muscle_groups: string[] } })[];
+  program_exercises: (ProgramExercise & { coach_exercise_id?: string | null; exercises?: { name: string; name_fr?: string | null; muscle_groups: string[] } })[];
 }
 
 // ── Exercise config form state ────────────────────────────
@@ -64,6 +66,80 @@ const defaultConfig: ExerciseConfig = {
   weightKg: '',
   notes: '',
 };
+
+// ── Workout reminder constants ────────────────────────────
+const WORKOUT_HOUR_ITEMS = Array.from({ length: 18 }, (_, i) => {
+  const hour = i + 6;
+  return { id: String(hour), label: `${hour}h00` };
+});
+const WEEKDAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const WEEKDAY_LABELS: Record<string, string> = {
+  monday: 'Lun', tuesday: 'Mar', wednesday: 'Mer',
+  thursday: 'Jeu', friday: 'Ven', saturday: 'Sam', sunday: 'Dim',
+};
+const DAY_TO_EXPO_WEEKDAY: Record<string, number> = {
+  sunday: 1, monday: 2, tuesday: 3, wednesday: 4,
+  thursday: 5, friday: 6, saturday: 7,
+};
+
+// ── InlinePicker component (copied from settings.tsx) ─────
+type PickerItem = { id: string; label: string };
+
+function InlinePicker({
+  visible,
+  items,
+  selectedId,
+  onSelect,
+  onClose,
+  theme,
+}: {
+  visible: boolean;
+  items: PickerItem[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  onClose: () => void;
+  theme: any;
+}) {
+  if (!visible) return null;
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <View style={{
+          backgroundColor: theme.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+          paddingBottom: 32, paddingTop: 8,
+        }}>
+          <View style={{
+            width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E0DA',
+            alignSelf: 'center', marginBottom: 16,
+          }} />
+          {items.map((item, i) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => { onSelect(item.id); onClose(); }}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                paddingVertical: 14, paddingHorizontal: 20,
+                borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#E2E0DA',
+              }}
+            >
+              <Text style={{ fontSize: 16, color: theme.text, fontWeight: item.id === selectedId ? '700' : '400' }}>
+                {item.label}
+              </Text>
+              {item.id === selectedId && (
+                <Ionicons name="checkmark" size={18} color="#FF5C1A" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
 
 export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -107,6 +183,47 @@ export default function ProgramDetailScreen() {
   // Cycle config
   const [showCycleConfig, setShowCycleConfig] = useState(false);
 
+  // Workout reminder section
+  const [workoutReminderEnabled, setWorkoutReminderEnabled] = useState(false);
+  const [workoutReminderDays, setWorkoutReminderDays] = useState<string[]>([]);
+  const [workoutReminderTime, setWorkoutReminderTime] = useState<string | null>(null);
+  const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
+  const reminderDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Media bottom sheet
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [mediaExerciseName, setMediaExerciseName] = useState('');
+  const [mediaVideoUrl, setMediaVideoUrl] = useState<string | null>(null);
+  const [mediaPhotoUrl, setMediaPhotoUrl] = useState<string | null>(null);
+  const [mediaGifUrl, setMediaGifUrl] = useState<string | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+
+  const fetchAndOpenMedia = async (coachExerciseId: string, exerciseName: string) => {
+    setMediaExerciseName(exerciseName);
+    setMediaVideoUrl(null);
+    setMediaPhotoUrl(null);
+    setMediaGifUrl(null);
+    setMediaLoading(true);
+    setShowMediaModal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+      const res = await fetch(`${apiUrl}/coach/exercises/${coachExerciseId}/media-url`, {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setMediaVideoUrl(json.video_url ?? null);
+        setMediaPhotoUrl(json.photo_url ?? null);
+        setMediaGifUrl(json.gif_url ?? null);
+      }
+    } catch {
+      // graceful degradation — modal shows name only
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
   const loadProgram = useCallback(async () => {
     if (!id) return;
     const { data: prog } = await supabase.from('workout_programs').select('*').eq('id', id).single();
@@ -114,7 +231,7 @@ export default function ProgramDetailScreen() {
 
     const { data: wkts } = await supabase
       .from('program_workouts')
-      .select('*, program_exercises(*, exercises(name, name_fr, muscle_groups))')
+      .select('*, program_exercises(*, coach_exercise_id, exercises(name, name_fr, muscle_groups))')
       .eq('program_id', id)
       .order('day_of_week');
     const workoutList = (wkts ?? []) as WorkoutDay[];
@@ -132,6 +249,40 @@ export default function ProgramDetailScreen() {
     loadProgram();
     if (exercises.length === 0) loadExercises();
   }, [id]);
+
+  // ── Load workout reminder prefs from notification_preferences ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+        const userId = session.user.id;
+        const { data, error } = await supabase
+          .from('notification_preferences')
+          .select('workout_reminder_days, workout_reminder_time')
+          .eq('user_id', userId)
+          .single();
+        if (error) {
+          // PGRST116 = no rows — stay at defaults
+          return;
+        }
+        if (data && Array.isArray(data.workout_reminder_days) && data.workout_reminder_days.length > 0) {
+          setWorkoutReminderEnabled(true);
+          setWorkoutReminderDays(data.workout_reminder_days as string[]);
+          setWorkoutReminderTime((data.workout_reminder_time as string | null) ?? null);
+        }
+      } catch (e) {
+        console.warn('[Workout] Failed to load reminder prefs:', e);
+      }
+    })();
+  }, [id]);
+
+  // ── Cleanup reminder debounce on unmount ─────────────────
+  useEffect(() => {
+    return () => {
+      if (reminderDebounceRef.current) clearTimeout(reminderDebounceRef.current);
+    };
+  }, []);
 
   // ── Day used check ──────────────────────────────────────
   const usedDays = workouts.map((w) => w.day_of_week).filter(Boolean) as number[];
@@ -438,6 +589,65 @@ export default function ProgramDetailScreen() {
     return parts.join(' ');
   };
 
+  // ── Save workout reminder prefs + cancel/reschedule ──────
+  const saveWorkoutReminderPrefs = async (days: string[], time: string | null) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      const userId = session.user.id;
+
+      // UPSERT to notification_preferences
+      await supabase
+        .from('notification_preferences')
+        .upsert({ user_id: userId, workout_reminder_days: days, workout_reminder_time: time }, { onConflict: 'user_id' });
+
+      // Cancel all existing workout reminders
+      const all = await ExpoNotifications.getAllScheduledNotificationsAsync();
+      for (const n of all) {
+        if ((n.content.data as any)?.workoutReminder === true) {
+          await ExpoNotifications.cancelScheduledNotificationAsync(n.identifier);
+        }
+      }
+
+      // Schedule new WEEKLY trigger per selected weekday
+      if (time && days.length > 0) {
+        if (!/^\d{2}:\d{2}$/.test(time)) {
+          console.warn('[Workout] Invalid reminder time format, skipping scheduling:', time);
+          return;
+        }
+        const parts = time.split(':').map(Number);
+        const h = parts[0] ?? 9;
+        const m = parts[1] ?? 0;
+        for (const dayStr of days) {
+          const weekday = DAY_TO_EXPO_WEEKDAY[dayStr];
+          if (weekday === undefined) continue;
+          await ExpoNotifications.scheduleNotificationAsync({
+            content: {
+              title: "Séance du jour 💪",
+              body: "C'est ton jour d'entraînement — allez !",
+              data: { workoutReminder: true },
+            },
+            trigger: {
+              type: ExpoNotifications.SchedulableTriggerInputTypes.WEEKLY,
+              weekday,
+              hour: h,
+              minute: m,
+            } as any,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[Workout] saveWorkoutReminderPrefs failed:', e);
+    }
+  };
+
+  const handleReminderChange = (newDays: string[], newTime: string | null) => {
+    if (reminderDebounceRef.current) clearTimeout(reminderDebounceRef.current);
+    reminderDebounceRef.current = setTimeout(() => {
+      saveWorkoutReminderPrefs(newDays, newTime);
+    }, 600);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       {/* Header */}
@@ -607,6 +817,10 @@ export default function ProgramDetailScreen() {
               .sort((a, b) => a.order_index - b.order_index)
               .map((pe) => (
                 <TouchableOpacity key={pe.id} onLongPress={() => handleDeleteExercise(pe.id)}
+                  onPress={pe.coach_exercise_id
+                    ? () => fetchAndOpenMedia(pe.coach_exercise_id!, pe.exercises?.name ?? '')
+                    : undefined
+                  }
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: theme.background, borderRadius: 10, padding: 10 }}>
                   <View style={{ width: 28, height: 28, borderRadius: 7, backgroundColor: theme.primary + '22', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="barbell-outline" size={14} color={theme.primary} />
@@ -656,6 +870,133 @@ export default function ProgramDetailScreen() {
           <Ionicons name="add" size={20} color={theme.primary} />
           <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 15 }}>{t('workout.addWorkoutDay')}</Text>
         </TouchableOpacity>
+
+        {/* ── Workout Reminder Section ───────────────────────────── */}
+        <View style={{
+          backgroundColor: theme.surface,
+          borderRadius: 16,
+          padding: 16,
+          marginTop: 16,
+          marginBottom: 8,
+          borderWidth: 1,
+          borderColor: theme.border,
+          shadowColor: '#000',
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 2,
+        }}>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 14 }}>
+            Rappels d'entraînement
+          </Text>
+
+          {/* Toggle row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 15, color: theme.text }}>Activer les rappels</Text>
+            <TouchableOpacity
+              onPress={() => {
+                const newEnabled = !workoutReminderEnabled;
+                setWorkoutReminderEnabled(newEnabled);
+                if (!newEnabled) {
+                  setWorkoutReminderDays([]);
+                  setWorkoutReminderTime(null);
+                  saveWorkoutReminderPrefs([], null);
+                }
+              }}
+              style={{
+                width: 44,
+                height: 26,
+                borderRadius: 13,
+                backgroundColor: workoutReminderEnabled ? '#FF5C1A' : '#E2E0DA',
+                justifyContent: 'center',
+                paddingHorizontal: 3,
+              }}
+            >
+              <View style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: '#FFFFFF',
+                alignSelf: workoutReminderEnabled ? 'flex-end' : 'flex-start',
+              }} />
+            </TouchableOpacity>
+          </View>
+
+          {workoutReminderEnabled && (
+            <View style={{ marginTop: 16 }}>
+              {/* Weekday chips */}
+              <Text style={{ fontSize: 13, color: theme.muted, marginBottom: 8 }}>Jours d'entraînement</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {WEEKDAY_ORDER.map((day) => {
+                  const isSelected = workoutReminderDays.includes(day);
+                  return (
+                    <TouchableOpacity
+                      key={day}
+                      onPress={() => {
+                        const newDays = isSelected
+                          ? workoutReminderDays.filter((d) => d !== day)
+                          : [...workoutReminderDays, day];
+                        setWorkoutReminderDays(newDays);
+                        handleReminderChange(newDays, workoutReminderTime);
+                      }}
+                      style={{
+                        paddingVertical: 8,
+                        paddingHorizontal: 14,
+                        borderRadius: 20,
+                        backgroundColor: isSelected ? '#FF5C1A' : theme.surface,
+                        borderWidth: 1.5,
+                        borderColor: isSelected ? '#FF5C1A' : theme.border,
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        color: isSelected ? '#FFFFFF' : theme.text,
+                      }}>
+                        {WEEKDAY_LABELS[day]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Time row */}
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: 16,
+                paddingTop: 14,
+                borderTopWidth: 1,
+                borderTopColor: theme.border,
+              }}>
+                <Text style={{ fontSize: 15, color: theme.text }}>Heure</Text>
+                <TouchableOpacity onPress={() => setShowReminderTimePicker(true)}>
+                  <Text style={{ fontSize: 15, color: workoutReminderTime ? '#FF5C1A' : '#6B6963', fontWeight: '600' }}>
+                    {workoutReminderTime
+                      ? `${parseInt(workoutReminderTime.split(':')[0] ?? '9')}h00`
+                      : 'Choisir...'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* InlinePicker for reminder time */}
+        <InlinePicker
+          visible={showReminderTimePicker}
+          items={WORKOUT_HOUR_ITEMS}
+          selectedId={workoutReminderTime ? String(parseInt(workoutReminderTime.split(':')[0] ?? '9')) : '9'}
+          onSelect={(id) => {
+            const h = id.padStart(2, '0');
+            const newTime = `${h}:00`;
+            setWorkoutReminderTime(newTime);
+            handleReminderChange(workoutReminderDays, newTime);
+          }}
+          onClose={() => setShowReminderTimePicker(false)}
+          theme={{ surface: theme.surface ?? '#FFFFFF', text: theme.text ?? '#1C1A17' }}
+        />
       </ScrollView>
 
       {/* ── Move Day Modal ─────────────────────────────────── */}
@@ -1028,6 +1369,52 @@ export default function ProgramDetailScreen() {
         theme={theme}
         t={t}
       />
+
+      {/* ── Media bottom sheet (coach exercise demo) ── */}
+      <Modal
+        visible={showMediaModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMediaModal(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.surface }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', flex: 1, marginRight: 8 }} numberOfLines={2}>{mediaExerciseName}</Text>
+            <TouchableOpacity onPress={() => setShowMediaModal(false)}>
+              <Ionicons name="close" size={22} color={theme.muted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            {mediaLoading ? (
+              <View style={{ height: 200, backgroundColor: theme.background, borderRadius: 12 }} />
+            ) : mediaVideoUrl ? (
+              <Video
+                source={{ uri: mediaVideoUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={false}
+              />
+            ) : mediaGifUrl ? (
+              <Image
+                source={{ uri: mediaGifUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                resizeMode="contain"
+              />
+            ) : mediaPhotoUrl ? (
+              <Image
+                source={{ uri: mediaPhotoUrl }}
+                style={{ width: '100%', height: 220, borderRadius: 12 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ color: theme.muted, fontSize: 14, textAlign: 'center', marginTop: 24 }}>
+                Aucun média disponible pour cet exercice.
+              </Text>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

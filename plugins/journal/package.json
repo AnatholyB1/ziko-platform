@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/JournalPlugin": "./src/screens/JournalPlugin.tsx",
     "./screens/JournalDashboard": "./src/screens/JournalDashboard.tsx",
     "./screens/JournalEntry": "./src/screens/JournalEntry.tsx"
   },

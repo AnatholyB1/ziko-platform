@@ -2,6 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Platform, Modal,
 } from 'react-native';
+import type * as NotificationsType from 'expo-notifications';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,37 +51,103 @@ function STHeader({ onBack, title }: { onBack: () => void; title: string }) {
 function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string }) {
   const theme = useThemeStore((s) => s.theme);
   const [isLoading, setIsLoading] = useState(true);
+  const [notifDenied, setNotifDenied] = useState(false);
   const [s, setS] = useState({
-    sessionsReminder: true, hydration: true, streakAlert: true, coach: true,
-    achievements: true, social: true, marketing: false,
-    sound: true, haptics: true,
+    push_enabled: true,
+    coach_enabled: true,
+    workout_enabled: true,
+    gamification_enabled: true,
+    health_enabled: true,
+    system_enabled: true,
+    quiet_hours_start: 22,
+    quiet_hours_end: 7,
   });
   const saveRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [startPickerVisible, setStartPickerVisible] = useState(false);
+  const [endPickerVisible, setEndPickerVisible] = useState(false);
+
+  useEffect(() => {
+    N()?.getPermissionsAsync().then(({ canAskAgain, status }) => {
+      setNotifDenied(status === 'denied' && !canAskAgain);
+    });
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from('user_profiles').select('settings').eq('id', userId).single()
-      .then(({ data }) => {
-        const prefs = (data as any)?.settings?.notif_prefs;
-        if (prefs) setS((prev) => ({ ...prev, ...prefs }));
+    (async () => {
+      try {
+        const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
+        await supabase
+          .from('notification_preferences')
+          .upsert(
+            {
+              user_id: userId,
+              push_enabled: true,
+              coach_enabled: true,
+              workout_enabled: true,
+              gamification_enabled: true,
+              health_enabled: true,
+              system_enabled: true,
+              quiet_hours_start: 22,
+              quiet_hours_end: 7,
+              timezone_offset: tzOffset,
+            },
+            { onConflict: 'user_id', ignoreDuplicates: true }
+          );
+        const { data } = await supabase
+          .from('notification_preferences')
+          .select('push_enabled, coach_enabled, workout_enabled, gamification_enabled, health_enabled, system_enabled, quiet_hours_start, quiet_hours_end')
+          .eq('user_id', userId)
+          .single();
+        if (data) {
+          setS({
+            push_enabled: data.push_enabled ?? true,
+            coach_enabled: data.coach_enabled ?? true,
+            workout_enabled: data.workout_enabled ?? true,
+            gamification_enabled: data.gamification_enabled ?? true,
+            health_enabled: data.health_enabled ?? true,
+            system_enabled: data.system_enabled ?? true,
+            quiet_hours_start: data.quiet_hours_start ?? 22,
+            quiet_hours_end: data.quiet_hours_end ?? 7,
+          });
+        }
         setIsLoading(false);
-      });
+      } catch {
+        setIsLoading(false);
+      }
+    })();
   }, [userId]);
 
-  const updateToggle = (k: keyof typeof s) => (v: boolean) => {
-    const next = { ...s, [k]: v };
+  const handleChange = (patch: Partial<typeof s>) => {
+    const next = { ...s, ...patch };
     setS(next);
     clearTimeout(saveRef.current);
+    const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
     saveRef.current = setTimeout(async () => {
-      const { data: fresh } = await supabase
-        .from('user_profiles').select('settings').eq('id', userId).single();
-      const current = (fresh as any)?.settings ?? {};
-      await supabase.from('user_profiles').upsert({
-        id: userId,
-        settings: { ...current, notif_prefs: next },
-      });
+      await supabase
+        .from('notification_preferences')
+        .upsert(
+          {
+            user_id: userId,
+            push_enabled: next.push_enabled,
+            coach_enabled: next.coach_enabled,
+            workout_enabled: next.workout_enabled,
+            gamification_enabled: next.gamification_enabled,
+            health_enabled: next.health_enabled,
+            system_enabled: next.system_enabled,
+            quiet_hours_start: next.quiet_hours_start,
+            quiet_hours_end: next.quiet_hours_end,
+            timezone_offset: tzOffset,
+          },
+          { onConflict: 'user_id' }
+        );
     }, 600);
   };
+
+  const HOUR_ITEMS = Array.from({ length: 24 }, (_, i) => ({
+    id: String(i),
+    label: `${i}h00`,
+  }));
 
   if (isLoading) {
     return (
@@ -86,22 +164,129 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <STHeader onBack={onBack} title="Notifications" />
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}>
-        <STGroup title="Coach & rappels">
-          <STRow icon="barbell-outline" tint="#FF5C1A" label="Rappels de séance" sub="60 min avant" toggleValue={s.sessionsReminder} onToggle={updateToggle('sessionsReminder')} />
-          <STRow icon="water-outline" tint="#3B82F6" label="Hydratation" sub="Toutes les 2h" toggleValue={s.hydration} onToggle={updateToggle('hydration')} />
-          <STRow icon="flame-outline" tint="#E94B3C" label="Alerte streak" sub="Avant que la chaîne casse" toggleValue={s.streakAlert} onToggle={updateToggle('streakAlert')} />
-          <STRow icon="sparkles-outline" tint="#FF5C1A" label="Coach IA quotidien" sub="Insight du matin" toggleValue={s.coach} onToggle={updateToggle('coach')} />
+        {notifDenied && (
+          <TouchableOpacity
+            onPress={() => Linking.openSettings()}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 12,
+              marginBottom: 12,
+              shadowColor: '#000',
+              shadowOpacity: 0.06,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 2,
+            }}
+          >
+            <Ionicons name="notifications-off-outline" size={20} color="#FF5C1A" style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#1C1A17' }}>
+                Réactiver les notifications
+              </Text>
+              <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 2 }}>
+                Les notifications sont bloquées — ouvrir les réglages système
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={16} color="#6B6963" />
+          </TouchableOpacity>
+        )}
+        <STGroup>
+          <STRow
+            icon="notifications-outline"
+            tint="#FF5C1A"
+            label="Toutes les notifications"
+            toggleValue={s.push_enabled}
+            onToggle={(v) => handleChange({ push_enabled: v })}
+          />
         </STGroup>
-        <STGroup title="Activité">
-          <STRow icon="trophy-outline" tint="#E8A33A" label="PR & badges" toggleValue={s.achievements} onToggle={updateToggle('achievements')} />
-          <STRow icon="people-outline" tint="#3B82F6" label="Communauté" sub="Likes, commentaires, follows" toggleValue={s.social} onToggle={updateToggle('social')} />
-          <STRow icon="notifications-outline" tint="#6B6963" label="Promotions & nouveautés" toggleValue={s.marketing} onToggle={updateToggle('marketing')} />
-        </STGroup>
-        <STGroup title="Style">
-          <STRow icon="musical-note-outline" tint="#8B5CF6" label="Sons" toggleValue={s.sound} onToggle={updateToggle('sound')} />
-          <STRow icon="flash-outline" tint="#F59E0B" label="Vibrations" toggleValue={s.haptics} onToggle={updateToggle('haptics')} />
-        </STGroup>
+
+        <View style={{ opacity: s.push_enabled ? 1 : 0.4 }} pointerEvents={s.push_enabled ? 'auto' : 'none'}>
+          <STGroup title="Catégories">
+            <STRow
+              icon="person-outline"
+              tint="#FF5C1A"
+              label="Coach"
+              toggleValue={s.coach_enabled}
+              onToggle={(v) => handleChange({ coach_enabled: v })}
+            />
+            <STRow
+              icon="barbell-outline"
+              tint="#E94B3C"
+              label="Workout"
+              toggleValue={s.workout_enabled}
+              onToggle={(v) => handleChange({ workout_enabled: v })}
+            />
+            <STRow
+              icon="trophy-outline"
+              tint="#E8A33A"
+              label="Gamification"
+              toggleValue={s.gamification_enabled}
+              onToggle={(v) => handleChange({ gamification_enabled: v })}
+            />
+            <STRow
+              icon="heart-outline"
+              tint="#22C55E"
+              label="Santé & Habitudes"
+              toggleValue={s.health_enabled}
+              onToggle={(v) => handleChange({ health_enabled: v })}
+            />
+            <STRow
+              icon="phone-portrait-outline"
+              tint="#6B6963"
+              label="App"
+              toggleValue={s.system_enabled}
+              onToggle={(v) => handleChange({ system_enabled: v })}
+            />
+          </STGroup>
+        </View>
+
+        {s.push_enabled && (
+          <STGroup title="Heures silencieuses">
+            <STRow
+              icon="moon-outline"
+              tint="#6B6963"
+              label="De"
+              right={`${s.quiet_hours_start}h00`}
+              onPress={() => setStartPickerVisible(true)}
+            />
+            <STRow
+              icon="sunny-outline"
+              tint="#E8A33A"
+              label="À"
+              right={`${s.quiet_hours_end}h00`}
+              onPress={() => setEndPickerVisible(true)}
+            />
+          </STGroup>
+        )}
       </ScrollView>
+
+      <InlinePicker
+        visible={startPickerVisible}
+        items={HOUR_ITEMS}
+        selectedId={String(s.quiet_hours_start)}
+        onSelect={(id) => {
+          handleChange({ quiet_hours_start: parseInt(id, 10) });
+          setStartPickerVisible(false);
+        }}
+        onClose={() => setStartPickerVisible(false)}
+        theme={theme}
+      />
+      <InlinePicker
+        visible={endPickerVisible}
+        items={HOUR_ITEMS}
+        selectedId={String(s.quiet_hours_end)}
+        onSelect={(id) => {
+          handleChange({ quiet_hours_end: parseInt(id, 10) });
+          setEndPickerVisible(false);
+        }}
+        onClose={() => setEndPickerVisible(false)}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }

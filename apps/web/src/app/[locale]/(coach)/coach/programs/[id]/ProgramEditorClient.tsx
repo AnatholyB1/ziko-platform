@@ -110,7 +110,7 @@ export function ProgramEditorClient({
   const handleAddSession = useCallback(
     (weekNumber: number) => {
       const newSession: ProgramSession = {
-        session_id: crypto.randomUUID(),
+        session_id: genId(),
         session_name: 'Nouvelle séance',
         day_of_week: 1,
         exercises: [],
@@ -138,7 +138,7 @@ export function ProgramEditorClient({
         // Give each session a new UUID
         clone.sessions = clone.sessions.map((s) => ({
           ...s,
-          session_id: crypto.randomUUID(),
+          session_id: genId(),
         }));
         return [...prev, clone];
       });

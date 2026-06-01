@@ -29,6 +29,18 @@ export function AISuggestion({ text, actionLabel, onAction, tintColor }: AISugge
         elevation: 3,
       }}
     >
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: '700',
+          letterSpacing: 0.06,
+          textTransform: 'uppercase',
+          color: tint,
+          marginBottom: 4,
+        }}
+      >
+        COACH IA · SUGGESTION
+      </Text>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
         <Ionicons name="sparkles" size={16} color={tint} style={{ marginTop: 1 }} />
         <Text style={{ flex: 1, fontSize: 14, color: theme.text, lineHeight: 20 }}>{text}</Text>

@@ -5,7 +5,10 @@
 //   POST   /links/redeem     — redeem a code; constant-time envelope; rate-limited
 //   DELETE /links/:id        — athlete revokes own link (INVITE-06)
 import { Hono } from 'hono';
+import { createClient } from '@supabase/supabase-js';
+import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
+import { notificationService } from '../../services/notificationService.js';
 import { redemptionRateLimit } from './ratelimit.js';
 import {
   getActiveLink,
@@ -30,7 +33,16 @@ import {
   listCompareData,
   getProgramsForClient,
   upsertSharedNote,
+  getFormsForClient,
 } from './db.js';
+import { getWidgetData } from '../dashboards/db.js';
+
+// Admin client for fire-and-forget RPC calls (SECURITY DEFINER functions, no JWT required)
+const adminClient = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_PUBLISHABLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
 const CODE_REGEX = /^[A-Z2-9]{6}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -110,6 +122,55 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
 
   try {
     const result = await redeemInvitation(jwt, { code }, userId);
+    // TRIGGER-01: fire first-contact hook non-blocking (result.ok guaranteed before RPC)
+    if (result.ok === true) {
+      const coachId = result.link.coach_id;
+      const athleteId = userId;
+      const linkId = result.link.id;
+      adminClient
+        .rpc('create_form_instances_for_trigger', {
+          p_trigger_type: 'first_contact',
+          p_athlete_id: athleteId,
+          p_coach_id: coachId,
+        })
+        .then(({ error }) => {
+          if (error) console.warn('[forms/first_contact trigger]', error.message);
+        });
+      // PUSH-02: bidirectional invitation-accepted push (athlete + coach)
+      waitUntil(
+        (async () => {
+          // Resolve athlete display name from user_profiles
+          const { data: profileRow } = await adminClient
+            .from('user_profiles')
+            .select('name')
+            .eq('id', athleteId)
+            .limit(1)
+            .maybeSingle();
+          const athleteName: string = profileRow?.name ?? 'Un athlète';
+
+          await Promise.allSettled([
+            notificationService.send({
+              recipientUserId: athleteId,
+              category: 'coach',
+              type: 'invitation_accepted',
+              title: 'Invitation acceptée ✅',
+              body: 'Tu es maintenant connecté à ton coach.',
+              data: { url: '/(app)/coach' },
+              idempotencyKey: `invitation_accepted_athlete_${athleteId}_${linkId}`,
+            }),
+            notificationService.send({
+              recipientUserId: coachId,
+              category: 'coach',
+              type: 'invitation_accepted_coach',
+              title: 'Nouvel athlète 🎉',
+              body: `${athleteName} a rejoint ta liste de clients.`,
+              data: { url: '/(app)/clients' },
+              idempotencyKey: `invitation_accepted_coach_${coachId}_${linkId}`,
+            }),
+          ]);
+        })(),
+      );
+    }
     return c.json(result);
   } catch (err: any) {
     console.warn('[coach/clients] /links/redeem unexpected error:', err.message);
@@ -401,6 +462,21 @@ clientsRouter.get('/:id/programs', async (c) => {
   }
 });
 
+// GET /:clientId/forms — form instances for this client (RESPONSES-01, RESPONSES-02, RESPONSES-03)
+clientsRouter.get('/:clientId/forms', async (c) => {
+  const { userId: coachId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('clientId');
+  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
+  try {
+    const result = await getFormsForClient(jwt, coachId, clientId);
+    return c.json(result);
+  } catch (err: any) {
+    console.error('[coach/clients] GET /:clientId/forms error:', err.message);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
 // PUT /:clientId/shared-note — update shared_note on the coach↔client link (PROG-07, PROG-09)
 clientsRouter.put('/:clientId/shared-note', async (c) => {
   const { userId: coachId } = c.get('auth');
@@ -417,5 +493,34 @@ clientsRouter.put('/:clientId/shared-note', async (c) => {
   } catch (err: any) {
     console.error('[coach/clients] PUT /:clientId/shared-note error:', err.message);
     return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /:clientId/widget-data — returns shaped data for a single widget type (01-04)
+clientsRouter.get('/:clientId/widget-data', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  const clientId = c.req.param('clientId');
+  const type = c.req.query('type');
+  const period = c.req.query('period') ?? '30d';
+
+  if (!type) return c.json({ error: 'type query param required' }, 400);
+
+  const params: Record<string, string> = {};
+  for (const key of ['dataKey', 'threshold', 'unit', 'message', 'severity', 'filter']) {
+    const v = c.req.query(key);
+    if (v !== undefined) params[key] = v;
+  }
+
+  try {
+    const data = await getWidgetData(jwt, userId, clientId, type, period, params);
+    return c.json(data);
+  } catch (err: any) {
+    const msg: string = err?.message ?? 'Unknown error';
+    if (msg.startsWith('Unknown widget type') || msg === 'Invalid period') {
+      return c.json({ error: msg }, 400);
+    }
+    console.error('[widget-data]', err);
+    return c.json({ error: 'Internal server error' }, 500);
   }
 });

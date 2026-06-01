@@ -9,6 +9,7 @@
     "backend/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
@@ -21,6 +22,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "~19.1.10",
     "eslint": "^9.0.0",
+    "patch-package": "^8.0.0",
     "prettier": "^3.4.0",
     "turbo": "^2.3.3",
     "typescript": "^5.7.0"

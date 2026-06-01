@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/CardioPlugin": "./src/screens/CardioPlugin.tsx",
     "./screens/CardioDashboard": "./src/screens/CardioDashboard.tsx",
     "./screens/CardioLog": "./src/screens/CardioLog.tsx",
     "./screens/CardioTracker": "./src/screens/CardioTracker.tsx",

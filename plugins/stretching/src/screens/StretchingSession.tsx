@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, useCreditStore } from '@ziko/plugin-sdk';
 import { useStretchingStore } from '../store';
-import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
 // Awaitable credit earn helper — returns { credited } for toast triggering
 async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {

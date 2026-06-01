@@ -8,7 +8,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
-    "./screens/PantryDashboard": "./src/screens/PantryDashboard.tsx",
+    "./screens/PantryPlugin": "./src/screens/PantryPlugin.tsx",
     "./screens/PantryItemForm": "./src/screens/PantryItemForm.tsx",
     "./screens/PantryRecipes": "./src/screens/PantryRecipes.tsx",
     "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx",

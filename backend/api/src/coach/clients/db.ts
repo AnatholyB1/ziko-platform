@@ -10,6 +10,7 @@ import type {
   ClientNote,
   ClientSummary,
 } from './types.js';
+import { getBranding, type BrandingRow } from '../branding/db.js';
 
 const COACH_PHOTO_BUCKET = 'coach-kyc';
 const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes per RESEARCH.md §Don't Hand-Roll
@@ -56,6 +57,7 @@ export async function getActiveLink(
 ): Promise<{
   link: LinkRow | null;
   preview: CoachPreviewPayload | null;
+  branding: BrandingRow | null;
 }> {
   const db = createUserClient(jwt);
   const { data: linkRow, error: linkErr } = await db
@@ -71,7 +73,7 @@ export async function getActiveLink(
     .maybeSingle();
 
   if (linkErr) throw new Error(linkErr.message);
-  if (!linkRow) return { link: null, preview: null };
+  if (!linkRow) return { link: null, preview: null, branding: null };
 
   // Fetch coach profile — readable by all authenticated users via migration 042 policy.
   const { data: cp, error: cpErr } = await db
@@ -83,6 +85,10 @@ export async function getActiveLink(
   if (cpErr) throw new Error(cpErr.message);
 
   const photoSignedUrl = await signCoachPhoto(db, cp?.photo_url ?? null);
+
+  // Fetch branding for this coach — returns null when no row exists (D-08).
+  // Uses athlete's user-scoped JWT so RLS athlete-read policy applies (T-03-05).
+  const branding = await getBranding(jwt, linkRow.coach_id);
 
   return {
     link: {
@@ -101,6 +107,7 @@ export async function getActiveLink(
           kyc_status: cp.kyc_status as CoachPreviewPayload['kyc_status'],
         }
       : null,
+    branding, // BrandingRow | null — per D-07, D-08, D-09
   };
 }
 
@@ -717,23 +724,25 @@ export async function listCompareData(
   return result;
 }
 
-// ----- GET /:id/programs — programs assigned to a client by this coach (PROG-06) -----
+// ----- GET /:id/programs — programs assigned to OR owned by a client (PROG-06) -----
+// Fetches both coach-assigned programs (assigned_to_user_id = clientId) and
+// programs the athlete created themselves (user_id = clientId, assigned_to_user_id = NULL).
+// The new RLS policy 059 allows coaches to SELECT programs where is_coach_of(coach, user_id).
 export async function getProgramsForClient(
   jwt: string,
   coachId: string,
   clientId: string,
-): Promise<{ programs: any[] }> {
+): Promise<{ active: any | null; history: any[] }> {
   const db = createUserClient(jwt);
 
   const { data: programs, error } = await db
     .from('workout_programs')
     .select('id, name, description, goal, weeks_count, is_template, created_by_coach_id, assigned_to_user_id, template_source_id, start_date, weeks_data')
-    .eq('assigned_to_user_id', clientId)
-    .eq('created_by_coach_id', coachId)
+    .or(`assigned_to_user_id.eq.${clientId},and(user_id.eq.${clientId},assigned_to_user_id.is.null)`)
     .order('start_date', { ascending: false, nullsFirst: false });
 
   if (error) throw new Error(error.message);
-  if (!programs || programs.length === 0) return { programs: [] };
+  if (!programs || programs.length === 0) return { active: null, history: [] };
 
   // Compute week_number_current for the ISO week (Monday 00:00 UTC)
   const now = Date.now();
@@ -792,7 +801,14 @@ export async function getProgramsForClient(
     });
   }
 
-  return { programs: enriched };
+  const todayStr = new Date().toISOString().split('T')[0];
+  // Active = first program with start_date <= today, or if none have a start_date, the most recent one
+  const activeProgram =
+    enriched.find((prog) => prog.start_date !== null && prog.start_date <= todayStr) ??
+    enriched[0] ??
+    null;
+  const history = enriched.filter((prog) => prog !== activeProgram);
+  return { active: activeProgram ?? null, history };
 }
 
 // ----- PUT /:clientId/shared-note — update shared note on the coach↔client link (PROG-07, PROG-09) -----
@@ -819,4 +835,108 @@ export async function upsertSharedNote(
   }
 
   return { updated: true };
+}
+
+// ----- GET /:clientId/forms — form instances for a client (RESPONSES-01, RESPONSES-02, RESPONSES-03) -----
+// Returns submitted instances (with Q&A answers pre-joined from coach_forms.questions) sorted DESC,
+// then pending instances (answers = null). Manual ownership filter (RF-02: no RLS on publishable client).
+interface FormAnswer {
+  question_id: string;
+  question_label: string;
+  question_type: 'text' | 'scale' | 'yes_no' | 'choice';
+  answer_value: string | number;
+}
+
+interface FormInstanceResponse {
+  instance_id: string;
+  form_id: string;
+  form_title: string;
+  status: 'pending' | 'submitted';
+  submitted_at: string | null;
+  question_count: number;
+  answers: FormAnswer[] | null;
+}
+
+export async function getFormsForClient(
+  jwt: string,
+  coachId: string,
+  clientId: string,
+): Promise<{ forms: FormInstanceResponse[] }> {
+  const db = createUserClient(jwt);
+
+  // Step 2 — Fetch all form_instances for this athlete, joining coach_forms
+  const { data: instances, error: instErr } = await db
+    .from('form_instances')
+    .select('id, form_id, status, submitted_at, coach_forms!inner(title, questions, coach_id)')
+    .eq('athlete_id', clientId);
+
+  if (instErr) throw new Error(instErr.message);
+  if (!instances || instances.length === 0) return { forms: [] };
+
+  // Step 3 — Security filter (RF-02: manual ownership check — publishable client has no RLS)
+  const ownedInstances = (instances as any[]).filter(
+    (i) => i.coach_forms?.coach_id === coachId
+  );
+
+  if (ownedInstances.length === 0) return { forms: [] };
+
+  // Step 4 — Fetch form_responses for submitted instances only
+  const submittedIds = ownedInstances.filter((i) => i.status === 'submitted').map((i) => i.id);
+  const responsesMap = new Map<string, any[]>();
+
+  if (submittedIds.length > 0) {
+    const { data: responses, error: respErr } = await db
+      .from('form_responses')
+      .select('instance_id, answers')
+      .in('instance_id', submittedIds);
+
+    if (respErr) throw new Error(respErr.message);
+
+    for (const r of (responses as any[]) ?? []) {
+      responsesMap.set(r.instance_id, Array.isArray(r.answers) ? r.answers : []);
+    }
+  }
+
+  // Step 5 — Build FormInstanceResponse[] for each owned instance
+  const forms: FormInstanceResponse[] = ownedInstances.map((i) => {
+    const questions: any[] = i.coach_forms?.questions ?? [];
+    const questionMap = new Map<string, any>();
+    for (const q of questions) {
+      questionMap.set(q.id, q);
+    }
+
+    let answers: FormAnswer[] | null = null;
+    if (i.status === 'submitted') {
+      const rawAnswers = responsesMap.get(i.id) ?? [];
+      answers = rawAnswers.map((a: any) => {
+        const q = questionMap.get(a.question_id);
+        return {
+          question_id: a.question_id,
+          question_label: q?.label ?? a.question_id,
+          question_type: (q?.type ?? 'text') as FormAnswer['question_type'],
+          answer_value: a.value,
+        };
+      });
+    }
+
+    return {
+      instance_id: i.id,
+      form_id: i.form_id,
+      form_title: i.coach_forms?.title ?? '',
+      status: i.status as 'pending' | 'submitted',
+      submitted_at: i.submitted_at ?? null,
+      question_count: questions.length,
+      answers,
+    };
+  });
+
+  // Step 6 — Sort: submitted rows first (DESC by submitted_at), then pending rows at bottom
+  const sorted: FormInstanceResponse[] = [
+    ...forms
+      .filter((f) => f.status === 'submitted')
+      .sort((a, b) => new Date(b.submitted_at!).getTime() - new Date(a.submitted_at!).getTime()),
+    ...forms.filter((f) => f.status === 'pending'),
+  ];
+
+  return { forms: sorted };
 }

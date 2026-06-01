@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Mobile UX v2
-status: in_progress
-stopped_at: Gap plans 35-G01 through 35-G07 written — ready to execute
-last_updated: "2026-05-23T11:54:00.776Z"
+status: complete
+stopped_at: Phase 41 complete — all 6 automated checks PASS, smoke test APPROVED
+last_updated: "2026-05-28T00:00:00Z"
 progress:
-  total_phases: 6
-  completed_phases: 3
-  total_plans: 16
-  completed_plans: 12
-  percent: 50
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 36
+  completed_plans: 36
+  percent: 100
 ---
 
 # Project State — v1.7 Mobile UX v2
@@ -25,12 +25,14 @@ See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
 
 ## Current Position
 
-Phase: **35 — Profile + Settings Redesign** — COMPLETE ✅
+Phase: **41 — Coach StateC + Final Audit** — COMPLETE ✅ (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28)
 
-Automated verification: 30/30 PASS ✅  
-Human UAT: 15/15 PASS ✅ (2026-05-25)
+Previous: Phase 40 — Extra Screens — COMPLETE ✅ (6/6 plans, 11/11 automated checks PASS, 2026-05-27)
 
-Progress: [████████░░] 75%
+Previous: Phase 39 complete — 26/26 automated checks PASS ✅
+Also complete (missing from prior STATE): Phase 36 — Workout Stack Redesign (12/12 PASS, 2026-05-25) ✅
+
+Progress: [██████████] 100% (10/10 phases complete) — **v1.7 MILESTONE COMPLETE** 🎉
 
 ## Accumulated Context
 
@@ -50,7 +52,7 @@ Progress: [████████░░] 75%
 ### Fixture Inventory (to be replaced)
 
 - `home.jsx`: PROFILE, STREAK, TODAY, FORME, RECENT, ALL_PLUGINS — ✅ DONE (Phase 33)
-- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED
+- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED — ✅ DONE (Phase 37)
 - `plugins-2.jsx`: STATS, SLEEP_DATA, GAMIFICATION, PANTRY, RECIPE data
 - `coach.jsx`: COACH_DATA
 - `workout-data.jsx`: SESSION_DATA
@@ -76,16 +78,31 @@ Progress: [████████░░] 75%
   - [ ] 35-G05 — Apparences: remove theme, add language/region migration 052, useUnits hook
   - [ ] 35-G06 — Parrainage: migration 053 + Hono routes + mobile screen
   - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
+- [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
+- [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test APPROVED 2026-05-27)
+- [x] Phase 36 — Workout Stack Redesign — COMPLETE (6/6 plans, automated 12/12 PASS, 2026-05-25) ← was missing from previous STATE
+- [x] Phase 39 — Remaining Plugins Group 2 — COMPLETE (4/4 plans, automated 26/26 PASS, 2026-05-27)
+- [x] Phase 40 — Extra Screens — COMPLETE (6/6 plans, 11/11 automated checks PASS, 2026-05-27) ✅
+  - [x] 40-01 — Notifications + Store redesign
+  - [x] 40-02 — AIChatScreen + AvatarUpload
+  - [x] 40-03 — Calendar + Search + Help/Legal
+  - [x] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral — DONE (0afabd7)
+  - [x] 40-05 — EmptyState + ErrorScreen components + integrations
+  - [x] 40-06 — Phase verification — DONE (11/11 PASS)
+- [x] Phase 41 — Coach StateC + Final Audit — COMPLETE (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28) ✅
+  - [x] 41-01 — Coach StateC label fix (progress_label → "Habitudes aujourd'hui" / "Today's habits")
+  - [x] 41-02 — INITIAL_MESSAGES fixture removed; loading/empty/error sweep (5 plugins + 3 data fixtures eliminated)
+  - [x] 41-03 — Phase verification — DONE (6/6 PASS + smoke test APPROVED)
 
 ### Blockers/Concerns
 
-None.
+- Phase 35 gaps (35-G01–G07) still open — referral (35-G06) may overlap with Phase 40 plan 40-04. Coordinate or merge.
 
 ## Session Continuity
 
-Last session: 2026-05-23T11:53:48.537Z
-Stopped at: Gap plans 35-G01 through 35-G07 written — ready to execute
-Resume: Run `/gsd-execute-phase 35` starting from 35-G01. Execute G01–G06 sequentially, G07 last (verification). G05 must run before G06 (migration 052 before 053).
+Last session: 2026-05-28
+Stopped at: Phase 41 complete — v1.7 milestone fully shipped.
+Resume: Phase 35 gaps (35-G01–G07) remain open — tracked separately, do not block v1.7.
 
 ---
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import HydrationDashboard from '@ziko/plugin-hydration/screens/HydrationDashboard';
+import HydrationPlugin from '@ziko/plugin-hydration/screens/HydrationPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function HydrationDashboardRoute() {
-  return <HydrationDashboard supabase={supabase} />;
+  return <HydrationPlugin supabase={supabase} />;
 }

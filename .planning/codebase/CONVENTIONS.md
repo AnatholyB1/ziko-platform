@@ -1,249 +1,371 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-03-26
+**Analysis Date:** 2026-05-28
+
+## TypeScript Usage
+
+**Strict Mode:** Enabled across all packages via `tsconfig.base.json` (`"strict": true`). All apps inherit via `extends "../../tsconfig.base.json"`.
+
+**Targets:**
+- `apps/mobile/tsconfig.json`: `ESNext`, bundler module resolution, `react-native` JSX, `nativewind/types`
+- `apps/web/tsconfig.json`: `ES2017`, `jsx: "preserve"` for Next.js App Router
+- `tsconfig.base.json`: `ES2022`, module `ESNext`
+
+**Path Aliases:**
+- Mobile: `@/*` → `./src/*`, `@app/*` → `./app/*`, `@ziko/sounds` → `./src/lib/sounds`
+- Web: `@/*` → `./src/*`
+- Backend: no path aliases — uses relative imports with explicit `.js` extensions (ESM Node.js)
+
+**Import Extension Rule (backend only):** All imports in `backend/api/src/` append `.js` even for `.ts` source files:
+```ts
+import { updateRole } from './db.js';
+import { authMiddleware } from '../../middleware/auth.js';
+```
+
+**Type Patterns:**
+- `interface` for object shapes, `type` for unions/literals/aliases
+- Prop types local to a file: `type ClientRow = { id: string; ... }`
+- Exported types: `export interface` or `export type`
+- `Omit<T, keyof>` for data subsets: `Omit<Habit, 'id' | 'user_id'>[]`
+- `as const` for readonly arrays and lookup maps
+- `Record<K, V>` for maps: `Record<string, PluginManifest>`, `Record<QuestionType, ...>`
+- Caught errors typed as `any`: `catch (err: any) { err.message }`
+
+**Zod Validation (backend):** Schemas in `packages/coach-sdk/src/schemas/`. Use `z.safeParse()` for runtime validation; surface `ZodError` as HTTP 400.
 
 ## Naming Patterns
 
 **Files:**
-- React components: PascalCase (e.g., `CustomAlert.tsx`, `CardioDashboard.tsx`)
-- Hooks: camelCase with `use` prefix (e.g., `useAuthStore.ts`, `useAIStore.ts`)
-- Utility/library files: camelCase (e.g., `supabase.ts`, `storage.ts`)
-- Plugin manifests: `manifest.ts` (always)
-- Plugin stores: `store.ts`
-- Routes: kebab-case in file system (e.g., `cardio/dashboard.tsx`)
+- React components: `PascalCase.tsx` — `PendingFormsOverlay.tsx`, `CoachSidebar.tsx`
+- Hooks: `camelCase.ts` with `use` prefix — `useHomeData.ts`, `useCoachClients.ts`
+- Stores: `camelCase.ts` with `Store` suffix — `authStore.ts`, `workoutStore.ts`
+- Backend modules: `service.ts` (routes), `db.ts` (queries), `types.ts` (schema types)
+- Test files: `*.spec.ts` for integration, `*.test.ts` for unit tests in web
 
 **Functions:**
-- Camel case: `loadConversations()`, `fetchUserContext()`, `addSet()`
-- Async operations: prefix with `load`, `fetch`, `send`, or verb form (e.g., `loadMessages`, `fetchUserContext`, `sendMessage`)
-- Boolean getters: prefix with `is` or `get` (e.g., `isCompletedToday()`, `getTodayValue()`)
-- Private/internal functions: no prefix but placed after exports in files
+- Components: `PascalCase` named exports (not default)
+- Hooks: `camelCase` with `use` prefix
+- Utilities/helpers: `camelCase`
+- Zustand actions: verb-first camelCase — `setHabits`, `updateLog`, `getStreak`
 
 **Variables:**
-- Camel case: `userId`, `currentSession`, `isLoading`, `activeSets`
-- Constants: UPPER_SNAKE_CASE (e.g., `AGENT_MODEL`, `DEFAULT_HABITS`, `BASE_SYSTEM`)
-- State slices in stores: camelCase, descriptive (e.g., `activePluginContext`, `streamingContent`, `pendingActions`)
+- `camelCase` throughout
+- Booleans: `is*` / `has*` prefix — `isLoading`, `isActive`, `hasDestructive`
+- Supabase results: always `{ data, error }` destructuring
 
-**Types and Interfaces:**
-- PascalCase: `AuthState`, `UserContext`, `PluginManifest`, `CardioSession`
-- Type imports: `import type { ... }` always used
-- Omit/Partial utilities for related types (e.g., `Omit<Habit, 'id' | 'user_id'>`)
+**Types/Interfaces:**
+- `PascalCase`
+- State slices suffixed with `State`: `HabitsState`, `AuthState`
+- Props interfaces match component: `CoachSidebarProps`, `FormQuestionProps`
+- Backend payload types: `ProfileUpsertPayload`, `AuthContext`
 
-## Code Style
+## Component Patterns
 
-**Formatting:**
-- Prettier v3.4.0 (configured but no explicit `.prettierrc` found — uses defaults)
-- Line length: no strict limit observed, but files stay readable
-- Indentation: 2 spaces (JavaScript/TypeScript standard)
-- Semicolons: required at end of statements
+### React Native (Mobile + Plugins)
 
-**Linting:**
-- ESLint v9.0.0 installed (no `.eslintrc` config file found — using defaults)
-- Strict TypeScript mode enabled (`strict: true` in all `tsconfig.json` files)
-- Type safety enforced across monorepo
-
-**Comments:**
-- JSDoc/TSDoc style for exported functions and interfaces:
-  ```typescript
-  /** Get or create a conversation and return its ID + existing messages */
-  export async function getOrCreateConversation(
-    userId: string,
-    conversationId?: string,
-  ): Promise<{ conversationId: string; history: StoredMessage[] }>
-  ```
-- Single-line comments for inline logic (e.g., `// Store unsubscribe so callers can clean up if needed`)
-- Section markers for major code blocks: `// ─── Section Name ────────────────────────────────────────`
-- No commented-out code; prefer TODOs for future work
-
-**TODO/FIXME:**
-- Marked with `// TODO: description` (e.g., `// TODO: send welcome notification via FCM/APNs`)
-- Not enforced via linting; use for unfinished features
-
-## Import Organization
-
-**Order:**
-1. React and React Native core imports
-2. React Native UI components (`View`, `Text`, `ScrollView`, etc.)
-3. Icon library (`@expo/vector-icons`)
-4. Router and navigation
-5. External libraries (Zustand, Supabase, AI SDK, etc.)
-6. Type-only imports: `import type { ... }`
-7. Internal @ziko modules (`@ziko/plugin-sdk`, `@ziko/plugin-*`)
-8. Local relative imports (utils, stores, lib)
-
-**Example from `CardioTracker.tsx`:**
-```typescript
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+**File structure:**
+```tsx
+// 1. React import
+import React, { useState, useMemo } from 'react';
+// 2. React Native primitives
+import { View, Text, TouchableOpacity, Modal } from 'react-native';
+// 3. Third-party (expo, tanstack, moti, expo-router)
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
-import { useCardioStore, ACTIVITY_LABELS, formatPace } from '../store';
-import type { CardioSession } from '../store';
+import { useQuery } from '@tanstack/react-query';
+// 4. Internal packages
+import { SubTabs, ErrorScreen } from '@ziko/ui';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+// 5. Local (stores, lib, types) — separated by ASCII-box section comments
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Habit { ... }
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const CARD_STYLE = { ... };
+
+// ─── Helper functions ─────────────────────────────────────────────────────────
+const habitColor = (color: string): string => ...
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export function MyScreen() { ... }
 ```
 
-**Path Aliases:**
-- Mobile app (`apps/mobile/tsconfig.json`):
-  - `@/*` → `./src/*`
-  - `@app/*` → `./app/*`
-  - `@ziko/sounds` → `./src/lib/sounds`
-- Backend API: no aliases (ES2022 modules with explicit relative paths)
-- Plugins: no aliases (direct relative imports or `@ziko/plugin-*` workspace refs)
+**Key rules:**
+- Named exports only (no default) for components
+- Never use `Alert.alert` from `react-native` — always `showAlert()` from `@ziko/plugin-sdk`
+- Icons: Ionicons string names only (e.g., `'checkmark-circle-outline'`), never emoji
+- Screen roots: `paddingBottom: 100` for tab bar clearance
 
-**Workspace imports:**
-- Format: `@ziko/plugin-{id}/manifest` or `@ziko/plugin-{id}/screens/ScreenName`
-- Example: `import manifest from '@ziko/plugin-cardio/manifest'`
-- Static plugin loaders in `PluginLoader.tsx` use `() => import('@ziko/plugin-*/manifest') as any` pattern (required for Metro bundler static analysis)
+### Next.js (Web Coach App)
+
+- `'use client';` as first line for interactive components
+- Server components have no directive (default in App Router)
+- Icons: `react-icons/io5` — `IoGridOutline`, `IoPeopleOutline`, etc.
+- Styling: Tailwind CSS v4 utility classes exclusively
+
+## State Management
+
+### Zustand Store Pattern
+
+```ts
+// 1. Export data interfaces
+export interface Habit { id: string; name: string; ... }
+
+// 2. Private state interface
+interface HabitsState {
+  habits: Habit[];
+  isLoading: boolean;
+  // Actions
+  setHabits: (habits: Habit[]) => void;
+  // Computed selectors as inline functions
+  getStreak: (habitId: string) => number;
+}
+
+// 3. Export store with `use` prefix + empty () for TypeScript inference
+export const useHabitsStore = create<HabitsState>()((set, get) => ({
+  habits: [],
+  isLoading: false,
+  setHabits: (habits) => set({ habits }),
+  getStreak: (habitId) => { /* use get() for reads */ },
+}));
+```
+
+**Locations:**
+- App-level: `apps/mobile/src/stores/*.ts` — `authStore.ts`, `workoutStore.ts`, `aiStore.ts`
+- Plugin-level: `plugins/<name>/src/store.ts`
+
+**Persistence:** Use `zustand/middleware` `persist` + `createJSONStorage(MMKV)` when store must survive app restarts.
+
+**Auth subscription:** `onAuthStateChange` returns a subscription that must be stored on the store object (as `(get() as any)._authSubscription`) for cleanup. See `apps/mobile/src/stores/authStore.ts`.
+
+### TanStack Query (v5)
+
+```ts
+// Query — always scope queryKey with user ID
+useQuery({
+  queryKey: ['resource-name', userId],
+  queryFn: async () => {
+    const { data, error } = await supabase.from('table').select('*').eq('id', userId!).single();
+    if (error) throw error;
+    return data;
+  },
+  enabled: !!userId,
+  staleTime: 1000 * 60 * 10,  // 10 min for profile/static data
+});
+
+// staleTime conventions:
+// 60_000   = 1 min — list data (clients, programs)
+// 10 * 60 * 1000 = 10 min — profile / slow-changing data
+// 0 = always fresh (pending forms, alerts)
+```
+
+**Query keys:** `[resourceName, scopeId]` — `['profile', userId]`, `['streak', userId]`, `['pending-forms', userId]`.
+
+**Data fetching source:**
+- Mobile: queries hit Supabase directly via `supabase` client
+- Web hooks: fetch Hono API with `Authorization: Bearer <token>` header
 
 ## Error Handling
 
-**Patterns:**
-- Try/catch blocks capture errors from Supabase, API calls, and async operations
-- Errors thrown explicitly: `throw new Error('Not authenticated')` or `throw error` (from Supabase)
-- No custom error classes observed; all errors are generic `Error`
+**Backend (Hono) pattern:**
+```ts
+// JSON parse guard
+let body: SomeType;
+try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON body' }, 400); }
 
-**Database errors:**
-- Supabase returns `{ data, error }` — check `error` before using `data`
-- Pattern: `if (error || !data) throw new Error('message')`
-- Null fallback: `data ?? []` or `data ?? null`
+// DB operation guard
+try {
+  const result = await someDbOperation();
+  return c.json(result);
+} catch (err: any) {
+  return c.json({ error: err.message }, 500);
+}
+```
 
-**API response errors:**
-- Hono routes return JSON errors: `c.json({ error: 'message' }, statusCode)`
-- Standard codes: `401` (auth), `404` (not found), `500` (server error)
+**Supabase pattern:**
+```ts
+const { data, error } = await supabase.from('table').select('*').eq('id', id).single();
+if (error) throw error;
+return data;
+// OR
+if (!error && data) { set({ profile: data }); }
+```
 
-**Console logging:**
-- Warnings: `console.warn('[PluginLoader] message:', data)` (scoped with bracket prefix)
-- Errors: `console.error('[API Error]', err)` in global error handler
-- Verbose logging: `console.log()` in dev (e.g., API startup message)
-- No logging in production-optimized paths; errors propagated instead
+**Mobile:** TanStack Query propagates thrown errors. Components show `ErrorScreen` from `@ziko/ui` for fatal errors.
 
-**Alert handling:**
-- Use `showAlert(title, message, buttons?)` from `@ziko/plugin-sdk` (not `Alert.alert()` from React Native)
-- `showAlert` is drop-in replacement with same API as native `Alert.alert`
-- Button object: `{ text: string, onPress?: () => void, style?: 'cancel' | 'destructive' }`
+## i18n / Translation Conventions
+
+**Hook:** `useTranslation()` from `@ziko/plugin-sdk` — returns `{ t }` function.
+
+**Key format:** dot-separated namespaces — `'general.save'`, `'auth.login'`, `'habits.addHabit'`.
+
+**Files:** All translation dictionaries in `packages/plugin-sdk/src/i18n.ts`. Two locales: `'fr'` (primary, ~500+ keys) and `'en'`.
+
+**Web (Next.js):** Uses `next-intl` package with `[locale]` URL prefix. Locale files in `apps/web/src/i18n/`.
+
+**Hardcoded French strings:** Plugin screens commonly hardcode French strings directly in JSX (`"Aujourd'hui"`, `"Il y a ${days} jours"`). This is accepted — only shared/cross-cutting strings use `t()`.
+
+## Styling Conventions
+
+### Mobile (React Native)
+
+**No `StyleSheet.create()`** — use inline style objects only. Design tokens via `useThemeStore`:
+```tsx
+const theme = useThemeStore((s) => s.theme);
+<View style={{ backgroundColor: theme.surface, borderRadius: 16 }} />
+```
+
+**Design token reference** (from `packages/plugin-sdk/src/theme.ts`):
+- `theme.background` = `#F7F6F3`
+- `theme.surface` = `#FFFFFF`
+- `theme.border` = `#E2E0DA`
+- `theme.primary` = `#FF5C1A`
+- `theme.text` = `#1C1A17`
+- `theme.muted` = `#6B6963`
+
+**Standard card shadow:**
+```ts
+const CARD_STYLE = {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: '#E2E0DA',
+  shadowColor: '#1C1A17',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 12,
+  elevation: 3,
+};
+```
+
+**NativeWind:** Installed but not used in plugin screens. Tailwind classes appear only in `apps/mobile/app/` base wrappers.
+
+### Web (Next.js)
+
+**Tailwind v4** — custom tokens in `apps/web/src/app/globals.css` under `@theme { }`:
+```css
+--color-primary: #FF5C1A;
+--color-background: #F7F6F3;
+--color-border: #E2E0DA;
+--color-muted: #6B6963;
+```
+
+Use semantic utility classes: `text-primary`, `bg-background`, `border-border`, `text-muted`, `text-danger`, `text-success`.
+
+## Plugin Development Conventions
+
+### Manifest (`plugins/<name>/src/manifest.ts`)
+
+```ts
+import type { PluginManifest } from '@ziko/plugin-sdk';
+
+const manifest: PluginManifest = {
+  id: 'plugin-id',                  // kebab-case
+  name: 'Human Readable Name',
+  version: '1.0.0',
+  icon: 'calculator-outline',        // MUST be Ionicons string, never emoji
+  category: 'training',
+  price: 'free',
+  requiredPermissions: ['read_profile'],  // use requiredPermissions NOT permissions
+  routes: [{
+    path: '/(plugins)/plugin-id/dashboard',
+    title: 'Tab Label',
+    icon: 'calculator-outline',
+    showInTabBar: true,              // use showInTabBar NOT inTabBar
+  }],
+  aiTools: [{
+    name: 'tool_name',
+    description: 'What the tool does.',
+    parameters: { type: 'object', properties: { arg: { type: 'string' } }, required: ['arg'] },
+  }],
+  aiSkills: [{
+    name: 'skill_name',
+    description: 'Skill description.',
+    triggerKeywords: ['keyword1', 'keyword2'],
+    contextProvider: () => ({ skill: 'skill_name' }),
+  }],
+  aiSystemPromptAddition: `## Plugin Context\n...`,
+};
+
+export default manifest;  // MUST be default export
+```
+
+### Plugin Store (`plugins/<name>/src/store.ts`)
+
+```ts
+export interface DataType { ... }
+
+interface PluginState {
+  data: DataType[];
+  isLoading: boolean;
+  setData: (data: DataType[]) => void;
+}
+
+export const usePluginStore = create<PluginState>()((set, get) => ({ ... }));
+```
+
+### Route Wrapper (`apps/mobile/app/(app)/(plugins)/<name>/<screen>.tsx`)
+
+Each plugin screen has a thin wrapper that passes `supabase`:
+```tsx
+import { supabase } from '@/lib/supabase';
+import { PluginScreen } from '@ziko/plugin-<name>';
+
+export default function Screen() {
+  return <PluginScreen supabase={supabase} />;
+}
+```
+
+### AI Tools (server-side)
+
+Backend implementations in `backend/api/src/tools/`. Registered in `backend/api/src/tools/registry.ts`. Use `inputSchema` (not `parameters`) in Vercel AI SDK v6 tool definitions.
+
+## Import Organization (Canonical Order)
+
+**Mobile/Plugin files:**
+1. `react` — core React
+2. React Native primitives and safe-area
+3. Third-party (expo, tanstack, moti, expo-router)
+4. Internal packages (`@ziko/ui`, `@ziko/plugin-sdk`)
+5. Local files (stores, lib, types)
+
+**Section comments in large files:**
+```ts
+// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Helper functions ─────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
+```
+
+**Barrel exports:** `packages/plugin-sdk/src/index.ts` uses explicit named re-exports. Consumers: `import { useThemeStore, showAlert } from '@ziko/plugin-sdk'`.
+
+## Comments
+
+**Architectural constraints:**
+```ts
+// SERVICE-ROLE ONLY IN TESTS — this file MUST NOT be imported from backend/api/src/**
+```
+
+**Phase/task references:**
+```ts
+// Phase 28 plan 02
+// COACH-01, COACH-04
+// D-08 NOTE: creditCheck cannot be added here because...
+```
+
+**Non-obvious workarounds:**
+```ts
+// findLast not available in ES2016 target — use filter + last element instead
+// Store unsubscribe so callers can clean up if needed
+(get() as any)._authSubscription = subscription;
+```
+
+**JSDoc:** Used for key exported interfaces and fields in `packages/plugin-sdk/src/types.ts`. Not required for component props.
 
 ## Logging
 
-**Framework:** No dedicated logging library; uses `console.*` and native error propagation
-
-**Patterns:**
-- Error context prefix in brackets: `[PluginLoader]`, `[API Error]`, `[Router]`
-- Async errors logged at catch point; not re-logged higher up
-- User-facing errors go through Supabase RLS or API validation layer
-
-## Component & Hook Design
-
-**React Components:**
-- Functional components only (no class components)
-- Props interface/type always explicitly declared: `{ supabase: any }` (plugin screens), destructured in parameter
-- Default exports for screen/route components: `export default function ScreenName() { }`
-- Named exports for sub-components used internally
-
-**Hooks (Zustand stores):**
-- Pattern: `export const useStore = create<StoreInterface>()((set, get) => ({ ... }))`
-- State initialization inline in creation function
-- Selectors: `useAuthStore((s) => s.profile)` or `useAuthStore.getState().user` for imperative access
-- Subscribe/unsubscribe pattern preserved: `const { data: { subscription } } = supabase.auth.onAuthStateChange(...)`
-
-**Plugin Screen Props:**
-- All screens receive `supabase` client: `function ScreenName({ supabase }: { supabase: any })`
-- Used to query `user_plugins`, `ai_conversations`, plugin data tables
-- No auth checks needed (middleware-protected API, plugin-loaded only if installed)
-
-**Effects and Subscriptions:**
-- `useCallback` for memoized functions passed to hooks
-- `useEffect` with dependency arrays (not commented)
-- Subscription cleanup functions stored and called on unmount
-- Pattern in `authStore.ts`: `(get() as any)._authSubscription = subscription` for reference storage
-
-**State Management Layer:**
-- Zustand stores (`src/stores/*`) for global state (auth, AI, workout, theme, etc.)
-- Store state accessed via hooks: `useAuthStore()` or `useAuthStore.getState()` for imperative
-- Store updates via action methods: `set()` for batch updates, immutable patterns
-- Plugin-scoped state: each plugin has own `store.ts` (e.g., `plugins/habits/src/store.ts`)
-
-## Function Design
-
-**Size:** No explicit line limits; average function 20–50 lines
-
-**Parameters:**
-- Destructured props preferred: `({ userId, conversationId }: Props)`
-- Union types for flexibility: `conversationId?: string` (optional)
-- Explicit typing over `any` where possible; `any` used for plugin props until better typing
-
-**Return Values:**
-- Async functions return `Promise<Type>`
-- Success patterns: return data directly or `{ success: true, data }`
-- Error patterns: throw error (not return `{ error: ... }`)
-- Void operations: confirm success via side effects or mutation
-
-**Null handling:**
-- Null coalescing: `value ?? default`
-- Optional chaining: `obj?.property?.nested`
-- Falsy checks for conditionals: `if (!data)`, `if (error)`
-
-## Module Design
-
-**Exports:**
-- Mix of default + named exports per file
-- Default exports: route components, main plugin manifests
-- Named exports: utility functions, store hooks, types, components
-- `export { router as pluginsRouter }` pattern for route modules
-
-**Barrel files:**
-- `@ziko/plugin-sdk/src/index.ts` re-exports all public APIs
-- Plugins no barrel files; direct imports from `@ziko/plugin-{id}/manifest` or `screens/ScreenName`
-
-**Folder structure for stores:**
-- Zustand stores centralized: `apps/mobile/src/stores/` (5 files)
-- Plugin stores co-located: `plugins/{id}/src/store.ts`
-- Context helpers: `backend/api/src/context/` (user.ts, conversation.ts)
-
-## TypeScript Specifics
-
-**Target and lib:**
-- Mobile: `ESNext` + `DOM` (for web APIs like `Promise`, `JSON`)
-- Backend: `ES2022` (Node.js runtime, no DOM)
-- Strict mode: enabled everywhere
-
-**Modules:**
-- Mobile: `ESNext` (Expo bundler supports all modern syntax)
-- Backend: `NodeNext` (Node.js with ES modules)
-
-**jsconfig/tsconfig patterns:**
-- Base config: `tsconfig.base.json` (shared compiler options)
-- Workspace configs: extend base, add path aliases
-- `noEmit: true` in mobile (bundler handles emit)
-- `outDir: dist` in backend (tsc outputs transpiled code)
-
-## Cross-Plugin Patterns
-
-**Plugin manifest structure:**
-```typescript
-const manifest: PluginManifest = {
-  id: 'string',
-  name: 'string',
-  icon: 'ionicons-name', // NOT emoji
-  requiredPermissions: ['read_profile', ...],
-  aiSkills: [{ name, description, triggerKeywords, contextProvider }],
-  aiTools: [{ name, description, parameters }],
-  routes: [{ path: '/(plugins)/...' , icon, showInTabBar }],
-};
-export default manifest; // NOT named export
-```
-
-**Plugin-to-plugin integration:**
-```typescript
-// Cardio plugin trying to access measurements
-let useMeasurementsStore: any = null;
-try { useMeasurementsStore = require('@ziko/plugin-measurements').useMeasurementsStore; } catch {}
-// Graceful fallback if measurements plugin not installed
-```
-
-**Theme colors:**
-- Access via: `const theme = useThemeStore((s) => s.theme)`
-- Properties: `theme.primary`, `theme.surface`, `theme.background`, `theme.text`, `theme.muted`, `theme.border`
-- Dynamic color mixing: `theme.primary + '15'` (appends alpha channel hex)
+No logging framework. `console.log` / `console.error` used ad-hoc. Hono's `logger()` middleware handles HTTP request logging in `backend/api/src/app.ts`.
 
 ---
 
-*Convention analysis: 2026-03-26*
+*Convention analysis: 2026-05-28*

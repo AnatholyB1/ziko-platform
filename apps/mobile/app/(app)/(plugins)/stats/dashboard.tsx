@@ -1,7 +1,7 @@
 import React from 'react';
-import StatsDashboard from '@ziko/plugin-stats/screens/StatsDashboard';
+import StatsPlugin from '@ziko/plugin-stats/screens/StatsPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function StatsDashboardRoute() {
-  return <StatsDashboard supabase={supabase} />;
+  return <StatsPlugin supabase={supabase} />;
 }

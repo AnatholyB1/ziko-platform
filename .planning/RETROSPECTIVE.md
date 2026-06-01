@@ -4,6 +4,46 @@
 
 ---
 
+## Milestone: v1.8 — Sport Dashboards
+
+**Shipped:** 2026-05-30
+**Phases:** 6 (37–41.1) | **Plans:** 20
+
+### What Was Built
+- Dashboard tab in coach CRM client detail view with sport selector + date filter
+- Powerlifting dashboard (4 Recharts charts) + 4 additional sport dashboards
+- Compare mode + PDF export (html2canvas + jsPDF)
+- AI context injection: chat awareness, insight chips, narrative summary, threshold alert badge
+- Phase 41.1 gap closure: crossedThresholds prop chain completed through 5 sport dashboards to ChartCard
+
+### What Worked
+- **UI design contract first (Phase 37)** — Locking all 11 surfaces, data shapes, and chart library before code prevented drift. No UI debates during implementation phases.
+- **Audit-driven gap closure** — Milestone audit found the AI-04 ChartCard badge disconnection before close. Phase 41.1 gap closure was surgical (3-file change per dashboard × 5). Audit tooling paid for itself.
+- **Existing table reuse** — All 6 dashboards built on existing Supabase tables (no migrations required). Saved significant backend time.
+- **Recharts already installed** — Chart library selection in Phase 37 confirmed existing usage in ComparisonChart.tsx. Zero new dependencies for the core dashboard.
+- **Phase structure (37→38→39→40→41)** — Clean dependency chain. Phases 39 and 40 could run in parallel with Phase 38 only needing the foundation; this sped up delivery.
+
+### What Was Inefficient
+- **Disconnected AI-04 prop chain missed by Phase 41 verifier** — Two VERIFICATION.md files were created for Phase 41; the first (12:00) claimed 12/12 pass, the second (14:00) re-verification found the badge dead code. Audit at milestone boundary caught it, but the gap should have been caught during plan 05 execution review.
+- **Missing VERIFICATION.md for phases 37–40** — All four phases lacked VERIFICATION.md at milestone close. Implementation was confirmed functional by integration checker, but documentation discipline slipped during execution.
+- **REQUIREMENTS.md traceability stale** — 13 of 17 requirements still showed `[ ] Pending` at close despite being implemented. The traceability table was never updated during phase execution.
+
+### Patterns Established
+- **Two-phase AI feature delivery**: backend routes + types in one plan, frontend components in another, page wiring in a third. This decomposition made Phase 41 clean.
+- **useInsights hook pattern** — Single hook polling one backend endpoint returns `{ chartInsights, narrative, crossedThresholds }`. All AI features share the same data fetch — no N+1 requests.
+- **`handleDataReady` → ref → POST body** — Dashboard context injection pattern: each sport dashboard calls `onDataReady(metrics)`, page stores in `dashboardContextRef`, drawer includes it in POST body. Works without re-renders.
+
+### Key Lessons
+- **Two verifiers diverge** — When two VERIFICATION.md files exist for the same phase, always take the later timestamp as authoritative. Earlier verifiers can miss integration-level issues that only surface when the whole page is assembled.
+- **Prop threading is invisible** — Optional props that are never passed produce no TypeScript error and no runtime crash. Audit checklists should explicitly trace each prop from the source (page.tsx) to every consumer (ChartCard), not just verify the prop exists on each component individually.
+- **Traceability updates should be atomic** — Each plan SUMMARY should include updating the REQUIREMENTS.md traceability row for its REQ-IDs. Deferring this to milestone close creates a 13-item backfill.
+
+### Cost Observations
+- Sessions: ~6 across 5 days
+- Notable: Phase 37 (UI contract, 1 plan) unlocked 19 subsequent plans with zero design disputes — highest ROI phase of the milestone.
+
+---
+
 ## Milestone: v1.1 — Smart Pantry Plugin
 
 **Shipped:** 2026-04-02

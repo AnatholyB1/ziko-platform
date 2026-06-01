@@ -1,7 +1,7 @@
 import React from 'react';
-import JournalDashboard from '@ziko/plugin-journal/screens/JournalDashboard';
+import JournalPlugin from '@ziko/plugin-journal/screens/JournalPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function JournalDashboardRoute() {
-  return <JournalDashboard supabase={supabase} />;
+  return <JournalPlugin supabase={supabase} />;
 }

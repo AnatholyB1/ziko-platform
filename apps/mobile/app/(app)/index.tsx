@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
@@ -51,9 +52,11 @@ async function fireAndForget(tool: string, input: Record<string, unknown>): Prom
 function MissionCardContent({
   isLoading,
   activeProgram,
+  onStart,
 }: {
   isLoading: boolean;
   activeProgram: any | null;
+  onStart: () => void;
 }) {
   const theme = useThemeStore((s) => s.theme);
 
@@ -110,7 +113,7 @@ function MissionCardContent({
   }
 
   // Populated state — parse program_data defensively
-  const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? [];
+  const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
   const todaySession = sessions[0] ?? null;
   const exercises: any[] = todaySession?.exercises ?? todaySession?.sets ?? [];
   const sessionName: string = todaySession?.name ?? todaySession?.title ?? activeProgram?.goal ?? 'Séance du jour';
@@ -164,7 +167,7 @@ function MissionCardContent({
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout' as any)}
+            onPress={onStart}
             activeOpacity={0.8}
             style={{
               flex: 1, backgroundColor: '#FF5C1A', borderRadius: 10, height: 48,
@@ -174,10 +177,14 @@ function MissionCardContent({
             <Ionicons name="play-outline" size={14} color="#fff" />
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Allez, c'est parti !</Text>
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7} style={{
-            width: 48, height: 48, backgroundColor: 'rgba(255,250,246,0.10)',
-            borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-          }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push(`/(app)/(plugins)/ai-programs/${activeProgram?.id}` as any)}
+            style={{
+              width: 48, height: 48, backgroundColor: 'rgba(255,250,246,0.10)',
+              borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+            }}
+          >
             <Ionicons name="chevron-down-outline" size={16} color="#FFFAF6" />
           </TouchableOpacity>
         </View>
@@ -250,10 +257,14 @@ export default function DashboardScreen() {
   const theme = useThemeStore((s) => s.theme);
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const startSession = useWorkoutStore((s) => s.startSession);
   const { width: screenWidth } = useWindowDimensions();
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   const userId = useAuthStore((s) => s.user?.id);
+  // authProfile is populated during initialize() before the home screen mounts —
+  // use it as an immediate name source while the TanStack Query resolves.
+  const authProfile = useAuthStore((s) => s.profile);
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
@@ -290,8 +301,13 @@ export default function DashboardScreen() {
   const nutritionPct = Math.min(100, Math.round((kcal / 2200) * 100));
   const weeklyGoal = parseWorkoutFrequency(profile?.workout_frequency);
   const weeklyCount = weeklySessions.length;
-  const loadPct = Math.min(100, Math.round((weeklyCount / Math.max(1, weeklyGoal)) * 100));
-  const score = Math.round((sleepPct + waterPct + nutritionPct + loadPct) / 4);
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayDone = weeklySessions.some((s: { started_at: string }) => s.started_at.startsWith(todayStr));
+  // Rest day = no workout goal OR weekly target already reached
+  const isRestDay = weeklyGoal === 0 || weeklyCount >= weeklyGoal;
+  const loadPct = (todayDone || isRestDay) ? 100 : 0;
+  const trackerPcts = [sleepPct, waterPct, nutritionPct, loadPct];
+  const score = Math.round(trackerPcts.reduce((a, b) => a + b, 0) / trackerPcts.length);
 
   // ── Week strip dates ──────────────────────────────────────────────────────
   const weeklySessionDates = useMemo(() => {
@@ -312,6 +328,14 @@ export default function DashboardScreen() {
     return () => clearInterval(id);
   }, [tips.length]);
   const currentTip = tips[tipIndex % Math.max(1, tips.length)];
+
+  // ── Start Mission handler ─────────────────────────────────────────────────
+  const handleStartMission = async () => {
+    const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
+    const sessionName: string = sessions[0]?.name ?? sessions[0]?.title ?? activeProgram?.goal ?? 'Séance du jour';
+    await startSession(undefined, sessionName);
+    router.push('/(app)/workout/session' as any);
+  };
 
   // ── Smart Actions ─────────────────────────────────────────────────────────
   const smartActions = useSmartActions(
@@ -341,7 +365,13 @@ export default function DashboardScreen() {
     return t('greeting.evening');
   }, []);
 
-  const firstName = profile?.name?.split(' ')[0] ?? 'Athlete';
+  // Use TanStack Query profile (authoritative) or auth store profile (available immediately on mount).
+  // Guard against email-as-name: the Supabase trigger stores the email as name for email/password signups
+  // when no full_name metadata is present, so we discard any value containing '@'.
+  const resolvedName = profile?.name ?? authProfile?.name ?? null;
+  const firstName = (resolvedName && !resolvedName.includes('@'))
+    ? resolvedName.split(' ')[0]
+    : 'Athlete';
 
   // ── QuickLog handlers ─────────────────────────────────────────────────────
   const handleLogWater = () => {
@@ -462,14 +492,18 @@ export default function DashboardScreen() {
             >
               <Ionicons name="notifications-outline" size={16} color={theme.text} />
             </TouchableOpacity>
-            <View style={{
-              width: 36, height: 36, borderRadius: 12, backgroundColor: theme.primary,
-              alignItems: 'center', justifyContent: 'center',
-            }}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push('/(app)/profile' as any)}
+              style={{
+                width: 36, height: 36, borderRadius: 12, backgroundColor: theme.primary,
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
               <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>
                 {(profile?.name ?? 'A').slice(0, 2).toUpperCase()}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -532,7 +566,7 @@ export default function DashboardScreen() {
 
         {/* ── MissionCard ────────────────────────────────── */}
         <View style={{ marginBottom: 12 }}>
-          <MissionCardContent isLoading={programLoading} activeProgram={activeProgram ?? null} />
+          <MissionCardContent isLoading={programLoading} activeProgram={activeProgram ?? null} onStart={handleStartMission} />
         </View>
 
         {/* ── AICoachInline ──────────────────────────────── */}

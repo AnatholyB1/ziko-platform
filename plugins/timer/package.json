@@ -8,6 +8,7 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./screens/TimerDashboard": "./src/screens/TimerDashboard.tsx",
+    "./screens/TimerPlugin": "./src/screens/TimerPlugin.tsx",
     "./screens/TimerManager": "./src/screens/TimerManager.tsx",
     "./screens/TimerEditor": "./src/screens/TimerEditor.tsx"
   },

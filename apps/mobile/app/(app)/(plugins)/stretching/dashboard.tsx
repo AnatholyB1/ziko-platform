@@ -1,7 +1,7 @@
 import React from 'react';
-import StretchingDashboard from '@ziko/plugin-stretching/screens/StretchingDashboard';
+import StretchingPlugin from '@ziko/plugin-stretching/screens/StretchingPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function StretchingDashboardRoute() {
-  return <StretchingDashboard supabase={supabase} />;
+  return <StretchingPlugin supabase={supabase} />;
 }

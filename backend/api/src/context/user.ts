@@ -10,6 +10,7 @@ export interface UserContext {
     height_cm: number | null;
     goal: string | null;
     units: string;
+    ai_persona?: string | null;
   } | null;
   installedPlugins: string[];
   recentWorkouts: Array<{
@@ -28,16 +29,23 @@ export interface UserContext {
     total: number;
     completed: number;
   };
+  personaInstruction: string;
+  recentFormResponses: Array<{
+    form_title: string;
+    submitted_at: string;
+    questions: Array<{ id: string; type: string; label: string }>;
+    answers: Array<{ question_id: string; value: string | number }>;
+  }>;
 }
 
 export async function fetchUserContext(userId: string, userToken?: string): Promise<UserContext> {
   const db = clientForUser(userToken);
   const date = today();
 
-  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes] =
+  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes, formResponsesRes] =
     await Promise.all([
       db.from('user_profiles')
-        .select('name, age, weight_kg, height_cm, goal, units')
+        .select('name, age, weight_kg, height_cm, goal, units, settings')
         .eq('id', userId)
         .single(),
       db.from('user_plugins')
@@ -61,6 +69,21 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
         .select('habit_id, value')
         .eq('user_id', userId)
         .eq('date', date),
+      db.from('form_responses')
+        .select(`
+          answers,
+          submitted_at,
+          form_instances!inner(
+            form_id,
+            coach_forms!inner(
+              title,
+              questions
+            )
+          )
+        `)
+        .eq('athlete_id', userId)
+        .order('submitted_at', { ascending: false })
+        .limit(5),
     ]);
 
   // Nutrition totals
@@ -81,6 +104,16 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
     (h: any) => (logMap.get(h.id) ?? 0) >= (h.target ?? 1),
   ).length;
 
+  // Persona injection (T-37-05-02: server-side hardcoded map — DB value is key lookup only)
+  const personaPrompts: Record<string, string> = {
+    max: "Tu t'appelles Max, tu es un coach sport motivant et exigeant, style sergent d'élite.",
+    zoe: "Tu t'appelles Zoé, tu es une coach bienveillante qui encourage et valorise les progrès.",
+    leo: "Tu t'appelles Léo, tu es un coach analytique qui optimise les performances avec les données.",
+    rio: "Tu t'appelles Rio, tu es un coach détendu et fun qui rend le sport accessible et sympa.",
+  };
+  const aiPersona = (profileRes.data?.settings as any)?.ai_persona ?? 'max';
+  const personaInstruction = personaPrompts[aiPersona] ?? personaPrompts.max;
+
   return {
     profile: profileRes.data
       ? {
@@ -90,6 +123,7 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
           height_cm: Number(profileRes.data.height_cm) || null,
           goal: profileRes.data.goal,
           units: profileRes.data.units,
+          ai_persona: aiPersona,
         }
       : null,
     installedPlugins: (pluginsRes.data ?? []).map((p: any) => p.plugin_id),
@@ -100,5 +134,12 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
     })),
     todayNutritionSummary,
     todayHabitsSummary: { total: habits.length, completed },
+    personaInstruction,
+    recentFormResponses: (formResponsesRes.data ?? []).map((r: any) => ({
+      form_title: r.form_instances?.coach_forms?.title ?? '',
+      submitted_at: r.submitted_at,
+      questions: r.form_instances?.coach_forms?.questions ?? [],
+      answers: r.answers ?? [],
+    })),
   };
 }

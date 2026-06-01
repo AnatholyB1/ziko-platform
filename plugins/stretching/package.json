@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./screens/StretchingPlugin": "./src/screens/StretchingPlugin.tsx",
     "./screens/StretchingDashboard": "./src/screens/StretchingDashboard.tsx",
     "./screens/StretchingSession": "./src/screens/StretchingSession.tsx",
     "./screens/RoutineEditor": "./src/screens/RoutineEditor.tsx",

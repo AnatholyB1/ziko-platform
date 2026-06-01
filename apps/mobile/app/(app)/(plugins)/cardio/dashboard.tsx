@@ -1,7 +1,7 @@
 import React from 'react';
-import CardioDashboard from '@ziko/plugin-cardio/screens/CardioDashboard';
+import CardioPlugin from '@ziko/plugin-cardio/screens/CardioPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function CardioDashboardRoute() {
-  return <CardioDashboard supabase={supabase} />;
+  return <CardioPlugin supabase={supabase} />;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,28 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Platform,
 } from 'react-native';
+import type * as NotificationsType from 'expo-notifications';
+
+// Lazy load expo-notifications to avoid crashing when ExpoTopicSubscriptionModule
+// native module is not linked (Expo Go on Android, SDK 54+).
+function N(): typeof NotificationsType | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert, coachStorage } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -36,9 +51,28 @@ interface LinkRow {
   created_at: string;
 }
 
+interface BrandingPayload {
+  primary_color: string;
+  logo_url: string | null;
+  tone: string | null;
+}
+
 interface LinkStatusResponse {
   link: LinkRow | null;
   preview: CoachPreviewPayload | null;
+  branding: BrandingPayload | null;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+// Stable deviceId stored in module scope — persists across re-renders for the session.
+// Best-effort: the backend deduplicates tokens by (userId, token), deviceId is secondary.
+let _deviceId: string | null = null;
+function getOrCreateDeviceId(): string {
+  if (!_deviceId) {
+    _deviceId = [Date.now().toString(36), Math.random().toString(36).slice(2), Math.random().toString(36).slice(2)].join('-');
+  }
+  return _deviceId;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -46,6 +80,7 @@ interface LinkStatusResponse {
 export default function CoachScreen({ supabase }: { supabase: any }) {
   const { t } = useTranslation();
   const theme = useThemeStore((s) => s.theme);
+  const clearCoachTheme = useThemeStore((s) => s.clearCoachTheme);
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
@@ -211,6 +246,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         },
       );
       if (res.ok) {
+        clearCoachTheme();
+        coachStorage.delete('coach:branding');
         setShowRevokeModal(false);
         setRevokeInput('');
         queryClient.invalidateQueries({ queryKey: ['coach-link', user?.id] });
@@ -224,7 +261,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     } finally {
       setIsRevoking(false);
     }
-  }, [link, isRevoking, supabase, queryClient, user?.id, t]);
+  }, [link, isRevoking, supabase, queryClient, user?.id, t, clearCoachTheme]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -232,11 +269,50 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     setRefreshing(false);
   }, [refetch]);
 
+  // ── Push token registration (State C — fires once on link activation) ──
+  useEffect(() => {
+    if (!link) return;
+    if (!Device.isDevice) return;
+
+    async function registerToken() {
+      try {
+        const n = N();
+        if (!n) return;
+
+        const perm = await n.requestPermissionsAsync() as any;
+        if (perm.status !== 'granted') return;
+
+        const projectId =
+          Constants?.expoConfig?.extra?.eas?.projectId ??
+          (Constants as any)?.easConfig?.projectId ??
+          '9b672c1a-10c4-4d66-882c-b9a08294650f';
+
+        const expoPushToken = (await n.getExpoPushTokenAsync({ projectId })).data;
+        const deviceId = getOrCreateDeviceId();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        await fetch(`${process.env.EXPO_PUBLIC_API_URL}/notifications/token`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: expoPushToken, platform: Platform.OS, deviceId }),
+        });
+      } catch {
+        // Push token registration is best-effort — silently swallow errors
+      }
+    }
+
+    registerToken();
+  }, [link?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Loading state ──
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#FF5C1A" />
+        <ActivityIndicator size="large" color={theme.primary} />
       </SafeAreaView>
     );
   }
@@ -253,18 +329,30 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   );
 
   // ── Avatar component (shared between State B and C) ──
-  const CoachAvatar = ({ photoUrl, displayName }: { photoUrl: string | null; displayName: string }) => (
-    photoUrl ? (
+  const CoachAvatar = ({
+    photoUrl,
+    logoUrl,
+    displayName,
+  }: {
+    photoUrl: string | null;
+    logoUrl?: string | null;
+    displayName: string;
+  }) => {
+    const effectiveUri = logoUrl
+      ? supabase.storage.from('coach-logos').getPublicUrl(logoUrl).data.publicUrl
+      : photoUrl ?? null;
+
+    return effectiveUri ? (
       <Image
-        source={{ uri: photoUrl }}
+        source={{ uri: effectiveUri }}
         style={{ width: 72, height: 72, borderRadius: 36 }}
       />
     ) : (
       <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name="person-circle-outline" size={72} color="#6B6963" />
       </View>
-    )
-  );
+    );
+  };
 
   // ── Specialties chips (shared) ──
   const SpecialtyChips = ({ specialties }: { specialties: string[] | null }) => {
@@ -310,7 +398,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5C1A" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
         }
       >
 
@@ -376,7 +464,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                 height: 52,
                 borderRadius: 14,
                 marginTop: 24,
-                backgroundColor: code.length === 6 && !isSubmitting ? '#FF5C1A' : '#E2E0DA',
+                backgroundColor: code.length === 6 && !isSubmitting ? theme.primary : '#E2E0DA',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -449,7 +537,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                   height: 52,
                   borderRadius: 14,
                   marginTop: 16,
-                  backgroundColor: '#FF5C1A',
+                  backgroundColor: theme.primary,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -467,7 +555,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                 onPress={() => { setPreview(null); setCode(''); }}
                 style={{ marginTop: 12, alignItems: 'center' }}
               >
-                <Text style={{ fontSize: 14, color: '#FF5C1A' }}>
+                <Text style={{ fontSize: 14, color: theme.primary }}>
                   {t('coach.state_b.cancel')}
                 </Text>
               </TouchableOpacity>
@@ -483,7 +571,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
             <View style={cardStyle}>
               {/* Avatar row */}
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <CoachAvatar photoUrl={data.preview.photo_signed_url} displayName={data.preview.display_name} />
+                <CoachAvatar photoUrl={data.preview.photo_signed_url} logoUrl={data.branding?.logo_url ?? null} displayName={data.preview.display_name} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
                   <Text style={{ fontSize: 20, fontWeight: '700', color: '#1C1A17' }}>
                     {data.preview.display_name}

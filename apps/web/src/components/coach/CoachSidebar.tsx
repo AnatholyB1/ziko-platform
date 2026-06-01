@@ -4,11 +4,13 @@ import {
   IoPeopleOutline,
   IoMailOutline,
   IoBarChartOutline,
+  IoBarbellOutline,
+  IoDocumentTextOutline,
   IoCloudUploadOutline,
   IoSparklesOutline,
+  IoColorPaletteOutline,
   IoSettingsOutline,
 } from 'react-icons/io5';
-import { useLocale } from 'next-intl';
 import { NavItem } from './NavItem';
 
 function getNavItems(locale: string) {
@@ -17,18 +19,21 @@ function getNavItems(locale: string) {
     { label: 'Clients', href: `/${locale}/coach/clients`, icon: IoPeopleOutline, disabled: false },
     { label: 'Invitations', href: `/${locale}/coach/invitations`, icon: IoMailOutline, disabled: false },
     { label: 'Programmes', href: `/${locale}/coach/programs`, icon: IoBarChartOutline, disabled: false },
+    { label: 'Exercices', href: `/${locale}/coach/exercises`, icon: IoBarbellOutline, disabled: false },
+    { label: 'Formulaires', href: `/${locale}/coach/forms`, icon: IoDocumentTextOutline, disabled: false },
     { label: 'Imports', href: `/${locale}/coach/imports`, icon: IoCloudUploadOutline, disabled: false },
     { label: 'IA', href: `/${locale}/coach/ai`, icon: IoSparklesOutline, disabled: false },
+    { label: 'Direction artistique', href: `/${locale}/coach/branding`, icon: IoColorPaletteOutline, disabled: false },
     { label: 'Paramètres', href: `/${locale}/coach/settings`, icon: IoSettingsOutline, disabled: false },
   ];
 }
 
 interface CoachSidebarProps {
+  locale: string;
   unreadAlertCount?: number;
 }
 
-export function CoachSidebar({ unreadAlertCount }: CoachSidebarProps) {
-  const locale = useLocale();
+export function CoachSidebar({ locale, unreadAlertCount }: CoachSidebarProps) {
   const navItems = getNavItems(locale);
 
   return (

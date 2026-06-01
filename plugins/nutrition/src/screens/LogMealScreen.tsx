@@ -9,8 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useNutritionStore } from '../store';
-import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
-import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
+import { useThemeStore, useTranslation, showAlert, useCreditStore } from '@ziko/plugin-sdk';
 import ScoreBadge from '../components/ScoreBadge';
 import { getOrFetchProduct, FoodProduct } from '../utils/offApi';
 

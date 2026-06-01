@@ -5,11 +5,14 @@ import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
+import { pushEventsRouter } from './routes/push-events.js';
 import { bugsRouter } from './routes/bugs.js';
 import { supplementsRouter } from './routes/supplements.js';
 import { pantryRecipesRouter } from './routes/pantry-recipes.js';
 import { creditsRouter } from './routes/credits.js';
 import { referralRoutes } from './routes/referral.js';
+import { notificationsRouter } from './routes/notifications.js';
+import { notificationsCronRouter } from './routes/notifications-cron.js';
 import { storageRouter, storageCleanupRouter } from './routes/storage.js';
 import { identityRouter } from './coach/identity/service.js';
 import { invitationsRouter } from './coach/invitations/service.js';
@@ -17,6 +20,12 @@ import { clientsRouter } from './coach/clients/service.js';
 import { programsRouter } from './coach/programs/service.js';
 import { importsRouter } from './coach/imports/service.js';
 import { coachAiRouter } from './coach/ai/service.js';
+import { voiceRouter } from './coach/voice/service.js';
+import { brandingRouter } from './coach/branding/service.js';
+import { exercisesRouter } from './coach/exercises/service.js';
+import { dashboardsRouter } from './coach/dashboards/service.js';
+import { videosRouter } from './coach/videos/service.js';
+import { formsRouter, formsCronRouter } from './routes/forms.js';
 const app = new Hono();
 
 // Global middleware
@@ -29,6 +38,7 @@ app.use(
       const allowed = [
         /^exp:\/\//,
         /^https?:\/\/localhost/,
+        /^https?:\/\/192\.168\./,
         /^https?:\/\/.*\.vercel\.app$/,
         process.env.APP_ORIGIN ?? '',
       ];
@@ -51,12 +61,15 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.route('/ai', aiRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
+app.route('/push-events', pushEventsRouter);
 app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
 app.route('/credits', creditsRouter);
 app.route('/referral', referralRoutes);
 app.route('/promo', referralRoutes);
+app.route('/notifications', notificationsRouter);
+app.route('/notifications', notificationsCronRouter);
 app.route('/storage', storageRouter);
 app.route('/storage', storageCleanupRouter);
 app.route('/coach/identity', identityRouter);
@@ -65,6 +78,13 @@ app.route('/coach/clients', clientsRouter);
 app.route('/coach/programs', programsRouter);
 app.route('/coach/imports', importsRouter);
 app.route('/coach/ai', coachAiRouter);
+app.route('/coach/voice', voiceRouter);
+app.route('/coach/branding', brandingRouter);
+app.route('/coach/exercises', exercisesRouter);
+app.route('/coach/dashboards', dashboardsRouter);
+app.route('/coach/videos', videosRouter);
+app.route('/forms', formsRouter);
+app.route('/forms', formsCronRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

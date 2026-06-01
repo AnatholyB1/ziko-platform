@@ -1,7 +1,7 @@
 import React from 'react';
-import MeasurementsDashboard from '@ziko/plugin-measurements/screens/MeasurementsDashboard';
+import MeasurementsPlugin from '@ziko/plugin-measurements/screens/MeasurementsPlugin';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function MeasurementsDashboardRoute() {
-  return <MeasurementsDashboard supabase={supabase} />;
+  return <MeasurementsPlugin supabase={supabase} />;
 }
