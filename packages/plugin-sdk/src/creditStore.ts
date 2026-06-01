@@ -54,7 +54,12 @@ export const useCreditStore = create<CreditState>()((set) => ({
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (!res.ok) return;
-      const data = await res.json();
+      const data = await res.json() as {
+        balance: number;
+        daily_earned: number;
+        daily_cap: number;
+        reset_timestamp: string | null;
+      };
       set({
         balance: data.balance,
         dailyEarned: data.daily_earned,
