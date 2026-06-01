@@ -1,8 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useVocalRecorder } from './useVocalRecorder';
 
 // GREEN — implementation exists in Wave 2 (Plan 01-04).
 // MediaRecorder and navigator.mediaDevices are mocked below for node test environment.
+// React's useRef is mocked so the hook can be called outside renderHook.
+
+// --- Mock React useRef so the hook works in a plain node/happy-dom environment ---
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>();
+  return {
+    ...actual,
+    useRef: <T>(initialValue: T) => ({ current: initialValue }),
+  };
+});
+
+import { useVocalRecorder } from './useVocalRecorder';
 
 // --- MediaRecorder mock ---
 class MockMediaRecorder {
