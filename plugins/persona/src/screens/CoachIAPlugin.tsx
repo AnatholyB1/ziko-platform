@@ -10,9 +10,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, useCreditStore } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
-import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
 // ─── Persona definitions (UI-SPEC §5.4) ───────────────────────────────────────
 const PERSONAS = [

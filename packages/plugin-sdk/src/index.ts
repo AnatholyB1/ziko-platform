@@ -18,3 +18,5 @@ export type {
   UseUserProfileHook,
   UseWorkoutHistoryHook,
 } from './hooks';
+export { useCreditStore } from './creditStore';
+export type { CreditExhaustionData } from './creditStore';

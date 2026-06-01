@@ -6,10 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, useCreditStore } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS } from '../store';
 import type { RoutePoint } from '../store';
-import { useCreditStore } from '../../../../apps/mobile/src/stores/creditStore';
 
 // Awaitable credit earn helper — returns { credited } for toast triggering
 async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {
