@@ -5,6 +5,6 @@ export {
   requestNotificationPermission,
   scheduleHabitReminder,
   cancelHabitReminder,
-  schedulAllReminders,
+  scheduleAllReminders,
 } from './notifications';
 export { default as HabitsPlugin } from './screens/HabitsPlugin';
