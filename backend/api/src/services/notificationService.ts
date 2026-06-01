@@ -1,21 +1,27 @@
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // CRITICAL: SUPABASE_SERVICE_KEY is required — bypasses RLS for cross-user token queries
 // (e.g. coach sending push to athlete). Never use user JWT here.
 // Lazy singleton: client is created on first use, not at module load time.
 // This allows tests that mock notificationService to import without a real key.
-let _supabaseAdminClient: ReturnType<typeof createClient> | null = null;
-function getSupabaseAdmin() {
-  if (!_supabaseAdminClient) {
-    const key = process.env.SUPABASE_SERVICE_KEY;
-    if (!key) {
-      throw new Error('SUPABASE_SERVICE_KEY is required for notificationService');
-    }
-    _supabaseAdminClient = createClient(process.env.SUPABASE_URL!, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createSupabaseAdmin(): SupabaseClient<any> {
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!key) {
+    throw new Error('SUPABASE_SERVICE_KEY is required for notificationService');
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return createClient<any>(process.env.SUPABASE_URL!, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _supabaseAdminClient: SupabaseClient<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getSupabaseAdmin(): SupabaseClient<any> {
+  if (!_supabaseAdminClient) _supabaseAdminClient = createSupabaseAdmin();
   return _supabaseAdminClient;
 }
 
