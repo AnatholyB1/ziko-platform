@@ -3,15 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 
 // CRITICAL: SUPABASE_SERVICE_KEY is required — bypasses RLS for cross-user token queries
 // (e.g. coach sending push to athlete). Never use user JWT here.
-if (!process.env.SUPABASE_SERVICE_KEY) {
-  throw new Error('SUPABASE_SERVICE_KEY is required for notificationService');
+// Lazy singleton: client is created on first use, not at module load time.
+// This allows tests that mock notificationService to import without a real key.
+let _supabaseAdminClient: ReturnType<typeof createClient> | null = null;
+function getSupabaseAdmin() {
+  if (!_supabaseAdminClient) {
+    const key = process.env.SUPABASE_SERVICE_KEY;
+    if (!key) {
+      throw new Error('SUPABASE_SERVICE_KEY is required for notificationService');
+    }
+    _supabaseAdminClient = createClient(process.env.SUPABASE_URL!, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+  }
+  return _supabaseAdminClient;
 }
-
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
 
 const expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
@@ -69,7 +75,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   } = payload;
 
   // ── Step 1: Check notification_preferences ──────────────────
-  const { data: prefs } = await supabaseAdmin
+  const { data: prefs } = await getSupabaseAdmin()
     .from('notification_preferences')
     .select('*')
     .eq('user_id', recipientUserId)
@@ -105,7 +111,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   // If no prefs row: treat as all-defaults-enabled (push_enabled=true, no quiet hours)
 
   // ── Step 3: Idempotency INSERT into notification_log ─────────
-  const { data: logRows } = await supabaseAdmin
+  const { data: logRows } = await getSupabaseAdmin()
     .from('notification_log')
     .insert({
       idempotency_key: idempotencyKey,
@@ -126,7 +132,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   }
 
   // ── Step 4: Fetch active tokens ───────────────────────────────
-  const { data: tokenRows } = await supabaseAdmin
+  const { data: tokenRows } = await getSupabaseAdmin()
     .from('notification_tokens')
     .select('token')
     .eq('user_id', recipientUserId)
@@ -141,7 +147,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
       validTokens.push(token);
     } else {
       // Mark invalid tokens as inactive
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('notification_tokens')
         .update({ is_active: false })
         .eq('token', token);
@@ -150,7 +156,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
 
   if (validTokens.length === 0) {
     // No valid tokens — mark as skipped
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('notification_log')
       .update({ status: 'skipped' })
       .eq('idempotency_key', idempotencyKey);
@@ -191,7 +197,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   }
 
   // ── Step 8: UPDATE notification_log with result ───────────────
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('notification_log')
     .update({
       status: 'sent',
@@ -228,7 +234,7 @@ async function processReceipts(receiptIds: string[]): Promise<void> {
     for (const [receiptId, receipt] of Object.entries(receipts)) {
       if (receipt.status === 'ok') {
         // Mark delivered — find log rows that contain this receipt_id
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('notification_log')
           .update({ status: 'delivered' })
           .contains('receipt_ids', [receiptId]);
@@ -238,12 +244,12 @@ async function processReceipts(receiptIds: string[]): Promise<void> {
           // Mark token inactive — we need to find it from the log
           // The receipt_id correlates to a token, but expo-server-sdk receipts don't return the token.
           // Best we can do: mark log as failed and let the next send attempt clean up via Step 5.
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('notification_log')
             .update({ status: 'failed', error_code: 'DeviceNotRegistered' })
             .contains('receipt_ids', [receiptId]);
         } else {
-          await supabaseAdmin
+          await getSupabaseAdmin()
             .from('notification_log')
             .update({
               status: 'failed',

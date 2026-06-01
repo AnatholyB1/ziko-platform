@@ -3,8 +3,16 @@
 
 import OpenAI, { toFile } from 'openai';
 
-// OpenAI client at module scope — avoid re-instantiation on every request
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+// Lazy singleton — avoid instantiating OpenAI at module load time so that
+// tests which mock this module (or don't call transcribeAudio) can import
+// without needing OPENAI_API_KEY in their environment.
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  }
+  return _openai;
+}
 
 /** Allowed audio MIME types (T-47-01: whitelist validation) */
 export const ALLOWED_MIME_TYPES: string[] = [
@@ -33,7 +41,7 @@ export async function transcribeAudio(buffer: Buffer, mimeType: string): Promise
   const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
   const file = await toFile(buffer, `recording.${ext}`, { type: mimeType });
 
-  const response = await openai.audio.transcriptions.create({
+  const response = await getOpenAI().audio.transcriptions.create({
     model: 'whisper-1',
     file,
     language: 'fr',
