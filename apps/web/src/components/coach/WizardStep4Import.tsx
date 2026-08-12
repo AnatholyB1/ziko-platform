@@ -5,6 +5,7 @@ import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline,
 
 type FileStatus = 'uploading' | 'parsing' | 'ready' | 'failed';
 type DocType = 'da_coach' | 'template_programme';
+type CommitStatus = 'pending' | 'committed' | 'failed';
 type FileState = {
   id: string;
   file: File;
@@ -13,6 +14,9 @@ type FileState = {
   errorMessage?: string;
   docType?: DocType;
   clarificationPending?: boolean;
+  parsedData?: Record<string, unknown>;
+  commitStatus?: CommitStatus;
+  commitError?: string;
 };
 type ChatMessage =
   | { id: string; kind: 'ia-template-summary'; fileId: string; name: string; weeks: number; sessions: number | null }
@@ -266,12 +270,13 @@ export function WizardStep4Import({
           clearInterval(handle);
           intervalsRef.current.delete(fileId);
           if (importRow.status === 'ready') {
+            const rawParsedData = importRow.parsed_data as unknown as Record<string, unknown> | undefined;
             const confidence = importRow.parsed_data?.overall_confidence;
             if (confidence == null) {
               // Unknown confidence — treat as ambiguous, require user clarification
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true, parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -282,7 +287,7 @@ export function WizardStep4Import({
               // Low confidence for template → classify as da_coach
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach' } : f,
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach', parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -296,7 +301,7 @@ export function WizardStep4Import({
               const sessions = importRow.parsed_data?.weeks?.[0]?.sessions?.length ?? null;
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme' } : f,
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme', parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -307,7 +312,7 @@ export function WizardStep4Import({
               // Ambiguous: 0.4 <= confidence < 0.6
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true, parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
