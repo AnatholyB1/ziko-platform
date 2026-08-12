@@ -129,16 +129,65 @@ Points que la recherche a explicitement refusé de trancher :
 
 ## Traceability
 
-À remplir lors de la création du roadmap.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| *(pending roadmap)* | — | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Pending |
+| PURGE-01 | Phase 2 | Pending |
+| PURGE-02 | Phase 2 | Pending |
+| PURGE-03 | Phase 2 | Pending |
+| PURGE-04 | Phase 2 | Pending |
+| PURGE-05 | Phase 2 | Pending |
+| LEGAL-01 | Phase 3 | Pending |
+| LEGAL-02 | Phase 3 | Pending |
+| LEGAL-03 | Phase 3 | Pending |
+| LEGAL-04 | Phase 3 | Pending |
+| LEGAL-05 | Phase 3 | Pending |
+| LEGAL-06 | Phase 3 | Pending |
+| LEGAL-07 | Phase 3 | Pending |
+| LEGAL-08 | Phase 3 | Pending |
+| LEGAL-09 | Phase 3 | Pending |
+| CRED-01 | Phase 4 | Pending |
+| CRED-02 | Phase 4 | Pending |
+| CRED-03 | Phase 4 | Pending |
+| CRED-04 | Phase 4 | Pending |
+| CRED-05 | Phase 4 | Pending |
+| CRED-06 | Phase 4 | Pending |
+| WAIT-01 | Phase 5 | Pending |
+| WAIT-02 | Phase 5 | Pending |
+| WAIT-03 | Phase 5 | Pending |
+| WAIT-04 | Phase 5 | Pending |
+| WAIT-05 | Phase 5 | Pending |
+| WAIT-06 | Phase 5 | Pending |
+| WAIT-07 | Phase 5 | Pending |
+| WAIT-08 | Phase 5 | Pending |
+| FOND-01 | Phase 5 | Pending |
+| FOND-02 | Phase 5 | Pending |
+| FOND-03 | Phase 5 | Pending |
+| FOND-04 | Phase 5 | Pending |
+| FOND-05 | Phase 5 | Pending |
+| FOND-06 | Phase 5 | Pending |
+| ENTRY-01 | Phase 5 | Pending |
+| ENTRY-02 | Phase 5 | Pending |
+| ENTRY-03 | Phase 5 | Pending |
+| ENTRY-04 | Phase 5 | Pending |
+| ENTRY-05 | Phase 5 | Pending |
+| ENTRY-06 | Phase 5 | Pending |
+
+Phase 6 (Founder Offer Go-Live) is a convergence/activation phase and owns no requirement directly
+— it verifies the production-activation state of CRED-01, CRED-05, LEGAL-05, PURGE-01–05, and
+FOND-06, all already mapped to their owning phase above. See `.planning/workstreams/lien-invite/ROADMAP.md`.
 
 **Coverage:**
 - v1 requirements: 47 total
-- Mapped to phases: 0
-- Unmapped: 47 ⚠️
+- Mapped to phases: 47
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-08-12*
+*Roadmap created: 2026-08-12*
