@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Wizard Integration** - Wire Step 4 into the existing 3-step wizard shell
 - [x] **Phase 2: Upload UX & Pipeline** - File drop UI + Phase 28 orchestration per file (completed 2026-05-30)
 - [ ] **Phase 3: AI Classification & Chat** - Conversational IA layer (classify, summarise, clarify)
-- [ ] **Phase 4: Review & Commit** - Consolidated review, type correction, commit, and exit flows
+- [x] **Phase 4: Review & Commit** - Consolidated review, type correction, commit, and exit flows (completed 2026-08-12)
 
 ## Phase Details
 
@@ -71,12 +71,12 @@ Plans:
   3. Confirming triggers `PUT /coach/imports/:id/commit` for all docs typed `coach_template`
   4. "Ignorer pour l'instant" skips import entirely and redirects to `/coach/dashboard`
   5. After successful commit, coach is redirected to `/coach/dashboard`
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 04-01-PLAN.md -- Repair RTL test infra (@testing-library/dom missing) + 9 Phase 4 i18n keys (fr/en)
 - [x] 04-02-PLAN.md -- Wave 0 test file: 6 RED tests covering REVIEW-01/02/03, COMPLETE-01/02, D-09 retry isolation
 - [x] 04-03-PLAN.md -- Logic layer: parsedData persistence (D-11), view/reviewPhase state, commitDoc/handleConfirm/retryCommit, 1500ms completion effect
-- [ ] 04-04-PLAN.md -- Rendering layer: review editing/committing/done views, pill toggles, live count, scoped retry, success state
+- [x] 04-04-PLAN.md -- Rendering layer: review editing/committing/done views, pill toggles, live count, scoped retry, success state
 **UI hint**: yes
 
 ## Progress
@@ -88,4 +88,4 @@ Plans:
 | 1. Wizard Integration | 2/2 | Complete | 2026-05-29 |
 | 2. Upload UX & Pipeline | 2/2 | Complete    | 2026-05-30 |
 | 3. AI Classification & Chat | 1/2 | In progress | - |
-| 4. Review & Commit | 3/4 | In Progress|  |
+| 4. Review & Commit | 4/4 | Complete   | 2026-08-12 |

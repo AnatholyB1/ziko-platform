@@ -34,7 +34,7 @@
 
 ### COMPLETE — Fin de step
 
-- [ ] **COMPLETE-01**: Un bouton "Ignorer pour l'instant" permet de quitter Step 4 et d'aller au dashboard sans importer
+- [x] **COMPLETE-01**: Un bouton "Ignorer pour l'instant" permet de quitter Step 4 et d'aller au dashboard sans importer
 - [x] **COMPLETE-02**: Après confirmation et commit, le coach est redirigé vers `/coach/dashboard`
 
 ---
@@ -73,5 +73,5 @@
 | REVIEW-01 | Phase 4 | Complete |
 | REVIEW-02 | Phase 4 | Complete |
 | REVIEW-03 | Phase 4 | Complete |
-| COMPLETE-01 | Phase 4 | Pending |
+| COMPLETE-01 | Phase 4 | Complete |
 | COMPLETE-02 | Phase 4 | Complete |
