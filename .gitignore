@@ -20,3 +20,6 @@ com.facebook.react.devsupport.*
 
 # GSD web-search cache — content-hashed, regenerable, not authored content
 .planning/**/.cache/
+
+# GSD write-guard override — transient, local, names a file allowed to shrink once
+.planning/.gsd-allow-shrink
