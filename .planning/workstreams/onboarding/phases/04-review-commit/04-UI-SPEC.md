@@ -29,19 +29,26 @@ This phase adds a second internal view (`view: 'import' | 'review'`) inside the 
 
 ## Spacing Scale
 
-Declared values (must be multiples of 4) — confirmed from existing `WizardStep4Import.tsx` usage, not re-invented:
+Phase 4 introduces **zero new spacing values**. It inherits the project's standard scale in full, plus two values that are already established and in continuous production use across Phase 1–3 of this exact `WizardStep4Import.tsx` component — Phase 4 is not adding these, it is continuing them for visual consistency within the same component.
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | `py-1` badge vertical padding, icon-to-text gaps |
 | sm | 8px | `gap-2`, `mb-2` — compact element spacing (icon+bubble, row internals) |
-| — | 12px | `gap-3`, `p-3`, `px-3`, `mt-3` — doc row padding, pill gaps, chat bubble stack gap (heavily used exception to the 8/16 jump — keep for consistency with Phase 2/3 rows) |
 | md | 16px | `p-6` drop-zone padding equivalent, `mt-4` list-to-dropzone gap, `px-4`/`px-6` button horizontal padding |
 | lg | 24px | `mb-6` section gap, `px-6` primary CTA padding |
 | xl | 32px | `p-8` outer card padding, `mt-8` footer button row gap |
-| — | 44px | `h-11` — CTA / Skip button touch target height (exception, already established) |
+| 2xl | 48px | reserved (not used by this phase's elements, available if needed) |
+| 3xl | 64px | reserved (not used by this phase's elements, available if needed) |
 
-Exceptions: 12px and 44px are used pervasively in the existing component and MUST be kept for visual consistency with Phase 2/3 — do not round to 8/16/48.
+**Existing component scale (pre-dates this phase — not a Phase 4 addition):**
+
+| Value | Existing class(es) | Where it already ships (Phase 1–3) |
+|-------|---------------------|-------------------------------------|
+| 12px | `gap-3`, `p-3`, `px-3`, `mt-3` | Doc-row padding, pill gaps, chat-bubble stack gap — used throughout the current production `WizardStep4Import.tsx` |
+| 44px | `h-11` | CTA / Skip button touch-target height — used for the existing "Continuer →" and "Ignorer pour l'instant" buttons |
+
+Phase 4's review-screen rows, pills, and buttons reuse these exact classes (`gap-3`/`p-3`/`px-3`/`mt-3`, `h-11`) so the new view matches the rest of the component pixel-for-pixel. No divergent spacing scale is introduced anywhere in this phase.
 
 ---
 
@@ -84,7 +91,7 @@ Accent reserved for: CTA button, IA avatar badge, live count numeral, pill-toggl
 | Skip (review screen) | Reuse existing `step4Skip` key/copy ("Ignorer pour l'instant") and exact existing class (`h-11 px-4 text-sm font-normal text-muted hover:text-text transition-colors`) — no new key needed |
 | Empty state | Not applicable — review screen is only reachable when `fileStates` has at least one `ready` doc (gated by existing `canAdvance`, unchanged) |
 | Per-doc commit error | `step4CommitError`: "L'import de ce document a échoué." — inline, `text-xs text-red-500`, directly under the row, same visual weight as the existing upload-error pattern (`fileState.errorMessage` block) |
-| Per-doc retry action | `step4CommitRetry`: "Réessayer" — small scoped button, ghost style: `h-8 px-3 rounded-lg border border-border text-xs font-bold text-text hover:border-primary hover:text-primary transition-colors` (same interaction language as the pill toggle, smaller footprint since it's row-scoped) |
+| Per-doc retry action | `step4CommitRetry`: button label stays "Réessayer" (short, fits the tight row-scoped footprint of `h-8 px-3`); `aria-label="Réessayer l'import de ce document"` supplies the fuller context for screen readers without widening the button. Class: `h-8 px-3 rounded-lg border border-border text-xs font-bold text-text hover:border-primary hover:text-primary transition-colors` |
 | Success confirmation (ICU plural) | `step4CommitSuccess`: `"{count, plural, one {1 programme importé !} other {# programmes importés !}}"` — centered, `text-xl font-bold text-text`, with `IoCheckmarkCircleOutline` (24px, `text-primary`) above it. Auto-redirect to `/coach/dashboard` fires exactly **1500ms** after this state renders — no button, no user action required (COMPLETE-02, D-10). |
 | Destructive confirmation | Not applicable — no destructive action in this phase. "Ignorer pour l'instant" requires no confirmation modal (consistent with Phase 2 precedent for the same button; D-03 keeps it a single click). |
 
@@ -95,6 +102,7 @@ Accent reserved for: CTA button, IA avatar badge, live count numeral, pill-toggl
 Three sub-states inside `view: 'review'` (naming is Claude's discretion per CONTEXT.md — this spec uses `reviewPhase: 'editing' | 'committing' | 'done'` for illustration only):
 
 **1. Editing (default on entering review, D-01/D-02)**
+*Primary focal point: the running count line + CTA button — the coach's eye should land on "N programmes seront importés" and the "Confirmer et importer" button as the two things that change/matter as they correct types.*
 - Card content is fully replaced (chat/dropzone/file-list unmounted) — reuse the exact outer shell: `<div className="bg-white rounded-2xl p-8 border border-border shadow-sm">`
 - Heading + subtitle block: reuse `<h2 className="text-xl font-bold text-text mb-2">` / `<p className="text-sm font-normal text-muted mb-6">`
 - One row per doc in `fileStates` (D-04 — both types together, nothing hidden), each row:
@@ -107,12 +115,14 @@ Three sub-states inside `view: 'review'` (naming is Claude's discretion per CONT
 - Footer button row: reuse exact `flex gap-3 mt-8 justify-end items-center` container. Skip button unchanged. CTA button label changes to `step4ReviewConfirm`, `onClick` triggers commit flow instead of `onSuccess`.
 
 **2. Committing (after CTA click, D-08/D-09)**
+*Primary focal point: the CTA button's inline spinner (signals the batch is in flight) — attention shifts to any row that surfaces a `step4CommitError` + `step4CommitRetry`, since a failed row is the only thing requiring further coach action during this state.*
 - CTA button shows existing spinner pattern (reuse `StatusPill`'s spinner span: `w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin`) inline before its label, and becomes disabled (`disabled:opacity-50`, `pointer-events-none`) — do not hide it.
 - `template_programme` rows show per-row commit status inline (reuse `StatusPill` visual language: spinner while in flight, no pill once committed — row simply stays as-is with a subtle `opacity-100` confirm, no new "committed" badge needed to avoid clutter).
 - On a failed row (D-09): show `step4CommitError` text + `step4CommitRetry` button directly under that row only (matches existing per-file error block pattern at lines 557–561). Other rows are unaffected and remain committed.
 - Rows already committed do not re-fire on a page-level retry — retry is scoped to the single failed doc's `PUT /:id/commit` call only.
 
 **3. Done (D-10)**
+*Primary focal point: the centered success icon + headline is the sole focal point — no competing UI, no buttons, nothing else on screen during the 1500ms hold before redirect.*
 - Card content replaced a second time with the centered success block (icon + `step4CommitSuccess` text, see Copywriting). No buttons. Auto-redirect after 1500ms via `router.push` (already wired at the `OnboardingWizard.tsx` level through `onSuccess`).
 
 ---
