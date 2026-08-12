@@ -530,6 +530,82 @@ export function WizardStep4Import({
     handleFiles(e.dataTransfer.files);
   }
 
+  if (view === 'review') {
+    return (
+      <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
+        <h2 className="text-xl font-bold text-text mb-2">{t('step4ReviewHeading')}</h2>
+        <p className="text-sm font-normal text-muted mb-6">{t('step4ReviewSubtitle')}</p>
+
+        <div className="flex flex-col gap-2">
+          {reviewDocs.map((fileState) => (
+            <div key={fileState.id} className="flex flex-col gap-1">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white">
+                <div className="shrink-0 text-muted">{getFileIcon(fileState.file.name)}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-normal text-text truncate">{fileState.file.name}</p>
+                  <p className="text-xs text-muted">{formatBytes(fileState.file.size)}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setDocType(fileState.id, 'template_programme')}
+                    disabled={reviewPhase !== 'editing'}
+                    className={`px-3 py-2 rounded-full border text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+                      fileState.docType === 'template_programme'
+                        ? 'border-primary text-primary bg-primary/10'
+                        : 'border-border text-text hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {t('step4PillTemplate')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDocType(fileState.id, 'da_coach')}
+                    disabled={reviewPhase !== 'editing'}
+                    className={`px-3 py-2 rounded-full border text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+                      fileState.docType === 'da_coach'
+                        ? 'border-primary text-primary bg-primary/10'
+                        : 'border-border text-text hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {t('step4PillDaCoach')}
+                  </button>
+                </div>
+                {fileState.docType === 'da_coach' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-surface-alt text-muted border border-border">
+                    {t('step4ReviewNoAction')}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-sm font-bold text-primary text-right mt-6">
+          {t('step4ReviewCount', { count: committableCount })}
+        </p>
+
+        <div className="flex gap-3 mt-8 justify-end items-center">
+          <button
+            type="button"
+            onClick={onSkip}
+            className="h-11 px-4 text-sm font-normal text-muted hover:text-text transition-colors"
+          >
+            {t('step4Skip')}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={reviewPhase === 'committing'}
+            className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {t('step4ReviewConfirm')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
       <h2 className="text-xl font-bold text-text mb-2">{t('step4Heading')}</h2>
@@ -697,7 +773,7 @@ export function WizardStep4Import({
         {canAdvance && (
           <button
             type="button"
-            onClick={onSuccess}
+            onClick={() => setView('review')}
             className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity"
           >
             {t('step4Continue')}
