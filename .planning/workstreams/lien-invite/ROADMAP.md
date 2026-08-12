@@ -47,8 +47,9 @@ all five.
   4. Every stored signup carries email, audience, timestamp, and founder rank, captured only
      through a `SECURITY DEFINER` RPC matching the `deduct_ai_credits` / `is_coach_of()` idiom
      (DATA-01, DATA-06)
-  5. Submitting an already-registered email produces a response indistinguishable from a
-     brand-new signup (DATA-07)
+  5. Submitting an already-registered email never discloses that address's founder status — a
+     genuinely new signup receives its rank, every other case receives a neutral confirmation
+     (DATA-07, revised during phase 1 discussion; see `01-CONTEXT.md` D-04)
 **Plans**: TBD
 **Research**: Not needed at plan time — the `SECURITY DEFINER` RPC + deny-all RLS idiom is already
 proven in this codebase (`deduct_ai_credits`, `is_coach_of()`); the `SEQUENCE`-based founder-rank
@@ -106,8 +107,9 @@ highest-severity item in the whole milestone).
 ### Phase 4: Credit-Gate Alignment
 **Goal**: Premium access to AI is generous but finite, activated only after confirming no real
 production user is silently downgraded, and decoupled from deploy via a feature flag.
-**Depends on**: Phase 1 (needs `grant_premium_credits()` RPC + `is_lifetime_premium` column),
-Phase 3 (legal text must already be live per LEGAL-05)
+**Depends on**: Phase 1 (needs `grant_premium_credits()` RPC + `is_lifetime_premium` column, and
+the shared `app_config` table introduced in phase 1 — CRED-05's feature flag lives there rather
+than in a second configuration mechanism), Phase 3 (legal text must already be live per LEGAL-05)
 **Requirements**: CRED-01, CRED-02, CRED-03, CRED-04, CRED-05, CRED-06
 **Success Criteria** (what must be TRUE):
   1. Before any code change, a production count of `tier='premium'` users confirms the "no real

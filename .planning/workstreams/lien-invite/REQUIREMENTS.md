@@ -25,7 +25,7 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 - [ ] **DATA-04**: Une adresse email déjà inscrite ne crée pas de doublon et ne consomme pas une seconde place fondateur
 - [ ] **DATA-05**: La table waitlist a RLS activé sans aucune politique — aucun rôle ne peut lire ou écrire directement
 - [ ] **DATA-06**: Toute écriture et toute lecture passent par des RPC `SECURITY DEFINER`, selon l'idiome déjà utilisé par `deduct_ai_credits` et `is_coach_of()`
-- [ ] **DATA-07**: Un visiteur ne peut pas déterminer si une adresse email donnée est déjà inscrite (réponse indistinguable, comme l'enveloppe `INVALID_OR_EXPIRED` des codes d'invitation)
+- [ ] **DATA-07**: Un visiteur ne peut pas déterminer le **statut fondateur** d'une adresse email tierce — une inscription authentiquement nouvelle reçoit son rang, tout autre cas reçoit une confirmation neutre. *Révisé en phase 1 : la formulation initiale exigeait une réponse totalement indistinguable, ce qui interdisait d'annoncer son rang au nouvel inscrit (WAIT-05). L'appartenance à la waitlist est donc divulgable ; la place fondateur ne l'est pas. Voir `phases/01-data-foundation/01-CONTEXT.md` D-04.*
 
 ### Page waitlist (WAIT)
 
