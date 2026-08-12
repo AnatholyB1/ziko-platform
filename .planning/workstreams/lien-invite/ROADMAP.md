@@ -50,7 +50,12 @@ all five.
   5. Submitting an already-registered email never discloses that address's founder status — a
      genuinely new signup receives its rank, every other case receives a neutral confirmation
      (DATA-07, revised during phase 1 discussion; see `01-CONTEXT.md` D-04)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Tracer: one signup end to end (migration core, `claimWaitlistSpot`, round-trip proof)
+- [ ] 01-02-PLAN.md — Threshold-arbitrated counter, `app_config`, erasure, sequence reset, blocking schema push
+- [ ] 01-03-PLAN.md — Deny-all RLS proof across anon and authenticated, plus normalized-dedupe proof
+- [ ] 01-04-PLAN.md — 200-cap concurrency proof, founder-status non-disclosure proof, CI wiring
 **Research**: Not needed at plan time — the `SECURITY DEFINER` RPC + deny-all RLS idiom is already
 proven in this codebase (`deduct_ai_credits`, `is_coach_of()`); the `SEQUENCE`-based founder-rank
 design is fully specified in `research/ARCHITECTURE.md` Section 1.
@@ -107,9 +112,13 @@ highest-severity item in the whole milestone).
 ### Phase 4: Credit-Gate Alignment
 **Goal**: Premium access to AI is generous but finite, activated only after confirming no real
 production user is silently downgraded, and decoupled from deploy via a feature flag.
-**Depends on**: Phase 1 (needs `grant_premium_credits()` RPC + `is_lifetime_premium` column, and
-the shared `app_config` table introduced in phase 1 — CRED-05's feature flag lives there rather
-than in a second configuration mechanism), Phase 3 (legal text must already be live per LEGAL-05)
+**Depends on**: Phase 1 (needs the shared `app_config` table introduced in phase 1 — CRED-05's
+feature flag lives there rather than in a second configuration mechanism), Phase 3 (legal text must
+already be live per LEGAL-05)
+> **Drift corrected 2026-08-12 during phase 1 planning.** This line previously also claimed phase 1
+> delivers `grant_premium_credits()` and `user_profiles.is_lifetime_premium`. It does not:
+> `phases/01-data-foundation/01-CONTEXT.md`'s domain boundary scopes phase 1 to `app_config` only,
+> and neither symbol is in any phase-1 plan. Phase 4 must plan both itself.
 **Requirements**: CRED-01, CRED-02, CRED-03, CRED-04, CRED-05, CRED-06
 **Success Criteria** (what must be TRUE):
   1. Before any code change, a production count of `tier='premium'` users confirms the "no real
@@ -191,7 +200,7 @@ being complete.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Data Foundation | 0/TBD | Not started | - |
+| 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 0/TBD | Not started | - |
 | 3. Legal — CGV & CGU | 0/TBD | Not started | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
