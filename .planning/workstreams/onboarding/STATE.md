@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-08-12T17:05:58.295Z"
-last_activity: 2026-08-12 -- Phase 04 planning complete
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-08-12T17:23:26.866Z"
+last_activity: 2026-08-12
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 10
-  completed_plans: 6
-  percent: 60
+  completed_plans: 7
+  percent: 70
 ---
 
 # Project State — Coach Onboarding Import IA
@@ -21,16 +21,16 @@ progress:
 See: .planning/workstreams/onboarding/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A coach onboards in 15 min by uploading 3–4 existing docs — no manual re-entry
-**Current focus:** Phase 03 — ai-classification-chat (Plan 2 of 2 remaining)
+**Current focus:** Phase 04 — review-commit
 
 ## Current Position
 
-Phase: 03 (ai-classification-chat) — EXECUTING
-Plan: 2 of 2
+Phase: 04 (review-commit) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-12 -- Phase 04 planning complete
+Last activity: 2026-08-12
 
-Progress: [██████░░░░] 67%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [██████░░░░] 67%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 04 P01 | 10min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,7 @@ Progress: [██████░░░░] 67%
 - Step 4 is optional — skip gate goes directly to `/coach/dashboard`
 - Confidence >= 0.6 = template_programme (auto), < 0.4 or null = da_coach (auto), 0.4-0.6 = ambiguous with clarification pills
 - sessions count uses null sentinel (not 0) when unavailable — enables rendering plan short fallback i18n key
+- [Phase 04]: 04-RESEARCH.md/04-VALIDATION.md's claim that no framework install was needed was incorrect - @testing-library/dom was declared but never materialized; fixed via root npm install rather than editing the manifest
 
 ### Pending Todos
 
@@ -75,6 +77,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-08-12T16:21:57.987Z
-Stopped at: Phase 4 UI-SPEC approved
-Resume file: .planning/workstreams/onboarding/phases/04-review-commit/04-UI-SPEC.md
+Last session: 2026-08-12T17:23:26.855Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

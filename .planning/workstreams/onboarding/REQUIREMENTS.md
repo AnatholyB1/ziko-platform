@@ -28,14 +28,14 @@
 
 ### REVIEW — Confirmation avant commit
 
-- [ ] **REVIEW-01**: Le coach voit un résumé consolidé de tous les docs analysés avant toute action définitive
-- [ ] **REVIEW-02**: Le coach peut corriger le type d'un doc (ex : "c'est un template, pas une DA")
-- [ ] **REVIEW-03**: Les docs de type `coach_template` sont commités via `PUT /coach/imports/:id/commit` après confirmation
+- [x] **REVIEW-01**: Le coach voit un résumé consolidé de tous les docs analysés avant toute action définitive
+- [x] **REVIEW-02**: Le coach peut corriger le type d'un doc (ex : "c'est un template, pas une DA")
+- [x] **REVIEW-03**: Les docs de type `coach_template` sont commités via `PUT /coach/imports/:id/commit` après confirmation
 
 ### COMPLETE — Fin de step
 
 - [ ] **COMPLETE-01**: Un bouton "Ignorer pour l'instant" permet de quitter Step 4 et d'aller au dashboard sans importer
-- [ ] **COMPLETE-02**: Après confirmation et commit, le coach est redirigé vers `/coach/dashboard`
+- [x] **COMPLETE-02**: Après confirmation et commit, le coach est redirigé vers `/coach/dashboard`
 
 ---
 
@@ -70,8 +70,8 @@
 | PARSE-01 | Phase 3 | Pending |
 | PARSE-02 | Phase 3 | Pending |
 | PARSE-03 | Phase 3 | Pending |
-| REVIEW-01 | Phase 4 | Pending |
-| REVIEW-02 | Phase 4 | Pending |
-| REVIEW-03 | Phase 4 | Pending |
+| REVIEW-01 | Phase 4 | Complete |
+| REVIEW-02 | Phase 4 | Complete |
+| REVIEW-03 | Phase 4 | Complete |
 | COMPLETE-01 | Phase 4 | Pending |
-| COMPLETE-02 | Phase 4 | Pending |
+| COMPLETE-02 | Phase 4 | Complete |
