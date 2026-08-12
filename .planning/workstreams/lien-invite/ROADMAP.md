@@ -20,6 +20,7 @@ all five.
 ## Phases
 
 **Phase Numbering:**
+
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
@@ -33,49 +34,70 @@ all five.
 ## Phase Details
 
 ### Phase 1: Data Foundation
+
 **Goal**: The waitlist has an atomic, secure, dedupe-safe capture backend that guarantees the
 200-founder cap under any concurrency, with zero direct read/write surface for any client.
 **Depends on**: Nothing (first phase — parallel track A, alongside Phase 2 and Phase 3)
 **Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
 **Success Criteria** (what must be TRUE):
+
   1. Two simultaneous signups submitted near spot 200 never both receive founder status — at most
      exactly 200 rows ever hold a founder rank, under any concurrency (DATA-02, DATA-03)
+
   2. A repeat signup with the same email (case-insensitive) is accepted without creating a
      duplicate row or consuming a second founder rank (DATA-04)
+
   3. Querying `waitlist_signups` directly with the anon or authenticated key returns zero rows —
      no policy grants read or write access to any role (DATA-05)
+
   4. Every stored signup carries email, audience, timestamp, and founder rank, captured only
      through a `SECURITY DEFINER` RPC matching the `deduct_ai_credits` / `is_coach_of()` idiom
      (DATA-01, DATA-06)
+
   5. Submitting an already-registered email never discloses that address's founder status — a
      genuinely new signup receives its rank, every other case receives a neutral confirmation
      (DATA-07, revised during phase 1 discussion; see `01-CONTEXT.md` D-04)
 **Plans**: 4 plans
 Plans:
+**Wave 1**
+
 - [ ] 01-01-PLAN.md — Tracer: one signup end to end (migration core, `claimWaitlistSpot`, round-trip proof)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 01-02-PLAN.md — Threshold-arbitrated counter, `app_config`, erasure, sequence reset, blocking schema push
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 01-03-PLAN.md — Deny-all RLS proof across anon and authenticated, plus normalized-dedupe proof
 - [ ] 01-04-PLAN.md — 200-cap concurrency proof, founder-status non-disclosure proof, CI wiring
+
 **Research**: Not needed at plan time — the `SECURITY DEFINER` RPC + deny-all RLS idiom is already
 proven in this codebase (`deduct_ai_credits`, `is_coach_of()`); the `SEQUENCE`-based founder-rank
 design is fully specified in `research/ARCHITECTURE.md` Section 1.
 
 ### Phase 2: Test-Account Purge
+
 **Goal**: Production no longer contains dev/QA test accounts, removed through an audited,
 backed-up, two-person-reviewed procedure — so the founder counter that later goes live counts only
 genuine signups.
 **Depends on**: Nothing (parallel track alongside Phase 1 and Phase 3; must complete before Phase 6)
 **Requirements**: PURGE-01, PURGE-02, PURGE-03, PURGE-04, PURGE-05
 **Success Criteria** (what must be TRUE):
+
   1. A written, human-reviewed list of exact test-account IDs/emails exists before any deletion
      runs — no deletion criterion is a bare pattern match used as the executed filter (PURGE-01)
+
   2. A dry-run export lists precisely the accounts that would be deleted, including any cross-links
      to real (non-candidate) accounts flagged for manual review, with zero rows actually removed
      at that point (PURGE-02)
+
   3. A restorable backup/PITR checkpoint exists and its timestamp is recorded before the real
      deletion executes (PURGE-03)
+
   4. Every deletion runs through the same Admin API path already proven in `account.ts`
      (`admin.auth.admin.deleteUser()`), never a raw bulk SQL statement (PURGE-04)
+
   5. After deletion, re-running the original match query returns zero rows, and no orphaned row
      remains in any linked table (PURGE-05)
 **Plans**: TBD
@@ -84,23 +106,29 @@ genuine signups.
 `research/PITFALLS.md` Pitfall 13 give the full reviewed procedure.
 
 ### Phase 3: Legal — CGV & CGU
+
 **Goal**: A published, bilingual legal framework accurately and safely describes the founder offer
 and the AI-credit cap, reviewed by outside counsel before anything it describes is active in code.
 **Depends on**: Nothing (parallel track alongside Phase 1 and Phase 2 — longest lead time in the
 milestone; must complete before Phase 4 starts, per LEGAL-05)
 **Requirements**: LEGAL-01, LEGAL-02, LEGAL-03, LEGAL-04, LEGAL-05, LEGAL-06, LEGAL-07, LEGAL-08, LEGAL-09
 **Success Criteria** (what must be TRUE):
+
   1. A public CGV page exists in French and English, stating that premium unlocks all features but
      AI credits remain capped (LEGAL-01, LEGAL-02)
+
   2. The CGV precisely scopes the "à vie" language to the service's operating lifetime, with no
      unconditional or unilaterally-revisable modification clause, and the CGU is revised to state
      the identical AI-credit cap with no contradiction between the two documents — both reviewed
      by counsel before publish (LEGAL-03, LEGAL-04)
+
   3. This legal text is live in production before or exactly when the credit-gate change activates
      — never after (LEGAL-05); this phase's completion is a hard precondition of Phase 4
+
   4. The waitlist form shows an unchecked, standalone consent checkbox, separate from the submit
      action, plus a point-of-collection RGPD notice (purpose, controller, retention) rather than
      only a footer link (LEGAL-06, LEGAL-07)
+
   5. A documented retention period governs stored addresses, and a registrant can request and
      receive erasure of their entry (LEGAL-08, LEGAL-09)
 **Plans**: TBD
@@ -110,6 +138,7 @@ open question already flagged for lawyer review (the "à vie" black-list-clause 
 highest-severity item in the whole milestone).
 
 ### Phase 4: Credit-Gate Alignment
+
 **Goal**: Premium access to AI is generous but finite, activated only after confirming no real
 production user is silently downgraded, and decoupled from deploy via a feature flag.
 **Depends on**: Phase 1 (needs the shared `app_config` table introduced in phase 1 — CRED-05's
@@ -121,15 +150,20 @@ already be live per LEGAL-05)
 > and neither symbol is in any phase-1 plan. Phase 4 must plan both itself.
 **Requirements**: CRED-01, CRED-02, CRED-03, CRED-04, CRED-05, CRED-06
 **Success Criteria** (what must be TRUE):
+
   1. Before any code change, a production count of `tier='premium'` users confirms the "no real
      user affected" assumption (A-01) — if the count is nonzero, work stops here and the
      grandfather question is escalated to the user rather than shipped silently (CRED-01)
+
   2. A premium user's AI requests are checked against a real, finite monthly balance instead of
      bypassing the credit gate unconditionally (CRED-02, CRED-03)
+
   3. A founder who later subscribes to and cancels a paid plan keeps their lifetime premium access,
      because it is tracked independently of any subscription tier flip (CRED-04)
+
   4. The new capped behavior stays off by default and only takes effect once a feature flag is
      explicitly flipped, decoupled from when the code deploys (CRED-05)
+
   5. Every existing caller reading `tier` (e.g. `branding/page.tsx`'s `isPro` check) continues to
      behave exactly as before — no regression (CRED-06)
 **Plans**: TBD
@@ -138,6 +172,7 @@ a product decision that must be modeled against `ai_cost_log`, not assumed; see
 `research/SUMMARY.md` Research Flags and `research/ARCHITECTURE.md` Section 4.
 
 ### Phase 5: Waitlist Page & Entry Points
+
 **Goal**: A visitor from either audience can discover the founder offer, submit only an email after
 choosing their profile, and see a truthful, on-brand bilingual page — reachable from every intended
 entry point on the site.
@@ -145,18 +180,23 @@ entry point on the site.
 **Requirements**: WAIT-01, WAIT-02, WAIT-03, WAIT-04, WAIT-05, WAIT-06, WAIT-07, WAIT-08, FOND-01,
 FOND-02, FOND-03, FOND-04, FOND-05, FOND-06, ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05, ENTRY-06
 **Success Criteria** (what must be TRUE):
+
   1. A visitor reaches a dedicated, bilingual founders page matching the existing light sport theme
      and Tailwind v4 tokens, statically rendered except for the counter (WAIT-01, WAIT-07, WAIT-08)
+
   2. The visitor picks athlete or coach before an email field appears, then submits only that one
      email; a malformed or disposable-domain address is rejected with a clear message (WAIT-02,
      WAIT-03, WAIT-04)
+
   3. After submitting, the visitor always sees the same inline success state — whether their email
      was new or already registered, and whether or not a founder spot was assigned — with no way
      to detect a prior registration from the response (WAIT-05, WAIT-06)
+
   4. The page states "first 200 = lifetime premium" as fact with no visible counter below the
      reveal threshold, then shows a real, never-inflated, never-increasing "spots remaining" count
      above it, and a distinct "complete" state once all 200 are claimed — with the reveal threshold
      itself adjustable without a redeploy (FOND-01, FOND-02, FOND-03, FOND-04, FOND-05, FOND-06)
+
   5. A visitor reaches the page from the homepage, `/coachs`, the header, and the footer; a shared
      link renders a correct social preview; the page is indexable and present in the sitemap; and
      its signups are measurable as conversions (ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05,
@@ -170,6 +210,7 @@ codebase; see `research/SUMMARY.md` Research Flags and `research/ARCHITECTURE.md
 `custom-widget` Phases 03–04).
 
 ### Phase 6: Founder Offer Go-Live
+
 **Goal**: The founder offer is safely and legally activated in production only once every upstream
 gate — data integrity, clean data, live legal text, and the credit-gate audit — is confirmed
 satisfied. This is a convergence/activation phase; it claims no requirement not already owned by
@@ -178,13 +219,17 @@ Phases 1–5, and instead verifies their production-activation state together.
 **Requirements**: None net-new — verifies the activation conditions of CRED-01, CRED-05, LEGAL-05,
 PURGE-01–05, and FOND-06 (all already mapped to their owning phases above)
 **Success Criteria** (what must be TRUE):
+
   1. The public founder counter reflects only genuine post-launch signups — any QA/test signups
      made while building Phase 5 have been cleared (waitlist table truncated + sequence reset, per
      `research/ARCHITECTURE.md` Section 1) before the page opens to the public
+
   2. The credit-gate feature flag is flipped only after the CGU/CGV pages describing the AI-credit
      cap are already live — confirming CRED-05 and LEGAL-05 together, never flag-before-text
+
   3. The founder's chosen reveal-threshold state (static offer vs. decreasing count) at the moment
      of launch matches what was actually intended — confirming FOND-06 was applied, not just built
+
   4. All mapped entry points route real traffic to the now-public page, and its conversions begin
      recording from the first live visit
 **Plans**: TBD
