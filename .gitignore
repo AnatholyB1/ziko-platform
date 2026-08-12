@@ -23,3 +23,8 @@ com.facebook.react.devsupport.*
 
 # GSD write-guard override — transient, local, names a file allowed to shrink once
 .planning/.gsd-allow-shrink
+
+# GSD plan-phase scratch — rendered capability fragments and the edge-probe report,
+# staged for the planner subagent and regenerable from the capability registry
+.planning/**/.planner-contributions.md
+.planning/**/.edge-coverage.json
