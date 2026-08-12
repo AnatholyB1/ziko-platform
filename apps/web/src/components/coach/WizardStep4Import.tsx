@@ -364,7 +364,6 @@ export function WizardStep4Import({
   useEffect(() => {
     if (reviewPhase !== 'committing') return;
     const committable = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
-    if (committable.length === 0) return;
     const allDone = committable.every((f) => f.commitStatus === 'committed');
     if (!allDone) return;
     setReviewPhase('done');

@@ -260,6 +260,32 @@ describe('WizardStep4Import review screen', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
+  it('confirming with zero committable docs still redirects (no docs stuck in committing)', async () => {
+    const onSuccess = vi.fn();
+    const container = renderStep4(onSuccess, vi.fn());
+    await driveToReview(container);
+
+    // Correct programme.pdf (first row) to 'DA coach' so both docs are da_coach — nothing committable.
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'DA coach' })[0]);
+    });
+    expect(screen.getByText('Aucun programme ne sera importé')).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer et importer' }));
+    });
+
+    // No committable docs means no /commit call should ever fire.
+    expect(fetchMockCalls().some(([url]) => url.endsWith('/commit'))).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+
+    // Must not be trapped in 'committing' forever — onSuccess still fires.
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
   it('per-doc retry isolation', async () => {
     const onSuccess = vi.fn();
     const container = renderStep4(onSuccess, vi.fn());
