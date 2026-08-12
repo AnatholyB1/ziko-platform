@@ -17,3 +17,6 @@ out/
 .mcp.json
 com.facebook.react.devsupport.*
 .worktrees/
+
+# GSD web-search cache — content-hashed, regenerable, not authored content
+.planning/**/.cache/
