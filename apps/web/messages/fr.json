@@ -160,7 +160,16 @@
     "step4AiConfirmation": "Compris — j'ai mis à jour le type.",
     "step4DocTypeTemplate": "Template",
     "step4DocTypeDaCoach": "DA coach",
-    "step4Continue": "Continuer →"
+    "step4Continue": "Continuer →",
+    "step4ReviewHeading": "Vérifie tes documents avant l'import",
+    "step4ReviewSubtitle": "Confirme le type de chaque document, puis lance l'import.",
+    "step4ReviewNoAction": "Enregistré comme contexte",
+    "step4ReviewCount": "{count, plural, =0 {Aucun programme ne sera importé} one {1 programme sera importé} other {# programmes seront importés}}",
+    "step4ReviewConfirm": "Confirmer et importer",
+    "step4CommitError": "L'import de ce document a échoué.",
+    "step4CommitRetry": "Réessayer",
+    "step4CommitRetryAria": "Réessayer l'import de ce document",
+    "step4CommitSuccess": "{count, plural, one {1 programme importé !} other {# programmes importés !}}"
   },
   "Dashboard": {
     "welcome": "Bonjour, {displayName} 👋",

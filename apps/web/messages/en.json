@@ -160,7 +160,16 @@
     "step4AiConfirmation": "Got it — I've updated the type.",
     "step4DocTypeTemplate": "Template",
     "step4DocTypeDaCoach": "Coaching DA",
-    "step4Continue": "Continue →"
+    "step4Continue": "Continue →",
+    "step4ReviewHeading": "Check your documents before importing",
+    "step4ReviewSubtitle": "Confirm each document's type, then start the import.",
+    "step4ReviewNoAction": "Saved as context",
+    "step4ReviewCount": "{count, plural, =0 {No program will be imported} one {1 program will be imported} other {# programs will be imported}}",
+    "step4ReviewConfirm": "Confirm and import",
+    "step4CommitError": "Importing this document failed.",
+    "step4CommitRetry": "Retry",
+    "step4CommitRetryAria": "Retry importing this document",
+    "step4CommitSuccess": "{count, plural, one {1 program imported!} other {# programs imported!}}"
   },
   "Dashboard": {
     "welcome": "Hello, {displayName} 👋",
