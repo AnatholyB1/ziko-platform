@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline } from 'react-icons/io5';
+import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline, IoCheckmarkCircleOutline, IoRefreshOutline } from 'react-icons/io5';
 
 type FileStatus = 'uploading' | 'parsing' | 'ready' | 'failed';
 type DocType = 'da_coach' | 'template_programme';
@@ -358,8 +358,9 @@ export function WizardStep4Import({
     });
   }, [fileStates, runPipeline]);
 
-  // Completion effect (D-10): once every committable doc reaches commitStatus 'committed',
-  // move to 'done' and auto-redirect via onSuccess exactly 1500ms later.
+  // Completion effect (D-10): once every committable doc reaches commitStatus 'committed', move to 'done'.
+  // Split into two effects (transition, then redirect) so that setReviewPhase('done') below does not
+  // retrigger this same effect via the `reviewPhase` dependency and clear its own just-scheduled timer.
   useEffect(() => {
     if (reviewPhase !== 'committing') return;
     const committable = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
@@ -367,9 +368,14 @@ export function WizardStep4Import({
     const allDone = committable.every((f) => f.commitStatus === 'committed');
     if (!allDone) return;
     setReviewPhase('done');
+  }, [fileStates, reviewPhase]);
+
+  // Auto-redirect effect (D-10): once 'done', fire onSuccess exactly 1500ms later.
+  useEffect(() => {
+    if (reviewPhase !== 'done') return;
     const timer = setTimeout(onSuccess, 1500);
     return () => clearTimeout(timer);
-  }, [fileStates, reviewPhase, onSuccess]);
+  }, [reviewPhase, onSuccess]);
 
   function handleClarification(fileId: string, chosenType: DocType): void {
     setFileStates((prev) =>
@@ -531,6 +537,16 @@ export function WizardStep4Import({
   }
 
   if (view === 'review') {
+    if (reviewPhase === 'done') {
+      return (
+        <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
+          <div className="flex flex-col items-center justify-center gap-3 py-8">
+            <IoCheckmarkCircleOutline className="w-6 h-6 text-primary" />
+            <p className="text-xl font-bold text-text">{t('step4CommitSuccess', { count: committedCount })}</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
         <h2 className="text-xl font-bold text-text mb-2">{t('step4ReviewHeading')}</h2>
@@ -576,7 +592,26 @@ export function WizardStep4Import({
                     {t('step4ReviewNoAction')}
                   </span>
                 )}
+                {fileState.docType === 'template_programme' && fileState.commitStatus === 'pending' && (
+                  <div className="shrink-0 text-muted">
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
+              {fileState.commitStatus === 'failed' && (
+                <div className="flex items-center gap-2 pl-3">
+                  <p className="text-xs text-red-500">{t('step4CommitError')}</p>
+                  <button
+                    type="button"
+                    onClick={() => retryCommit(fileState.id)}
+                    title={t('step4CommitRetryAria')}
+                    className="h-8 px-3 rounded-lg border border-border text-xs font-bold text-text hover:border-primary hover:text-primary transition-colors inline-flex items-center gap-1"
+                  >
+                    <IoRefreshOutline className="w-3 h-3" />
+                    {t('step4CommitRetry')}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -597,8 +632,11 @@ export function WizardStep4Import({
             type="button"
             onClick={handleConfirm}
             disabled={reviewPhase === 'committing'}
-            className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:pointer-events-none"
+            className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2"
           >
+            {reviewPhase === 'committing' && (
+              <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            )}
             {t('step4ReviewConfirm')}
           </button>
         </div>
