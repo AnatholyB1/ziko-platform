@@ -178,4 +178,138 @@ describe('WizardStep4Import review screen', () => {
     const calls = fetchMockCalls();
     expect(calls.some(([url]) => url.endsWith('/commit'))).toBe(false);
   });
+
+  it('parallel commit fires only for template docs', async () => {
+    const container = renderStep4(vi.fn(), vi.fn());
+    await driveToReview(container);
+
+    // Correct da-coach.pdf (second row) to 'Template programme' so both docs are committable.
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Template programme' })[1]);
+    });
+
+    let resolveTemplate!: (value: CommitResult) => void;
+    let resolveDa!: (value: CommitResult) => void;
+    const templatePromise = new Promise<CommitResult>((resolve) => {
+      resolveTemplate = resolve;
+    });
+    const daPromise = new Promise<CommitResult>((resolve) => {
+      resolveDa = resolve;
+    });
+    commitHandlers['imp-template'] = () => templatePromise;
+    commitHandlers['imp-da'] = () => daPromise;
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer et importer' }));
+    });
+
+    // Before either deferred resolves, both commit calls must already have fired (D-08 parallelism).
+    const callsBeforeResolve = fetchMockCalls().filter(([url]) => url.endsWith('/commit'));
+    expect(callsBeforeResolve).toHaveLength(2);
+
+    const templateCall = callsBeforeResolve.find(([url]) => url.includes('imp-template'));
+    expect(templateCall).toBeDefined();
+    const [, templateInit] = templateCall as [string, RequestInit];
+    expect(templateInit.method).toBe('PUT');
+    const templateHeaders = templateInit.headers as Record<string, string>;
+    expect(templateHeaders.Authorization).toBe('Bearer jwt-token');
+    expect(templateHeaders['Content-Type']).toBe('application/json');
+    expect(JSON.parse(String(templateInit.body))).toEqual({ parsed_data: TEMPLATE_PARSED });
+
+    await act(async () => {
+      resolveTemplate({ status: 200, body: { program_id: 'prog-imp-template' } });
+      resolveDa({ status: 200, body: { program_id: 'prog-imp-da' } });
+    });
+
+    // Second render: leave da-coach.pdf as 'DA coach' (default) — only the template doc commits.
+    commitHandlers = defaultCommitHandlers();
+    const container2 = renderStep4(vi.fn(), vi.fn());
+    await driveToReview(container2);
+
+    const callsBeforeSecondConfirm = fetchMockCalls().length;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer et importer' }));
+    });
+    const newCalls = fetchMockCalls().slice(callsBeforeSecondConfirm);
+    const newCommitCalls = newCalls.filter(([url]) => url.endsWith('/commit'));
+    expect(newCommitCalls).toHaveLength(1);
+    expect(newCommitCalls[0][0]).toContain('imp-template');
+    expect(newCommitCalls.some(([url]) => url.includes('imp-da'))).toBe(false);
+  });
+
+  it('auto-redirect after commit', async () => {
+    const onSuccess = vi.fn();
+    const container = renderStep4(onSuccess, vi.fn());
+    await driveToReview(container);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer et importer' }));
+    });
+
+    expect(screen.getByText('1 programme importé !')).toBeDefined();
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1400);
+    });
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('per-doc retry isolation', async () => {
+    const onSuccess = vi.fn();
+    const container = renderStep4(onSuccess, vi.fn());
+    await driveToReview(container);
+
+    // Correct da-coach.pdf (second row) to 'Template programme' so both docs are committable.
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Template programme' })[1]);
+    });
+
+    commitHandlers['imp-template'] = () => Promise.resolve({ status: 200, body: { program_id: 'prog-1' } });
+    commitHandlers['imp-da'] = () => Promise.resolve({ status: 500, body: { error: 'boom' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer et importer' }));
+    });
+
+    expect(screen.getAllByText("L'import de ce document a échoué.")).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Réessayer' })).toHaveLength(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    const callsBeforeRetry = fetchMockCalls().filter(([url]) => url.endsWith('/commit'));
+    const templateCountBeforeRetry = callsBeforeRetry.filter(([url]) => url.includes('imp-template')).length;
+    const daCountBeforeRetry = callsBeforeRetry.filter(([url]) => url.includes('imp-da')).length;
+    expect(templateCountBeforeRetry).toBe(1);
+    expect(daCountBeforeRetry).toBe(1);
+
+    commitHandlers['imp-da'] = () => Promise.resolve({ status: 200, body: { program_id: 'prog-2' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    });
+
+    const callsAfterRetry = fetchMockCalls().filter(([url]) => url.endsWith('/commit'));
+    const templateCountAfterRetry = callsAfterRetry.filter(([url]) => url.includes('imp-template')).length;
+    const daCountAfterRetry = callsAfterRetry.filter(([url]) => url.includes('imp-da')).length;
+    expect(templateCountAfterRetry).toBe(1);
+    expect(daCountAfterRetry).toBe(2);
+
+    expect(screen.queryByText("L'import de ce document a échoué.")).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
+    expect(screen.getByText('2 programmes importés !')).toBeDefined();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
 });
