@@ -74,6 +74,8 @@ export function WizardStep4Import({
   const [fileStates, setFileStates] = useState<FileState[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [view, setView] = useState<'import' | 'review'>('import');
+  const [reviewPhase, setReviewPhase] = useState<'editing' | 'committing' | 'done'>('editing');
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const pipelineStartedRef = useRef<Set<string>>(new Set());
@@ -89,6 +91,12 @@ export function WizardStep4Import({
         (f.status === 'ready' && Boolean(f.docType) && !f.clarificationPending),
     ) &&
     fileStates.some((f) => f.status === 'ready');
+
+  const reviewDocs = fileStates.filter((f) => f.status === 'ready');
+  const committableCount = reviewDocs.filter((f) => f.docType === 'template_programme').length;
+  const committedCount = reviewDocs.filter(
+    (f) => f.docType === 'template_programme' && f.commitStatus === 'committed',
+  ).length;
 
   // Cleanup all polling intervals and abort controllers on unmount
   useEffect(() => {
@@ -350,6 +358,19 @@ export function WizardStep4Import({
     });
   }, [fileStates, runPipeline]);
 
+  // Completion effect (D-10): once every committable doc reaches commitStatus 'committed',
+  // move to 'done' and auto-redirect via onSuccess exactly 1500ms later.
+  useEffect(() => {
+    if (reviewPhase !== 'committing') return;
+    const committable = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
+    if (committable.length === 0) return;
+    const allDone = committable.every((f) => f.commitStatus === 'committed');
+    if (!allDone) return;
+    setReviewPhase('done');
+    const timer = setTimeout(onSuccess, 1500);
+    return () => clearTimeout(timer);
+  }, [fileStates, reviewPhase, onSuccess]);
+
   function handleClarification(fileId: string, chosenType: DocType): void {
     setFileStates((prev) =>
       prev.map((f) =>
@@ -361,6 +382,87 @@ export function WizardStep4Import({
       { id: crypto.randomUUID(), kind: 'coach-reply', fileId, docType: chosenType },
       { id: crypto.randomUUID(), kind: 'ia-confirmation', fileId },
     ]);
+  }
+
+  function setDocType(fileId: string, next: DocType): void {
+    setFileStates((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, docType: next, clarificationPending: false, commitError: undefined, commitStatus: undefined }
+          : f,
+      ),
+    );
+  }
+
+  async function commitDoc(fileId: string, fileState: FileState): Promise<boolean> {
+    if (!fileState.importId || !fileState.parsedData) {
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+        ),
+      );
+      return false;
+    }
+    try {
+      const res = await fetch(`${apiUrl}/coach/imports/${fileState.importId}/commit`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({ parsed_data: fileState.parsedData }),
+      });
+      if (res.status === 409) {
+        const body = await res.json().catch(() => ({} as { program_id?: string }));
+        if (body.program_id) {
+          setFileStates((prev) =>
+            prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'committed' } : f)),
+          );
+          return true;
+        }
+      }
+      if (!res.ok) {
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+          ),
+        );
+        return false;
+      }
+      setFileStates((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'committed', commitError: undefined } : f)),
+      );
+      return true;
+    } catch {
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+        ),
+      );
+      return false;
+    }
+  }
+
+  async function handleConfirm(): Promise<void> {
+    setReviewPhase('committing');
+    const toCommit = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
+    setFileStates((prev) =>
+      prev.map((f) =>
+        f.status === 'ready' && f.docType === 'template_programme'
+          ? { ...f, commitStatus: 'pending', commitError: undefined }
+          : f,
+      ),
+    );
+    await Promise.all(toCommit.map((f) => commitDoc(f.id, f)));
+  }
+
+  function retryCommit(fileId: string): void {
+    const fileState = fileStates.find((f) => f.id === fileId);
+    if (!fileState) return;
+    setFileStates((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'pending', commitError: undefined } : f)),
+    );
+    void commitDoc(fileId, fileState);
   }
 
   function formatBytes(bytes: number): string {
