@@ -111,7 +111,7 @@ status: halted
 
 1. **Task 1: Threshold-arbitrated founder counter** — combined into `ac4deb3` (see note below)
 2. **Task 2: Erasure + sequence reset** — combined into `ac4deb3` (feat)
-3. **Task 3: [BLOCKING] Schema push confirmation** — pending human sign-off, not yet resolved
+3. **Task 3: [BLOCKING] Schema push confirmation** — **approved by the user 2026-08-13.** Confirmed: functions/RLS verified live, no non-test rows, Phase 4 ROADMAP drift noted, production consequence of merging to `main` (triggers `migrate-supabase` in CI) acknowledged.
 
 **Note on commit granularity:** Tasks 1 and 2 both append to the same single migration file and were authored, applied, and verified together in one pass rather than as two separate apply/verify cycles — splitting the commit would not have split the verification (both were proven against the same live schema state), so batching them avoided a misleading "task 1 proven" commit that wasn't actually independently verified before task 2 landed.
 
@@ -145,14 +145,14 @@ Same structural gap as plan 01-01: the literal `cd backend/api && npm run test:r
 
 ## Next Phase Readiness
 
-**Task 3 (blocking checkpoint) is presented to the user separately, not self-approved.** Per its own instructions, this plan cannot be marked complete until a human confirms:
-1. The migration is applied to the test project, not production — automatable steps confirmed (functions exist, RLS/grants correct); the literal vitest command still needs the service-role key
-2. The Supabase dashboard shows RLS-with-no-policy on both tables and all five functions under Database → Functions
-3. No non-test rows exist in `waitlist_signups` — confirmed live, table is empty
-4. Acknowledgment that merging to `main` triggers production migration — a one-way door
-5. The Phase 4 ROADMAP drift note (`grant_premium_credits`/`is_lifetime_premium` are not phase-1 scope)
+**Task 3 (blocking checkpoint) is approved.** All five points confirmed:
+1. Functions/RLS/grants verified live via direct SQL (the literal vitest command still needs a service-role key — same gap as plan 01-01, tracked in D4)
+2. Dashboard-equivalent confirmation done via `pg_policies`/`pg_proc` queries
+3. No non-test rows in `waitlist_signups` — confirmed empty
+4. Production consequence of merging to `main` (triggers `migrate-supabase` in CI) acknowledged by the user
+5. Phase 4 ROADMAP drift noted
 
-Plans 01-03 and 01-04 depend on this plan. Given the database layer (all 8 objects) is now proven live, they can reasonably proceed once Task 3 is acknowledged.
+Plans 01-03 and 01-04 depend on this plan and can proceed — the full 8-object database layer is proven live and the blocking checkpoint is cleared.
 
 ---
 *Phase: 01-data-foundation*
