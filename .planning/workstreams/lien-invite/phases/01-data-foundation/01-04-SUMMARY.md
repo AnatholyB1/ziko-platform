@@ -78,7 +78,7 @@ coverage:
 
 duration: ~70min
 completed: 2026-08-13
-status: halted
+status: complete
 ---
 
 # Phase 1 Plan 4: 200-Cap Race, Non-Disclosure Proof, CI Wiring Summary
@@ -100,7 +100,7 @@ status: halted
 
 1. **Task 1: Race the 200 boundary and close the founder-status oracle** — `3b048c3` (feat)
 2. **Task 2: CI migration-apply + both proof suites** — `cab8caa` (feat)
-3. **Task 3: [BLOCKING] Phase acceptance** — pending human sign-off, presented separately; genuinely requires a real CI run this session cannot produce
+3. **Task 3: [BLOCKING] Phase acceptance** — **approved by the user 2026-08-13**, with the known, explicitly-acknowledged gap: approval is based on the database layer proven live via direct SQL across all four plans (including 3 real bugs found and fixed), not on a literal `npx turbo run test` run or an actual green CI run on a real pull request — neither was obtainable in this session (no `SUPABASE_SERVICE_ROLE_KEY`, no path to open/observe a real PR). The user chose to accept the live-SQL proof as sufficient rather than blocking further on infrastructure this session cannot reach.
 
 ## Files Created/Modified
 - `apps/web/test/actions/waitlist.concurrency.test.ts` — 2 new describe blocks (127 lines)
@@ -119,14 +119,15 @@ Same `SUPABASE_SERVICE_ROLE_KEY` gap as every prior plan in this phase — the l
 
 ## Next Phase Readiness
 
-**Task 3 (blocking checkpoint) is presented to the user separately.** This is genuinely the phase's final gate — per its own `<how-to-verify>`, it needs:
-1. `npx turbo run test` green locally against the test project (needs a real `SUPABASE_SERVICE_ROLE_KEY`)
-2. The same command confirming a clean skip when pointed at production instead
-3. An actual pull request with the "RLS Suite" workflow green on both jobs
-4. Acknowledgment of the production-merge consequence (already given once, at plan 01-02's Task 3 — carrying forward)
-5. The two carry-forward notes (Phase 4 ROADMAP drift, D-09 deferred to phase 5) — already recorded
+**Task 3 (blocking checkpoint) is approved — Phase 1 is accepted.** Approval basis, explicitly: all four database-layer plans (01-01 through 01-04) have their SQL/RPC/RLS behavior proven live against the `ziko` test project, including three real bugs found and fixed along the way (a broken skip guard, a broken anon-execute revoke — which also surfaced a live production security gap outside this phase's scope, tracked separately — and two test-logic bugs in plan 01-03). The parts NOT verified in this session: the literal `npm run test:rls` / `npx vitest run` commands (need `SUPABASE_SERVICE_ROLE_KEY`, unavailable via the MCP tools this session had) and an actual GitHub Actions run on a real pull request (this session cannot open or observe one).
 
-All four database-layer plans (01-01 through 01-04) have their SQL/RPC/RLS behavior proven live against the `ziko` test project, including three real bugs found and fixed along the way (a broken skip guard, a broken anon-execute revoke — which also surfaced a live production security gap outside this phase's scope — and two test-logic bugs in plan 01-03). What remains for phase acceptance is specifically the parts requiring a real CI environment and a real service-role key, neither available in this session.
+**Outstanding, not phase-1 blocking, carried forward:**
+- **Urgent, separate from this phase:** `is_coach_of()`, `redeem_invitation_code()`, `peek_invitation()` are anon-executable in production today (found during plan 01-01 verification) — needs its own fix migration.
+- Confirm `SUPABASE_TEST_PROJECT_ID` and `SUPABASE_ACCESS_TOKEN` secrets are actually configured in the repository before relying on the new CI migration-apply steps.
+- Recommend running the full suite for real (with a real service-role key, in CI or locally) at the earliest opportunity to close the gap this approval accepted.
+- ROADMAP.md Phase 4 "Depends on" drift (`grant_premium_credits`/`is_lifetime_premium` not phase-1 scope) and D-09 deferred to phase 5 — both already recorded.
+
+Phase 2 (Test-Account Purge) and Phase 3 (Legal — CGV & CGU) have no dependency on Phase 1 and can start immediately per ROADMAP.md.
 
 ---
 *Phase: 01-data-foundation*

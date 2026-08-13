@@ -24,7 +24,7 @@ all five.
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Data Foundation** - Atomic, RLS-locked waitlist schema, sequence-backed founder cap, and the RPCs everything else calls
+- [x] **Phase 1: Data Foundation** - Atomic, RLS-locked waitlist schema, sequence-backed founder cap, and the RPCs everything else calls
 - [ ] **Phase 2: Test-Account Purge** - Dry-run-reviewed, backed-up removal of dev/QA accounts so the founder counter is credible
 - [ ] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes
 - [ ] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag

@@ -19,13 +19,13 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Data & Intégrité (DATA)
 
-- [ ] **DATA-01**: Une inscription à la waitlist est stockée avec son email, son audience (athlète ou coach), son horodatage et son rang fondateur
-- [ ] **DATA-02**: Le rang fondateur est attribué par une `SEQUENCE` Postgres, de sorte que deux inscriptions simultanées ne peuvent jamais recevoir le même rang
-- [ ] **DATA-03**: Le plafond de 200 places fondateur est exact sous n'importe quelle concurrence — la 201ᵉ inscription est acceptée mais sans statut fondateur
-- [ ] **DATA-04**: Une adresse email déjà inscrite ne crée pas de doublon et ne consomme pas une seconde place fondateur
-- [ ] **DATA-05**: La table waitlist a RLS activé sans aucune politique — aucun rôle ne peut lire ou écrire directement
-- [ ] **DATA-06**: Toute écriture et toute lecture passent par des RPC `SECURITY DEFINER`, selon l'idiome déjà utilisé par `deduct_ai_credits` et `is_coach_of()`
-- [ ] **DATA-07**: Un visiteur ne peut pas déterminer le **statut fondateur** d'une adresse email tierce — une inscription authentiquement nouvelle reçoit son rang, tout autre cas reçoit une confirmation neutre. *Révisé en phase 1 : la formulation initiale exigeait une réponse totalement indistinguable, ce qui interdisait d'annoncer son rang au nouvel inscrit (WAIT-05). L'appartenance à la waitlist est donc divulgable ; la place fondateur ne l'est pas. Voir `phases/01-data-foundation/01-CONTEXT.md` D-04.*
+- [x] **DATA-01**: Une inscription à la waitlist est stockée avec son email, son audience (athlète ou coach), son horodatage et son rang fondateur
+- [x] **DATA-02**: Le rang fondateur est attribué par une `SEQUENCE` Postgres, de sorte que deux inscriptions simultanées ne peuvent jamais recevoir le même rang
+- [x] **DATA-03**: Le plafond de 200 places fondateur est exact sous n'importe quelle concurrence — la 201ᵉ inscription est acceptée mais sans statut fondateur
+- [x] **DATA-04**: Une adresse email déjà inscrite ne crée pas de doublon et ne consomme pas une seconde place fondateur
+- [x] **DATA-05**: La table waitlist a RLS activé sans aucune politique — aucun rôle ne peut lire ou écrire directement
+- [x] **DATA-06**: Toute écriture et toute lecture passent par des RPC `SECURITY DEFINER`, selon l'idiome déjà utilisé par `deduct_ai_credits` et `is_coach_of()`
+- [x] **DATA-07**: Un visiteur ne peut pas déterminer le **statut fondateur** d'une adresse email tierce — une inscription authentiquement nouvelle reçoit son rang, tout autre cas reçoit une confirmation neutre. *Révisé en phase 1 : la formulation initiale exigeait une réponse totalement indistinguable, ce qui interdisait d'annoncer son rang au nouvel inscrit (WAIT-05). L'appartenance à la waitlist est donc divulgable ; la place fondateur ne l'est pas. Voir `phases/01-data-foundation/01-CONTEXT.md` D-04.*
 
 ### Page waitlist (WAIT)
 
@@ -131,13 +131,13 @@ Points que la recherche a explicitement refusé de trancher :
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
-| DATA-06 | Phase 1 | Pending |
-| DATA-07 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
+| DATA-06 | Phase 1 | Complete |
+| DATA-07 | Phase 1 | Complete |
 | PURGE-01 | Phase 2 | Pending |
 | PURGE-02 | Phase 2 | Pending |
 | PURGE-03 | Phase 2 | Pending |
