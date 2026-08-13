@@ -100,7 +100,29 @@ genuine signups.
 
   5. After deletion, re-running the original match query returns zero rows, and no orphaned row
      remains in any linked table (PURGE-05)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Tracer: end-to-end dry-run (criterion, Admin API enumeration, cross-link exclusion, review report)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — Unconditional pre-delete row export, hashed manifest, live PITR status read
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Guarded Admin API deletion of the reviewed manifest set, plus post-purge reconciliation and orphan scan
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 02-04-PLAN.md — RUNBOOK with the written criterion, end-to-end rehearsal, blocking human review
+
+> **Scope note (D-03, recorded during phase 2 planning).** This phase builds and rehearses the full
+> purge; it deliberately does **not** execute the real deletion against production. Criteria 3 and 5
+> above complete during that separate, explicitly human-triggered run, which happens outside phase 2
+> once production credentials are in hand and the dry-run row set has been reviewed.
+
 **Research**: Not needed at plan time — the Admin API deletion path is already proven in
 `apps/web/src/actions/account.ts:84-85`; `research/ARCHITECTURE.md` Section 6 and
 `research/PITFALLS.md` Pitfall 13 give the full reviewed procedure.
@@ -246,7 +268,7 @@ being complete.
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
-| 2. Test-Account Purge | 0/TBD | Not started | - |
+| 2. Test-Account Purge | 0/4 | Planned | - |
 | 3. Legal — CGV & CGU | 0/TBD | Not started | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
