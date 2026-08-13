@@ -360,11 +360,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('surfaces a query error by throwing, naming the table and column', async () => {
     const client = {
-      from(table: string) {
+      from(_table: string) {
         return {
           select() {
             return {
-              in(col: string) {
+              in(_col: string) {
                 return Promise.resolve({
                   data: null,
                   error: { message: 'boom' },

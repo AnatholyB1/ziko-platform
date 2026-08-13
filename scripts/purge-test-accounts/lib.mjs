@@ -96,9 +96,41 @@ export async function listAllUsers(client) {
 // ── Cross-link detection (D-05) ─────────────────────────────────────────
 
 /**
- * Queries coach_client_links for candidates on either the coach_id or client_id
- * column, so a test account is caught whether it is the coach or the client.
- * Returns an empty array when candidateIds is empty rather than issuing a query.
+ * Every cross-user table this purge must check, declared once so the query
+ * loop below is the same shape for all three. Verified against
+ * supabase/migrations/035_coach_invitations_links_rls.sql,
+ * supabase/migrations/20260527_coach_vocal_feedbacks.sql, and
+ * supabase/migrations/036_workout_programs_ai_imports.sql.
+ */
+const CROSS_LINK_SOURCES = [
+  { table: 'coach_client_links', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'coach_vocal_feedbacks', columnA: 'coach_id', columnB: 'athlete_id' },
+  { table: 'workout_programs', columnA: 'created_by_coach_id', columnB: 'assigned_to_user_id' },
+];
+
+// PostgREST's URL length limit is what this guards against — a large
+// candidate set issued as a single `.in(...)` call could exceed it.
+const CROSS_LINK_BATCH_SIZE = 200;
+
+/** @param {string[]} arr @param {number} size @returns {string[][]} */
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+  return out;
+}
+
+/**
+ * Queries every declared cross-user table (coach_client_links,
+ * coach_vocal_feedbacks, workout_programs) on both of its user columns, so a
+ * test account is caught whichever side of the pair it sits on. Skips any row
+ * whose opposite column is null — nobody to entangle with. Chunks
+ * candidateIds into batches of 200 per `.in(...)` call. Throws, naming the
+ * table and column, on any query error rather than swallowing it — a
+ * swallowed error here would silently read as "no cross-links found," the
+ * single most dangerous failure mode of this whole script. Returns an empty
+ * array without issuing a query when candidateIds is empty.
  * @param {import('@supabase/supabase-js').SupabaseClient} client
  * @param {string[]} candidateIds
  * @returns {Promise<Array<{table: string, candidateColumn: string, candidateId: string, linkedColumn: string, linkedUserId: string}>>}
@@ -107,45 +139,48 @@ export async function fetchCrossLinks(client, candidateIds) {
   if (!candidateIds || candidateIds.length === 0) return [];
 
   const links = [];
+  const batches = chunk(candidateIds, CROSS_LINK_BATCH_SIZE);
 
-  const { data: coachRows, error: coachError } = await client
-    .from('coach_client_links')
-    .select('coach_id, client_id')
-    .in('coach_id', candidateIds);
-  if (coachError) {
-    throw new Error(
-      `fetchCrossLinks: coach_client_links.coach_id query failed: ${coachError.message}`
-    );
-  }
-  for (const row of coachRows ?? []) {
-    if (row.client_id == null) continue;
-    links.push({
-      table: 'coach_client_links',
-      candidateColumn: 'coach_id',
-      candidateId: row.coach_id,
-      linkedColumn: 'client_id',
-      linkedUserId: row.client_id,
-    });
-  }
+  for (const { table, columnA, columnB } of CROSS_LINK_SOURCES) {
+    for (const batch of batches) {
+      // Candidate on columnA (e.g. coach_id) — linked on columnB.
+      const { data: rowsA, error: errorA } = await client
+        .from(table)
+        .select(`${columnA}, ${columnB}`)
+        .in(columnA, batch);
+      if (errorA) {
+        throw new Error(`fetchCrossLinks: ${table}.${columnA} query failed: ${errorA.message}`);
+      }
+      for (const row of rowsA ?? []) {
+        if (row[columnB] == null) continue;
+        links.push({
+          table,
+          candidateColumn: columnA,
+          candidateId: row[columnA],
+          linkedColumn: columnB,
+          linkedUserId: row[columnB],
+        });
+      }
 
-  const { data: clientRows, error: clientError } = await client
-    .from('coach_client_links')
-    .select('coach_id, client_id')
-    .in('client_id', candidateIds);
-  if (clientError) {
-    throw new Error(
-      `fetchCrossLinks: coach_client_links.client_id query failed: ${clientError.message}`
-    );
-  }
-  for (const row of clientRows ?? []) {
-    if (row.coach_id == null) continue;
-    links.push({
-      table: 'coach_client_links',
-      candidateColumn: 'client_id',
-      candidateId: row.client_id,
-      linkedColumn: 'coach_id',
-      linkedUserId: row.coach_id,
-    });
+      // Candidate on columnB (e.g. client_id/athlete_id/assigned_to_user_id) — linked on columnA.
+      const { data: rowsB, error: errorB } = await client
+        .from(table)
+        .select(`${columnA}, ${columnB}`)
+        .in(columnB, batch);
+      if (errorB) {
+        throw new Error(`fetchCrossLinks: ${table}.${columnB} query failed: ${errorB.message}`);
+      }
+      for (const row of rowsB ?? []) {
+        if (row[columnA] == null) continue;
+        links.push({
+          table,
+          candidateColumn: columnB,
+          candidateId: row[columnB],
+          linkedColumn: columnA,
+          linkedUserId: row[columnA],
+        });
+      }
+    }
   }
 
   return links;
@@ -239,12 +274,34 @@ export async function runDryRun({ listUsers, fetchCrossLinks, now = () => new Da
 
 // ── Report writer ────────────────────────────────────────────────────────
 
+/** Quotes a CSV field only when it contains a comma, quote, or newline. */
+function csvField(value) {
+  const str = value == null ? '' : String(value);
+  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+}
+
 /**
- * Writes the report as pretty-printed JSON to outDir (created recursively).
- * Returns the path written. csvPath is added in a later task.
+ * Renders the to_delete row set as CSV — the artifact a second reviewer
+ * actually reads under Pitfall 13's two-person rule, so it carries the
+ * delete set and not the flagged set.
+ * @param {Array<{id: string, email: string | undefined, created_at: string}>} toDelete
+ * @returns {string}
+ */
+function toDeleteCsv(toDelete) {
+  const header = 'id,email,created_at';
+  const rows = toDelete.map((r) =>
+    [csvField(r.id), csvField(r.email), csvField(r.created_at)].join(',')
+  );
+  return [header, ...rows].join('\n') + '\n';
+}
+
+/**
+ * Writes the report as pretty-printed JSON and the to_delete set as CSV to
+ * outDir (created recursively). Returns both paths.
  * @param {object} report DryRunReport
  * @param {string} outDir
- * @returns {Promise<{ jsonPath: string, csvPath: undefined }>}
+ * @returns {Promise<{ jsonPath: string, csvPath: string }>}
  */
 export async function writeReport(report, outDir) {
   await mkdir(outDir, { recursive: true });
@@ -254,5 +311,8 @@ export async function writeReport(report, outDir) {
   const jsonPath = join(outDir, `dry-run-${stamp}.json`);
   await writeFile(jsonPath, JSON.stringify(report, null, 2), 'utf8');
 
-  return { jsonPath, csvPath: undefined };
+  const csvPath = join(outDir, `dry-run-${stamp}.csv`);
+  await writeFile(csvPath, toDeleteCsv(report.to_delete), 'utf8');
+
+  return { jsonPath, csvPath };
 }
