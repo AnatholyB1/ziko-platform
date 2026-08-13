@@ -5,10 +5,10 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 1
 current_phase_name: Data Foundation
 status: executing
-stopped_at: "Phase 1 plan 01-01 halted — DB round-trip unverified, blocked on Supabase access"
-last_updated: "2026-08-12T17:20:00.000Z"
+stopped_at: "Phase 1 plan 01-01 — DB layer proven live; a critical pre-existing security bug found and flagged; Server Action's own vitest run still needs SUPABASE_SERVICE_ROLE_KEY"
+last_updated: "2026-08-12T18:05:00.000Z"
 last_activity: 2026-08-12
-last_activity_desc: Plan 01-01 code written and structurally verified; live-DB acceptance criteria could not run in this environment
+last_activity_desc: Migration applied to the live ziko test project and verified via direct SQL; fixed a critical anon-execute bug; same bug confirmed live in production on is_coach_of/redeem_invitation_code/peek_invitation
 progress:
   total_phases: 1
   completed_phases: 0
@@ -30,15 +30,19 @@ contrat comme dans le code.
 ## Current Position
 
 Phase: 1 of 6 (Data Foundation)
-Plan: 01-01 of 4 — executed, **halted** (not complete)
-Status: Blocked on live Supabase access — see 01-01-SUMMARY.md "Next Phase Readiness"
-Last activity: 2026-08-12 — migration + Server Action + test written; every acceptance
-criterion checkable without a database passes (14 static checks, tsc clean, skip-guard
-verified — this run caught and fixed a real bug in the skip guard itself); the two
-DB-dependent criteria (round-trip test passing, migration re-apply idempotency) did not
-run — no Supabase MCP/CLI/connection string was available in this session
+Plan: 01-01 of 4 — executed, database layer **proven live**, `status: halted` only because
+the Server Action's own vitest run hasn't executed (needs SUPABASE_SERVICE_ROLE_KEY)
+Status: Migration applied + verified against ziko test project (slkobhavpwsubnsmuhya).
+Round-trip, dedupe, normalization, RLS deny-all, and grants all confirmed live via
+mcp__Supabase__execute_sql. See 01-01-SUMMARY.md "Next Phase Readiness" for the one
+remaining step.
+Last activity: 2026-08-12 — **found and fixed a critical security bug**: REVOKE EXECUTE
+FROM PUBLIC does not block anon/authenticated on this project (ALTER DEFAULT PRIVILEGES
+grants them EXECUTE directly at function-creation time). Fixed for the two new waitlist
+RPCs. The SAME bug is confirmed live in PRODUCTION today on is_coach_of(),
+redeem_invitation_code(), and peek_invitation() — see Blockers/Concerns below.
 
-Progress: [░░░░░░░░░░] 0% (0/4 plans complete — plan 01-01 executed but not verified complete)
+Progress: [░░░░░░░░░░] 0% (0/4 plans complete — plan 01-01's DB layer proven, TS Server Action's own test run still pending)
 
 ## Performance Metrics
 
@@ -88,13 +92,27 @@ None yet.
 
 ### Blockers/Concerns
 
-- **No live Supabase access in this execution environment (new, 2026-08-12)**: plan 01-01's
-  migration and Server Action are written and pass every check that doesn't require a database,
-  but the tracer's actual round-trip proof and the migration's idempotent-reapply check have not
-  run. Supabase MCP was declined, the `supabase` CLI is not installed, and no connection string is
-  reachable. Plan 01-01 is `status: halted`, not `complete` — plans 01-02/01-03/01-04 depend on it
-  and should not be treated as building on a proven foundation until a session with real DB access
-  runs the two remaining checks (see 01-01-SUMMARY.md § Next Phase Readiness) and flips the status.
+- **URGENT, pre-existing, outside this phase's scope (found 2026-08-12): `is_coach_of()`,
+  `redeem_invitation_code()`, and `peek_invitation()` are anon-executable in PRODUCTION today.**
+  Confirmed live via `has_function_privilege('anon', <fn>, 'EXECUTE') = true` on all three, despite
+  each carrying its own `REVOKE EXECUTE ... FROM PUBLIC`. Root cause: this Supabase project has
+  `ALTER DEFAULT PRIVILEGES` on schema `public` granting EXECUTE to `anon`/`authenticated` directly
+  at `CREATE FUNCTION` time — a grant separate from `PUBLIC` that a `PUBLIC`-only revoke never
+  removes. This affects the exact functions this codebase's own research treated as "the proven
+  SECURITY DEFINER idiom." Practical exposure: `is_coach_of(coach_uuid, client_uuid)` takes two
+  UUIDs directly, so anyone with the public anon key could enumerate coach-client relationships by
+  brute-forcing UUID pairs, no authentication required. `redeem_invitation_code`/`peek_invitation`
+  at least require guessing a live 6-char code. **Fixing this needs a NEW migration** (never edit
+  the existing ones) that explicitly `REVOKE EXECUTE ... FROM anon, authenticated` on all three —
+  this is a deliberate security response, not something to fold into the waitlist phase.
+
+- **Plan 01-01's database layer is now proven** (was previously the blocker here): the migration
+  applied cleanly to the live `ziko` test project (`slkobhavpwsubnsmuhya`), the same anon-execute
+  bug above was found and fixed for the two NEW waitlist functions, and round-trip/dedupe/
+  normalization/RLS/grants were all confirmed via direct SQL. What remains: the Server Action's own
+  `npx vitest run` command needs `SUPABASE_SERVICE_ROLE_KEY`, not obtainable via the MCP tools
+  available in this session (only publishable/anon keys are exposed). See 01-01-SUMMARY.md §
+  "Next Phase Readiness."
 
 - **CRED-01 (A-01) unverified**: assumption that zero real production users hold `tier='premium'`
   must be confirmed by a live count before Phase 4 starts any code change — if false, work stops
