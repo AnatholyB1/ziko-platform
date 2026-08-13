@@ -1,4 +1,5 @@
-# RLS Suite — Phase 22 Wave 0 gate.
+# RLS Suite — Phase 22 Wave 0 gate, extended in phase 1 (v1.16) to cover the
+# waitlist migration and its two proof suites.
 #
 # Per .planning/phases/22-schema-foundation-rls-keystone/22-VALIDATION.md,
 # every PR that touches Supabase migrations OR the RLS test scaffold must
@@ -15,6 +16,9 @@ on:
       - 'backend/api/test/rls/**'
       - 'backend/api/vitest.config.ts'
       - 'backend/api/package.json'
+      - 'apps/web/src/actions/waitlist.ts'
+      - 'apps/web/test/actions/**'
+      - 'apps/web/vitest.config.ts'
       - '.github/workflows/test-rls.yml'
   workflow_dispatch:
 
@@ -26,8 +30,13 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_TEST_PUBLISHABLE_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+      SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      SUPABASE_TEST_PROJECT_ID: ${{ secrets.SUPABASE_TEST_PROJECT_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -46,7 +55,33 @@ jobs:
           SUPABASE_URL=${SUPABASE_URL}
           SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
           SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+          SUPABASE_TEST_URL=${SUPABASE_TEST_URL}
           EOF
+
+      # This workflow previously had no migration-apply step, so a suite could pass
+      # against a schema older than the change under review (01-RESEARCH.md Pitfall 4).
+      # Both steps below are conditional: when SUPABASE_TEST_PROJECT_ID is not
+      # configured, they skip and the suites still run — the workflow degrades to its
+      # pre-phase-1 behavior rather than breaking. Migration application in that case
+      # is manual, covered by the blocking checkpoint at the end of plan 01-02.
+      - name: Setup Supabase CLI
+        if: env.SUPABASE_TEST_PROJECT_ID != ''
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply migrations to test project
+        if: env.SUPABASE_TEST_PROJECT_ID != ''
+        run: |
+          supabase link --project-ref ${{ env.SUPABASE_TEST_PROJECT_ID }}
+          NEW=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- supabase/migrations/ | xargs -I{} basename {} .sql)
+          for f in supabase/migrations/*.sql; do
+            version=$(basename "$f" .sql)
+            if ! echo "$NEW" | grep -qx "$version"; then
+              supabase migration repair --status applied "$version" 2>/dev/null || true
+            fi
+          done
+          supabase db push --include-all
 
       - name: Run RLS suite
         working-directory: backend/api
@@ -58,3 +93,29 @@ jobs:
             echo "::error::service-role reference detected under backend/api/src/. ARCH-03 violation."
             exit 1
           fi
+
+  web-waitlist:
+    name: Web waitlist concurrency + non-disclosure
+    needs: rls
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_TEST_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+      SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run waitlist concurrency + non-disclosure suite
+        working-directory: apps/web
+        run: npx vitest run test/actions/waitlist.concurrency.test.ts
