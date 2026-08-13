@@ -112,7 +112,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Guarded Admin API deletion of the reviewed manifest set, plus post-purge reconciliation and orphan scan
+- [x] 02-03-PLAN.md — Guarded Admin API deletion of the reviewed manifest set, plus post-purge reconciliation and orphan scan
 
 **Wave 4** *(blocked on Wave 3 completion)*
 

@@ -73,8 +73,8 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 - [x] **PURGE-01**: Les critères identifiant un compte de test sont écrits et relus avant toute suppression
 - [x] **PURGE-02**: Un export en simulation liste exactement les comptes qui seraient supprimés, sans rien supprimer
 - [x] **PURGE-03**: Un point de sauvegarde restaurable existe avant la suppression
-- [ ] **PURGE-04**: La suppression passe par l'API Admin déjà éprouvée dans `account.ts`, jamais par du SQL en masse
-- [ ] **PURGE-05**: Après suppression, aucune ligne orpheline ne subsiste dans les tables liées
+- [x] **PURGE-04**: La suppression passe par l'API Admin déjà éprouvée dans `account.ts`, jamais par du SQL en masse
+- [x] **PURGE-05**: Après suppression, aucune ligne orpheline ne subsiste dans les tables liées
 
 ### Points d'entrée (ENTRY)
 
@@ -142,8 +142,8 @@ Points que la recherche a explicitement refusé de trancher :
 | PURGE-01 | Phase 2 | Complete |
 | PURGE-02 | Phase 2 | Complete |
 | PURGE-03 | Phase 2 | Complete |
-| PURGE-04 | Phase 2 | Pending |
-| PURGE-05 | Phase 2 | Pending |
+| PURGE-04 | Phase 2 | Complete |
+| PURGE-05 | Phase 2 | Complete |
 | LEGAL-01 | Phase 3 | Pending |
 | LEGAL-02 | Phase 3 | Pending |
 | LEGAL-03 | Phase 3 | Pending |
