@@ -6,23 +6,24 @@
 <domain>
 ## Phase Boundary
 
-Phase 2 delivers a written, human-reviewed test-account deletion procedure for production: the
-criteria/allowlist capture step, a dry-run (read-only) export tool, a backup/PITR confirmation
-step, and the deletion script itself — built and rehearsed through the same Admin API path already
-proven in `apps/web/src/actions/account.ts:84-85` (`admin.auth.admin.deleteUser()`).
+Phase 2 delivers a written, human-reviewed test-account deletion procedure for production, applying
+the locked `@ziko-app.com` domain criterion (D-01): a dry-run (read-only) export tool, an export
+backup step, and the deletion script itself — built and rehearsed through the same Admin API path
+already proven in `apps/web/src/actions/account.ts:84-85` (`admin.auth.admin.deleteUser()`).
 
-**In scope:** the allowlist-capture blocking checkpoint, the dry-run export (including cross-link
+**In scope:** the dry-run export applying the `@ziko-app.com` criterion (including cross-link
 detection against `coach_client_links` / `coach_vocal_feedbacks` / any `assigned_to_user_id`
-column), the backup/PITR confirmation, the delete script built on the Admin API path, and
-post-deletion orphan verification — all built and verified structurally/via dry-run.
+column), the human review of that literal query result, the pre-delete row export, a PITR-status
+check, the delete script built on the Admin API path, and post-deletion orphan verification — all
+built and verified structurally/via dry-run.
 
 **Out of scope:** the actual irreversible execution of the real deletion against production (see
-D-02 — deliberately deferred to a separate, explicitly human-triggered step outside this phase);
+D-03 — deliberately deferred to a separate, explicitly human-triggered step outside this phase);
 the `waitlist_signups` test-row reset described in `research/ARCHITECTURE.md` §1/§6 (a distinct
 concern from pre-existing `auth.users` test accounts — the mechanism already exists from Phase 1's
 `reset_waitlist_founder_sequence()` RPC, and its timing naturally belongs with Phase 6's
 convergence/activation checks, not this phase); resolving cross-linked pairs flagged by the dry-run
-(per D-04, they are excluded from this purge run and revisited later, outside this phase).
+(per D-05, they are excluded from this purge run and revisited later, outside this phase).
 
 </domain>
 
@@ -31,24 +32,30 @@ convergence/activation checks, not this phase); resolving cross-linked pairs fla
 
 ### Test-account identification
 
-- **D-01:** The allowlist of exact test/QA `user_id`/email values comes **from the user**, not
-  from an inferred pattern — consistent with `research/ARCHITECTURE.md` §6 and `PITFALLS.md`
-  Pitfall 13, which both explicitly reject a fuzzy match (`email LIKE '%test%'` or similar) as the
-  *executed* filter. No existing marker was found anywhere in the schema (no `is_test` column, no
-  test-domain convention — confirmed by grep across `supabase/seed.sql` and all migrations during
-  Phase 1's research).
+- **D-01:** The criterion is **locked**: every `auth.users` account with an `@ziko-app.com` email
+  is test/dev data; every other domain is a real account — **no exceptions**. This is a genuine,
+  human-provided rule (not inferred), consistent with `research/ARCHITECTURE.md` §6 and
+  `PITFALLS.md` Pitfall 13, which both reject a fuzzy match (`email LIKE '%test%'` or similar) as
+  the *executed* filter — `@ziko-app.com` is not a fuzzy heuristic, it is the explicit, confirmed
+  team domain used for dev/QA accounts. No existing marker was found anywhere in the schema (no
+  `is_test` column, no test-domain convention — confirmed by grep across `supabase/seed.sql` and
+  all migrations during Phase 1's research), so this domain rule *is* the written criterion PURGE-01
+  requires.
+  — **Reversibility:** one-way in effect — deletion executed under this rule cannot be undone by
+  changing the rule afterward; get the domain confirmed correct before the real run (D-03).
 
-- **D-02:** The allowlist is **not available yet**. The plan's first task must be a
-  `checkpoint:decision`-style **blocking checkpoint** that stops and asks the user for the exact
-  list before any dry-run or deletion tooling runs against real data. Nothing downstream in the
-  plan can execute against production before this checkpoint clears.
-  — **Reversibility:** reversible — this is a planning-order constraint, not a schema or contract
-  decision; changing it later just means resequencing tasks.
+- **D-02:** Because the criterion is already fixed, no separate "obtain the allowlist" checkpoint
+  is needed. What PURGE-01/PURGE-02 still require is a **human review of the literal query result**:
+  the dry-run task runs `... WHERE email LIKE '%@ziko-app.com'` and the plan's review step is the
+  user inspecting that concrete row set (not the abstract rule) before the real delete — catching
+  any surprise (e.g., a real user who was mistakenly given a `@ziko-app.com` alias) that the rule
+  alone wouldn't reveal.
+  — **Reversibility:** reversible — a review-gate placement is a planning-order detail.
 
 ### Execution scope
 
 - **D-03:** This phase **builds and rehearses the full purge but does not run the real delete**.
-  Deliverables: the criteria/allowlist checkpoint, a dry-run export tool proven against read-only
+  Deliverables: a dry-run export tool applying the D-01 criterion, proven against read-only
   queries, the backup/export step, and the delete script itself — all built, tested, and verified
   structurally (and via dry-run output where the data allows). The actual irreversible run against
   **production** (distinct from the `ziko` *test* project Phase 1 used) is a separate, explicitly
@@ -65,12 +72,14 @@ convergence/activation checks, not this phase); resolving cross-linked pairs fla
 
 ### Backup mechanism
 
-- **D-04 (backup):** Both safety nets are required immediately before the real deletion runs,
-  belt-and-suspenders given the one-way-door nature of the operation: (1) confirm Supabase PITR is
-  enabled on the **production** project and record the timestamp to restore to, AND (2) export the
-  exact affected rows (`pg_dump`/CSV — IDs, emails, `created_at`, `tier`, any waitlist rows) right
-  before deleting. This matches `PITFALLS.md` Pitfall 13's "how to avoid" step 3 verbatim, taken as
-  the union rather than either option alone.
+- **D-04 (backup):** The **export is the primary, unconditional safety net** — the exact affected
+  rows (`pg_dump`/CSV — IDs, emails, `created_at`, `tier`, any waitlist rows) are exported
+  immediately before deleting, regardless of PITR status, because it restores just the affected
+  rows fast. Whether Supabase PITR is enabled on the **production** project is **not yet known** —
+  that becomes a verification task at execution time, not assumed here — and PITR, if available,
+  is treated as a secondary, more disruptive fallback behind the export, not a co-equal requirement.
+  This still matches `PITFALLS.md` Pitfall 13's "how to avoid" step 3, just with the export as the
+  primary mechanism and PITR as backstop rather than both gating equally.
 
 ### Cross-linked accounts
 
@@ -90,11 +99,10 @@ convergence/activation checks, not this phase); resolving cross-linked pairs fla
   form) — no existing precedent script hits the Supabase Admin API from this codebase, so the
   planner should pick the simplest option consistent with "one person runs it, a second person
   reviews the dry-run output first" (Pitfall 13's two-person rule).
-- Exact SQL/query shape for candidate generation (if any pattern-based candidate generation is
-  layered on top of the user-provided allowlist — D-01 makes the allowlist the source of truth
-  either way).
+- Exact query form for applying the `@ziko-app.com` criterion (case sensitivity, whitespace
+  handling) — D-01 fixes the rule, not the SQL syntax.
 - Whether the backup export step is a manual `pg_dump` invocation documented in a runbook, or a
-  small script — as long as both PITR confirmation and an explicit row export happen (D-04).
+  small script — as long as the unconditional row export happens and PITR status is checked (D-04).
 
 </decisions>
 
@@ -158,8 +166,8 @@ convergence/activation checks, not this phase); resolving cross-linked pairs fla
 <specifics>
 ## Specific Ideas
 
-- The user will supply the actual test-account allowlist personally — this phase's plan must not
-  proceed past that checkpoint on assumed or inferred data.
+- The test-account rule is exact and absolute: **every** `@ziko-app.com` address is test/dev,
+  **every** other domain is real — no exception list to track.
 - The purge is explicitly framed as "rehearse, don't fire" for this phase: every piece of tooling
   proven correct and ready, but the loaded gun stays on the table until the user pulls the trigger
   outside of this phase's automated tasks.
@@ -176,7 +184,7 @@ convergence/activation checks, not this phase); resolving cross-linked pairs fla
   revisited manually later, outside this phase.
 - **The actual production deletion run** (D-03) — this phase builds and rehearses; the real
   execution is a separate, explicitly human-triggered step, likely tracked as its own follow-up
-  task/session once the user has production credentials ready and has supplied the allowlist.
+  task/session once the user has production credentials ready and has reviewed the dry-run output.
 
 </deferred>
 
