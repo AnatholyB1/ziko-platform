@@ -70,8 +70,8 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Nettoyage base (PURGE)
 
-- [ ] **PURGE-01**: Les critères identifiant un compte de test sont écrits et relus avant toute suppression
-- [ ] **PURGE-02**: Un export en simulation liste exactement les comptes qui seraient supprimés, sans rien supprimer
+- [x] **PURGE-01**: Les critères identifiant un compte de test sont écrits et relus avant toute suppression
+- [x] **PURGE-02**: Un export en simulation liste exactement les comptes qui seraient supprimés, sans rien supprimer
 - [ ] **PURGE-03**: Un point de sauvegarde restaurable existe avant la suppression
 - [ ] **PURGE-04**: La suppression passe par l'API Admin déjà éprouvée dans `account.ts`, jamais par du SQL en masse
 - [ ] **PURGE-05**: Après suppression, aucune ligne orpheline ne subsiste dans les tables liées
@@ -90,6 +90,7 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 Reconnus mais hors de ce milestone.
 
 ### Engagement
+
 - **ENG-01**: L'inscrit reçoit un email de confirmation automatique
 - **ENG-02**: Double opt-in sur l'adresse email
 - **ENG-03**: L'inscrit reçoit un lien de parrainage et remonte dans la file
@@ -138,8 +139,8 @@ Points que la recherche a explicitement refusé de trancher :
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 1 | Complete |
-| PURGE-01 | Phase 2 | Pending |
-| PURGE-02 | Phase 2 | Pending |
+| PURGE-01 | Phase 2 | Complete |
+| PURGE-02 | Phase 2 | Complete |
 | PURGE-03 | Phase 2 | Pending |
 | PURGE-04 | Phase 2 | Pending |
 | PURGE-05 | Phase 2 | Pending |
@@ -184,6 +185,7 @@ Phase 6 (Founder Offer Go-Live) is a convergence/activation phase and owns no re
 FOND-06, all already mapped to their owning phase above. See `.planning/workstreams/lien-invite/ROADMAP.md`.
 
 **Coverage:**
+
 - v1 requirements: 47 total
 - Mapped to phases: 47
 - Unmapped: 0 ✓

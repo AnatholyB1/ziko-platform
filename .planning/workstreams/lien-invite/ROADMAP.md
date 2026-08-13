@@ -100,11 +100,11 @@ genuine signups.
 
   5. After deletion, re-running the original match query returns zero rows, and no orphaned row
      remains in any linked table (PURGE-05)
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Tracer: end-to-end dry-run (criterion, Admin API enumeration, cross-link exclusion, review report)
+- [x] 02-01-PLAN.md — Tracer: end-to-end dry-run (criterion, Admin API enumeration, cross-link exclusion, review report)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -268,7 +268,7 @@ being complete.
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
-| 2. Test-Account Purge | 0/4 | Planned | - |
+| 2. Test-Account Purge | 1/4 | In Progress|  |
 | 3. Legal — CGV & CGU | 0/TBD | Not started | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |

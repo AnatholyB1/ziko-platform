@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 2
 current_phase_name: Test-Account Purge
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-08-13T22:36:36.321Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-08-13T22:52:38.555Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 1 accepted at plan 01-04 Task 3's blocking checkpoint. DATA-01..07 all Complete in REQUIREMENTS.md.
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 9
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -31,8 +31,8 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 ## Current Position
 
 Phase: 2 (Test-Account Purge) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 2
+Plan: 2 of 4
+Status: Ready to execute
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -47,7 +47,7 @@ no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 Last activity: 2026-08-13 — Phase 2 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
-Progress: [██░░░░░░░░] 17% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [██████░░░░] 56% (1/6 phases complete, Phase 1 — 4/4 plans)
 
 ## Performance Metrics
 
@@ -64,6 +64,11 @@ Progress: [██░░░░░░░░] 17% (1/6 phases complete, Phase 1 —
 | 1 — Data Foundation | 4/4 | ~3h 20min | ~50min |
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 02-test-account-purge P01 | ~10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -90,6 +95,8 @@ so far, from research and roadmap creation:
 
 - Phase 6 (Go-Live) claims no net-new requirements — it verifies the production-activation state of
   CRED-01/CRED-05, LEGAL-05, PURGE-01–05, and FOND-06 together
+
+- [Phase ?]: Task-level TDD RED/GREEN commits for cross-link surface completion (02-01 Task 2): committed 6 failing tests before extending fetchCrossLinks/writeReport
 
 ### Pending Todos
 
@@ -140,9 +147,9 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-13T21:03:01.849Z
-Stopped at: Phase 2 context gathered
+Last session: 2026-08-13T22:52:38.539Z
+Stopped at: Completed 02-01-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: .planning/workstreams/lien-invite/phases/02-test-account-purge/02-CONTEXT.md
+Resume file: None
