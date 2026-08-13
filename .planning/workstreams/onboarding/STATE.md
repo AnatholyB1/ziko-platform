@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: milestone_complete
-stopped_at: Milestone complete (Phase 04 was final phase)
-last_updated: 2026-08-12T18:35:25.325Z
-last_activity: 2026-08-12
+status: Awaiting next milestone
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-08-13T22:44:44.487Z"
+last_activity: 2026-08-13 — Milestone v1.0 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
@@ -25,12 +25,10 @@ See: .planning/workstreams/onboarding/PROJECT.md (updated 2026-05-29)
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-08-12
-
-Progress: [██████████] 100%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-13 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
@@ -83,8 +81,23 @@ None.
 
 None.
 
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-08-13:
+
+| Category | Item | Status |
+|----------|------|--------|
+| verification_gap | 01-VERIFICATION.md (Phase 01 — Wizard Integration) | human_needed |
+| verification_gap | 02-VERIFICATION.md (Phase 02 — Upload UX & Pipeline) | human_needed |
+
+Both phases scored 100% on automated verification (12/12 and 4/4 must-haves). The flagged items are browser-interactive behaviors that static analysis cannot confirm: Step 4 redirect after KYC completion, skip-button routing, locale-switch rendering, drag-over visual states, and live upload/parse polling transitions. No defects found — deferred to manual click-through testing.
+
 ## Session Continuity
 
 Last session: 2026-08-12T18:11:12.667Z
 Stopped at: Completed 04-04-PLAN.md
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
