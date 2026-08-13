@@ -12,6 +12,7 @@ import {
   buildManifest,
   writeExport,
 } from '../../../../scripts/purge-test-accounts/export.mjs';
+import { checkPitrStatus, resolveProjectRef } from '../../../../scripts/purge-test-accounts/pitr.mjs';
 
 const tmpDirs: string[] = [];
 afterEach(() => {
@@ -250,5 +251,101 @@ describe('writeExport', () => {
     const lines = readFileSync(csvPath, 'utf8').trim().split('\n');
     const parsed = parseCsvLine(lines[1]);
     expect(parsed).toHaveLength(8);
+  });
+});
+
+describe('resolveProjectRef', () => {
+  it('extracts the project ref from a Supabase project URL', () => {
+    expect(resolveProjectRef('https://slkobhavpwsubnsmuhya.supabase.co')).toBe(
+      'slkobhavpwsubnsmuhya'
+    );
+  });
+
+  it('returns null for a URL that is not a Supabase project URL', () => {
+    expect(resolveProjectRef('https://example.com')).toBeNull();
+  });
+});
+
+describe('checkPitrStatus', () => {
+  it('yields enabled when the Management API reports pitr_enabled true', async () => {
+    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ pitr_enabled: true }) });
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: 'tk',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('enabled');
+    expect(result.checked_at).toBeTruthy();
+  });
+
+  it('yields disabled when the Management API reports pitr_enabled false', async () => {
+    const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ pitr_enabled: false }) });
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: 'tk',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('disabled');
+  });
+
+  it('yields unknown naming the status code on a 401 response, and does not throw', async () => {
+    const fetchImpl = async () => ({ ok: false, status: 401, json: async () => ({}) });
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: 'tk',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('unknown');
+    expect(result.detail).toMatch(/401/);
+  });
+
+  it('yields unknown naming the status code on a 403 response', async () => {
+    const fetchImpl = async () => ({ ok: false, status: 403, json: async () => ({}) });
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: 'tk',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('unknown');
+    expect(result.detail).toMatch(/403/);
+  });
+
+  it('yields unknown naming the failure when fetch rejects, and does not throw', async () => {
+    const fetchImpl = async () => {
+      throw new Error('network unreachable');
+    };
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: 'tk',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('unknown');
+    expect(result.detail).toMatch(/network unreachable/);
+  });
+
+  it('yields unknown without issuing any request when the access token is absent', async () => {
+    let called = false;
+    const fetchImpl = async () => {
+      called = true;
+      return { ok: true, status: 200, json: async () => ({ pitr_enabled: true }) };
+    };
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: '',
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.status).toBe('unknown');
+    expect(called).toBe(false);
+  });
+
+  it('never includes the injected fake token in the returned detail', async () => {
+    const fakeToken = 'sbp_totally_fake_secret_token_value';
+    const fetchImpl = async () => ({ ok: false, status: 500, json: async () => ({}) });
+    const result = await checkPitrStatus({
+      supabaseUrl: 'https://abc.supabase.co',
+      accessToken: fakeToken,
+      fetchImpl: fetchImpl as never,
+    });
+    expect(result.detail).not.toContain(fakeToken);
   });
 });
