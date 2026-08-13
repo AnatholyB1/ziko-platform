@@ -22,6 +22,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createPurgeAdminClient } from './lib.mjs';
+import { checkPitrStatus } from './pitr.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -249,12 +250,15 @@ async function main() {
   const fetchProfiles = bindFetchProfiles(client);
   const fetchWaitlistRows = bindFetchWaitlistRows(client);
 
+  // Rows are collected before PITR is checked (T-02-13) — a hanging
+  // Management API can never prevent the export from having gathered its
+  // data.
   const rows = await collectExportRows({ report, fetchProfiles, fetchWaitlistRows });
 
-  // PITR is not wired in yet — this task's CLI reports the honest state
-  // that the check has not run, rather than guessing. Plan 02-02 task 2
-  // wires in the real checkPitrStatus() call from pitr.mjs.
-  const pitr = { status: 'unknown', checked_at: new Date().toISOString(), detail: 'PITR check has not run yet' };
+  const pitr = await checkPitrStatus({
+    supabaseUrl: process.env.SUPABASE_URL,
+    accessToken: process.env.SUPABASE_ACCESS_TOKEN,
+  });
   console.log(`  pitr status: ${pitr.status} (${pitr.detail})`);
 
   const stampDate = new Date();
