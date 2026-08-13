@@ -5,14 +5,14 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 1
 current_phase_name: Data Foundation
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-08-12T17:11:30.288Z"
+stopped_at: "Phase 1 plan 01-01 halted — DB round-trip unverified, blocked on Supabase access"
+last_updated: "2026-08-12T17:20:00.000Z"
 last_activity: 2026-08-12
-last_activity_desc: ROADMAP.md created, 47/47 v1 requirements mapped across 6 phases
+last_activity_desc: Plan 01-01 code written and structurally verified; live-DB acceptance criteria could not run in this environment
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 5
+  total_plans: 4
   completed_plans: 0
 ---
 
@@ -30,11 +30,15 @@ contrat comme dans le code.
 ## Current Position
 
 Phase: 1 of 6 (Data Foundation)
-Plan: — (roadmap created, not yet planned)
-Status: Ready to execute
-Last activity: 2026-08-12 — ROADMAP.md created, 47/47 v1 requirements mapped across 6 phases
+Plan: 01-01 of 4 — executed, **halted** (not complete)
+Status: Blocked on live Supabase access — see 01-01-SUMMARY.md "Next Phase Readiness"
+Last activity: 2026-08-12 — migration + Server Action + test written; every acceptance
+criterion checkable without a database passes (14 static checks, tsc clean, skip-guard
+verified — this run caught and fixed a real bug in the skip guard itself); the two
+DB-dependent criteria (round-trip test passing, migration re-apply idempotency) did not
+run — no Supabase MCP/CLI/connection string was available in this session
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [░░░░░░░░░░] 0% (0/4 plans complete — plan 01-01 executed but not verified complete)
 
 ## Performance Metrics
 
@@ -83,6 +87,14 @@ so far, from research and roadmap creation:
 None yet.
 
 ### Blockers/Concerns
+
+- **No live Supabase access in this execution environment (new, 2026-08-12)**: plan 01-01's
+  migration and Server Action are written and pass every check that doesn't require a database,
+  but the tracer's actual round-trip proof and the migration's idempotent-reapply check have not
+  run. Supabase MCP was declined, the `supabase` CLI is not installed, and no connection string is
+  reachable. Plan 01-01 is `status: halted`, not `complete` — plans 01-02/01-03/01-04 depend on it
+  and should not be treated as building on a proven foundation until a session with real DB access
+  runs the two remaining checks (see 01-01-SUMMARY.md § Next Phase Readiness) and flips the status.
 
 - **CRED-01 (A-01) unverified**: assumption that zero real production users hold `tier='premium'`
   must be confirmed by a live count before Phase 4 starts any code change — if false, work stops
