@@ -14,6 +14,12 @@ import {
   runDelete,
   writeDeleteLog,
 } from '../../../../scripts/purge-test-accounts/delete.mjs';
+import {
+  checkResidualMatches,
+  checkAccountConservation,
+  fetchOrphanRows,
+  summarizeOrphans,
+} from '../../../../scripts/purge-test-accounts/verify-purge.mjs';
 
 const tmpDirs: string[] = [];
 afterEach(() => {
@@ -298,5 +304,205 @@ describe('writeDeleteLog', () => {
     expect(written.results).toHaveLength(2);
     expect(written.results.map((r: { id: string }) => r.id)).toEqual(['a', 'b']);
     expect(written.manifest_hash).toBe('abc123');
+  });
+});
+
+// ── Task 2: residual reconciliation and cross-table orphan scan ──────────
+
+function makeVerifyManifest(overrides: Record<string, unknown> = {}) {
+  return {
+    candidate_ids: ['x', 'y'],
+    ...overrides,
+  };
+}
+
+function makeVerifyReport(overrides: Record<string, unknown> = {}) {
+  return {
+    totals: { users_scanned: 5 },
+    flagged: [],
+    ...overrides,
+  };
+}
+
+describe('checkResidualMatches', () => {
+  it('reports deleted_still_present as empty when the manifest ids are all gone', () => {
+    const result = checkResidualMatches({
+      users: [{ id: 'real1', email: 'real@gmail.com' }],
+      manifest: makeVerifyManifest(),
+      report: makeVerifyReport(),
+    });
+    expect(result.deleted_still_present).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('reports a manifest id still present in the database and fails overall', () => {
+    const result = checkResidualMatches({
+      users: [{ id: 'x', email: 'qa1@ziko-app.com' }],
+      manifest: makeVerifyManifest(),
+      report: makeVerifyReport(),
+    });
+    expect(result.deleted_still_present).toEqual(['x']);
+    expect(result.ok).toBe(false);
+  });
+
+  it('reports a criterion-matching survivor named in report.flagged as expected_remaining, and does not fail', () => {
+    const result = checkResidualMatches({
+      users: [{ id: 'z', email: 'coach@ziko-app.com' }],
+      manifest: makeVerifyManifest(),
+      report: makeVerifyReport({ flagged: [{ candidate_id: 'z' }] }),
+    });
+    expect(result.expected_remaining).toEqual(['z']);
+    expect(result.unexpected_matches).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it('reports a criterion-matching survivor in neither the manifest nor flagged as unexpected_matches, and fails', () => {
+    const result = checkResidualMatches({
+      users: [{ id: 'z', email: 'qa@ziko-app.com' }],
+      manifest: makeVerifyManifest(),
+      report: makeVerifyReport({ flagged: [] }),
+    });
+    expect(result.unexpected_matches).toEqual(['z']);
+    expect(result.ok).toBe(false);
+  });
+
+  it('ignores a surviving account that does not match the criterion at all', () => {
+    const result = checkResidualMatches({
+      users: [{ id: 'real1', email: 'real@gmail.com' }],
+      manifest: makeVerifyManifest(),
+      report: makeVerifyReport(),
+    });
+    expect(result.expected_remaining).toEqual([]);
+    expect(result.unexpected_matches).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe('checkAccountConservation', () => {
+  it('passes when the surviving count equals the scanned count minus the manifest size', () => {
+    const result = checkAccountConservation({
+      users: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+      manifest: { candidate_ids: ['x', 'y'] },
+      report: { totals: { users_scanned: 5 } },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.expected_floor).toBe(3);
+    expect(result.actual).toBe(3);
+  });
+
+  it('still passes when the surviving count is higher — post-dry-run signups only add', () => {
+    const result = checkAccountConservation({
+      users: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }],
+      manifest: { candidate_ids: ['x', 'y'] },
+      report: { totals: { users_scanned: 5 } },
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('fails when the surviving count is even one lower than the floor, reporting the shortfall', () => {
+    const result = checkAccountConservation({
+      users: [{ id: 'a' }],
+      manifest: { candidate_ids: ['x', 'y'] },
+      report: { totals: { users_scanned: 5 } },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.expected_floor).toBe(3);
+    expect(result.shortfall).toBe(2);
+  });
+});
+
+// A hand-rolled fake exposing only from(table).select(cols).in(col, ids)
+// resolving { data, error } — mirrors apps/web/test/purge/purge-lib.test.ts's
+// makeFakeClient. `tables` maps a table name to its fixture rows; passing
+// `errorOn` makes exactly one table.column combination fail.
+function makeOrphanFakeClient(
+  tables: Record<string, Array<Record<string, unknown>>>,
+  errorOn?: { table: string; column: string }
+) {
+  return {
+    from(table: string) {
+      return {
+        select(_cols: string) {
+          return {
+            in(col: string, ids: string[]) {
+              if (errorOn && errorOn.table === table && errorOn.column === col) {
+                return Promise.resolve({ data: null, error: { message: 'connection reset' } });
+              }
+              const rows = (tables[table] ?? []).filter((r) => ids.includes(r[col] as string));
+              return Promise.resolve({ data: rows, error: null });
+            },
+          };
+        },
+      };
+    },
+  };
+}
+
+describe('fetchOrphanRows', () => {
+  it('reports a hit per matching row across the documented tables and columns', async () => {
+    const tables = {
+      user_profiles: [{ id: 'u1' }],
+      coach_client_links: [{ coach_id: 'u1', client_id: 'real1' }],
+      coach_vocal_feedbacks: [],
+      workout_programs: [{ user_id: 'u1' }],
+    };
+    const client = makeOrphanFakeClient(tables);
+    const hits = await fetchOrphanRows(client as never, ['u1']);
+    expect(hits.some((h: { table: string; column: string }) => h.table === 'user_profiles' && h.column === 'id')).toBe(
+      true
+    );
+    expect(
+      hits.some((h: { table: string; column: string }) => h.table === 'coach_client_links' && h.column === 'coach_id')
+    ).toBe(true);
+    expect(
+      hits.some((h: { table: string; column: string }) => h.table === 'workout_programs' && h.column === 'user_id')
+    ).toBe(true);
+  });
+
+  it('returns an empty array without querying when deletedIds is empty', async () => {
+    let queried = false;
+    const client = {
+      from() {
+        queried = true;
+        return { select: () => ({ in: () => Promise.resolve({ data: [], error: null }) }) };
+      },
+    };
+    const hits = await fetchOrphanRows(client as never, []);
+    expect(hits).toEqual([]);
+    expect(queried).toBe(false);
+  });
+
+  it('throws, naming the table and column, on a query error rather than returning an empty result', async () => {
+    const client = makeOrphanFakeClient({}, { table: 'coach_vocal_feedbacks', column: 'athlete_id' });
+    await expect(fetchOrphanRows(client as never, ['u1'])).rejects.toThrow(/coach_vocal_feedbacks/);
+    await expect(fetchOrphanRows(client as never, ['u1'])).rejects.toThrow(/athlete_id/);
+  });
+});
+
+describe('summarizeOrphans', () => {
+  it('returns a per-table breakdown and total for rows from three tables', () => {
+    const rows = [
+      { table: 'user_profiles', column: 'id', id: 'u1' },
+      { table: 'coach_client_links', column: 'coach_id', id: 'u1' },
+      { table: 'workout_programs', column: 'user_id', id: 'u1' },
+    ];
+    const result = summarizeOrphans(rows);
+    expect(result.total).toBe(3);
+    expect(result.byTable['user_profiles.id']).toBe(1);
+    expect(result.byTable['coach_client_links.coach_id']).toBe(1);
+    expect(result.byTable['workout_programs.user_id']).toBe(1);
+  });
+
+  it('reports success only when the total is zero', () => {
+    expect(summarizeOrphans([]).ok).toBe(true);
+    expect(
+      summarizeOrphans([{ table: 'user_profiles', column: 'id', id: 'u1' }]).ok
+    ).toBe(false);
+  });
+
+  it('fails and names the table when a single orphan row exists in any one of the four tables', () => {
+    const result = summarizeOrphans([{ table: 'coach_vocal_feedbacks', column: 'athlete_id', id: 'u1' }]);
+    expect(result.ok).toBe(false);
+    expect(result.byTable['coach_vocal_feedbacks.athlete_id']).toBe(1);
   });
 });
