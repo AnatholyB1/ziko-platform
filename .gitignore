@@ -28,3 +28,6 @@ com.facebook.react.devsupport.*
 # staged for the planner subagent and regenerable from the capability registry
 .planning/**/.planner-contributions.md
 .planning/**/.edge-coverage.json
+
+# Test-account purge exports — real account emails, must never be committed (phase 02)
+scripts/purge-test-accounts/exports/
