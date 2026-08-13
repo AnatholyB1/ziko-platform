@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 2
 current_phase_name: Test-Account Purge
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-08-13T22:52:38.555Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-08-13T23:02:44.605Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 1 accepted at plan 01-04 Task 3's blocking checkpoint. DATA-01..07 all Complete in REQUIREMENTS.md.
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 9
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -31,7 +31,7 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 ## Current Position
 
 Phase: 2 (Test-Account Purge) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
@@ -47,7 +47,7 @@ no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 Last activity: 2026-08-13 — Phase 2 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
-Progress: [██████░░░░] 56% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [███████░░░] 67% (1/6 phases complete, Phase 1 — 4/4 plans)
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [██████░░░░] 56% (1/6 phases complete, Phase 1 —
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 02-test-account-purge P01 | ~10min | 2 tasks | 4 files |
+| Phase 02-test-account-purge P02 | ~25min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ so far, from research and roadmap creation:
   CRED-01/CRED-05, LEGAL-05, PURGE-01–05, and FOND-06 together
 
 - [Phase ?]: Task-level TDD RED/GREEN commits for cross-link surface completion (02-01 Task 2): committed 6 failing tests before extending fetchCrossLinks/writeReport
+- [Phase ?]: 02-02: last_sign_in_at CSV column always empty — no source in 02-01's DryRunReport.to_delete shape (id/email/created_at only); read defensively via candidate.last_sign_in_at ?? '' so a future report augmentation auto-populates it
+- [Phase ?]: 02-02: writeExport always overwrites manifest.export_csv with the exact path it wrote the CSV to, making the manifest-points-at-a-real-file guarantee unconditional
 
 ### Pending Todos
 
@@ -147,8 +150,8 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-13T22:52:38.539Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-08-13T23:02:44.588Z
+Stopped at: Completed 02-02-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.

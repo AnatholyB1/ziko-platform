@@ -100,7 +100,7 @@ genuine signups.
 
   5. After deletion, re-running the original match query returns zero rows, and no orphaned row
      remains in any linked table (PURGE-05)
-**Plans**: 1/4 plans executed
+**Plans**: 2/4 plans executed
 Plans:
 **Wave 1**
 
@@ -108,7 +108,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — Unconditional pre-delete row export, hashed manifest, live PITR status read
+- [x] 02-02-PLAN.md — Unconditional pre-delete row export, hashed manifest, live PITR status read
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -268,7 +268,7 @@ being complete.
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
-| 2. Test-Account Purge | 1/4 | In Progress|  |
+| 2. Test-Account Purge | 2/4 | In Progress|  |
 | 3. Legal — CGV & CGU | 0/TBD | Not started | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
