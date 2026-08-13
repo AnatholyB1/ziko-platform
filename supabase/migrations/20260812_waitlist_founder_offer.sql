@@ -83,7 +83,13 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.normalize_waitlist_email(TEXT) FROM PUBLIC;
+-- REVOKE FROM PUBLIC alone is NOT sufficient on this project: ALTER DEFAULT PRIVILEGES
+-- for schema public grants EXECUTE to anon/authenticated/service_role directly at
+-- CREATE FUNCTION time (verified live — this also affects is_coach_of() /
+-- redeem_invitation_code() / peek_invitation(), a pre-existing gap outside this phase's
+-- scope). PUBLIC-only revoke never touches an already-materialized per-role grant, so
+-- anon/authenticated must be revoked explicitly, by name, on every new function.
+REVOKE EXECUTE ON FUNCTION public.normalize_waitlist_email(TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.normalize_waitlist_email(TEXT) TO service_role;
 
 -- ───────────────────────────────────────────────────────────
@@ -140,5 +146,7 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.claim_waitlist_signup(TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC;
+-- See the note above normalize_waitlist_email(): PUBLIC-only revoke does not remove the
+-- default-privilege grant Supabase materializes to anon/authenticated at creation time.
+REVOKE EXECUTE ON FUNCTION public.claim_waitlist_signup(TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_waitlist_signup(TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
