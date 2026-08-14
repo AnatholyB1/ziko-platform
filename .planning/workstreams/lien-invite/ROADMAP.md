@@ -100,7 +100,7 @@ genuine signups.
 
   5. After deletion, re-running the original match query returns zero rows, and no orphaned row
      remains in any linked table (PURGE-05)
-**Plans**: 2/4 plans executed
+**Plans**: 4/4 plans executed
 Plans:
 **Wave 1**
 
@@ -116,7 +116,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-04-PLAN.md — RUNBOOK with the written criterion, end-to-end rehearsal, blocking human review
+- [x] 02-04-PLAN.md — RUNBOOK with the written criterion, end-to-end rehearsal, blocking human review
 
 > **Scope note (D-03, recorded during phase 2 planning).** This phase builds and rehearses the full
 > purge; it deliberately does **not** execute the real deletion against production. Criteria 3 and 5
@@ -268,7 +268,7 @@ being complete.
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
-| 2. Test-Account Purge | 2/4 | In Progress|  |
+| 2. Test-Account Purge | 4/4 | In Progress|  |
 | 3. Legal — CGV & CGU | 0/TBD | Not started | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
