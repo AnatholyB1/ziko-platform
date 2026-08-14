@@ -44,20 +44,37 @@ credit-gate feature flag (Phase 6).
   modification clause (Pitfall 8), and the free-vs-paid lifetime-benefit consumer-law nuance (Pitfall
   8) — so the user can hand it to any lawyer without re-deriving the open questions themselves.
 
-### Drafting content (grounded in existing research, not new discussion items)
+### Drafting content
+
+> **Provenance note:** D-03/D-04 below were originally discussed in an earlier, interrupted session
+> whose answers were captured in a `03-DISCUSS-CHECKPOINT.json` that was never committed — discovered
+> only after this session had independently derived a slightly less specific version of the same
+> decisions from research alone. The checkpoint's answers are authoritative and are what's recorded
+> here (all four sub-questions had a clear "recommended" option the user's checkpoint selected).
 
 - **D-03:** The "à vie" clause is scoped to **the life of the Service**, not the person, per
   `research/PITFALLS.md` Pitfall 7: "l'avantage Premium à vie est valable pour toute la durée
-  d'exploitation du Service par [Company]." Premium is defined as of the offer date; future feature
-  additions may or may not extend to founder members at the company's discretion (adding, not taking
-  away). AI credit caps apply to founder-tier premium exactly as to any other premium — no "premium =
-  unlimited AI" implication anywhere, including marketing copy.
+  d'exploitation du Service par [Company]." **Premium is frozen at the offer date's feature set, with
+  future additions extended to founders only at the company's discretion** (adding, not taking away —
+  the exact checkpoint wording, narrower than "may or may not extend"). **The AI-credit cap is stated
+  explicitly in the CGV with founder parity to any other premium user, and the cap value itself may
+  evolve — but only as a platform-wide policy change that never singles out founders specifically.**
+  No "premium = unlimited AI" implication anywhere, including marketing copy.
 
-- **D-04:** No unconditional unilateral-modification clause (Pitfall 8's black-list trap). Any
-  modification-rights language follows the grey-list pattern: narrow, justified by a stated legitimate
-  reason, with the consumer given a right to react (notice + right to leave). Discontinuation rights
-  are reserved only for genuine service-wide shutdown, with a notice period and a data-export
-  commitment — never a way to quietly remove the founder benefit while the rest of the app continues.
+- **D-04:** No unconditional unilateral-modification clause (Pitfall 8's black-list trap). Modification
+  rights follow the grey-list pattern: **narrow and notice-bearing** — genuine service-wide shutdown
+  only, with an advance notice period and a data-export commitment, never a way to quietly remove the
+  founder benefit while the rest of the app continues.
+
+### Bilingual governing language
+
+- **D-08:** **French governs legally; English is a professional courtesy translation** with an
+  explicit precedence clause stating French controls in case of discrepancy. Ziko is a French company
+  and Code de la consommation is the applicable law — this is the standard pattern for a French-law
+  contract offered bilingually, not an area requiring further discussion. French is drafted first;
+  English follows as translation, not parallel independent drafting.
+  — **Reversibility:** costly — switching to dual-authoritative text after publish means re-verifying
+  the two versions say the same thing with no gaps, effectively a re-draft.
 
 ### Retention & erasure (LEGAL-08/09)
 

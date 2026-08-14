@@ -5,7 +5,28 @@
 
 **Date:** 2026-08-14
 **Phase:** 3-Legal — CGV & CGU
-**Areas discussed:** Retention period, Erasure mechanism, Counsel-review gate, Counsel-briefing status
+**Areas discussed:** À vie scope & discontinuation, Retention period, Erasure mechanism, Counsel-review gate, Counsel-briefing status, Governing language
+
+> **Note on provenance:** The "À vie scope & discontinuation" area below was discussed in an earlier
+> session whose answers were captured in an interrupted `03-DISCUSS-CHECKPOINT.json` that was never
+> committed — discovered only after this session had independently re-derived a less specific version
+> of the same decisions from research alone. The checkpoint's answers are authoritative and are what's
+> recorded here and in CONTEXT.md D-03/D-04.
+
+---
+
+## À vie scope & discontinuation
+
+**From the earlier, interrupted session (checkpoint):**
+
+| Question | Answer |
+|----------|--------|
+| What should "à vie" (lifetime) be legally scoped to? | Life of the Service — "valid for as long as Ziko operates the Service" |
+| What exactly does "Premium" include for founders — frozen or evolving feature set? | Frozen at offer date + optional additions |
+| How should the CGV state Ziko's right to modify or discontinue the offer? | Narrow + notice-bearing — genuine service-wide shutdown only, advance notice + data-export commitment |
+| Should the CGV state the founder's AI-credit cap explicitly, and can that cap value itself change later? | Explicit parity, cap can evolve platform-wide — same rules as any premium user, adjustable only as a platform-wide policy change, never singling out founders |
+
+**Locked decisions:** all four, as stated above. See CONTEXT.md D-03/D-04.
 
 ---
 
@@ -54,6 +75,18 @@
 
 **User's choice:** Package it for me
 **Notes:** See CONTEXT.md D-02.
+
+---
+
+## Governing language
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| French governs, English is courtesy translation | French drafted first, legally binding; English is a professional translation with an explicit precedence clause. Standard for a French-law contract. | ✓ |
+| Both equally authoritative, no precedence clause | Requires exact legal sync between both versions, less standard for French-law contracts. | |
+
+**User's choice:** French governs, English is courtesy translation (the recommended option)
+**Notes:** See CONTEXT.md D-08.
 
 ---
 
