@@ -4,15 +4,15 @@ milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
 current_phase_name: Legal — CGV & CGU
-status: planning
+status: executing
 stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-08-14T13:09:05.384Z"
+last_updated: "2026-08-14T13:30:17.675Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 8
+  total_plans: 12
   completed_plans: 8
 ---
 
@@ -32,7 +32,7 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 
 Phase: 3 — Legal — CGV & CGU
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
