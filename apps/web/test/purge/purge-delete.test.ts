@@ -29,22 +29,40 @@ afterEach(() => {
   }
 });
 
-function sha256(ids: string[]): string {
-  return createHash('sha256').update(ids.join('\n')).digest('hex');
+// WR-01: manifest_sha256 covers candidate_ids, generated_at, and pitr
+// together — mirrors buildManifest's hash input in export.mjs exactly.
+function manifestSha256({
+  candidate_ids,
+  generated_at,
+  pitr,
+}: {
+  candidate_ids: string[];
+  generated_at: unknown;
+  pitr: unknown;
+}): string {
+  return createHash('sha256').update(JSON.stringify({ candidate_ids, generated_at, pitr })).digest('hex');
 }
 
 function makeManifest(overrides: Record<string, unknown> = {}) {
-  const candidateIds = ['a', 'b', 'c'];
-  return {
+  const base = {
     generated_at: '2026-08-13T12:00:00.000Z',
     source_report: '/tmp/report.json',
     export_csv: '/tmp/export.csv',
-    candidate_ids: candidateIds,
-    candidate_ids_sha256: sha256(candidateIds),
+    candidate_ids: ['a', 'b', 'c'],
     counts: { accounts: 3, profiles: 0, waitlist_rows: 0 },
     pitr: { status: 'enabled', checked_at: '2026-08-13T12:00:00.000Z', detail: 'Management API reported pitr_enabled=true' },
-    ...overrides,
   };
+  const merged: Record<string, unknown> = { ...base, ...overrides };
+  // Auto-recompute manifest_sha256 from the merged fields unless the test
+  // explicitly overrides it (e.g. to simulate a tampered/mismatched hash) —
+  // this keeps every non-hash-focused test's manifest internally consistent
+  // without each call site having to compute the hash by hand.
+  if (!('manifest_sha256' in overrides)) {
+    merged.manifest_sha256 = manifestSha256(
+      merged as { candidate_ids: string[]; generated_at: unknown; pitr: unknown }
+    );
+  }
+  return merged;
 }
 
 const NOW = new Date('2026-08-13T12:30:00.000Z'); // 30 minutes after generated_at
@@ -112,7 +130,7 @@ describe('assertManifestIntegrity', () => {
   });
 
   it('rejects a manifest whose recorded hash disagrees with the recomputed hash', () => {
-    const manifest = makeManifest({ candidate_ids_sha256: 'deadbeef' });
+    const manifest = makeManifest({ manifest_sha256: 'deadbeef' });
     const result = assertManifestIntegrity({
       manifest,
       now: NOW,
@@ -151,7 +169,7 @@ describe('assertManifestIntegrity', () => {
   });
 
   it('rejects a manifest with an empty id list', () => {
-    const manifest = makeManifest({ candidate_ids: [], candidate_ids_sha256: sha256([]) });
+    const manifest = makeManifest({ candidate_ids: [] });
     const result = assertManifestIntegrity({
       manifest,
       now: NOW,
@@ -191,7 +209,7 @@ describe('assertManifestIntegrity', () => {
   it('accumulates every failing check rather than stopping at the first', () => {
     const manifest = makeManifest({
       candidate_ids: [],
-      candidate_ids_sha256: 'deadbeef',
+      manifest_sha256: 'deadbeef',
       generated_at: '2026-08-13T10:30:00.000Z',
       pitr: { status: 'unknown', checked_at: 't', detail: 'no token' },
     });

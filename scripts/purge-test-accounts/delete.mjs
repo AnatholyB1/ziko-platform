@@ -64,12 +64,16 @@ export function parsePurgeArgs(argv) {
 /**
  * Pure guard: accumulates every failing check rather than returning on the
  * first, so a single run of this function reports the manifest's complete
- * failure surface. The hash check binds this run to the exact row set a
- * human actually reviewed (D-02) — without it the manifest is just a file
- * anyone could widen between review and execution (T-02-15). The age check
- * stops an export from yesterday standing in for a backup taken minutes ago
- * (Pitfall 13 step 3, T-02-17). The PITR check converts a silent
- * `unknown` assumption into a recorded operator decision (D-04, T-02-18).
+ * failure surface. The hash check binds this run to the exact
+ * `candidate_ids`, `generated_at`, and `pitr` a human actually reviewed
+ * (D-02) — hashing all three, not just `candidate_ids`, closes WR-01: since
+ * the age check below trusts `generated_at` and the PITR check trusts
+ * `pitr.status`, both must be covered by the same tamper-evident hash or
+ * either could be edited on disk without tripping the mismatch error. The
+ * age check stops an export from yesterday standing in for a backup taken
+ * minutes ago (Pitfall 13 step 3, T-02-17). The PITR check converts a
+ * silent `unknown` assumption into a recorded operator decision (D-04,
+ * T-02-18).
  * @param {{ manifest: object, now: Date, maxAgeMinutes: number, acceptUnknownPitr: boolean, fileExists: (path: string) => boolean }} args
  * @returns {{ ok: boolean, errors: string[] }}
  */
@@ -81,10 +85,12 @@ export function assertManifestIntegrity({ manifest, now, maxAgeMinutes, acceptUn
     errors.push('manifest candidate_ids is empty — nothing to delete, refusing to run');
   }
 
-  const recomputedHash = createHash('sha256').update(candidateIds.join('\n')).digest('hex');
-  if (recomputedHash !== manifest?.candidate_ids_sha256) {
+  const recomputedHash = createHash('sha256')
+    .update(JSON.stringify({ candidate_ids: candidateIds, generated_at: manifest?.generated_at, pitr: manifest?.pitr }))
+    .digest('hex');
+  if (recomputedHash !== manifest?.manifest_sha256) {
     errors.push(
-      `manifest candidate_ids_sha256 mismatch: recomputed ${recomputedHash}, recorded ${manifest?.candidate_ids_sha256} — the manifest may have been widened after review`
+      `manifest manifest_sha256 mismatch: recomputed ${recomputedHash}, recorded ${manifest?.manifest_sha256} — the manifest may have been widened after review`
     );
   }
 
@@ -252,7 +258,7 @@ async function main() {
   const logPayload = {
     ...result,
     manifest_path: resolvedManifestPath,
-    manifest_hash: manifest.candidate_ids_sha256,
+    manifest_hash: manifest.manifest_sha256,
     written_at: new Date().toISOString(),
   };
   const logPath = await writeDeleteLog(logPayload, args.outDir);

@@ -130,15 +130,23 @@ export async function collectExportRows({ report, fetchProfiles, fetchWaitlistRo
 
 /**
  * Builds the export manifest binding the reviewed candidate set to this
- * export via a SHA-256 over the id list. Plan 02-03 recomputes this hash
- * and refuses to act on a mismatch, so a manifest edited between review and
- * execution cannot pass.
+ * export via a SHA-256 over every safety-relevant field
+ * `assertManifestIntegrity` gates on — `candidate_ids`, `generated_at` (the
+ * staleness check, T-02-17), and `pitr` (the unknown-PITR acknowledgement
+ * gate, T-02-18) — not just the id list (WR-01). Hashing only
+ * `candidate_ids` would let `generated_at` or `pitr.status` be edited on
+ * disk without tripping the "manifest may have been widened" error. Plan
+ * 02-03 recomputes this hash the same way and refuses to act on a mismatch,
+ * so a manifest edited between review and execution cannot pass.
  * @param {{ report: object, reportPath: string, csvPath: string, rows: Array<object>, pitr: {status: string, checked_at: string, detail: string}, now?: () => Date }} args
  * @returns {object}
  */
 export function buildManifest({ report, reportPath, csvPath, rows, pitr, now = () => new Date() }) {
   const candidateIds = (report.to_delete ?? []).map((c) => c.id);
-  const candidateIdsSha256 = createHash('sha256').update(candidateIds.join('\n')).digest('hex');
+  const generated_at = now().toISOString();
+  const manifestSha256 = createHash('sha256')
+    .update(JSON.stringify({ candidate_ids: candidateIds, generated_at, pitr }))
+    .digest('hex');
 
   const profilesFound = rows.filter(
     (r) => r.tier !== '' || r.subscription_tier !== '' || r.profile_created_at !== ''
@@ -149,11 +157,11 @@ export function buildManifest({ report, reportPath, csvPath, rows, pitr, now = (
   );
 
   return {
-    generated_at: now().toISOString(),
+    generated_at,
     source_report: resolve(reportPath),
     export_csv: resolve(csvPath),
     candidate_ids: candidateIds,
-    candidate_ids_sha256: candidateIdsSha256,
+    manifest_sha256: manifestSha256,
     counts: {
       accounts: rows.length,
       profiles: profilesFound,

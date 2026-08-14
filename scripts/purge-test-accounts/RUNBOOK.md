@@ -117,10 +117,12 @@ by the operator; step 3 is performed by a second person.
    ```
 
    This step is **unconditional** — it is the primary safety net (D-04) and it always runs regardless
-   of PITR status. It writes a CSV of every `to_delete` row plus a hashed manifest
-   (`candidate_ids`, `candidate_ids_sha256`). A manifest older than 60 minutes is refused by the next
-   step precisely so "run the export immediately before deleting" stays true rather than becoming a
-   stale convenience.
+   of PITR status. It writes a CSV of every `to_delete` row plus a hashed manifest. The manifest's
+   `manifest_sha256` covers `candidate_ids`, `generated_at`, and `pitr` together (WR-01) — not just
+   the id list — so none of the three fields the next step gates on can be edited on disk without
+   tripping the mismatch check. A manifest older than 60 minutes is refused by the next step precisely
+   so "run the export immediately before deleting" stays true rather than becoming a stale
+   convenience.
 
 5. Read the PITR line the export prints (`pitr status: <enabled|disabled|unknown> (<detail>)`). PITR
    is the **secondary** backstop behind the export (D-04) — not a co-equal requirement. An `unknown`
@@ -142,11 +144,11 @@ by the operator; step 3 is performed by a second person.
    node --env-file=apps/web/.env.local scripts/purge-test-accounts/delete.mjs --manifest <path> --confirm [--accept-unknown-pitr] [--max-manifest-age-minutes <n>]
    ```
 
-   Before attempting any deletion, `delete.mjs` recomputes `candidate_ids_sha256` over the manifest's
-   `candidate_ids` and refuses to run on a mismatch, checks the manifest's age against
-   `--max-manifest-age-minutes` (default 60), confirms the referenced export CSV still exists on disk,
-   and enforces the PITR acknowledgement from step 5. Every check runs and every failure is reported
-   at once, so a stale or tampered manifest is never partially trusted.
+   Before attempting any deletion, `delete.mjs` recomputes `manifest_sha256` over the manifest's
+   `candidate_ids`, `generated_at`, and `pitr` together and refuses to run on a mismatch, checks the
+   manifest's age against `--max-manifest-age-minutes` (default 60), confirms the referenced export
+   CSV still exists on disk, and enforces the PITR acknowledgement from step 5. Every check runs and
+   every failure is reported at once, so a stale or tampered manifest is never partially trusted.
 
 7. Run the post-purge verification with both the manifest and the original report:
 

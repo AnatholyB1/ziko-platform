@@ -157,7 +157,7 @@ describe('buildManifest', () => {
     expect(manifest.candidate_ids).toEqual(['u1', 'u2', 'u3']);
   });
 
-  it('produces a candidate_ids_sha256 that is stable across two calls on the same input', () => {
+  it('produces a manifest_sha256 that is stable across two calls on the same input', () => {
     const toDelete = makeToDelete();
     const report = makeReport(toDelete);
     const args = {
@@ -166,13 +166,14 @@ describe('buildManifest', () => {
       csvPath: '/tmp/export.csv',
       rows: [],
       pitr: emptyPitr,
+      now: () => new Date('2026-08-13T12:00:00.000Z'),
     };
     const m1 = buildManifest(args);
     const m2 = buildManifest(args);
-    expect(m1.candidate_ids_sha256).toBe(m2.candidate_ids_sha256);
+    expect(m1.manifest_sha256).toBe(m2.manifest_sha256);
   });
 
-  it('changes candidate_ids_sha256 when any id changes', () => {
+  it('changes manifest_sha256 when any id changes', () => {
     const report1 = makeReport(makeToDelete());
     const report2 = makeReport([
       ...makeToDelete().slice(0, 2),
@@ -192,7 +193,35 @@ describe('buildManifest', () => {
       rows: [],
       pitr: emptyPitr,
     });
-    expect(m1.candidate_ids_sha256).not.toBe(m2.candidate_ids_sha256);
+    expect(m1.manifest_sha256).not.toBe(m2.manifest_sha256);
+  });
+
+  // WR-01: the hash must also change when generated_at or pitr.status
+  // change on their own — hashing only candidate_ids would let either be
+  // edited on disk without tripping the mismatch check.
+  it('changes manifest_sha256 when generated_at changes but candidate_ids and pitr do not', () => {
+    const report = makeReport(makeToDelete());
+    const args = { report, reportPath: 'r', csvPath: 'c', rows: [], pitr: emptyPitr };
+    const m1 = buildManifest({ ...args, now: () => new Date('2026-08-13T12:00:00.000Z') });
+    const m2 = buildManifest({ ...args, now: () => new Date('2026-08-13T13:00:00.000Z') });
+    expect(m1.candidate_ids).toEqual(m2.candidate_ids);
+    expect(m1.manifest_sha256).not.toBe(m2.manifest_sha256);
+  });
+
+  it('changes manifest_sha256 when pitr.status changes but candidate_ids and generated_at do not', () => {
+    const report = makeReport(makeToDelete());
+    const now = () => new Date('2026-08-13T12:00:00.000Z');
+    const m1 = buildManifest({ report, reportPath: 'r', csvPath: 'c', rows: [], pitr: emptyPitr, now });
+    const m2 = buildManifest({
+      report,
+      reportPath: 'r',
+      csvPath: 'c',
+      rows: [],
+      pitr: { status: 'enabled', checked_at: 't', detail: 'Management API reported pitr_enabled=true' },
+      now,
+    });
+    expect(m1.generated_at).toBe(m2.generated_at);
+    expect(m1.manifest_sha256).not.toBe(m2.manifest_sha256);
   });
 });
 
