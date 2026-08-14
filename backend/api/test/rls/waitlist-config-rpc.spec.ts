@@ -63,6 +63,32 @@ describe.skipIf(!RUN_DB)('app_config + get_waitlist_founder_status — deny-all,
   });
 });
 
+// Phase 3 plan 03-03 (LEGAL-08, T-03-10) — the retention row seeded by
+// 20260815_waitlist_retention_config.sql. No afterAll restore here: this
+// suite never mutates the retention row, unlike the threshold row above.
+describe.skipIf(!RUN_DB)('app_config waitlist_retention_years — deny-all holds for the new row too (LEGAL-08)', () => {
+  let admin: ReturnType<typeof getAdminClient>;
+  let anon: ReturnType<typeof getAnonClient>;
+
+  beforeAll(async () => {
+    admin = getAdminClient();
+    anon = getAnonClient();
+  });
+
+  it('admin reads exactly one waitlist_retention_years row, value 3', async () => {
+    const { data, error } = await admin.from('app_config').select('*').eq('key', 'waitlist_retention_years');
+    expect(error).toBeNull();
+    expect(data).toHaveLength(1);
+    expect(Number(data?.[0]?.value)).toBe(3);
+  });
+
+  it('anon reading the retention key directly gets zero rows', async () => {
+    const { data, error } = await anon.from('app_config').select('*').eq('key', 'waitlist_retention_years');
+    expect(error).toBeNull();
+    expect(data).toEqual([]);
+  });
+});
+
 describe.skipIf(!RUN_DB)('anonymize_waitlist_signup — erasure keeps the founder spot consumed (D-07, T-01-13)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   const createdEmails: string[] = [];
