@@ -83,12 +83,22 @@ export function checkAccountConservation({ users, manifest, report }) {
 
 // ── Cross-table orphan scan (T-02-22, PURGE-05) ───────────────────────────
 
-// The documented orphan-scan surface — every column across the four tables
-// that references a deleted id. Verified against
-// supabase/migrations/035_coach_invitations_links_rls.sql:43-51,
-// supabase/migrations/20260527_coach_vocal_feedbacks.sql:4-11 and
-// supabase/migrations/036_workout_programs_ai_imports.sql:17-19, plus
-// workout_programs.user_id from 001_initial_schema.sql.
+// The documented orphan-scan surface — every column across every table that
+// references a deleted id, mirroring CROSS_LINK_SOURCES in lib.mjs plus
+// workout_programs.user_id and user_profiles.id (which are single-FK, not
+// cross-link, tables but are still part of the post-purge orphan proof).
+// Verified against supabase/migrations/035_coach_invitations_links_rls.sql
+// (coach_invitations, coach_client_links),
+// supabase/migrations/20260527_coach_vocal_feedbacks.sql,
+// supabase/migrations/036_workout_programs_ai_imports.sql (plus
+// workout_programs.user_id from 001_initial_schema.sql),
+// supabase/migrations/009_community_schema.sql (friendships, app_invites,
+// screen_reactions, shared_programs, xp_gifts, coin_gifts,
+// habit_encouragements), supabase/migrations/041_coach_client_tags_notes.sql,
+// supabase/migrations/050_coach_ai_schema.sql,
+// supabase/migrations/056_dashboard_widgets.sql,
+// supabase/migrations/057_coach_videos_schema.sql, and
+// supabase/migrations/063_coach_metric_thresholds.sql (CR-01, 2026-08-14).
 const ORPHAN_SOURCES = [
   { table: 'user_profiles', column: 'id' },
   { table: 'coach_client_links', column: 'coach_id' },
@@ -98,6 +108,36 @@ const ORPHAN_SOURCES = [
   { table: 'workout_programs', column: 'user_id' },
   { table: 'workout_programs', column: 'created_by_coach_id' },
   { table: 'workout_programs', column: 'assigned_to_user_id' },
+  { table: 'coach_invitations', column: 'coach_id' },
+  { table: 'coach_invitations', column: 'used_by' },
+  { table: 'friendships', column: 'requester_id' },
+  { table: 'friendships', column: 'addressee_id' },
+  { table: 'app_invites', column: 'inviter_id' },
+  { table: 'app_invites', column: 'used_by' },
+  { table: 'screen_reactions', column: 'sender_id' },
+  { table: 'screen_reactions', column: 'receiver_id' },
+  { table: 'shared_programs', column: 'sender_id' },
+  { table: 'shared_programs', column: 'receiver_id' },
+  { table: 'xp_gifts', column: 'sender_id' },
+  { table: 'xp_gifts', column: 'receiver_id' },
+  { table: 'coin_gifts', column: 'sender_id' },
+  { table: 'coin_gifts', column: 'receiver_id' },
+  { table: 'habit_encouragements', column: 'sender_id' },
+  { table: 'habit_encouragements', column: 'receiver_id' },
+  { table: 'coach_client_tags', column: 'coach_id' },
+  { table: 'coach_client_tags', column: 'client_id' },
+  { table: 'coach_client_notes', column: 'coach_id' },
+  { table: 'coach_client_notes', column: 'client_id' },
+  { table: 'coach_alerts', column: 'coach_id' },
+  { table: 'coach_alerts', column: 'client_id' },
+  { table: 'ai_tool_audit', column: 'coach_id' },
+  { table: 'ai_tool_audit', column: 'target_client_id' },
+  { table: 'dashboard_configs', column: 'coach_id' },
+  { table: 'dashboard_configs', column: 'client_id' },
+  { table: 'coach_client_videos', column: 'athlete_id' },
+  { table: 'coach_client_videos', column: 'coach_id' },
+  { table: 'coach_metric_thresholds', column: 'coach_id' },
+  { table: 'coach_metric_thresholds', column: 'client_id' },
 ];
 
 // Mirrors CROSS_LINK_BATCH_SIZE in lib.mjs — the same PostgREST URL-length

@@ -459,6 +459,44 @@ describe('fetchOrphanRows', () => {
     ).toBe(true);
   });
 
+  // CR-01: ORPHAN_SOURCES was expanded from 4 tables (8 columns) to 19
+  // tables (38 columns) to mirror lib.mjs's expanded CROSS_LINK_SOURCES.
+  // These cases pin a representative sample of the new columns.
+  it('reports a hit for a lingering reference in friendships.addressee_id (community schema)', async () => {
+    const client = makeOrphanFakeClient({
+      friendships: [{ requester_id: 'real1', addressee_id: 'u1' }],
+    });
+    const hits = await fetchOrphanRows(client as never, ['u1']);
+    expect(
+      hits.some((h: { table: string; column: string }) => h.table === 'friendships' && h.column === 'addressee_id')
+    ).toBe(true);
+  });
+
+  it('reports a hit for a lingering reference in coach_metric_thresholds.client_id (coach-CRM schema)', async () => {
+    const client = makeOrphanFakeClient({
+      coach_metric_thresholds: [{ coach_id: 'real1', client_id: 'u1' }],
+    });
+    const hits = await fetchOrphanRows(client as never, ['u1']);
+    expect(
+      hits.some(
+        (h: { table: string; column: string }) =>
+          h.table === 'coach_metric_thresholds' && h.column === 'client_id'
+      )
+    ).toBe(true);
+  });
+
+  it('reports a hit for a lingering reference in coach_invitations.used_by (verified against migrations, not in the original review list)', async () => {
+    const client = makeOrphanFakeClient({
+      coach_invitations: [{ coach_id: 'real1', used_by: 'u1' }],
+    });
+    const hits = await fetchOrphanRows(client as never, ['u1']);
+    expect(
+      hits.some(
+        (h: { table: string; column: string }) => h.table === 'coach_invitations' && h.column === 'used_by'
+      )
+    ).toBe(true);
+  });
+
   it('returns an empty array without querying when deletedIds is empty', async () => {
     let queried = false;
     const client = {

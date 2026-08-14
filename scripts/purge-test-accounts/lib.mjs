@@ -97,15 +97,41 @@ export async function listAllUsers(client) {
 
 /**
  * Every cross-user table this purge must check, declared once so the query
- * loop below is the same shape for all three. Verified against
- * supabase/migrations/035_coach_invitations_links_rls.sql,
- * supabase/migrations/20260527_coach_vocal_feedbacks.sql, and
- * supabase/migrations/036_workout_programs_ai_imports.sql.
+ * loop below is the same shape for all of them — every table in
+ * supabase/migrations/ with two or more columns `REFERENCES auth.users(id)`.
+ * Verified by direct migration inspection (CR-01, 2026-08-14):
+ * supabase/migrations/035_coach_invitations_links_rls.sql (coach_invitations,
+ * coach_client_links), supabase/migrations/20260527_coach_vocal_feedbacks.sql,
+ * supabase/migrations/036_workout_programs_ai_imports.sql,
+ * supabase/migrations/009_community_schema.sql (friendships, app_invites,
+ * screen_reactions, shared_programs, xp_gifts, coin_gifts,
+ * habit_encouragements), supabase/migrations/041_coach_client_tags_notes.sql,
+ * supabase/migrations/050_coach_ai_schema.sql,
+ * supabase/migrations/056_dashboard_widgets.sql,
+ * supabase/migrations/057_coach_videos_schema.sql, and
+ * supabase/migrations/063_coach_metric_thresholds.sql. Since a future
+ * migration could add another two-FK table without this list being updated,
+ * treat any new cross-user table as a required addition here.
  */
 const CROSS_LINK_SOURCES = [
   { table: 'coach_client_links', columnA: 'coach_id', columnB: 'client_id' },
   { table: 'coach_vocal_feedbacks', columnA: 'coach_id', columnB: 'athlete_id' },
   { table: 'workout_programs', columnA: 'created_by_coach_id', columnB: 'assigned_to_user_id' },
+  { table: 'coach_invitations', columnA: 'coach_id', columnB: 'used_by' },
+  { table: 'friendships', columnA: 'requester_id', columnB: 'addressee_id' },
+  { table: 'app_invites', columnA: 'inviter_id', columnB: 'used_by' },
+  { table: 'screen_reactions', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'shared_programs', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'xp_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'coin_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'habit_encouragements', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'coach_client_tags', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'coach_client_notes', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'coach_alerts', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ai_tool_audit', columnA: 'coach_id', columnB: 'target_client_id' },
+  { table: 'dashboard_configs', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'coach_client_videos', columnA: 'athlete_id', columnB: 'coach_id' },
+  { table: 'coach_metric_thresholds', columnA: 'coach_id', columnB: 'client_id' },
 ];
 
 // PostgREST's URL length limit is what this guards against — a large

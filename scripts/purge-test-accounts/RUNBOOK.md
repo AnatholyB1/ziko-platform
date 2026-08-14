@@ -40,14 +40,20 @@ across 31 migration files (`research/ARCHITECTURE.md` §6). Deleting one `auth.u
 also removes that account's workouts, nutrition logs, AI conversations, credit ledger entries, and
 coach links — the cascade is total and by design, and there is no way to delete "just the auth row."
 
-The one real hazard this creates (`research/ARCHITECTURE.md` §6): a test-domain coach account can be
-linked to a **real** athlete through `coach_client_links`, `coach_vocal_feedbacks`, or
-`workout_programs`. Deleting that test coach would silently sever the athlete's coaching relationship
-and any coach-authored data pointing at them, even though the athlete's own account is completely
-real. `scripts/purge-test-accounts/dry-run.mjs` automatically withholds any test-domain candidate
-that is cross-linked to a non-candidate (real) account, on either user column of each of those three
-tables, and lists it in the report's `flagged` section instead of `to_delete`. Flagged pairs are
-**excluded from this purge run** and revisited manually later, outside this procedure (D-05).
+The one real hazard this creates (`research/ARCHITECTURE.md` §6): a test-domain coach or athlete
+account can be linked to a **real** account through any of the 18 tables in `supabase/migrations/`
+that pair two `auth.users` foreign keys: `coach_client_links`, `coach_vocal_feedbacks`,
+`workout_programs`, `coach_invitations`, `friendships`, `app_invites`, `screen_reactions`,
+`shared_programs`, `xp_gifts`, `coin_gifts`, `habit_encouragements`, `coach_client_tags`,
+`coach_client_notes`, `coach_alerts`, `ai_tool_audit`, `dashboard_configs`, `coach_client_videos`,
+and `coach_metric_thresholds` (canonical list: `CROSS_LINK_SOURCES` in
+`scripts/purge-test-accounts/lib.mjs`). Deleting that test account would silently sever the real
+counterpart's coaching relationship, social connection, or coach-authored data pointing at them, even
+though the counterpart's own account is completely real. `scripts/purge-test-accounts/dry-run.mjs`
+automatically withholds any test-domain candidate that is cross-linked to a non-candidate (real)
+account, on either user column of each of those tables, and lists it in the report's `flagged`
+section instead of `to_delete`. Flagged pairs are **excluded from this purge run** and revisited
+manually later, outside this procedure (D-05).
 
 ---
 

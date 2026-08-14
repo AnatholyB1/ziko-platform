@@ -345,7 +345,7 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
     });
   });
 
-  it('references all three cross-link tables in a single pass', async () => {
+  it('references all three original cross-link tables in a single pass', async () => {
     const { client } = makeFakeClient({
       coach_client_links: [{ coach_id: 'cand-1', client_id: 'real-1' }],
       coach_vocal_feedbacks: [{ coach_id: 'cand-2', athlete_id: 'real-2' }],
@@ -356,6 +356,110 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
     expect(tables).toEqual(
       new Set(['coach_client_links', 'coach_vocal_feedbacks', 'workout_programs'])
     );
+  });
+
+  // CR-01: the review found only 3 of at least 17 two-auth.users-FK tables
+  // were checked. These cases pin the expanded surface — one representative
+  // from each schema family the review's gap spanned (community/social,
+  // coach-CRM, and coach_invitations, a table the review itself missed but
+  // which has the identical coach_id/used_by shape as coach_client_links).
+  it('flags a candidate linked through friendships (community schema)', async () => {
+    const { client } = makeFakeClient({
+      friendships: [{ requester_id: 'cand-1', addressee_id: 'real-1' }],
+    });
+    const links = await fetchCrossLinks(client as never, ['cand-1']);
+    expect(links).toContainEqual({
+      table: 'friendships',
+      candidateColumn: 'requester_id',
+      candidateId: 'cand-1',
+      linkedColumn: 'addressee_id',
+      linkedUserId: 'real-1',
+    });
+  });
+
+  it('flags a candidate linked through coach_metric_thresholds (coach-CRM schema)', async () => {
+    const { client } = makeFakeClient({
+      coach_metric_thresholds: [{ coach_id: 'cand-1', client_id: 'real-1' }],
+    });
+    const links = await fetchCrossLinks(client as never, ['cand-1']);
+    expect(links).toContainEqual({
+      table: 'coach_metric_thresholds',
+      candidateColumn: 'coach_id',
+      candidateId: 'cand-1',
+      linkedColumn: 'client_id',
+      linkedUserId: 'real-1',
+    });
+  });
+
+  it('flags a candidate linked through coach_invitations.used_by (verified against migrations, not in the original review list)', async () => {
+    const { client } = makeFakeClient({
+      coach_invitations: [{ coach_id: 'real-1', used_by: 'cand-1' }],
+    });
+    const links = await fetchCrossLinks(client as never, ['cand-1']);
+    expect(links).toContainEqual({
+      table: 'coach_invitations',
+      candidateColumn: 'used_by',
+      candidateId: 'cand-1',
+      linkedColumn: 'coach_id',
+      linkedUserId: 'real-1',
+    });
+  });
+
+  it('references all 18 declared cross-link tables across a full candidate set', async () => {
+    const declaredTables = [
+      'coach_client_links',
+      'coach_vocal_feedbacks',
+      'workout_programs',
+      'coach_invitations',
+      'friendships',
+      'app_invites',
+      'screen_reactions',
+      'shared_programs',
+      'xp_gifts',
+      'coin_gifts',
+      'habit_encouragements',
+      'coach_client_tags',
+      'coach_client_notes',
+      'coach_alerts',
+      'ai_tool_audit',
+      'dashboard_configs',
+      'coach_client_videos',
+      'coach_metric_thresholds',
+    ];
+    const columnPairs: Record<string, [string, string]> = {
+      coach_client_links: ['coach_id', 'client_id'],
+      coach_vocal_feedbacks: ['coach_id', 'athlete_id'],
+      workout_programs: ['created_by_coach_id', 'assigned_to_user_id'],
+      coach_invitations: ['coach_id', 'used_by'],
+      friendships: ['requester_id', 'addressee_id'],
+      app_invites: ['inviter_id', 'used_by'],
+      screen_reactions: ['sender_id', 'receiver_id'],
+      shared_programs: ['sender_id', 'receiver_id'],
+      xp_gifts: ['sender_id', 'receiver_id'],
+      coin_gifts: ['sender_id', 'receiver_id'],
+      habit_encouragements: ['sender_id', 'receiver_id'],
+      coach_client_tags: ['coach_id', 'client_id'],
+      coach_client_notes: ['coach_id', 'client_id'],
+      coach_alerts: ['coach_id', 'client_id'],
+      ai_tool_audit: ['coach_id', 'target_client_id'],
+      dashboard_configs: ['coach_id', 'client_id'],
+      coach_client_videos: ['athlete_id', 'coach_id'],
+      coach_metric_thresholds: ['coach_id', 'client_id'],
+    };
+    const tables: Record<string, Array<Record<string, unknown>>> = {};
+    const candidateIds: string[] = [];
+    declaredTables.forEach((table, i) => {
+      const [colA, colB] = columnPairs[table];
+      const candId = `cand-${i}`;
+      const realId = `real-${i}`;
+      tables[table] = [{ [colA]: candId, [colB]: realId }];
+      candidateIds.push(candId);
+    });
+    const { client } = makeFakeClient(tables);
+    const links = await fetchCrossLinks(client as never, candidateIds);
+    const seenTables = new Set(links.map((l) => l.table));
+    expect(seenTables).toEqual(new Set(declaredTables));
+    expect(seenTables.size).toBe(18);
   });
 
   it('surfaces a query error by throwing, naming the table and column', async () => {
@@ -395,8 +499,9 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
     for (const size of batchSizes) {
       expect(size).toBeLessThanOrEqual(200);
     }
-    // 450 ids -> 3 batches (200, 200, 50) per column-query, and there are 3
-    // tables x 2 columns = 6 column-queries per batch.
-    expect(calls.length).toBe(3 * 6);
+    // 450 ids -> 3 batches (200, 200, 50) per column-query, and there are 18
+    // tables x 2 columns = 36 column-queries per batch (CR-01 expanded the
+    // declared table count from 3 to 18).
+    expect(calls.length).toBe(3 * 36);
   });
 });
