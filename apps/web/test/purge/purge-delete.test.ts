@@ -19,7 +19,9 @@ import {
   checkAccountConservation,
   fetchOrphanRows,
   summarizeOrphans,
+  checkReportMatchesManifest,
 } from '../../../../scripts/purge-test-accounts/verify-purge.mjs';
+import { resolve } from 'node:path';
 
 const tmpDirs: string[] = [];
 afterEach(() => {
@@ -581,5 +583,48 @@ describe('summarizeOrphans', () => {
     const result = summarizeOrphans([{ table: 'coach_vocal_feedbacks', column: 'athlete_id', id: 'u1' }]);
     expect(result.ok).toBe(false);
     expect(result.byTable['coach_vocal_feedbacks.athlete_id']).toBe(1);
+  });
+});
+
+// WR-04: verify-purge.mjs never cross-checked --report against
+// manifest.source_report, so an operator pointing --report at the wrong
+// dry-run report would reconcile against a mismatched baseline silently.
+describe('checkReportMatchesManifest', () => {
+  it('passes when manifest.source_report resolves to the same path as --report', () => {
+    const result = checkReportMatchesManifest({
+      manifestSourceReport: '/tmp/dry-run-2026.json',
+      reportPath: '/tmp/dry-run-2026.json',
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('passes when the two paths are equivalent once both are resolved (relative vs. absolute spelling)', () => {
+    // manifest.source_report is always stored absolute (buildManifest calls
+    // resolve() on it), but --report may be passed relative to the cwd the
+    // operator happens to be in — both must resolve to the same location.
+    const absoluteManifestPath = resolve(process.cwd(), 'dry-run-2026.json');
+    const result = checkReportMatchesManifest({
+      manifestSourceReport: absoluteManifestPath,
+      reportPath: 'dry-run-2026.json',
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it('fails when --report points at a different file than manifest.source_report', () => {
+    const result = checkReportMatchesManifest({
+      manifestSourceReport: '/tmp/dry-run-2026-08-13.json',
+      reportPath: '/tmp/dry-run-2026-08-01-STALE.json',
+    });
+    expect(result.ok).toBe(false);
+    expect(result.manifestSourceReport).toBe(resolve('/tmp/dry-run-2026-08-13.json'));
+    expect(result.resolvedReportPath).toBe(resolve('/tmp/dry-run-2026-08-01-STALE.json'));
+  });
+
+  it('fails when manifest.source_report is missing entirely', () => {
+    const result = checkReportMatchesManifest({
+      manifestSourceReport: undefined,
+      reportPath: '/tmp/dry-run-2026.json',
+    });
+    expect(result.ok).toBe(false);
   });
 });

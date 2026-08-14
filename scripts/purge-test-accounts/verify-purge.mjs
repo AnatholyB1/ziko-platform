@@ -198,6 +198,31 @@ export function summarizeOrphans(rows) {
   return { ok: rows.length === 0, total: rows.length, byTable };
 }
 
+// ── Report/manifest cross-check (WR-04) ───────────────────────────────────
+
+/**
+ * Refuses to reconcile against a `--report` that isn't the one the manifest
+ * was actually built from. `manifest.source_report` is written by
+ * `buildManifest` in export.mjs but was previously never read back here — an
+ * operator accidentally pointing `--report` at a different (older, or a
+ * different environment's) dry-run report would otherwise have
+ * `checkResidualMatches` and `checkAccountConservation` silently computed
+ * against the wrong baseline, printing PASS on an unreconciled run or FAIL
+ * on a clean one. Resolves both paths the same way before comparing so a
+ * relative vs. absolute path difference doesn't produce a false mismatch.
+ * @param {{ manifestSourceReport: string | undefined, reportPath: string }} args
+ * @returns {{ ok: boolean, manifestSourceReport: string, resolvedReportPath: string }}
+ */
+export function checkReportMatchesManifest({ manifestSourceReport, reportPath }) {
+  const resolvedManifestSourceReport = resolve(manifestSourceReport ?? '');
+  const resolvedReportPath = resolve(reportPath ?? '');
+  return {
+    ok: resolvedManifestSourceReport === resolvedReportPath,
+    manifestSourceReport: resolvedManifestSourceReport,
+    resolvedReportPath,
+  };
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────
 
 function parseVerifyArgs(argv) {
@@ -221,6 +246,18 @@ async function main() {
 
   const manifest = JSON.parse(await readFile(resolve(manifestPath), 'utf8'));
   const report = JSON.parse(await readFile(resolve(reportPath), 'utf8'));
+
+  const reportMatch = checkReportMatchesManifest({
+    manifestSourceReport: manifest.source_report,
+    reportPath,
+  });
+  if (!reportMatch.ok) {
+    console.error(
+      `Test-account purge — verify: --report (${reportMatch.resolvedReportPath}) does not match manifest.source_report (${reportMatch.manifestSourceReport}) — refusing to reconcile against a mismatched baseline`
+    );
+    process.exit(1);
+    return;
+  }
 
   const client = createPurgeAdminClient();
   const users = await listAllUsers(client);
