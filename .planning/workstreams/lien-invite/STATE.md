@@ -5,14 +5,14 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
 current_phase_name: Legal — CGV & CGU
 status: planning
-stopped_at: Phase 3 context gathered
-last_updated: "2026-08-14T12:47:11.848Z"
+stopped_at: Phase 3 UI-SPEC approved
+last_updated: "2026-08-14T13:09:05.384Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 9
+  completed_phases: 2
+  total_plans: 8
   completed_plans: 8
 ---
 
@@ -155,9 +155,9 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-14T12:47:11.796Z
-Stopped at: Phase 3 context gathered
+Last session: 2026-08-14T13:09:05.357Z
+Stopped at: Phase 3 UI-SPEC approved
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: .planning/workstreams/lien-invite/phases/03-legal-cgv-cgu/03-CONTEXT.md
+Resume file: /home/user/ziko-platform/.planning/workstreams/lien-invite/phases/03-legal-cgv-cgu/03-UI-SPEC.md
