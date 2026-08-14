@@ -1,845 +1,262 @@
-# Architecture Research — v1.5 Coach Platform & CRM
+# Architecture Research
 
-**Domain:** Ziko Platform v1.5 — Coach Platform, Client CRM, AI File Imports, Strava Integration
-**Researched:** 2026-05-13
-**Confidence:** HIGH — all integration points cross-verified against existing repo (`backend/api/src/app.ts`, `tools/registry.ts`, migrations 001/026/032/033)
+**Domain:** Bulk third-party dataset import pipeline (exercise data + licensed media) merged into an existing FK-referenced production table, self-hosted on Supabase Storage
+**Researched:** 2026-08-14
+**Confidence:** HIGH — every integration point below is grounded in files read directly from this codebase (migration numbering, existing bucket/RLS patterns, the `scripts/` precedent that already generated the current seed, the signed-URL storage route). No speculative framework claims; this is a wiring problem, not a technology-choice problem.
 
----
+## Standard Architecture
 
-## Overview
-
-v1.5 introduces a coach-facing web CRM as a Next.js app inside the Turborepo (`apps/web/`), six new bounded-context modules in the Hono backend (`backend/api/src/coach/{identity,clients,programs,invitations,imports,ai}`), eight new Supabase tables (one of which — `coach_client_links` — drives cross-user RLS access), one column extension on `user_profiles` (`role`), one extension on `workout_programs` (coaching fields), and two new integrations (Claude vision/document parsing for file imports + Strava OAuth + webhook reconciliation). Existing client-side architecture (mobile, RLS-per-user pattern, credit system, AI orchestrator) is left structurally intact — coach features are additive.
-
-The architecture deliberately mirrors module boundaries between backend (`coach/<module>`) and Next.js (`app/(coach)/<module>`) so that the future ERP milestones (`coach/billing`, `coach/scheduling`) can be added without disturbing any v1.5 module.
-
----
-
-## High-Level Topology
+### System Overview
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                       Turborepo (existing)                                  │
-│                                                                            │
-│  apps/                                                                     │
-│    mobile/      Expo SDK 54 — adds: invitation entry, "Mon coach" screen   │
-│    web/         Next.js 14 App Router (NEW or migrated from public repo)   │
-│      app/                                                                  │
-│        (marketing)/     /coachs FR/EN landing  (NEW)                       │
-│        (coach)/         /coach/* authenticated CRM  (NEW)                  │
-│          identity/   programs/   clients/[id]/   imports/   ai/            │
-│                                                                            │
-│  backend/api/src/                                                          │
-│    coach/         (NEW — bounded contexts)                                 │
-│      identity/    clients/    programs/    invitations/    imports/   ai/  │
-│    routes/        (existing — ai, plugins, credits, storage, …)            │
-│    middleware/    (existing — auth, rateLimiter, credits)                  │
-│    tools/         (existing registry — 3 new coach tools wired in)         │
-│                                                                            │
-│  packages/                                                                 │
-│    plugin-sdk/   (existing — shared theme, i18n, AITool type)              │
-│    coach-sdk/    (NEW — shared Zod schemas for coach domain, used by both  │
-│                  Next.js web and Hono backend; mirrors plugin-sdk pattern) │
-└────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│  Supabase Postgres                                                          │
-│    NEW tables:  coach_profiles, coach_client_links, coach_invitations,     │
-│                 coach_programs_meta (or merged into workout_programs ext), │
-│                 ai_imports, strava_accounts, strava_webhook_events         │
-│    EXTENDED:    user_profiles (role), workout_programs (coach fields)      │
-│    NEW RPC:     is_coach_of(coach_uuid, client_uuid)  — SECURITY DEFINER   │
-└────────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│  External services                                                          │
-│    Anthropic (existing) — Claude vision/document for AI imports            │
-│    Strava OAuth + webhook — NEW                                            │
-│    Supabase Storage (existing) — reused for import file uploads            │
-└────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  LOCAL / CI — one-off ETL, never a Vercel/Hono request handler        │
+│  scripts/import-exercises/  (new — sibling to existing scripts/*.js)  │
+│                                                                        │
+│  ┌────────────┐   ┌────────────────┐   ┌───────────────────────────┐ │
+│  │ 1. fetch.ts │──▶│ 2. match.ts    │──▶│ 3. merge.ts               │ │
+│  │ tarball dl  │   │ dry-run report │   │ upload media + UPDATE/    │ │
+│  │ raw.github  │   │ (no writes)    │   │ INSERT, logs to           │ │
+│  │ usercontent │   │                │   │ exercise_import_log       │ │
+│  └────────────┘   └────────────────┘   └───────────────┬───────────┘ │
+└──────────────────────────────────────────────────────────┼───────────┘
+                                                             │ direct Postgres
+                                                             │ connection string
+                                                             │ (not PgBouncer pool)
+┌────────────────────────────────────────────────────────────▼─────────┐
+│  SUPABASE                                                             │
+│  ┌───────────────────────────┐   ┌────────────────────────────────┐  │
+│  │ public.exercises           │   │ Storage: exercise-media (new)  │  │
+│  │  + image, gif_url (v2)     │◀──│  PUBLIC read bucket            │  │
+│  │  + attribution (existing   │   │  no client INSERT policy       │  │
+│  │    gif_url column reused)  │   │  (server/script-only writes,   │  │
+│  │ public.exercise_import_log │   │   same pattern as `exports`)   │  │
+│  │  (new — resumability)      │   │                                │  │
+│  └─────────────┬───────────────┘   └────────────────────────────────┘ │
+└────────────────┼──────────────────────────────────────────────────────┘
+                  │ Supabase JS client (anon/publishable key, RLS read)
+┌─────────────────▼──────────────────────────────────────────────────┐
+│  MOBILE (Expo)                                                      │
+│  ExercisePicker.tsx, [exerciseId].tsx  — TanStack Query             │
+│  queryKey ['exercises', 'v2'] (bumped) → renders image/gif_url      │
+│  Expo Image with contentFit, capped at 180×180 intrinsic size       │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
----
+The Hono backend (`backend/api/`) is **not** in this diagram on purpose — it plays no role in the import pipeline. It is only a downstream consumer boundary in the same sense mobile is (any future `GET /exercises` route reads the same table, no changes required for this milestone unless one already exists).
 
-## Bounded Contexts
+### Component Responsibilities
 
-The boundary rule: **a module owns its tables, its Hono routes, its web routes, its types, and (optionally) its AI tools.** Cross-module reads go through the owning module's service layer — never direct table reads from another module's code. This is what makes the v1.6 ERP modules drop-in.
+| Component | Responsibility | Typical Implementation |
+|-----------|----------------|-------------------------|
+| `scripts/import-exercises/fetch.ts` | Download the dataset tarball once, extract JSON + media to a local staging dir, verify file count against manifest | Node/tsx script, `codeload.github.com/hasaneyldrm/exercises-dataset/tar.gz/<pinned-sha>`, `tar` extraction, no Supabase calls |
+| `scripts/import-exercises/match.ts` | Normalize names on both sides, run the 3-tier match pipeline (exact → field-agreement fuzzy → unmatched), write a JSON/CSV dry-run report | Pure function over two in-memory arrays (≤2600 rows total — no DB round-trips needed for matching itself), reads `public.exercises` once via direct connection |
+| `scripts/import-exercises/merge.ts` | Consume the **reviewed** dry-run report, upload media to Storage, UPDATE matched rows in place, INSERT unmatched-new rows, skip anything already recorded in `exercise_import_log` | Batches of small transactions (one row or small chunk per transaction), bounded-concurrency Storage uploads, idempotent via the log table |
+| `public.exercise_import_log` (new table) | Durable resume/audit point: which dataset row mapped to which `exercises.id`, upload status, timestamp | Plain Postgres table, no RLS needed (never queried by app users), read/written only by the script's service-role/direct connection |
+| `exercise-media` Storage bucket (new) | Serve GIF + thumbnail publicly to the mobile app without per-request signed URLs | `public: true` bucket, INSERT/UPDATE restricted to service role only (no `authenticated` policy) |
+| Mobile `ExercisePicker.tsx` / `[exerciseId].tsx` | Render `image`/`gif_url` with attribution badge, capped at 180×180 | Expo `<Image>` (already used elsewhere in the app per fixture-elimination work), versioned TanStack Query key |
 
-### Module 1 — `coach/identity`
-
-Owns the concept of "a user who is a coach": signup, profile, light KYC, role transitions.
-
-| Concern | Owns |
-|---------|------|
-| Tables (NEW) | `coach_profiles` (display_name, bio, specialties[], website, kyc_status, created_at) |
-| Tables (EXTENDED) | `user_profiles.role TEXT CHECK (role IN ('client','coach','both')) DEFAULT 'client'` |
-| Hono routes | `POST /coach/identity/signup` (promote existing user_profile to coach), `GET /coach/identity/me`, `PATCH /coach/identity/me`, `POST /coach/identity/kyc-submit` |
-| Web routes | `(coach)/onboarding`, `(coach)/settings/profile`, `(coach)/settings/kyc` |
-| Types (`packages/coach-sdk`) | `CoachProfile`, `CoachIdentityState`, `KycStatus` |
-| AI tools | None |
-| Depends on | nothing (root of the dependency tree) |
-| Provides to others | `getCoachProfile(coachId)`, `requireCoachRole(userId)` service helpers; `is_coach(user_id)` SQL fn |
-| **ERP migration** | `coach/billing` will FK `coach_subscriptions.coach_id → coach_profiles.user_id`; `coach/scheduling` will FK `coach_calendar_settings.coach_id → coach_profiles.user_id`. The `coach_profiles` table never changes — billing/scheduling extend, do not modify. |
-
-### Module 2 — `coach/invitations`
-
-Owns the 6-character invitation code lifecycle and the act of binding a client to a coach.
-
-| Concern | Owns |
-|---------|------|
-| Tables (NEW) | `coach_invitations (id UUID, coach_id UUID, code TEXT UNIQUE, expires_at TIMESTAMPTZ, max_uses INT DEFAULT 1, used_count INT DEFAULT 0, created_at)` |
-| Hono routes | `POST /coach/invitations` (generate code, coach-only), `GET /coach/invitations` (list own codes), `DELETE /coach/invitations/:id` (revoke), `POST /coach/invitations/redeem` (client-side: validates code, creates link in `coach/clients` via service call) |
-| Web routes | `(coach)/invitations` — list + generate + share-link UI |
-| Mobile UI | Onboarding step + profile screen: "Enter coach code" → calls `POST /coach/invitations/redeem` |
-| Types | `Invitation`, `RedeemResult` |
-| AI tools | None |
-| Depends on | `coach/identity` (only coaches can create); `coach/clients` (calls its `createLink()` service on redeem) |
-| Provides | `validateAndConsumeCode(code, clientUserId)` → returns `{coach_id}` |
-| **ERP migration** | Stable. Billing/scheduling don't touch invitations. |
-
-Code generation: 6 chars from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (exclude `IO01` to avoid confusion), generated server-side, retried on UNIQUE collision. Default expiry: 30 days. `max_uses` left configurable in schema but always 1 in v1.5 UI.
-
-### Module 3 — `coach/clients`
-
-Owns the **link relation** between coach and client, and exposes read access to linked-client data. This is the trickiest module because it crosses RLS boundaries.
-
-| Concern | Owns |
-|---------|------|
-| Tables (NEW) | `coach_client_links (id UUID, coach_id UUID REFERENCES auth.users, client_id UUID REFERENCES auth.users, status TEXT CHECK status IN ('active','revoked'), invited_via UUID REFERENCES coach_invitations(id), created_at, revoked_at, UNIQUE(coach_id, client_id) WHERE status = 'active')` |
-| Hono routes | `GET /coach/clients` (list active links + denormalized client preview), `GET /coach/clients/:clientId` (full client detail aggregate), `DELETE /coach/clients/:clientId` (revoke), `GET /coach/clients/:clientId/sessions`, `GET /coach/clients/:clientId/measurements`, `GET /coach/clients/:clientId/habits`, `GET /coach/clients/:clientId/nutrition`, `GET /coach/clients/:clientId/sleep`, `GET /coach/clients/:clientId/cardio` |
-| Web routes | `(coach)/clients` (list+search), `(coach)/clients/[clientId]` (tabbed detail) |
-| Mobile UI | "Mon coach" screen → calls a mirror endpoint `GET /coach/clients/my-coach` (client side reading their own link) |
-| Types | `CoachClientLink`, `ClientPreview`, `ClientAggregate` |
-| AI tools | None directly; consumed by `coach/ai` |
-| Depends on | `coach/identity` (for coach role gate) |
-| Provides | `isCoachOf(coachId, clientId)` boolean, `getLinkedClients(coachId)`, `getClientAggregate(coachId, clientId)` |
-| **ERP migration** | Stable. Billing will read `coach_client_links` to count active clients (read-only). Scheduling will FK sessions to (`coach_id`, `client_id`) but the link table doesn't change. |
-
-**This is where the cross-user RLS is solved.** See "RLS Policies — Coach Cross-User Access" below.
-
-### Module 4 — `coach/programs`
-
-Owns coach-authored programs (templates) and assignments to clients. Extends the existing `workout_programs` rather than duplicating.
-
-| Concern | Owns |
-|---------|------|
-| Tables (EXTENDED) | `workout_programs`: ADD COLUMN `created_by_coach_id UUID REFERENCES auth.users(id)`, `assigned_to_user_id UUID REFERENCES auth.users(id)`, `is_template BOOLEAN DEFAULT FALSE`, `weeks_data JSONB`, `template_source_id UUID REFERENCES workout_programs(id)` (when a template is forked into an assignment) |
-| Tables (NEW) | None — single-table model. (Decision: extending `workout_programs` is correct because the existing `user_id` column doubles as "owner" — for a template, `user_id = created_by_coach_id`; for an assignment, `user_id = assigned_to_user_id` and `created_by_coach_id` records authorship.) |
-| Hono routes | `GET /coach/programs/templates` (coach's own templates), `POST /coach/programs/templates`, `PATCH /coach/programs/templates/:id`, `DELETE /coach/programs/templates/:id`, `POST /coach/programs/templates/:id/assign` (forks template → creates assignment row for a client), `GET /coach/programs/assignments` (filterable by client), `PATCH /coach/programs/assignments/:id`, `DELETE /coach/programs/assignments/:id` |
-| Web routes | `(coach)/programs` (template library), `(coach)/programs/[id]/edit`, `(coach)/clients/[clientId]/programs` (assignments view) |
-| Mobile | Read-only on "Mon coach" — uses existing `workout_programs` reads (which already work via `user_id = auth.uid()` since the assignment row's `user_id = client_id`) |
-| Types | `WorkoutProgramExtended`, `ProgramTemplate`, `ProgramAssignment` |
-| AI tools | None directly; consumed by `coach/ai` and `coach/imports` (both write programs) |
-| Depends on | `coach/identity`, `coach/clients` (to validate coach has link to target client on assignment) |
-| Provides | `assignTemplateToClient(coachId, templateId, clientId)`, `listTemplates(coachId)`, `listAssignments(coachId, clientId?)` |
-| **ERP migration** | Stable. `coach/scheduling` will reference `program_assignments` to plan sessions; no shape change. |
-
-### Module 5 — `coach/imports`
-
-Owns the AI file → structured program/sessions pipeline (replaces CSV).
-
-| Concern | Owns |
-|---------|------|
-| Tables (NEW) | `ai_imports (id UUID, user_id UUID, mode TEXT CHECK IN ('athlete_self','coach_template','coach_for_client'), target_client_id UUID NULL, source_storage_path TEXT, source_mime TEXT, status TEXT CHECK IN ('uploaded','parsing','preview_ready','committed','failed','cancelled'), parsed_json JSONB, committed_program_id UUID REFERENCES workout_programs(id), error_message TEXT, credit_cost INT, created_at, updated_at)` |
-| Hono routes | `POST /coach/imports/upload-url` (returns signed Supabase Storage URL — reuses v1.3 pattern), `POST /coach/imports/:id/parse` (triggers Claude vision/document → generateObject → writes parsed_json, advances status), `GET /coach/imports/:id` (poll status + preview), `POST /coach/imports/:id/commit` (writes to `workout_programs` via `coach/programs` service), `DELETE /coach/imports/:id` (cancel/cleanup) |
-| Web routes | `(coach)/imports` (list), `(coach)/imports/new` (uploader + preview/commit) |
-| Mobile | `(plugins)/ai-programs/import` screen — same flow, mode='athlete_self' |
-| Types | `ImportJob`, `ParsedProgram` (Zod schema in `coach-sdk`), `ImportPreview` |
-| AI tools | None exposed to orchestrator (imports are an explicit user action with a preview, not an autonomous tool call) |
-| Depends on | `coach/programs` (for commit path), `coach/clients` (for `coach_for_client` mode to verify link), existing `routes/credits.ts` (cost gate), existing `routes/storage.ts` (signed URL bucket) |
-| Provides | Nothing exported to other modules |
-| **ERP migration** | Stable. |
-
-The parsed program Zod schema lives in `packages/coach-sdk` so both web (for preview rendering) and backend (for `generateObject` shape) reference the same source of truth.
-
-### Module 6 — `coach/ai`
-
-Owns the three coach-specific AI tools and their wiring into the existing AI orchestrator. Does **not** own its own chat endpoint — reuses `/ai/chat/stream`. The orchestrator decides whether the user is a coach (via the role column) and what tool set is exposed.
-
-| Concern | Owns |
-|---------|------|
-| Tables | None |
-| Hono routes | None new — extends existing `/ai/chat/stream` via tool injection |
-| Web routes | `(coach)/ai` — coach AI chat UI (Next.js, calls the same `/ai/chat/stream` SSE endpoint as mobile but with `audience: 'coach'` header or message metadata) |
-| Tool registrations (added to `backend/api/src/tools/registry.ts`) | `analyze_client(client_id)`, `generate_coaching_program(client_id, goal, weeks, …)`, `monitor_client_alerts(client_id?)` |
-| Types | `AnalyzeClientResult`, `MonitoringAlert` |
-| AI tools | The three above. Each tool's executor calls `coach/clients.isCoachOf(userId, params.client_id)` first — RLS via service layer, not just DB layer. |
-| Depends on | `coach/clients` (link verification + data reads), `coach/programs` (program generation write path) |
-| Provides | Nothing |
-| **ERP migration** | Future `coach/billing` may add a `report_invoice_summary` tool; `coach/scheduling` may add `propose_session_slots`. All slot into the same registry. |
-
----
-
-## Cross-Module Communication
-
-**Decision: direct service-layer imports within the same Hono process. No internal HTTP, no event bus.**
-
-Rationale: Hono runs in a single Vercel serverless function. Cross-module calls become TypeScript function calls into a thin `service.ts` file per module. This:
-
-1. Avoids HTTP overhead and serialization on each call.
-2. Keeps types end-to-end without contract duplication.
-3. Lets us still enforce the boundary by **import linting** — each module exports a single `service.ts` index; routes/handlers in other modules may only import from that index (enforced via an ESLint rule `no-restricted-imports` allowing `coach/<m>/service` but disallowing `coach/<m>/db` or `coach/<m>/internal/*`).
+## Recommended Project Structure
 
 ```
-backend/api/src/coach/
-  identity/
-    routes.ts        ← Hono sub-router, mounted at /coach/identity
-    service.ts       ← public API for other modules
-    db.ts            ← internal Supabase queries (private)
-    schemas.ts       ← Zod schemas (re-exported from packages/coach-sdk where shared)
-  clients/
-    routes.ts
-    service.ts       ← exports isCoachOf, getClientAggregate, createLink, …
-    db.ts
-    schemas.ts
-  programs/   { routes, service, db, schemas }
-  invitations/ { routes, service, db, schemas }
-  imports/    { routes, service, db, schemas, parser.ts }
-  ai/
-    tools.ts         ← exports analyze_client, generate_coaching_program, monitor_client_alerts
-    schemas.ts
-  index.ts           ← mounts each sub-router on the parent /coach router
+scripts/
+├── csv-to-seed.js              # existing — precedent for this pattern
+├── json-to-seed.js             # existing — precedent for this pattern
+├── gen_fr_migration.py         # existing
+└── import-exercises/           # NEW — this milestone
+    ├── fetch.ts                 # download tarball → .staging/exercises-dataset/ (gitignored)
+    ├── normalize.ts              # shared name-normalization + field-agreement helpers (used by match.ts AND merge.ts's re-verification)
+    ├── match.ts                  # dry-run only, writes .staging/match-report.json — NEVER touches Supabase writes
+    ├── merge.ts                  # reads reviewed match-report.json, writes to Supabase (data + Storage), resumable via exercise_import_log
+    ├── review-report.ts          # small CLI to pretty-print match-report.json counts (matched/unmatched-legacy/unmatched-new/ambiguous) for the human review gate
+    └── README.md                 # run order + required env vars (SUPABASE_DB_URL direct connection, not pooled)
+
+supabase/migrations/
+├── 064_unaccent_user_search.sql          # existing, last numeric
+├── 20260529_fix_trigger_n_sessions.sql   # existing, last dated
+├── 20260814_exercises_image_column.sql   # NEW — schema first (see Build Order)
+└── 20260814_exercise_import_log.sql      # NEW — companion migration, same date, run after the column migration
+
+apps/mobile/
+├── src/components/ExercisePicker.tsx     # MODIFIED — add thumbnail + attribution badge, data-driven filters deferred (P2, out of this milestone per FEATURES.md)
+└── app/(app)/workout/exercise/[exerciseId].tsx  # MODIFIED — replace fake video placeholder with real GIF + attribution
 ```
 
-**Mount point** in `app.ts`:
-```ts
-import { coachRouter } from './coach/index.js';
-app.route('/coach', coachRouter);
-```
-
-**Tool registry wiring** in `backend/api/src/tools/registry.ts`:
-```ts
-import * as CoachAiTools from '../coach/ai/tools.js';
-// ...add to schemas array and executors map (same pattern as habits, cardio, etc.)
-```
-
-For the **web app → backend** call (Next.js server actions or route handlers calling Hono), the call is always HTTPS to `https://ziko-api-lilac.vercel.app/coach/*` carrying the user's Supabase JWT in `Authorization`. The web has no direct DB write path — it always goes through Hono. This is non-negotiable: it preserves the existing security model (one auth boundary, one logging point, one rate limiter).
-
----
-
-## Data Model
-
-### New Tables (migration 034 — first new migration in v1.5)
-
-```sql
--- 034_coach_platform_foundation.sql
-
--- 1. coach_profiles ───────────────────────────────────────────
-CREATE TABLE public.coach_profiles (
-  user_id        UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  display_name   TEXT NOT NULL,
-  bio            TEXT,
-  specialties    TEXT[] NOT NULL DEFAULT '{}',
-  website        TEXT,
-  kyc_status     TEXT NOT NULL DEFAULT 'pending' CHECK (kyc_status IN ('pending','approved','rejected')),
-  kyc_data       JSONB DEFAULT '{}'::jsonb,  -- doc URLs, submission notes
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE TRIGGER trg_coach_profiles_updated BEFORE UPDATE ON public.coach_profiles
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-ALTER TABLE public.coach_profiles ENABLE ROW LEVEL SECURITY;
-
--- 2. coach_client_links ───────────────────────────────────────
-CREATE TABLE public.coach_client_links (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  coach_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  client_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  status        TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','revoked')),
-  invited_via   UUID REFERENCES public.coach_invitations(id),
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  revoked_at    TIMESTAMPTZ,
-  CHECK (coach_id <> client_id)
-);
--- One active link per pair
-CREATE UNIQUE INDEX idx_coach_client_active
-  ON public.coach_client_links (coach_id, client_id)
-  WHERE status = 'active';
-CREATE INDEX idx_coach_client_by_coach  ON public.coach_client_links (coach_id)  WHERE status = 'active';
-CREATE INDEX idx_coach_client_by_client ON public.coach_client_links (client_id) WHERE status = 'active';
-ALTER TABLE public.coach_client_links ENABLE ROW LEVEL SECURITY;
-
--- 3. coach_invitations ────────────────────────────────────────
-CREATE TABLE public.coach_invitations (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  coach_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  code        TEXT NOT NULL UNIQUE CHECK (code ~ '^[A-Z2-9]{6}$'),
-  expires_at  TIMESTAMPTZ NOT NULL,
-  max_uses    INTEGER NOT NULL DEFAULT 1 CHECK (max_uses >= 1),
-  used_count  INTEGER NOT NULL DEFAULT 0,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_invitations_coach ON public.coach_invitations(coach_id, created_at DESC);
-CREATE INDEX idx_invitations_code  ON public.coach_invitations(code);
-ALTER TABLE public.coach_invitations ENABLE ROW LEVEL SECURITY;
-
--- 4. ai_imports ───────────────────────────────────────────────
-CREATE TABLE public.ai_imports (
-  id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id               UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  mode                  TEXT NOT NULL CHECK (mode IN ('athlete_self','coach_template','coach_for_client')),
-  target_client_id      UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  source_storage_path   TEXT NOT NULL,        -- bucket key in import-uploads
-  source_mime           TEXT NOT NULL,
-  status                TEXT NOT NULL DEFAULT 'uploaded' CHECK (status IN ('uploaded','parsing','preview_ready','committed','failed','cancelled')),
-  parsed_json           JSONB,
-  committed_program_id  UUID REFERENCES public.workout_programs(id) ON DELETE SET NULL,
-  error_message         TEXT,
-  credit_cost           INTEGER NOT NULL DEFAULT 0,
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_ai_imports_user_created ON public.ai_imports(user_id, created_at DESC);
-CREATE TRIGGER trg_ai_imports_updated BEFORE UPDATE ON public.ai_imports
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-ALTER TABLE public.ai_imports ENABLE ROW LEVEL SECURITY;
-
--- 5. strava_accounts ──────────────────────────────────────────
-CREATE TABLE public.strava_accounts (
-  user_id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  athlete_id         BIGINT NOT NULL UNIQUE,
-  access_token       TEXT NOT NULL,   -- encrypted at app layer (pgcrypto optional later)
-  refresh_token      TEXT NOT NULL,
-  expires_at         TIMESTAMPTZ NOT NULL,
-  scope              TEXT,
-  last_sync_at       TIMESTAMPTZ,
-  last_cursor_id     BIGINT,          -- last activity id reconciled
-  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE TRIGGER trg_strava_accounts_updated BEFORE UPDATE ON public.strava_accounts
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-ALTER TABLE public.strava_accounts ENABLE ROW LEVEL SECURITY;
-
--- 6. strava_webhook_events ────────────────────────────────────
-CREATE TABLE public.strava_webhook_events (
-  id              BIGSERIAL PRIMARY KEY,
-  athlete_id      BIGINT NOT NULL,
-  object_type     TEXT NOT NULL,        -- 'activity' | 'athlete'
-  object_id       BIGINT NOT NULL,
-  aspect_type     TEXT NOT NULL,        -- 'create' | 'update' | 'delete'
-  event_time      TIMESTAMPTZ NOT NULL,
-  processed       BOOLEAN NOT NULL DEFAULT FALSE,
-  processed_at    TIMESTAMPTZ,
-  payload         JSONB NOT NULL,
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_strava_events_unprocessed ON public.strava_webhook_events(processed, created_at)
-  WHERE processed = FALSE;
-CREATE INDEX idx_strava_events_athlete ON public.strava_webhook_events(athlete_id, object_id);
--- No RLS — webhook table is service-role-only, never queried from client
-```
-
-### Extended Tables
-
-```sql
--- user_profiles: add role
-ALTER TABLE public.user_profiles
-  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'client'
-  CHECK (role IN ('client', 'coach', 'both'));
-CREATE INDEX idx_user_profiles_role ON public.user_profiles(role)
-  WHERE role <> 'client';
-
--- workout_programs: coaching fields
-ALTER TABLE public.workout_programs
-  ADD COLUMN IF NOT EXISTS created_by_coach_id  UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  ADD COLUMN IF NOT EXISTS assigned_to_user_id  UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  ADD COLUMN IF NOT EXISTS is_template          BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS weeks_data           JSONB,
-  ADD COLUMN IF NOT EXISTS template_source_id   UUID REFERENCES public.workout_programs(id) ON DELETE SET NULL;
-CREATE INDEX idx_programs_coach    ON public.workout_programs(created_by_coach_id) WHERE created_by_coach_id IS NOT NULL;
-CREATE INDEX idx_programs_template ON public.workout_programs(created_by_coach_id) WHERE is_template = TRUE;
-```
-
-**Migration plan:** three sequential migration files keeps blast radius small.
-
-- `034_coach_role_and_profile.sql` — adds `role` column, `coach_profiles` table.
-- `035_coach_links_and_invitations.sql` — `coach_invitations` + `coach_client_links` + RPC helper `is_coach_of()` + RLS policies that depend on the links table (see next section).
-- `036_coach_programs_and_imports.sql` — `workout_programs` extension + `ai_imports` table + adjusted RLS policy on `workout_programs` to allow coach read/write of templates and assignments.
-- `037_strava_integration.sql` — `strava_accounts` + `strava_webhook_events`.
-
-Splitting like this lets us deploy `034` early (coach onboarding without yet exposing client data) and ship `035` once the cross-user RLS is validated.
-
----
-
-## RLS Policies — Coach Cross-User Access
-
-This is the architecturally hardest problem. The existing RLS pattern is `auth.uid() = user_id` everywhere. A coach must read **another user's** habits, sessions, measurements, etc. — without breaking the existing pattern for direct client access.
-
-**Approach:** introduce a SECURITY DEFINER SQL function `public.is_coach_of(p_coach UUID, p_client UUID) RETURNS BOOLEAN` that bypasses RLS to check the link table, then extend each relevant table's policy with `OR is_coach_of(auth.uid(), user_id)`.
-
-### The link-check function
-
-```sql
-CREATE OR REPLACE FUNCTION public.is_coach_of(p_coach UUID, p_client UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.coach_client_links
-    WHERE coach_id = p_coach
-      AND client_id = p_client
-      AND status = 'active'
-  );
-$$;
-
-REVOKE ALL ON FUNCTION public.is_coach_of(UUID, UUID) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.is_coach_of(UUID, UUID) TO authenticated;
-```
-
-**Why SECURITY DEFINER**: a user-side query against `coach_client_links` is itself RLS-restricted to their own rows. The function escapes that to answer "is X linked to Y" without leaking the broader link table. `STABLE` lets Postgres cache the result within a single query plan.
-
-### Link table's own RLS
-
-Each side sees only their own rows.
-
-```sql
--- Coach sees their links; client sees their links. Neither sees others'.
-CREATE POLICY "links_select_own" ON public.coach_client_links
-  FOR SELECT
-  USING (auth.uid() = coach_id OR auth.uid() = client_id);
-
--- Only the coach creates links (via service-role redeem flow that uses a SECURITY DEFINER fn, not direct insert)
-CREATE POLICY "links_insert_via_redeem" ON public.coach_client_links
-  FOR INSERT
-  WITH CHECK (auth.uid() = client_id);   -- client redeems → row inserted with their id
-
--- Either party can revoke
-CREATE POLICY "links_update_revoke" ON public.coach_client_links
-  FOR UPDATE
-  USING (auth.uid() = coach_id OR auth.uid() = client_id)
-  WITH CHECK (status = 'revoked');       -- only allowed transition via this policy
-```
-
-Pragmatically, link insert happens server-side through the redeem endpoint using the Hono backend's authenticated Supabase client, so even tighter would be acceptable; the policy above is defense-in-depth.
-
-### Pattern for each data table (habits, sessions, measurements, nutrition, sleep, cardio, hydration, journal, stretching)
-
-Replace the existing `auth.uid() = user_id` SELECT policy with an OR'd version. Keep INSERT/UPDATE/DELETE strictly self-owned (coach is **read-only** of client data in v1.5).
-
-```sql
--- Example: habit_logs (and apply same shape to: workout_sessions, session_sets via join,
---   body_measurements, nutrition_logs, sleep_logs, cardio_sessions, hydration_logs,
---   journal_entries, stretching_logs, habits, habit_logs)
-DROP POLICY IF EXISTS "own_habit_logs" ON public.habit_logs;
-
-CREATE POLICY "habit_logs_select" ON public.habit_logs
-  FOR SELECT
-  USING (
-    auth.uid() = user_id
-    OR public.is_coach_of(auth.uid(), user_id)
-  );
-
-CREATE POLICY "habit_logs_modify" ON public.habit_logs
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-```
-
-For `session_sets` and `program_workouts`/`program_exercises` which use JOIN-based policies, the existing JOIN expands transparently because `workout_sessions`/`workout_programs` themselves carry the OR'd SELECT policy.
-
-### `workout_programs` — special two-axis policy
-
-Programs split into three rows: client-owned (`user_id=client`), coach templates (`user_id=coach`, `is_template=true`), coach assignments (`user_id=client`, `created_by_coach_id=coach`).
-
-```sql
-DROP POLICY IF EXISTS "own_programs" ON public.workout_programs;
-
-CREATE POLICY "programs_select" ON public.workout_programs
-  FOR SELECT
-  USING (
-    auth.uid() = user_id
-    OR auth.uid() = created_by_coach_id
-    OR public.is_coach_of(auth.uid(), user_id)
-  );
-
-CREATE POLICY "programs_insert" ON public.workout_programs
-  FOR INSERT
-  WITH CHECK (
-    auth.uid() = user_id
-    OR (
-      auth.uid() = created_by_coach_id
-      AND (
-        is_template = TRUE                                       -- coach template
-        OR public.is_coach_of(auth.uid(), assigned_to_user_id)   -- coach assignment to linked client
-      )
-    )
-  );
-
-CREATE POLICY "programs_update" ON public.workout_programs
-  FOR UPDATE
-  USING (auth.uid() = user_id OR auth.uid() = created_by_coach_id)
-  WITH CHECK (auth.uid() = user_id OR auth.uid() = created_by_coach_id);
-
-CREATE POLICY "programs_delete" ON public.workout_programs
-  FOR DELETE
-  USING (auth.uid() = user_id OR auth.uid() = created_by_coach_id);
-```
-
-### `coach_profiles` RLS
-
-```sql
--- Coach owns their profile
-CREATE POLICY "coach_profile_own" ON public.coach_profiles
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Linked clients can read their coach's profile (read-only public-ish info)
-CREATE POLICY "coach_profile_visible_to_clients" ON public.coach_profiles
-  FOR SELECT USING (
-    auth.uid() = user_id
-    OR public.is_coach_of(user_id, auth.uid())   -- inverse direction: this profile belongs to my coach
-  );
-```
-
-### `ai_imports` RLS
-
-```sql
-CREATE POLICY "imports_own" ON public.ai_imports
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
-
-### `strava_accounts` RLS
-
-```sql
-CREATE POLICY "strava_accounts_own" ON public.strava_accounts
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
-
-### Performance note
-
-`is_coach_of` is called once per row by SELECT policies. With B-tree on `(coach_id, client_id) WHERE status = 'active'` the lookup is O(log n). For a coach with ≤ 50 clients reading a 30-day window of habit_logs (~1500 rows), the planner inlines the STABLE function once per query — verified pattern in Supabase docs. At 10k+ active links table-wide it remains negligible. If it ever becomes hot, materialize a `pg_trgm`-style cache. Out of scope for v1.5.
-
----
-
-## Data Flows
-
-### AI File Import Flow
-
-```
-[Mobile or web client]                              [Backend]                       [Storage / Anthropic]
-       │                                                │                                    │
-       │ 1. POST /coach/imports/upload-url              │                                    │
-       │    { mime, mode, target_client_id? }           │                                    │
-       │                                                │ a. validate role + link (if mode=  │
-       │                                                │    coach_for_client)               │
-       │                                                │ b. ai_imports row → 'uploaded'     │
-       │                                                │ c. signed URL via Supabase Storage │
-       │ ◄── { import_id, signed_url, storage_path } ───│                                    │
-       │                                                │                                    │
-       │ 2. PUT (binary) → signed_url ──────────────────┼───────────────────────────────────►│
-       │                                                │                                    │
-       │ 3. POST /coach/imports/:id/parse               │                                    │
-       │                                                │ creditCheck(IMPORT_COST)           │
-       │                                                │ ai_imports → 'parsing'             │
-       │                                                │ fetch file bytes / signed download │◄──┐
-       │                                                │ Claude messages.create with        │   │
-       │                                                │   document or image block          │───┘
-       │                                                │ generateObject(ParsedProgramSchema)│──►│ Anthropic
-       │                                                │ ai_imports.parsed_json = result    │◄──│ (vision/doc)
-       │                                                │ ai_imports → 'preview_ready'       │
-       │                                                │ creditDeduct (only if success)     │
-       │ ◄── { status:'preview_ready', preview:{…} } ───│                                    │
-       │                                                │                                    │
-       │ 4. POST /coach/imports/:id/commit              │                                    │
-       │    { edits? }                                  │                                    │
-       │                                                │ coach/programs.commitFromImport(   │
-       │                                                │   parsed, mode, target_client_id)  │
-       │                                                │ → INSERT workout_programs (+rows)  │
-       │                                                │ ai_imports.committed_program_id    │
-       │                                                │ ai_imports → 'committed'           │
-       │ ◄── { program_id } ────────────────────────────│                                    │
-```
-
-Reuses existing v1.3 Supabase Storage signed-URL pattern (bypasses Vercel's 4.5 MB body limit). Storage bucket: new `import-uploads` (private, path-prefixed RLS `(storage.foldername(name))[1] = auth.uid()`). Lifecycle cron extended to clean `import-uploads/*` after 30 days.
-
-Credit cost is taken from `coach/imports/parse` route via the existing `creditCheck`/`creditDeduct` middleware pair. Cost likely 3 credits (higher than chat) — final number set by FEATURES research.
-
-### Strava Sync Flow
-
-```
-[Mobile]                  [Backend]                    [Strava]
-   │                         │                            │
-   │ 1. tap "Connect Strava" │                            │
-   │ open WebBrowser to:     │                            │
-   │ https://strava.com/oauth?                            │
-   │  client_id, redirect=   │                            │
-   │  https://api/strava/cb  │                            │
-   │ ──────────────────────────────────────────────────►  │
-   │                         │ ◄── 302 redirect with code │
-   │                         │     (callback hits Hono)   │
-   │                         │ POST oauth/token (client_  │
-   │                         │   secret, code) ─────────► │
-   │                         │ ◄── access_token, refresh, │
-   │                         │     athlete_id             │
-   │                         │ UPSERT strava_accounts     │
-   │                         │ register webhook subscription (once, on first ever connect)
-   │                         │ initial backfill: GET /api/v3/athlete/activities (last 30d)
-   │                         │   → INSERT cardio_sessions │
-   │ ◄── deep link back ─────│                            │
-   │                         │                            │
-   │                         │                            │
-   │ later: athlete records an activity in Strava         │
-   │                         │ ◄── POST /webhooks/strava  │
-   │                         │     {object_type:'activity',aspect:'create',object_id, owner_id}
-   │                         │ INSERT strava_webhook_events (processed=false)
-   │                         │ respond 200 within 2s      │
-   │                         │                            │
-   │                         │ cron every 5 min:          │
-   │                         │   SELECT * FROM events WHERE processed=false LIMIT 50
-   │                         │   for each:                │
-   │                         │     refresh token if expired
-   │                         │     GET /api/v3/activities/{object_id} ──►
-   │                         │     map → cardio_sessions (UPSERT on external_strava_id)
-   │                         │     mark event processed   │
-   │                         │                            │
-   │                         │ reconciliation cron daily: │
-   │                         │   for each account:        │
-   │                         │     GET activities?after=last_sync_at
-   │                         │     UPSERT any missed      │
-```
-
-Webhook reconciliation is mandatory because Strava webhook delivery is best-effort; the daily cron closes gaps. `cardio_sessions` gets an extra nullable column `external_strava_id BIGINT UNIQUE` (sparse unique allowed via partial index) to support idempotent UPSERT.
-
-```sql
-ALTER TABLE public.cardio_sessions
-  ADD COLUMN IF NOT EXISTS external_strava_id BIGINT,
-  ADD COLUMN IF NOT EXISTS external_source TEXT CHECK (external_source IN ('strava'));
-CREATE UNIQUE INDEX idx_cardio_strava ON public.cardio_sessions(user_id, external_strava_id)
-  WHERE external_strava_id IS NOT NULL;
-```
-
-Routes (live under `coach/` only by file location for organization — Strava is athlete-facing, but its module conceptually belongs to the wearables/cardio domain; placing in `backend/api/src/integrations/strava/` is cleaner and avoids mis-binding it to coach modules):
-
-```
-backend/api/src/integrations/strava/
-  routes.ts    POST /integrations/strava/connect (returns OAuth URL)
-               GET  /integrations/strava/callback (OAuth redirect handler)
-               POST /integrations/strava/disconnect
-               POST /webhooks/strava        (Strava → us)
-               GET  /webhooks/strava        (subscription validation handshake)
-  service.ts   refreshIfExpired, upsertActivity, mapStravaToCardioSession
-  cron.ts      processWebhookQueue, dailyReconcile
-  db.ts
-```
-
-Vercel cron in `vercel.json`:
-```json
-{
-  "crons": [
-    { "path": "/integrations/strava/cron/process-webhooks", "schedule": "*/5 * * * *" },
-    { "path": "/integrations/strava/cron/daily-reconcile",  "schedule": "0 3 * * *" }
-  ]
+### Structure Rationale
+
+- **`scripts/import-exercises/` as a subfolder, not new top-level scripts:** the repo already has an established `scripts/` convention for one-off data-generation jobs (`csv-to-seed.js`, `json-to-seed.js` — these are literally what produced the *current* `seed_exercises.sql` from `kaggle_data/`). This import is the direct successor to that same workflow; putting it anywhere else (e.g. `backend/api/src/scripts/`) would incorrectly imply it's part of the deployed API surface.
+- **`fetch` / `match` / `merge` as three separate scripts, not one:** directly implements PITFALLS.md Pitfall 3 (non-idempotent script) and Pitfall 4 (17MB payload) — download must fully complete and be verified before any DB write begins, and the human-review gate (PITFALLS.md Pitfall 1 & 2) only works if `match.ts` is a distinct, side-effect-free step whose output is inspected before `merge.ts` ever runs.
+- **`normalize.ts` shared between match and merge:** `merge.ts` re-derives normalized names when writing (not just trusting the report blindly) as a cheap safety check that the underlying table hasn't drifted between the dry run and the actual write.
+- **Dated migration filenames (`20260814_*`), not next numeric (`065_*`):** the migration history shows the project switched from strict numeric (`001`–`064`) to `YYYYMMDD_description.sql` for everything after `064_unaccent_user_search.sql` (`20260526_*`, `20260527_*` ×2, `20260529_*`). Follow the convention actually in use at the tip of the migration history, not the older one.
+
+## Architectural Patterns
+
+### Pattern 1: Separate download/merge phases with a durable resume log
+
+**What:** Split the pipeline into a pure-download step (no DB writes) and a pure-merge step (no network fetches, reads only from local staging + Supabase), with a `exercise_import_log` table as the source of truth for "what's already been done."
+**When to use:** Any bulk external-data import where the write target is a live, FK-referenced production table and the input source involves ~2600 individual network fetches that can fail partway.
+**Trade-offs:** Slightly more code/ceremony than a single script; in exchange, a killed process, a GitHub rate-limit hit, or a Supabase network blip mid-run costs zero re-work — re-running `merge.ts` skips every row already marked `done` in the log.
+
+**Example:**
+```typescript
+// merge.ts (excerpt)
+const { data: alreadyDone } = await supabase
+  .from('exercise_import_log')
+  .select('dataset_exercise_id')
+  .eq('status', 'done');
+const doneSet = new Set(alreadyDone.map(r => r.dataset_exercise_id));
+
+for (const match of matchReport.matched) {
+  if (doneSet.has(match.datasetId)) continue; // resumable
+  await withTransaction(async (tx) => {
+    await tx.query('INSERT INTO exercises_merge_backup SELECT * FROM exercises WHERE id = $1', [match.existingId]);
+    await tx.query('UPDATE exercises SET image=$1, gif_url=$2, ... WHERE id=$3', [...]);
+    await tx.query(
+      `INSERT INTO exercise_import_log (dataset_exercise_id, matched_row_id, status, processed_at)
+       VALUES ($1,$2,'done',now())`,
+      [match.datasetId, match.existingId],
+    );
+  });
 }
 ```
 
-(Existing storage-cleanup cron in v1.3 stays; just add these entries.)
+### Pattern 2: Public read-only reference-data bucket (no per-user prefix)
 
-### Invitation Flow
+**What:** Unlike the 3 existing private buckets (`profile-photos`, `scan-photos`, `exports`, plus `coach-kyc`/`ai-imports`/`coach-exercises`), all of which are keyed by `(storage.foldername(name))[1] = auth.uid()::text` because they hold *user-owned* content, this bucket holds *global reference data* — every user needs to read the same objects, and no user (nor even the mobile client generally) ever writes to it.
+**When to use:** Shared/global media that all authenticated (and here, even unauthenticated marketing-page) clients must read, written only by a trusted server-side process.
+**Trade-offs:** Public buckets skip the signed-URL round-trip (`GET /storage/upload-url`) entirely on the read side — the mobile app just uses the public URL directly, which is simpler and faster than the existing per-user pattern. The cost is that write access must be locked down explicitly (no `authenticated` INSERT policy at all — only the service-role key used by the import script can write), otherwise any logged-in user could overwrite exercise media.
 
-```
-[Coach web]                  [Backend]                        [Client mobile]
-    │                            │                                  │
-    │ POST /coach/invitations    │                                  │
-    │   { expires_in_days:30 }   │                                  │
-    │                            │ requireCoachRole(userId)         │
-    │                            │ generate 6-char code (retry on   │
-    │                            │   UNIQUE collision)              │
-    │                            │ INSERT coach_invitations         │
-    │ ◄── { code, share_url } ───│                                  │
-    │                            │                                  │
-    │ share_url copied → SMS/WhatsApp to client ──────────────────► │
-    │                            │                                  │
-    │                            │      POST /coach/invitations/redeem
-    │                            │      { code: "X7K2NP" }          │
-    │                            │ ◄────────────────────────────────│
-    │                            │                                  │
-    │                            │ SECURITY DEFINER fn:             │
-    │                            │   SELECT * FROM invitations      │
-    │                            │   WHERE code=$1 AND used_count<max_uses
-    │                            │     AND expires_at>NOW()         │
-    │                            │   FOR UPDATE                     │
-    │                            │ INSERT coach_client_links        │
-    │                            │   (coach_id, client_id=auth.uid()) ON CONFLICT DO NOTHING (active)
-    │                            │ UPDATE invitations.used_count++  │
-    │                            │ ──────────────────────────────►  │
-    │                            │ { ok, coach: {...profile} }      │
-    │                            │                                  │
-    │                            │                                  │ mobile redirects to "Mon coach" screen
+**Example:**
+```sql
+-- 20260814_exercises_image_column.sql (excerpt) or a third migration alongside it
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('exercise-media', 'exercise-media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Public read (matches profile-photos' public-read policy pattern)
+CREATE POLICY "exercise_media_public_read" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'exercise-media');
+
+-- No INSERT/UPDATE/DELETE policy for `authenticated` or `public` — mirrors
+-- the `exports` bucket precedent ("No INSERT policy — server-side only").
+-- The import script uses the service-role key, which bypasses RLS entirely.
 ```
 
-Redeem happens server-side in a single SECURITY DEFINER PL/pgSQL function (`redeem_invitation_code(p_code, p_client_id)`) to atomically check-then-consume.
+### Pattern 3: Precision-first 3-tier match pipeline with a mandatory human gate
 
-### Coach AI Tool Execution Flow
+**What:** (1) exact normalized-name match, (2) normalized-name + at least one independent field (`body_part` or `equipment`) agreement for near-matches, (3) everything else → `unmatched` bucket requiring manual review before any write. This is spelled out in full in PITFALLS.md Pitfalls 1 & 2; restated here as the architectural shape it implies: **the match step's output is a file/report artifact, not a live DB mutation.**
+**When to use:** Any merge where false positives (silently corrupting a row referenced by real user history) are more expensive than false negatives (an extra row awaiting manual triage).
+**Trade-offs:** Requires a human in the loop once (reviewing the dry-run report) before `merge.ts` can run — this is the correct trade-off given `program_exercises`/`session_sets` have no `ON DELETE CASCADE` and real user data already exists.
+
+## Data Flow
+
+### Import Pipeline Flow (one-time / occasionally re-run)
 
 ```
-[Coach web]                           [Backend /ai/chat/stream]
-    │                                       │
-    │ POST messages=[..."Comment va Léa ?"] │
-    │ Authorization: Bearer <coach JWT>     │
-    │                                       │ existing chain: ipRateLimiter, auth, aiChatLimiter, creditCheck
-    │                                       │ fetchUserContext(userId) detects role='coach'|'both'
-    │                                       │   → expands tool set with coach AI tools
-    │                                       │   → system prompt addition: "You are a coach assistant.
-    │                                       │       The user is a fitness coach. Their linked clients: [...]"
-    │                                       │ streamText({ model, messages, tools: [...client tools, ...coach tools] })
-    │                                       │
-    │                                       │ Claude decides: call analyze_client({ client_id: "<Léa's uuid>" })
-    │                                       │
-    │                                       │ tools/registry.execute('analyze_client',
-    │                                       │   { client_id }, userId, userToken)
-    │                                       │   → coach/ai/tools.analyze_client(userId, params)
-    │                                       │      ├─ coach/clients.service.isCoachOf(userId, client_id) → must be true (else throw)
-    │                                       │      ├─ coach/clients.service.getClientAggregate(userId, client_id, 30days)
-    │                                       │      │   ← Supabase reads via the user's JWT → RLS allows OR is_coach_of(...)
-    │                                       │      └─ return structured analysis JSON to model
-    │                                       │
-    │                                       │ Claude generates final assistant message
-    │ ◄── SSE chunks ──────────────────────│ persist messages (existing ai_messages table)
-    │                                       │ creditDeduct
+[GitHub tarball, pinned SHA]
+    ↓ fetch.ts (raw.githubusercontent / codeload, NOT Contents API)
+[.staging/exercises-dataset/ — JSON + ~2600 media files, verified against manifest]
+    ↓ match.ts (reads public.exercises via direct connection, pure computation, zero writes)
+[.staging/match-report.json — matched / unmatched-legacy / unmatched-new / ambiguous]
+    ↓ ★ HUMAN REVIEW GATE ★ (review-report.ts prints counts; someone approves before proceeding)
+    ↓ merge.ts
+    ├─▶ [Supabase Storage: exercise-media/ — upload GIF+thumb, skip if already uploaded per log]
+    └─▶ [Postgres: exercises_merge_backup ← UPDATE exercises SET image, gif_url, ... ← exercise_import_log]
 ```
 
-**Critical:** the tool executor uses the **user's JWT** for its Supabase client, not the service role. RLS does the policing. The `isCoachOf` service call inside the tool is defense in depth, providing a clean 4xx error before Supabase silently returns empty rows. This is the same pattern existing plugin tools use (`tools/db.ts` in current registry — each tool receives `userId` and `userToken`).
+### Mobile Consumption Flow (steady state, post-migration)
 
----
+```
+[ExercisePicker.tsx / [exerciseId].tsx mount]
+    ↓ TanStack Query, queryKey ['exercises', 'v2']  (bumped from whatever the current key is — forces cache miss)
+    ↓ supabase.from('exercises').select('id,name,name_fr,image,gif_url,attribution,...')
+[Public exercise-media bucket URL, e.g. https://<project>.supabase.co/storage/v1/object/public/exercise-media/<id>.gif]
+    ↓ Expo <Image> with contentFit + explicit 180×180 max style
+[Rendered demo + co-located "© Gym visual" badge]
+```
 
-## Build Order
+### Key Data Flows
 
-Each phase below maps to a roadmap phase; numbered for dependency ordering.
+1. **Schema → Data → Storage → Mobile, strictly in that order (see Build Order below):** the `image`/`attribution` columns must exist before `merge.ts` can write to them; media must be uploaded and URLs written to the row before mobile code that reads `image`/`gif_url` is deployed, otherwise mobile ships against columns that are still null for most rows.
+2. **Backup-before-overwrite on every UPDATE:** `exercises_merge_backup` (a plain table, `INSERT INTO ... SELECT * FROM exercises WHERE id = $1` immediately before each UPDATE) is the recovery path for Pitfall 2 (false-positive match) — this is a data-flow step inside `merge.ts`'s per-row transaction, not a separate migration/table with its own lifecycle.
 
-**Phase 1 — Schema foundation (migrations 034–036)**
-Migration 034 (role + coach_profiles). Migration 035 (invitations + links + `is_coach_of`). Migration 036 (programs extension + ai_imports + RLS rewrites for habits/sessions/measurements/etc). Validate RLS with manual SQL test cases. Schema MUST land first because every backend module depends on tables existing.
-*Depends on:* nothing.
+## Scaling Considerations
 
-**Phase 2 — `apps/web/` Turborepo integration**
-Decide: pull existing ziko-app.com Next.js into the monorepo as `apps/web/`, or keep dual-repo. (STACK research will recommend; ARCHITECTURE assumes integration.) Wire up `next.config.js`, share design tokens, configure Vercel project for monorepo build, set up `(coach)/` route segment with Supabase auth helpers (`@supabase/ssr`).
-*Depends on:* Phase 1 not required, but useful to know schema for the auth context.
+This import operates once (plus occasional manual re-runs for dataset updates), against a fixed, small dataset (~1324 rows, ~2600 files). "Scaling" here means "will this survive one run without falling over," not multi-tenant growth — the FEATURES.md MVP definition explicitly defers an automated/scheduled resync to v2+.
 
-**Phase 3 — `coach/identity` module + coach signup**
-Backend module skeleton (`coach/index.ts`, sub-router pattern, ESLint boundary rules). `coach/identity` routes, services, schemas. Web `(coach)/onboarding` flow that PATCHes user_profiles.role and inserts coach_profiles row. Self-serve, no KYC blocker.
-*Depends on:* Phase 1, Phase 2.
+| Scale | Architecture Adjustments |
+|-------|---------------------------|
+| Single run, ~1324 rows / ~2600 files | Bounded concurrency (10-20 parallel) for Storage uploads; batched small transactions, not one giant transaction; local/CI execution as planned |
+| Occasional re-run (future dataset version bump) | Already covered by the resumable `exercise_import_log` design — a re-run against an updated dataset just processes the delta, no architecture change needed |
+| Hypothetical future admin-triggered resync (explicitly out of scope this milestone per FEATURES.md anti-features) | Would require promoting `merge.ts` into a properly queued/cron job with its own auth surface — not needed now, don't build it now |
 
-**Phase 4 — `coach/invitations` + `coach/clients` (links only)**
-Invitation routes, redeem RPC, link table writes. Mobile invitation-entry screen. Mobile "Mon coach" minimal screen (no data aggregate yet, just shows linked coach name + bio).
-*Depends on:* Phase 3.
+### Scaling Priorities
 
-**Phase 5 — `coach/clients` (read aggregate) + web CRM list/detail**
-Implement `getClientAggregate` reading all the cross-RLS data. Web `(coach)/clients` list and `(coach)/clients/[id]` tabbed detail. Read-only sessions/measurements/habits/nutrition/sleep/cardio tabs.
-*Depends on:* Phase 4 + RLS from Phase 1 verified end-to-end.
+1. **First and only real risk: partial failure mid-run**, not load — mitigated entirely by Pattern 1 (separate phases + resume log), already the core design.
+2. **Second-order risk: GitHub rate limiting during `fetch.ts`** — mitigated by using the tarball endpoint (one request) instead of per-file Contents API calls (per PITFALLS.md Integration Gotchas).
 
-**Phase 6 — `coach/programs` (templates + assignments)**
-Migration 036 program extension verified. Service methods. Routes. Web `(coach)/programs` template library + editor. Assign-to-client flow.
-*Depends on:* Phase 5.
+## Anti-Patterns
 
-**Phase 7 — `coach/imports` (AI file imports)**
-New storage bucket. `ai_imports` table from migration 036. Upload-url endpoint. Parse endpoint with Claude vision/document + generateObject + Zod (shared schema in `coach-sdk`). Preview + commit flow. Both athlete and coach modes.
-*Depends on:* Phase 6 (commit writes through coach/programs service).
+### Anti-Pattern 1: Implementing the import as a Hono route (`POST /admin/import-exercises` or similar)
 
-**Phase 8 — `coach/ai` orchestrator tools**
-Three new tools registered in `tools/registry.ts`. System prompt branch for coach audience. Web `(coach)/ai` chat UI (reuses SSE client pattern from mobile's AIBridge).
-*Depends on:* Phase 5 (analyze_client reads client data), Phase 6 (generate_coaching_program writes programs).
+**What people do:** Default to "everything is an API route" for consistency with the rest of `backend/api/`.
+**Why it's wrong:** The 17MB source JSON alone exceeds this project's own documented Vercel 4.5MB payload constraint (`.planning/PROJECT.md` Key Decisions, v1.3); a Hono/Vercel function is also subject to execution-duration limits that don't fit a ~9-minute-minimum sequential media download, and GitHub's Contents API (which a serverless function would be tempted to use instead of a tarball, to avoid writing to a filesystem) inflates payload ~33% via base64 — compounding the problem. Confirmed independently by both sibling PITFALLS.md (Pitfall 4) and this research.
+**Do this instead:** Local/CI Node+tsx script (Pattern 1), run manually or as a scheduled CI job with a direct (non-pooled) Postgres connection string — never a synchronous request handler.
 
-**Phase 9 — Strava OAuth + sync**
-Migration 037. OAuth connect/callback. Webhook subscription. Webhook ingestion route (idempotent insert into strava_webhook_events). Cron processor. Daily reconciliation. Mobile "Connect Strava" button + status indicator.
-*Depends on:* nothing in coach modules; can run in parallel with Phases 6–8 if capacity allows. Sequenced last because it's the lowest-coupling feature.
+### Anti-Pattern 2: Reusing the per-user-prefix bucket RLS pattern for reference data
 
-**Phase 10 — Public landing `/coachs` FR/EN**
-Marketing page under `(marketing)/coachs` (and `/en/coachs`). Signup CTA → links to `(coach)/onboarding`. Reuses existing next-intl setup from v1.0 landing.
-*Depends on:* Phase 3 (signup flow must exist for the CTA to land somewhere useful). Can be built earlier in parallel.
+**What people do:** Copy-paste the `(storage.foldername(name))[1] = auth.uid()::text` policy from `profile-photos`/`scan-photos`/`coach-exercises` because it's the only Storage pattern in the codebase.
+**Why it's wrong:** That pattern assumes every object belongs to exactly one user and is private-by-default with a signed-URL escape hatch. Exercise media is the opposite: one canonical asset per exercise, read by every user, written by nobody at request time. Forcing it through the signed-URL flow (`GET /storage/upload-url`) would require every mobile client to mint a signed URL per exercise media just to *read* it — unnecessary latency and complexity for content that has no confidentiality requirement.
+**Do this instead:** `public: true` bucket with a single public-SELECT policy and no client-facing INSERT/UPDATE/DELETE policy at all (Pattern 2) — writes happen exclusively through the import script's service-role key, which bypasses RLS.
 
-**Parallelizable lanes:**
-- Web Turborepo integration (Phase 2) can start at the same time as backend Phase 3.
-- Strava (Phase 9) is independent and can be parallelized any time after Phase 1.
-- Landing page (Phase 10) only depends on Phase 3's onboarding URL being decided.
+### Anti-Pattern 3: One giant transaction for the whole 1324-row merge
 
----
+**What people do:** Wrap the entire merge loop in a single `BEGIN...COMMIT` "to keep it atomic and simple."
+**Why it's wrong:** Already flagged in PITFALLS.md's Technical Debt Patterns table — a single transaction either fully succeeds (fine, but a timeout mid-way loses 100% of progress, defeating the resumability design) or fully fails and rolls back with zero partial audit trail of what was even validated.
+**Do this instead:** Small per-row (or small-batch) transactions, each immediately followed by an `exercise_import_log` write recording success — this is what makes Pattern 1's resumability actually work in practice, not just in theory.
 
-## ERP Migration Path (v1.6+)
+## Integration Points
 
-What the future ERP modules will add and how v1.5 stays unchanged:
+### External Services
 
-### `coach/billing` (v1.6 candidate)
+| Service | Integration Pattern | Notes |
+|---------|----------------------|-------|
+| GitHub (`hasaneyldrm/exercises-dataset`) | `fetch.ts` downloads `https://codeload.github.com/hasaneyldrm/exercises-dataset/tar.gz/<pinned-commit-sha>` once, extracts locally | Pin to a commit SHA, not `main` (integrity + reproducibility, per PITFALLS.md Security Mistakes); never loop the Contents API per-file |
+| Supabase Postgres (direct connection) | `match.ts`/`merge.ts` connect via `SUPABASE_DB_URL` (direct, non-pooled) from `backend/api/.env`-style local env, **not** the app's PgBouncer/transaction-mode pooled connection | Matches PITFALLS.md Integration Gotchas — pooled connections aren't suited to many sequential statements in a batch job |
+| Supabase Storage | `merge.ts` uploads via `@supabase/supabase-js` service-role client, bounded concurrency (10-20) | Same SDK already used throughout `backend/api/src/routes/storage.ts` — no new dependency |
 
-Adds:
-- Table `coach_subscriptions(coach_id FK coach_profiles, plan TEXT, status, current_period_end, stripe_customer_id, stripe_subscription_id)`.
-- Table `coach_invoices(coach_id, period_start, period_end, amount, …)`.
-- Tool `report_invoice_summary` in the registry.
-- Web routes `(coach)/billing`.
-- Webhook `/webhooks/stripe`.
+### Internal Boundaries
 
-Touches in v1.5:
-- **`coach_profiles`** — read-only FK target, no schema change.
-- **`coach_client_links`** — billing reads active link count for usage-based pricing; no schema change.
+| Boundary | Communication | Notes |
+|----------|----------------|-------|
+| `scripts/import-exercises/` ↔ `public.exercises` | Direct SQL via `pg`/`@supabase/supabase-js` service-role client, run manually/CI, never through the Hono API | Script is entirely outside `backend/api/`'s runtime request path — zero changes to `backend/api/src/routes/` are required for the import itself |
+| `scripts/import-exercises/` ↔ `coach_exercises` | **Explicit exclusion** — the merge query must filter `WHERE is_custom = FALSE AND user_id IS NULL` (mirrors the exact predicate `seed_exercises.sql` already uses for its DELETE), and must never touch the separate `coach_exercises` table (migration 055) at all | Confirmed by both sibling PITFALLS.md and FEATURES.md as a required exclusion — different table, different bucket, different RLS owner (`coach_id` vs. global) |
+| `public.exercises` ↔ mobile (`ExercisePicker.tsx`, `[exerciseId].tsx`) | Existing Supabase JS client read (`supabase.from('exercises').select(...)`), RLS policy `read_exercises` already permits `is_custom = FALSE` for all authenticated users, unchanged by this migration | Only the *columns selected* and the *query key version* change; no RLS policy change needed on `exercises` itself |
+| `exercise-media` bucket ↔ mobile | Public bucket URL consumed directly (no signed-URL fetch), stored as the full `gif_url`/`image` value on the row itself | Simpler than every other Storage integration in this codebase — no `/storage/upload-url` round-trip needed for reads |
 
-Conclusion: v1.5 needs no defensive design for billing. The bounded module boundary is the contract.
+## Build Order (dependency-driven, answers the "what migration order" question directly)
 
-### `coach/scheduling` (v1.6 candidate)
+1. **Schema migration(s) first** — `20260814_exercises_image_column.sql` (adds `image TEXT`, `attribution TEXT NOT NULL DEFAULT '© Gym visual — https://gymvisual.com/'` or structured equivalent per FEATURES.md's "structured field, not free text" requirement) + `20260814_exercise_import_log.sql` (new table) + a third migration (or combine with the column one) creating the `exercise-media` public bucket and its single read policy. Nothing downstream can run until these exist.
+2. **Download + merge script** (`scripts/import-exercises/fetch.ts` → `match.ts` → human review → `merge.ts`) — depends on step 1's columns/table existing. This step both uploads media to Storage *and* writes the resulting public URLs into `exercises.image`/`exercises.gif_url` in the same per-row transaction, so "storage upload" and "data write" are not separable phases at the architecture level (they were separable as a *pitfall concern* — resumability — but the actual write happens together, upload-then-UPDATE, per row, inside `merge.ts`).
+3. **Mobile consumption changes** (`ExercisePicker.tsx`, `[exerciseId].tsx`, query key version bump, attribution badge component in `packages/ui/`) — depends on step 2 having actually populated real URLs in production; shipping mobile UI against the new columns before the merge has run would show blank/placeholder states for every exercise, which is safe but pointless to ship early. Sequence step 2 to completion (including verification per PITFALLS.md's checklist) before starting step 3's implementation, even though the code for step 3 could technically be written in parallel against a staging copy.
 
-Adds:
-- Tables `coach_calendar_settings(coach_id, availability_rules JSONB, timezone)`, `coach_sessions(coach_id, client_id, scheduled_at, duration_min, type, status, notes)`, `coach_session_notes`.
-- Tools `propose_session_slots`, `book_session`, `record_session_notes`.
-- Web routes `(coach)/calendar`, `(coach)/clients/[id]/sessions`.
-- Cron for reminder emails.
-
-Touches in v1.5:
-- **`coach_client_links`** — FK source for `coach_sessions.client_id`. No change needed.
-- **`workout_programs`** — `coach_sessions` may optionally FK an assignment. No change needed.
-- **AI tools** — three new tools added to registry. The registry pattern already handles N tools.
-
-Conclusion: again, additive.
-
-### `coach/messaging` (deferred per PROJECT.md)
-
-Will likely add `coach_threads`, `coach_messages`, plus Supabase Realtime channels per thread. The link table is the FK source. Existing AI orchestrator can be extended with a `summarize_thread` tool. No v1.5 changes.
-
-### What MUST stay stable
-
-| Surface | Stability promise |
-|---------|-------------------|
-| `coach_client_links` table shape | Frozen — every future module joins this. Additions (e.g., `tier` per link) allowed; column removals forbidden. |
-| `is_coach_of(coach, client)` SQL function signature | Frozen — every cross-user RLS policy uses it. |
-| `user_profiles.role` enum values | `'client'|'coach'|'both'` is permanent. New roles (e.g., admin) require a separate column. |
-| Tool registry shape (`AITool` + executor) | Frozen — already 30+ tools depend on it. |
-| `coach-sdk` ParsedProgram Zod schema (once stable) | Versioned with semver. v1.x additive only. |
-
----
-
-## Risks
-
-1. **Cross-user RLS performance regression.** Every habit_log, session, measurement now has an OR'd policy with a function call. Mitigation: STABLE function + indexed `coach_client_links` lookup means single B-tree probe; pre-launch benchmark on a seeded 1000-coach × 50-client × 30-day dataset is the gate. *Risk level: MEDIUM.*
-
-2. **`is_coach_of` SECURITY DEFINER leak.** A bug here means any user could read any other user's data. Mitigation: function takes only `(coach, client)` and returns boolean; no row data returned. Unit test the function explicitly. *Risk level: LOW if reviewed; CATASTROPHIC if buggy.*
-
-3. **Strava webhook race conditions.** A single activity may produce create + update webhooks within ms. UPSERT on `external_strava_id` is idempotent, but the cron processor reading "unprocessed" events could double-process if two crons overlap. Mitigation: `SELECT … FOR UPDATE SKIP LOCKED LIMIT 50` on the events table. *Risk level: LOW.*
-
-4. **Vercel function timeout on AI import parse.** Claude document parsing can take 10–30s for large PDFs. Mitigation: parse endpoint must complete within Vercel Fluid's hobby/pro budget (60s); if exceeded, switch to a queued model (`status='parsing'` polled by client) where parse is triggered by a separate cron-tickled queue. Implement polling on day one — even if parse usually completes synchronously, the UI must tolerate async. *Risk level: MEDIUM.*
-
-5. **Web/mobile auth context drift.** Supabase `@supabase/ssr` (web) and `@supabase/supabase-js` (mobile) handle JWT differently. The Hono backend already trusts `Authorization: Bearer <jwt>` from either, but session refresh logic differs. Mitigation: document both flows in `apps/web/src/lib/supabase.ts` and `apps/mobile/src/lib/supabase.ts`. *Risk level: LOW.*
-
-6. **Turborepo monorepo onboarding of `apps/web/`.** Pulling the existing public Next.js repo into the monorepo touches deployment, env vars, and shared package builds. Mitigation: spike before Phase 2 to confirm Vercel monorepo build works with `apps/web/` and existing `backend/api/`; have rollback to dual-repo as fallback (the bounded-context architecture works either way — modules in `coach-sdk` would just be NPM-published instead). *Risk level: MEDIUM.* (Final call deferred to STACK research.)
-
-7. **AI import Zod schema drift.** If the parsed JSON shape changes between commit time and migration, old imports break. Mitigation: version the Zod schema (`ParsedProgramV1`), persist `schema_version` in `ai_imports.parsed_json.__v`, never break old shapes. *Risk level: LOW.*
-
-8. **GDPR right-to-erasure cascade across coach data.** If a client deletes their account, FK cascades remove their `coach_client_links` row and (per `ON DELETE CASCADE`) their cardio_sessions, habit_logs, etc. Their coach still has assignments where `assigned_to_user_id = <deleted_id>` — those should also cascade. The schema above uses `ON DELETE CASCADE` on `workout_programs.assigned_to_user_id`, which is correct for GDPR but means a coach loses the history of a deleted client. Acceptable in v1.5; if not, switch to `ON DELETE SET NULL` and rely on `coach_client_links.status='revoked'` for the lifecycle. *Risk level: LOW; design decision to confirm with product.*
-
----
+This order directly satisfies the FK-safety dependency requested: schema exists before data is written, data (with real URLs) exists before mobile code that assumes it renders, and the resumability/backup mechanisms (import log, merge backup table) are schema-level artifacts that must predate the first write, not bolted on after.
 
 ## Sources
 
-- Verified from source: `backend/api/src/app.ts` — Hono router mount pattern, CORS, middleware chain order.
-- Verified from source: `backend/api/src/tools/registry.ts` — tool schema + executor registration shape; how a new module's tools get wired in.
-- Verified from source: `supabase/migrations/001_initial_schema.sql` — RLS pattern (`auth.uid() = user_id`), trigger functions (`handle_updated_at`, `handle_new_user`), workout_programs/sessions/sets shape.
-- Verified from source: `supabase/migrations/026_ai_credits.sql` — atomic SECURITY DEFINER pattern with FOR UPDATE row lock, balance_after trigger, ON CONFLICT DO NOTHING idempotency — proven pattern this milestone reuses for `redeem_invitation_code`.
-- Verified from source: `supabase/migrations/032_onboarding_profile_fields.sql` — current shape of user_profiles extensions used as model for the `role` column addition.
-- Verified from source: `supabase/migrations/033_community_posts.sql` — current shape of public-read tables with private-write; useful pattern for `coach_profiles` "visible to linked clients".
-- Verified from source: `.planning/PROJECT.md` — v1.5 milestone definition, bounded-context decision, deferral list.
-- Verified from source: `.planning/research/v1.4/ARCHITECTURE.md` — established middleware composition + tool registry conventions (creditCheck/creditDeduct sandwich, fire-and-forget pattern).
-- Verified from source: `CLAUDE.md` — tech stack truth (Hono v4, Vercel, Supabase publishable key, AI SDK v6 with `inputSchema`/`stepCountIs`).
+- `C:\ziko-platform\supabase\migrations\001_initial_schema.sql` — `exercises`, `program_exercises`, `session_sets` FK shape — HIGH, read directly
+- `C:\ziko-platform\supabase\migrations\004_exercises_extended.sql` — existing `gif_url`/`body_part`/`equipment`/`target_muscle` columns, current category CHECK — HIGH, read directly
+- `C:\ziko-platform\supabase\migrations\025_storage_buckets.sql` — established bucket + RLS pattern (`profile-photos` public-read precedent, `exports` server-only-write precedent) — HIGH, read directly
+- `C:\ziko-platform\supabase\migrations\055_coach_exercises_schema.sql` — confirms `coach_exercises` is a fully separate table/bucket, must not be conflated with this import — HIGH, read directly
+- `C:\ziko-platform\backend\api\src\routes\storage.ts` — existing signed-URL upload flow (`ALLOWED_BUCKETS`, per-user path prefix enforcement) — confirms why this new bucket needs a *different* pattern (public, no signed URL) — HIGH, read directly
+- `C:\ziko-platform\scripts\` directory listing (`csv-to-seed.js`, `json-to-seed.js`, `gen_fr_migration.py`) — direct precedent for where and how one-off data-generation scripts live in this repo — HIGH, read directly
+- `C:\ziko-platform\package.json` — confirms `@supabase/supabase-js` and `zod` already available as root-level dependencies, no new package needed for the script to talk to Supabase — HIGH, read directly
+- `ls supabase/migrations` sorted — confirms migration numbering convention shifted from numeric (`001`–`064`) to dated (`YYYYMMDD_*`) at the tip of history — HIGH, read directly
+- `.planning/research/PITFALLS.md` (sibling researcher output) — Pitfalls 1–6, Technical Debt Patterns, Integration Gotchas, Security Mistakes — factored in directly per task instructions, not re-derived
+- `.planning/research/FEATURES.md` (sibling researcher output) — MVP scope, attribution UX recommendation, explicit `is_custom` exclusion requirement — factored in directly per task instructions, not re-derived
+- `C:\ziko-platform\.planning\PROJECT.md` — Vercel 4.5MB constraint (v1.3 Key Decision), v1.16 `image-exo` workstream description — HIGH, read directly
 
 ---
-*Architecture research for: v1.5 Coach Platform & CRM — Ziko Platform*
-*Researched: 2026-05-13*
+*Architecture research for: Exercise library data + media import pipeline (Ziko Platform, v1.16 `image-exo` workstream)*
+*Researched: 2026-08-14*
