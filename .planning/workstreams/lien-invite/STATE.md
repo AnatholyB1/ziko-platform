@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
-current_phase: 2
-current_phase_name: Test-Account Purge
-status: executing
+current_phase: 3
+current_phase_name: Legal — CGV & CGU
+status: planning
 stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-08-13T23:12:48.526Z"
-last_activity: 2026-08-13
-last_activity_desc: Phase 1 accepted at plan 01-04 Task 3's blocking checkpoint. DATA-01..07 all Complete in REQUIREMENTS.md.
+last_updated: "2026-08-14T12:13:34.982Z"
+last_activity: 2026-08-14
+last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -30,9 +30,9 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 
 ## Current Position
 
-Phase: 2 (Test-Account Purge) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
+Phase: 3 — Legal — CGV & CGU
+Plan: Not started
+Status: Ready to plan
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -44,7 +44,7 @@ suites on future PRs.
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-13 — Phase 2 execution started
+Last activity: 2026-08-14 — Phase 2 complete, transitioned to Phase 3
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
 Progress: [████████░░] 78% (1/6 phases complete, Phase 1 — 4/4 plans)
@@ -53,7 +53,7 @@ Progress: [████████░░] 78% (1/6 phases complete, Phase 1 —
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 4
 - Average duration: —
 - Total execution time: —
 
@@ -62,6 +62,7 @@ Progress: [████████░░] 78% (1/6 phases complete, Phase 1 —
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 — Data Foundation | 4/4 | ~3h 20min | ~50min |
+| 2 | 4 | - | - |
 
 *Updated after each plan completion*
 **Per-Plan Metrics:**
