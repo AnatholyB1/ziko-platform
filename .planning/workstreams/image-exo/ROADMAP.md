@@ -10,7 +10,7 @@
 
 **Phase Numbering:** Fresh parallel workstream — numbering starts at Phase 1 (not continuing the shared main-track sequence).
 
-- [ ] **Phase 1: Schema & Storage Foundation** - Add the `image` column, `exercise_import_log` table, and public `exercise-media` bucket the rest of the pipeline depends on
+- [x] **Phase 1: Schema & Storage Foundation** - Add the `image` column, `exercise_import_log` table, and public `exercise-media` bucket the rest of the pipeline depends on (completed 2026-08-14)
 - [ ] **Phase 2: Download & Match (Dry-Run)** - Fetch the dataset and produce a human-reviewable match report with zero database writes
 - [ ] **Phase 3: Merge (Human-Approved Write)** - Apply the approved report to production — resumable, backed up, FK-safe
 - [ ] **Phase 4: Mobile Consumption & Attribution** - Real media, structured instructions, and mandatory attribution render in the app
@@ -27,10 +27,10 @@
   1. `public.exercises` has a nullable `image` (thumbnail path) column, added via a dated migration
   2. A public `exercise-media` Supabase Storage bucket exists — readable by anyone, writable only via the service-role key (no client-facing write policy)
   3. An `exercise_import_log` table exists, ready to record per-row import status — the foundation Phase 3's resumable merge depends on (supports IMPORT-04)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 01-01-PLAN.md — Add exercises.image/gif columns, create exercise-media Storage bucket, create exercise_import_log table, push migration live
+- [x] 01-01-PLAN.md — Add exercises.image/gif columns, create exercise-media Storage bucket, create exercise_import_log table, push migration live
 
 ### Phase 2: Download & Match (Dry-Run)
 **Goal**: A human reviewer can see exactly which exercises will be updated, added, or need manual attention — before any database write happens.
@@ -77,7 +77,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema & Storage Foundation | 0/1 | Planned | - |
+| 1. Schema & Storage Foundation | 1/1 | Complete   | 2026-08-14 |
 | 2. Download & Match (Dry-Run) | 0/TBD | Not started | - |
 | 3. Merge (Human-Approved Write) | 0/TBD | Not started | - |
 | 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
