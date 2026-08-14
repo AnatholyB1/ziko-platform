@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
-current_phase_name: Legal — CGV & CGU
+current_phase_name: legal-cgv-cgu
 status: executing
 stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-08-14T13:30:17.675Z"
+last_updated: "2026-08-14T13:32:24.297Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
@@ -25,14 +25,14 @@ See: .planning/workstreams/lien-invite/PROJECT.md context inherited from root .p
 **Core value:** Capturer les emails des personnes intéressées par l'accès anticipé à Ziko, athlètes
 comme coachs, et tenir une promesse « premium à vie » pour les 200 premiers qui soit vraie dans le
 contrat comme dans le code.
-**Current focus:** Phase 2 — Test-Account Purge
+**Current focus:** Phase 3 — legal-cgv-cgu
 dependency on Phase 1 and can start immediately per ROADMAP.md
 
 ## Current Position
 
-Phase: 3 — Legal — CGV & CGU
-Plan: Not started
-Status: Ready to execute
+Phase: 3 (legal-cgv-cgu) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 3
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -44,7 +44,7 @@ suites on future PRs.
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-14 — Phase 2 complete, transitioned to Phase 3
+Last activity: 2026-08-14 — Phase 3 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
 Progress: [████████░░] 78% (1/6 phases complete, Phase 1 — 4/4 plans)
