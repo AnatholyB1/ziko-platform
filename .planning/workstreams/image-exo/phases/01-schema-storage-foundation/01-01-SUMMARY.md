@@ -117,3 +117,10 @@ All three should return HTTP 200, and the bucket check should show `"public":tru
 ---
 *Phase: 01-schema-storage-foundation*
 *Completed: 2026-08-14 (partial — Task 1 of 3)*
+
+## Self-Check: PASSED
+
+- FOUND: `supabase/migrations/20260814_exercise_media_schema.sql`
+- FOUND: `.planning/workstreams/image-exo/phases/01-schema-storage-foundation/01-01-SUMMARY.md`
+- FOUND: commit `5440c44` (Task 1 migration file)
+- FOUND: commit `4257098` (this SUMMARY.md)
