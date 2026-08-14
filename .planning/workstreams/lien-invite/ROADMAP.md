@@ -153,7 +153,21 @@ milestone; must complete before Phase 4 starts, per LEGAL-05)
 
   5. A documented retention period governs stored addresses, and a registrant can request and
      receive erasure of their entry (LEGAL-08, LEGAL-09)
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Tracer: bilingual CGV route end to end (footer link → locale-branched clause module → rendered page), then the full ten-section contract
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — CGU states the identical AI-credit cap by shared import, privacy-policy retention + erasure section, consent/notice copy frozen for Phase 5
+- [ ] 03-03-PLAN.md — Additive `app_config` retention migration, human-triggered erasure script + runbook over Phase 1's RPC, counsel-briefing package
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-04-PLAN.md — Blocking counsel-approval gate (D-01), approval record, revisions applied, draft-pending banner cleared
+
 **Research**: Needs deeper work at plan time, but it is legal drafting requiring outside counsel,
 not further searching — `research/PITFALLS.md` Pitfalls 1, 2, 3, 4, 6, 7, 8, 10 lay out every
 open question already flagged for lawyer review (the "à vie" black-list-clause risk is the single
@@ -269,7 +283,7 @@ being complete.
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
-| 3. Legal — CGV & CGU | 0/TBD | Not started | - |
+| 3. Legal — CGV & CGU | 0/4 | Planned | - |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
