@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
 current_phase_name: legal-cgv-cgu
 status: executing
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-08-14T13:32:24.297Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-14T18:00:28.126Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 10
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -31,8 +31,8 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 ## Current Position
 
 Phase: 3 (legal-cgv-cgu) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 3
+Plan: 2 of 4
+Status: Ready to execute
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -47,7 +47,7 @@ no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 Last activity: 2026-08-14 — Phase 3 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
-Progress: [████████░░] 78% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [████████░░] 83% (1/6 phases complete, Phase 1 — 4/4 plans)
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [████████░░] 78% (1/6 phases complete, Phase 1 —
 | Phase 02-test-account-purge P01 | ~10min | 2 tasks | 4 files |
 | Phase 02-test-account-purge P02 | ~25min | 2 tasks | 3 files |
 | Phase 02-test-account-purge P03 | ~20min | 2 tasks | 3 files |
+| Phase 03-legal-cgv-cgu P02 | ~30min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,9 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 2] 02-03: runDelete receives no client and no enumeration function, only manifest.candidate_ids and an injected deleteAccount fake — re-deriving a candidate set at delete time is structurally impossible (D-02, T-02-21)
 - [Phase ?]: [Phase 2] 02-03: fetchOrphanRows scans all 8 (table,column) pairs from the plan's own interfaces table, not 7 as the action prose miscounted — completeness matters more for an orphan scan than matching a wrong prose count
 - [Phase ?]: [Phase 2] 02-03: checkAccountConservation is the only post-purge check able to detect a real account destroyed by an over-broad criterion — asserts surviving count never falls below scanned minus manifest size (Pitfall 13 step 7)
+- [Phase ?]: [Phase 3] 03-02: CGU imports AI_CREDIT_CAP_SENTENCE from founder-offer.ts rather than restating it — LEGAL-04 drift made structurally impossible, not merely tested-for
+- [Phase ?]: [Phase 3] 03-02: COLLECTION_POINT_NOTICE built via template-literal interpolation of WAITLIST_RETENTION_YEARS — the point-of-collection retention figure can never independently drift from RETENTION_STATEMENT's
+- [Phase ?]: [Phase 3] 03-02: no draft-pending-review banner on the privacy-policy waitlist section — it restates an existing retention period + statutory GDPR right, not new contractual terms; banner stays reserved for CGV/CGU
 
 ### Pending Todos
 
@@ -155,9 +159,9 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-14T13:09:05.357Z
-Stopped at: Phase 3 UI-SPEC approved
+Last session: 2026-08-14T18:00:28.108Z
+Stopped at: Completed 03-02-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: /home/user/ziko-platform/.planning/workstreams/lien-invite/phases/03-legal-cgv-cgu/03-UI-SPEC.md
+Resume file: None

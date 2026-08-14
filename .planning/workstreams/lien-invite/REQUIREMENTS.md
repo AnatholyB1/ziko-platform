@@ -61,12 +61,12 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 - [ ] **LEGAL-01**: Une page CGV publique existe, en français et en anglais
 - [ ] **LEGAL-02**: Les CGV énoncent que le premium ouvre toutes les fonctionnalités mais que les crédits IA restent plafonnés
 - [ ] **LEGAL-03**: Les CGV précisent la portée de l'engagement « à vie » sans se réserver un droit de modification unilatérale illimité
-- [ ] **LEGAL-04**: Les CGU sont révisées pour être cohérentes avec les CGV sur le plafond de crédits IA
+- [x] **LEGAL-04**: Les CGU sont révisées pour être cohérentes avec les CGV sur le plafond de crédits IA
 - [ ] **LEGAL-05**: Le texte légal décrivant le plafond est en ligne avant ou en même temps que l'activation du changement de code, jamais après
-- [ ] **LEGAL-06**: Le formulaire présente une case de consentement décochée par défaut et dissociée du bouton d'inscription
-- [ ] **LEGAL-07**: La mention d'information RGPD figure au point de collecte, pas seulement en pied de page
-- [ ] **LEGAL-08**: Une durée de conservation des adresses est définie et documentée
-- [ ] **LEGAL-09**: Un inscrit peut demander l'effacement de son adresse et obtenir sa suppression
+- [x] **LEGAL-06**: Le formulaire présente une case de consentement décochée par défaut et dissociée du bouton d'inscription
+- [x] **LEGAL-07**: La mention d'information RGPD figure au point de collecte, pas seulement en pied de page
+- [x] **LEGAL-08**: Une durée de conservation des adresses est définie et documentée
+- [x] **LEGAL-09**: Un inscrit peut demander l'effacement de son adresse et obtenir sa suppression
 
 ### Nettoyage base (PURGE)
 
@@ -147,12 +147,12 @@ Points que la recherche a explicitement refusé de trancher :
 | LEGAL-01 | Phase 3 | Pending |
 | LEGAL-02 | Phase 3 | Pending |
 | LEGAL-03 | Phase 3 | Pending |
-| LEGAL-04 | Phase 3 | Pending |
+| LEGAL-04 | Phase 3 | Complete |
 | LEGAL-05 | Phase 3 | Pending |
-| LEGAL-06 | Phase 3 | Pending |
-| LEGAL-07 | Phase 3 | Pending |
-| LEGAL-08 | Phase 3 | Pending |
-| LEGAL-09 | Phase 3 | Pending |
+| LEGAL-06 | Phase 3 | Complete |
+| LEGAL-07 | Phase 3 | Complete |
+| LEGAL-08 | Phase 3 | Complete |
+| LEGAL-09 | Phase 3 | Complete |
 | CRED-01 | Phase 4 | Pending |
 | CRED-02 | Phase 4 | Pending |
 | CRED-03 | Phase 4 | Pending |

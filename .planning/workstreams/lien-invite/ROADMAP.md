@@ -153,15 +153,15 @@ milestone; must complete before Phase 4 starts, per LEGAL-05)
 
   5. A documented retention period governs stored addresses, and a registrant can request and
      receive erasure of their entry (LEGAL-08, LEGAL-09)
-**Plans**: 4 plans
+**Plans**: 2/4 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Tracer: bilingual CGV route end to end (footer link → locale-branched clause module → rendered page), then the full ten-section contract
+- [x] 03-01-PLAN.md — Tracer: bilingual CGV route end to end (footer link → locale-branched clause module → rendered page), then the full ten-section contract
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-02-PLAN.md — CGU states the identical AI-credit cap by shared import, privacy-policy retention + erasure section, consent/notice copy frozen for Phase 5
+- [x] 03-02-PLAN.md — CGU states the identical AI-credit cap by shared import, privacy-policy retention + erasure section, consent/notice copy frozen for Phase 5
 - [ ] 03-03-PLAN.md — Additive `app_config` retention migration, human-triggered erasure script + runbook over Phase 1's RPC, counsel-briefing package
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -283,7 +283,7 @@ being complete.
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
-| 3. Legal — CGV & CGU | 0/4 | Planned | - |
+| 3. Legal — CGV & CGU | 2/4 | In Progress|  |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
