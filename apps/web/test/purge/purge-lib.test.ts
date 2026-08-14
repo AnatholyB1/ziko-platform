@@ -252,6 +252,28 @@ describe('runDryRun + writeReport — end to end', () => {
     // content must start with the neutralizing apostrophe, not the raw '='.
     expect(lines[1]).toMatch(/^u1,"'=cmd/);
   });
+
+  // WR-05: a lone \r (old-style Mac line ending, unaccompanied by \n) must
+  // also trigger quoting — a naive comma/quote/\n-only check would let it
+  // through unquoted and a spreadsheet app could read it as a row break.
+  it('quotes an email field containing a bare carriage return', async () => {
+    const users = [{ id: 'u1', email: 'a\rb@ziko-app.com', created_at: 't1', last_sign_in_at: null }];
+
+    const report = await runDryRun({
+      listUsers: async () => users,
+      fetchCrossLinks: async () => [],
+      now: () => new Date('2026-08-13T12:07:00.000Z'),
+    });
+
+    const dir = mkdtempSync(join(tmpdir(), 'purge-'));
+    tmpDirs.push(dir);
+
+    const { csvPath } = await writeReport(report, dir);
+    const csv = readFileSync(csvPath as string, 'utf8');
+    // Confirm the field is wrapped in quotes rather than left bare — a raw
+    // split on '\n' would otherwise misparse the row.
+    expect(csv).toContain('"a\rb@ziko-app.com"');
+  });
 });
 
 describe('classifyAccounts — multi-link aggregation', () => {

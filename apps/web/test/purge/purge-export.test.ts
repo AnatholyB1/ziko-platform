@@ -309,6 +309,31 @@ describe('writeExport', () => {
     const parsed = parseCsvLine(lines[1]);
     expect(parsed[1]).toBe("'=1+1@ziko-app.com");
   });
+
+  // WR-05: a lone \r must also trigger quoting, not just \n.
+  it('quotes an email field containing a bare carriage return', async () => {
+    const toDelete = [{ id: 'u1', email: 'a\rb@ziko-app.com', created_at: 't1' }];
+    const report = makeReport(toDelete);
+    const rows = await collectExportRows({
+      report,
+      fetchProfiles: async () => [],
+      fetchWaitlistRows: async () => [],
+    });
+    const dir = mkdtempSync(join(tmpdir(), 'purge-export-'));
+    tmpDirs.push(dir);
+
+    const manifest = buildManifest({
+      report,
+      reportPath: 'r',
+      csvPath: join(dir, 'x.csv'),
+      rows,
+      pitr: emptyPitr,
+    });
+    const { csvPath } = await writeExport({ rows, manifest, outDir: dir });
+
+    const csvContent = readFileSync(csvPath, 'utf8');
+    expect(csvContent).toContain('"a\rb@ziko-app.com"');
+  });
 });
 
 describe('resolveProjectRef', () => {

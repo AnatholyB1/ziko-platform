@@ -55,7 +55,10 @@ function chunk(arr, size) {
 function csvField(value) {
   let str = value == null ? '' : String(value);
   if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`; // neutralize formula injection
-  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  // WR-05: also quote on a lone \r (not just \n) — some parsers/spreadsheet
+  // apps treat old-style Mac line endings (\r-only) as a row break, and an
+  // unquoted bare \r would corrupt the CSV's row/column structure.
+  if (/["\r\n,]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
 }
 
