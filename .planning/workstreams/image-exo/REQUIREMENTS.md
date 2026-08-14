@@ -17,8 +17,8 @@ Requirements for this milestone. Each maps to a roadmap phase.
 
 ### Média & Storage
 
-- [ ] **MEDIA-01**: Colonne `image` (chemin thumbnail) ajoutée à `public.exercises` via une migration datée
-- [ ] **MEDIA-02**: GIFs + thumbnails uploadés vers un nouveau bucket Supabase Storage public `exercise-media` — écriture service-role uniquement, aucune policy d'écriture client
+- [x] **MEDIA-01**: Colonne `image` (chemin thumbnail) ajoutée à `public.exercises` via une migration datée
+- [x] **MEDIA-02**: GIFs + thumbnails uploadés vers un nouveau bucket Supabase Storage public `exercise-media` — écriture service-role uniquement, aucune policy d'écriture client
 - [ ] **MEDIA-03**: Média stocké et servi à sa résolution native 180×180, jamais upscalé — contrainte imposée dès l'étape d'upload
 - [ ] **MEDIA-04**: Snapshot de sauvegarde des lignes écrasées (table `exercises_merge_backup`) créé avant chaque UPDATE, pour réversibilité
 
@@ -57,8 +57,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MEDIA-01 | Phase 1 | Pending |
-| MEDIA-02 | Phase 1 | Pending |
+| MEDIA-01 | Phase 1 | Complete |
+| MEDIA-02 | Phase 1 | Complete |
 | IMPORT-01 | Phase 2 | Pending |
 | IMPORT-02 | Phase 2 | Pending |
 | IMPORT-03 | Phase 3 | Pending |
