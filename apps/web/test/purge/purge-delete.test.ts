@@ -92,6 +92,14 @@ describe('parsePurgeArgs', () => {
     expect(args.maxManifestAgeMinutes).toBe(15);
   });
 
+  // WR-03: parsePurgeArgs itself does no validation — Number('typo') is NaN
+  // — so this documents the coupling to assertManifestIntegrity's NaN guard
+  // below, which is what actually catches a malformed value.
+  it('produces NaN for a non-numeric --max-manifest-age-minutes value', () => {
+    const args = parsePurgeArgs(['--manifest', '/tmp/m.json', '--max-manifest-age-minutes', 'sixty']);
+    expect(Number.isNaN(args.maxManifestAgeMinutes)).toBe(true);
+  });
+
   it('reads an explicit --out directory', () => {
     const args = parsePurgeArgs(['--manifest', '/tmp/m.json', '--out', '/tmp/custom-out']);
     expect(args.outDir).toBe('/tmp/custom-out');
@@ -140,6 +148,19 @@ describe('assertManifestIntegrity', () => {
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((e: string) => /sha256|hash/i.test(e))).toBe(true);
+  });
+
+  it('rejects (rather than silently passing) a non-numeric maxAgeMinutes instead of letting NaN comparisons default to false', () => {
+    const manifest = makeManifest();
+    const result = assertManifestIntegrity({
+      manifest,
+      now: NOW,
+      maxAgeMinutes: Number('not-a-number'),
+      acceptUnknownPitr: false,
+      fileExists: alwaysExists,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e: string) => /max-manifest-age-minutes|not a valid number/i.test(e))).toBe(true);
   });
 
   it('rejects a manifest generated 120 minutes ago against a 60-minute limit', () => {

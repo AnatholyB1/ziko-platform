@@ -98,10 +98,20 @@ export function assertManifestIntegrity({ manifest, now, maxAgeMinutes, acceptUn
     errors.push(`manifest export_csv is missing from disk: ${manifest?.export_csv}`);
   }
 
+  // WR-03: Number('non-numeric') is NaN, and any comparison against NaN is
+  // false — an unvalidated --max-manifest-age-minutes typo would otherwise
+  // silently disable the entire staleness guard below rather than failing,
+  // the opposite of this function's fail-closed design everywhere else.
+  if (Number.isNaN(maxAgeMinutes)) {
+    errors.push(
+      `--max-manifest-age-minutes is not a valid number (${maxAgeMinutes}) — refusing to run rather than silently disabling the staleness check`
+    );
+  }
+
   const generatedAtMs = Date.parse(manifest?.generated_at ?? '');
   if (Number.isNaN(generatedAtMs)) {
     errors.push(`manifest generated_at is not a valid timestamp: ${manifest?.generated_at}`);
-  } else {
+  } else if (!Number.isNaN(maxAgeMinutes)) {
     const ageMinutes = (now.getTime() - generatedAtMs) / 60000;
     if (ageMinutes > maxAgeMinutes) {
       errors.push(
