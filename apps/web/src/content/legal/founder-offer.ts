@@ -76,3 +76,30 @@ export const ERASURE_REQUEST_STATEMENT: LocalizedText = {
   fr: "Vous pouvez demander la suppression de votre adresse e-mail de notre liste d'attente à tout moment en écrivant à support@ziko-app.com. Votre demande sera traitée dans un délai d'un mois maximum, conformément à l'article 12 du RGPD.",
   en: 'You may request the removal of your email address from our waitlist at any time by writing to support@ziko-app.com. Your request will be processed within one month at most, as required by Article 12 GDPR.',
 };
+
+// LEGAL-06, D-07 — copy only, Phase 5 renders the actual (unchecked, standalone)
+// checkbox. Worded as a freely-given, revocable marketing opt-in per Planet49
+// (CJEU C-673/17) / GDPR Recital 32 — never phrased as acceptance of the CGV/CGU,
+// never bundled with the submit action.
+export const CONSENT_CHECKBOX_LABEL: LocalizedText = {
+  fr: "J'accepte de recevoir des informations sur le lancement de Ziko et l'offre fondateurs par e-mail. Je peux me désinscrire à tout moment.",
+  en: 'I agree to receive information about the Ziko launch and the founder offer by email. I can unsubscribe at any time.',
+};
+
+// LEGAL-07, D-07 — copy only, Phase 5 renders it at the point of collection (not
+// footer-only). Carries all six CNIL Article 13 minimum fields in one block:
+// controller, purposes, legal basis, recipients, retention duration, and
+// data-subject rights with a contact channel. The retention duration is
+// interpolated from WAITLIST_RETENTION_YEARS so the notice can never drift from
+// the number the database and RETENTION_STATEMENT state.
+export const COLLECTION_POINT_NOTICE: LocalizedText = {
+  fr: `Ziko (responsable du traitement) collecte votre adresse e-mail pour vous informer du lancement de l'application et gérer votre place dans l'offre fondateurs (base légale : consentement). Vos données ne sont partagées avec aucun tiers à des fins commerciales et sont conservées ${WAITLIST_RETENTION_YEARS} ans à compter de votre dernier contact avec nous. Vous disposez d'un droit d'accès, de rectification et d'effacement : contactez-nous à support@ziko-app.com.`,
+  en: `Ziko (data controller) collects your email address to notify you of the app launch and manage your place in the founder offer (legal basis: consent). Your data is never shared with third parties for commercial purposes and is kept for ${WAITLIST_RETENTION_YEARS} years from your last contact with us. You have the right to access, correct, and erase your data: contact us at support@ziko-app.com.`,
+};
+
+// Pattern 4, 03-RESEARCH.md — the literal Phase 5 writes into
+// `waitlist_signups.consent_version` alongside `consent_given_at` (columns Phase 1
+// shipped empty for exactly this purpose, D-15/D-16). Increment the `-vN` suffix
+// any future time CONSENT_CHECKBOX_LABEL or COLLECTION_POINT_NOTICE changes, so a
+// stored signup stays traceable to the exact copy it agreed to.
+export const CONSENT_VERSION = 'waitlist-consent-v1';
