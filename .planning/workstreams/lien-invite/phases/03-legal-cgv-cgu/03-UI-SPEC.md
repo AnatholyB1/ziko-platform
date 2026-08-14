@@ -43,7 +43,7 @@ Declared values (must be multiples of 4) — these are the values already load-b
 | 2xl | 32px | Section top margin (`mt-8`), page container horizontal padding (`px-8`), page container vertical rhythm (`space-y-8`) |
 | 3xl | 64px | Page container top/bottom padding (`py-16`) |
 
-Exceptions: none — 12px (`mb-3`, `space-y-3`) is a genuine multiple of 4 and matches the exact classes already in `cgu/page.tsx`/`politique-de-confidentialite/page.tsx`; carry it forward unchanged for the new CGV page and any touched CGU sections.
+Exceptions: 12px (`mb-3`/`space-y-3`) — carried forward from existing legal-page precedent in `apps/web/src/app/[locale]/(marketing)/cgu/page.tsx` (verified lines 45–161); used specifically for the section-heading-to-first-paragraph gap (`mb-3` between an `<h2>` and its following `<p>`) and the draft-pending-review banner's internal element stack (`space-y-3` between the banner's headline, body text, and contact line). Both are tight-grouping contexts — content that reads as one cohesive unit — distinct from the looser 16px paragraph-to-paragraph rhythm (`mb-4`) and 32px section-to-section rhythm (`mt-8`) used elsewhere on the same pages. Reserved for these two contexts only; not a general-purpose spacing value for this phase.
 
 ---
 
@@ -63,6 +63,8 @@ Role mapping for this phase's concrete elements:
 - Heading (20px/600): CGV `<h2>` section titles, CGU `<h2>` sections revised for LEGAL-04, **and** the draft-pending-review banner headline (previously 18px/`text-lg` in the CGU's medical-disclaimer precedent — standardized up to 20px/Heading role for this phase's new banner, one fewer special case)
 - Body (16px/400): all paragraph prose, list items, banner body text
 - Label (14px/400): "Dernière mise à jour" footer line, any inline meta text
+
+**Visual hierarchy (page-level, both CGV and CGU):** `<h1>` (Display, 30px) → draft-pending-review banner (Heading headline + Body text, immediately below `<h1>`, before the first `<section>`) → `<h2>` section titles (Heading, 20px) → body prose (Body, 16px) → "Dernière mise à jour" footer line (Label, 14px). This is a single linear read order with no competing focal points — the banner is the only element visually distinct from surrounding prose (via the warning border/background from the Color section below), which is intentional: it is the one thing on the page a first-time reader must not miss.
 
 ---
 
