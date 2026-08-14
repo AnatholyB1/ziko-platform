@@ -43,6 +43,42 @@ export function useProfile() {
   });
 }
 
+// ── useSessionStreak ─────────────────────────────────────────
+// Computes consecutive workout days (descending from today) where at least
+// one workout_sessions row exists for that user.
+export function useSessionStreak() {
+  const userId = useAuthStore((s) => s.user?.id);
+  return useQuery({
+    queryKey: ['session_streak', userId],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('workout_sessions')
+        .select('started_at')
+        .eq('user_id', userId!)
+        .gte('started_at', since)
+        .order('started_at', { ascending: false });
+
+      const uniqueDays = new Set(
+        (data ?? []).map((r: { started_at: string }) => r.started_at.split('T')[0]),
+      );
+
+      let streak = 0;
+      const cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+
+      while (uniqueDays.has(cursor.toISOString().split('T')[0])) {
+        streak++;
+        cursor.setTime(cursor.getTime() - 86400000);
+      }
+
+      return streak;
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ── useStreak ─────────────────────────────────────────────────
 // Computes consecutive habit days (descending from today) where at least
 // one habit_log row exists with completed=true.

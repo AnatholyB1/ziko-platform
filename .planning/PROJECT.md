@@ -73,6 +73,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé).
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
+**Parallel workstream:** v1.16 Exercise Library Import (`image-exo`) — remplace la bibliothèque d'exercices (1324 exos, GIFs + thumbnails 180×180, instructions FR/EN) depuis le dataset `hasaneyldrm/exercises-dataset` sur Supabase Storage ; médias sous licence Gym visual (attribution obligatoire) ; UPDATE par nom matché pour préserver les FK `program_exercises`/`session_sets`.
 
 ---
 
@@ -304,7 +305,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v1.8 milestone — Sport Dashboards (Phases 37–41.1) archived; v1.8 validated requirements added; threshold alerts gap (AI-04) confirmed closed.*
+*Last updated: 2026-08-14 — v1.16 Exercise Library Import (`image-exo`) parallel workstream started.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
