@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
 current_phase_name: legal-cgv-cgu
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-08-14T18:00:28.126Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-08-14T18:10:05.196Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -31,7 +31,7 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 ## Current Position
 
 Phase: 3 (legal-cgv-cgu) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
@@ -47,7 +47,7 @@ no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 Last activity: 2026-08-14 — Phase 3 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
-Progress: [████████░░] 83% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [█████████░] 92% (1/6 phases complete, Phase 1 — 4/4 plans)
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Progress: [████████░░] 83% (1/6 phases complete, Phase 1 —
 | Phase 02-test-account-purge P02 | ~25min | 2 tasks | 3 files |
 | Phase 02-test-account-purge P03 | ~20min | 2 tasks | 3 files |
 | Phase 03-legal-cgv-cgu P02 | ~30min | 3 tasks | 5 files |
+| Phase 03-legal-cgv-cgu P03 | ~35min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 3] 03-02: CGU imports AI_CREDIT_CAP_SENTENCE from founder-offer.ts rather than restating it — LEGAL-04 drift made structurally impossible, not merely tested-for
 - [Phase ?]: [Phase 3] 03-02: COLLECTION_POINT_NOTICE built via template-literal interpolation of WAITLIST_RETENTION_YEARS — the point-of-collection retention figure can never independently drift from RETENTION_STATEMENT's
 - [Phase ?]: [Phase 3] 03-02: no draft-pending-review banner on the privacy-policy waitlist section — it restates an existing retention period + statutory GDPR right, not new contractual terms; banner stays reserved for CGV/CGU
+- [Phase ?]: [Phase 3] 03-03: erasure script carries none of Phase 2's purge ceremony (no dry-run export, hashed manifest, two-person rule) — anonymize_waitlist_signup is a single-row, non-destructive, non-cascading RPC, disproportionate for that rigor
+- [Phase ?]: [Phase 3] 03-03: erase.mjs never normalizes/lowercases the email client-side — normalize_waitlist_email() already runs inside the RPC, avoiding silent divergence if the SQL definition changes
+- [Phase ?]: [Phase 3] 03-03: backend/api test:rls could not be executed this session — sandbox denies read/write on backend/api/.env* paths, so setup.ts's unconditional required-env-var check (ahead of the RUN_DB guard) could not be satisfied even with a placeholder
 
 ### Pending Todos
 
@@ -159,8 +163,8 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-14T18:00:28.108Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-08-14T18:09:57.339Z
+Stopped at: Completed 03-03-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.

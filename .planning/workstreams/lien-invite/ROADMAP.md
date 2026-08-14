@@ -162,7 +162,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 03-02-PLAN.md — CGU states the identical AI-credit cap by shared import, privacy-policy retention + erasure section, consent/notice copy frozen for Phase 5
-- [ ] 03-03-PLAN.md — Additive `app_config` retention migration, human-triggered erasure script + runbook over Phase 1's RPC, counsel-briefing package
+- [x] 03-03-PLAN.md — Additive `app_config` retention migration, human-triggered erasure script + runbook over Phase 1's RPC, counsel-briefing package
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
