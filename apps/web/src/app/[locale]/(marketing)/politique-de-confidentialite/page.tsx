@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
+import { ERASURE_REQUEST_STATEMENT, RETENTION_STATEMENT } from '@/content/legal/founder-offer'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PolitiqueConfidentialitePage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const isEn = locale === 'en';
 
   return (
     <main className="max-w-screen-xl mx-auto px-8 py-16 space-y-8">
@@ -160,7 +162,21 @@ export default async function PolitiqueConfidentialitePage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">7. Vos droits</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">
+          {isEn
+            ? '7. Founder waitlist — retention and erasure'
+            : "7. Liste d'attente fondateurs — conservation et effacement"}
+        </h2>
+        <p className="text-text leading-relaxed mb-4">
+          {isEn ? RETENTION_STATEMENT.en : RETENTION_STATEMENT.fr}
+        </p>
+        <p className="text-text leading-relaxed mb-4">
+          {isEn ? ERASURE_REQUEST_STATEMENT.en : ERASURE_REQUEST_STATEMENT.fr}
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold mt-8 mb-3">8. Vos droits</h2>
         <p className="text-text leading-relaxed mb-4">
           Conform&eacute;ment au RGPD, vous disposez des droits suivants concernant vos donn&eacute;es personnelles&nbsp;:
         </p>
@@ -194,7 +210,7 @@ export default async function PolitiqueConfidentialitePage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">8. S&eacute;curit&eacute;</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">9. S&eacute;curit&eacute;</h2>
         <p className="text-text leading-relaxed mb-4">
           Ziko met en &oelig;uvre des mesures techniques et organisationnelles appropri&eacute;es pour prot&eacute;ger vos donn&eacute;es personnelles contre tout acc&egrave;s non autoris&eacute;, perte, destruction ou alt&eacute;ration. Ces mesures comprennent notamment&nbsp;:
         </p>
@@ -207,14 +223,14 @@ export default async function PolitiqueConfidentialitePage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">9. Cookies</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">10. Cookies</h2>
         <p className="text-text leading-relaxed mb-4">
           Le site ziko-app.com n&apos;utilise pas de cookies de tra&ccedil;age publicitaire ni de cookies analytiques tiers. Seuls des cookies fonctionnels essentiels peuvent &ecirc;tre utilis&eacute;s pour assurer le bon fonctionnement du site (gestion de session, pr&eacute;f&eacute;rences de langue).
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">10. Modifications de la politique</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">11. Modifications de la politique</h2>
         <p className="text-text leading-relaxed mb-4">
           Ziko se r&eacute;serve le droit de modifier la pr&eacute;sente politique de confidentialit&eacute; &agrave; tout moment. En cas de modification substantielle, vous serez notifi&eacute;(e) par e-mail ou via une notification dans l&apos;application. La date de derni&egrave;re mise &agrave; jour figurant en haut de ce document sera &eacute;galement actualis&eacute;e. Nous vous encourageons &agrave; consulter r&eacute;guli&egrave;rement cette page.
         </p>

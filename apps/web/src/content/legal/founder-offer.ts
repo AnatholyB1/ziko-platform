@@ -68,3 +68,11 @@ export const LANGUAGE_PRECEDENCE_CLAUSE: LocalizedText = {
   fr: "Les présentes CGV sont rédigées en langue française, qui fait seule foi. La version anglaise est fournie à titre de traduction de courtoisie destinée à faciliter la compréhension des utilisateurs non francophones. En cas de divergence ou de contradiction entre la version française et la version anglaise, la version française prévaut.",
   en: 'These Terms of Sale are drafted in French, which is the sole authoritative version. The English version is provided as a courtesy translation to help non-French-speaking users. In the event of any discrepancy or contradiction between the French and English versions, the French version shall prevail.',
 };
+
+// LEGAL-09, D-06 — the erasure-request channel and Article 12 GDPR's settled
+// one-month response ceiling. Verbatim from 03-UI-SPEC.md's Copywriting Contract;
+// the deadline is a statutory maximum, never softened or shortened here.
+export const ERASURE_REQUEST_STATEMENT: LocalizedText = {
+  fr: "Vous pouvez demander la suppression de votre adresse e-mail de notre liste d'attente à tout moment en écrivant à support@ziko-app.com. Votre demande sera traitée dans un délai d'un mois maximum, conformément à l'article 12 du RGPD.",
+  en: 'You may request the removal of your email address from our waitlist at any time by writing to support@ziko-app.com. Your request will be processed within one month at most, as required by Article 12 GDPR.',
+};
