@@ -89,6 +89,8 @@
     "privacyDescription": "Comment Ziko collecte et traite vos données personnelles.",
     "cguTitle": "CGU",
     "cguDescription": "Conditions générales d'utilisation de l'application Ziko.",
+    "cgvTitle": "CGV",
+    "cgvDescription": "Conditions générales de vente de l'offre fondateurs Ziko.",
     "deleteTitle": "Supprimer mon compte",
     "deleteDescription": "Demander la suppression de votre compte Ziko.",
     "appScreenshotAlt": "Capture d'écran de l'application Ziko"
@@ -98,6 +100,7 @@
     "legal": "Mentions légales",
     "privacy": "Politique de confidentialité",
     "terms": "CGU",
+    "cgv": "CGV",
     "deleteAccount": "Supprimer mon compte"
   },
   "Login": {

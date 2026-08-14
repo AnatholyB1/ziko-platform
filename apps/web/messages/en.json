@@ -89,6 +89,8 @@
     "privacyDescription": "How Ziko collects and processes your personal data.",
     "cguTitle": "Terms of use",
     "cguDescription": "Terms of use for the Ziko application.",
+    "cgvTitle": "Terms of Sale",
+    "cgvDescription": "Terms of sale for the Ziko founder offer.",
     "deleteTitle": "Delete my account",
     "deleteDescription": "Request deletion of your Ziko account.",
     "appScreenshotAlt": "Ziko app screenshot"
@@ -98,6 +100,7 @@
     "legal": "Legal notice",
     "privacy": "Privacy policy",
     "terms": "Terms of use",
+    "cgv": "Terms of Sale",
     "deleteAccount": "Delete my account"
   },
   "Login": {

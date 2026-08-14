@@ -1,0 +1,70 @@
+// Single source of truth for every legal clause that must appear, byte-identical
+// per locale, in more than one legal document (CGV, CGU, Politique de confidentialité).
+// Phase 03-legal-cgv-cgu — 03-01 (Task 1) creates this module; 03-02 appends the
+// consent/collection-notice constants consumed by Phase 5.
+//
+// French is the authoritative language (D-08); English is a courtesy translation.
+// Every constant below is drafted from 03-UI-SPEC.md's Copywriting Contract table —
+// verbatim where the table provides text, drafted within the D-03/D-04 guardrails
+// where it does not (LANGUAGE_PRECEDENCE_CLAUSE).
+
+export type LocalizedText = {
+  fr: string;
+  en: string;
+};
+
+// D-05 — CNIL NS-048 retention guidance for the founder waitlist. Plan 03-03's
+// migration seeds `app_config.waitlist_retention_years` with this exact value.
+export const WAITLIST_RETENTION_YEARS = 3;
+
+// D-01 — rendered on both the CGV and CGU pages, immediately after <h1>, before the
+// first <section>. Stays live until the phase's terminal counsel checkpoint clears.
+export const DRAFT_REVIEW_BANNER: { headline: LocalizedText; body: LocalizedText } = {
+  headline: {
+    fr: 'Document en cours de relecture juridique',
+    en: 'Document under legal review',
+  },
+  body: {
+    fr: "Ce texte a été rédigé avec le plus grand soin mais n'a pas encore été validé par un avocat. Il est susceptible d'être modifié avant sa version définitive. Pour toute question, contactez-nous à support@ziko-app.com.",
+    en: 'This text has been drafted with care but has not yet been reviewed and approved by a lawyer. It may be revised before its final version. Please contact us at support@ziko-app.com with any questions.',
+  },
+};
+
+// LEGAL-02, D-03 — the AI-credit-cap parity sentence. Pasted byte-identical
+// (translated) into both the CGV and the CGU per 03-RESEARCH.md's pitfall guard
+// against describing the cap in subtly different terms across documents.
+export const AI_CREDIT_CAP_SENTENCE: LocalizedText = {
+  fr: "L'abonnement Premium à vie donne accès à l'ensemble des fonctionnalités de Ziko. L'usage de l'intelligence artificielle (coach IA, analyse de repas, génération de programmes) reste soumis à un quota mensuel de crédits IA, identique à celui de tout autre utilisateur Premium. Ce quota peut évoluer dans le temps en tant que politique tarifaire applicable à l'ensemble des utilisateurs Premium, sans jamais cibler spécifiquement les membres fondateurs.",
+  en: "Lifetime Premium membership unlocks all of Ziko's features. Use of artificial intelligence (AI coach, meal analysis, program generation) remains subject to a monthly AI-credit allowance, identical to that of any other Premium user. This allowance may change over time as a platform-wide policy that applies to all Premium users, and will never single out founding members specifically.",
+};
+
+// LEGAL-03, D-03 — scoped to the Service's operating lifetime, frozen feature set,
+// discretionary-only future additions (Pitfall 7).
+export const LIFETIME_SCOPE_SENTENCE: LocalizedText = {
+  fr: "L'avantage Premium à vie est valable pour toute la durée d'exploitation du Service par Ziko. Il correspond à l'ensemble des fonctionnalités Premium disponibles à la date de l'offre fondateurs. Les fonctionnalités Premium ajoutées ultérieurement pourront être étendues aux membres fondateurs, à la discrétion de Ziko, sans que cela ne constitue un engagement contractuel additionnel.",
+  en: "The lifetime Premium benefit is valid for the entire operating lifetime of the Service by Ziko. It corresponds to the set of Premium features available as of the founder offer date. Premium features added later may be extended to founding members at Ziko's discretion, without this constituting an additional contractual commitment.",
+};
+
+// LEGAL-03/04, D-04 — the grey-list-pattern modification clause (Pitfall 8). The only
+// circumstance in which the founder benefit ends is a service-wide shutdown, with
+// notice and a data-export commitment. The `[TBD]` day count is a genuine open
+// question routed to counsel via 03-COUNSEL-BRIEFING.md — do not resolve it here.
+export const SHUTDOWN_MODIFICATION_CLAUSE: LocalizedText = {
+  fr: "Ziko ne peut mettre fin à l'avantage Premium à vie des membres fondateurs que dans le cadre d'une cessation générale du Service. Dans ce cas, Ziko s'engage à notifier les utilisateurs concernés avec un préavis raisonnable d'au moins [TBD — nombre de jours à confirmer par le conseil] jours et à leur permettre d'exporter leurs données personnelles avant la fermeture.",
+  en: "Ziko may only end founding members' lifetime Premium benefit as part of a general shutdown of the Service. In that case, Ziko commits to notifying affected users with reasonable advance notice of at least [TBD — day count to be confirmed by counsel] days and to allowing them to export their personal data before closure.",
+};
+
+// LEGAL-08, D-05 — "3 years from last contact" (CNIL NS-048). Stated in the CGV/CGU
+// text and, per Phase 5, in the point-of-collection notice — same number, both places.
+export const RETENTION_STATEMENT: LocalizedText = {
+  fr: "Les adresses e-mail collectées via la liste d'attente fondateurs sont conservées pendant 3 ans à compter du dernier contact avec l'inscrit, conformément aux recommandations de la CNIL (norme NS-048), puis supprimées ou anonymisées.",
+  en: "Email addresses collected through the founder waitlist are retained for 3 years from the registrant's last contact with us, in line with CNIL's NS-048 guidance, and are then deleted or anonymized.",
+};
+
+// D-08 — French governs legally, English is a courtesy translation, French controls
+// on any discrepancy. Not present verbatim in 03-UI-SPEC.md's Copywriting Contract
+// table; drafted here within D-08's guardrail as the plan directs.
+export const LANGUAGE_PRECEDENCE_CLAUSE: LocalizedText = {
+  fr: "Les présentes CGV sont rédigées en langue française, qui fait seule foi. La version anglaise est fournie à titre de traduction de courtoisie destinée à faciliter la compréhension des utilisateurs non francophones. En cas de divergence ou de contradiction entre la version française et la version anglaise, la version française prévaut.",
+  en: 'These Terms of Sale are drafted in French, which is the sole authoritative version. The English version is provided as a courtesy translation to help non-French-speaking users. In the event of any discrepancy or contradiction between the French and English versions, the French version shall prevail.',
+};
