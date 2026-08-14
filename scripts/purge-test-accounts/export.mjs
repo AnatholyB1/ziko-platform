@@ -44,9 +44,17 @@ function chunk(arr, size) {
   return out;
 }
 
-/** Quotes a CSV field only when it contains a comma, quote, or newline. */
+/**
+ * Renders a CSV field, quoting when it contains a comma, quote, or newline.
+ * Also neutralizes a leading `=`, `+`, `-`, or `@` (OWASP CSV-injection
+ * trigger characters) with a leading `'` before quoting, since this CSV is
+ * read by a human in Excel/Sheets as part of the two-person review gate
+ * (WR-02) and the email/waitlist_emails columns are attacker-influenceable
+ * data.
+ */
 function csvField(value) {
-  const str = value == null ? '' : String(value);
+  let str = value == null ? '' : String(value);
+  if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`; // neutralize formula injection
   if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
   return str;
 }

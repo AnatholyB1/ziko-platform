@@ -281,6 +281,34 @@ describe('writeExport', () => {
     const parsed = parseCsvLine(lines[1]);
     expect(parsed).toHaveLength(8);
   });
+
+  // WR-02: this export CSV is the artifact a second reviewer opens under the
+  // two-person rule — a formula-trigger leading character in the email
+  // column must never reach the file unescaped.
+  it('neutralizes a formula-injection-triggering leading character in the email column', async () => {
+    const toDelete = [{ id: 'u1', email: '=1+1@ziko-app.com', created_at: 't1' }];
+    const report = makeReport(toDelete);
+    const rows = await collectExportRows({
+      report,
+      fetchProfiles: async () => [],
+      fetchWaitlistRows: async () => [],
+    });
+    const dir = mkdtempSync(join(tmpdir(), 'purge-export-'));
+    tmpDirs.push(dir);
+
+    const manifest = buildManifest({
+      report,
+      reportPath: 'r',
+      csvPath: join(dir, 'x.csv'),
+      rows,
+      pitr: emptyPitr,
+    });
+    const { csvPath } = await writeExport({ rows, manifest, outDir: dir });
+
+    const lines = readFileSync(csvPath, 'utf8').trim().split('\n');
+    const parsed = parseCsvLine(lines[1]);
+    expect(parsed[1]).toBe("'=1+1@ziko-app.com");
+  });
 });
 
 describe('resolveProjectRef', () => {

@@ -229,6 +229,29 @@ describe('runDryRun + writeReport — end to end', () => {
     expect(lines[0]).toBe('id,email,created_at');
     expect(lines).toHaveLength(1 + report.to_delete.length);
   });
+
+  // WR-02: the to_delete CSV is the artifact a second reviewer opens in
+  // Excel/Sheets under the two-person rule — a formula-trigger leading
+  // character in the email column must never reach the file unescaped.
+  it('neutralizes a formula-injection-triggering leading character in the email column', async () => {
+    const users = [{ id: 'u1', email: '=cmd|"/c calc"!A1@ziko-app.com', created_at: 't1', last_sign_in_at: null }];
+
+    const report = await runDryRun({
+      listUsers: async () => users,
+      fetchCrossLinks: async () => [],
+      now: () => new Date('2026-08-13T12:06:00.000Z'),
+    });
+
+    const dir = mkdtempSync(join(tmpdir(), 'purge-'));
+    tmpDirs.push(dir);
+
+    const { csvPath } = await writeReport(report, dir);
+    const csv = readFileSync(csvPath as string, 'utf8').trim();
+    const lines = csv.split('\n');
+    // The email is quoted (it contains embedded quotes) and the quoted
+    // content must start with the neutralizing apostrophe, not the raw '='.
+    expect(lines[1]).toMatch(/^u1,"'=cmd/);
+  });
 });
 
 describe('classifyAccounts — multi-link aggregation', () => {
