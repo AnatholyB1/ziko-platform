@@ -17,3 +17,8 @@ out/
 .mcp.json
 com.facebook.react.devsupport.*
 .worktrees/
+
+# Exercise import pipeline: cloned hasaneyldrm/exercises-dataset working tree
+# (~128MB of images/ + videos/) — too large to commit, redundant with the
+# Supabase Storage delivery path Phase 3 uses.
+scripts/exercise-import/.dataset-cache/
