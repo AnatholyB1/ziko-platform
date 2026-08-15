@@ -115,3 +115,18 @@ None — no external service configuration required. All three modules are pure/
 ---
 *Phase: 02-download-match-dry-run*
 *Completed: 2026-08-15*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/exercise-import/lib/paths.ts
+- FOUND: scripts/exercise-import/lib/types.ts
+- FOUND: scripts/exercise-import/lib/types.test.ts
+- FOUND: scripts/exercise-import/lib/normalize.ts
+- FOUND: scripts/exercise-import/lib/normalize.test.ts
+- FOUND: scripts/exercise-import/lib/supabase-client.ts
+- FOUND: scripts/exercise-import/lib/supabase-client.test.ts
+- FOUND: .planning/workstreams/image-exo/phases/02-download-match-dry-run/02-02-SUMMARY.md
+- FOUND: commit 3208c37 (Task 1: path constants and zod contracts)
+- FOUND: commit 8e00f8b (Task 2: name normalization and similarity)
+- FOUND: commit c984662 (Task 3: read-only Supabase access with pagination)
+- FOUND: commit 60a57c8 (docs: SUMMARY.md)
