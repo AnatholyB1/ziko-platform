@@ -116,3 +116,13 @@ None — no external service configuration required. `fetch.ts` reads no environ
 ---
 *Phase: 02-download-match-dry-run*
 *Completed: 2026-08-15*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/exercise-import/lib/verify.ts
+- FOUND: scripts/exercise-import/lib/verify.test.ts
+- FOUND: scripts/exercise-import/fetch.ts
+- FOUND: .planning/workstreams/image-exo/phases/02-download-match-dry-run/02-03-SUMMARY.md
+- FOUND: commit 4d82898 (Task 1: pure dataset verification module)
+- FOUND: commit 0b2447f (Task 2: clone-or-reuse fetch entrypoint)
+- FOUND: commit 591b78c (docs: SUMMARY.md)
