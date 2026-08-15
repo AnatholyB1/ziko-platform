@@ -261,6 +261,10 @@ function toCandidateFromTier1(row: ProductionExercise, matchedOn: MatchedOn): Ca
  * Invariants held by construction and asserted by the test suite:
  *  - `matched.length + unmatched_new.length + ambiguous.length === dataset.length`
  *  - no production id appears in both `matched` and `unmatched_legacy`
+ *  - no production id appears more than once across `matched` (a Tier 1
+ *    name index hit against an already-`consumed` row falls through to
+ *    Tier 2/3 instead of double-claiming — see the Pass 1 comment below;
+ *    real-world trigger: two dataset records sharing an identical name)
  */
 export function categorizeAll(dataset: DatasetExercise[], production: ProductionExercise[]): CategorizeAllResult {
   const duplicate_production_names = findDuplicateNames(production);
@@ -272,11 +276,24 @@ export function categorizeAll(dataset: DatasetExercise[], production: Production
   const ambiguous: AmbiguousRow[] = [];
 
   // Pass 1 — Tier 1 across the entire dataset first.
+  //
+  // The index is built once from the full production array and never
+  // shrinks as rows are consumed, so two DIFFERENT dataset records that
+  // normalize to the same name (a genuine upstream duplicate — verified
+  // live in the hasaneyldrm/exercises-dataset clone, e.g. two distinct
+  // ids both named "Barbell Seated Calf Raise") would otherwise both
+  // resolve to the same single production row and both get pushed to
+  // `matched`, silently double-claiming one production id. Checking
+  // `consumed` here is what stops that: the second dataset record with an
+  // already-claimed target name falls through to Tier 2/3 against
+  // whatever production rows remain, instead of producing a second
+  // `matched` row for a production id that can only be UPDATEd once in
+  // Phase 3.
   const afterTier1: DatasetExercise[] = [];
   for (const ex of dataset) {
     const tier1 = tier1Match(ex, index);
 
-    if (tier1.rows.length === 1) {
+    if (tier1.rows.length === 1 && !consumed.has(tier1.rows[0].id)) {
       const row = tier1.rows[0];
       matched.push({
         dataset_id: ex.id,
@@ -289,6 +306,8 @@ export function categorizeAll(dataset: DatasetExercise[], production: Production
         field_conflicts: computeFieldConflicts(ex, row),
       });
       consumed.add(row.id);
+    } else if (tier1.rows.length === 1 && consumed.has(tier1.rows[0].id)) {
+      afterTier1.push(ex);
     } else if (tier1.rows.length > 1) {
       ambiguous.push({
         dataset_id: ex.id,
