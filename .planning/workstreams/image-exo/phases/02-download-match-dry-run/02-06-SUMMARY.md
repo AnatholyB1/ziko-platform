@@ -36,30 +36,25 @@ key-decisions:
   - "TIER2_THRESHOLD kept at 0.87 (unchanged) — the real run produced zero tier2/tier3 matched rows and zero ambiguous rows, so there was no false positive to raise the threshold against and no unmatched_legacy row for a lower threshold to rescue. Tier 1 exact-name matching alone accounted for all 1318 production rows."
   - "Fixed a Tier 1 double-claim bug in categorizeAll (Rule 1): the name index is built once from the full production array and never shrinks, so two dataset records sharing an identical normalized name both resolved to the same single production row before this fix, producing two matched rows for one production id. Now the check `!consumed.has(tier1.rows[0].id)` routes the second occurrence to Tier 2/3 instead of double-claiming."
 
-requirements-completed: []
-requirements-in-progress: [IMPORT-01, IMPORT-02]
+requirements-completed: [IMPORT-01, IMPORT-02]
+requirements-in-progress: []
 
 # Metrics
-duration: ~50min (Tasks 1-2; Task 3 is a blocking human checkpoint, not yet resolved)
+duration: ~55min (all 3 tasks, including Task 3 human-approval checkpoint)
 completed: 2026-08-15
 ---
 
-# Phase 2 Plan 6: Real Dry Run, Threshold Confirmation & Matcher Bugfix Summary
+# Phase 2 Plan 6: Real Dry Run, Threshold Confirmation & Human-Approved Match Report Summary
 
-**Ran the exercise-import pipeline for real for the first time — cloned `hasaneyldrm/exercises-dataset` (1,324 records) and read live production `public.exercises` (1,318 non-custom rows) — found and fixed a genuine Tier 1 double-claim bug via a `lib/check-report.ts` structural checker, then confirmed `TIER2_THRESHOLD=0.87` needs no adjustment: the real match report has 0 tier2/tier3 rows and 0 ambiguous rows. STOPPED at Task 3's blocking human-approval checkpoint — Phase 2 is not yet complete.**
+**Ran the exercise-import pipeline for real for the first time — cloned `hasaneyldrm/exercises-dataset` (1,324 records) and read live production `public.exercises` (1,318 non-custom rows) — found and fixed a genuine Tier 1 double-claim bug via a `lib/check-report.ts` structural checker, confirmed `TIER2_THRESHOLD=0.87` needs no adjustment (0 tier2/tier3 rows, 0 ambiguous rows in the real report), and obtained explicit human approval locking `match-report.json`/`match-report.md` as Phase 3's input. Phase 2 is now COMPLETE.**
 
-## STATUS: Tasks 1-2 complete. Task 3 (human review checkpoint) is BLOCKING and unresolved.
-
-This SUMMARY is written now (per worktree-isolation requirements) to avoid losing committed
-work when this worktree is torn down. A continuation agent must pick up at Task 3 after the
-human's decision is known, and should REPLACE the "STATUS" section above (and this note) once
-the checkpoint resolves — do not treat this file as final until Task 3 is checked off.
+## STATUS: All 3 tasks complete. Human approval obtained — report is locked as Phase 3's input.
 
 ## Performance
 
-- **Duration:** ~50 min for Tasks 1-2 (includes a ~128MB real git clone and investigating/fixing
-  a real matcher bug found only by running against live data)
-- **Tasks:** 2 of 3 complete (Task 3 is the blocking checkpoint)
+- **Duration:** ~55 min for all 3 tasks (includes a ~128MB real git clone, investigating/fixing
+  a real matcher bug found only by running against live data, and the human-approval checkpoint)
+- **Tasks:** 3 of 3 complete
 - **Files modified:** 5 (2 created under `lib/`, 2 report artifacts created, 1 matcher module +
   its test file modified)
 
@@ -109,8 +104,30 @@ Each task was committed atomically:
    `lib/matcher.test.ts`, found during this task's real run (see Deviations)
 2. **Task 2: Tier 2 threshold tuning iteration** - `7c79fc0` (docs) — confirms `0.87` unchanged;
    only the report artifacts changed (regenerated `generated_at`)
+3. **Task 3: Human review and approval of the match report** - resolved via checkpoint response,
+   no code change (approval is a decision, not an artifact edit); recorded in this SUMMARY and
+   in the final docs commit
 
-**Task 3 (checkpoint) has NOT been committed** — it is a human-approval gate, not a code change.
+## Task 3 — Human Approval
+
+**Outcome: APPROVED.** The orchestrator relayed the human's explicit "approved" response,
+along with an independent verification of the zero-write guarantee performed via the Supabase
+REST API immediately before relaying:
+
+| Table | Verified count | Matches report's implicit expectation |
+|-------|-----------------|----------------------------------------|
+| `public.exercises` | 1,318 (unchanged) | Yes — matches `production_count: 1318` in `match-report.json`, confirming zero rows were added/removed by the dry run |
+| `public.exercise_import_log` | 0 rows | Yes — Phase 2 writes nothing to this table by design; it remains empty as expected |
+| `public.coach_exercises` | 0 rows | Yes — never queried or written by this pipeline (structural exclusion, not just a filter) |
+
+No `human_decision` edits were needed in `match-report.json` — the real report has zero
+`ambiguous` rows, so there was nothing for the reviewer to resolve row-by-row. The approval
+locks the report **as generated** (commit `7c79fc0`) as Phase 3's input, per D-08 (fixed
+filenames, human approval is what "locks" a report, not a code change).
+
+**`match-report.json` and `match-report.md` are not re-generated or modified for this
+approval** — the two artifacts committed in `7c79fc0` are the exact, byte-identical files the
+human reviewed and approved.
 
 ## Files Created/Modified
 
@@ -220,33 +237,36 @@ with each one locked out by a regression test").
 
 ## User Setup Required
 
-None for the automated portion. **Task 3 (this plan's final task) requires a human decision** —
-see "Next Phase Readiness" below and the checkpoint returned alongside this SUMMARY.
+None. Task 3's human decision was obtained via the checkpoint response — see "Task 3 — Human
+Approval" above and "Next Phase Readiness" below.
 
 ## Next Phase Readiness
 
-**BLOCKED on Task 3 — the blocking human-approval checkpoint.** Do not begin Phase 3 and do not
-consider Phase 2 complete until a human has reviewed `match-report.md`/`match-report.json` and
-responded "approved" (or described what needs to change).
+**Phase 2 is COMPLETE.** All `must_haves` are satisfied:
+- A real match report generated from the real upstream dataset and real production data exists
+  in the repo, committed at `.planning/workstreams/image-exo/reports/match-report.json` /
+  `match-report.md` (commits `73c91cf`, `7c79fc0`).
+- The Tier 2 threshold (`0.87`) was checked against actual near-duplicate pairs — there were
+  none in the real run — and kept, with the evidence recorded above.
+- **A human has reviewed the report and explicitly approved it as Phase 3's input** (this
+  checkpoint, approved with independently-verified zero-write confirmation — see Task 3 section
+  above).
+- Supabase row counts for `exercises` (1,318), `exercise_import_log` (0), and `coach_exercises`
+  (0) were confirmed unchanged after the run, independently, via the Supabase REST API.
 
-What is ready for that review:
-- `.planning/workstreams/image-exo/reports/match-report.json` and `match-report.md` are
-  committed (as of `73c91cf`/`7c79fc0`) and reflect a real run against real data:
-  `dataset_commit: 7455efae41b330c265e7cd4b78dfa848e7ce5ebd`, `dataset_count: 1324`,
-  `production_count: 1318`, `counts: {matched: 1318, unmatched_new: 6, unmatched_legacy: 0,
-  ambiguous: 0}`, `thresholds.tier2: 0.87`.
-- Zero rows were written to Supabase (publishable-key-only client, no
-  insert/update/upsert/delete/rpc/storage call anywhere in `match.ts` or the `lib/` modules it
-  calls) — the human still needs to independently confirm this via the Supabase dashboard/SQL
-  per the checkpoint's `how-to-verify` steps, since that is the point of this gate.
-- `npx tsx scripts/exercise-import/lib/check-report.ts` exits 0, no problems.
-- `npx vitest run scripts/exercise-import` — 89/89 tests green.
-- `git status --porcelain scripts/exercise-import/.dataset-cache` prints nothing (cache
-  correctly gitignored, not staged, not committed).
+Phase 3 (human-approved merge) can now consume `match-report.json` directly:
+`dataset_commit: 7455efae41b330c265e7cd4b78dfa848e7ce5ebd`, `dataset_count: 1324`,
+`production_count: 1318`, `counts: {matched: 1318, unmatched_new: 6, unmatched_legacy: 0,
+ambiguous: 0}`, `thresholds.tier2: 0.87`. Every `matched` row carries `phase3_status: "matched"`
+and every `unmatched_new` row carries `phase3_status: "inserted"` (from `PHASE3_STATUS_HINT`,
+never hardcoded) — Phase 3's merge script should read these hints directly rather than
+re-deriving them from category membership.
+
+No blockers remain for Phase 3.
 
 ---
 *Phase: 02-download-match-dry-run*
-*Completed: 2026-08-15 (Tasks 1-2 only — Task 3 pending)*
+*Completed: 2026-08-15 (all 3 tasks — human approval obtained)*
 
 ## Self-Check: PASSED
 
@@ -255,3 +275,5 @@ What is ready for that review:
 - FOUND: .planning/workstreams/image-exo/reports/match-report.md
 - FOUND: commit 73c91cf (Task 1: real dry run + structural checker + Tier 1 bugfix)
 - FOUND: commit 7c79fc0 (Task 2: threshold confirmation, kept at 0.87)
+- FOUND: Task 3 approved via checkpoint response (independently-verified zero-write counts:
+  exercises=1318, exercise_import_log=0, coach_exercises=0)
