@@ -420,6 +420,50 @@ describe('categorizeAll', () => {
     expect(result.unmatched_new[0].dataset_id).toBe('1371');
   });
 
+  test('Regression (CR-01, 02-REVIEW.md): a row already offered as an ambiguous candidate cannot later be auto-claimed into matched', () => {
+    // Reproduces the exact scenario from CR-01: production has two rows
+    // (prod-x, prod-y) sharing the duplicate name "Foo". Dataset record
+    // 0001, also named "Foo", hits the Tier 1 name-collision branch FIRST
+    // and is pushed to `ambiguous` with candidates [prod-x, prod-y]. A
+    // different dataset record 0002 is named "Bar", which exactly matches
+    // prod-x's `name_fr` — before the fix this was a clean single-row Tier
+    // 1 hit that pushed prod-x into `matched`, leaving the already-pushed
+    // ambiguous row for 0001 still listing prod-x as an available
+    // candidate. A human approving 0001's ambiguous row with
+    // {"action":"match","exercise_id":"prod-x"} would then produce two
+    // independent claims on prod-x in Phase 3.
+    const dataset = [
+      makeDatasetExercise({ id: '0001', name: 'Foo' }),
+      makeDatasetExercise({ id: '0002', name: 'Bar' }),
+    ];
+    const production = [
+      makeProductionExercise({ id: 'prod-x', name: 'Foo', name_fr: 'Bar' }),
+      makeProductionExercise({ id: 'prod-y', name: 'Foo', name_fr: null }),
+    ];
+    const result = categorizeAll(dataset, production);
+
+    // 0001's name collision is still reported as ambiguous with both rows.
+    expect(result.ambiguous.length).toBe(1);
+    expect(result.ambiguous[0].dataset_id).toBe('0001');
+    const candidateIds = result.ambiguous[0].candidates.map((c) => c.exercise_id).sort();
+    expect(candidateIds).toEqual(['prod-x', 'prod-y']);
+
+    // 0002 must NOT auto-claim prod-x into `matched` — prod-x is already
+    // reserved as a pending-human-decision candidate on 0001's row.
+    expect(result.matched.some((row) => row.exercise_id === 'prod-x')).toBe(false);
+    expect(result.matched.length).toBe(0);
+
+    // Core CR-01 invariant: no production id appears in both `matched` and
+    // any `ambiguous` row's `candidates`.
+    const matchedIds = new Set(result.matched.map((row) => row.exercise_id));
+    const ambiguousCandidateIds = new Set(
+      result.ambiguous.flatMap((row) => row.candidates.map((c) => c.exercise_id)),
+    );
+    for (const id of matchedIds) {
+      expect(ambiguousCandidateIds.has(id)).toBe(false);
+    }
+  });
+
   test('Totals invariant + no-overlap invariant across a mixed 6-record fixture', () => {
     const dataset: DatasetExercise[] = [
       makeDatasetExercise({ id: '0001', name: 'Overhead Press', body_part: 'shoulders', equipment: 'barbell', target: 'shoulders' }), // -> tier1 matched

@@ -265,10 +265,22 @@ function toCandidateFromTier1(row: ProductionExercise, matchedOn: MatchedOn): Ca
  *    name index hit against an already-`consumed` row falls through to
  *    Tier 2/3 instead of double-claiming — see the Pass 1 comment below;
  *    real-world trigger: two dataset records sharing an identical name)
+ *  - no production id appears in both `matched` and any `ambiguous` row's
+ *    `candidates` (CR-01 fix, 02-REVIEW.md): every id ever offered as an
+ *    ambiguous candidate is added to `consumed` at push time, so nothing
+ *    later in the same run (same pass or a subsequent one) can silently
+ *    auto-claim a row a human still needs to adjudicate. This also
+ *    prevents an already-`consumed` row from being re-offered as a stale
+ *    Tier 1 collision candidate (the static name index never shrinks).
  */
 export function categorizeAll(dataset: DatasetExercise[], production: ProductionExercise[]): CategorizeAllResult {
   const duplicate_production_names = findDuplicateNames(production);
   const index = buildNameIndex(production);
+  // `consumed` means "no longer available to offer/claim in this run" — it
+  // holds both rows already placed in `matched` AND every row ever offered
+  // as a candidate on an ambiguous row (CR-01 fix). Reusing one set for
+  // both keeps the invariant matched ∩ ambiguous[].candidates === ∅ true
+  // by construction rather than by a post-hoc reconciliation pass.
   const consumed = new Set<string>();
 
   const matched: MatchedRow[] = [];
@@ -309,13 +321,32 @@ export function categorizeAll(dataset: DatasetExercise[], production: Production
     } else if (tier1.rows.length === 1 && consumed.has(tier1.rows[0].id)) {
       afterTier1.push(ex);
     } else if (tier1.rows.length > 1) {
-      ambiguous.push({
-        dataset_id: ex.id,
-        dataset_name: ex.name,
-        reason: 'tier1-name-collision',
-        candidates: tier1.rows.slice(0, 3).map((row) => toCandidateFromTier1(row, tier1.matched_on)),
-        human_decision: null,
-      });
+      // CR-01 fix: `index` is a static snapshot built once and never
+      // shrinks, so `tier1.rows` can include a row already claimed by an
+      // earlier dataset record in THIS SAME pass (e.g. matched via
+      // name_fr moments ago). Filter those out before presenting
+      // candidates — never offer an already-consumed row as if it were
+      // still available.
+      const unconsumedRows = tier1.rows.filter((row) => !consumed.has(row.id));
+      if (unconsumedRows.length === 0) {
+        // Every row sharing this name was already claimed elsewhere in
+        // this pass — nothing left to offer here; let Tier 2/3 have a
+        // shot against whatever else remains.
+        afterTier1.push(ex);
+      } else {
+        const candidates = unconsumedRows.slice(0, 3).map((row) => toCandidateFromTier1(row, tier1.matched_on));
+        ambiguous.push({
+          dataset_id: ex.id,
+          dataset_name: ex.name,
+          reason: 'tier1-name-collision',
+          candidates,
+          human_decision: null,
+        });
+        // Reserve every offered candidate so a later record (this pass or
+        // a subsequent one) can never silently claim it out from under
+        // this pending human decision (CR-01).
+        for (const candidate of candidates) consumed.add(candidate.exercise_id);
+      }
     } else {
       afterTier1.push(ex);
     }
@@ -342,13 +373,18 @@ export function categorizeAll(dataset: DatasetExercise[], production: Production
       });
       consumed.add(winner.exercise_id);
     } else if (candidates.length > 1) {
+      const ambiguousCandidates = candidates.slice(0, 3);
       ambiguous.push({
         dataset_id: ex.id,
         dataset_name: ex.name,
         reason: 'tier2-multiple-candidates',
-        candidates: candidates.slice(0, 3),
+        candidates: ambiguousCandidates,
         human_decision: null,
       });
+      // CR-01 fix: reserve so a later record's Tier 2 (recomputes
+      // `unconsumed` fresh each iteration) or Tier 3 pass can never claim
+      // a row this ambiguous entry is still offering to the reviewer.
+      for (const candidate of ambiguousCandidates) consumed.add(candidate.exercise_id);
     } else {
       afterTier2.push(ex);
     }
@@ -360,13 +396,20 @@ export function categorizeAll(dataset: DatasetExercise[], production: Production
     const candidates = tier3Candidates(ex, unconsumed);
 
     if (candidates.length > 0) {
+      const ambiguousCandidates = candidates.slice(0, 3);
       ambiguous.push({
         dataset_id: ex.id,
         dataset_name: ex.name,
         reason: 'attribute-overlap-only',
-        candidates: candidates.slice(0, 3),
+        candidates: ambiguousCandidates,
         human_decision: null,
       });
+      // CR-01 fix: reserve so a later Tier 3 record in this same pass
+      // (unconsumed is recomputed fresh each iteration) does not also
+      // offer the same row as a candidate on a second, independent
+      // ambiguous entry — avoiding a double-approval race of the same
+      // kind CR-01 describes, just entirely within Tier 3.
+      for (const candidate of ambiguousCandidates) consumed.add(candidate.exercise_id);
     } else {
       unmatched_new.push({
         dataset_id: ex.id,
