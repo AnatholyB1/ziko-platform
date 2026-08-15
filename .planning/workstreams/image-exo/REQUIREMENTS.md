@@ -9,8 +9,8 @@ Requirements for this milestone. Each maps to a roadmap phase.
 
 ### Import Pipeline
 
-- [ ] **IMPORT-01**: Script récupère le dataset (exercises.json + images/ + videos/) depuis `hasaneyldrm/exercises-dataset` via `git clone --depth 1`, vérifié contre le manifest de fichiers attendu
-- [ ] **IMPORT-02**: Phase de match à blanc (dry-run) produit un rapport revu par un humain (matché / non-matché-ancien / non-matché-nouveau / ambigu) via un matcher précision-first à 3 niveaux, zéro écriture DB, exclut explicitement `is_custom=true` et la table `coach_exercises`
+- [x] **IMPORT-01**: Script récupère le dataset (exercises.json + images/ + videos/) depuis `hasaneyldrm/exercises-dataset` via `git clone --depth 1`, vérifié contre le manifest de fichiers attendu
+- [x] **IMPORT-02**: Phase de match à blanc (dry-run) produit un rapport revu par un humain (matché / non-matché-ancien / non-matché-nouveau / ambigu) via un matcher précision-first à 3 niveaux, zéro écriture DB, exclut explicitement `is_custom=true` et la table `coach_exercises`
 - [ ] **IMPORT-03**: Le merge ne s'exécute que sur un rapport approuvé — UPDATE des exercices matchés en place (préserve l'UUID pour la sécurité des FK `program_exercises`/`session_sets`), INSERT des exercices non-matchés nouveaux, jamais de DELETE
 - [ ] **IMPORT-04**: Le merge est idempotent/reprenable via une table `exercise_import_log` — un run tué ou relancé ne retraite ni ne corrompt les lignes déjà migrées
 - [ ] **IMPORT-05**: Les anciens exercices sans match confiant mais référencés par de l'historique réel (`program_exercises`/`session_sets`) sont laissés intacts et signalés pour revue manuelle — jamais auto-mergés, jamais supprimés
@@ -59,8 +59,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | MEDIA-01 | Phase 1 | Complete |
 | MEDIA-02 | Phase 1 | Complete |
-| IMPORT-01 | Phase 2 | Pending |
-| IMPORT-02 | Phase 2 | Pending |
+| IMPORT-01 | Phase 2 | Complete |
+| IMPORT-02 | Phase 2 | Complete |
 | IMPORT-03 | Phase 3 | Pending |
 | IMPORT-04 | Phase 3 | Pending |
 | IMPORT-05 | Phase 3 | Pending |
