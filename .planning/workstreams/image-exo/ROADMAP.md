@@ -41,11 +41,11 @@ Plans:
   2. Running the match step against production data produces a written report categorizing every dataset exercise as matched / unmatched-legacy / unmatched-new / ambiguous, via a 3-tier precision-first matcher
   3. The match report explicitly excludes `is_custom=true` exercises and all `coach_exercises` rows from matching consideration
   4. Zero rows are written to Supabase (Postgres or Storage) at any point during fetch or match — dry-run only
-**Plans:** 1/6 plans executed
+**Plans:** 2/6 plans executed
 
 Plans:
 - [x] 02-01-PLAN.md — Package legitimacy gate + root vitest test-runner home + gitignored dataset cache + pipeline README
-- [ ] 02-02-PLAN.md — Shared lib: zod contracts (dataset/production/report), name normalization + similarity, read-only paginated Supabase client
+- [x] 02-02-PLAN.md — Shared lib: zod contracts (dataset/production/report), name normalization + similarity, read-only paginated Supabase client
 - [ ] 02-03-PLAN.md — fetch.ts: git clone --depth 1 with cache reuse, manifest-equivalent verification, hard exit on mismatch
 - [ ] 02-04-PLAN.md — 3-tier precision-first matcher core (pure functions) + fixture test suite
 - [ ] 02-05-PLAN.md — Report assembly (JSON + Markdown), reviewer-decision preservation, match.ts entrypoint
@@ -86,7 +86,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema & Storage Foundation | 1/1 | Complete    | 2026-08-14 |
-| 2. Download & Match (Dry-Run) | 1/6 | In Progress|  |
+| 2. Download & Match (Dry-Run) | 2/6 | In Progress|  |
 | 3. Merge (Human-Approved Write) | 0/TBD | Not started | - |
 | 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
 
