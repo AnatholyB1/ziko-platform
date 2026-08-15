@@ -131,9 +131,11 @@ export function mergePriorHumanDecisions(
     carriedForward += 1;
 
     let staleDecision = false;
-    if (prior.human_decision.action === 'match') {
+    const priorDecision = prior.human_decision;
+    if (priorDecision.action === 'match') {
+      const targetExerciseId = priorDecision.exercise_id;
       const stillCandidate = row.candidates.some(
-        (candidate) => candidate.exercise_id === prior.human_decision!.exercise_id,
+        (candidate) => candidate.exercise_id === targetExerciseId,
       );
       if (!stillCandidate) {
         staleDecision = true;
