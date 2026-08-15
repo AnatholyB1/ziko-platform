@@ -11,7 +11,7 @@
 **Phase Numbering:** Fresh parallel workstream — numbering starts at Phase 1 (not continuing the shared main-track sequence).
 
 - [x] **Phase 1: Schema & Storage Foundation** - Add the `image` column, `exercise_import_log` table, and public `exercise-media` bucket the rest of the pipeline depends on (completed 2026-08-14)
-- [ ] **Phase 2: Download & Match (Dry-Run)** - Fetch the dataset and produce a human-reviewable match report with zero database writes
+- [x] **Phase 2: Download & Match (Dry-Run)** - Fetch the dataset and produce a human-reviewable match report with zero database writes (completed 2026-08-15)
 - [ ] **Phase 3: Merge (Human-Approved Write)** - Apply the approved report to production — resumable, backed up, FK-safe
 - [ ] **Phase 4: Mobile Consumption & Attribution** - Real media, structured instructions, and mandatory attribution render in the app
 
@@ -41,7 +41,7 @@ Plans:
   2. Running the match step against production data produces a written report categorizing every dataset exercise as matched / unmatched-legacy / unmatched-new / ambiguous, via a 3-tier precision-first matcher
   3. The match report explicitly excludes `is_custom=true` exercises and all `coach_exercises` rows from matching consideration
   4. Zero rows are written to Supabase (Postgres or Storage) at any point during fetch or match — dry-run only
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Package legitimacy gate + root vitest test-runner home + gitignored dataset cache + pipeline README
@@ -49,7 +49,7 @@ Plans:
 - [x] 02-03-PLAN.md — fetch.ts: git clone --depth 1 with cache reuse, manifest-equivalent verification, hard exit on mismatch
 - [x] 02-04-PLAN.md — 3-tier precision-first matcher core (pure functions) + fixture test suite
 - [x] 02-05-PLAN.md — Report assembly (JSON + Markdown), reviewer-decision preservation, match.ts entrypoint
-- [ ] 02-06-PLAN.md — Real dry run, Tier 2 threshold tuning, human review & approval of the match report
+- [x] 02-06-PLAN.md — Real dry run, Tier 2 threshold tuning, human review & approval of the match report
 
 ### Phase 3: Merge (Human-Approved Write)
 **Goal**: The exercise library is safely and reversibly updated in production without breaking any FK-referenced program or session history.
@@ -86,7 +86,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema & Storage Foundation | 1/1 | Complete    | 2026-08-14 |
-| 2. Download & Match (Dry-Run) | 5/6 | In Progress|  |
+| 2. Download & Match (Dry-Run) | 6/6 | Complete   | 2026-08-15 |
 | 3. Merge (Human-Approved Write) | 0/TBD | Not started | - |
 | 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
 
