@@ -485,14 +485,14 @@ No deprecated/outdated findings apply — `sharp`, `@supabase/supabase-js`, and 
 | A2 | Merge run wall-clock time of roughly 20-45 minutes for ~1,324 sequential rows (2 media uploads + 1 backup insert + 1 DB write each, ~1-2s/row) | Standard Stack / Alternatives Considered | Low — affects only UX expectations (how long the operator waits at the confirmation prompt before completion), not correctness; if wildly off, bounded concurrency (noted as a future optimization) becomes worth reconsidering |
 | A3 | No `NOTICE.md` file exists yet in the repo despite being referenced in `REQUIREMENTS.md`'s "Out of Scope" table as the source of the 180×180 licensing constraint | Common Pitfalls / general awareness | Low for Phase 3 (the 180×180 cap is already a locked requirement regardless of whether the file exists) — worth flagging to the planner in case a `NOTICE.md` creation task belongs in this phase or Phase 4 |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact distinct `category` values across all 1,324 dataset records**
+1. **Exact distinct `category` values across all 1,324 dataset records** — **RESOLVED:** adopted as recommended. Plan 03-03 builds `lib/category.ts` with `collectUnmappableCategories(records)` (diffing distinct dataset `category` values against the CHECK constraint's 6 allowed values), and plan 03-05 Task 1 calls it as preflight step 6 of `merge.ts`, surfacing any unmappable value in the pre-confirmation summary rather than as a mid-batch `23514`. Non-empty results do not exit — the operator decides at the confirmation prompt. Per-row try/catch (Pitfall 7) remains the backstop.
    - What we know: the dataset's `category` field is free-text per the zod schema (`z.string().min(1)`), and production's CHECK constraint only allows 6 specific values.
    - What's unclear: whether every dataset category value happens to already match one of the 6 (matcher fixture used `'strength'`, which does match) — not verified across the full dataset since `.dataset-cache/` isn't present on this machine.
    - Recommendation: the planner should add a preflight/dry-run step to `merge.ts` (or a small standalone check script) that loads the dataset and diffs distinct `category` values against the CHECK constraint's 6 values, before the interactive confirmation — surfacing any mismatch as part of the pre-merge summary rather than a mid-batch `23514` error. Per-row try/catch already makes this safe either way (Pitfall 7).
 
-2. **`import_log_id` linkage between `exercises_merge_backup` and `exercise_import_log`**
+2. **`import_log_id` linkage between `exercises_merge_backup` and `exercise_import_log`** — **RESOLVED: omitted, deliberately.** Plan 03-01 Task 1 lists `import_log_id` under "Deliberate exclusions" and grep-asserts its absence from the migration: `backed_up_at` timestamp correlation is sufficient, no success criterion requires the FK, and adding it would couple backup retention to log retention.
    - What we know: D-10 requires full-row snapshots; the log table already tracks per-row outcome.
    - What's unclear: whether the planner wants an explicit FK from `exercises_merge_backup` back to the `exercise_import_log` row that triggered it (useful for "why was this backed up" auditability) or whether `backed_up_at` timestamp correlation is sufficient.
    - Recommendation: lightweight addition (`import_log_id UUID` nullable, no FK constraint to avoid coupling backup retention to log retention) — not required by any success criterion, but cheap to add now if desired; otherwise omit.
