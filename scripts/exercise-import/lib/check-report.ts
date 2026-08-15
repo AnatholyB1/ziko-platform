@@ -140,6 +140,22 @@ export function checkReport(report: unknown): string[] {
     }
   }
 
+  // CR-01 / WR-01: no exercise_id offered as an ambiguous candidate may
+  // already be claimed in matched — a human approving that candidate would
+  // otherwise produce two independent claims on the same production row in
+  // Phase 3.
+  for (const row of ambiguous) {
+    const candidates = asArray(row.candidates);
+    for (const candidate of candidates) {
+      if (matchedExerciseIds.has(candidate.exercise_id)) {
+        problems.push(
+          `ambiguous row ${String(row.dataset_id)} offers candidate ` +
+            `${String(candidate.exercise_id)}, which is already claimed in matched`,
+        );
+      }
+    }
+  }
+
   // Every matched production exercise_id must be unique — a repeat means
   // two dataset records double-claimed the same production row (see the
   // Tier 1 consumed-check fix in lib/matcher.ts, found via this exact
