@@ -188,6 +188,44 @@ export const AmbiguousRowSchema = z
 
 export type AmbiguousRow = z.infer<typeof AmbiguousRowSchema>;
 
+// Per-row Phase 3 status hint (01-CONTEXT.md D-06 enum). Declared ahead of
+// PHASE3_STATUS_HINT below so the report-row schemas can reference it.
+export const Phase3StatusEnum = z.enum(['matched', 'inserted', 'skipped', 'needs_review']);
+export type Phase3Status = z.infer<typeof Phase3StatusEnum>;
+
+// Report-row schemas (plan 02-05). The base *RowSchema definitions above are
+// the shape lib/matcher.ts's categorizeAll produces internally — that
+// module has no notion of a Phase 3 status hint. lib/report.ts stamps
+// `phase3_status` (and, on ambiguous rows, `stale_decision`) onto every row
+// before it reaches the JSON/Markdown artifacts Phase 3 actually consumes.
+// `.extend()` then a fresh `.strict()` keeps this additive without loosening
+// or mutating the base schemas matcher.ts and its tests depend on.
+export const ReportMatchedRowSchema = MatchedRowSchema.extend({
+  phase3_status: Phase3StatusEnum,
+}).strict();
+export type ReportMatchedRow = z.infer<typeof ReportMatchedRowSchema>;
+
+export const ReportUnmatchedNewRowSchema = UnmatchedNewRowSchema.extend({
+  phase3_status: Phase3StatusEnum,
+}).strict();
+export type ReportUnmatchedNewRow = z.infer<typeof ReportUnmatchedNewRowSchema>;
+
+export const ReportUnmatchedLegacyRowSchema = UnmatchedLegacyRowSchema.extend({
+  phase3_status: Phase3StatusEnum,
+}).strict();
+export type ReportUnmatchedLegacyRow = z.infer<typeof ReportUnmatchedLegacyRowSchema>;
+
+// stale_decision (D-08 safety net): true when a carried-forward
+// human_decision references an exercise_id no longer among this row's
+// candidates. Always present (never optional) so JSON.stringify output
+// stays deterministic across rebuilds regardless of whether a decision was
+// ever carried forward.
+export const ReportAmbiguousRowSchema = AmbiguousRowSchema.extend({
+  phase3_status: Phase3StatusEnum,
+  stale_decision: z.boolean(),
+}).strict();
+export type ReportAmbiguousRow = z.infer<typeof ReportAmbiguousRowSchema>;
+
 // INTERNAL contract — this pipeline's hand-off to Phase 3. Grouped by
 // category (never a flat array — D-06's readability floor).
 export const MatchReportSchema = z
@@ -224,10 +262,10 @@ export const MatchReportSchema = z
         ambiguous: z.number().int(),
       })
       .strict(),
-    matched: z.array(MatchedRowSchema),
-    unmatched_new: z.array(UnmatchedNewRowSchema),
-    unmatched_legacy: z.array(UnmatchedLegacyRowSchema),
-    ambiguous: z.array(AmbiguousRowSchema),
+    matched: z.array(ReportMatchedRowSchema),
+    unmatched_new: z.array(ReportUnmatchedNewRowSchema),
+    unmatched_legacy: z.array(ReportUnmatchedLegacyRowSchema),
+    ambiguous: z.array(ReportAmbiguousRowSchema),
   })
   .strict();
 
