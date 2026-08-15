@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { IoWarningOutline } from 'react-icons/io5'
-import { AI_CREDIT_CAP_SENTENCE, DRAFT_REVIEW_BANNER } from '@/content/legal/founder-offer'
+import { AI_CREDIT_CAP_SENTENCE } from '@/content/legal/founder-offer'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -43,16 +42,6 @@ export default async function CguPage({ params }: Props) {
   return (
     <main className="max-w-screen-xl mx-auto px-8 py-16 space-y-8">
       <h1 className="text-3xl font-bold">Conditions G&eacute;n&eacute;rales d&apos;Utilisation</h1>
-
-      <div className="rounded-lg border-2 border-warning bg-warning-subtle p-6 space-y-3">
-        <p className="font-semibold text-warning text-xl flex items-center gap-2">
-          <IoWarningOutline aria-hidden="true" />
-          {isEn ? DRAFT_REVIEW_BANNER.headline.en : DRAFT_REVIEW_BANNER.headline.fr}
-        </p>
-        <p className="text-text leading-relaxed">
-          {isEn ? DRAFT_REVIEW_BANNER.body.en : DRAFT_REVIEW_BANNER.body.fr}
-        </p>
-      </div>
 
       <section>
         <h2 className="text-xl font-semibold mt-8 mb-3">1. Objet</h2>
@@ -206,7 +195,7 @@ export default async function CguPage({ params }: Props) {
       </section>
 
       <p className="text-muted text-sm mt-12">
-        Derni&egrave;re mise &agrave; jour&nbsp;: mars 2026
+        Derni&egrave;re mise &agrave; jour&nbsp;: ao&ucirc;t 2026
       </p>
     </main>
   );

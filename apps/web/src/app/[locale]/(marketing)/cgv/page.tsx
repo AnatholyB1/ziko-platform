@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { IoWarningOutline } from 'react-icons/io5'
 import { cgvSections, CGV_LAST_UPDATED } from '@/content/legal/cgv'
-import { DRAFT_REVIEW_BANNER } from '@/content/legal/founder-offer'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -42,8 +40,6 @@ export default async function CgvPage({ params }: Props) {
 
   const isEn = locale === 'en';
   const title = isEn ? 'Terms of Sale' : 'Conditions Générales de Vente';
-  const banner = isEn ? DRAFT_REVIEW_BANNER.headline.en : DRAFT_REVIEW_BANNER.headline.fr;
-  const bannerBody = isEn ? DRAFT_REVIEW_BANNER.body.en : DRAFT_REVIEW_BANNER.body.fr;
   const sections = cgvSections(locale);
   const lastUpdated = isEn ? CGV_LAST_UPDATED.en : CGV_LAST_UPDATED.fr;
   const cguLinkLabel = isEn ? 'Terms of Use' : 'CGU';
@@ -56,14 +52,6 @@ export default async function CgvPage({ params }: Props) {
   return (
     <main className="max-w-screen-xl mx-auto px-8 py-16 space-y-8">
       <h1 className="text-3xl font-semibold">{title}</h1>
-
-      <div className="rounded-lg border-2 border-warning bg-warning-subtle p-6 space-y-3">
-        <p className="font-semibold text-warning text-xl flex items-center gap-2">
-          <IoWarningOutline aria-hidden="true" />
-          {banner}
-        </p>
-        <p className="text-text leading-relaxed">{bannerBody}</p>
-      </div>
 
       {sections.map((section, index) => (
         <section key={index}>

@@ -17,19 +17,6 @@ export type LocalizedText = {
 // migration seeds `app_config.waitlist_retention_years` with this exact value.
 export const WAITLIST_RETENTION_YEARS = 3;
 
-// D-01 — rendered on both the CGV and CGU pages, immediately after <h1>, before the
-// first <section>. Stays live until the phase's terminal counsel checkpoint clears.
-export const DRAFT_REVIEW_BANNER: { headline: LocalizedText; body: LocalizedText } = {
-  headline: {
-    fr: 'Document en cours de relecture juridique',
-    en: 'Document under legal review',
-  },
-  body: {
-    fr: "Ce texte a été rédigé avec le plus grand soin mais n'a pas encore été validé par un avocat. Il est susceptible d'être modifié avant sa version définitive. Pour toute question, contactez-nous à support@ziko-app.com.",
-    en: 'This text has been drafted with care but has not yet been reviewed and approved by a lawyer. It may be revised before its final version. Please contact us at support@ziko-app.com with any questions.',
-  },
-};
-
 // LEGAL-02, D-03 — the AI-credit-cap parity sentence. Pasted byte-identical
 // (translated) into both the CGV and the CGU per 03-RESEARCH.md's pitfall guard
 // against describing the cap in subtly different terms across documents.

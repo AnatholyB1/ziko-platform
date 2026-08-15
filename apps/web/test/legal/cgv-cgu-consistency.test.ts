@@ -46,11 +46,6 @@ describe('LEGAL-04 — CGU obtains the sentence by import, not by paraphrase', (
     expect(cguSource).not.toContain(frOpening);
   });
 
-  it('the CGU route carries the draft-pending-review banner', () => {
-    expect(cguSource).toContain('DRAFT_REVIEW_BANNER');
-    expect(cguSource).toContain('border-warning');
-  });
-
   it('the CGU route leaves the existing section-9 modification clause untouched', () => {
     expect(cguSource).toContain('Ziko se r&eacute;serve le droit de modifier');
   });
