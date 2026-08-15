@@ -33,22 +33,32 @@ import { createReadOnlyClient, fetchAllProductionExercises } from './lib/supabas
 import { categorizeAll } from './lib/matcher';
 import { buildReport, mergePriorHumanDecisions, renderMarkdown } from './lib/report';
 import { TIER2_THRESHOLD } from './lib/normalize';
-import type { MatchReport } from './lib/types';
+import { MatchReportSchema, type MatchReport } from './lib/types';
 
 /**
  * Reads and JSON.parses an existing report file at `path`, if present.
  * A missing file returns null silently (first run). A present-but-corrupt
  * file (bad JSON) also degrades to null, with a printed warning — never a
- * crash. No schema validation happens here: only the `human_decision`
- * field is ever trusted out of a prior report (see
- * mergePriorHumanDecisions), so a tampered/malformed prior file cannot
- * manufacture a fake match result.
+ * crash. The parsed result is additionally validated against
+ * MatchReportSchema (WR-02): a successfully-parsed-but-wrong-shape prior
+ * report (an old-schema file, or a reviewer who hand-edits
+ * match-report.json and deletes a required key instead of leaving it
+ * `null`) also degrades to null with a warning, rather than reaching
+ * mergePriorHumanDecisions and crashing on an unexpected `undefined`.
  */
 function readPriorReport(path: string): MatchReport | null {
   if (!existsSync(path)) return null;
   try {
     const raw = readFileSync(path, 'utf-8');
-    return JSON.parse(raw) as MatchReport;
+    const parsed = JSON.parse(raw);
+    const result = MatchReportSchema.safeParse(parsed);
+    if (!result.success) {
+      console.warn(
+        `Warning: existing report at ${path} failed schema validation — treating as no prior report. (${result.error.message})`,
+      );
+      return null;
+    }
+    return result.data;
   } catch (err) {
     console.warn(
       `Warning: could not parse existing report at ${path} as JSON — treating as no prior report. (${
