@@ -26,7 +26,7 @@ all five.
 
 - [x] **Phase 1: Data Foundation** - Atomic, RLS-locked waitlist schema, sequence-backed founder cap, and the RPCs everything else calls
 - [x] **Phase 2: Test-Account Purge** - Dry-run-reviewed, backed-up removal of dev/QA accounts so the founder counter is credible (completed 2026-08-14)
-- [ ] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes
+- [x] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes (completed 2026-08-15)
 - [ ] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag
 - [ ] **Phase 5: Waitlist Page & Entry Points** - The public `/fondateurs` page, its counter, and every CTA that routes visitors to it
 - [ ] **Phase 6: Founder Offer Go-Live** - Safe production activation once data, purge, legal, and credit-gate are all confirmed ready
@@ -153,7 +153,7 @@ milestone; must complete before Phase 4 starts, per LEGAL-05)
 
   5. A documented retention period governs stored addresses, and a registrant can request and
      receive erasure of their entry (LEGAL-08, LEGAL-09)
-**Plans**: 2/4 plans executed
+**Plans**: 4/4 plans executed
 Plans:
 **Wave 1**
 
@@ -166,7 +166,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-04-PLAN.md — Blocking counsel-approval gate (D-01), approval record, revisions applied, draft-pending banner cleared
+- [x] 03-04-PLAN.md — Blocking counsel-approval gate (D-01), approval record, revisions applied, draft-pending banner cleared
 
 **Research**: Needs deeper work at plan time, but it is legal drafting requiring outside counsel,
 not further searching — `research/PITFALLS.md` Pitfalls 1, 2, 3, 4, 6, 7, 8, 10 lay out every
@@ -283,7 +283,7 @@ being complete.
 |-------|-----------------|--------|-----------|
 | 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
-| 3. Legal — CGV & CGU | 2/4 | In Progress|  |
+| 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 0/TBD | Not started | - |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
