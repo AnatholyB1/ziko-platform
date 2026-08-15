@@ -102,3 +102,11 @@ None - no external service configuration required. All installs and config are l
 ---
 *Phase: 02-download-match-dry-run*
 *Completed: 2026-08-15*
+
+## Self-Check: PASSED
+
+- FOUND: vitest.config.ts
+- FOUND: scripts/exercise-import/README.md
+- FOUND: .planning/workstreams/image-exo/phases/02-download-match-dry-run/02-01-SUMMARY.md
+- FOUND: commit 555f3a3 (Task 2: install + scaffold)
+- FOUND: commit d496ce6 (docs: SUMMARY.md)
