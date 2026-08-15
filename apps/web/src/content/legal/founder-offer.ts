@@ -47,11 +47,11 @@ export const LIFETIME_SCOPE_SENTENCE: LocalizedText = {
 
 // LEGAL-03/04, D-04 — the grey-list-pattern modification clause (Pitfall 8). The only
 // circumstance in which the founder benefit ends is a service-wide shutdown, with
-// notice and a data-export commitment. The `[TBD]` day count is a genuine open
-// question routed to counsel via 03-COUNSEL-BRIEFING.md — do not resolve it here.
+// notice and a data-export commitment. The notice period was counsel's Q6 answer in
+// 03-COUNSEL-BRIEFING.md — see 03-COUNSEL-APPROVAL.md — 90 days, approved 2026-08-15.
 export const SHUTDOWN_MODIFICATION_CLAUSE: LocalizedText = {
-  fr: "Ziko ne peut mettre fin à l'avantage Premium à vie des membres fondateurs que dans le cadre d'une cessation générale du Service. Dans ce cas, Ziko s'engage à notifier les utilisateurs concernés avec un préavis raisonnable d'au moins [TBD — nombre de jours à confirmer par le conseil] jours et à leur permettre d'exporter leurs données personnelles avant la fermeture.",
-  en: "Ziko may only end founding members' lifetime Premium benefit as part of a general shutdown of the Service. In that case, Ziko commits to notifying affected users with reasonable advance notice of at least [TBD — day count to be confirmed by counsel] days and to allowing them to export their personal data before closure.",
+  fr: "Ziko ne peut mettre fin à l'avantage Premium à vie des membres fondateurs que dans le cadre d'une cessation générale du Service. Dans ce cas, Ziko s'engage à notifier les utilisateurs concernés avec un préavis raisonnable d'au moins 90 jours et à leur permettre d'exporter leurs données personnelles avant la fermeture.",
+  en: "Ziko may only end founding members' lifetime Premium benefit as part of a general shutdown of the Service. In that case, Ziko commits to notifying affected users with reasonable advance notice of at least 90 days and to allowing them to export their personal data before closure.",
 };
 
 // LEGAL-08, D-05 — "3 years from last contact" (CNIL NS-048). Stated in the CGV/CGU

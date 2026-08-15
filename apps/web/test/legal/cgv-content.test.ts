@@ -74,10 +74,15 @@ describe('LEGAL-03 — lifetime scope + narrow shutdown-only modification clause
   });
 });
 
-describe('D-04 — notice-period placeholder integrity', () => {
-  it('the shutdown clause still carries the unresolved [TBD] placeholder in both locales', () => {
-    expect(SHUTDOWN_MODIFICATION_CLAUSE.fr).toContain('[TBD');
-    expect(SHUTDOWN_MODIFICATION_CLAUSE.en).toContain('[TBD');
+describe('D-04 — notice-period placeholder resolved to counsel-approved figure', () => {
+  it('the shutdown clause carries no unresolved [TBD] placeholder in either locale', () => {
+    expect(SHUTDOWN_MODIFICATION_CLAUSE.fr).not.toContain('[TBD');
+    expect(SHUTDOWN_MODIFICATION_CLAUSE.en).not.toContain('[TBD');
+  });
+
+  it('the shutdown clause states the counsel-approved 90-day notice period in both locales', () => {
+    expect(SHUTDOWN_MODIFICATION_CLAUSE.fr).toContain('90 jours');
+    expect(SHUTDOWN_MODIFICATION_CLAUSE.en).toContain('90 days');
   });
 });
 
