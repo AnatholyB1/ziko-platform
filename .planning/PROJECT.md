@@ -286,6 +286,7 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | NEXT_PUBLIC_API_URL must be set in apps/web | Missing env var caused "Failed to fetch" on /storage/upload-url — component fell back to localhost:3000 (unreachable in production). Added to apps/web/.env. | v1.5 Phase 24 ✓ |
 | Marketing pages isolated in (marketing) route group | locale root layout rendered sticky `<Header />` unconditionally — coach pages inherited it, causing CoachSidebar to slide behind. Moving marketing pages to `[locale]/(marketing)/layout.tsx` strips Header/Footer from all coach routes cleanly. | v1.5 Phase 24 ✓ |
 | loginAction uses `getLocale()` + `/${locale}/` prefix on all redirects | loginAction returned hardcoded locale-less paths ('/coach/onboarding') causing 404 in next-intl; all redirects now prefixed dynamically. | v1.5 Phase 24 ✓ |
+| 3-tier precision-first matcher, publishable-key-only reads, zero DB writes for dry-run scripts | Live run against `hasaneyldrm/exercises-dataset` + production matched 1,318/1,318 exercises (Tier 1 exact name); a real double-claim bug (same production row appearing both `matched` and as a live `ambiguous` candidate) was found and fixed post-review — `consumed` set now reserved at candidate-push time across all 3 tiers, closing the risk before Phase 3 trusts this report for `UPDATE`/`INSERT` decisions | v1.16 Phase 2 ✓ |
 
 ## Evolution
 
@@ -305,7 +306,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-14 — v1.16 Exercise Library Import (`image-exo`) parallel workstream started.*
+*Last updated: 2026-08-15 — v1.16 Exercise Library Import (`image-exo`) Phase 2 complete: real dry-run matched 1,318/1,318 production exercises, zero DB writes confirmed.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
