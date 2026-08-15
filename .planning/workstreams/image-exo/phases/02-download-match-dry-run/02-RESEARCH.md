@@ -362,22 +362,28 @@ function tier2Match(prodName: string, datasetName: string): boolean {
 
 **If this table is empty:** N/A — see entries above.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three questions were closed during Phase 02 planning (2026-08-15). Each carries an inline
+> `RESOLVED:` marker naming the plan/task that closes it. None gate execution.
 
 1. **Exact production exercise row count and any existing name duplicates**
    - What we know: `scripts/exercise_names.txt` shows 1,318 unique names as of the last seed-generation run; the DB schema has no UNIQUE constraint on `name`.
    - What's unclear: The live count today (rows may have been added/edited since that file was generated), and whether any duplicate names currently exist in production.
    - Recommendation: `match.ts` should compute this itself at runtime (per Pattern 2 + the Pitfall 4 safety check) rather than the planner hardcoding an assumed count anywhere in the plan. Do not gate planning on a live `\d exercises`/SQL query — the pagination + dedup-check pattern above makes the script self-verifying regardless of the actual count.
+   - **RESOLVED:** Answered at runtime, never assumed. **02-02 Task 3** (`lib/supabase-client.ts`) reads the live `exercises` table with keyset pagination and no hardcoded row count. **02-04 Task 1** (`lib/matcher.ts`) exports `findDuplicateNames(production)` and builds an array-valued name index, so duplicate production names surface in the report's `warnings.duplicate_production_names` (threat `T-02-10`) instead of collapsing silently. **02-04 Task 2** asserts both behaviours against fixtures. No plan hardcodes 1,318 or 1,324.
 
 2. **Real match-tier volumes (how many ambiguous/unmatched-legacy/unmatched-new rows actually result)**
    - What we know: Strong lineage evidence suggests high Tier 1 hit rate; CONTEXT.md's D-04/D-09/D-10 all explicitly defer their final shape to "once real data is seen."
    - What's unclear: The actual numbers — could only be resolved by running `match.ts` against real production + real dataset data, which is implementation, not research.
    - Recommendation: The planner should design the report schema and Tier 3/ambiguous-presentation logic to be **cheap to re-tune** (e.g., threshold as a named constant, not hardcoded inline in multiple places) rather than trying to pre-guess exact numbers. Plan for a "run once, inspect report, adjust threshold, re-run" loop as an explicit task, not a single-pass implementation.
+   - **RESOLVED:** Planned as an explicit measure-then-tune loop rather than a guess. **02-06 Task 1** performs the first real dry run and a structural report check; **02-06 Task 2** is the dedicated Tier 2 threshold tuning iteration (single named threshold constant, re-run and re-inspect); **02-06 Task 3** is the human review/approval checkpoint on the resulting report. No plan pre-commits to an expected tier volume.
 
 3. **Whether `hasaneyldrm/exercises-dataset`'s upstream `main` branch could change between the time this research was done and Phase 2 execution**
    - What we know: `git clone --depth 1` always pulls the current `main` HEAD; the schema/counts verified today (2026-08-15, repo `pushed_at: 2026-07-16`) are a snapshot.
    - What's unclear: Whether the repo owner will push updates before this phase executes.
    - Recommendation: The zod-schema-validation pattern (Don't Hand-Roll) exists specifically to make any drift a loud, early failure rather than a silent one — the planner should include it as a task, not treat today's schema as permanently locked-in without a runtime check.
+   - **RESOLVED:** Drift is a loud runtime failure on every run, and today's snapshot is never treated as locked in. **02-02 Task 1** defines `DatasetExerciseArraySchema` in `lib/types.ts`; **02-03 Task 1** `loadDatasetJson()` parses through that schema and lets `ZodError` propagate, and `verifyDataset()` compares `exercises.json`'s array length against live `images/`/`videos/` counts with no hardcoded expected count (so legitimate upstream growth passes, a corrupt/partial clone fails); **02-03 Task 2** re-labels a `ZodError` as a schema-drift failure and exits non-zero with no report written (D-11); **02-05 Task 3** re-validates on every `match.ts` run. Threat `T-02-06` tracks this.
 
 ## Environment Availability
 
