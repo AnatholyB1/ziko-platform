@@ -392,6 +392,34 @@ describe('categorizeAll', () => {
     expect(result.duplicate_production_names).toEqual([]);
   });
 
+  test('Regression (real-data find, plan 02-06): two dataset records sharing an identical name do not both claim the same production row', () => {
+    // Real names from the hasaneyldrm/exercises-dataset live clone (dataset
+    // ids 0088 and 1371) — the upstream dataset genuinely contains this
+    // exact duplicate. Before the fix, both records resolved to the same
+    // single production row via Tier 1 (whose index is built once and
+    // never shrinks), producing two `matched` rows for one production id —
+    // a false positive that would silently double-UPDATE the same row in
+    // Phase 3 and lose the second dataset record's traceability entirely.
+    const dataset = [
+      makeDatasetExercise({ id: '0088', name: 'Barbell Seated Calf Raise' }),
+      makeDatasetExercise({ id: '1371', name: 'Barbell Seated Calf Raise' }),
+    ];
+    const production = [makeProductionExercise({ id: 'prod-calf-raise', name: 'Barbell Seated Calf Raise' })];
+    const result = categorizeAll(dataset, production);
+
+    // Exactly one matched row references the single production id — the
+    // second dataset record must NOT also claim it.
+    expect(result.matched.length).toBe(1);
+    expect(result.matched[0].exercise_id).toBe('prod-calf-raise');
+    const matchedExerciseIds = result.matched.map((row) => row.exercise_id);
+    expect(new Set(matchedExerciseIds).size).toBe(matchedExerciseIds.length);
+
+    // The second dataset record falls through to unmatched_new (no other
+    // production row exists in this fixture for it to fuzzy/attribute-match).
+    expect(result.unmatched_new.length).toBe(1);
+    expect(result.unmatched_new[0].dataset_id).toBe('1371');
+  });
+
   test('Totals invariant + no-overlap invariant across a mixed 6-record fixture', () => {
     const dataset: DatasetExercise[] = [
       makeDatasetExercise({ id: '0001', name: 'Overhead Press', body_part: 'shoulders', equipment: 'barbell', target: 'shoulders' }), // -> tier1 matched
