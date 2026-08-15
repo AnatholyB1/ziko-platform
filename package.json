@@ -45,6 +45,7 @@
     "@supabase/supabase-js": "^2.99.2",
     "fastest-levenshtein": "1.0.16",
     "react-dom": "19.2.6",
+    "sharp": "0.34.5",
     "zod": "^4.3.6"
   }
 }
