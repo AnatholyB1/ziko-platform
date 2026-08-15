@@ -134,7 +134,7 @@ export default async function CguPage({ params }: Props) {
 
       <section>
         <h2 className="text-xl font-semibold mt-8 mb-3">
-          {isEn ? '6. Premium access and AI credits' : '6. Acc&egrave;s Premium et cr&eacute;dits IA'}
+          {isEn ? '6. Premium access and AI credits' : '6. Accès Premium et crédits IA'}
         </h2>
         <p className="text-text leading-relaxed mb-4">
           {isEn ? AI_CREDIT_CAP_SENTENCE.en : AI_CREDIT_CAP_SENTENCE.fr}
