@@ -50,10 +50,9 @@ export function buildReport(input: BuildReportInput): MatchReport {
     .sort((a, b) => compareStrings(a.dataset_id, b.dataset_id))
     .map((row) => ({ ...row, phase3_status: PHASE3_STATUS_HINT.matched }));
 
-  const unmatched_new: ReportUnmatchedNewRow[] = categorized.unmatched_new.map((row) => ({
-    ...row,
-    phase3_status: PHASE3_STATUS_HINT.unmatched_new,
-  }));
+  const unmatched_new: ReportUnmatchedNewRow[] = [...categorized.unmatched_new]
+    .sort((a, b) => compareStrings(a.dataset_id, b.dataset_id))
+    .map((row) => ({ ...row, phase3_status: PHASE3_STATUS_HINT.unmatched_new }));
 
   const unmatched_legacy: ReportUnmatchedLegacyRow[] = [...categorized.unmatched_legacy]
     .sort((a, b) => compareStrings(a.production_name, b.production_name))
