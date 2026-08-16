@@ -114,3 +114,13 @@ None - no external service configuration required for this plan. A real supervis
 ---
 *Phase: 03-merge-human-approved-write*
 *Completed: 2026-08-16*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/exercise-import/merge.ts
+- FOUND: scripts/exercise-import/README.md
+- FOUND: .planning/workstreams/image-exo/phases/03-merge-human-approved-write/03-05-SUMMARY.md
+- FOUND commit: 1048ad5
+- FOUND commit: 46165be
+- FOUND commit: 5efb256
+- FOUND commit: 42cd569
