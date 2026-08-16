@@ -50,15 +50,16 @@ Declared values (must be multiples of 4):
 | xl | 32px | Page horizontal padding (`px-8`, matches every existing marketing page's `max-w-screen-xl mx-auto px-8` shell) |
 | 2xl | 48px | Gap between major page blocks (hero → role picker → counter → legal footer) |
 | 3xl | 64px | Reserved, not used at this scale in Phase 5 |
+| 4xl | 80px (`py-20`) | Hero-region vertical padding — matches `HeroClient.tsx`/`CoachsHeroClient.tsx` exactly, used twice (page hero, homepage founders-section hero-style intro) |
+| 5xl | 96px (`py-24`) | Standard marketing-section vertical padding — matches `CoachsFeatureBlocksClient.tsx`/`CoachsCtaFooterClient.tsx` exactly, used twice (role-picker section, counter/legal section) |
 
-Exceptions:
-- `py-20` (80px) — hero-region vertical padding, matches `HeroClient.tsx`/`CoachsHeroClient.tsx` exactly.
-- `py-24` (96px) — standard section vertical padding, matches `CoachsFeatureBlocksClient.tsx`/`CoachsCtaFooterClient.tsx` exactly.
-- `min-h-[44px]` touch targets — required on the new header/footer "Fondateurs" nav link and the two
-  role-picker cards, matching `HeaderClient.tsx`'s existing locale-switcher links (`min-h-[44px] inline-flex items-center`).
+Both 4xl and 5xl are multiples of 4px and are not new — they are the exact values every existing marketing
+section on this site already uses; Phase 5 does not introduce a new spacing idiom, only names the
+already-established values so they're part of the formal scale rather than implicit exceptions.
 
-Both exceptions are multiples of 4px and are not new — they are the exact values every existing marketing
-section on this site already uses; Phase 5 does not introduce a new spacing idiom.
+Touch-target exception (not a spacing-scale token, a minimum-hit-area rule):
+- `min-h-[44px]` — required on the new header/footer "Fondateurs" nav link and the two role-picker
+  cards, matching `HeaderClient.tsx`'s existing locale-switcher links (`min-h-[44px] inline-flex items-center`).
 
 ---
 
@@ -69,18 +70,21 @@ section on this site already uses; Phase 5 does not introduce a new spacing idio
 | Display (page H1, `/fondateurs` hero headline) | 48px mobile / 72px desktop (`text-5xl md:text-7xl`) | Bold (700) | 1.05 (`leading-none`) |
 | Heading (section headings — homepage founders section, role-picker section title, complete-state heading) | 30px mobile / 36px desktop (`text-3xl md:text-4xl`) | Bold (700) | 1.2 |
 | Body (subheadline, form labels expanded, consent copy, collection notice, success/error message body) | 16px (`text-base`) | Regular (400) | 1.5 |
-| Label (nav link, form field label, counter caption, button text) | 14px (`text-sm`) | Regular (400) for static labels / Bold (700) for button and counter-emphasis text | 1.4 |
+| Label (nav link, form field label, offer badge/pill text, legal microcopy, counter caption, button text) | 14px (`text-sm`) | Regular (400) for static labels / legal microcopy / Bold (700) for button, badge, and counter-emphasis text | 1.4 |
 
-Exactly 2 weights declared: **Regular (400)** and **Bold (700)**.
+Exactly 4 sizes declared, no exceptions: **Display, Heading, Body, Label.** Exactly 2 weights declared:
+**Regular (400)** and **Bold (700)**.
 
 **Documented deviation:** `Hero.tsx`/`CoachsHeroClient.tsx` use `font-black` (900) for their H1. Phase 5's
 Display role uses Bold (700) instead — a deliberate simplification to respect this contract's 2-weight
 cap. This does not violate WAIT-07 (colors, tokens, spacing, and component idiom are unchanged); only the
 single heaviest weight is normalized down one step.
 
-Exception: **Caption, 12px (`text-xs`)** — reserved exclusively for the offer badge/pill text (matching
-`HeroClient.tsx`'s existing badge: `text-xs font-bold`) and legal microcopy (matching
-`CoachsCtaFooterClient.tsx`'s `ctaNote`: `text-xs text-muted`). Not a fifth general-purpose size.
+**Documented deviation:** the offer badge/pill text and legal microcopy (`ctaNote`) are rendered at
+`text-xs` (12px) elsewhere on this site (`HeroClient.tsx`, `CoachsCtaFooterClient.tsx`). Phase 5
+normalizes both up to the Label size, 14px (`text-sm`), instead of introducing a fifth font size — the
+badge keeps its `font-bold` weight, legal microcopy stays `font-normal text-muted`. See Component
+Specifications §4 for the updated badge classes.
 
 ---
 
@@ -143,6 +147,18 @@ state" constraints — tone/wording only, not new legal or structural claims.
 > and D-10's "concrete visual treatment" note). Auto-mode calls, made from CONTEXT.md's decisions and
 > existing codebase idiom — not asked interactively.
 
+### Focal points
+
+- **`/fondateurs` page:** the primary visual anchor is the **role-picker card pair** (§3 below), not the
+  hero headline or the offer badge. The hero establishes the offer in one line and then hands off
+  immediately — the two role cards are the largest, highest-contrast interactive elements above the fold,
+  and the accent color's first live use on the page is the card's selected-state border/badge. Offer copy
+  and the counter badge are supporting context that justifies the action, not the thing the eye lands on.
+- **Homepage founders section:** the primary visual anchor is the **CTA button** (`bg-primary`,
+  "Devenir fondateur →"), consistent with every other homepage section on this site ending in a single
+  primary-accent action. The counter/offer copy sits above it as justification, matching the section's
+  role as a teaser that routes to `/fondateurs` rather than a duplicate of the full role-picker flow.
+
 ### 1. ENTRY-03 header treatment — plain nav link placement
 
 `HeaderClient.tsx`'s current row is `Logo | [locale FR|EN] [primary CTA button]` inside a single
@@ -184,9 +200,10 @@ Visual recipe matches `CoachsFeatureBlocksClient.tsx`'s existing card pattern, m
 
 ### 4. Counter/offer badge widget (FOND-01/02/05, D-10)
 
-One widget, three mutually exclusive visual states, all built on the exact badge shape already
-established by `HeroClient.tsx`'s existing badge span
-(`inline-flex ... text-xs font-bold px-4 py-2 rounded-full border`):
+One widget, three mutually exclusive visual states, all built on the badge shape already established by
+`HeroClient.tsx`'s existing badge span, with the text size normalized up to this contract's Label size
+(`inline-flex ... text-sm font-bold px-4 py-2 rounded-full border` — `text-sm`, not `HeroClient.tsx`'s
+original `text-xs`, per the Typography section's documented deviation):
 
 | State | Classes | Content |
 |-------|---------|---------|
@@ -215,23 +232,53 @@ language.
 
 ## UI Considerations
 
-Applicable state considerations resolved: 7 covered, 1 backstop, 0 unresolved (2 categories not
-applicable — no `list-collection` or `media` element exists in this phase's UI inventory).
+Ran the compiled `ui-consideration-probe` engine (not just hand-curated) against the 5 elements this
+phase's UI inventory produces — `WaitlistRoleForm` (form), `WaitlistCounterClient` (static-content
+badge widget), `HeaderClient` nav row (nav), the success-confirmation copy (static-content), and the
+consent/RGPD-notice copy (static-content). The engine applied all 8 taxonomy categories per element
+(37 applicable items total) since no element in this phase is a `list-collection` or `media` kind;
+every `populated`/`zero-one-many` row below is therefore a **Dismiss**, not a gap. Resolved: 13
+explicit, 1 backstop, 23 dismissed (not applicable to any element in this inventory), 0 unresolved.
 
-| Category | Element(s) | Status | Resolution / Reason |
-|----------|------------|--------|---------------------|
-| empty | `WaitlistRoleForm` (form) | ✅ covered | Two unselected role cards render, email field absent from the DOM until a role is clicked (WAIT-02) — see Copywriting Contract |
-| empty | `WaitlistCounterClient` (static-content) | ✅ covered | Below the reveal threshold, the widget shows the static fact-badge with no number at all (FOND-01) — see Component Specifications §4 |
-| loading | `WaitlistCounterClient` (static-content) | ✅ covered | Pre-threshold badge shape with a `fadeIn` pulse fill while `/api/waitlist/count` resolves — never blank, never a layout shift |
-| loading | `WaitlistRoleForm` (form) | ✅ covered | Submit button shows "Envoi…"/"Sending…" + `disabled`, matching `DeleteAccountForm.tsx`'s pending pattern |
-| error | `WaitlistRoleForm` (form) | ✅ covered | WAIT-04 malformed/disposable email — see Copywriting Contract Error state row |
-| error | `WaitlistCounterClient` (static-content) | ✅ covered | Route Handler's documented safe-default fallback renders the pre-threshold state, never a broken widget — see Component Specifications §4 |
-| populated | — | not applicable | No `list-collection` or `media` element exists in this phase's UI inventory (dismissed) |
-| partial | `WaitlistRoleForm` (form) | 🧪 backstop | Role picked but email not yet valid/submitted is covered by ordinary HTML5 `type="email"` + Zod-on-submit field validation, not a distinct bespoke UI state — held out as a backstop rather than pixel-specced |
-| overflow | `HeaderClient` nav row (nav) | ✅ covered | New "Fondateurs" link + `flex-wrap justify-end gap-y-2` on the right-hand nav wrapper — see Component Specifications §1 |
-| zero-one-many | — | not applicable | No `list-collection` element exists in this phase's UI inventory (dismissed) |
-| long-text | Success confirmation copy (static-content) | ✅ covered | Confirmation copy never echoes the submitted email address back — avoids any overflow risk and stays consistent with the anti-enumeration philosophy (no per-user variable-length content in the response) |
-| long-text | `COLLECTION_POINT_NOTICE` / consent copy (static-content) | ✅ covered | Rendered inside a `max-w-md`/`max-w-lg` container, wraps normally like every other legal paragraph on `/cgu`/`/cgv` — never truncated or clipped |
+| Category | Element | Status | Resolution / Reason |
+|----------|---------|--------|---------------------|
+| empty | `WaitlistRoleForm` | ✅ resolved (explicit) | Two unselected role cards render, email field absent from the DOM until a role is clicked (WAIT-02) — see Copywriting Contract |
+| empty | `WaitlistCounterClient` | ✅ resolved (explicit) | Below the reveal threshold, the widget shows the static fact-badge with no number at all (FOND-01) — see Component Specifications §4 |
+| empty | `HeaderClient` nav row | dismissed | Static server-rendered nav always shows logo + links; no "no items" state exists for a fixed nav bar |
+| empty | Success confirmation copy | dismissed | Always renders one of the two fixed message variants immediately on success; no empty variant exists |
+| empty | Consent/RGPD notice copy | dismissed | Always renders the frozen legal copy from `founder-offer.ts`; no empty variant |
+| loading | `WaitlistCounterClient` | ✅ resolved (explicit) | Pre-threshold badge shape with a `fadeIn` pulse fill while `/api/waitlist/count` resolves — never blank, never a layout shift |
+| loading | `WaitlistRoleForm` | ✅ resolved (explicit) | Submit button shows "Envoi…"/"Sending…" + `disabled`, matching `DeleteAccountForm.tsx`'s pending pattern |
+| loading | `HeaderClient` nav row | dismissed | Server-rendered static content, no async loading state |
+| loading | Success confirmation copy | dismissed | Rendered only after the Server Action resolves; the pending state belongs to the form (`WaitlistRoleForm`), not this element |
+| loading | Consent/RGPD notice copy | dismissed | Static content from a frozen module at build time, no async load |
+| error | `WaitlistRoleForm` | ✅ resolved (explicit) | WAIT-04 malformed/disposable email — see Copywriting Contract Error state row |
+| error | `WaitlistCounterClient` | ✅ resolved (explicit) | Route Handler's documented safe-default fallback renders the pre-threshold state, never a broken widget — see Component Specifications §4 |
+| error | `HeaderClient` nav row | dismissed | No data-fetch or submission path; no error state applicable to a static nav |
+| error | Success confirmation copy | dismissed | This is the success-path copy; the error path is `WaitlistRoleForm`'s error state, not this element |
+| error | Consent/RGPD notice copy | dismissed | No data-fetch or submission path of its own — validation lives on the form's email field |
+| populated | `WaitlistRoleForm` | dismissed | Not a list-collection; form has exactly one email field, no populated/empty-list distinction beyond the empty-role-picker state above |
+| populated | `WaitlistCounterClient` | dismissed | Not a list-collection; the widget shows a single number/state, never a collection of items |
+| populated | `HeaderClient` nav row | dismissed | Not a list-collection; fixed, known set of nav items |
+| populated | Consent/RGPD notice copy | dismissed | Not a list-collection |
+| partial | `WaitlistRoleForm` | 🧪 resolved (backstop) | Role picked but email not yet valid/submitted is covered by ordinary HTML5 `type="email"` + Zod-on-submit field validation, not a distinct bespoke UI state — held out as a backstop rather than pixel-specced |
+| partial | `WaitlistCounterClient` | dismissed | Widget has three mutually exclusive whole states (pre-threshold / counter-visible / complete); no partial/in-between rendering exists |
+| partial | `HeaderClient` nav row | dismissed | N/A — static nav has no partial-completion state |
+| partial | Success confirmation copy | dismissed | N/A — not a partial-completion element |
+| partial | Consent/RGPD notice copy | dismissed | N/A — static legal copy has no partial state |
+| overflow | `HeaderClient` nav row | ✅ resolved (explicit) | New "Fondateurs" link + `flex-wrap justify-end gap-y-2` on the right-hand nav wrapper handles narrow-viewport wrapping — see Component Specifications §1 |
+| overflow | Consent/RGPD notice copy | ✅ resolved (explicit) | Rendered inside a `max-w-md`/`max-w-lg` container, wraps normally like every other legal paragraph on `/cgu`/`/cgv` — never truncated or clipped |
+| overflow | `WaitlistRoleForm` | dismissed | Single email input + two short fixed role labels; no long-content overflow risk |
+| overflow | `WaitlistCounterClient` | dismissed | Badge text is a short fixed-format string ("Plus que N places"); `N` is always a small integer (≤200), no overflow risk |
+| overflow | Success confirmation copy | dismissed | Fixed-length sentence copy at the Body size, rendered in the same card as `DeleteAccountForm.tsx`'s success state — no overflow risk |
+| zero-one-many | `WaitlistRoleForm` | dismissed | Not a list-collection |
+| zero-one-many | `WaitlistCounterClient` | dismissed | Not a list-collection |
+| zero-one-many | `HeaderClient` nav row | dismissed | Fixed, known set of nav items; not a dynamic collection |
+| zero-one-many | Consent/RGPD notice copy | dismissed | Not a list-collection |
+| long-text | `WaitlistRoleForm` | dismissed | Form labels and button text are fixed, short copy; no user-generated or variable-length content renders inside the form itself |
+| long-text | `HeaderClient` nav row | dismissed | All nav labels are short fixed strings ("Fondateurs", "FR", "EN"); no variable-length content |
+| long-text | Success confirmation copy | ✅ resolved (explicit) | Confirmation copy never echoes the submitted email address back — avoids overflow risk and stays consistent with the anti-enumeration philosophy (no per-user variable-length content in the response) |
+| long-text | Consent/RGPD notice copy | ✅ resolved (explicit) | Same container as the overflow row above — constrained width, normal text wrapping, matches the existing legal-page pattern |
 
 ---
 
