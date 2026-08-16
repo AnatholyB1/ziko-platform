@@ -100,3 +100,12 @@ None - no external service configuration required. This plan builds a pure, inje
 ---
 *Phase: 03-merge-human-approved-write*
 *Completed: 2026-08-16*
+
+## Self-Check: PASSED
+
+- FOUND: scripts/exercise-import/lib/merge-row.ts
+- FOUND: scripts/exercise-import/lib/merge-row.test.ts
+- FOUND: .planning/workstreams/image-exo/phases/03-merge-human-approved-write/03-04-SUMMARY.md
+- FOUND commit: 089f7dc (Task 1)
+- FOUND commit: 0a410bd (Task 2)
+- FOUND commit: e949cf3 (docs: summary)
