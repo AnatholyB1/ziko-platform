@@ -178,6 +178,12 @@ Before trusting D1's RLS-backed coverage above, or before this milestone's go-li
 - Known gap carried forward from plan 04-01, unchanged by this plan: the RLS specs for both the flag/provenance migration (`premium-credit-gate.spec.ts`) and this plan's grant RPC (`premium-grant-rpc.spec.ts`) have not been proven against a real Supabase database in any session to date. See "User Setup Required" above.
 - The founder-to-`tier='premium'` redemption flow (D-04) remains explicitly out of scope for this milestone — Phase 4 built the grant mechanism and the provenance flag so they are ready whenever that future flow ships, per the original phase context.
 
+## Self-Check: PASSED
+
+All 9 code/config files created or modified by this plan were verified present on disk, and all 6
+commit hashes (`346ee7a`, `f9e0cd8`, `5253721`, `363de06`, `8c1dd6e`, `47725b8`) were verified
+present in `git log --oneline --all`. No missing items.
+
 ---
 *Phase: 04-credit-gate-alignment*
 *Completed: 2026-08-16*

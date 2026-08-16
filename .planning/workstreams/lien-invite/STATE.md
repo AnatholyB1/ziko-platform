@@ -4,16 +4,16 @@ milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 3
 current_phase_name: legal-cgv-cgu
-status: executing
-stopped_at: Phase 4 plan 01 complete
-last_updated: "2026-08-16T18:35:32.513Z"
+status: verifying
+stopped_at: Completed 04-credit-gate-alignment 04-02-PLAN.md — Phase 4 feature-complete (2/2 plans)
+last_updated: "2026-08-16T18:49:39.306Z"
 last_activity: 2026-08-14
 last_activity_desc: Phase 2 complete, transitioned to Phase 3
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -32,7 +32,7 @@ dependency on Phase 1 and can start immediately per ROADMAP.md
 
 Phase: 3 (legal-cgv-cgu) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -47,7 +47,7 @@ no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 Last activity: 2026-08-14 — Phase 3 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
-Progress: [█████████░] 92% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [██████████] 100% (1/6 phases complete, Phase 1 — 4/4 plans)
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [█████████░] 92% (1/6 phases complete, Phase 1 —
 | Phase 03-legal-cgv-cgu P02 | ~30min | 3 tasks | 5 files |
 | Phase 03-legal-cgv-cgu P03 | ~35min | 3 tasks | 7 files |
 | Phase 03-legal-cgv-cgu P04 | ~25min | 2 tasks | 6 files |
+| Phase 04-credit-gate-alignment P02 | ~35min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,8 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 3] 03-03: backend/api test:rls could not be executed this session — sandbox denies read/write on backend/api/.env* paths, so setup.ts's unconditional required-env-var check (ahead of the RUN_DB guard) could not be satisfied even with a placeholder
 - [Phase ?]: [Phase 3] 03-04: Task 2's counsel-approval gate (D-01) resolved to approved-as-drafted by the real user outside this session — recorded verbatim in 03-COUNSEL-APPROVAL.md, not re-derived; approving lawyer's name withheld at their own request, Q6 notice period resolved to 90 days
 - [Phase ?]: [Phase 3] 03-04: draft-pending-review banner removed from /cgv and /cgu together with its guarding test assertion, in one commit (T-03-19) — Phase 3 complete, 4/4 plans, LEGAL-01 through LEGAL-09 all Complete, Phase 4 unblocked per LEGAL-05
+- [Phase ?]: [Phase 4] 04-02: mirrored 028's ledger-first/GET DIAGNOSTICS/early-return ordering for grant_premium_credits(), not 026's naive increment-then-insert or the RESEARCH.md/PATTERNS.md skeletons that omit the partial-index WHERE predicate on ON CONFLICT
+- [Phase ?]: [Phase 4] 04-02: the monthly grant cron runs unconditionally regardless of CRED-05's activation flag (D-02/D-03) — funding is separate from enforcement, so Phase 6's flip meets an already-funded premium tier instead of instantly 402-ing everyone
 
 ### Pending Todos
 
@@ -166,9 +169,9 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-16T18:35:32.429Z
-Stopped at: Phase 4 plan 01 complete
+Last session: 2026-08-16T18:49:39.288Z
+Stopped at: Completed 04-credit-gate-alignment 04-02-PLAN.md — Phase 4 feature-complete (2/2 plans)
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: .planning/workstreams/lien-invite/phases/04-credit-gate-alignment/04-02-PLAN.md
+Resume file: None

@@ -207,7 +207,7 @@ already be live per LEGAL-05)
 Plans:
 
 - [x] 04-01-PLAN.md — CRED-01 production re-audit, the `app_config` cap flag and `is_lifetime_premium` migration, and the flag-driven `creditCheck` (wave 1)
-- [ ] 04-02-PLAN.md — `grant_premium_credits()` RPC, the 300-credit allowance constant, its service wrapper, and the monthly Vercel cron route (wave 2)
+- [x] 04-02-PLAN.md — `grant_premium_credits()` RPC, the 300-credit allowance constant, its service wrapper, and the monthly Vercel cron route (wave 2)
 
 **Research**: Resolved. The monthly allowance is locked at 300 credits/month by 04-CONTEXT.md D-02
 (≈10x a fully-engaged free user's chat volume); `04-RESEARCH.md` re-verified every call site against
