@@ -222,8 +222,7 @@ than `026_ai_credits.sql` (partial-index `ON CONFLICT` predicate, ledger claim b
 choosing their profile, and see a truthful, on-brand bilingual page — reachable from every intended
 entry point on the site.
 **Depends on**: Phase 1 (RPCs must exist)
-**Requirements**: WAIT-01, WAIT-02, WAIT-03, WAIT-04, WAIT-05, WAIT-06, WAIT-07, WAIT-08, FOND-01,
-FOND-02, FOND-03, FOND-04, FOND-05, FOND-06, ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05, ENTRY-06
+**Requirements**: WAIT-01, WAIT-02, WAIT-03, WAIT-04, WAIT-05, WAIT-06, WAIT-07, WAIT-08, FOND-01, FOND-02, FOND-03, FOND-04, FOND-05, FOND-06, ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05, ENTRY-06
 **Success Criteria** (what must be TRUE):
 
   1. A visitor reaches a dedicated, bilingual founders page matching the existing light sport theme
