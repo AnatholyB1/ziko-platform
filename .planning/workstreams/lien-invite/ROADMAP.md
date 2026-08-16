@@ -202,10 +202,18 @@ already be live per LEGAL-05)
 
   5. Every existing caller reading `tier` (e.g. `branding/page.tsx`'s `isPro` check) continues to
      behave exactly as before — no regression (CRED-06)
-**Plans**: TBD
-**Research**: Needs deeper work at plan time — the numeric monthly premium AI-credit allowance is
-a product decision that must be modeled against `ai_cost_log`, not assumed; see
-`research/SUMMARY.md` Research Flags and `research/ARCHITECTURE.md` Section 4.
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — CRED-01 production re-audit, the `app_config` cap flag and `is_lifetime_premium` migration, and the flag-driven `creditCheck` (wave 1)
+- [ ] 04-02-PLAN.md — `grant_premium_credits()` RPC, the 300-credit allowance constant, its service wrapper, and the monthly Vercel cron route (wave 2)
+
+**Research**: Resolved. The monthly allowance is locked at 300 credits/month by 04-CONTEXT.md D-02
+(≈10x a fully-engaged free user's chat volume); `04-RESEARCH.md` re-verified every call site against
+current code. Two plan-time corrections were made to that research and are recorded in the plans:
+the flag-off branch must keep its `tier` condition (a flag-only pass-through would give every *free*
+user unlimited AI), and the grant RPC must mirror `028_fix_earn_rpc_and_quota_tracking.sql` rather
+than `026_ai_credits.sql` (partial-index `ON CONFLICT` predicate, ledger claim before funding).
 
 ### Phase 5: Waitlist Page & Entry Points
 
