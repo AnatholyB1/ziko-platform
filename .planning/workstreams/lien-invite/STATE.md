@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
-current_phase: 3
-current_phase_name: legal-cgv-cgu
-status: verifying
+current_phase: 04
+current_phase_name: Credit-Gate Alignment
+status: executing
 stopped_at: Completed 04-credit-gate-alignment 04-02-PLAN.md — Phase 4 feature-complete (2/2 plans)
-last_updated: "2026-08-16T18:49:39.306Z"
-last_activity: 2026-08-14
-last_activity_desc: Phase 2 complete, transitioned to Phase 3
+last_updated: "2026-08-16T18:50:20.699Z"
+last_activity: 2026-08-16
+last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 4
   completed_phases: 4
@@ -25,14 +25,14 @@ See: .planning/workstreams/lien-invite/PROJECT.md context inherited from root .p
 **Core value:** Capturer les emails des personnes intéressées par l'accès anticipé à Ziko, athlètes
 comme coachs, et tenir une promesse « premium à vie » pour les 200 premiers qui soit vraie dans le
 contrat comme dans le code.
-**Current focus:** Phase 3 — legal-cgv-cgu
+**Current focus:** Phase 04 — Credit-Gate Alignment
 dependency on Phase 1 and can start immediately per ROADMAP.md
 
 ## Current Position
 
-Phase: 3 (legal-cgv-cgu) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
+Phase: 04 (Credit-Gate Alignment) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 04
 SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
@@ -44,7 +44,7 @@ suites on future PRs.
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-14 — Phase 3 execution started
+Last activity: 2026-08-16 — Phase 04 execution started
 REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
 
 Progress: [██████████] 100% (1/6 phases complete, Phase 1 — 4/4 plans)
