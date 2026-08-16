@@ -4,8 +4,8 @@ milestone: v1.16
 milestone_name: Exercise Library Import
 status: executing
 stopped_at: Phase 3 context gathered
-last_updated: "2026-08-15T14:16:36.196Z"
-last_activity: 2026-08-15 -- Phase 3 planning complete
+last_updated: "2026-08-15T14:22:35.141Z"
+last_activity: 2026-08-15 -- Phase 3 execution started
 progress:
   total_phases: 4
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/image-exo/REQUIREMENTS.md
 
 **Core value:** Coaches et athlètes disposent d'une bibliothèque d'exercices fiable et complète — données riches, GIFs et thumbnails réels et self-hébergés, sans dépendance à un CDN tiers cassé.
-**Current focus:** Phase 3 — merge (human approved write)
+**Current focus:** Phase 3 — Merge (Human-Approved Write)
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-15 -- Phase 3 planning complete
+Phase: 3 (Merge (Human-Approved Write)) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 3
+Last activity: 2026-08-15 -- Phase 3 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
