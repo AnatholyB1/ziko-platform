@@ -16,8 +16,46 @@ Records the real, human-supervised production merge run for the exercise library
 
 ## Run output
 
-_Pending — Task 2 (supervised interactive merge run) has not yet been performed. This section will be filled in with the operator-pasted `=== Merge Complete ===` summary block(s) once Task 2 completes._
+Command run by the operator, from a real interactive terminal at the repo root: `npx tsx --env-file=backend/api/.env.local scripts/exercise-import/merge.ts`
+
+Pre-confirmation summary matched the expected 1318 UPDATE / 6 INSERT / 0 needs_review counts before the operator typed `yes`. No "unmappable category" warning appeared at the pre-confirmation stage — the 6 category errors below surfaced during row processing on the INSERT path for the 6 unmatched-new dataset rows specifically, not as a pre-run warning.
+
+### Run 1
+
+```
+=== Merge Complete ===
+Updated (matched):    618
+Inserted (new):       0
+Skipped (resumed):    700
+Needs review:         0
+Errored:              6
+Category omitted:     594
+
+Some rows failed. First 10 errors:
+  1371: Cannot INSERT exercise (dataset_id: 1371): dataset category "lower legs" is not one of the CHECK-allowed values
+  1628: Cannot INSERT exercise (dataset_id: 1628): dataset category "upper arms" is not one of the CHECK-allowed values
+  0576: Cannot INSERT exercise (dataset_id: 0576): dataset category "chest" is not one of the CHECK-allowed values
+  0656: Cannot INSERT exercise (dataset_id: 0656): dataset category "chest" is not one of the CHECK-allowed values
+  1766: Cannot INSERT exercise (dataset_id: 1766): dataset category "upper legs" is not one of the CHECK-allowed values
+  1394: Cannot INSERT exercise (dataset_id: 1394): dataset category "lower legs" is not one of the CHECK-allowed values
+```
+
+### Run 2 (re-run per D-08 to pick up the 6 errored rows)
+
+```
+=== Merge Complete ===
+Updated (matched):    0
+Inserted (new):       0
+Skipped (resumed):    1318
+Needs review:         0
+Errored:              6
+Category omitted:     0
+
+Some rows failed. First 10 errors: (same 6 dataset_ids/messages as run 1: 1371, 1628, 0576, 0656, 1766, 1394 — identical "not one of the CHECK-allowed values" errors)
+```
+
+Combined outcome across both runs: all 1318 matched (UPDATE) rows processed successfully (618 updated in run 1 + 700 already-done/skipped in run 1, all 1318 confirmed skipped/already-done in run 2). All 6 unmatched-new (INSERT) rows failed deterministically both times on the same category-CHECK-constraint error — not a transient failure, so a third re-run would not change the outcome. See "Errors and triage" in the Post-run verification section below.
 
 ## Post-run verification
 
-_Pending — to be completed in Task 3 after Task 2's run output is recorded._
+_Pending — Task 3._
