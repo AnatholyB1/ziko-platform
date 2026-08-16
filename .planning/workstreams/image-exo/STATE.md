@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Exercise Library Import
-status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-08-15T14:22:35.141Z"
-last_activity: 2026-08-15 -- Phase 3 execution started
+status: verifying
+stopped_at: Phase 3 plan 06 complete (real merge run + verification); Phase 3 done
+last_updated: "2026-08-16T20:43:50.051Z"
+last_activity: 2026-08-16
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 13
-  completed_plans: 7
-  percent: 50
+  completed_plans: 13
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/image-exo/REQUIREMENTS.md
 ## Current Position
 
 Phase: 3 (Merge (Human-Approved Write)) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 3
-Last activity: 2026-08-15 -- Phase 3 execution started
+Plan: 6 of 6
+Status: Phase complete — ready for verification
+Last activity: 2026-08-16
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -38,6 +38,7 @@ Progress: [░░░░░░░░░░] 0%
 
 - Strict 4-phase dependency chain (schema → download/match dry-run → human-approved merge → mobile consumption); not parallelizable — each phase consumes the prior phase's committed output (research-derived, roadmap-confirmed)
 - Match/merge split into separate phases specifically to enforce a human review gate between dry-run report and any production write (mitigates false-positive/false-negative matching risk)
+- [Phase 3]: 6 unmatched-new exercises left unresolved after the real merge run — dataset uses muscle-group categories (chest/upper arms/upper legs/lower legs) with no 1:1 mapping to production's training-modality CHECK constraint (category.ts has no fuzzy/default mapping by design); follow-up decision needed (alias mapping vs manual insert) before non-custom exercises count reaches 1324
 
 ### Pending Todos
 
@@ -49,9 +50,10 @@ None yet.
 - Live `exercises.name` uniqueness constraint should be double-checked against production (`\d exercises`) before Phase 2/3 planning
 - 180×180 resolution-cap legal interpretation needs explicit sign-off before Phase 4 is marked done
 - Attribution badge visual design deferred to a UI-SPEC pass — needed before/during Phase 4 planning (ui_safety_gate applies, Phase 4 has UI hint)
+- 6 unmatched-new exercises (dataset ids 1371,1394,1628,1766,0576,0656) blocked on category taxonomy mismatch — dataset category values (chest/upper arms/upper legs/lower legs) don't map to production's strength/cardio/flexibility/balance/sports/stretching CHECK constraint. Needs human decision: extend lib/category.ts alias mapping (recommended: -> strength) and re-run merge.ts, or manual INSERT.
 
 ## Session Continuity
 
-Last session: 2026-08-15T12:56:47.058Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/workstreams/image-exo/phases/03-merge-human-approved-write/03-CONTEXT.md
+Last session: 2026-08-16T20:42:47.379Z
+Stopped at: Phase 3 plan 06 complete (real merge run + verification); Phase 3 done
+Resume file: None
