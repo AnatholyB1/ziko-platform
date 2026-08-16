@@ -97,6 +97,17 @@ None - no external service configuration required.
 - `capImage`/`capGif`/`MEDIA_CAP_PX` and `withRetry`/`RETRY_ATTEMPTS`/`RETRY_BASE_DELAY_MS` are exported exactly per the plan's target interfaces — ready for direct import by plan 03-04's `merge-row.ts`
 - No blockers. `sharp` dependency and media/retry utilities are dependency-free of any Supabase/network code, matching the "pure function, caller supplies bytes" contract downstream merge logic requires
 
+## Self-Check: PASSED
+
+- FOUND: scripts/exercise-import/lib/media.ts
+- FOUND: scripts/exercise-import/lib/media.test.ts
+- FOUND: scripts/exercise-import/lib/retry.ts
+- FOUND: scripts/exercise-import/lib/retry.test.ts
+- FOUND: .planning/workstreams/image-exo/phases/03-merge-human-approved-write/03-02-SUMMARY.md
+- FOUND: commit aea3c2e (feat(03-02): add sharp dependency and media resize/cap utilities)
+- FOUND: commit 84031fd (feat(03-02): add bounded retry helper with exponential backoff)
+- FOUND: commit 75fcdd5 (docs(03-02): complete media cap & retry utilities plan)
+
 ---
 *Phase: 03-merge-human-approved-write*
 *Completed: 2026-08-16*
