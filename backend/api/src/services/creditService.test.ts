@@ -30,9 +30,10 @@ describe('grantMonthlyPremiumCredits (CRED-03, T-04-05)', () => {
 
     await grantMonthlyPremiumCredits('user-1');
 
-    // Asserted against the imported symbol, not a bare 300 — this is what
-    // actually proves D-02's single-source-of-truth property holds at the
-    // call site; a literal 300 here would let the two drift apart silently.
+    // Asserted against the imported symbol, not a hard-coded literal — this
+    // is what actually proves D-02's single-source-of-truth property holds
+    // at the call site; a copy-pasted literal here would let the two drift
+    // apart silently.
     expect(mockRpc).toHaveBeenCalledWith('grant_premium_credits', {
       p_user_id: 'user-1',
       p_amount: PREMIUM_MONTHLY_GRANT,

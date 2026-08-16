@@ -5,6 +5,7 @@ import {
   MONTHLY_QUOTAS,
   EARN_AMOUNT,
   DAILY_EARN_CAP,
+  PREMIUM_MONTHLY_GRANT,
   type CreditAction,
 } from '../config/credits.js';
 
@@ -143,6 +144,33 @@ export async function deductCredits(
     balance: result.balance_after ?? result.balance ?? 0,
     required: result.required,
   };
+}
+
+/**
+ * Tops a premium user's AI-credit balance up by the monthly allowance (CRED-03).
+ *
+ * The grant is idempotent per calendar month inside grant_premium_credits() itself
+ * (a month-scoped idempotency key on the ledger's partial unique index), so a falsy
+ * `granted` here usually means "already granted this month," not a failure — the
+ * caller (the cron route) is what decides what a falsy result means. The amount is
+ * a constant (PREMIUM_MONTHLY_GRANT) rather than anything client-supplied. Never
+ * throws and never retries — a monthly job that self-retries inside this layer
+ * would fight the RPC's own idempotency.
+ */
+export async function grantMonthlyPremiumCredits(
+  userId: string,
+  amount: number = PREMIUM_MONTHLY_GRANT,
+): Promise<{ granted: boolean }> {
+  const { data, error } = await supabase.rpc('grant_premium_credits', {
+    p_user_id: userId,
+    p_amount: amount,
+  });
+
+  if (error || !data) {
+    return { granted: false };
+  }
+
+  return { granted: (data as { granted: boolean }).granted === true };
 }
 
 /**
