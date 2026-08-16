@@ -114,15 +114,22 @@ scope for the whole milestone per Phase 4 D-04).
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Milestone specs
+- `.planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-RESEARCH.md` — **read this
+  first, and let it override ARCHITECTURE.md §2/§3 below wherever they conflict.** It confirms both
+  waitlist RPCs shipped `service_role`-only (not anon-executable as ARCHITECTURE.md §2/§3 originally
+  assumed), that `apps/web/src/actions/waitlist.ts` (`claimWaitlistSpot`) already exists and is already
+  tested — this phase **extends** it, not creates it — and it carries the `## Validation Architecture`
+  section this project's Nyquist gate requires.
 - `.planning/workstreams/lien-invite/REQUIREMENTS.md` — WAIT-01→08, FOND-01→06, ENTRY-01→06 are this
   phase's requirements.
 - `.planning/workstreams/lien-invite/ROADMAP.md` — Phase 5 goal, 5 success criteria, and the "UI hint:
   yes" note requiring a UI-SPEC design contract before implementation.
 - `.planning/workstreams/lien-invite/research/ARCHITECTURE.md` §2 "RLS for a Public, Unauthenticated
-  INSERT" and §3 "The Public Counter" — the `SECURITY DEFINER` RPC + deny-all RLS call path, the
-  Server Action using the **anon key** (not service-role), rate limiting via
-  `apps/web/src/lib/ratelimit.ts`, and the counter's Route Handler + 30s revalidate pattern (do not make
-  the whole page dynamic).
+  INSERT" and §3 "The Public Counter" — the `SECURITY DEFINER` RPC + deny-all RLS call path, and the
+  counter's Route Handler + 30s revalidate pattern (do not make the whole page dynamic) still hold.
+  **Superseded:** its recommendation to call both RPCs via the **anon key** — the shipped migration
+  grants `service_role` only; use `createAdminClient()` for both the claim action and the counter Route
+  Handler, per `05-RESEARCH.md`.
 - `.planning/workstreams/lien-invite/research/STACK.md` — the exact package list (`mailchecker`,
   `botid`, `@marsidev/react-turnstile` held in reserve, `@vercel/analytics`, `@vercel/speed-insights`),
   version-verified against npm registry, with integration points for each.
@@ -158,8 +165,9 @@ scope for the whole milestone per Phase 4 D-04).
   (`apps/web/src/app/api/waitlist/count/route.ts` per research) follows this shape.
 - `apps/web/src/lib/ratelimit.ts` — existing Upstash lazy-singleton limiter pattern
   (`rolePromotionRatelimit`, `kycUploadRatelimit`) to mirror for the waitlist Server Action.
-- `apps/web/src/lib/supabase/server.ts` `createServerSupabase()` — the anon-key server client this
-  phase's Server Action must use (not the service-role admin client — see ARCHITECTURE.md §2).
+- `apps/web/src/lib/supabase/admin.ts` `createAdminClient()` — the service-role client both the claim
+  Server Action and the counter Route Handler must use; both RPCs shipped `service_role`-only, per
+  `05-RESEARCH.md` (corrects this file's earlier anon-key guidance).
 - `apps/web/src/components/layout/HeaderClient.tsx`, `FooterClient.tsx` — existing nav link patterns
   (`AnimatedLink`, locale-aware `Link` from `@/i18n/navigation`) the new founders nav link follows.
 - `apps/web/src/components/marketing/CoachsHeroClient.tsx:83-89`,
@@ -173,8 +181,12 @@ scope for the whole milestone per Phase 4 D-04).
 ## Existing Code Insights
 
 ### Reusable Assets
-- `apps/web/src/lib/supabase/server.ts` `createServerSupabase()` — anon-key server client, ready to
-  call the waitlist RPCs.
+- `apps/web/src/lib/supabase/admin.ts` `createAdminClient()` — service-role client, required for both
+  waitlist RPCs (corrected from an earlier anon-key assumption — see `05-RESEARCH.md`).
+- `apps/web/src/actions/waitlist.ts` (`claimWaitlistSpot`) — already exists, already calls
+  `claim_waitlist_signup` via the admin client, already proven by
+  `apps/web/test/actions/waitlist.concurrency.test.ts`. This phase extends it (rate limiting,
+  `mailchecker`, `botid`, honeypot, consent recording) rather than building a new Server Action.
 - `apps/web/src/lib/ratelimit.ts` — Upstash limiter already configured and used elsewhere in
   `apps/web`; same pattern applies to the new Server Action.
 - `next-intl` FR/EN routing (`apps/web/src/i18n/`) — no new i18n infrastructure needed.
