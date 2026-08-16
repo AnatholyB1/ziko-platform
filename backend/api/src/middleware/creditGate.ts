@@ -74,10 +74,17 @@ export function creditCheck(action: CreditAction) {
 
     if (!capEnabled) {
       // ── Legacy path: reproduces today's premium pass-through exactly ──
+      // Rule-1 fix (04-01): user_profiles' PK column is `id`, not `user_id`
+      // (verified against 001_initial_schema.sql and context/user.ts:49's
+      // correct `.eq('id', userId)` read of this same table). The prior
+      // `.eq('user_id', userId)` filtered on a nonexistent column, which
+      // PostgREST rejects — profile always came back null, so the tier
+      // condition below never actually resolved true in production,
+      // regardless of tier.
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('tier')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (profile?.tier === 'premium') {

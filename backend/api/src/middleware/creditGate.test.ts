@@ -60,15 +60,21 @@ interface MockTables {
 }
 
 function setupSupabaseMocks({ appConfig, userProfile, txRows }: MockTables) {
+  const chains: { appConfig?: ReturnType<typeof makeChain>; userProfile?: ReturnType<typeof makeChain> } = {};
   mockFrom.mockImplementation((table: string) => {
-    if (table === 'app_config') return makeChain(appConfig);
+    if (table === 'app_config') {
+      chains.appConfig = makeChain(appConfig);
+      return chains.appConfig;
+    }
     if (table === 'user_profiles') {
       if (!userProfile) throw new Error('Unexpected query against user_profiles (no tier read expected)');
-      return makeChain(userProfile);
+      chains.userProfile = makeChain(userProfile);
+      return chains.userProfile;
     }
     if (table === 'ai_credit_transactions') return makeChain(txRows ?? { data: [], error: null });
     throw new Error(`Unexpected table queried: ${table}`);
   });
+  return chains;
 }
 
 function buildApp(handlerSpy = vi.fn((c) => c.json({ ok: true }))) {
@@ -117,7 +123,7 @@ beforeEach(() => {
 
 describe('creditCheck — flag off (legacy path, CRED-05 default)', () => {
   it('premium tier: next() runs, creditPassThrough=true, getQuotaStatus never called', async () => {
-    setupSupabaseMocks({ appConfig: FLAG_OFF, userProfile: PREMIUM });
+    const chains = setupSupabaseMocks({ appConfig: FLAG_OFF, userProfile: PREMIUM });
     const { app, handlerSpy } = buildApp();
 
     const res = await app.request('/test');
@@ -125,6 +131,10 @@ describe('creditCheck — flag off (legacy path, CRED-05 default)', () => {
     expect(res.status).toBe(200);
     expect(handlerSpy).toHaveBeenCalledTimes(1);
     expect(mockGetQuotaStatus).not.toHaveBeenCalled();
+    // Rule-1 fix (04-01): user_profiles' PK column is `id`, not `user_id` —
+    // the prior `.eq('user_id', ...)` filtered on a nonexistent column and
+    // silently broke the tier check in production regardless of tier.
+    expect(chains.userProfile?.eq).toHaveBeenCalledWith('id', 'user-1');
   });
 
   it('free tier, quota exhausted, balance below cost: 402 insufficient_credits (anti-regression: flag-off is not a global bypass)', async () => {
