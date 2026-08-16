@@ -31,15 +31,28 @@
 import { existsSync, readFileSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { createInterface } from 'readline/promises';
+import { randomUUID } from 'crypto';
 import { assertRunFromRepoRoot, DATASET_ROOT, DATASET_JSON_PATH, REPORT_JSON_PATH } from './lib/paths';
-import { loadDatasetJson } from './lib/verify';
+import { loadDatasetJson, resolveInsideRoot } from './lib/verify';
 import { createWriteClient } from './lib/supabase-write-client';
 import { buildResumeMap, type ImportLogRow, type ResumeState } from './lib/import-log';
 import { collectUnmappableCategories } from './lib/category';
-import { MatchReportSchema, type MatchReport } from './lib/types';
+import { capImage, capGif } from './lib/media';
+import { withRetry } from './lib/retry';
+import { processRow, type MergeRowInput, type MergeRowKind } from './lib/merge-row';
+import { MatchReportSchema, type MatchReport, type DatasetExercise } from './lib/types';
 
 const LOG_PAGE_SIZE = 1000;
 const SAMPLE_ROWS_PER_CATEGORY = 5;
+const PROGRESS_INTERVAL = 50;
+const MAX_REPORTED_ERRORS = 10;
+
+interface WorkItem {
+  kind: MergeRowKind;
+  sourceId: string;
+  exerciseId: string | null;
+  datasetRecord: DatasetExercise | null;
+}
 
 /**
  * Prints a summary of what is about to be written and requires the
@@ -203,7 +216,6 @@ async function main(): Promise<void> {
   const dataset = loadDatasetJson(DATASET_JSON_PATH);
   const datasetById = new Map(dataset.map((r) => [r.id, r]));
   console.log(`Loaded ${dataset.length} dataset records from ${DATASET_JSON_PATH}`);
-  void datasetById; // consumed by the post-confirmation loop (Task 2)
 
   // 6. Category preflight — keep the result for the summary, do NOT exit
   // on a non-empty result; the operator decides at the prompt.
@@ -221,19 +233,53 @@ async function main(): Promise<void> {
   const resumeMap = buildResumeMap(logRows);
   console.log(`Loaded ${logRows.length} prior exercise_import_log rows`);
 
-  // Resume summary for the confirmation prompt (per-row work-list
-  // assembly and the post-confirmation loop itself land in Task 2).
-  const allSourceIds = [
-    ...report.matched.map((r) => r.dataset_id),
-    ...report.unmatched_new.map((r) => r.dataset_id),
-    ...report.unmatched_legacy.map((r) => r.exercise_id),
-    ...report.ambiguous.map((r) => r.dataset_id),
+  // Assemble the work list in a single deterministic order: all
+  // report.matched rows, then all report.unmatched_new rows, then all
+  // report.unmatched_legacy rows, then all report.ambiguous rows. The
+  // legacy and ambiguous branches must exist and be exercised by the code
+  // even though the approved report currently contains zero of each
+  // (IMPORT-05 requires the path, not just the outcome).
+  const workItems: WorkItem[] = [
+    ...report.matched.map(
+      (row): WorkItem => ({
+        kind: 'matched',
+        sourceId: row.dataset_id,
+        exerciseId: row.exercise_id,
+        datasetRecord: datasetById.get(row.dataset_id) ?? null,
+      }),
+    ),
+    ...report.unmatched_new.map(
+      (row): WorkItem => ({
+        kind: 'unmatched_new',
+        sourceId: row.dataset_id,
+        exerciseId: null,
+        datasetRecord: datasetById.get(row.dataset_id) ?? null,
+      }),
+    ),
+    ...report.unmatched_legacy.map(
+      (row): WorkItem => ({
+        kind: 'needs_review',
+        sourceId: row.exercise_id,
+        exerciseId: row.exercise_id,
+        datasetRecord: null,
+      }),
+    ),
+    ...report.ambiguous.map(
+      (row): WorkItem => ({
+        kind: 'needs_review',
+        sourceId: row.dataset_id,
+        exerciseId: null,
+        datasetRecord: null,
+      }),
+    ),
   ];
+
+  // Resume summary for the confirmation prompt.
   let unprocessedCount = 0;
   let retryCount = 0;
   let skipCount = 0;
-  for (const sourceId of allSourceIds) {
-    const state: ResumeState | undefined = resumeMap.get(sourceId);
+  for (const item of workItems) {
+    const state: ResumeState | undefined = resumeMap.get(item.sourceId);
     if (state === undefined) unprocessedCount++;
     else if (state === 'retry') retryCount++;
     else skipCount++;
@@ -244,6 +290,119 @@ async function main(): Promise<void> {
     { unprocessed: unprocessedCount, retry: retryCount, skip: skipCount },
     unmappableCategories,
   );
+
+  // Injected readMediaBytes: resolves a dataset-relative path inside the
+  // dataset root via resolveInsideRoot (throwing on an escaping path),
+  // then reads the file. All filesystem and path-containment concerns
+  // stay in this entrypoint — lib/merge-row.ts never touches the
+  // filesystem directly.
+  const readMediaBytes = async (datasetRelativePath: string): Promise<Buffer> => {
+    const resolved = resolveInsideRoot(DATASET_ROOT, datasetRelativePath);
+    if (resolved === null) {
+      throw new Error(`Path escapes dataset root: ${datasetRelativePath}`);
+    }
+    return readFileSync(resolved);
+  };
+
+  const deps = { client, readMediaBytes, capImage, capGif, withRetry, newId: randomUUID };
+
+  // Running tallies for the final summary.
+  let updated = 0;
+  let inserted = 0;
+  let skipped = 0;
+  let needsReview = 0;
+  let errored = 0;
+  let categoryOmitted = 0;
+  const erroredRows: { sourceId: string; errorMessage: string }[] = [];
+
+  console.log(`\nProcessing ${workItems.length} rows sequentially...`);
+
+  let processedCount = 0;
+  for (const item of workItems) {
+    const resumeState: ResumeState | undefined = resumeMap.get(item.sourceId);
+
+    if (resumeState === 'done') {
+      // Already processed in a prior run — write the resume marker row
+      // (Phase 1 D-06's documented meaning of 'skipped') without calling
+      // processRow, so the log stays a complete audit trail of every
+      // run's pass over every row.
+      const { error: logError } = await client.from('exercise_import_log').insert({
+        source_id: item.sourceId,
+        exercise_id: item.exerciseId,
+        status: 'skipped',
+        error_message: null,
+      });
+      if (logError) {
+        console.error(`Failed to write skip log row for ${item.sourceId}: ${logError.message}`);
+      }
+      skipped++;
+      processedCount++;
+      if (processedCount % PROGRESS_INTERVAL === 0) {
+        console.log(`Progress: ${processedCount}/${workItems.length} (errors so far: ${errored})`);
+      }
+      continue;
+    }
+
+    // Both 'retry' and 'unprocessed' states proceed to processRow (D-08:
+    // errored rows are picked up automatically, with no manual clear).
+    const input: MergeRowInput = {
+      kind: item.kind,
+      sourceId: item.sourceId,
+      exerciseId: item.exerciseId,
+      datasetRecord: item.datasetRecord,
+    };
+
+    const result = await processRow(input, deps);
+
+    const { error: logError } = await client.from('exercise_import_log').insert({
+      source_id: result.sourceId,
+      exercise_id: result.exerciseId,
+      status: result.status,
+      error_message: result.errorMessage,
+    });
+    if (logError) {
+      console.error(`Failed to write log row for ${result.sourceId}: ${logError.message}`);
+    }
+
+    if (result.categoryOmitted) categoryOmitted++;
+
+    if (result.errorMessage !== null) {
+      errored++;
+      if (erroredRows.length < MAX_REPORTED_ERRORS) {
+        erroredRows.push({ sourceId: result.sourceId, errorMessage: result.errorMessage });
+      }
+    } else if (result.status === 'matched') {
+      updated++;
+    } else if (result.status === 'inserted') {
+      inserted++;
+    } else if (result.status === 'needs_review') {
+      needsReview++;
+    }
+
+    processedCount++;
+    if (processedCount % PROGRESS_INTERVAL === 0) {
+      console.log(`Progress: ${processedCount}/${workItems.length} (errors so far: ${errored})`);
+    }
+  }
+
+  console.log('\n=== Merge Complete ===');
+  console.log(`Updated (matched):    ${updated}`);
+  console.log(`Inserted (new):       ${inserted}`);
+  console.log(`Skipped (resumed):    ${skipped}`);
+  console.log(`Needs review:         ${needsReview}`);
+  console.log(`Errored:              ${errored}`);
+  console.log(`Category omitted:     ${categoryOmitted}`);
+
+  if (errored > 0) {
+    console.log('\nSome rows failed. First 10 errors:');
+    for (const row of erroredRows) {
+      console.log(`  ${row.sourceId}: ${row.errorMessage}`);
+    }
+    console.log(
+      '\nErrored rows are retried automatically on the next run. Re-run: ' +
+        'npx tsx --env-file=backend/api/.env.local scripts/exercise-import/merge.ts',
+    );
+  }
 }
 
 main().catch((err) => {
