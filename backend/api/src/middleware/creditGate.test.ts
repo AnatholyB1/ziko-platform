@@ -122,7 +122,7 @@ beforeEach(() => {
 });
 
 describe('creditCheck — flag off (legacy path, CRED-05 default)', () => {
-  it('premium tier: next() runs, creditPassThrough=true, getQuotaStatus never called', async () => {
+  it('premium tier: next() runs, pass-through set, getQuotaStatus never called', async () => {
     const chains = setupSupabaseMocks({ appConfig: FLAG_OFF, userProfile: PREMIUM });
     const { app, handlerSpy } = buildApp();
 
@@ -150,7 +150,7 @@ describe('creditCheck — flag off (legacy path, CRED-05 default)', () => {
     expect(handlerSpy).not.toHaveBeenCalled();
   });
 
-  it('free tier, within free quota: next() runs, creditPassThrough=true', async () => {
+  it('free tier, within free quota: next() runs, pass-through set', async () => {
     setupSupabaseMocks({ appConfig: FLAG_OFF, userProfile: FREE });
     mockGetQuotaStatus.mockResolvedValue(WITHIN_FREE_QUOTA);
     const { app, handlerSpy } = buildApp();
@@ -187,7 +187,7 @@ describe('creditCheck — flag on (enforcing path, CRED-02)', () => {
     expect(handlerSpy).not.toHaveBeenCalled();
   });
 
-  it('premium tier, within free quota: next() runs, creditPassThrough=true', async () => {
+  it('premium tier, within free quota: next() runs, pass-through set', async () => {
     setupSupabaseMocks({ appConfig: FLAG_ON });
     mockGetQuotaStatus.mockResolvedValue(WITHIN_FREE_QUOTA);
     const { app, handlerSpy } = buildApp();
@@ -198,7 +198,7 @@ describe('creditCheck — flag on (enforcing path, CRED-02)', () => {
     expect(handlerSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('balance at or above cost, quota exhausted: next() runs, creditPassThrough=false', async () => {
+  it('balance at or above cost, quota exhausted: next() runs, deduction path selected', async () => {
     setupSupabaseMocks({ appConfig: FLAG_ON });
     mockGetQuotaStatus.mockResolvedValue(QUOTA_EXHAUSTED_SUFFICIENT_BALANCE);
     const { app, handlerSpy } = buildApp();
