@@ -62,12 +62,12 @@ Plans:
   3. Killing and re-running merge resumes from `exercise_import_log` without reprocessing or corrupting already-migrated rows
   4. Legacy exercises with no confident match but referenced by real `program_exercises`/`session_sets` history are left untouched and flagged for manual review — never auto-merged, never deleted
   5. Every row about to be UPDATEd is snapshotted to `exercises_merge_backup` before the write, and no uploaded media exceeds 180×180 at any point in the upload path
-**Plans:** 0/6 plans complete
+**Plans:** 3/6 plans executed
 
 Plans:
-- [ ] 03-01-PLAN.md — Migration: instructions_fr/instruction_steps columns + exercises_merge_backup table, applied live [BLOCKING push]
-- [ ] 03-02-PLAN.md — sharp dependency + lib/media.ts 180×180 cap (never upscale, GIF stays animated) + lib/retry.ts bounded backoff
-- [ ] 03-03-PLAN.md — Service-role write client, exercise_import_log resume-state reducer, category CHECK guard
+- [x] 03-01-PLAN.md — Migration: instructions_fr/instruction_steps columns + exercises_merge_backup table, applied live [BLOCKING push]
+- [x] 03-02-PLAN.md — sharp dependency + lib/media.ts 180×180 cap (never upscale, GIF stays animated) + lib/retry.ts bounded backoff
+- [x] 03-03-PLAN.md — Service-role write client, exercise_import_log resume-state reducer, category CHECK guard
 - [ ] 03-04-PLAN.md — lib/merge-row.ts: per-row cap→upload→backup→write ordering, needs_review routing, no DELETE path
 - [ ] 03-05-PLAN.md — merge.ts entrypoint: preflight, TTY-only approval gate, sequential resumable loop, audit log, README update
 - [ ] 03-06-PLAN.md — Real human-supervised merge run against production + post-run verification
@@ -96,7 +96,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Schema & Storage Foundation | 1/1 | Complete    | 2026-08-14 |
 | 2. Download & Match (Dry-Run) | 6/6 | Complete    | 2026-08-15 |
-| 3. Merge (Human-Approved Write) | 0/6 | Not started | - |
+| 3. Merge (Human-Approved Write) | 3/6 | In Progress|  |
 | 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
 
 ---
