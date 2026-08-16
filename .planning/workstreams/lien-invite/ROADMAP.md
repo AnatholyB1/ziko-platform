@@ -27,7 +27,7 @@ all five.
 - [x] **Phase 1: Data Foundation** - Atomic, RLS-locked waitlist schema, sequence-backed founder cap, and the RPCs everything else calls
 - [x] **Phase 2: Test-Account Purge** - Dry-run-reviewed, backed-up removal of dev/QA accounts so the founder counter is credible (completed 2026-08-14)
 - [x] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes (completed 2026-08-15)
-- [ ] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag
+- [x] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag (completed 2026-08-16)
 - [ ] **Phase 5: Waitlist Page & Entry Points** - The public `/fondateurs` page, its counter, and every CTA that routes visitors to it
 - [ ] **Phase 6: Founder Offer Go-Live** - Safe production activation once data, purge, legal, and credit-gate are all confirmed ready
 
@@ -293,6 +293,6 @@ being complete.
 | 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
-| 4. Credit-Gate Alignment | 1/2 | In Progress|  |
+| 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |

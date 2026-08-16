@@ -49,12 +49,12 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Alignement crédits IA (CRED)
 
-- [ ] **CRED-01**: Avant toute modification, un décompte des utilisateurs en `tier='premium'` en production confirme l'hypothèse « aucun vrai utilisateur concerné » ; si elle est fausse, le travail s'arrête et la question du grand-père remonte à l'utilisateur
-- [ ] **CRED-02**: Un utilisateur premium n'a plus d'accès illimité à l'IA — le contournement inconditionnel du gate de crédits est supprimé
+- [x] **CRED-01**: Avant toute modification, un décompte des utilisateurs en `tier='premium'` en production confirme l'hypothèse « aucun vrai utilisateur concerné » ; si elle est fausse, le travail s'arrête et la question du grand-père remonte à l'utilisateur
+- [x] **CRED-02**: Un utilisateur premium n'a plus d'accès illimité à l'IA — le contournement inconditionnel du gate de crédits est supprimé
 - [x] **CRED-03**: Un utilisateur premium reçoit une allocation mensuelle de crédits IA généreuse mais finie
-- [ ] **CRED-04**: Un fondateur conserve son avantage à vie même si un abonnement payant ultérieur est souscrit puis résilié
-- [ ] **CRED-05**: Le changement de comportement du gate est protégé par un feature flag, pour découpler le déploiement de l'activation
-- [ ] **CRED-06**: Aucun appelant existant lisant `tier` ne régresse
+- [x] **CRED-04**: Un fondateur conserve son avantage à vie même si un abonnement payant ultérieur est souscrit puis résilié
+- [x] **CRED-05**: Le changement de comportement du gate est protégé par un feature flag, pour découpler le déploiement de l'activation
+- [x] **CRED-06**: Aucun appelant existant lisant `tier` ne régresse
 
 ### Légal & conformité (LEGAL)
 
@@ -153,12 +153,12 @@ Points que la recherche a explicitement refusé de trancher :
 | LEGAL-07 | Phase 3 | Complete |
 | LEGAL-08 | Phase 3 | Complete |
 | LEGAL-09 | Phase 3 | Complete |
-| CRED-01 | Phase 4 | Pending |
-| CRED-02 | Phase 4 | Pending |
+| CRED-01 | Phase 4 | Complete |
+| CRED-02 | Phase 4 | Complete |
 | CRED-03 | Phase 4 | Complete |
-| CRED-04 | Phase 4 | Pending |
-| CRED-05 | Phase 4 | Pending |
-| CRED-06 | Phase 4 | Pending |
+| CRED-04 | Phase 4 | Complete |
+| CRED-05 | Phase 4 | Complete |
+| CRED-06 | Phase 4 | Complete |
 | WAIT-01 | Phase 5 | Pending |
 | WAIT-02 | Phase 5 | Pending |
 | WAIT-03 | Phase 5 | Pending |
