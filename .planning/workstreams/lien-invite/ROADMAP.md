@@ -202,10 +202,11 @@ already be live per LEGAL-05)
 
   5. Every existing caller reading `tier` (e.g. `branding/page.tsx`'s `isPro` check) continues to
      behave exactly as before — no regression (CRED-06)
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 Plans:
-- [ ] 04-01-PLAN.md — CRED-01 production re-audit, the `app_config` cap flag and `is_lifetime_premium` migration, and the flag-driven `creditCheck` (wave 1)
+
+- [x] 04-01-PLAN.md — CRED-01 production re-audit, the `app_config` cap flag and `is_lifetime_premium` migration, and the flag-driven `creditCheck` (wave 1)
 - [ ] 04-02-PLAN.md — `grant_premium_credits()` RPC, the 300-credit allowance constant, its service wrapper, and the monthly Vercel cron route (wave 2)
 
 **Research**: Resolved. The monthly allowance is locked at 300 credits/month by 04-CONTEXT.md D-02
@@ -292,6 +293,6 @@ being complete.
 | 1. Data Foundation | 0/4 | Planned | - |
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
-| 4. Credit-Gate Alignment | 0/TBD | Not started | - |
+| 4. Credit-Gate Alignment | 1/2 | In Progress|  |
 | 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
