@@ -27,7 +27,7 @@ import {
   useSleepToday,
   useHydrationToday,
   useNutritionToday,
-  useStreak,
+  useSessionStreak,
   HOME_DEFAULTS,
 } from '../../src/hooks/useHomeData';
 import { useAITips, dismissTip } from '../../src/hooks/useAITips';
@@ -268,7 +268,7 @@ export default function DashboardScreen() {
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
-  const { data: streak = 0 } = useStreak();
+  const { data: streak = 0 } = useSessionStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
@@ -414,7 +414,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['sleep', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
-      queryClient.invalidateQueries({ queryKey: ['streak'] }),
+      queryClient.invalidateQueries({ queryKey: ['session_streak'] }),
     ]).catch(() => setLoadError(true));
     setRefreshing(false);
   };
