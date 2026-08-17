@@ -89,6 +89,14 @@ None - no external service configuration required.
 - MOBILE-02 and MOBILE-06 are satisfied for `ExercisePicker.tsx`. Plan 04-01 (hero media + `<AttributedMedia>` + `[exerciseId].tsx` query-key bump + instructions wiring) is independent (`depends_on: []` in this plan's frontmatter, and per the phase note this plan explicitly does not import `AttributedMedia`) and can proceed/merge without conflict — the only shared file risk is none, since 04-01's target files (`[exerciseId].tsx`, `packages/ui/src/components/AttributedMedia.tsx`, `packages/plugin-sdk/src/i18n.ts`) are disjoint from this plan's `ExercisePicker.tsx`.
 - No blockers.
 
+## Self-Check: PASSED
+
+- FOUND: apps/mobile/src/components/ExercisePicker.tsx
+- FOUND: .planning/workstreams/image-exo/phases/04-mobile-consumption-attribution/04-02-SUMMARY.md
+- FOUND: 24955f4 (Task 1 commit)
+- FOUND: 4d15711 (Task 2 commit)
+- FOUND: e90f6e6 (SUMMARY.md commit)
+
 ---
 *Phase: 04-mobile-consumption-attribution*
 *Completed: 2026-08-17*
