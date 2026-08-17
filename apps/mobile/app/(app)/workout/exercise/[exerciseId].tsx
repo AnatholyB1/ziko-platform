@@ -14,14 +14,18 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
-import { AttributedMedia } from '@ziko/ui';
+import { useTranslation } from '@ziko/plugin-sdk';
+import { AttributedMedia, EmptyState } from '@ziko/ui';
 import { supabase } from '../../../../src/lib/supabase';
 import WSHeader from '../../../../src/components/WSHeader';
 import ExercisePicker from '../../../../src/components/ExercisePicker';
 
+type InstructionSteps = { en?: string[]; fr?: string[] };
+
 export default function ExerciseDetailScreen() {
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
   const theme = useThemeStore((s) => s.theme);
+  const { t, tExercise, locale } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -127,18 +131,15 @@ export default function ExerciseDetailScreen() {
     ? Math.max(...sessionGroups.map((g) => g.volume))
     : 1;
 
-  // Parse instructions — can be string or array
-  const cues: string[] = (() => {
-    if (!exercise?.instructions) return ['Pas de consignes disponibles.'];
-    if (Array.isArray(exercise.instructions)) return exercise.instructions;
-    try {
-      const parsed = JSON.parse(exercise.instructions);
-      if (Array.isArray(parsed)) return parsed;
-      return [exercise.instructions];
-    } catch {
-      return exercise.instructions.split('\n').filter(Boolean);
-    }
-  })();
+  // Structured instructions — direct JSONB read, locale-aware (MOBILE-04/05)
+  const instructionSteps = exercise?.instruction_steps as InstructionSteps | null | undefined;
+  const steps: string[] = instructionSteps?.[locale] ?? instructionSteps?.en ?? [];
+
+  const legacyInstructions: string =
+    (locale === 'fr'
+      ? exercise?.instructions_fr ?? exercise?.instructions
+      : exercise?.instructions ?? exercise?.instructions_fr
+    )?.trim() ?? '';
 
   const secondaryMuscles: string[] = Array.isArray(exercise?.muscle_groups)
     ? exercise.muscle_groups
@@ -184,7 +185,7 @@ export default function ExerciseDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <WSHeader
-        title={exercise?.name ?? 'Exercice'}
+        title={exercise ? tExercise(exercise.name, exercise.name_fr) : 'Exercice'}
         sub={`${exercise?.target_muscle ?? ''} · ${exercise?.difficulty ?? ''}`}
         onBack={() => router.back()}
       />
@@ -414,30 +415,42 @@ export default function ExerciseDetailScreen() {
                 >
                   Points clés d'exécution
                 </Text>
-                <View style={{ gap: 10 }}>
-                  {cues.map((cue, i) => (
-                    <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-                      <View
-                        style={{
-                          width: 22,
-                          height: 22,
-                          borderRadius: 999,
-                          backgroundColor: 'rgba(255,92,26,0.14)',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Text style={{ fontSize: 10, fontWeight: '700', color: '#FF5C1A' }}>
-                          {i + 1}
+                {steps.length > 0 ? (
+                  <View style={{ gap: 10 }}>
+                    {steps.map((step, i) => (
+                      <View key={i} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+                        <View
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 999,
+                            backgroundColor: 'rgba(255,92,26,0.14)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#FF5C1A' }}>
+                            {i + 1}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 12, lineHeight: 18, flex: 1, color: theme.text }}>
+                          {step}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 12, lineHeight: 18, flex: 1, color: theme.text }}>
-                        {cue}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                    ))}
+                  </View>
+                ) : legacyInstructions ? (
+                  <Text style={{ fontSize: 12, lineHeight: 18, color: theme.text }}>
+                    {legacyInstructions}
+                  </Text>
+                ) : (
+                  <EmptyState
+                    variant="no-data"
+                    title={t('exercise.instructionsEmptyTitle')}
+                    message={t('exercise.instructionsEmptyBody')}
+                  />
+                )}
 
                 {/* AISuggestion block */}
                 <View
