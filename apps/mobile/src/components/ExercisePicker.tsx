@@ -30,6 +30,7 @@ interface ExerciseRow {
   muscle_groups: string[] | null;
   equipment: string | null;
   target_muscle: string | null;
+  image: string | null;
 }
 
 export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePickerProps) {
@@ -43,11 +44,11 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
     isError,
     refetch,
   } = useQuery<ExerciseRow[]>({
-    queryKey: ['exercises-picker'],
+    queryKey: ['exercises', 'v2', 'picker'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, muscle_groups, equipment, target_muscle')
+        .select('id, name, muscle_groups, equipment, target_muscle, image')
         .order('name')
         .limit(200);
       if (error) throw error;
@@ -239,6 +240,9 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
           <View style={{ gap: 8 }}>
             {filteredExercises.map((ex, index) => {
               const isSelected = selectedIds.includes(ex.id);
+              const publicThumbUrl = ex.image
+                ? supabase.storage.from('exercise-media').getPublicUrl(ex.image).data.publicUrl
+                : null;
               return (
                 <MotiView
                   key={ex.id}
