@@ -40,12 +40,12 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Offre fondateurs & compteur (FOND)
 
-- [ ] **FOND-01**: La page présente l'offre « les 200 premiers membres obtiennent le premium à vie » comme un fait, sans compteur, tant que le seuil de révélation n'est pas atteint
-- [ ] **FOND-02**: Au-delà du seuil de remplissage, la page affiche le nombre de places **restantes**, en décroissant
-- [ ] **FOND-03**: Le nombre affiché est toujours issu d'une requête réelle — jamais décalé, arrondi ou fabriqué
-- [ ] **FOND-04**: Le nombre affiché ne peut jamais augmenter du point de vue du visiteur
-- [ ] **FOND-05**: Une fois les 200 places prises, la page affiche un état « complet » distinct et continue d'accepter les inscriptions sans statut fondateur
-- [ ] **FOND-06**: Le seuil de révélation du compteur est configurable sans redéploiement
+- [x] **FOND-01**: La page présente l'offre « les 200 premiers membres obtiennent le premium à vie » comme un fait, sans compteur, tant que le seuil de révélation n'est pas atteint
+- [x] **FOND-02**: Au-delà du seuil de remplissage, la page affiche le nombre de places **restantes**, en décroissant
+- [x] **FOND-03**: Le nombre affiché est toujours issu d'une requête réelle — jamais décalé, arrondi ou fabriqué
+- [x] **FOND-04**: Le nombre affiché ne peut jamais augmenter du point de vue du visiteur
+- [x] **FOND-05**: Une fois les 200 places prises, la page affiche un état « complet » distinct et continue d'accepter les inscriptions sans statut fondateur
+- [x] **FOND-06**: Le seuil de révélation du compteur est configurable sans redéploiement
 
 ### Alignement crédits IA (CRED)
 
@@ -167,12 +167,12 @@ Points que la recherche a explicitement refusé de trancher :
 | WAIT-06 | Phase 5 | Complete |
 | WAIT-07 | Phase 5 | Complete |
 | WAIT-08 | Phase 5 | Complete |
-| FOND-01 | Phase 5 | Pending |
-| FOND-02 | Phase 5 | Pending |
-| FOND-03 | Phase 5 | Pending |
-| FOND-04 | Phase 5 | Pending |
-| FOND-05 | Phase 5 | Pending |
-| FOND-06 | Phase 5 | Pending |
+| FOND-01 | Phase 5 | Complete |
+| FOND-02 | Phase 5 | Complete |
+| FOND-03 | Phase 5 | Complete |
+| FOND-04 | Phase 5 | Complete |
+| FOND-05 | Phase 5 | Complete |
+| FOND-06 | Phase 5 | Complete |
 | ENTRY-01 | Phase 5 | Pending |
 | ENTRY-02 | Phase 5 | Pending |
 | ENTRY-03 | Phase 5 | Pending |

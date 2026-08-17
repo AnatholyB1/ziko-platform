@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
-current_phase: 04
-current_phase_name: Credit-Gate Alignment
+current_phase: 05
+current_phase_name: Waitlist Page & Entry Points
 status: executing
-stopped_at: Phase 5 plan 02 complete
-last_updated: "2026-08-17T17:53:36.735Z"
-last_activity: 2026-08-16
-last_activity_desc: Phase 04 execution started
+stopped_at: Phase 5 plan 03 complete
+last_updated: "2026-08-17T18:04:14.162Z"
+last_activity: 2026-08-17
+last_activity_desc: Phase 05 plan 03 (counter route + widget) execution complete
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -25,29 +25,34 @@ See: .planning/workstreams/lien-invite/PROJECT.md context inherited from root .p
 **Core value:** Capturer les emails des personnes intéressées par l'accès anticipé à Ziko, athlètes
 comme coachs, et tenir une promesse « premium à vie » pour les 200 premiers qui soit vraie dans le
 contrat comme dans le code.
-**Current focus:** Phase 04 — Credit-Gate Alignment
-dependency on Phase 1 and can start immediately per ROADMAP.md
+**Current focus:** Phase 05 — Waitlist Page & Entry Points
+Phase 4 (Credit-Gate Alignment) is complete; Phase 5 depends on Phases 1-4 all being
+complete per ROADMAP.md and is now executing.
 
 ## Current Position
 
-Phase: 04 (Credit-Gate Alignment) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-SECURITY DEFINER RPCs) applied to the live ziko test project (slkobhavpwsubnsmuhya)
+Phase: 05 (Waitlist Page & Entry Points) — EXECUTING
+Plan: 3 of 6 (05-03 complete)
+Status: Wave 2 (05-02, 05-03) complete — Wave 3 (05-04, 05-05) next, then the
+full-phase gate run (05-06)
+
+Phase 4 recap: Credit-Gate Alignment shipped 2/2 plans complete
+(SECURITY DEFINER RPCs applied to the live ziko test project (slkobhavpwsubnsmuhya)
 and proven correct via direct SQL — round-trip, dedupe, normalization, RLS deny-all
 (anon + authenticated), all-five-RPCs-closed-to-anon, threshold arbitration, erasure
 monotonicity, sequence reset, the 200-cap concurrency race, and founder-status
-non-disclosure. Three real bugs found and fixed along the way. CI wired
+non-disclosure). Three real bugs found and fixed along the way. CI wired
 (.github/workflows/test-rls.yml) to apply the migration and run both waitlist
 suites on future PRs.
-**Known, accepted gap:** the literal `npm run test:rls` / `npx vitest run` commands
+**Known, accepted gap (Phase 1):** the literal `npm run test:rls` / `npx vitest run` commands
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-16 — Phase 04 execution started
-REQUIREMENTS.md. ROADMAP.md Phase 1 checkbox marked done.
+Last activity: 2026-08-17 — Phase 05 plan 03 (counter route + widget) execution complete.
+FOND-01 through FOND-06 marked complete in REQUIREMENTS.md; ROADMAP.md Phase 5 plan
+progress updated to 3/6.
 
-Progress: [████████░░] 75% (1/6 phases complete, Phase 1 — 4/4 plans)
+Progress: [███████░░░] 71% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
 
 ## Performance Metrics
 
@@ -77,6 +82,7 @@ Progress: [████████░░] 75% (1/6 phases complete, Phase 1 —
 | Phase 03-legal-cgv-cgu P04 | ~25min | 2 tasks | 6 files |
 | Phase 04-credit-gate-alignment P02 | ~35min | 3 tasks | 9 files |
 | Phase 05 P01 | ~55min | 2 tasks | 10 files |
+| Phase 05 P03 | ~30min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -121,6 +127,8 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 4] 04-02: mirrored 028's ledger-first/GET DIAGNOSTICS/early-return ordering for grant_premium_credits(), not 026's naive increment-then-insert or the RESEARCH.md/PATTERNS.md skeletons that omit the partial-index WHERE predicate on ON CONFLICT
 - [Phase ?]: [Phase 4] 04-02: the monthly grant cron runs unconditionally regardless of CRED-05's activation flag (D-02/D-03) — funding is separate from enforcement, so Phase 6's flip meets an already-funded premium tier instead of instantly 402-ing everyone
 - [Phase ?]: [Phase 5] 05-01: WaitlistRoleForm dispatches via manual onSubmit + startTransition rather than <form action={formAction}> — happy-dom 15's BrowserFrameNavigator eval()s React 19's javascript: sentinel href unconditionally regardless of preventDefault(), a happy-dom test-environment limitation, not a React/app bug
+- [Phase 5] 05-03: /api/waitlist/count caches via an explicit Cache-Control header (public, s-maxage=30, stale-while-revalidate=60 on success, no-store on fallback), never a `revalidate` export — a revalidate export would evaluate the handler (and construct the service-role client) at `next build` time, where credentials may be absent
+- [Phase 5] 05-03: WaitlistCounterClient collapses every failure mode (fetch rejection, non-ok response, malformed body) into the exact same display-false render as the route's own honest safe default — a broken counter and a not-yet-revealed counter are indistinguishable to a visitor
 
 ### Pending Todos
 
@@ -171,9 +179,10 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-17T17:53:36.591Z
-Stopped at: Phase 5 plan 02 complete
-6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
-& Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
-both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-03-PLAN.md
+Last session: 2026-08-17T18:04:14.162Z
+Stopped at: Phase 5 plan 03 complete
+6 phases total (Data Foundation ✓, Test-Account Purge ✓, Legal ✓, Credit-Gate Alignment ✓,
+Waitlist Page & Entry Points — 3/6 plans, Founder Offer Go-Live not started). Phase 5 Wave 2
+(05-02, 05-03) is now complete; Wave 3 (05-04 homepage section + coach CTA redirects, 05-05
+header/footer nav links) is next, followed by 05-06's full-phase gate run.
+Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-04-PLAN.md (not yet created — run /gsd-plan-phase or the phase's next planning step)
