@@ -287,6 +287,8 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | Marketing pages isolated in (marketing) route group | locale root layout rendered sticky `<Header />` unconditionally — coach pages inherited it, causing CoachSidebar to slide behind. Moving marketing pages to `[locale]/(marketing)/layout.tsx` strips Header/Footer from all coach routes cleanly. | v1.5 Phase 24 ✓ |
 | loginAction uses `getLocale()` + `/${locale}/` prefix on all redirects | loginAction returned hardcoded locale-less paths ('/coach/onboarding') causing 404 in next-intl; all redirects now prefixed dynamically. | v1.5 Phase 24 ✓ |
 | 3-tier precision-first matcher, publishable-key-only reads, zero DB writes for dry-run scripts | Live run against `hasaneyldrm/exercises-dataset` + production matched 1,318/1,318 exercises (Tier 1 exact name); a real double-claim bug (same production row appearing both `matched` and as a live `ambiguous` candidate) was found and fixed post-review — `consumed` set now reserved at candidate-push time across all 3 tiers, closing the risk before Phase 3 trusts this report for `UPDATE`/`INSERT` decisions | v1.16 Phase 2 ✓ |
+| TTY-gated interactive-only approval (`process.stdin.isTTY` as literal first line of `main()`, no `--yes`/`--force` bypass) | Enforces "no code path from fetch/match output straight into merge" structurally, not just procedurally — a non-interactive/automated invocation hard-exits before any write | v1.16 Phase 3 ✓ |
+| Real production merge run: 1,318/1,318 matched exercises UPDATEd (media + attributes + instructions, full-row backup snapshotted first); 6/6 unmatched-new INSERTs deterministically refused (dataset category values don't map to production's CHECK constraint — no data corrupted, tracked as follow-up) | Code review also surfaced 2 accepted-as-tracked gaps: `merge-row.ts` doesn't yet write `muscle_group`, and `merge.ts` doesn't read ambiguous-row `human_decision` (unexercised this run — 0 ambiguous rows) | v1.16 Phase 3 ✓ |
 
 ## Evolution
 
@@ -306,7 +308,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-15 — v1.16 Exercise Library Import (`image-exo`) Phase 2 complete: real dry-run matched 1,318/1,318 production exercises, zero DB writes confirmed.*
+*Last updated: 2026-08-17 — v1.16 Exercise Library Import (`image-exo`) Phase 3 complete: real human-supervised merge run against production — 1,318/1,318 matched exercises updated (media, attributes, instructions), 6 new-exercise inserts deterministically deferred on a category-mapping gap (tracked, non-corrupting). Phase 4 (Mobile Consumption & Attribution) next.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
