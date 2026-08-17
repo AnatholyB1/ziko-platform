@@ -13,7 +13,8 @@
 - [x] **Phase 1: Schema & Storage Foundation** - Add the `image` column, `exercise_import_log` table, and public `exercise-media` bucket the rest of the pipeline depends on (completed 2026-08-14)
 - [x] **Phase 2: Download & Match (Dry-Run)** - Fetch the dataset and produce a human-reviewable match report with zero database writes
  (completed 2026-08-15)
-- [x] **Phase 3: Merge (Human-Approved Write)** - Apply the approved report to production — resumable, backed up, FK-safe (completed 2026-08-16)
+- [x] **Phase 3: Merge (Human-Approved Write)** - Apply the approved report to production — resumable, backed up, FK-safe
+ (completed 2026-08-16)
 - [ ] **Phase 4: Mobile Consumption & Attribution** - Real media, structured instructions, and mandatory attribution render in the app
 
 ---
@@ -83,7 +84,14 @@ Plans:
   4. Exercise instructions render as numbered steps sourced from `instruction_steps`, with the fragile `JSON.parse`/`.split('\n')` fallback chain removed
   5. Exercise name and instructions display in French or English per the user's locale, consistent with the existing `name_fr` convention
   6. After the app update ships, a previously-installed client's exercise cache is invalidated (TanStack Query key bumped to `['exercises', 'v2']`) — no screen shows a mix of old exercisedb.io and new Storage media
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Shared `<AttributedMedia>` in `packages/ui` (180×180 clamp + Gym visual badge + barbell fallback) and 3 FR/EN i18n keys
+- [ ] 04-02-PLAN.md — `ExercisePicker`: 40×40 row thumbnails from `image`, versioned `['exercises','v2','picker']` key
+- [ ] 04-03-PLAN.md — Detail screen: square attributed GIF hero replacing the fake video chrome, `instruction_steps` bilingual numbered steps, versioned `['exercises','v2',id]` key
+- [ ] 04-04-PLAN.md — Static sweep + blocking manual device verification (manual-only validation, no RN test infra)
+
 **UI hint**: yes
 
 ---
@@ -97,7 +105,7 @@ Plans:
 | 1. Schema & Storage Foundation | 1/1 | Complete    | 2026-08-14 |
 | 2. Download & Match (Dry-Run) | 6/6 | Complete    | 2026-08-15 |
 | 3. Merge (Human-Approved Write) | 6/6 | Complete    | 2026-08-17 |
-| 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
+| 4. Mobile Consumption & Attribution | 0/4 | Planned | - |
 
 ---
 
