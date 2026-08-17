@@ -3,7 +3,8 @@
     "logo": "Ziko",
     "cta": "Download the app",
     "localeFR": "FR",
-    "localeEN": "EN"
+    "localeEN": "EN",
+    "founders": "Founders"
   },
   "Home": {
     "hero": {
@@ -101,7 +102,8 @@
     "privacy": "Privacy policy",
     "terms": "Terms of use",
     "cgv": "Terms of Sale",
-    "deleteAccount": "Delete my account"
+    "deleteAccount": "Delete my account",
+    "founders": "Founders"
   },
   "Login": {
     "title": "Welcome",
@@ -370,6 +372,44 @@
       "subheading": "Open private beta — 100% free, no commitment.",
       "button": "Join the private beta",
       "note": "No credit card required"
+    }
+  },
+  "fondateurs": {
+    "meta": {
+      "title": "Ziko — Become a founding member",
+      "description": "The first 200 Ziko members get lifetime premium. Claim your spot with just an email address.",
+      "ogImageAlt": "Ziko founder offer — lifetime premium for the first 200 members"
+    },
+    "hero": {
+      "headline": "Become a Ziko founding member",
+      "subtitle": "Join the waitlist and get lifetime premium if you're one of the first 200 members."
+    },
+    "picker": {
+      "heading": "You are…",
+      "athlete": "Athlete",
+      "coach": "Coach"
+    },
+    "form": {
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@email.com",
+      "submit": "Claim my spot",
+      "submitPending": "Sending…"
+    },
+    "counter": {
+      "preThreshold": "The first 200 members get lifetime premium.",
+      "remaining": "Only {remaining} founder spots left",
+      "completeHeading": "All 200 founder spots are taken",
+      "completeBody": "Sign up anyway to be notified when we launch."
+    },
+    "success": {
+      "founder": "You're in! You're founder #{rank} of 200.",
+      "generic": "You're in! We'll let you know as soon as we launch."
+    },
+    "error": {
+      "invalidEmail": "This email address looks invalid or disposable. Please use a personal email address.",
+      "generic": "Something went wrong. Please try again.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes.",
+      "consentRequired": "Please check the box above to continue."
     }
   }
 }

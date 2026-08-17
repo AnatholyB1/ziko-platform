@@ -1,0 +1,174 @@
+'use client'
+
+import { startTransition, useActionState, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { IoBarbellOutline, IoPeopleOutline, IoCheckmarkCircle } from 'react-icons/io5'
+import { claimWaitlistSpot, type WaitlistState } from '@/actions/waitlist'
+import { fadeUp, ctaHover, ctaTap } from '@/lib/motion'
+
+type Role = 'athlete' | 'coach'
+
+type Props = {
+  locale: string
+  pickerAthlete: string
+  pickerCoach: string
+  emailLabel: string
+  emailPlaceholder: string
+  submitLabel: string
+  submitPendingLabel: string
+  successFounder: string
+  successGeneric: string
+  errorGeneric: string
+  consentLabel: string
+  collectionNotice: string
+}
+
+const initialState: WaitlistState = { status: 'idle', isFounder: false, founderRank: null, message: '' }
+
+// D-08 / WAIT-05 — reading the ?role= hint here, inside the client subtree, is what lets
+// the page stay statically prerendered (WAIT-08). The parent wraps this component in a
+// <Suspense> boundary specifically because useSearchParams() requires one.
+function usePreselectedRole(): Role | null {
+  const searchParams = useSearchParams()
+  const raw = searchParams.get('role')
+  return raw === 'athlete' || raw === 'coach' ? raw : null
+}
+
+function cardClassName(selected: boolean) {
+  const base = 'relative text-left rounded-2xl p-6 min-h-[44px]'
+  return selected
+    ? `${base} border-2 border-primary bg-primary/5`
+    : `${base} bg-white border border-border`
+}
+
+export function WaitlistRoleForm(props: Props) {
+  const preselected = usePreselectedRole()
+  const [role, setRole] = useState<Role | null>(preselected)
+  const [consent, setConsent] = useState(false)
+  const [state, formAction, pending] = useActionState(claimWaitlistSpot, initialState)
+
+  const canSubmit = role !== null && consent && !pending
+
+  if (state.status === 'success') {
+    const sentence = state.isFounder
+      ? props.successFounder.replace('{rank}', String(state.founderRank))
+      : props.successGeneric
+
+    return (
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        className="rounded-lg bg-success-subtle border border-success/30 p-6"
+      >
+        <p className="text-success font-medium">{sentence}</p>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          type="button"
+          aria-pressed={role === 'athlete'}
+          onClick={() => setRole('athlete')}
+          className={cardClassName(role === 'athlete')}
+        >
+          <span className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <IoBarbellOutline size={24} className="text-primary" />
+          </span>
+          <span className="block text-lg font-bold text-text mt-3">{props.pickerAthlete}</span>
+          {role === 'athlete' && (
+            <IoCheckmarkCircle size={20} className="text-primary absolute top-3 right-3" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          aria-pressed={role === 'coach'}
+          onClick={() => setRole('coach')}
+          className={cardClassName(role === 'coach')}
+        >
+          <span className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <IoPeopleOutline size={24} className="text-primary" />
+          </span>
+          <span className="block text-lg font-bold text-text mt-3">{props.pickerCoach}</span>
+          {role === 'coach' && (
+            <IoCheckmarkCircle size={20} className="text-primary absolute top-3 right-3" />
+          )}
+        </button>
+      </div>
+
+      {role !== null && (
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mt-6">
+          {/*
+            Built and dispatched from the DOM form directly (rather than the plain
+            `<form action={formAction}>` idiom `DeleteAccountForm.tsx` uses) so this
+            component's tested behavior does not depend on the browser's native
+            action-submission pathway — happy-dom's `SubmitEvent`/navigation handling
+            for React 19 form actions is unreliable in this repo's test environment.
+            `formAction` is the same `useActionState` dispatcher either way; only how
+            its `FormData` argument is produced differs.
+          */}
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
+              // useActionState's dispatcher must run inside a transition for `pending`
+              // to update correctly — the native `<form action={formAction}>` pathway
+              // does this implicitly; calling it from onSubmit does not.
+              startTransition(() => {
+                formAction(formData)
+              })
+            }}
+            className="space-y-6"
+          >
+            <div>
+              <label className="block text-sm font-medium text-text mb-1" htmlFor="email">
+                {props.emailLabel}
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                required
+                placeholder={props.emailPlaceholder}
+                className="w-full rounded-lg border border-border px-4 py-3 text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <input type="hidden" name="audience" value={role} />
+            <input type="hidden" name="locale" value={props.locale} />
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-text">{props.consentLabel}</span>
+            </label>
+
+            <p className="max-w-lg text-sm text-muted">{props.collectionNotice}</p>
+
+            {state.status === 'error' && <p className="text-danger text-sm">{props.errorGeneric}</p>}
+
+            <motion.div whileHover={ctaHover} whileTap={ctaTap} className="inline-block w-full">
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full bg-primary text-white rounded-xl font-bold text-sm px-6 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ boxShadow: '0 4px 20px rgba(255,92,26,0.30)' }}
+              >
+                {pending ? props.submitPendingLabel : props.submitLabel}
+              </button>
+            </motion.div>
+          </form>
+        </motion.div>
+      )}
+    </div>
+  )
+}
