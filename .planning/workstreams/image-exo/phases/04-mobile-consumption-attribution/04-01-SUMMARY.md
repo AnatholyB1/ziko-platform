@@ -97,3 +97,11 @@ None - plan executed exactly as written. All grep-based and `tsc --noEmit` accep
 ---
 *Phase: 04-mobile-consumption-attribution*
 *Completed: 2026-08-17*
+
+## Self-Check: PASSED
+
+- FOUND: `packages/ui/src/components/AttributedMedia.tsx`
+- FOUND: `.planning/workstreams/image-exo/phases/04-mobile-consumption-attribution/04-01-SUMMARY.md`
+- FOUND commit `3b24aab` (Task 1: i18n keys)
+- FOUND commit `710b5fa` (Task 2: AttributedMedia component)
+- FOUND commit `4a9399a` (this SUMMARY.md)
