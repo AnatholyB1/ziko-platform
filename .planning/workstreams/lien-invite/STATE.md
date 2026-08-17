@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 05
 current_phase_name: Waitlist Page & Entry Points
 status: executing
-stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-08-17T18:20:38.338Z"
+stopped_at: Completed 05-05-PLAN.md
+last_updated: "2026-08-17T18:34:37.726Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 05 plan 03 (counter route + widget) execution complete
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -32,7 +32,7 @@ complete per ROADMAP.md and is now executing.
 ## Current Position
 
 Phase: 05 (Waitlist Page & Entry Points) — EXECUTING
-Plan: 4 of 6 (05-03 complete)
+Plan: 5 of 6 (05-03 complete)
 Status: Wave 2 (05-02, 05-03) complete — Wave 3 (05-04, 05-05) next, then the
 full-phase gate run (05-06)
 
@@ -52,7 +52,7 @@ Last activity: 2026-08-17 — Phase 05 plan 03 (counter route + widget) executio
 FOND-01 through FOND-06 marked complete in REQUIREMENTS.md; ROADMAP.md Phase 5 plan
 progress updated to 3/6.
 
-Progress: [█████████░] 90% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
+Progress: [██████████] 95% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
 
 ## Performance Metrics
 
@@ -84,6 +84,7 @@ Progress: [█████████░] 90% (4/5 known phases complete + Phas
 | Phase 05 P01 | ~55min | 2 tasks | 10 files |
 | Phase 05 P03 | ~30min | 2 tasks | 6 files |
 | Phase 05 P04 | ~35min | 2 tasks | 9 files |
+| Phase 05 P05 | ~40min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ so far, from research and roadmap creation:
 - [Phase 5] 05-03: WaitlistCounterClient collapses every failure mode (fetch rejection, non-ok response, malformed body) into the exact same display-false render as the route's own honest safe default — a broken counter and a not-yet-revealed counter are indistinguishable to a visitor
 - [Phase ?]: [Phase 5] 05-04: WaitlistRoleForm.tsx exports WAITLIST_ROLE_PARAM/WAITLIST_ROLE_ATHLETE/WAITLIST_ROLE_COACH — both /coachs CTA links import these rather than retyping the role-hint literal, so a future rename of the param breaks the build instead of silently landing a visitor on an unanswered picker
 - [Phase ?]: [Phase 5] 05-04: FoundersOfferSection reuses WaitlistCounterClient (Plan 05-03) verbatim on the homepage rather than a second local badge — the homepage is structurally incapable of showing a fabricated number
+- [Phase ?]: [Phase 5] 05-05: header/footer touch-target reading — the footer's founders link stays min-h-free (matching AnimatedLink's existing siblings and the UI-SPEC's explicit 'zero new styling' instruction) rather than gaining an independent 44px floor the header's copied-class link already has; giving only the new link a taller hit area than its neighbours would have violated D-04's equal-weight requirement
+- [Phase ?]: [Phase 5] 05-05: track() imported from the base '@vercel/analytics' package (not '/react') in WaitlistRoleForm.tsx — both work from a 'use client' component; the base import needs no extra wiring beyond the <Analytics /> mount already using the '/next' entry point
 
 ### Pending Todos
 
@@ -182,10 +185,10 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-17T18:20:38.309Z
-Stopped at: Completed 05-04-PLAN.md
+Last session: 2026-08-17T18:34:37.702Z
+Stopped at: Completed 05-05-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge ✓, Legal ✓, Credit-Gate Alignment ✓,
 Waitlist Page & Entry Points — 3/6 plans, Founder Offer Go-Live not started). Phase 5 Wave 2
 (05-02, 05-03) is now complete; Wave 3 (05-04 homepage section + coach CTA redirects, 05-05
 header/footer nav links) is next, followed by 05-06's full-phase gate run.
-Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-05-PLAN.md
+Resume file: None

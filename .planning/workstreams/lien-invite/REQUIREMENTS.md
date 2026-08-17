@@ -80,10 +80,10 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 - [x] **ENTRY-01**: Un visiteur atteint la page fondateurs depuis la page d'accueil
 - [x] **ENTRY-02**: Un visiteur atteint la page fondateurs depuis la page `/coachs`
-- [ ] **ENTRY-03**: Un visiteur atteint la page fondateurs depuis l'en-tête et le pied de page du site
+- [x] **ENTRY-03**: Un visiteur atteint la page fondateurs depuis l'en-tête et le pied de page du site
 - [x] **ENTRY-04**: Le partage du lien sur les réseaux sociaux affiche un aperçu correct (métadonnées OG et Twitter card)
-- [ ] **ENTRY-05**: La page est indexable et présente dans le sitemap
-- [ ] **ENTRY-06**: Les conversions de la page sont mesurables
+- [x] **ENTRY-05**: La page est indexable et présente dans le sitemap
+- [x] **ENTRY-06**: Les conversions de la page sont mesurables
 
 ## v2 Requirements
 
@@ -175,10 +175,10 @@ Points que la recherche a explicitement refusé de trancher :
 | FOND-06 | Phase 5 | Complete |
 | ENTRY-01 | Phase 5 | Complete |
 | ENTRY-02 | Phase 5 | Complete |
-| ENTRY-03 | Phase 5 | Pending |
+| ENTRY-03 | Phase 5 | Complete |
 | ENTRY-04 | Phase 5 | Complete |
-| ENTRY-05 | Phase 5 | Pending |
-| ENTRY-06 | Phase 5 | Pending |
+| ENTRY-05 | Phase 5 | Complete |
+| ENTRY-06 | Phase 5 | Complete |
 
 Phase 6 (Founder Offer Go-Live) is a convergence/activation phase and owns no requirement directly
 — it verifies the production-activation state of CRED-01, CRED-05, LEGAL-05, PURGE-01–05, and
