@@ -245,10 +245,31 @@ entry point on the site.
      link renders a correct social preview; the page is indexable and present in the sitemap; and
      its signups are measurable as conversions (ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05,
      ENTRY-06)
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+**Wave 1**
+
+- [ ] 05-01-PLAN.md — Tracer: `/fondateurs` end to end (bilingual copy surface, SSG route, role picker → email → real Server Action → localized confirmation, social preview + metadata)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 05-02-PLAN.md — Package legitimacy gate, then honeypot/bot/rate-limit/syntax/disposable-domain guards, consent recording, and UTM attribution on the submission path
+- [ ] 05-03-PLAN.md — Counter Route Handler over the service-role RPC, and the three-state counter widget mounted on the founders hero
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 05-04-PLAN.md — Homepage founders section (D-05) and both `/coachs` CTAs redirected with coach pre-selected (D-01)
+- [ ] 05-05-PLAN.md — Header and footer nav links (D-04), sitemap entry, and the cookieless conversion event
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 05-06-PLAN.md — Full-phase gate run on the merged tree, validation record completed, blocking UI/entry-point human verification
+
 **Research**: Not needed at plan time — `useActionState` + Server Action + Zod, the honeypot +
 Upstash + botid layering, and the Route Handler counter pattern are all well-established in this
 codebase; see `research/SUMMARY.md` Research Flags and `research/ARCHITECTURE.md` Sections 2–3.
+`05-RESEARCH.md` corrects one stale assumption carried by the milestone-level research: both waitlist
+RPCs shipped `service_role`-only, so the counter route and the claim action both use the admin client.
 **UI hint**: yes — a UI-SPEC design contract is expected before implementation, per this project's
 `ui_phase`/`ui_safety_gate` configuration and prior UI-phase precedent (v1.8 Sport Dashboards,
 `custom-widget` Phases 03–04).
@@ -293,5 +314,5 @@ being complete.
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
-| 5. Waitlist Page & Entry Points | 0/TBD | Not started | - |
+| 5. Waitlist Page & Entry Points | 0/6 | Planned | - |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
