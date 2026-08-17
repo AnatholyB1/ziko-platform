@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
@@ -274,6 +275,34 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
                       elevation: 3,
                     }}
                   >
+                    {/* Thumbnail slot — no attribution badge here (D-06: attribution is
+                        shown once per screen on the primary/largest media instance, i.e.
+                        the exercise detail hero; list-row thumbnails are deliberately
+                        unattributed per the discussed interpretation of MOBILE-03). */}
+                    {publicThumbUrl ? (
+                      <Image
+                        source={{ uri: publicThumbUrl }}
+                        style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 10,
+                          flexShrink: 0,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: theme.background,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                        }}
+                      >
+                        <Ionicons name="barbell-outline" size={18} color={theme.muted} />
+                      </View>
+                    )}
+
                     {/* Checkbox */}
                     <View
                       style={{
