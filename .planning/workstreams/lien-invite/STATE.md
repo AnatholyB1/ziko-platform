@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 05
 current_phase_name: Waitlist Page & Entry Points
 status: executing
-stopped_at: Phase 5 plan 03 complete
-last_updated: "2026-08-17T18:04:14.162Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-08-17T18:20:38.338Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 05 plan 03 (counter route + widget) execution complete
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -32,7 +32,7 @@ complete per ROADMAP.md and is now executing.
 ## Current Position
 
 Phase: 05 (Waitlist Page & Entry Points) — EXECUTING
-Plan: 3 of 6 (05-03 complete)
+Plan: 4 of 6 (05-03 complete)
 Status: Wave 2 (05-02, 05-03) complete — Wave 3 (05-04, 05-05) next, then the
 full-phase gate run (05-06)
 
@@ -52,7 +52,7 @@ Last activity: 2026-08-17 — Phase 05 plan 03 (counter route + widget) executio
 FOND-01 through FOND-06 marked complete in REQUIREMENTS.md; ROADMAP.md Phase 5 plan
 progress updated to 3/6.
 
-Progress: [███████░░░] 71% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
+Progress: [█████████░] 90% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Progress: [███████░░░] 71% (4/5 known phases complete + Phas
 | Phase 04-credit-gate-alignment P02 | ~35min | 3 tasks | 9 files |
 | Phase 05 P01 | ~55min | 2 tasks | 10 files |
 | Phase 05 P03 | ~30min | 2 tasks | 6 files |
+| Phase 05 P04 | ~35min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,8 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 5] 05-01: WaitlistRoleForm dispatches via manual onSubmit + startTransition rather than <form action={formAction}> — happy-dom 15's BrowserFrameNavigator eval()s React 19's javascript: sentinel href unconditionally regardless of preventDefault(), a happy-dom test-environment limitation, not a React/app bug
 - [Phase 5] 05-03: /api/waitlist/count caches via an explicit Cache-Control header (public, s-maxage=30, stale-while-revalidate=60 on success, no-store on fallback), never a `revalidate` export — a revalidate export would evaluate the handler (and construct the service-role client) at `next build` time, where credentials may be absent
 - [Phase 5] 05-03: WaitlistCounterClient collapses every failure mode (fetch rejection, non-ok response, malformed body) into the exact same display-false render as the route's own honest safe default — a broken counter and a not-yet-revealed counter are indistinguishable to a visitor
+- [Phase ?]: [Phase 5] 05-04: WaitlistRoleForm.tsx exports WAITLIST_ROLE_PARAM/WAITLIST_ROLE_ATHLETE/WAITLIST_ROLE_COACH — both /coachs CTA links import these rather than retyping the role-hint literal, so a future rename of the param breaks the build instead of silently landing a visitor on an unanswered picker
+- [Phase ?]: [Phase 5] 05-04: FoundersOfferSection reuses WaitlistCounterClient (Plan 05-03) verbatim on the homepage rather than a second local badge — the homepage is structurally incapable of showing a fabricated number
 
 ### Pending Todos
 
@@ -179,10 +182,10 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-17T18:04:14.162Z
-Stopped at: Phase 5 plan 03 complete
+Last session: 2026-08-17T18:20:38.309Z
+Stopped at: Completed 05-04-PLAN.md
 6 phases total (Data Foundation ✓, Test-Account Purge ✓, Legal ✓, Credit-Gate Alignment ✓,
 Waitlist Page & Entry Points — 3/6 plans, Founder Offer Go-Live not started). Phase 5 Wave 2
 (05-02, 05-03) is now complete; Wave 3 (05-04 homepage section + coach CTA redirects, 05-05
 header/footer nav links) is next, followed by 05-06's full-phase gate run.
-Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-04-PLAN.md (not yet created — run /gsd-plan-phase or the phase's next planning step)
+Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-05-PLAN.md

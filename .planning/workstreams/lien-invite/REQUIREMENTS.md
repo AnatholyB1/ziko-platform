@@ -78,8 +78,8 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Points d'entrée (ENTRY)
 
-- [ ] **ENTRY-01**: Un visiteur atteint la page fondateurs depuis la page d'accueil
-- [ ] **ENTRY-02**: Un visiteur atteint la page fondateurs depuis la page `/coachs`
+- [x] **ENTRY-01**: Un visiteur atteint la page fondateurs depuis la page d'accueil
+- [x] **ENTRY-02**: Un visiteur atteint la page fondateurs depuis la page `/coachs`
 - [ ] **ENTRY-03**: Un visiteur atteint la page fondateurs depuis l'en-tête et le pied de page du site
 - [x] **ENTRY-04**: Le partage du lien sur les réseaux sociaux affiche un aperçu correct (métadonnées OG et Twitter card)
 - [ ] **ENTRY-05**: La page est indexable et présente dans le sitemap
@@ -173,8 +173,8 @@ Points que la recherche a explicitement refusé de trancher :
 | FOND-04 | Phase 5 | Complete |
 | FOND-05 | Phase 5 | Complete |
 | FOND-06 | Phase 5 | Complete |
-| ENTRY-01 | Phase 5 | Pending |
-| ENTRY-02 | Phase 5 | Pending |
+| ENTRY-01 | Phase 5 | Complete |
+| ENTRY-02 | Phase 5 | Complete |
 | ENTRY-03 | Phase 5 | Pending |
 | ENTRY-04 | Phase 5 | Complete |
 | ENTRY-05 | Phase 5 | Pending |
