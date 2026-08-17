@@ -9,6 +9,14 @@ import { fadeUp, ctaHover, ctaTap } from '@/lib/motion'
 
 type Role = 'athlete' | 'coach'
 
+// Phase 5 plan 05-04 (T-05-09, D-01) — the contract the `/coachs` redirect links
+// must satisfy. Exported so those links (and their tests) read the parameter name
+// and accepted value from here rather than a retyped literal — a mismatch here
+// fails silently: the link works, the page loads, and the picker is unanswered.
+export const WAITLIST_ROLE_PARAM = 'role'
+export const WAITLIST_ROLE_ATHLETE: Role = 'athlete'
+export const WAITLIST_ROLE_COACH: Role = 'coach'
+
 type Props = {
   locale: string
   pickerAthlete: string
@@ -42,8 +50,8 @@ function errorSentenceFor(code: WaitlistState['code'], props: Props): string {
 // <Suspense> boundary specifically because useSearchParams() requires one.
 function usePreselectedRole(): Role | null {
   const searchParams = useSearchParams()
-  const raw = searchParams.get('role')
-  return raw === 'athlete' || raw === 'coach' ? raw : null
+  const raw = searchParams.get(WAITLIST_ROLE_PARAM)
+  return raw === WAITLIST_ROLE_ATHLETE || raw === WAITLIST_ROLE_COACH ? raw : null
 }
 
 // ENTRY-06 — campaign parameters on the landing URL, forwarded as hidden inputs so
