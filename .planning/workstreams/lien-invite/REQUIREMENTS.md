@@ -29,14 +29,14 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 
 ### Page waitlist (WAIT)
 
-- [ ] **WAIT-01**: Un visiteur accède à une page publique dédiée à l'offre fondateurs, servie en français et en anglais
-- [ ] **WAIT-02**: Le visiteur choisit son profil (athlète ou coach) avant que le champ email n'apparaisse — divulgation progressive, pas un champ de formulaire supplémentaire
-- [ ] **WAIT-03**: Le formulaire ne demande qu'une seule information saisie : l'adresse email
+- [x] **WAIT-01**: Un visiteur accède à une page publique dédiée à l'offre fondateurs, servie en français et en anglais
+- [x] **WAIT-02**: Le visiteur choisit son profil (athlète ou coach) avant que le champ email n'apparaisse — divulgation progressive, pas un champ de formulaire supplémentaire
+- [x] **WAIT-03**: Le formulaire ne demande qu'une seule information saisie : l'adresse email
 - [ ] **WAIT-04**: Une adresse mal formée ou issue d'un domaine jetable est refusée avec un message explicite
-- [ ] **WAIT-05**: Après soumission, le visiteur voit un état de succès en ligne confirmant son inscription et son statut fondateur si une place lui a été attribuée
-- [ ] **WAIT-06**: Le visiteur qui soumet une adresse déjà inscrite reçoit le même état de succès, sans révéler qu'elle existait déjà
-- [ ] **WAIT-07**: La page respecte le thème sport clair existant et les tokens Tailwind v4 de `globals.css`
-- [ ] **WAIT-08**: La page reste rendue statiquement, seul le compteur étant servi dynamiquement
+- [x] **WAIT-05**: Après soumission, le visiteur voit un état de succès en ligne confirmant son inscription et son statut fondateur si une place lui a été attribuée
+- [x] **WAIT-06**: Le visiteur qui soumet une adresse déjà inscrite reçoit le même état de succès, sans révéler qu'elle existait déjà
+- [x] **WAIT-07**: La page respecte le thème sport clair existant et les tokens Tailwind v4 de `globals.css`
+- [x] **WAIT-08**: La page reste rendue statiquement, seul le compteur étant servi dynamiquement
 
 ### Offre fondateurs & compteur (FOND)
 
@@ -81,7 +81,7 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 - [ ] **ENTRY-01**: Un visiteur atteint la page fondateurs depuis la page d'accueil
 - [ ] **ENTRY-02**: Un visiteur atteint la page fondateurs depuis la page `/coachs`
 - [ ] **ENTRY-03**: Un visiteur atteint la page fondateurs depuis l'en-tête et le pied de page du site
-- [ ] **ENTRY-04**: Le partage du lien sur les réseaux sociaux affiche un aperçu correct (métadonnées OG et Twitter card)
+- [x] **ENTRY-04**: Le partage du lien sur les réseaux sociaux affiche un aperçu correct (métadonnées OG et Twitter card)
 - [ ] **ENTRY-05**: La page est indexable et présente dans le sitemap
 - [ ] **ENTRY-06**: Les conversions de la page sont mesurables
 
@@ -159,14 +159,14 @@ Points que la recherche a explicitement refusé de trancher :
 | CRED-04 | Phase 4 | Complete |
 | CRED-05 | Phase 4 | Complete |
 | CRED-06 | Phase 4 | Complete |
-| WAIT-01 | Phase 5 | Pending |
-| WAIT-02 | Phase 5 | Pending |
-| WAIT-03 | Phase 5 | Pending |
+| WAIT-01 | Phase 5 | Complete |
+| WAIT-02 | Phase 5 | Complete |
+| WAIT-03 | Phase 5 | Complete |
 | WAIT-04 | Phase 5 | Pending |
-| WAIT-05 | Phase 5 | Pending |
-| WAIT-06 | Phase 5 | Pending |
-| WAIT-07 | Phase 5 | Pending |
-| WAIT-08 | Phase 5 | Pending |
+| WAIT-05 | Phase 5 | Complete |
+| WAIT-06 | Phase 5 | Complete |
+| WAIT-07 | Phase 5 | Complete |
+| WAIT-08 | Phase 5 | Complete |
 | FOND-01 | Phase 5 | Pending |
 | FOND-02 | Phase 5 | Pending |
 | FOND-03 | Phase 5 | Pending |
@@ -176,7 +176,7 @@ Points que la recherche a explicitement refusé de trancher :
 | ENTRY-01 | Phase 5 | Pending |
 | ENTRY-02 | Phase 5 | Pending |
 | ENTRY-03 | Phase 5 | Pending |
-| ENTRY-04 | Phase 5 | Pending |
+| ENTRY-04 | Phase 5 | Complete |
 | ENTRY-05 | Phase 5 | Pending |
 | ENTRY-06 | Phase 5 | Pending |
 

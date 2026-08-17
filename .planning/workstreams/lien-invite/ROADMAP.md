@@ -245,11 +245,11 @@ entry point on the site.
      link renders a correct social preview; the page is indexable and present in the sitemap; and
      its signups are measurable as conversions (ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05,
      ENTRY-06)
-**Plans**: 6 plans
+**Plans**: 1/6 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Tracer: `/fondateurs` end to end (bilingual copy surface, SSG route, role picker → email → real Server Action → localized confirmation, social preview + metadata)
+- [x] 05-01-PLAN.md — Tracer: `/fondateurs` end to end (bilingual copy surface, SSG route, role picker → email → real Server Action → localized confirmation, social preview + metadata)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -314,5 +314,5 @@ being complete.
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
-| 5. Waitlist Page & Entry Points | 0/6 | Planned | - |
+| 5. Waitlist Page & Entry Points | 1/6 | In Progress|  |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
