@@ -15,6 +15,16 @@ import MailChecker from 'mailchecker';
 import { checkBotId } from 'botid/server';
 import { waitlistRatelimit } from '@/lib/ratelimit';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { CONSENT_VERSION } from '@/content/legal/founder-offer';
+
+const UTM_MAX_LENGTH = 64;
+
+// Truncated, null-normalized so an attacker-controlled query-string value is never
+// stored whole and never stored as an empty string (T-05-T3).
+function normalizeUtmValue(raw: string | null): string | null {
+  const trimmed = (raw ?? '').trim().slice(0, UTM_MAX_LENGTH);
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 export type WaitlistErrorCode = 'invalid_form' | 'invalid_email' | 'rate_limited' | 'server_error';
 
@@ -63,8 +73,14 @@ export async function claimWaitlistSpot(
   const audience = formData.get('audience') as string | null;
   const locale = (formData.get('locale') as string | null) ?? null;
   const honeypot = (formData.get('website') as string | null)?.trim() ?? '';
+  const consent = formData.get('consent');
+  const utmSource = normalizeUtmValue(formData.get('utm_source') as string | null);
+  const utmCampaign = normalizeUtmValue(formData.get('utm_campaign') as string | null);
 
-  if (!email || !audience) {
+  // LEGAL-06 — consent is the stated legal basis for the whole processing; a row
+  // written without it is a row that must not exist. Checked here, before any other
+  // work, alongside the pre-existing empty-email/empty-audience check.
+  if (!email || !audience || !consent) {
     return { status: 'error', isFounder: false, founderRank: null, message: 'Formulaire invalide.', code: 'invalid_form' };
   }
 
@@ -130,6 +146,8 @@ export async function claimWaitlistSpot(
     p_email: email,
     p_audience: audience,
     p_locale: locale,
+    p_utm_source: utmSource,
+    p_utm_campaign: utmCampaign,
   });
 
   if (error || !data?.[0]) {
@@ -141,6 +159,33 @@ export async function claimWaitlistSpot(
     is_founder: boolean;
     founder_rank: number | null;
   };
+
+  // Consent write — runs unconditionally, for both a new signup and a duplicate, and
+  // ahead of the disclosure filter below, so both paths perform the exact same sequence
+  // of database calls (T-05-I4). Matched on the database's own normalized identity
+  // (never a client-side lowercase) because a duplicate submitted with a Gmail
+  // +suffix/dots variant maps to a row whose stored `email` is the original
+  // submitter's spelling (05-RESEARCH.md Pattern 2, Pitfall 2). A failure here is
+  // logged, never surfaced to the visitor — the signup itself already succeeded.
+  try {
+    const { data: normalizedEmail, error: normalizeError } = await admin.rpc('normalize_waitlist_email', {
+      p_email: email,
+    });
+    if (normalizeError || typeof normalizedEmail !== 'string') {
+      console.error('[waitlist] consent write skipped — email normalization RPC failed', normalizeError);
+    } else {
+      const { error: consentError } = await admin
+        .from('waitlist_signups')
+        .update({ consent_given_at: new Date().toISOString(), consent_version: CONSENT_VERSION })
+        .eq('email_normalized', normalizedEmail)
+        .is('anonymized_at', null);
+      if (consentError) {
+        console.error('[waitlist] consent write failed', consentError);
+      }
+    }
+  } catch (consentWriteError) {
+    console.error('[waitlist] consent write threw', consentWriteError);
+  }
 
   // D-03/D-04 — the ONLY place this filtering may happen. Reading any other field
   // before this check reintroduces the founder-status oracle. A duplicate (is_new

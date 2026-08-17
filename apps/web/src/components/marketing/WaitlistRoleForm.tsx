@@ -20,11 +20,22 @@ type Props = {
   successFounder: string
   successGeneric: string
   errorGeneric: string
+  errorInvalidEmail: string
+  errorRateLimited: string
   consentLabel: string
   collectionNotice: string
 }
 
 const initialState: WaitlistState = { status: 'idle', isFounder: false, founderRank: null, message: '', code: null }
+
+// The invalid-form and server-error codes deliberately fall through to the generic
+// sentence — this plan only renders a code-specific sentence for the two failure
+// modes with a visitor-actionable fix (invalid_email, rate_limited).
+function errorSentenceFor(code: WaitlistState['code'], props: Props): string {
+  if (code === 'invalid_email') return props.errorInvalidEmail
+  if (code === 'rate_limited') return props.errorRateLimited
+  return props.errorGeneric
+}
 
 // D-08 / WAIT-05 — reading the ?role= hint here, inside the client subtree, is what lets
 // the page stay statically prerendered (WAIT-08). The parent wraps this component in a
@@ -33,6 +44,16 @@ function usePreselectedRole(): Role | null {
   const searchParams = useSearchParams()
   const raw = searchParams.get('role')
   return raw === 'athlete' || raw === 'coach' ? raw : null
+}
+
+// ENTRY-06 — campaign parameters on the landing URL, forwarded as hidden inputs so
+// claimWaitlistSpot can pass them through to claim_waitlist_signup unchanged.
+function useUtmParams(): { utmSource: string; utmCampaign: string } {
+  const searchParams = useSearchParams()
+  return {
+    utmSource: searchParams.get('utm_source') ?? '',
+    utmCampaign: searchParams.get('utm_campaign') ?? '',
+  }
 }
 
 function cardClassName(selected: boolean) {
@@ -44,6 +65,7 @@ function cardClassName(selected: boolean) {
 
 export function WaitlistRoleForm(props: Props) {
   const preselected = usePreselectedRole()
+  const { utmSource, utmCampaign } = useUtmParams()
   const [role, setRole] = useState<Role | null>(preselected)
   const [consent, setConsent] = useState(false)
   const [state, formAction, pending] = useActionState(claimWaitlistSpot, initialState)
@@ -141,10 +163,30 @@ export function WaitlistRoleForm(props: Props) {
 
             <input type="hidden" name="audience" value={role} />
             <input type="hidden" name="locale" value={props.locale} />
+            <input type="hidden" name="utm_source" value={utmSource} />
+            <input type="hidden" name="utm_campaign" value={utmCampaign} />
+
+            {/*
+              Honeypot (T-05-D2/T-05-S2, T-05-A1) — off-screen rather than
+              `display:none` so a screen reader would still (in principle) traverse
+              it, but `aria-hidden` on the wrapper keeps assistive tech from ever
+              announcing it, `tabIndex={-1}` keeps keyboard users from tabbing into
+              it, and `autoComplete="off"` with no visible label gives a password
+              manager nothing to match. A human never fills this in; a bot that
+              fills every input on the page does.
+            */}
+            <div
+              aria-hidden="true"
+              style={{ position: 'absolute', left: '-9999px', top: 0, width: 1, height: 1, overflow: 'hidden' }}
+            >
+              <label htmlFor="website">Ne pas remplir</label>
+              <input id="website" type="text" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
 
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
+                name="consent"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
                 className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
@@ -154,7 +196,9 @@ export function WaitlistRoleForm(props: Props) {
 
             <p className="max-w-lg text-sm text-muted">{props.collectionNotice}</p>
 
-            {state.status === 'error' && <p className="text-danger text-sm">{props.errorGeneric}</p>}
+            {state.status === 'error' && (
+              <p className="text-danger text-sm">{errorSentenceFor(state.code, props)}</p>
+            )}
 
             <motion.div whileHover={ctaHover} whileTap={ctaTap} className="inline-block w-full">
               <button

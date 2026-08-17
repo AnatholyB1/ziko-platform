@@ -9,6 +9,20 @@ import { createClient } from '@supabase/supabase-js';
 // imports below, so claimWaitlistSpot can be imported directly in a plain Node process.
 vi.mock('server-only', () => ({}));
 
+// Phase 5 (05-02) — claimWaitlistSpot now imports `botid/server` and
+// `@/lib/ratelimit` at module scope. Unmocked, checkBotId() would attempt a real
+// network call and the rate limiter would consume real Upstash budget during this
+// suite's 200-cap race — mocked here to report "not a bot" / "budget available" so
+// this file keeps proving only what it has always proven (05-RESEARCH.md Pitfall 3).
+vi.mock('botid/server', () => ({
+  checkBotId: async () => ({ isHuman: true, isBot: false, isVerifiedBot: false, bypassed: false }),
+}));
+vi.mock('@/lib/ratelimit', () => ({
+  waitlistRatelimit: {
+    limit: async () => ({ success: true, limit: 5, remaining: 4, reset: 0, pending: Promise.resolve() }),
+  },
+}));
+
 const { claimWaitlistSpot } = await import('../../src/actions/waitlist');
 
 // Load-bearing guard: the root CI `verify` job runs `npx turbo run test` with the
@@ -50,6 +64,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
     const formData = new FormData();
     formData.set('email', email);
     formData.set('audience', 'athlete');
+    formData.set('consent', 'on');
 
     const result = await claimWaitlistSpot(
       { status: 'idle', isFounder: false, founderRank: null, message: '', code: null },
@@ -133,6 +148,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
       const fd = new FormData();
       fd.set('email', `${racePrefix}${i}@example.com`);
       fd.set('audience', 'athlete');
+      fd.set('consent', 'on');
       return fd;
     });
 
@@ -188,6 +204,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     const dupFormData = new FormData();
     dupFormData.set('email', founderEmail);
     dupFormData.set('audience', 'athlete');
+    dupFormData.set('consent', 'on');
     const dupResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '', code: null }, dupFormData);
 
     expect(dupResult.status).toBe('success');
@@ -202,6 +219,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     const freshFormData = new FormData();
     freshFormData.set('email', freshEmail);
     freshFormData.set('audience', 'athlete');
+    freshFormData.set('consent', 'on');
     const freshResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '', code: null }, freshFormData);
 
     expect(freshResult).toEqual(dupResult);

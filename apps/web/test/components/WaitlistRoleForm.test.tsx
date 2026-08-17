@@ -41,6 +41,8 @@ const frProps = {
   successFounder: 'Vous êtes inscrit·e ! Vous êtes fondateur·rice n°{rank} sur 200.',
   successGeneric: 'Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement.',
   errorGeneric: 'Une erreur est survenue. Merci de réessayer.',
+  errorInvalidEmail: 'Cette adresse e-mail semble invalide ou temporaire. Merci d\'utiliser une adresse e-mail personnelle.',
+  errorRateLimited: 'Trop de tentatives. Merci de réessayer dans quelques minutes.',
   consentLabel: CONSENT_CHECKBOX_LABEL.fr,
   collectionNotice: COLLECTION_POINT_NOTICE.fr,
 };
@@ -57,6 +59,8 @@ const enProps = {
   successFounder: "You're in! You're founder #{rank} of 200.",
   successGeneric: "You're in! We'll let you know as soon as we launch.",
   errorGeneric: 'Something went wrong. Please try again.',
+  errorInvalidEmail: 'This email address looks invalid or temporary. Please use a personal email address.',
+  errorRateLimited: 'Too many attempts. Please try again in a few minutes.',
   consentLabel: CONSENT_CHECKBOX_LABEL.en,
   collectionNotice: COLLECTION_POINT_NOTICE.en,
 };

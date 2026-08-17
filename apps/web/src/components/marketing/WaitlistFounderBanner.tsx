@@ -23,6 +23,8 @@ export async function WaitlistFounderBanner({ locale }: Props) {
       successFounder={t('success.founder')}
       successGeneric={t('success.generic')}
       errorGeneric={t('error.generic')}
+      errorInvalidEmail={t('error.invalidEmail')}
+      errorRateLimited={t('error.rateLimited')}
       consentLabel={CONSENT_CHECKBOX_LABEL[localeKey]}
       collectionNotice={COLLECTION_POINT_NOTICE[localeKey]}
     />

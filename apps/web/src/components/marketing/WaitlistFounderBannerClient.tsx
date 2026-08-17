@@ -19,6 +19,8 @@ type Props = {
   successFounder: string
   successGeneric: string
   errorGeneric: string
+  errorInvalidEmail: string
+  errorRateLimited: string
   consentLabel: string
   collectionNotice: string
 }
@@ -46,6 +48,8 @@ export function WaitlistFounderBannerClient({
   successFounder,
   successGeneric,
   errorGeneric,
+  errorInvalidEmail,
+  errorRateLimited,
   consentLabel,
   collectionNotice,
 }: Props) {
@@ -90,6 +94,8 @@ export function WaitlistFounderBannerClient({
                 successFounder={successFounder}
                 successGeneric={successGeneric}
                 errorGeneric={errorGeneric}
+                errorInvalidEmail={errorInvalidEmail}
+                errorRateLimited={errorRateLimited}
                 consentLabel={consentLabel}
                 collectionNotice={collectionNotice}
               />
