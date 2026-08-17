@@ -52,7 +52,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
     formData.set('audience', 'athlete');
 
     const result = await claimWaitlistSpot(
-      { status: 'idle', isFounder: false, founderRank: null, message: '' },
+      { status: 'idle', isFounder: false, founderRank: null, message: '', code: null },
       formData,
     );
 
@@ -137,7 +137,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     });
 
     const results = await Promise.all(
-      forms.map((fd) => claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '' }, fd)),
+      forms.map((fd) => claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '', code: null }, fd)),
     );
 
     const foundersReported = results.filter((r) => r.isFounder).length;
@@ -188,7 +188,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     const dupFormData = new FormData();
     dupFormData.set('email', founderEmail);
     dupFormData.set('audience', 'athlete');
-    const dupResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '' }, dupFormData);
+    const dupResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '', code: null }, dupFormData);
 
     expect(dupResult.status).toBe('success');
     expect(dupResult.isFounder).toBe(false);
@@ -202,7 +202,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     const freshFormData = new FormData();
     freshFormData.set('email', freshEmail);
     freshFormData.set('audience', 'athlete');
-    const freshResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '' }, freshFormData);
+    const freshResult = await claimWaitlistSpot({ status: 'idle', isFounder: false, founderRank: null, message: '', code: null }, freshFormData);
 
     expect(freshResult).toEqual(dupResult);
 

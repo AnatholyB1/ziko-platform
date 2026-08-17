@@ -69,6 +69,7 @@ beforeEach(() => {
     isFounder: false,
     founderRank: null,
     message: '',
+    code: null,
   });
 });
 
@@ -163,6 +164,7 @@ describe('WaitlistRoleForm', () => {
       isFounder: true,
       founderRank: 7,
       message: 'Inscription confirmée.',
+      code: null,
     });
     const user = userEvent.setup();
     render(<WaitlistRoleForm {...frProps} />);
@@ -181,6 +183,7 @@ describe('WaitlistRoleForm', () => {
       isFounder: false,
       founderRank: null,
       message: 'Inscription confirmée.',
+      code: null,
     });
     const user = userEvent.setup();
     render(<WaitlistRoleForm {...frProps} />);
@@ -199,6 +202,7 @@ describe('WaitlistRoleForm', () => {
       isFounder: false,
       founderRank: null,
       message: 'Inscription confirmée.',
+      code: null,
     });
     const firstRun = userEvent.setup();
     const { unmount } = render(<WaitlistRoleForm {...frProps} />);
@@ -216,6 +220,7 @@ describe('WaitlistRoleForm', () => {
       isFounder: false,
       founderRank: null,
       message: 'Inscription confirmée.',
+      code: null,
     });
     const secondRun = userEvent.setup();
     render(<WaitlistRoleForm {...frProps} />);

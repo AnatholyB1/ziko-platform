@@ -24,7 +24,7 @@ type Props = {
   collectionNotice: string
 }
 
-const initialState: WaitlistState = { status: 'idle', isFounder: false, founderRank: null, message: '' }
+const initialState: WaitlistState = { status: 'idle', isFounder: false, founderRank: null, message: '', code: null }
 
 // D-08 / WAIT-05 — reading the ?role= hint here, inside the client subtree, is what lets
 // the page stay statically prerendered (WAIT-08). The parent wraps this component in a
