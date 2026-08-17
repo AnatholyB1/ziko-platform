@@ -11,6 +11,7 @@ export async function Footer() {
       terms={t('terms')}
       cgv={t('cgv')}
       deleteAccount={t('deleteAccount')}
+      founders={t('founders')}
     />
   )
 }
