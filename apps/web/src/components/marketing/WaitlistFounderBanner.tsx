@@ -13,6 +13,10 @@ export async function WaitlistFounderBanner({ locale }: Props) {
       locale={locale}
       heroHeadline={t('hero.headline')}
       heroSubtitle={t('hero.subtitle')}
+      counterStaticOffer={t('counter.preThreshold')}
+      counterRemainingTemplate={t('counter.remaining')}
+      counterCompleteHeading={t('counter.completeHeading')}
+      counterCompleteBody={t('counter.completeBody')}
       pickerHeading={t('picker.heading')}
       pickerAthlete={t('picker.athlete')}
       pickerCoach={t('picker.coach')}

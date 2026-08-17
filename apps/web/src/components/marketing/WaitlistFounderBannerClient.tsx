@@ -4,11 +4,16 @@ import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { fadeUp } from '@/lib/motion'
 import { WaitlistRoleForm } from './WaitlistRoleForm'
+import { WaitlistCounterClient } from './WaitlistCounterClient'
 
 type Props = {
   locale: string
   heroHeadline: string
   heroSubtitle: string
+  counterStaticOffer: string
+  counterRemainingTemplate: string
+  counterCompleteHeading: string
+  counterCompleteBody: string
   pickerHeading: string
   pickerAthlete: string
   pickerCoach: string
@@ -38,6 +43,10 @@ export function WaitlistFounderBannerClient({
   locale,
   heroHeadline,
   heroSubtitle,
+  counterStaticOffer,
+  counterRemainingTemplate,
+  counterCompleteHeading,
+  counterCompleteBody,
   pickerHeading,
   pickerAthlete,
   pickerCoach,
@@ -57,7 +66,14 @@ export function WaitlistFounderBannerClient({
     <>
       <section className="py-20 bg-background">
         <div className="max-w-screen-xl mx-auto px-8 text-center">
-          {/* Plan 05-03 mounts the live "spots remaining" counter widget here. */}
+          <div className="mb-6 flex justify-center">
+            <WaitlistCounterClient
+              staticOfferSentence={counterStaticOffer}
+              remainingTemplate={counterRemainingTemplate}
+              completeHeading={counterCompleteHeading}
+              completeBody={counterCompleteBody}
+            />
+          </div>
           <motion.h1
             variants={fadeUp}
             initial="hidden"
