@@ -34,8 +34,8 @@ Project already declares a spacing scale in `packages/ui/src/components.tsx` —
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon-to-text gaps inside badges |
-| sm | 8px | Attribution badge padding, compact gaps |
+| xs | 4px | Icon-to-text gaps inside badges, attribution badge vertical padding |
+| sm | 8px | Attribution badge horizontal padding, corner offsets, missing-media caption top margin, compact gaps |
 | md | 16px | Screen horizontal padding, default element spacing |
 | lg | 24px | Section padding |
 | xl | 32px | Layout gaps |
@@ -44,19 +44,20 @@ Project already declares a spacing scale in `packages/ui/src/components.tsx` —
 Exceptions:
 - `ExercisePicker` row gap and checkbox size (22×22, `borderRadius: 6`) are pre-existing non-4pt values in the touched file — **do not change them**, only insert the new 40×40 thumbnail alongside them using the row's existing `gap: 12` (already a project value, kept for consistency rather than forced onto the packages/ui scale).
 - Attribution badge corner offset uses `8px` (spacing.sm) from both edges — see Component Specifications.
+- All new spacing values introduced by this phase (`<AttributedMedia>` badge `paddingVertical: 4`, missing-media caption `marginTop: 8`) are on-grid (spacing.xs / spacing.sm) — no further exceptions required.
 
 ---
 
 ## Typography
 
-Reuses the file's existing inline scale — no new type ramp introduced by this phase.
+Reuses the file's existing inline scale — no new type ramp introduced by this phase. Exactly **two** weights are used across all touched/new elements: **400 (regular)** for body copy and **700 (bold)** for labels, stats, and the attribution/caption text.
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body (instructions/cues, picker row subtitle) | 12px | 400 | 18px (1.5) |
 | Label (row title, stat labels) | 12–13px | 700 | default |
 | Heading (screen title, via `WSHeader`) | unchanged — not touched this phase | — | — |
-| Caption (attribution badge text, missing-media caption) | 9–10px | 600 | default (single line) |
+| Caption (attribution badge text, missing-media caption) | 9–11px | 700 | default (single line) |
 
 ---
 
@@ -149,15 +150,15 @@ Badge visual spec (locked pixel values — this is the concrete answer to CONTEX
 position: absolute
 bottom: 8            // spacing.sm
 right: 8              // spacing.sm — mirrors where the old "HD" badge sat (D-04)
-paddingHorizontal: 8
-paddingVertical: 3
+paddingHorizontal: 8  // spacing.sm
+paddingVertical: 4    // spacing.xs
 borderRadius: 6       // rounded rect, not a full pill — the credit string is long, a pill reads oddly at this length
 backgroundColor: 'rgba(28,26,23,0.55)'   // theme.cardDark at 55% — dark-neutral overlay reads on any underlying image color, matches the "semi-transparent" instruction in D-04
 ```
 Text:
 ```
 fontSize: 9
-fontWeight: '600'
+fontWeight: '700'
 color: '#FFFAF6'      // theme.cardDarkText
 letterSpacing: 0
 numberOfLines: 1
@@ -198,7 +199,7 @@ Hero size (inside the 1:1 card from §1):
 Icon: barbell-outline, size 48, color theme.muted (#6B6963)
 Container: fills the full square slot, centered (alignItems/justifyContent: 'center')
 Background: theme.surface (inherits the card's existing background — no separate fill needed)
-Optional caption below icon: "Aperçu indisponible" / "Preview unavailable", fontSize 11, color theme.muted, marginTop 6
+Optional caption below icon: "Aperçu indisponible" / "Preview unavailable", fontSize 11, fontWeight 700, color theme.muted, marginTop 8  // spacing.sm
 ```
 List-row thumbnail size (40×40 slot):
 ```
