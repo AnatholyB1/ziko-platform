@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useThemeStore } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
+import { AttributedMedia } from '@ziko/ui';
 import { supabase } from '../../../../src/lib/supabase';
 import WSHeader from '../../../../src/components/WSHeader';
 import ExercisePicker from '../../../../src/components/ExercisePicker';
@@ -31,7 +32,7 @@ export default function ExerciseDetailScreen() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['exercise', exerciseId],
+    queryKey: ['exercises', 'v2', exerciseId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('exercises')
@@ -43,6 +44,10 @@ export default function ExerciseDetailScreen() {
     },
     enabled: !!exerciseId,
   });
+
+  const publicGifUrl = exercise?.gif
+    ? supabase.storage.from('exercise-media').getPublicUrl(exercise.gif).data.publicUrl
+    : null;
 
   // Fetch user session for userId
   const { data: sessionData } = useQuery({
@@ -197,103 +202,25 @@ export default function ExerciseDetailScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: 'timing', duration: 200 }}
         >
-          {/* 16:9 Video Placeholder */}
+          {/* Hero media card — attributed square GIF */}
           <View
             style={{
               borderRadius: 14,
-              aspectRatio: 16 / 9,
+              aspectRatio: 1,
               overflow: 'hidden',
-              position: 'relative',
-              backgroundColor: '#1C1A17',
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.border,
+              shadowColor: theme.text,
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 2 },
+              elevation: 3,
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {/* Diagonal pattern overlay */}
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(255,92,26,0.04)',
-              }}
-            />
-            {/* Play button */}
-            <View
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <View
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 999,
-                  backgroundColor: 'rgba(255,250,246,0.92)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#000',
-                  shadowOpacity: 0.5,
-                  shadowRadius: 28,
-                  shadowOffset: { width: 0, height: 8 },
-                  elevation: 12,
-                }}
-              >
-                <Ionicons name="play" size={22} color="#1C1A17" />
-              </View>
-            </View>
-            {/* Top-left badge */}
-            <View
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: 12,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: 999,
-                  backgroundColor: 'rgba(28,26,23,0.7)',
-                  color: '#FFFAF6',
-                  fontWeight: '700',
-                  overflow: 'hidden',
-                }}
-              >
-                Démo · 0:42
-              </Text>
-            </View>
-            {/* Bottom-right badge */}
-            <View
-              style={{
-                position: 'absolute',
-                right: 12,
-                bottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 10,
-                  paddingHorizontal: 8,
-                  paddingVertical: 3,
-                  borderRadius: 999,
-                  backgroundColor: 'rgba(255,250,246,0.12)',
-                  color: '#FFFAF6',
-                  fontWeight: '700',
-                  overflow: 'hidden',
-                }}
-              >
-                HD
-              </Text>
-            </View>
+            <AttributedMedia uri={publicGifUrl} showBadge />
           </View>
 
           {/* 3 Stat tiles */}
