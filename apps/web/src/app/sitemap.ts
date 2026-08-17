@@ -5,6 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 const pages = [
   { path: '', changeFrequency: 'weekly' as const, priority: 1.0 },
+  { path: '/fondateurs', changeFrequency: 'daily' as const, priority: 0.9 },
   { path: '/mentions-legales', changeFrequency: 'monthly' as const, priority: 0.3 },
   { path: '/politique-de-confidentialite', changeFrequency: 'monthly' as const, priority: 0.3 },
   { path: '/cgu', changeFrequency: 'monthly' as const, priority: 0.3 },
