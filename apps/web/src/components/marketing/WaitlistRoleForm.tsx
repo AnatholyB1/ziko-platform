@@ -1,11 +1,20 @@
 'use client'
 
-import { startTransition, useActionState, useState } from 'react'
+import { startTransition, useActionState, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { track } from '@vercel/analytics'
 import { IoBarbellOutline, IoPeopleOutline, IoCheckmarkCircle } from 'react-icons/io5'
 import { claimWaitlistSpot, type WaitlistState } from '@/actions/waitlist'
 import { fadeUp, ctaHover, ctaTap } from '@/lib/motion'
+
+// ENTRY-06 — the client half of conversion measurement. The event name is a stable
+// literal and the payload carries exactly one property: the chosen audience. Never
+// the email address, the founder rank, or any other value — the point-of-collection
+// notice tells visitors their address is used to run the offer, not to feed an
+// analytics endpoint, and the rank is the one fact the whole non-disclosure design
+// (Phase 1 D-03/D-04) exists to protect.
+const WAITLIST_SIGNUP_EVENT = 'waitlist_signup'
 
 type Role = 'athlete' | 'coach'
 
@@ -79,6 +88,18 @@ export function WaitlistRoleForm(props: Props) {
   const [state, formAction, pending] = useActionState(claimWaitlistSpot, initialState)
 
   const canSubmit = role !== null && consent && !pending
+
+  // Fires once per successful submission, on the transition into the success state —
+  // guarded by a ref (in addition to the effect's own dependency array) so the
+  // success panel's own re-renders never re-fire it, and a React 19 Strict Mode
+  // double-invoke in development can't double-count a real signup either.
+  const trackedRef = useRef(false)
+  useEffect(() => {
+    if (state.status === 'success' && role !== null && !trackedRef.current) {
+      trackedRef.current = true
+      track(WAITLIST_SIGNUP_EVENT, { audience: role })
+    }
+  }, [state.status, role])
 
   if (state.status === 'success') {
     const sentence = state.isFounder

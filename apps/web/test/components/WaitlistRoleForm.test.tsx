@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSearchParams } from 'next/navigation';
+import { track } from '@vercel/analytics';
 import { claimWaitlistSpot } from '@/actions/waitlist';
 import { CONSENT_CHECKBOX_LABEL, COLLECTION_POINT_NOTICE } from '@/content/legal/founder-offer';
 import { WaitlistRoleForm } from '@/components/marketing/WaitlistRoleForm';
@@ -21,8 +22,15 @@ vi.mock('@/actions/waitlist', () => ({
   claimWaitlistSpot: vi.fn(),
 }));
 
+// ENTRY-06 (T-05-12) — the tracking function is a spy so the conversion-event
+// cases can assert exactly what is sent and exactly how many times.
+vi.mock('@vercel/analytics', () => ({
+  track: vi.fn(),
+}));
+
 const mockedUseSearchParams = vi.mocked(useSearchParams);
 const mockedClaimWaitlistSpot = vi.mocked(claimWaitlistSpot);
+const mockedTrack = vi.mocked(track);
 
 function setSearchParams(query = '') {
   mockedUseSearchParams.mockReturnValue(
@@ -246,5 +254,130 @@ describe('WaitlistRoleForm', () => {
     const localeInput = container.querySelector('input[name="locale"]') as HTMLInputElement;
     expect(audienceInput.value).toBe('coach');
     expect(localeInput.value).toBe('fr');
+  });
+
+  describe('conversion event (T-05-12, ENTRY-06)', () => {
+    it('calls the tracking spy exactly once when a submission resolves to a success state', async () => {
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'success',
+        isFounder: false,
+        founderRank: null,
+        message: 'Inscription confirmée.',
+        code: null,
+      });
+      const user = userEvent.setup();
+      render(<WaitlistRoleForm {...frProps} />);
+      await user.click(screen.getByRole('button', { name: frProps.pickerAthlete }));
+      await user.type(screen.getByLabelText(frProps.emailLabel), 'visitor@example.com');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: frProps.submitLabel }));
+
+      await screen.findByText(frProps.successGeneric);
+      expect(mockedTrack).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses a stable event-name literal and a payload whose key set is exactly one key, the chosen audience', async () => {
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'success',
+        isFounder: false,
+        founderRank: null,
+        message: 'Inscription confirmée.',
+        code: null,
+      });
+      const user = userEvent.setup();
+      render(<WaitlistRoleForm {...frProps} />);
+      await user.click(screen.getByRole('button', { name: frProps.pickerCoach }));
+      await user.type(screen.getByLabelText(frProps.emailLabel), 'visitor@example.com');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: frProps.submitLabel }));
+
+      await screen.findByText(frProps.successGeneric);
+      const [eventName, payload] = mockedTrack.mock.calls[0];
+      expect(eventName).toBe('waitlist_signup');
+      // Key-set equality, not presence — a payload leaking the email address
+      // beside the audience would still pass a `toHaveProperty` presence check.
+      expect(Object.keys(payload ?? {}).sort()).toEqual(['audience']);
+      expect(payload).toEqual({ audience: 'coach' });
+    });
+
+    it('does not re-fire the event on a re-render while already in the success state', async () => {
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'success',
+        isFounder: false,
+        founderRank: null,
+        message: 'Inscription confirmée.',
+        code: null,
+      });
+      const user = userEvent.setup();
+      const { rerender } = render(<WaitlistRoleForm {...frProps} />);
+      await user.click(screen.getByRole('button', { name: frProps.pickerAthlete }));
+      await user.type(screen.getByLabelText(frProps.emailLabel), 'visitor@example.com');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: frProps.submitLabel }));
+      await screen.findByText(frProps.successGeneric);
+
+      expect(mockedTrack).toHaveBeenCalledTimes(1);
+      rerender(<WaitlistRoleForm {...frProps} />);
+      expect(mockedTrack).toHaveBeenCalledTimes(1);
+    });
+
+    it('never fires the event when a submission resolves to an error state', async () => {
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'error',
+        isFounder: false,
+        founderRank: null,
+        message: '',
+        code: 'server_error',
+      });
+      const user = userEvent.setup();
+      render(<WaitlistRoleForm {...frProps} />);
+      await user.click(screen.getByRole('button', { name: frProps.pickerAthlete }));
+      await user.type(screen.getByLabelText(frProps.emailLabel), 'visitor@example.com');
+      await user.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('button', { name: frProps.submitLabel }));
+
+      await screen.findByText(frProps.errorGeneric);
+      expect(mockedTrack).not.toHaveBeenCalled();
+    });
+
+    it('emits the same event and key set on the founder branch as on the generic branch — founder status never leaks', async () => {
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'success',
+        isFounder: true,
+        founderRank: 7,
+        message: 'Inscription confirmée.',
+        code: null,
+      });
+      const founderRun = userEvent.setup();
+      const { unmount } = render(<WaitlistRoleForm {...frProps} />);
+      await founderRun.click(screen.getByRole('button', { name: frProps.pickerAthlete }));
+      await founderRun.type(screen.getByLabelText(frProps.emailLabel), 'founder@example.com');
+      await founderRun.click(screen.getByRole('checkbox'));
+      await founderRun.click(screen.getByRole('button', { name: frProps.submitLabel }));
+      await screen.findByText(/n°7/);
+      const founderPayload = mockedTrack.mock.calls[0][1];
+      unmount();
+
+      mockedClaimWaitlistSpot.mockResolvedValueOnce({
+        status: 'success',
+        isFounder: false,
+        founderRank: null,
+        message: 'Inscription confirmée.',
+        code: null,
+      });
+      const genericRun = userEvent.setup();
+      render(<WaitlistRoleForm {...frProps} />);
+      await genericRun.click(screen.getByRole('button', { name: frProps.pickerAthlete }));
+      await genericRun.type(screen.getByLabelText(frProps.emailLabel), 'generic@example.com');
+      await genericRun.click(screen.getByRole('checkbox'));
+      await genericRun.click(screen.getByRole('button', { name: frProps.submitLabel }));
+      await screen.findByText(frProps.successGeneric);
+      const genericPayload = mockedTrack.mock.calls[1][1];
+
+      expect(Object.keys(founderPayload ?? {}).sort()).toEqual(['audience']);
+      expect(Object.keys(genericPayload ?? {}).sort()).toEqual(['audience']);
+      expect(founderPayload).toEqual(genericPayload);
+      expect(mockedTrack.mock.calls[0][0]).toBe(mockedTrack.mock.calls[1][0]);
+    });
   });
 });

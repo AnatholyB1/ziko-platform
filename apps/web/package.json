@@ -16,6 +16,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/analytics": "^2.0.1",
     "@vidstack/react": "^1.15.1",
     "@ziko/coach-sdk": "^0.1.0",
     "botid": "1.5.11",
