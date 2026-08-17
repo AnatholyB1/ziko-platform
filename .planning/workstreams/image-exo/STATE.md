@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Exercise Library Import
-status: verifying
-stopped_at: Phase 3 plan 06 complete (real merge run + verification); Phase 3 done
-last_updated: "2026-08-16T20:43:50.051Z"
+status: ready_to_plan
+stopped_at: Phase 3 complete (6/6) — ready to discuss Phase 4
+last_updated: 2026-08-17T09:20:18.290Z
 last_activity: 2026-08-16
 progress:
   total_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/image-exo/REQUIREMENTS.md
 
 **Core value:** Coaches et athlètes disposent d'une bibliothèque d'exercices fiable et complète — données riches, GIFs et thumbnails réels et self-hébergés, sans dépendance à un CDN tiers cassé.
-**Current focus:** Phase 3 — Merge (Human-Approved Write)
+**Current focus:** Phase 4 — mobile consumption & attribution
 
 ## Current Position
 
-Phase: 3 (Merge (Human-Approved Write)) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-08-16
+Phase: 4
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-17
 
 Progress: [██████████] 100%
 

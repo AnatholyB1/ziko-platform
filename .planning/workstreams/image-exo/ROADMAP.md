@@ -96,7 +96,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Schema & Storage Foundation | 1/1 | Complete    | 2026-08-14 |
 | 2. Download & Match (Dry-Run) | 6/6 | Complete    | 2026-08-15 |
-| 3. Merge (Human-Approved Write) | 6/6 | Complete   | 2026-08-16 |
+| 3. Merge (Human-Approved Write) | 6/6 | Complete    | 2026-08-17 |
 | 4. Mobile Consumption & Attribution | 0/TBD | Not started | - |
 
 ---
