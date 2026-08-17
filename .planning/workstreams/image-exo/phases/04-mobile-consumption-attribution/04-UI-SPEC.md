@@ -1,7 +1,7 @@
 ---
 phase: 4
 slug: mobile-consumption-attribution
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-08-17
@@ -231,11 +231,11 @@ When both `instruction_steps` and the legacy `instructions`/`instructions_fr` TE
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS (fixed in revision 1 — Caption weight collapsed 600→700, 2 weights total)
+- [x] Dimension 5 Spacing: PASS (fixed in revision 1 — badge paddingVertical 3→4, caption marginTop 6→8, both on 4pt grid)
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-08-17 (gsd-ui-checker, after 1 revision round)
