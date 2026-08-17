@@ -245,7 +245,7 @@ entry point on the site.
      link renders a correct social preview; the page is indexable and present in the sitemap; and
      its signups are measurable as conversions (ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05,
      ENTRY-06)
-**Plans**: 1/6 plans executed
+**Plans**: 2/6 plans executed
 Plans:
 **Wave 1**
 
@@ -253,7 +253,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02-PLAN.md — Package legitimacy gate, then honeypot/bot/rate-limit/syntax/disposable-domain guards, consent recording, and UTM attribution on the submission path
+- [x] 05-02-PLAN.md — Package legitimacy gate, then honeypot/bot/rate-limit/syntax/disposable-domain guards, consent recording, and UTM attribution on the submission path
 - [ ] 05-03-PLAN.md — Counter Route Handler over the service-role RPC, and the three-state counter widget mounted on the founders hero
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -314,5 +314,5 @@ being complete.
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
-| 5. Waitlist Page & Entry Points | 1/6 | In Progress|  |
+| 5. Waitlist Page & Entry Points | 2/6 | In Progress|  |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |

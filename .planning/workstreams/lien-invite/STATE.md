@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 04
 current_phase_name: Credit-Gate Alignment
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-08-17T12:56:12.608Z"
+stopped_at: Phase 5 plan 02 complete
+last_updated: "2026-08-17T17:53:36.735Z"
 last_activity: 2026-08-16
 last_activity_desc: Phase 04 execution started
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 20
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -171,9 +171,9 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-17T12:56:12.579Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-08-17T17:53:36.591Z
+Stopped at: Phase 5 plan 02 complete
 6 phases total (Data Foundation ✓, Test-Account Purge, Legal, Credit-Gate Alignment, Waitlist Page
 & Entry Points, Founder Offer Go-Live). Phase 2 and Phase 3 have no dependency on Phase 1 and are
 both unblocked — either can start next via `/gsd-discuss-phase 2` or `/gsd-discuss-phase 3`.
-Resume file: None
+Resume file: .planning/workstreams/lien-invite/phases/05-waitlist-page-entry-points/05-03-PLAN.md
