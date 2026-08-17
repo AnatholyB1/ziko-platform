@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Exercise Library Import
 status: planning
-stopped_at: Phase 4 context gathered — ready for UI-phase
-last_updated: "2026-08-17T12:46:32.067Z"
+stopped_at: Phase 4 UI-SPEC approved
+last_updated: "2026-08-17T12:58:55.539Z"
 last_activity: 2026-08-17
 progress:
   total_phases: 4
@@ -56,6 +56,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-17T12:46:32.050Z
-Stopped at: Phase 4 context gathered — ready for UI-phase
-Resume file: .planning/workstreams/image-exo/phases/04-mobile-consumption-attribution/04-CONTEXT.md
+Last session: 2026-08-17T12:58:55.529Z
+Stopped at: Phase 4 UI-SPEC approved
+Resume file: .planning/workstreams/image-exo/phases/04-mobile-consumption-attribution/04-UI-SPEC.md
