@@ -17,6 +17,12 @@
       "ctaPlayStore": "Get it on Google Play",
       "ctaCoach": "Are you a coach? Access the coach space"
     },
+    "founders": {
+      "heading": "200 founder spots, lifetime premium",
+      "subheading": "Athletes and coaches: the first 200 people on the waitlist get lifetime premium on Ziko.",
+      "button": "Become a founder →",
+      "note": "Free to join, no commitment."
+    },
     "howItWorks": {
       "heading": "How it works",
       "step1": {
@@ -288,8 +294,8 @@
       "badge": "Private beta · 100% free",
       "headline": "The AI-powered coaching CRM",
       "subtitle": "Manage your clients, analyze their real-time data, and generate programs with AI. Free in private beta — the future ERP for fitness coaches.",
-      "cta": "Join the private beta",
-      "ctaNote": "No credit card required"
+      "cta": "Join the founders waitlist",
+      "ctaNote": "200 founder spots available"
     },
     "video": {
       "heading": "See Ziko in action",
@@ -370,8 +376,8 @@
     "cta": {
       "heading": "Join the first coaches on Ziko.",
       "subheading": "Open private beta — 100% free, no commitment.",
-      "button": "Join the private beta",
-      "note": "No credit card required"
+      "button": "Join the founders waitlist",
+      "note": "200 founder spots, lifetime premium"
     }
   },
   "fondateurs": {
