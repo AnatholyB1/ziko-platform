@@ -31,3 +31,4 @@ export { PRStatCard } from './components/PRStatCard';
 export { ProfileHero } from './components/ProfileHero';
 export { EmptyState } from './components/EmptyState';
 export { ErrorScreen } from './components/ErrorScreen';
+export { AttributedMedia } from './components/AttributedMedia';
