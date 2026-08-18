@@ -24,8 +24,20 @@
 
 No source files modified in Task 1 (read-only verification, as required).
 
-## Task 2: Manual Device Verification — AWAITING DEVELOPER
+## Task 2: Manual Device Verification — PASS (8/8)
 
-Blocking checkpoint. Per the plan's explicit instruction, this is not self-approved and is not inferred from Task 1's static sweep. Awaiting the developer to run the app and walk the 8-point checklist in `04-04-PLAN.md`'s `<how-to-verify>` block.
+Blocking checkpoint. The developer ran the app on a device/simulator and walked the 8-point checklist below, then replied "approved" (unqualified approval of all 8 checks).
 
-Resume signal: developer replies "approved" or lists observed issues (screen + exercise + observed-vs-expected).
+| # | Requirement | Check | Result |
+|---|---|---|---|
+| 1 | MOBILE-01 | Hero is full-width square card, real GIF plays ~180×180 centered, animates continuously, no play button/HD badge/duration text | PASS |
+| 2 | MOBILE-03 | Attribution badge "© Gym visual — https://gymvisual.com/" legible, bottom-right, one line, appears exactly once on screen | PASS |
+| 3 | MOBILE-04 | Consignes tab renders numbered steps with orange circled numbers, real sentence content, no JSON parse errors in console | PASS |
+| 4 | MOBILE-05 | Switching locale FR↔EN updates screen title and instruction steps correctly | PASS |
+| 5 | MOBILE-02 | ExercisePicker rows show 40x40 rounded-square static thumbnail left of checkbox, uniform alignment | PASS |
+| 6 | D-06 | No attribution badge on any ExercisePicker row thumbnail — **confirmed intentional per CONTEXT.md D-06 (once-per-screen attribution), not a defect** | PASS |
+| 7 | D-07/D-08 | Custom (`is_custom=true`) exercise with no media shows barbell-outline placeholder + "Aperçu indisponible" caption, no badge, uniform slot in both hero and picker row | PASS |
+| 8 | MOBILE-04 fallback | Custom exercise instructions render as plain paragraph (or empty state) via the legacy-text fallback path | PASS |
+
+**Developer response:** "approved"
+**Outcome:** All 8 manual checks pass. No issues found. Phase 4 requirements MOBILE-01 through MOBILE-06 are confirmed working on a real device/simulator build.
