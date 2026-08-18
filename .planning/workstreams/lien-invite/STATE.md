@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
-current_phase: 05
-current_phase_name: Waitlist Page & Entry Points
+current_phase: 6
+current_phase_name: Founder Offer Go-Live
 status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-08-18T10:58:11.905Z"
+last_updated: "2026-08-18T11:00:46.171Z"
 last_activity: 2026-08-18
 last_activity_desc: Phase 05 plan 06 (merged-tree convergence gate + human UI safety checkpoint) execution complete — Phase 5 done, 6/6 plans
 progress:
@@ -25,15 +25,15 @@ See: .planning/workstreams/lien-invite/PROJECT.md context inherited from root .p
 **Core value:** Capturer les emails des personnes intéressées par l'accès anticipé à Ziko, athlètes
 comme coachs, et tenir une promesse « premium à vie » pour les 200 premiers qui soit vraie dans le
 contrat comme dans le code.
-**Current focus:** Phase 05 — Waitlist Page & Entry Points (now complete)
+**Current focus:** Phase 6 — Founder Offer Go-Live
 Phase 5 (Waitlist Page & Entry Points) is complete, 6/6 plans; Phase 6 (Founder Offer Go-Live)
 depends on Phases 2, 3, 4, and 5 all being complete per ROADMAP.md and is now unblocked, not yet started.
 
 ## Current Position
 
-Phase: 05 (Waitlist Page & Entry Points) — COMPLETE (6/6 plans)
-Plan: 6 of 6 (05-06, the merged-tree convergence gate + human UI safety checkpoint, complete)
-Status: All four waves done. T-05-13 (merged-tree convergence gate) and T-05-14 (human UI safety
+Phase: 6 (Founder Offer Go-Live) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 6
 checkpoint) both closed — T-05-14 approved by the real user 2026-08-18, with a locale-propagation
 bug found during the walkthrough fixed and re-verified (commit 137a562), and two disclosed,
 user-accepted gaps (real-submission success/duplicate states; FOND-06 live counter-reveal
@@ -51,7 +51,7 @@ suites on future PRs.
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-18 — Phase 05 plan 06 (merged-tree convergence gate + human UI safety
+Last activity: 2026-08-18 — Phase 6 execution started
 checkpoint) execution complete. WAIT-01 through ENTRY-06 (19 requirements, all of Phase 5) marked
 complete in REQUIREMENTS.md; ROADMAP.md Phase 5 marked Complete, 6/6 plans, 2026-08-18.
 
