@@ -29,5 +29,8 @@ com.facebook.react.devsupport.*
 .planning/**/.planner-contributions.md
 .planning/**/.edge-coverage.json
 
+# GSD dispatch-isolation sentinel — transient, session-local runtime state, regenerable
+.gsd/
+
 # Test-account purge exports — real account emails, must never be committed (phase 02)
 scripts/purge-test-accounts/exports/
