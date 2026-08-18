@@ -1,10 +1,11 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline } from 'react-icons/io5';
+import { IoCloudUploadOutline, IoCloseOutline, IoDocumentOutline, IoGridOutline, IoReaderOutline, IoCheckmarkCircleOutline, IoRefreshOutline } from 'react-icons/io5';
 
 type FileStatus = 'uploading' | 'parsing' | 'ready' | 'failed';
 type DocType = 'da_coach' | 'template_programme';
+type CommitStatus = 'pending' | 'committed' | 'failed';
 type FileState = {
   id: string;
   file: File;
@@ -13,6 +14,9 @@ type FileState = {
   errorMessage?: string;
   docType?: DocType;
   clarificationPending?: boolean;
+  parsedData?: Record<string, unknown>;
+  commitStatus?: CommitStatus;
+  commitError?: string;
 };
 type ChatMessage =
   | { id: string; kind: 'ia-template-summary'; fileId: string; name: string; weeks: number; sessions: number | null }
@@ -70,6 +74,8 @@ export function WizardStep4Import({
   const [fileStates, setFileStates] = useState<FileState[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [view, setView] = useState<'import' | 'review'>('import');
+  const [reviewPhase, setReviewPhase] = useState<'editing' | 'committing' | 'done'>('editing');
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const pipelineStartedRef = useRef<Set<string>>(new Set());
@@ -85,6 +91,12 @@ export function WizardStep4Import({
         (f.status === 'ready' && Boolean(f.docType) && !f.clarificationPending),
     ) &&
     fileStates.some((f) => f.status === 'ready');
+
+  const reviewDocs = fileStates.filter((f) => f.status === 'ready');
+  const committableCount = reviewDocs.filter((f) => f.docType === 'template_programme').length;
+  const committedCount = reviewDocs.filter(
+    (f) => f.docType === 'template_programme' && f.commitStatus === 'committed',
+  ).length;
 
   // Cleanup all polling intervals and abort controllers on unmount
   useEffect(() => {
@@ -266,12 +278,13 @@ export function WizardStep4Import({
           clearInterval(handle);
           intervalsRef.current.delete(fileId);
           if (importRow.status === 'ready') {
+            const rawParsedData = importRow.parsed_data as unknown as Record<string, unknown> | undefined;
             const confidence = importRow.parsed_data?.overall_confidence;
             if (confidence == null) {
               // Unknown confidence — treat as ambiguous, require user clarification
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true, parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -282,7 +295,7 @@ export function WizardStep4Import({
               // Low confidence for template → classify as da_coach
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach' } : f,
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'da_coach', parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -296,7 +309,7 @@ export function WizardStep4Import({
               const sessions = importRow.parsed_data?.weeks?.[0]?.sessions?.length ?? null;
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme' } : f,
+                  f.id === fileId ? { ...f, status: 'ready', docType: 'template_programme', parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -307,7 +320,7 @@ export function WizardStep4Import({
               // Ambiguous: 0.4 <= confidence < 0.6
               setFileStates((prev) =>
                 prev.map((f) =>
-                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true } : f,
+                  f.id === fileId ? { ...f, status: 'ready', clarificationPending: true, parsedData: rawParsedData } : f,
                 ),
               );
               setChatMessages((prev) => [
@@ -345,6 +358,24 @@ export function WizardStep4Import({
     });
   }, [fileStates, runPipeline]);
 
+  // Completion effect (D-10): once every committable doc reaches commitStatus 'committed', move to 'done'.
+  // Split into two effects (transition, then redirect) so that setReviewPhase('done') below does not
+  // retrigger this same effect via the `reviewPhase` dependency and clear its own just-scheduled timer.
+  useEffect(() => {
+    if (reviewPhase !== 'committing') return;
+    const committable = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
+    const allDone = committable.every((f) => f.commitStatus === 'committed');
+    if (!allDone) return;
+    setReviewPhase('done');
+  }, [fileStates, reviewPhase]);
+
+  // Auto-redirect effect (D-10): once 'done', fire onSuccess exactly 1500ms later.
+  useEffect(() => {
+    if (reviewPhase !== 'done') return;
+    const timer = setTimeout(onSuccess, 1500);
+    return () => clearTimeout(timer);
+  }, [reviewPhase, onSuccess]);
+
   function handleClarification(fileId: string, chosenType: DocType): void {
     setFileStates((prev) =>
       prev.map((f) =>
@@ -356,6 +387,87 @@ export function WizardStep4Import({
       { id: crypto.randomUUID(), kind: 'coach-reply', fileId, docType: chosenType },
       { id: crypto.randomUUID(), kind: 'ia-confirmation', fileId },
     ]);
+  }
+
+  function setDocType(fileId: string, next: DocType): void {
+    setFileStates((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, docType: next, clarificationPending: false, commitError: undefined, commitStatus: undefined }
+          : f,
+      ),
+    );
+  }
+
+  async function commitDoc(fileId: string, fileState: FileState): Promise<boolean> {
+    if (!fileState.importId || !fileState.parsedData) {
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+        ),
+      );
+      return false;
+    }
+    try {
+      const res = await fetch(`${apiUrl}/coach/imports/${fileState.importId}/commit`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({ parsed_data: fileState.parsedData }),
+      });
+      if (res.status === 409) {
+        const body = await res.json().catch(() => ({} as { program_id?: string }));
+        if (body.program_id) {
+          setFileStates((prev) =>
+            prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'committed' } : f)),
+          );
+          return true;
+        }
+      }
+      if (!res.ok) {
+        setFileStates((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+          ),
+        );
+        return false;
+      }
+      setFileStates((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'committed', commitError: undefined } : f)),
+      );
+      return true;
+    } catch {
+      setFileStates((prev) =>
+        prev.map((f) =>
+          f.id === fileId ? { ...f, commitStatus: 'failed', commitError: t('step4CommitError') } : f,
+        ),
+      );
+      return false;
+    }
+  }
+
+  async function handleConfirm(): Promise<void> {
+    setReviewPhase('committing');
+    const toCommit = fileStates.filter((f) => f.status === 'ready' && f.docType === 'template_programme');
+    setFileStates((prev) =>
+      prev.map((f) =>
+        f.status === 'ready' && f.docType === 'template_programme'
+          ? { ...f, commitStatus: 'pending', commitError: undefined }
+          : f,
+      ),
+    );
+    await Promise.all(toCommit.map((f) => commitDoc(f.id, f)));
+  }
+
+  function retryCommit(fileId: string): void {
+    const fileState = fileStates.find((f) => f.id === fileId);
+    if (!fileState) return;
+    setFileStates((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, commitStatus: 'pending', commitError: undefined } : f)),
+    );
+    void commitDoc(fileId, fileState);
   }
 
   function formatBytes(bytes: number): string {
@@ -421,6 +533,114 @@ export function WizardStep4Import({
     e.stopPropagation();
     setIsDragOver(false);
     handleFiles(e.dataTransfer.files);
+  }
+
+  if (view === 'review') {
+    if (reviewPhase === 'done') {
+      return (
+        <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
+          <div className="flex flex-col items-center justify-center gap-3 py-8">
+            <IoCheckmarkCircleOutline className="w-6 h-6 text-primary" />
+            <p className="text-xl font-bold text-text">{t('step4CommitSuccess', { count: committedCount })}</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="bg-white rounded-2xl p-8 border border-border shadow-sm">
+        <h2 className="text-xl font-bold text-text mb-2">{t('step4ReviewHeading')}</h2>
+        <p className="text-sm font-normal text-muted mb-6">{t('step4ReviewSubtitle')}</p>
+
+        <div className="flex flex-col gap-2">
+          {reviewDocs.map((fileState) => (
+            <div key={fileState.id} className="flex flex-col gap-1">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-white">
+                <div className="shrink-0 text-muted">{getFileIcon(fileState.file.name)}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-normal text-text truncate">{fileState.file.name}</p>
+                  <p className="text-xs text-muted">{formatBytes(fileState.file.size)}</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setDocType(fileState.id, 'template_programme')}
+                    disabled={reviewPhase !== 'editing'}
+                    className={`px-3 py-2 rounded-full border text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+                      fileState.docType === 'template_programme'
+                        ? 'border-primary text-primary bg-primary/10'
+                        : 'border-border text-text hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {t('step4PillTemplate')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDocType(fileState.id, 'da_coach')}
+                    disabled={reviewPhase !== 'editing'}
+                    className={`px-3 py-2 rounded-full border text-sm font-bold transition-colors disabled:opacity-50 disabled:pointer-events-none ${
+                      fileState.docType === 'da_coach'
+                        ? 'border-primary text-primary bg-primary/10'
+                        : 'border-border text-text hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {t('step4PillDaCoach')}
+                  </button>
+                </div>
+                {fileState.docType === 'da_coach' && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-surface-alt text-muted border border-border">
+                    {t('step4ReviewNoAction')}
+                  </span>
+                )}
+                {fileState.docType === 'template_programme' && fileState.commitStatus === 'pending' && (
+                  <div className="shrink-0 text-muted">
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+              {fileState.commitStatus === 'failed' && (
+                <div className="flex items-center gap-2 pl-3">
+                  <p className="text-xs text-red-500">{t('step4CommitError')}</p>
+                  <button
+                    type="button"
+                    onClick={() => retryCommit(fileState.id)}
+                    title={t('step4CommitRetryAria')}
+                    className="h-8 px-3 rounded-lg border border-border text-xs font-bold text-text hover:border-primary hover:text-primary transition-colors inline-flex items-center gap-1"
+                  >
+                    <IoRefreshOutline className="w-3 h-3" />
+                    {t('step4CommitRetry')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-sm font-bold text-primary text-right mt-6">
+          {t('step4ReviewCount', { count: committableCount })}
+        </p>
+
+        <div className="flex gap-3 mt-8 justify-end items-center">
+          <button
+            type="button"
+            onClick={onSkip}
+            className="h-11 px-4 text-sm font-normal text-muted hover:text-text transition-colors"
+          >
+            {t('step4Skip')}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={reviewPhase === 'committing'}
+            className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:pointer-events-none inline-flex items-center gap-2"
+          >
+            {reviewPhase === 'committing' && (
+              <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            )}
+            {t('step4ReviewConfirm')}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -590,7 +810,7 @@ export function WizardStep4Import({
         {canAdvance && (
           <button
             type="button"
-            onClick={onSuccess}
+            onClick={() => setView('review')}
             className="h-11 px-6 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-opacity"
           >
             {t('step4Continue')}

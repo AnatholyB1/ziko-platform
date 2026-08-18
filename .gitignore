@@ -34,3 +34,8 @@ com.facebook.react.devsupport.*
 
 # Test-account purge exports — real account emails, must never be committed (phase 02)
 scripts/purge-test-accounts/exports/
+
+# Exercise import pipeline: cloned hasaneyldrm/exercises-dataset working tree
+# (~128MB of images/ + videos/) — too large to commit, redundant with the
+# Supabase Storage delivery path Phase 3 uses.
+scripts/exercise-import/.dataset-cache/

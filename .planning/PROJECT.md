@@ -64,6 +64,23 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 </details>
 
+<details>
+<summary>✅ v1.16 Exercise Library Import [image-exo] — SHIPPED 2026-08-18</summary>
+
+**Goal:** Coaches et athlètes disposent d'une bibliothèque d'exercices fiable et complète — données riches, GIFs et thumbnails réels et self-hébergés, sans dépendance à un CDN tiers cassé.
+
+**What shipped:**
+- Full exercise library replacement from `hasaneyldrm/exercises-dataset` — 1,318/1,324 exercises matched and merged in place (UUID-preserving UPDATE), 6 unmatched-new inserts deterministically deferred on a category-taxonomy gap (tracked, non-corrupting)
+- 3-tier precision-first name matcher, human-approved dry-run report gate before any production write, resumable/idempotent merge via `exercise_import_log`, full-row backup snapshot before every UPDATE
+- Media pipeline: GIFs + thumbnails self-hosted on public `exercise-media` Supabase Storage bucket (service-role write only), capped at 180×180 native resolution, never upscaled
+- Mobile consumption: exercise detail hero replaced the fake video placeholder with the real attributed GIF; `ExercisePicker` rows show real thumbnails; shared `<AttributedMedia>` component (`packages/ui/`) structurally enforces the Gym visual licence credit + 180×180 cap; `instruction_steps` JSONB wired into the numbered-steps UI (fragile `JSON.parse`/`.split` fallback removed); bilingual FR/EN name + instructions via the existing `tExercise` pattern; TanStack Query keys versioned (`['exercises', 'v2', ...]`) to invalidate stale client caches
+- Attribution scope decision (D-06): badge shown once per screen on the primary media instance, not on every list thumbnail — deliberate, documented interpretation of the licence requirement
+
+**Phases:** 1–4 (4 phases, 13 plans)
+**Archive:** `.planning/workstreams/image-exo/ROADMAP.md` · `.planning/workstreams/image-exo/REQUIREMENTS.md`
+
+</details>
+
 ## Active Parallel Workstreams
 
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
@@ -285,6 +302,9 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | NEXT_PUBLIC_API_URL must be set in apps/web | Missing env var caused "Failed to fetch" on /storage/upload-url — component fell back to localhost:3000 (unreachable in production). Added to apps/web/.env. | v1.5 Phase 24 ✓ |
 | Marketing pages isolated in (marketing) route group | locale root layout rendered sticky `<Header />` unconditionally — coach pages inherited it, causing CoachSidebar to slide behind. Moving marketing pages to `[locale]/(marketing)/layout.tsx` strips Header/Footer from all coach routes cleanly. | v1.5 Phase 24 ✓ |
 | loginAction uses `getLocale()` + `/${locale}/` prefix on all redirects | loginAction returned hardcoded locale-less paths ('/coach/onboarding') causing 404 in next-intl; all redirects now prefixed dynamically. | v1.5 Phase 24 ✓ |
+| 3-tier precision-first matcher, publishable-key-only reads, zero DB writes for dry-run scripts | Live run against `hasaneyldrm/exercises-dataset` + production matched 1,318/1,318 exercises (Tier 1 exact name); a real double-claim bug (same production row appearing both `matched` and as a live `ambiguous` candidate) was found and fixed post-review — `consumed` set now reserved at candidate-push time across all 3 tiers, closing the risk before Phase 3 trusts this report for `UPDATE`/`INSERT` decisions | v1.16 Phase 2 ✓ |
+| TTY-gated interactive-only approval (`process.stdin.isTTY` as literal first line of `main()`, no `--yes`/`--force` bypass) | Enforces "no code path from fetch/match output straight into merge" structurally, not just procedurally — a non-interactive/automated invocation hard-exits before any write | v1.16 Phase 3 ✓ |
+| Real production merge run: 1,318/1,318 matched exercises UPDATEd (media + attributes + instructions, full-row backup snapshotted first); 6/6 unmatched-new INSERTs deterministically refused (dataset category values don't map to production's CHECK constraint — no data corrupted, tracked as follow-up) | Code review also surfaced 2 accepted-as-tracked gaps: `merge-row.ts` doesn't yet write `muscle_group`, and `merge.ts` doesn't read ambiguous-row `human_decision` (unexercised this run — 0 ambiguous rows) | v1.16 Phase 3 ✓ |
 
 ## Evolution
 
@@ -304,7 +324,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 after v1.8 milestone — Sport Dashboards (Phases 37–41.1) archived; v1.8 validated requirements added; threshold alerts gap (AI-04) confirmed closed.*
+*Last updated: 2026-08-18 — v1.16 Exercise Library Import (`image-exo`) SHIPPED: Phase 4 (Mobile Consumption & Attribution) complete and verified — real GIF/thumbnail media, structured bilingual instructions, and mandatory attribution all live in the mobile app. All 4 phases of the milestone complete.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|

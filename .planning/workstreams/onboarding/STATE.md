@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-05-30T20:30:00.000Z"
-last_activity: 2026-05-30 -- Phase 03 Plan 01 completed
+status: Awaiting next milestone
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-08-13T22:44:44.487Z"
+last_activity: 2026-08-13 — Milestone v1.0 completed and archived
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 5
-  percent: 67
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State — Coach Onboarding Import IA
@@ -20,22 +21,20 @@ progress:
 See: .planning/workstreams/onboarding/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A coach onboards in 15 min by uploading 3–4 existing docs — no manual re-entry
-**Current focus:** Phase 03 — ai-classification-chat (Plan 2 of 2 remaining)
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 03 (ai-classification-chat) — EXECUTING
-Plan: 2 of 2
-Status: Plan 01 complete — Plan 02 (rendering) pending
-Last activity: 2026-05-30 -- Phase 03 Plan 01 completed
-
-Progress: [██████░░░░] 67%
+Phase: Milestone v1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-13 — Milestone v1.0 completed and archived
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 5
+- Total plans completed: 9
 - Average duration: ~15min
 - Total execution time: —
 
@@ -44,6 +43,7 @@ Progress: [██████░░░░] 67%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 03    | 1     | ~15m  | ~15m     |
+| 04 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -51,6 +51,10 @@ Progress: [██████░░░░] 67%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 04 P01 | 10min | 2 tasks | 3 files |
+| Phase 04 P02 | 25min | 2 tasks | 1 files |
+| Phase 04 P03 | ~10min | 2 tasks | 1 files |
+| Phase 04 P04 | 20min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -63,6 +67,11 @@ Progress: [██████░░░░] 67%
 - Step 4 is optional — skip gate goes directly to `/coach/dashboard`
 - Confidence >= 0.6 = template_programme (auto), < 0.4 or null = da_coach (auto), 0.4-0.6 = ambiguous with clarification pills
 - sessions count uses null sentinel (not 0) when unavailable — enables rendering plan short fallback i18n key
+- [Phase 04]: 04-RESEARCH.md/04-VALIDATION.md's claim that no framework install was needed was incorrect - @testing-library/dom was declared but never materialized; fixed via root npm install rather than editing the manifest
+- [Phase 04]: Split WizardStep4Import.test.tsx across two commits mirroring plan 04-02's two tasks (harness + 3 render-level tests, then 3 commit-flow tests) — Preserves per-task commit granularity even though both tasks target the same test file
+- [Phase 04]: Count-line color applied to full step4ReviewCount line (not just numeral) since the locked ICU plural copy has no rich-text tag to isolate the digit
+- [Phase 04]: Retry button uses title (not aria-label) for step4CommitRetryAria so visible Reessayer text supplies the accessible name expected by tests
+- [Phase 04]: [Rule 1 - Bug] Split the 04-03 completion effect into two effects - the original single effect canceled its own just-scheduled 1500ms redirect timer via a dependency-triggered re-run after calling setReviewPhase(done)
 
 ### Pending Todos
 
@@ -72,8 +81,23 @@ None.
 
 None.
 
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-08-13:
+
+| Category | Item | Status |
+|----------|------|--------|
+| verification_gap | 01-VERIFICATION.md (Phase 01 — Wizard Integration) | human_needed |
+| verification_gap | 02-VERIFICATION.md (Phase 02 — Upload UX & Pipeline) | human_needed |
+
+Both phases scored 100% on automated verification (12/12 and 4/4 must-haves). The flagged items are browser-interactive behaviors that static analysis cannot confirm: Step 4 redirect after KYC completion, skip-button routing, locale-switch rendering, drag-over visual states, and live upload/parse polling transitions. No defects found — deferred to manual click-through testing.
+
 ## Session Continuity
 
-Last session: 2026-05-30T20:30:00.000Z
-Stopped at: Phase 03 Plan 01 complete — classification logic layer done
-Resume file: .planning/workstreams/onboarding/phases/03-ai-classification-chat/03-02-PLAN.md
+Last session: 2026-08-12T18:11:12.667Z
+Stopped at: Completed 04-04-PLAN.md
+Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
