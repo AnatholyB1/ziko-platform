@@ -64,6 +64,23 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 </details>
 
+<details>
+<summary>✅ v1.16 Exercise Library Import [image-exo] — SHIPPED 2026-08-18</summary>
+
+**Goal:** Coaches et athlètes disposent d'une bibliothèque d'exercices fiable et complète — données riches, GIFs et thumbnails réels et self-hébergés, sans dépendance à un CDN tiers cassé.
+
+**What shipped:**
+- Full exercise library replacement from `hasaneyldrm/exercises-dataset` — 1,318/1,324 exercises matched and merged in place (UUID-preserving UPDATE), 6 unmatched-new inserts deterministically deferred on a category-taxonomy gap (tracked, non-corrupting)
+- 3-tier precision-first name matcher, human-approved dry-run report gate before any production write, resumable/idempotent merge via `exercise_import_log`, full-row backup snapshot before every UPDATE
+- Media pipeline: GIFs + thumbnails self-hosted on public `exercise-media` Supabase Storage bucket (service-role write only), capped at 180×180 native resolution, never upscaled
+- Mobile consumption: exercise detail hero replaced the fake video placeholder with the real attributed GIF; `ExercisePicker` rows show real thumbnails; shared `<AttributedMedia>` component (`packages/ui/`) structurally enforces the Gym visual licence credit + 180×180 cap; `instruction_steps` JSONB wired into the numbered-steps UI (fragile `JSON.parse`/`.split` fallback removed); bilingual FR/EN name + instructions via the existing `tExercise` pattern; TanStack Query keys versioned (`['exercises', 'v2', ...]`) to invalidate stale client caches
+- Attribution scope decision (D-06): badge shown once per screen on the primary media instance, not on every list thumbnail — deliberate, documented interpretation of the licence requirement
+
+**Phases:** 1–4 (4 phases, 13 plans)
+**Archive:** `.planning/workstreams/image-exo/ROADMAP.md` · `.planning/workstreams/image-exo/REQUIREMENTS.md`
+
+</details>
+
 ## Active Parallel Workstreams
 
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
@@ -73,7 +90,6 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé).
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
-**Parallel workstream:** v1.16 Exercise Library Import (`image-exo`) — remplace la bibliothèque d'exercices (1324 exos, GIFs + thumbnails 180×180, instructions FR/EN) depuis le dataset `hasaneyldrm/exercises-dataset` sur Supabase Storage ; médias sous licence Gym visual (attribution obligatoire) ; UPDATE par nom matché pour préserver les FK `program_exercises`/`session_sets`.
 
 ---
 
@@ -308,7 +324,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-17 — v1.16 Exercise Library Import (`image-exo`) Phase 3 complete: real human-supervised merge run against production — 1,318/1,318 matched exercises updated (media, attributes, instructions), 6 new-exercise inserts deterministically deferred on a category-mapping gap (tracked, non-corrupting). Phase 4 (Mobile Consumption & Attribution) next.*
+*Last updated: 2026-08-18 — v1.16 Exercise Library Import (`image-exo`) SHIPPED: Phase 4 (Mobile Consumption & Attribution) complete and verified — real GIF/thumbnail media, structured bilingual instructions, and mandatory attribution all live in the mobile app. All 4 phases of the milestone complete.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
