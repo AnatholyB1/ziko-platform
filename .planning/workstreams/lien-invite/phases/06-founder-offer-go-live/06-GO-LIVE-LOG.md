@@ -28,7 +28,7 @@ disclosed gaps).
 | 2 | `Check for migration changes` step | Ran (changed=true or false reported) | Ran, resolved `changed=true` (correctly — single merge commit strategy worked as designed) | Claude (GitHub Actions read) | 2026-08-18 |
 | 2 | `Setup Supabase CLI` step | Executed, not skipped | Executed successfully | Claude (GitHub Actions read) | 2026-08-18 |
 | 2 | `Push migrations` step | Executed, not skipped; log tail pasted | **Executed, FAILED** — see Escalation E-01. No migration applied. | Claude (GitHub Actions read) | 2026-08-18 |
-| 3.1 | `SELECT key, value FROM public.app_config ORDER BY key;` against `slkobhavpwsubnsmuhya` | Full result pasted; `premium_credit_cap_enabled` row present | `[{"key":"waitlist_reveal_threshold","value":30}]` — only 1 row, **`premium_credit_cap_enabled` absent**. Confirms Push migrations failure left production schema unchanged (no partial apply). | Claude (Supabase MCP) | 2026-08-18 |
+| 3.1 | `SELECT key, value FROM public.app_config ORDER BY key;` against `slkobhavpwsubnsmuhya` | Full result pasted; `premium_credit_cap_enabled` row present | **UPDATED (E-04):** `[{"key":"premium_credit_cap_enabled","value":false},{"key":"waitlist_retention_years","value":3},{"key":"waitlist_reveal_threshold","value":30}]` — all 3 rows present after direct MCP migration apply. `is_lifetime_premium` column and both RPCs also verified present. | Claude (Supabase MCP), applied per explicit user instruction | 2026-08-18 |
 | 3.2 | `curl -s -o /dev/null -w '%{http_code}' https://ziko-api-lilac.vercel.app/health` | `200` | **500** — see Escalation E-02 | Claude (curl) | 2026-08-18 |
 | 3.2 | Vercel dashboard production deployment SHA (API + web) | Matches merge commit SHA from Section 1 | **Does not match** — most recent `ziko-api` production deployment (`dpl_7YcfNLArhzzvLj79ynhqF3in5dbj`) is still from PR #24 (`23034e868db5190e578ac1cc3d5e86af9c3fcc5f`), not this merge. See Escalation E-03. | Claude (Vercel MCP) | 2026-08-18 |
 
@@ -74,10 +74,32 @@ No new `ziko-api` production deployment appeared for merge commit `182637b1...` 
 (GitHub integration should auto-deploy on push to `main`, per CLAUDE.md). An attempt to trigger one via
 `mcp__Vercel__create_git_project` (reusing the existing linked project) was first blocked by the Claude
 Code auto-mode permission classifier, then — after explicit user approval — failed with a Vercel API
-403 (`"You don't have permission to create the project"`). This session's Vercel connection lacks the
-permission to trigger a deployment for this project. Escalated to the user; not resolved this session.
+403 (`"You don't have permission to create the project"`) for both `ziko-api` and `ziko-web`, tried a
+second time after the user re-approved. Confirmed this is a Vercel-account/token permission limit on
+this session's connection, not the Claude Code classifier — in-chat approval cannot override it.
+**Still open** as of this entry: application code (both API and web) is not yet redeployed with this
+merge's changes. Needs either a Vercel-side permission fix on this session's connector, or the user
+triggering the deploy manually from the Vercel dashboard (Deployments → Redeploy on latest `main`, for
+both `ziko-api` and `ziko-web`).
 
-**Carried forward from Phase 5 (inherited, unrelated to E-01–E-03):** a real submission's
+**E-04 — [RESOLVED, deviation from RUNBOOK] The three pending migrations were applied directly via
+Supabase MCP, not through CI, per explicit user instruction.**
+Given E-01 (CI's `db push` blocked by the pre-existing filename/version-history drift) and the user's
+explicit direction to defer that reconciliation and apply the schema change directly instead — since
+this Supabase project is confirmed to be the only instance (no separate test project to diverge from)
+— all three pending migration files were applied via `mcp__Supabase__apply_migration` against
+`slkobhavpwsubnsmuhya`, each using its exact repo file content unmodified:
+`20260815_waitlist_retention_config.sql`, `20260816_premium_credit_flag.sql`,
+`20260816_premium_credit_grant.sql`. Verified by direct read immediately after:
+`app_config` now holds all three keys (`premium_credit_cap_enabled=false`,
+`waitlist_retention_years=3`, `waitlist_reveal_threshold=30`); `user_profiles.is_lifetime_premium`
+column exists; `grant_premium_credits()` and `reset_waitlist_founder_sequence()` RPCs both exist.
+**Production database schema is now caught up with `main`.** The CI/CLI migration-ledger drift (E-01)
+itself remains unreconciled — deferred by explicit user instruction — but no longer blocks the
+schema being correct, since the MCP path applies DDL directly rather than diffing against the
+CLI's version-history table.
+
+**Carried forward from Phase 5 (inherited, unrelated to E-01–E-04):** a real submission's
 success/duplicate confirmation states were never observed live, and FOND-06's live counter-reveal was
 never observed (per `STATE.md`). Still open; plan 06-04 is where these are closed or restated.
 
