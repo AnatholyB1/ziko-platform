@@ -297,8 +297,30 @@ PURGE-01–05, and FOND-06 (all already mapped to their owning phases above)
 
   4. All mapped entry points route real traffic to the now-public page, and its conversions begin
      recording from the first live visit
-**Plans**: TBD
-**Research**: Not needed — pure activation/launch checklist, no new technical surface.
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — Tracer: merge to `main` end to end (PR → CI `migrate-supabase` apply → Vercel deploy), proven on one migration artifact and one deploy artifact, plus the RUNBOOK and evidence ledger
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 06-02-PLAN.md — Pre-launch reads: all three migrations confirmed independently, fresh production purge dry-run (D-03), reveal threshold at 30 (D-05, criterion 3), CRED-01 premium count re-audit
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 06-03-PLAN.md — Activation: live `claim_waitlist_signup()` smoke test, one-way `TRUNCATE` + sequence reset behind a `checkpoint:decision` (D-04, criterion 1), four-URL CGU/CGV liveness gate then the flag flip (D-06, criterion 2)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 06-04-PLAN.md — Public surface: four entry points walked live in both locales and the `waitlist_signup` conversion confirmed in Vercel Analytics (criterion 4), Phase 5's two carried-forward gaps closed or restated, ledger and validation record signed off
+
+**Research**: Done — `06-RESEARCH.md`. No new technical surface, but the research found the load-bearing
+fact this phase turns on: the milestone branch has never been merged to `main` (157 commits ahead, 0
+behind), so Phase 3's and Phase 4's migrations have never been applied to production and the live API
+still runs the old unconditional premium bypass. The merge, the CI migration apply and the Vercel
+deploy confirmation are therefore in scope as a blocking wave-1 sequence (D-02), not assumed to have
+happened separately.
 
 ## Progress
 
@@ -315,4 +337,4 @@ being complete.
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
 | 5. Waitlist Page & Entry Points | 6/6 | Complete    | 2026-08-18 |
-| 6. Founder Offer Go-Live | 0/TBD | Not started | - |
+| 6. Founder Offer Go-Live | 0/4 | Planned | - |
