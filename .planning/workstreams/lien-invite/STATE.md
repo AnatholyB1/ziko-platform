@@ -5,12 +5,12 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 05
 current_phase_name: Waitlist Page & Entry Points
 status: executing
-stopped_at: Completed 05-06-PLAN.md — Phase 5 (Waitlist Page & Entry Points) complete, 6/6 plans
-last_updated: "2026-08-18T08:23:55.120Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-08-18T10:22:59.380Z"
 last_activity: 2026-08-18
 last_activity_desc: Phase 05 plan 06 (merged-tree convergence gate + human UI safety checkpoint) execution complete — Phase 5 done, 6/6 plans
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
   total_plans: 20
   completed_plans: 20
@@ -198,12 +198,12 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-18T08:23:55.082Z
-Stopped at: Completed 05-06-PLAN.md — Phase 5 (Waitlist Page & Entry Points) complete, 6/6 plans
+Last session: 2026-08-18T10:22:59.288Z
+Stopped at: Phase 6 context gathered
 6 phases total (Data Foundation ✓, Test-Account Purge ✓, Legal ✓, Credit-Gate Alignment ✓,
 Waitlist Page & Entry Points ✓, Founder Offer Go-Live not started). Phase 5 is fully complete —
 all four waves shipped, the merged-tree convergence gate (T-05-13) ran green, and the human UI
 safety checkpoint (T-05-14) was approved by the real user with a locale-propagation bug found and
 fixed along the way. Phase 6 is unblocked (depends on Phases 2, 3, 4, 5 all complete) but not yet
 started — next step is `/gsd-discuss-phase 6`.
-Resume file: None
+Resume file: .planning/workstreams/lien-invite/phases/06-founder-offer-go-live/06-CONTEXT.md
