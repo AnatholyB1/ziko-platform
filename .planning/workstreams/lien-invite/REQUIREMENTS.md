@@ -32,7 +32,7 @@ Prises avec l'utilisateur avant rédaction, elles contraignent tout ce qui suit 
 - [x] **WAIT-01**: Un visiteur accède à une page publique dédiée à l'offre fondateurs, servie en français et en anglais
 - [x] **WAIT-02**: Le visiteur choisit son profil (athlète ou coach) avant que le champ email n'apparaisse — divulgation progressive, pas un champ de formulaire supplémentaire
 - [x] **WAIT-03**: Le formulaire ne demande qu'une seule information saisie : l'adresse email
-- [ ] **WAIT-04**: Une adresse mal formée ou issue d'un domaine jetable est refusée avec un message explicite
+- [x] **WAIT-04**: Une adresse mal formée ou issue d'un domaine jetable est refusée avec un message explicite
 - [x] **WAIT-05**: Après soumission, le visiteur voit un état de succès en ligne confirmant son inscription et son statut fondateur si une place lui a été attribuée
 - [x] **WAIT-06**: Le visiteur qui soumet une adresse déjà inscrite reçoit le même état de succès, sans révéler qu'elle existait déjà
 - [x] **WAIT-07**: La page respecte le thème sport clair existant et les tokens Tailwind v4 de `globals.css`
@@ -162,7 +162,7 @@ Points que la recherche a explicitement refusé de trancher :
 | WAIT-01 | Phase 5 | Complete |
 | WAIT-02 | Phase 5 | Complete |
 | WAIT-03 | Phase 5 | Complete |
-| WAIT-04 | Phase 5 | Pending |
+| WAIT-04 | Phase 5 | Complete |
 | WAIT-05 | Phase 5 | Complete |
 | WAIT-06 | Phase 5 | Complete |
 | WAIT-07 | Phase 5 | Complete |

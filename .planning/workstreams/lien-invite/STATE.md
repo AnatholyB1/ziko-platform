@@ -5,15 +5,15 @@ milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 05
 current_phase_name: Waitlist Page & Entry Points
 status: executing
-stopped_at: Completed 05-05-PLAN.md
-last_updated: "2026-08-17T18:34:37.726Z"
-last_activity: 2026-08-17
-last_activity_desc: Phase 05 plan 03 (counter route + widget) execution complete
+stopped_at: Completed 05-06-PLAN.md — Phase 5 (Waitlist Page & Entry Points) complete, 6/6 plans
+last_updated: "2026-08-18T08:23:55.120Z"
+last_activity: 2026-08-18
+last_activity_desc: Phase 05 plan 06 (merged-tree convergence gate + human UI safety checkpoint) execution complete — Phase 5 done, 6/6 plans
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State — v1.16 Waitlist Fondateurs & Accès Anticipé
@@ -25,16 +25,19 @@ See: .planning/workstreams/lien-invite/PROJECT.md context inherited from root .p
 **Core value:** Capturer les emails des personnes intéressées par l'accès anticipé à Ziko, athlètes
 comme coachs, et tenir une promesse « premium à vie » pour les 200 premiers qui soit vraie dans le
 contrat comme dans le code.
-**Current focus:** Phase 05 — Waitlist Page & Entry Points
-Phase 4 (Credit-Gate Alignment) is complete; Phase 5 depends on Phases 1-4 all being
-complete per ROADMAP.md and is now executing.
+**Current focus:** Phase 05 — Waitlist Page & Entry Points (now complete)
+Phase 5 (Waitlist Page & Entry Points) is complete, 6/6 plans; Phase 6 (Founder Offer Go-Live)
+depends on Phases 2, 3, 4, and 5 all being complete per ROADMAP.md and is now unblocked, not yet started.
 
 ## Current Position
 
-Phase: 05 (Waitlist Page & Entry Points) — EXECUTING
-Plan: 5 of 6 (05-03 complete)
-Status: Wave 2 (05-02, 05-03) complete — Wave 3 (05-04, 05-05) next, then the
-full-phase gate run (05-06)
+Phase: 05 (Waitlist Page & Entry Points) — COMPLETE (6/6 plans)
+Plan: 6 of 6 (05-06, the merged-tree convergence gate + human UI safety checkpoint, complete)
+Status: All four waves done. T-05-13 (merged-tree convergence gate) and T-05-14 (human UI safety
+checkpoint) both closed — T-05-14 approved by the real user 2026-08-18, with a locale-propagation
+bug found during the walkthrough fixed and re-verified (commit 137a562), and two disclosed,
+user-accepted gaps (real-submission success/duplicate states; FOND-06 live counter-reveal
+observation) carried forward to Phase 6.
 
 Phase 4 recap: Credit-Gate Alignment shipped 2/2 plans complete
 (SECURITY DEFINER RPCs applied to the live ziko test project (slkobhavpwsubnsmuhya)
@@ -48,11 +51,11 @@ suites on future PRs.
 and an actual green CI run never executed in this session (no SUPABASE_SERVICE_ROLE_KEY,
 no path to open/observe a real PR). The user explicitly approved Phase 1 at the
 01-04 Task 3 checkpoint with this gap acknowledged — see 01-04-SUMMARY.md.
-Last activity: 2026-08-17 — Phase 05 plan 03 (counter route + widget) execution complete.
-FOND-01 through FOND-06 marked complete in REQUIREMENTS.md; ROADMAP.md Phase 5 plan
-progress updated to 3/6.
+Last activity: 2026-08-18 — Phase 05 plan 06 (merged-tree convergence gate + human UI safety
+checkpoint) execution complete. WAIT-01 through ENTRY-06 (19 requirements, all of Phase 5) marked
+complete in REQUIREMENTS.md; ROADMAP.md Phase 5 marked Complete, 6/6 plans, 2026-08-18.
 
-Progress: [██████████] 95% (4/5 known phases complete + Phase 5 at 3/6 plans; Phase 6 scope TBD)
+Progress: [██████████] 100% (5/5 known phases complete; Phase 6 scope TBD, not started)
 
 ## Performance Metrics
 
@@ -85,6 +88,7 @@ Progress: [██████████] 95% (4/5 known phases complete + Phas
 | Phase 05 P03 | ~30min | 2 tasks | 6 files |
 | Phase 05 P04 | ~35min | 2 tasks | 9 files |
 | Phase 05 P05 | ~40min | 3 tasks | 11 files |
+| Phase 05 P06 | ~35min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -135,6 +139,8 @@ so far, from research and roadmap creation:
 - [Phase ?]: [Phase 5] 05-04: FoundersOfferSection reuses WaitlistCounterClient (Plan 05-03) verbatim on the homepage rather than a second local badge — the homepage is structurally incapable of showing a fabricated number
 - [Phase ?]: [Phase 5] 05-05: header/footer touch-target reading — the footer's founders link stays min-h-free (matching AnimatedLink's existing siblings and the UI-SPEC's explicit 'zero new styling' instruction) rather than gaining an independent 44px floor the header's copied-class link already has; giving only the new link a taller hit area than its neighbours would have violated D-04's equal-weight requirement
 - [Phase ?]: [Phase 5] 05-05: track() imported from the base '@vercel/analytics' package (not '/react') in WaitlistRoleForm.tsx — both work from a 'use client' component; the base import needs no extra wiring beyond the <Analytics /> mount already using the '/next' entry point
+- [Phase ?]: [Phase 5] 05-06: shared marketing layout.tsx was the one route boundary in the tree that never called setRequestLocale() itself — Header/Footer/CoachsHero/CoachsCtaFooter's next-intl calls didn't reliably resolve locale during static generation, rendering French on /en pages; fixed by mirroring every other route.tsx's own convention, which also closed a pre-existing Phase 3 CGU/CGV footer-link gap as a side effect
+- [Phase ?]: [Phase 5] 05-06: two verification gaps (real-submission success/duplicate states; FOND-06 live counter-reveal observation) could not be completed live this session — missing SUPABASE_TEST_URL/SUPABASE_SERVICE_ROLE_KEY, and the only credentialed Supabase project was confirmed production — disclosed in full and explicitly accepted by the user when approving T-05-14; carried forward to Phase 6
 
 ### Pending Todos
 
@@ -172,8 +178,15 @@ None yet.
 - **Phase 3 needs outside counsel**, not more research — the "à vie" CGV clause (Pitfall 7/8) is
   the single highest-severity legal item in the milestone and gates Phase 4 per LEGAL-05
 
-- **Phase 5 is a UI phase** (`ui_phase`/`ui_safety_gate` both on) — a UI-SPEC design contract is
-  expected before implementation begins
+- **Phase 5 complete, two disclosed gaps carried to Phase 6.** T-05-14's human checkpoint was
+  approved 2026-08-18 with two verification steps explicitly disclosed and accepted rather than
+  completed: (1) a real submission's success/duplicate confirmation states were never observed
+  live — no working `SUPABASE_SERVICE_ROLE_KEY` in this session; (2) FOND-06's live counter-reveal
+  observation (raising `app_config.waitlist_reveal_threshold` on the test project) was never
+  attempted — the only credentialed Supabase project this session held (`slkobhavpwsubnsmuhya`)
+  was confirmed by the user to be production, not the required test project. Both should close
+  with real test-project credentials at the earliest opportunity, ideally before Phase 6 activates
+  the offer in production — see `05-06-SUMMARY.md`.
 
 ## Deferred Items
 
@@ -185,10 +198,12 @@ Items acknowledged and carried forward from requirements definition:
 
 ## Session Continuity
 
-Last session: 2026-08-17T18:34:37.702Z
-Stopped at: Completed 05-05-PLAN.md
+Last session: 2026-08-18T08:23:55.082Z
+Stopped at: Completed 05-06-PLAN.md — Phase 5 (Waitlist Page & Entry Points) complete, 6/6 plans
 6 phases total (Data Foundation ✓, Test-Account Purge ✓, Legal ✓, Credit-Gate Alignment ✓,
-Waitlist Page & Entry Points — 3/6 plans, Founder Offer Go-Live not started). Phase 5 Wave 2
-(05-02, 05-03) is now complete; Wave 3 (05-04 homepage section + coach CTA redirects, 05-05
-header/footer nav links) is next, followed by 05-06's full-phase gate run.
+Waitlist Page & Entry Points ✓, Founder Offer Go-Live not started). Phase 5 is fully complete —
+all four waves shipped, the merged-tree convergence gate (T-05-13) ran green, and the human UI
+safety checkpoint (T-05-14) was approved by the real user with a locale-propagation bug found and
+fixed along the way. Phase 6 is unblocked (depends on Phases 2, 3, 4, 5 all complete) but not yet
+started — next step is `/gsd-discuss-phase 6`.
 Resume file: None

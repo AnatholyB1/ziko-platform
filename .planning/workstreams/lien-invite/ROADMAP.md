@@ -28,7 +28,7 @@ all five.
 - [x] **Phase 2: Test-Account Purge** - Dry-run-reviewed, backed-up removal of dev/QA accounts so the founder counter is credible (completed 2026-08-14)
 - [x] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes (completed 2026-08-15)
 - [x] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag (completed 2026-08-16)
-- [ ] **Phase 5: Waitlist Page & Entry Points** - The public `/fondateurs` page, its counter, and every CTA that routes visitors to it
+- [x] **Phase 5: Waitlist Page & Entry Points** - The public `/fondateurs` page, its counter, and every CTA that routes visitors to it (completed 2026-08-18)
 - [ ] **Phase 6: Founder Offer Go-Live** - Safe production activation once data, purge, legal, and credit-gate are all confirmed ready
 
 ## Phase Details
@@ -245,7 +245,7 @@ entry point on the site.
      link renders a correct social preview; the page is indexable and present in the sitemap; and
      its signups are measurable as conversions (ENTRY-01, ENTRY-02, ENTRY-03, ENTRY-04, ENTRY-05,
      ENTRY-06)
-**Plans**: 5/6 plans executed
+**Plans**: 6/6 plans executed
 Plans:
 **Wave 1**
 
@@ -263,7 +263,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-06-PLAN.md — Full-phase gate run on the merged tree, validation record completed, blocking UI/entry-point human verification
+- [x] 05-06-PLAN.md — Full-phase gate run on the merged tree, validation record completed, blocking UI/entry-point human verification
 
 **Research**: Not needed at plan time — `useActionState` + Server Action + Zod, the honeypot +
 Upstash + botid layering, and the Route Handler counter pattern are all well-established in this
@@ -314,5 +314,5 @@ being complete.
 | 2. Test-Account Purge | 4/4 | Complete    | 2026-08-14 |
 | 3. Legal — CGV & CGU | 4/4 | Complete    | 2026-08-15 |
 | 4. Credit-Gate Alignment | 2/2 | Complete    | 2026-08-16 |
-| 5. Waitlist Page & Entry Points | 5/6 | In Progress|  |
+| 5. Waitlist Page & Entry Points | 6/6 | Complete    | 2026-08-18 |
 | 6. Founder Offer Go-Live | 0/TBD | Not started | - |
