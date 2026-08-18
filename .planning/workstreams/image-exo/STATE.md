@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Exercise Library Import
-status: executing
-stopped_at: Phase 4 UI-SPEC approved
-last_updated: "2026-08-17T18:12:06.405Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 4 was final phase)
+last_updated: 2026-08-18T08:45:29.336Z
 last_activity: 2026-08-17 -- Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 13
+  completed_plans: 17
   percent: 75
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/image-exo/REQUIREMENTS.md
 
 **Core value:** Coaches et athlètes disposent d'une bibliothèque d'exercices fiable et complète — données riches, GIFs et thumbnails réels et self-hébergés, sans dépendance à un CDN tiers cassé.
-**Current focus:** Phase 4 — Mobile Consumption & Attribution
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 4 (Mobile Consumption & Attribution) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 4
-Last activity: 2026-08-17 -- Phase 4 execution started
+Phase: 4
+Plan: Not started
+Status: Milestone complete
+Last activity: 2026-08-18
 
 Progress: [██████████] 100%
 

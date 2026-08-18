@@ -24,12 +24,12 @@ Requirements for this milestone. Each maps to a roadmap phase.
 
 ### Mobile
 
-- [ ] **MOBILE-01**: Écran détail exercice (`[exerciseId].tsx`) affiche le vrai GIF + thumbnail, remplaçant le faux placeholder vidéo (`Démo · 0:42`, badge `HD`) actuellement affiché sans asset réel
-- [ ] **MOBILE-02**: Liste `ExercisePicker` affiche les thumbnails des exercices (au lieu du texte seul actuel)
-- [ ] **MOBILE-03**: Chaque surface d'affichage de média montre l'attribution obligatoire "© Gym visual — https://gymvisual.com/" via un composant partagé `<AttributedMedia>` (`packages/ui/`) qui impose structurellement le badge + le cap 180×180
-- [ ] **MOBILE-04**: `instruction_steps` (tableau structuré du dataset) câblé dans l'UI d'étapes numérotées existante, remplaçant le fallback fragile `JSON.parse`/`.split('\n')`
-- [ ] **MOBILE-05**: Nom + instructions bilingues FR/EN sourcés depuis le dataset, cohérent avec la convention `name_fr` existante
-- [ ] **MOBILE-06**: Clé TanStack Query versionnée (ex. `['exercises', 'v2']`) pour éviter qu'un client déjà installé affiche un mélange de médias anciens (exercisedb.io) et nouveaux (Storage) après le rollout
+- [x] **MOBILE-01**: Écran détail exercice (`[exerciseId].tsx`) affiche le vrai GIF + thumbnail, remplaçant le faux placeholder vidéo (`Démo · 0:42`, badge `HD`) actuellement affiché sans asset réel
+- [x] **MOBILE-02**: Liste `ExercisePicker` affiche les thumbnails des exercices (au lieu du texte seul actuel)
+- [x] **MOBILE-03**: Chaque surface d'affichage de média montre l'attribution obligatoire "© Gym visual — https://gymvisual.com/" via un composant partagé `<AttributedMedia>` (`packages/ui/`) qui impose structurellement le badge + le cap 180×180
+- [x] **MOBILE-04**: `instruction_steps` (tableau structuré du dataset) câblé dans l'UI d'étapes numérotées existante, remplaçant le fallback fragile `JSON.parse`/`.split('\n')`
+- [x] **MOBILE-05**: Nom + instructions bilingues FR/EN sourcés depuis le dataset, cohérent avec la convention `name_fr` existante
+- [x] **MOBILE-06**: Clé TanStack Query versionnée (ex. `['exercises', 'v2']`) pour éviter qu'un client déjà installé affiche un mélange de médias anciens (exercisedb.io) et nouveaux (Storage) après le rollout
 
 ## v2 Requirements
 
@@ -66,12 +66,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPORT-05 | Phase 3 | Complete |
 | MEDIA-03 | Phase 3 | Complete |
 | MEDIA-04 | Phase 3 | Complete |
-| MOBILE-01 | Phase 4 | Pending |
-| MOBILE-02 | Phase 4 | Pending |
-| MOBILE-03 | Phase 4 | Pending |
-| MOBILE-04 | Phase 4 | Pending |
-| MOBILE-05 | Phase 4 | Pending |
-| MOBILE-06 | Phase 4 | Pending |
+| MOBILE-01 | Phase 4 | Complete |
+| MOBILE-02 | Phase 4 | Complete |
+| MOBILE-03 | Phase 4 | Complete |
+| MOBILE-04 | Phase 4 | Complete |
+| MOBILE-05 | Phase 4 | Complete |
+| MOBILE-06 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
