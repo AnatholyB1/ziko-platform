@@ -4,6 +4,7 @@ import { motion, useInView } from 'framer-motion'
 import { useRef } from 'react'
 import Link from 'next/link'
 import { ctaHover, ctaTap } from '@/lib/motion'
+import { WAITLIST_ROLE_PARAM, WAITLIST_ROLE_COACH } from './WaitlistRoleForm'
 
 type Props = {
   locale: string
@@ -29,7 +30,7 @@ export function CoachsCtaFooterClient({ locale, heading, subheading, button, not
           <p className="text-base text-muted mb-8">{subheading}</p>
           <motion.div whileHover={ctaHover} whileTap={ctaTap} className="inline-block">
             <Link
-              href={`/${locale}/coach/onboarding`}
+              href={`/${locale}/fondateurs?${WAITLIST_ROLE_PARAM}=${WAITLIST_ROLE_COACH}`}
               className="bg-primary text-white px-8 py-4 rounded-xl font-bold text-xs inline-block"
               style={{ boxShadow: '0 4px 20px rgba(255,92,26,0.30)' }}
             >

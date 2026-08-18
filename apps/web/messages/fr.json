@@ -3,7 +3,8 @@
     "logo": "Ziko",
     "cta": "Télécharger l'app",
     "localeFR": "FR",
-    "localeEN": "EN"
+    "localeEN": "EN",
+    "founders": "Fondateurs"
   },
   "Home": {
     "hero": {
@@ -15,6 +16,12 @@
       "ctaAppStore": "Télécharger sur l'App Store",
       "ctaPlayStore": "Disponible sur Google Play",
       "ctaCoach": "Vous êtes coach ? Accéder à l'espace coach"
+    },
+    "founders": {
+      "heading": "200 places fondateurs, premium à vie",
+      "subheading": "Athlètes et coachs : les 200 premiers inscrits sur la liste d'attente obtiennent le premium à vie sur Ziko.",
+      "button": "Devenir fondateur →",
+      "note": "Inscription gratuite, sans engagement."
     },
     "howItWorks": {
       "heading": "Comment ça marche",
@@ -89,6 +96,8 @@
     "privacyDescription": "Comment Ziko collecte et traite vos données personnelles.",
     "cguTitle": "CGU",
     "cguDescription": "Conditions générales d'utilisation de l'application Ziko.",
+    "cgvTitle": "CGV",
+    "cgvDescription": "Conditions générales de vente de l'offre fondateurs Ziko.",
     "deleteTitle": "Supprimer mon compte",
     "deleteDescription": "Demander la suppression de votre compte Ziko.",
     "appScreenshotAlt": "Capture d'écran de l'application Ziko"
@@ -98,7 +107,9 @@
     "legal": "Mentions légales",
     "privacy": "Politique de confidentialité",
     "terms": "CGU",
-    "deleteAccount": "Supprimer mon compte"
+    "cgv": "CGV",
+    "deleteAccount": "Supprimer mon compte",
+    "founders": "Fondateurs"
   },
   "Login": {
     "title": "Bienvenue",
@@ -283,8 +294,8 @@
       "badge": "Bêta privée · 100% gratuit",
       "headline": "La CRM coaching à l'IA",
       "subtitle": "Gérez vos clients, analysez leurs données en temps réel, et générez des programmes avec l'IA. Gratuit en bêta privée — le futur ERP des coachs fitness.",
-      "cta": "Rejoindre la bêta privée",
-      "ctaNote": "Aucune carte bancaire requise"
+      "cta": "Rejoindre la liste des fondateurs",
+      "ctaNote": "200 places fondateurs disponibles"
     },
     "video": {
       "heading": "Découvrez Ziko en action",
@@ -365,8 +376,46 @@
     "cta": {
       "heading": "Rejoignez les premiers coachs sur Ziko.",
       "subheading": "Bêta privée ouverte — 100% gratuit, sans engagement.",
-      "button": "Rejoindre la bêta privée",
-      "note": "Aucune carte bancaire requise"
+      "button": "Rejoindre la liste des fondateurs",
+      "note": "200 places fondateurs, premium à vie"
+    }
+  },
+  "fondateurs": {
+    "meta": {
+      "title": "Ziko — Devenez membre fondateur",
+      "description": "Les 200 premiers membres Ziko obtiennent le premium à vie. Réservez votre place avec une simple adresse e-mail.",
+      "ogImageAlt": "Offre fondateurs Ziko — premium à vie pour les 200 premiers membres"
+    },
+    "hero": {
+      "headline": "Devenez fondateur·rice Ziko",
+      "subtitle": "Rejoignez la liste d'attente et obtenez le premium à vie si vous faites partie des 200 premiers membres."
+    },
+    "picker": {
+      "heading": "Vous êtes…",
+      "athlete": "Athlète",
+      "coach": "Coach"
+    },
+    "form": {
+      "emailLabel": "Adresse e-mail",
+      "emailPlaceholder": "votre@email.com",
+      "submit": "Réserver ma place",
+      "submitPending": "Envoi…"
+    },
+    "counter": {
+      "preThreshold": "Les 200 premiers membres obtiennent le premium à vie.",
+      "remaining": "Plus que {remaining} places fondateur",
+      "completeHeading": "Les 200 places fondateurs sont prises",
+      "completeBody": "Inscrivez-vous quand même pour être averti·e du lancement."
+    },
+    "success": {
+      "founder": "Vous êtes inscrit·e ! Vous êtes fondateur·rice n°{rank} sur 200.",
+      "generic": "Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement."
+    },
+    "error": {
+      "invalidEmail": "Cette adresse e-mail semble invalide ou temporaire. Merci d'utiliser une adresse e-mail personnelle.",
+      "generic": "Une erreur est survenue. Merci de réessayer.",
+      "rateLimited": "Trop de tentatives. Merci de réessayer dans quelques minutes.",
+      "consentRequired": "Merci de cocher la case ci-dessus pour continuer."
     }
   }
 }

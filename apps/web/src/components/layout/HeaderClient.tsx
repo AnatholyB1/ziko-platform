@@ -4,15 +4,23 @@ import { Link } from '@/i18n/navigation'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ctaHover, ctaTap } from '@/lib/motion'
 
+// ENTRY-03 / D-04 — the exact class recipe of the *unselected* locale link, reused
+// verbatim for the new "Fondateurs" nav link so the two are guaranteed to carry the
+// same visual weight (05-UI-SPEC.md "Component Specifications" §1) rather than an
+// independently hand-composed near-match.
+const NAV_LINK_CLASS =
+  'text-sm text-muted hover:text-text transition-colors px-2 py-2 min-h-[44px] inline-flex items-center rounded'
+
 type Props = {
   locale: string
   logo: string
   localeFR: string
   localeEN: string
   cta: string
+  founders: string
 }
 
-export function HeaderClient({ locale, logo, localeFR, localeEN, cta }: Props) {
+export function HeaderClient({ locale, logo, localeFR, localeEN, cta, founders }: Props) {
   const { scrollY } = useScroll()
   const blurOpacity = useTransform(scrollY, [0, 50], [0, 1])
 
@@ -26,12 +34,15 @@ export function HeaderClient({ locale, logo, localeFR, localeEN, cta }: Props) {
         <Link href="/" className="text-2xl font-black text-primary">
           {logo}
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap justify-end gap-y-2">
+          <Link href="/fondateurs" className={NAV_LINK_CLASS}>
+            {founders}
+          </Link>
           <div className="flex items-center gap-2">
             <Link
               href="/"
               locale="fr"
-              className={locale === 'fr' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : 'text-sm text-muted hover:text-text transition-colors px-2 py-2 min-h-[44px] inline-flex items-center rounded'}
+              className={locale === 'fr' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : NAV_LINK_CLASS}
             >
               {localeFR}
             </Link>
@@ -39,7 +50,7 @@ export function HeaderClient({ locale, logo, localeFR, localeEN, cta }: Props) {
             <Link
               href="/"
               locale="en"
-              className={locale === 'en' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : 'text-sm text-muted hover:text-text transition-colors px-2 py-2 min-h-[44px] inline-flex items-center rounded'}
+              className={locale === 'en' ? 'font-bold text-text text-sm px-2 py-2 min-h-[44px] inline-flex items-center rounded' : NAV_LINK_CLASS}
             >
               {localeEN}
             </Link>

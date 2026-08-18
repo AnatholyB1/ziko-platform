@@ -48,3 +48,14 @@ export const EARN_AMOUNT = 1;
 // chat bonus (2) + scan bonus (2) = 4
 // Once a user has earned this many credits today, further earn calls are no-ops.
 export const DAILY_EARN_CAP = DAILY_QUOTAS.chat.bonus + DAILY_QUOTAS.scan.bonus;
+
+// Monthly AI-credit allowance for premium users (CRED-03, D-02). Funded by the
+// grant RPC (grant_premium_credits) via the monthly cron — never by any
+// gate-time branch in creditGate.ts. D-02 chose this value as roughly ten
+// times a fully engaged free user's chat volume: generous enough to read as
+// a real premium benefit, finite enough to cap worst-case cost. Deliberately
+// not derived from CREDIT_COSTS or DAILY_QUOTAS — those describe the free
+// tier's economics, and coupling the two would let a free-tier tweak
+// silently move the premium allowance. Raising it later means editing this
+// line and nothing else.
+export const PREMIUM_MONTHLY_GRANT = 300;

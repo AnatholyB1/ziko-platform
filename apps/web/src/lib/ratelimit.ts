@@ -31,6 +31,7 @@ function makeRatelimit(limiter: ReturnType<typeof Ratelimit.slidingWindow>, pref
 let _ratelimit: Ratelimit | null = null;
 let _rolePromotionRatelimit: Ratelimit | null = null;
 let _kycUploadRatelimit: Ratelimit | null = null;
+let _waitlistRatelimit: Ratelimit | null = null;
 
 const noopLimiter = {
   limit: async (_identifier: string) => ({ success: true, limit: 0, remaining: 0, reset: 0, pending: Promise.resolve() }),
@@ -57,5 +58,13 @@ export const kycUploadRatelimit = {
     if (!isUpstashConfigured()) return noopLimiter.limit(identifier);
     if (!_kycUploadRatelimit) _kycUploadRatelimit = makeRatelimit(Ratelimit.slidingWindow(10, '60 s'), 'ziko:kyc-upload');
     return _kycUploadRatelimit.limit(identifier);
+  },
+};
+
+export const waitlistRatelimit = {
+  limit: async (identifier: string) => {
+    if (!isUpstashConfigured()) return noopLimiter.limit(identifier);
+    if (!_waitlistRatelimit) _waitlistRatelimit = makeRatelimit(Ratelimit.slidingWindow(5, '60 s'), 'ziko:waitlist');
+    return _waitlistRatelimit.limit(identifier);
   },
 };

@@ -31,6 +31,10 @@
     {
       "path": "/notifications/cron/weekly-digest",
       "schedule": "0 9 * * 0"
+    },
+    {
+      "path": "/credits/cron/premium-grant",
+      "schedule": "0 0 1 * *"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."

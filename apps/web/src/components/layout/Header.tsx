@@ -11,6 +11,7 @@ export async function Header() {
       localeFR={t('localeFR')}
       localeEN={t('localeEN')}
       cta={t('cta')}
+      founders={t('founders')}
     />
   )
 }

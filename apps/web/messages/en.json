@@ -3,7 +3,8 @@
     "logo": "Ziko",
     "cta": "Download the app",
     "localeFR": "FR",
-    "localeEN": "EN"
+    "localeEN": "EN",
+    "founders": "Founders"
   },
   "Home": {
     "hero": {
@@ -15,6 +16,12 @@
       "ctaAppStore": "Download on the App Store",
       "ctaPlayStore": "Get it on Google Play",
       "ctaCoach": "Are you a coach? Access the coach space"
+    },
+    "founders": {
+      "heading": "200 founder spots, lifetime premium",
+      "subheading": "Athletes and coaches: the first 200 people on the waitlist get lifetime premium on Ziko.",
+      "button": "Become a founder →",
+      "note": "Free to join, no commitment."
     },
     "howItWorks": {
       "heading": "How it works",
@@ -89,6 +96,8 @@
     "privacyDescription": "How Ziko collects and processes your personal data.",
     "cguTitle": "Terms of use",
     "cguDescription": "Terms of use for the Ziko application.",
+    "cgvTitle": "Terms of Sale",
+    "cgvDescription": "Terms of sale for the Ziko founder offer.",
     "deleteTitle": "Delete my account",
     "deleteDescription": "Request deletion of your Ziko account.",
     "appScreenshotAlt": "Ziko app screenshot"
@@ -98,7 +107,9 @@
     "legal": "Legal notice",
     "privacy": "Privacy policy",
     "terms": "Terms of use",
-    "deleteAccount": "Delete my account"
+    "cgv": "Terms of Sale",
+    "deleteAccount": "Delete my account",
+    "founders": "Founders"
   },
   "Login": {
     "title": "Welcome",
@@ -283,8 +294,8 @@
       "badge": "Private beta · 100% free",
       "headline": "The AI-powered coaching CRM",
       "subtitle": "Manage your clients, analyze their real-time data, and generate programs with AI. Free in private beta — the future ERP for fitness coaches.",
-      "cta": "Join the private beta",
-      "ctaNote": "No credit card required"
+      "cta": "Join the founders waitlist",
+      "ctaNote": "200 founder spots available"
     },
     "video": {
       "heading": "See Ziko in action",
@@ -365,8 +376,46 @@
     "cta": {
       "heading": "Join the first coaches on Ziko.",
       "subheading": "Open private beta — 100% free, no commitment.",
-      "button": "Join the private beta",
-      "note": "No credit card required"
+      "button": "Join the founders waitlist",
+      "note": "200 founder spots, lifetime premium"
+    }
+  },
+  "fondateurs": {
+    "meta": {
+      "title": "Ziko — Become a founding member",
+      "description": "The first 200 Ziko members get lifetime premium. Claim your spot with just an email address.",
+      "ogImageAlt": "Ziko founder offer — lifetime premium for the first 200 members"
+    },
+    "hero": {
+      "headline": "Become a Ziko founding member",
+      "subtitle": "Join the waitlist and get lifetime premium if you're one of the first 200 members."
+    },
+    "picker": {
+      "heading": "You are…",
+      "athlete": "Athlete",
+      "coach": "Coach"
+    },
+    "form": {
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@email.com",
+      "submit": "Claim my spot",
+      "submitPending": "Sending…"
+    },
+    "counter": {
+      "preThreshold": "The first 200 members get lifetime premium.",
+      "remaining": "Only {remaining} founder spots left",
+      "completeHeading": "All 200 founder spots are taken",
+      "completeBody": "Sign up anyway to be notified when we launch."
+    },
+    "success": {
+      "founder": "You're in! You're founder #{rank} of 200.",
+      "generic": "You're in! We'll let you know as soon as we launch."
+    },
+    "error": {
+      "invalidEmail": "This email address looks invalid or disposable. Please use a personal email address.",
+      "generic": "Something went wrong. Please try again.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes.",
+      "consentRequired": "Please check the box above to continue."
     }
   }
 }

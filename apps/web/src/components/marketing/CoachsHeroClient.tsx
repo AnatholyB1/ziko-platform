@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import { fadeIn, fadeUp, ctaHover, ctaTap } from '@/lib/motion'
+import { WAITLIST_ROLE_PARAM, WAITLIST_ROLE_COACH } from './WaitlistRoleForm'
 
 const wordVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -81,7 +82,7 @@ export function CoachsHeroClient({ locale, badge, headline, subtitle, cta, ctaNo
             >
               <motion.div whileHover={ctaHover} whileTap={ctaTap} className="inline-block">
                 <Link
-                  href={`/${locale}/coach/onboarding`}
+                  href={`/${locale}/fondateurs?${WAITLIST_ROLE_PARAM}=${WAITLIST_ROLE_COACH}`}
                   className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm inline-block"
                   style={{ boxShadow: '0 4px 20px rgba(255,92,26,0.30)' }}
                 >

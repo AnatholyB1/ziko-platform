@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
+import { AI_CREDIT_CAP_SENTENCE } from '@/content/legal/founder-offer'
 
 type Props = { params: Promise<{ locale: string }> }
 
@@ -36,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CguPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const isEn = locale === 'en';
 
   return (
     <main className="max-w-screen-xl mx-auto px-8 py-16 space-y-8">
@@ -120,7 +122,35 @@ export default async function CguPage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">6. Donn&eacute;es personnelles</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">
+          {isEn ? '6. Premium access and AI credits' : '6. Accès Premium et crédits IA'}
+        </h2>
+        <p className="text-text leading-relaxed mb-4">
+          {isEn ? AI_CREDIT_CAP_SENTENCE.en : AI_CREDIT_CAP_SENTENCE.fr}
+        </p>
+        <p className="text-text leading-relaxed mb-4">
+          {isEn ? (
+            <>
+              The specific terms of the founder offer are set out in the{' '}
+              <Link href="/cgv" className="text-primary underline">
+                Terms of Sale
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              Les modalit&eacute;s propres &agrave; l&apos;offre fondateurs sont pr&eacute;cis&eacute;es dans les{' '}
+              <Link href="/cgv" className="text-primary underline">
+                CGV
+              </Link>
+              .
+            </>
+          )}
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold mt-8 mb-3">7. Donn&eacute;es personnelles</h2>
         <p className="text-text leading-relaxed mb-4">
           Le traitement de vos donn&eacute;es personnelles est r&eacute;gi par notre{' '}
           <Link href="/politique-de-confidentialite" className="text-primary underline">
@@ -131,7 +161,7 @@ export default async function CguPage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">7. Propri&eacute;t&eacute; intellectuelle</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">8. Propri&eacute;t&eacute; intellectuelle</h2>
         <p className="text-text leading-relaxed mb-4">
           L&apos;ensemble des &eacute;l&eacute;ments constituant le Service (code source, design, textes, graphismes, logos, marques) est la propri&eacute;t&eacute; exclusive de Ziko et est prot&eacute;g&eacute; par le droit de la propri&eacute;t&eacute; intellectuelle fran&ccedil;ais et international.
         </p>
@@ -141,7 +171,7 @@ export default async function CguPage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">8. Limitation de responsabilit&eacute;</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">9. Limitation de responsabilit&eacute;</h2>
         <p className="text-text leading-relaxed mb-4">
           Le Service est fourni &laquo;&nbsp;en l&apos;&eacute;tat&nbsp;&raquo;, sans garantie d&apos;aucune sorte. Ziko ne garantit pas la disponibilit&eacute; continue du Service ni l&apos;absence d&apos;interruptions ou d&apos;erreurs.
         </p>
@@ -151,21 +181,21 @@ export default async function CguPage({ params }: Props) {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">9. Modification des CGU</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">10. Modification des CGU</h2>
         <p className="text-text leading-relaxed mb-4">
           Ziko se r&eacute;serve le droit de modifier les pr&eacute;sentes CGU &agrave; tout moment. Les modifications seront notifi&eacute;es aux utilisateurs par e-mail ou via l&apos;application avec un pr&eacute;avis raisonnable. La poursuite de l&apos;utilisation du Service apr&egrave;s notification vaut acceptation des nouvelles CGU.
         </p>
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold mt-8 mb-3">10. Droit applicable et juridiction</h2>
+        <h2 className="text-xl font-semibold mt-8 mb-3">11. Droit applicable et juridiction</h2>
         <p className="text-text leading-relaxed mb-4">
           Les pr&eacute;sentes CGU sont soumises au droit fran&ccedil;ais. En cas de litige relatif &agrave; l&apos;interpr&eacute;tation ou &agrave; l&apos;ex&eacute;cution des pr&eacute;sentes, les parties s&apos;engagent &agrave; tenter de r&eacute;soudre le diff&eacute;rend &agrave; l&apos;amiable avant tout recours judiciaire. &Agrave; d&eacute;faut, les tribunaux comp&eacute;tents [A COMPL&Eacute;TER] seront seuls comp&eacute;tents pour conna&icirc;tre du litige.
         </p>
       </section>
 
       <p className="text-muted text-sm mt-12">
-        Derni&egrave;re mise &agrave; jour&nbsp;: mars 2026
+        Derni&egrave;re mise &agrave; jour&nbsp;: ao&ucirc;t 2026
       </p>
     </main>
   );

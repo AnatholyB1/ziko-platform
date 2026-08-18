@@ -17,3 +17,20 @@ out/
 .mcp.json
 com.facebook.react.devsupport.*
 .worktrees/
+
+# GSD web-search cache — content-hashed, regenerable, not authored content
+.planning/**/.cache/
+
+# GSD write-guard override — transient, local, names a file allowed to shrink once
+.planning/.gsd-allow-shrink
+
+# GSD plan-phase scratch — rendered capability fragments and the edge-probe report,
+# staged for the planner subagent and regenerable from the capability registry
+.planning/**/.planner-contributions.md
+.planning/**/.edge-coverage.json
+
+# GSD dispatch-isolation sentinel — transient, session-local runtime state, regenerable
+.gsd/
+
+# Test-account purge exports — real account emails, must never be committed (phase 02)
+scripts/purge-test-accounts/exports/

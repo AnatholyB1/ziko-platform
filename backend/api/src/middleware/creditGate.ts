@@ -14,7 +14,8 @@ const supabase = createClient(supabaseUrl, serviceKey, {
 
 // ─── Context Variable Extension ──────────────────────────────
 // Same augmentation pattern as auth.ts.
-// creditPassThrough=true  → free quota slot (D-01/D-02) or premium user (PREM-02) — no deduction
+// creditPassThrough=true  → free quota slot (D-01/D-02), or the legacy premium
+//   pass-through while the activation flag (CRED-05) is off — no deduction
 // creditPassThrough=false → balance confirmed; creditDeduct will deduct after handler success
 declare module 'hono' {
   interface ContextVariableMap {
@@ -41,25 +42,55 @@ declare module 'hono' {
  * creditCheck(action) — factory returning a Hono middleware.
  *
  * Gate logic (in order):
- *  1. PREM-02: premium users bypass entirely (tier='premium')
- *  2. D-01/D-02: first-N-free daily quota pass-through (withinFreeQuota=true)
- *  3. D-04: insufficient balance → 402 with rich JSON body
- *  4. Otherwise: balance sufficient, set creditPassThrough=false, continue
+ *  1. CRED-05: read the activation flag from app_config. A missing/errored read,
+ *     or any value that is not the JS boolean `true`, is treated as flag-off —
+ *     the failure mode always degrades to the more permissive legacy behavior,
+ *     never to a stricter one.
+ *  2. Flag off: run the legacy tier read and pass through premium users
+ *     unconditionally (today's shipped behavior, reproduced exactly). Flag on:
+ *     skip the tier read entirely — premium and free users run identical code
+ *     from here down, and the premium advantage is balance size alone (D-03),
+ *     funded by the separate monthly grant.
+ *  3. D-01/D-02: first-N-free daily quota pass-through (withinFreeQuota=true)
+ *  4. D-04: insufficient balance → 402 with rich JSON body
+ *  5. Otherwise: balance sufficient, set creditPassThrough=false, continue
  */
 export function creditCheck(action: CreditAction) {
   return async (c: Context, next: Next) => {
     const userId = c.get('auth').userId;
 
-    // ── PREM-02: Premium bypass ──────────────────────────────
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('tier')
-      .eq('user_id', userId)
+    // ── CRED-05: activation flag read ────────────────────────
+    // Re-read on every request — no module-level cache, no env var, no
+    // build-time constant. Optional chaining means an errored or missing
+    // read (or any non-boolean-true value, e.g. the JSONB trap of a JS
+    // string 'true') evaluates to flag-off, the fail-safe direction.
+    const { data: config } = await supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'premium_credit_cap_enabled')
       .single();
 
-    if (profile?.tier === 'premium') {
-      c.set('creditPassThrough', true);
-      return next();
+    const capEnabled = config?.value === true;
+
+    if (!capEnabled) {
+      // ── Legacy path: reproduces today's premium pass-through exactly ──
+      // Rule-1 fix (04-01): user_profiles' PK column is `id`, not `user_id`
+      // (verified against 001_initial_schema.sql and context/user.ts:49's
+      // correct `.eq('id', userId)` read of this same table). The prior
+      // `.eq('user_id', userId)` filtered on a nonexistent column, which
+      // PostgREST rejects — profile always came back null, so the tier
+      // condition below never actually resolved true in production,
+      // regardless of tier.
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('tier')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.tier === 'premium') {
+        c.set('creditPassThrough', true);
+        return next();
+      }
     }
 
     // ── D-01/D-02: Free quota pass-through ──────────────────
@@ -118,7 +149,8 @@ export function creditCheck(action: CreditAction) {
  *
  * Runs AFTER the handler (calls await next() first so the full downstream chain executes).
  * Only deducts when:
- *  - creditPassThrough is false (not a free quota slot / not premium)
+ *  - creditPassThrough is false (not a free-quota slot, and not the legacy
+ *    premium pass-through while the activation flag is off)
  *  - Handler responded with status < 400 (SC5: no charge on failure)
  *
  * Uses X-Request-Id header as idempotency key when provided by the client,
@@ -130,11 +162,11 @@ export function creditDeduct(action: CreditAction) {
     // Handler (and all downstream middleware including zValidator) runs first
     await next();
 
-    // Free quota slot or premium — track usage so getQuotaStatus advances, then skip deduction
+    // Free-quota slot, or the legacy premium pass-through while the activation
+    // flag is off — track usage so getQuotaStatus advances, then skip deduction
     if (c.get('creditPassThrough') === true) {
       const userId = c.get('auth').userId;
       const idempotencyKey = c.req.header('X-Request-Id') ?? crypto.randomUUID();
-      // Only track quota for non-premium (premium bypass should not consume quota slots)
       creditService
         .trackQuotaUsage(userId, action, idempotencyKey)
         .catch(() => {});

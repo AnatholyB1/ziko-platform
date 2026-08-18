@@ -9,7 +9,9 @@ export async function Footer() {
       legal={t('legal')}
       privacy={t('privacy')}
       terms={t('terms')}
+      cgv={t('cgv')}
       deleteAccount={t('deleteAccount')}
+      founders={t('founders')}
     />
   )
 }

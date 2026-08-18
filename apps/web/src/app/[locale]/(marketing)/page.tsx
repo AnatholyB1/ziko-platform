@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { Hero } from '@/components/marketing/Hero'
+import { FoundersOfferSection } from '@/components/marketing/FoundersOfferSection'
 import { HowItWorks } from '@/components/marketing/HowItWorks'
 import { AICoach } from '@/components/marketing/AICoach'
 import { PluginShowcase } from '@/components/marketing/PluginShowcase'
@@ -69,6 +70,7 @@ export default async function HomePage({ params }: Props) {
       <JsonLd data={appSchema} />
       <JsonLd data={websiteSchema} />
       <Hero />
+      <FoundersOfferSection locale={locale} />
       <HowItWorks />
       <AICoach />
       <PluginShowcase />

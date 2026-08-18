@@ -22,10 +22,12 @@ type Props = {
   legal: string
   privacy: string
   terms: string
+  cgv: string
   deleteAccount: string
+  founders: string
 }
 
-export function FooterClient({ copyright, legal, privacy, terms, deleteAccount }: Props) {
+export function FooterClient({ copyright, legal, privacy, terms, cgv, deleteAccount, founders }: Props) {
   return (
     <footer className="bg-white">
       <div className="h-px w-full bg-gradient-to-r from-primary/20 to-transparent" />
@@ -35,9 +37,11 @@ export function FooterClient({ copyright, legal, privacy, terms, deleteAccount }
           <p className="text-sm text-muted">{copyright}</p>
         </div>
         <nav className="flex flex-wrap gap-6 justify-center">
+          <AnimatedLink href="/fondateurs">{founders}</AnimatedLink>
           <AnimatedLink href="/mentions-legales">{legal}</AnimatedLink>
           <AnimatedLink href="/politique-de-confidentialite">{privacy}</AnimatedLink>
           <AnimatedLink href="/cgu">{terms}</AnimatedLink>
+          <AnimatedLink href="/cgv">{cgv}</AnimatedLink>
           <Link href="/supprimer-mon-compte" className="text-sm text-muted hover:text-text transition-colors">
             {deleteAccount}
           </Link>
