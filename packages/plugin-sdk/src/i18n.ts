@@ -281,6 +281,9 @@ const fr: TranslationDict = {
   'exercise.category.balance': 'Équilibre',
   'exercise.category.sports': 'Sports',
   'exercise.category.stretching': 'Étirements',
+  'exercise.mediaUnavailable': 'Aperçu indisponible',
+  'exercise.instructionsEmptyTitle': 'Consignes à venir',
+  'exercise.instructionsEmptyBody': "Les instructions détaillées n'ont pas encore été ajoutées pour cet exercice.",
 
   // ── Muscle groups ──
   'muscle.chest': 'Pectoraux',
@@ -1105,6 +1108,9 @@ const en: TranslationDict = {
   'exercise.category.balance': 'Balance',
   'exercise.category.sports': 'Sports',
   'exercise.category.stretching': 'Stretching',
+  'exercise.mediaUnavailable': 'Preview unavailable',
+  'exercise.instructionsEmptyTitle': 'Instructions coming soon',
+  'exercise.instructionsEmptyBody': "Detailed instructions haven't been added for this exercise yet.",
 
   // ── Muscle groups ──
   'muscle.chest': 'Chest',
