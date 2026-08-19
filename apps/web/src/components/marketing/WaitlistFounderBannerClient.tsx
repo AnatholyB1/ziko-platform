@@ -78,7 +78,7 @@ export function WaitlistFounderBannerClient({
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="text-5xl md:text-7xl font-bold leading-none text-text"
+            className="text-5xl md:text-7xl font-bold leading-none tracking-tight text-text"
           >
             {heroHeadline}
           </motion.h1>
