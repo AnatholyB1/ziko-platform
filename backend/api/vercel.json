@@ -26,7 +26,7 @@
     },
     {
       "path": "/notifications/cron/check-receipts",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 5 * * *"
     },
     {
       "path": "/notifications/cron/weekly-digest",
