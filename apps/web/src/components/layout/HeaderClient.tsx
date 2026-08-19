@@ -30,7 +30,7 @@ export function HeaderClient({ locale, logo, localeFR, localeEN, cta, founders }
         className="absolute inset-0 backdrop-blur-md bg-white/90 border-b border-border"
         style={{ opacity: blurOpacity }}
       />
-      <div className="relative max-w-screen-xl mx-auto px-8 h-14 flex items-center justify-between">
+      <div className="relative max-w-screen-xl mx-auto px-8 min-h-14 py-2 flex items-center justify-between">
         <Link href="/" className="text-2xl font-black text-primary">
           {logo}
         </Link>
