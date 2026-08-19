@@ -102,19 +102,25 @@ export async function claimWaitlistSpot(
   // addresses (limited by IP), and many sources hammering one address (limited by the
   // submitted address's lowercased form, always checked regardless of IP availability).
   const clientAddress = await getClientAddress();
-  const rateLimitChecks = [waitlistRatelimit.limit(email.toLowerCase())];
-  if (clientAddress) {
-    rateLimitChecks.push(waitlistRatelimit.limit(clientAddress));
-  }
-  const rateLimitResults = await Promise.all(rateLimitChecks);
-  if (rateLimitResults.some((result) => !result.success)) {
-    return {
-      status: 'error',
-      isFounder: false,
-      founderRank: null,
-      message: 'Trop de tentatives. Merci de réessayer dans quelques minutes.',
-      code: 'rate_limited',
-    };
+  try {
+    const rateLimitChecks = [waitlistRatelimit.limit(email.toLowerCase())];
+    if (clientAddress) {
+      rateLimitChecks.push(waitlistRatelimit.limit(clientAddress));
+    }
+    const rateLimitResults = await Promise.all(rateLimitChecks);
+    if (rateLimitResults.some((result) => !result.success)) {
+      return {
+        status: 'error',
+        isFounder: false,
+        founderRank: null,
+        message: 'Trop de tentatives. Merci de réessayer dans quelques minutes.',
+        code: 'rate_limited',
+      };
+    }
+  } catch (rateLimitError) {
+    // Upstash unreachable (DNS/network) must never take down signup — rate limiting is a
+    // protective layer, not a core dependency. Fail open and keep going.
+    console.error('[waitlist] rate limit check failed, allowing request', rateLimitError);
   }
 
   // Syntax.
