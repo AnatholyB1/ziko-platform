@@ -1,4 +1,4 @@
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import type { Expo as ExpoType, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // CRITICAL: SUPABASE_SERVICE_KEY is required — bypasses RLS for cross-user token queries
@@ -25,7 +25,21 @@ function getSupabaseAdmin(): SupabaseClient<any> {
   return _supabaseAdminClient;
 }
 
-const expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+// expo-server-sdk is ESM-only; this project compiles to CommonJS, so a static
+// import would emit a require() that crashes at runtime (ERR_REQUIRE_ESM).
+// Load it lazily via dynamic import() instead, same lazy-singleton pattern as
+// the Supabase admin client above.
+let _expoClass: typeof ExpoType | null = null;
+let _expo: ExpoType | null = null;
+async function getExpo(): Promise<{ Expo: typeof ExpoType; expo: ExpoType }> {
+  if (!_expoClass) {
+    ({ Expo: _expoClass } = await import('expo-server-sdk'));
+  }
+  if (!_expo) {
+    _expo = new _expoClass({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+  }
+  return { Expo: _expoClass, expo: _expo };
+}
 
 export interface NotificationPayload {
   recipientUserId: string;
@@ -147,6 +161,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   const allTokens = (tokenRows ?? []).map((r: { token: string }) => r.token);
 
   // ── Step 5: Filter invalid tokens ─────────────────────────────
+  const { Expo, expo } = await getExpo();
   const validTokens: string[] = [];
   for (const token of allTokens) {
     if (Expo.isExpoPushToken(token)) {
@@ -232,6 +247,7 @@ async function sendBatch(payloads: NotificationPayload[]): Promise<BatchResult> 
 }
 
 async function processReceipts(receiptIds: string[]): Promise<void> {
+  const { expo } = await getExpo();
   const chunks = expo.chunkPushNotificationReceiptIds(receiptIds);
 
   for (const chunk of chunks) {
