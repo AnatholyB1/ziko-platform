@@ -90,6 +90,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.13 Retour Vidéo Coach (`retour-video`) — athlète upload vidéo depuis mobile → player web coach avec annotations timecodées (texte + vocal nettoyé).
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
+**Parallel workstream:** v1.17 Connexion Google & Apple (`connexion`) — remplace les boutons Google/Apple non-fonctionnels de l'écran welcome mobile par de vrais flows OAuth natifs (Supabase Auth), avec linking automatique des comptes par email vérifié.
 
 ---
 
