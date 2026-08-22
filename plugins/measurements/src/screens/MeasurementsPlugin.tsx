@@ -103,9 +103,20 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
   const [thigh, setThigh] = useState('');
   const [hip, setHip] = useState('');
 
+  // Fetch current user
+  const { data: userInfo } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+  const userId = userInfo?.id ?? null;
+
   // ── Queries ──────────────────────────────────────────────────────────────
   const { data: latestMeasurement, isLoading: measurementsLoading, isError: measurementsError, refetch: measurementsRefetch } = useQuery({
-    queryKey: ['latest_measurement', 'user'],
+    queryKey: ['latest_measurement', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const {
         data: { user },
@@ -129,7 +140,8 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       : null;
 
   const { data: measurements6weeks } = useQuery({
-    queryKey: ['measurements_6weeks', 'user'],
+    queryKey: ['measurements_6weeks', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const {
         data: { user },
