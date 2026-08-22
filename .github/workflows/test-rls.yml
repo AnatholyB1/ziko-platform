@@ -111,7 +111,13 @@ jobs:
 
       - name: Guard — no service-role references under src/
         run: |
-          if grep -rE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]role' backend/api/src/ ; then
+          # Exclude whole-line comments — this guard should only catch actual
+          # code usage, not documentation like "no service-role key is used
+          # in this module" (backend/api/src/coach/imports/db.ts:13), which
+          # was a false positive.
+          MATCHES=$(grep -rnE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]role' backend/api/src/ | grep -vE ':[0-9]+:\s*//' || true)
+          if [ -n "$MATCHES" ]; then
+            echo "$MATCHES"
             echo "::error::service-role reference detected under backend/api/src/. ARCH-03 violation."
             exit 1
           fi
