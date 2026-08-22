@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.17
 milestone_name: Connexion Google & Apple
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-08-22T23:34:15.126Z"
+stopped_at: Completed 01-01-PLAN.md (native OAuth SDKs + Apple entitlement)
+last_updated: "2026-08-22T23:57:48.362Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -22,15 +22,15 @@ See: `.planning/workstreams/connexion/REQUIREMENTS.md` and `ROADMAP.md` for this
 
 **Core value:** L'utilisateur peut créer un compte et se connecter à l'app mobile Ziko via Google
 ou Apple, sans friction et sans doublon de compte.
-**Current focus:** Phase 1 — OAuth Infrastructure (native deps, entitlements, Supabase provider config)
+**Current focus:** Phase 1 — OAuth Infrastructure
 
 ## Current Position
 
-Phase: Not started (defining requirements — complete, ready to plan)
-Plan: —
+Phase: 1 (OAuth Infrastructure) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
 
-Progress: [░░░░░░░░░░] 0% (0/2 phases complete)
+Progress: [███░░░░░░░] 25%
 
 ## Accumulated Context
 
@@ -47,6 +47,9 @@ Progress: [░░░░░░░░░░] 0% (0/2 phases complete)
 - Phase order: infrastructure (native deps, entitlements, Supabase config) before UX — the sign-in
   screens are unbuildable/untestable without the native OAuth clients registered first
 
+- [Phase 01-01]: expo-apple-authentication pinned at 8.0.8 (SDK-54 compatible), not RESEARCH.md's 57.0.1 floor — expo install's own SDK-54 resolver confirmed 8.0.8; npm dist-tags show 57.0.1 targets a newer SDK line, no sdk-54 tag exists for this package
+- [Phase 01-01]: Removed expo install's auto-added google-signin config-plugin entry from app.json — iosUrlScheme unknown until plan 01-02's Google Cloud Console checkpoint; plan explicitly forbids adding a placeholder
+
 ### Pending Todos
 
 None yet.
@@ -61,6 +64,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-22T22:27:10.229Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/workstreams/connexion/phases/01-oauth-infrastructure/01-CONTEXT.md
+Last session: 2026-08-22T23:57:48.351Z
+Stopped at: Completed 01-01-PLAN.md (native OAuth SDKs + Apple entitlement)
+Resume file: None

@@ -26,10 +26,10 @@ handshake and Supabase is configured to accept it — before any UI work happens
 **Depends on**: Nothing (first phase)
 **Requirements**: OAUTH-08, OAUTH-09, OAUTH-10
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
-- [ ] 01-01-PLAN.md — Install the native OAuth SDKs and declare Apple Sign-In in app.json
+- [x] 01-01-PLAN.md — Install the native OAuth SDKs and declare Apple Sign-In in app.json
 - [ ] 01-02-PLAN.md — Register the Google OAuth clients (Web/Android/iOS) + release keystore SHA-1, wire client IDs into app.json
 - [ ] 01-03-PLAN.md — Enable Sign In with Apple on the App ID and configure the Supabase Auth providers
 - [ ] 01-04-PLAN.md — Prove the entitlement and native-module link on real EAS build artifacts

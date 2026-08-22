@@ -18,7 +18,7 @@
 
 ### Configuration native
 
-- [ ] **OAUTH-08**: Le build iOS embarque l'entitlement `com.apple.developer.applesignin`
+- [x] **OAUTH-08**: Le build iOS embarque l'entitlement `com.apple.developer.applesignin`
 - [ ] **OAUTH-09**: Un client OAuth Android est configuré (SHA-1 keystore dev + prod enregistrées) et relié à `google-services.json`
 - [ ] **OAUTH-10**: Les providers Google et Apple sont activés dans le dashboard Supabase Auth du projet `ziko`, avec les client IDs/secrets corrects, et le linking automatique par email vérifié est activé (support d'OAUTH-11)
 
@@ -47,7 +47,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OAUTH-08 | Phase 1 | Pending |
+| OAUTH-08 | Phase 1 | Complete |
 | OAUTH-09 | Phase 1 | Pending |
 | OAUTH-10 | Phase 1 | Pending |
 | OAUTH-01 | Phase 2 | Pending |
