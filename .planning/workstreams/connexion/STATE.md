@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.17
 milestone_name: Connexion Google & Apple
-status: planning
+status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-08-22T22:27:10.250Z"
+last_updated: "2026-08-22T23:34:15.126Z"
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -28,7 +28,7 @@ ou Apple, sans friction et sans doublon de compte.
 
 Phase: Not started (defining requirements — complete, ready to plan)
 Plan: —
-Status: Ready to plan Phase 1
+Status: Ready to execute
 
 Progress: [░░░░░░░░░░] 0% (0/2 phases complete)
 
