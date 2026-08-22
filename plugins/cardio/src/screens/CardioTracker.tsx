@@ -97,60 +97,75 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
 
   useEffect(() => () => stopTracking(), []);
 
+  const isStartingTrackingRef = useRef(false);
+
   const startLocationTracking = useCallback(async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setLocationError('Permission GPS refusée. Active la localisation dans les réglages.');
-      return false;
-    }
-    setLocationError(null);
+    if (isStartingTrackingRef.current) return false;
+    isStartingTrackingRef.current = true;
+    try {
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
 
-    locationSubRef.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.BestForNavigation,
-        distanceInterval: 5, // update every 5m
-        timeInterval: 3000,
-      },
-      (loc) => {
-        const point: RoutePoint = {
-          lat: loc.coords.latitude,
-          lng: loc.coords.longitude,
-          timestamp: loc.timestamp,
-          altitude: loc.coords.altitude ?? undefined,
-        };
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Permission GPS refusée. Active la localisation dans les réglages.');
+        return false;
+      }
+      setLocationError(null);
 
-        setRoutePoints((prev) => {
-          const last = prev[prev.length - 1];
-          if (!last) return [...prev, point];
+      locationSubRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          distanceInterval: 5, // update every 5m
+          timeInterval: 3000,
+        },
+        (loc) => {
+          const point: RoutePoint = {
+            lat: loc.coords.latitude,
+            lng: loc.coords.longitude,
+            timestamp: loc.timestamp,
+            altitude: loc.coords.altitude ?? undefined,
+          };
 
-          const segDist = haversine(last.lat, last.lng, point.lat, point.lng);
-          // Filter GPS noise: ignore jumps > 50m in < 3s
-          const timeDiff = (point.timestamp - last.timestamp) / 1000;
-          if (segDist > 0.05 && timeDiff < 3) return prev;
+          const last = lastPointRef.current;
+          let isNoise = false;
 
-          if (segDist > 0.001) { // > 1m
-            setDistanceKm((d) => d + segDist);
+          if (last) {
+            const segDist = haversine(last.lat, last.lng, point.lat, point.lng);
+            // Filter GPS noise: ignore jumps > 50m in < 3s
+            const timeDiff = (point.timestamp - last.timestamp) / 1000;
+            isNoise = segDist > 0.05 && timeDiff < 3;
 
-            // Rolling 60s pace
-            const now = point.timestamp;
-            recentDistancesRef.current = [
-              ...recentDistancesRef.current.filter((r) => now - r.time < 60000),
-              { dist: segDist, time: now },
-            ];
-            const recentDist = recentDistancesRef.current.reduce((s, r) => s + r.dist, 0);
-            const recentTime = (now - (recentDistancesRef.current[0]?.time ?? now)) / 1000;
-            if (recentDist > 0.05 && recentTime > 5) {
-              setCurrentPaceSecPerKm(recentTime / recentDist);
+            if (!isNoise && segDist > 0.001) { // > 1m
+              setDistanceKm((d) => d + segDist);
+
+              // Rolling 60s pace
+              const now = point.timestamp;
+              recentDistancesRef.current = [
+                ...recentDistancesRef.current.filter((r) => now - r.time < 60000),
+                { dist: segDist, time: now },
+              ];
+              const recentDist = recentDistancesRef.current.reduce((s, r) => s + r.dist, 0);
+              const recentTime = (now - (recentDistancesRef.current[0]?.time ?? now)) / 1000;
+              if (recentDist > 0.05 && recentTime > 5) {
+                setCurrentPaceSecPerKm(recentTime / recentDist);
+              }
             }
           }
 
-          return [...prev, point];
-        });
+          if (!isNoise) {
+            setRoutePoints((prev) => [...prev, point]);
+          }
 
-        lastPointRef.current = point;
-      }
-    );
-    return true;
+          lastPointRef.current = point;
+        }
+      );
+      return true;
+    } finally {
+      isStartingTrackingRef.current = false;
+    }
   }, []);
 
   const handleStart = async () => {
@@ -166,7 +181,7 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
     Vibration.vibrate(100);
   };
 
-  const handlePause = () => {
+  const handlePause = async () => {
     if (trackingState === 'running') {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (locationSubRef.current) locationSubRef.current.remove();
@@ -174,7 +189,8 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
       setTrackingState('paused');
       Vibration.vibrate(200);
     } else if (trackingState === 'paused') {
-      startLocationTracking();
+      const ok = await startLocationTracking();
+      if (!ok) return;
       intervalRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
       setTrackingState('running');
       Vibration.vibrate(100);
