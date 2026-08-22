@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -103,7 +103,7 @@ export default function ChallengeDetailScreen({ supabase }: { supabase: any }) {
 
   const handleJoin = async (teamId?: string) => {
     await joinChallenge(supabase, challenge.id, teamId);
-    Alert.alert('Rejoint !', 'Tu as rejoint le défi');
+    showAlert('Rejoint !', 'Tu as rejoint le défi');
     load();
   };
 
