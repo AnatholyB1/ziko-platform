@@ -26,12 +26,28 @@ handshake and Supabase is configured to accept it — before any UI work happens
 **Depends on**: Nothing (first phase)
 **Requirements**: OAUTH-08, OAUTH-09, OAUTH-10
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Install the native OAuth SDKs and declare Apple Sign-In in app.json
+- [ ] 01-02-PLAN.md — Register the Google OAuth clients (Web/Android/iOS) + release keystore SHA-1, wire client IDs into app.json
+- [ ] 01-03-PLAN.md — Enable Sign In with Apple on the App ID and configure the Supabase Auth providers
+- [ ] 01-04-PLAN.md — Prove the entitlement and native-module link on real EAS build artifacts
+
 **Success criteria:**
 1. iOS build includes the `com.apple.developer.applesignin` entitlement
-2. Android build has a registered OAuth client (dev + prod SHA-1) wired to `google-services.json`
+2. Android build has a registered OAuth client (prod/preview release-keystore SHA-1) wired to `google-services.json`
+   *(revised during planning: the local dev/debug keystore SHA-1 is out of scope per CONTEXT.md D-02)*
 3. Supabase Auth dashboard has Google and Apple providers enabled with correct client IDs/secrets
-4. Supabase Auth automatic linking (by verified email) is enabled for the `ziko` project
-5. Native dependencies installed (`expo-apple-authentication`, Google Sign-In SDK, `expo-web-browser`/`expo-auth-session` as needed) and the app builds successfully on both platforms
+4. Supabase Auth automatic linking (by verified email) is confirmed active for the `ziko` project
+   *(revised during planning: RESEARCH.md Finding 1 / Pitfall 7 established there is no toggle to enable —
+   automatic linking is default GoTrue behavior. Phase 1 enables the providers, keeps "Allow manual
+   linking" OFF, and carries the behavioral linking test into Phase 2, which is the first phase where a
+   real Google/Apple sign-in can be performed.)*
+5. Native dependencies installed (`expo-apple-authentication` + `@react-native-google-signin/google-signin`)
+   and the app builds successfully on both platforms
+   *(revised during planning: `expo-web-browser`/`expo-auth-session` are deliberately NOT installed —
+   RESEARCH.md rules out the browser-redirect path as the cause of the very bug this milestone fixes)*
 
 ### Phase 2: Google & Apple Sign-In UX
 
