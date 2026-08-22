@@ -2,7 +2,6 @@ import type {
   UserProfile,
   PluginManifest,
   AISkill,
-  AIMessage,
 } from '@ziko/plugin-sdk';
 
 // ── Payload sent to the AI agent API ────────────────────
@@ -43,14 +42,12 @@ Keep responses concise unless the user asks for detail. Use markdown sparingly.`
 // ── AIBridge ─────────────────────────────────────────────
 export class AIBridge {
   private agentUrl: string;
-  private apiKey: string;
   private skillsByPlugin: Map<string, AISkill[]> = new Map();
   private activePluginManifests: Map<string, PluginManifest> = new Map();
 
-  constructor(agentUrl: string, apiKey: string) {
+  constructor(agentUrl: string) {
     if (!agentUrl) throw new Error('AIBridge: agentUrl is required');
     this.agentUrl = agentUrl.replace(/\/$/, '');
-    this.apiKey = apiKey;
   }
 
   // ── Plugin & Skill management ─────────────────────────
@@ -123,24 +120,24 @@ export class AIBridge {
   async sendMessage(
     conversationId: string,
     message: string,
-    history: AIMessage[],
     userContext: AIRequestPayload['user_context'],
     onChunk: (text: string) => void,
     signal?: AbortSignal,
     onActions?: (actions: AIAction[]) => void,
     authToken?: string,
   ): Promise<void> {
+    if (!authToken) {
+      return Promise.reject(new Error('AIBridge.sendMessage: authToken is required'));
+    }
+
     const systemPrompt = this.buildSystemPrompt(
       userContext.profile,
       Array.from(this.activePluginManifests.values()),
     );
 
-    const messages = history
-      .filter((m) => m.role !== 'system')
-      .slice(-20)
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-
-    messages.push({ role: 'user', content: message });
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+      { role: 'user', content: message },
+    ];
 
     const payload: AIRequestPayload = {
       system: systemPrompt,
@@ -150,9 +147,10 @@ export class AIBridge {
 
     return new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      let settled = false;
       xhr.open('POST', `${this.agentUrl}/chat/stream`);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('Authorization', `Bearer ${authToken ?? this.apiKey}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
       xhr.setRequestHeader('X-Conversation-Id', conversationId);
 
       let processedLength = 0;
@@ -175,6 +173,7 @@ export class AIBridge {
             } else if (chunk.type === 'actions' && chunk.actions && onActions) {
               onActions(chunk.actions);
             } else if (chunk.type === 'error') {
+              settled = true;
               reject(new Error(chunk.error ?? 'Stream error'));
             }
           } catch {
@@ -192,6 +191,7 @@ export class AIBridge {
 
       xhr.onload = () => {
         done = true;
+        settled = true;
         // Process any remaining bytes
         const remaining = xhr.responseText.slice(processedLength);
         if (remaining) processChunk(remaining);
@@ -202,61 +202,23 @@ export class AIBridge {
         }
       };
 
-      xhr.onerror = () => reject(new Error('Network error'));
-      xhr.ontimeout = () => reject(new Error('Request timeout'));
+      xhr.onerror = () => { settled = true; reject(new Error('Network error')); };
+      xhr.ontimeout = () => { settled = true; reject(new Error('Request timeout')); };
 
       if (signal) {
-        signal.addEventListener('abort', () => { xhr.abort(); reject(new Error('Aborted')); });
+        signal.addEventListener(
+          'abort',
+          () => {
+            if (settled) return;
+            settled = true;
+            xhr.abort();
+            reject(new Error('Aborted'));
+          },
+          { once: true },
+        );
       }
 
       xhr.send(JSON.stringify(payload));
     });
-  }
-
-  // ── Non-streaming fallback ────────────────────────────
-
-  async sendMessageSync(
-    conversationId: string,
-    message: string,
-    history: AIMessage[],
-    userContext: AIRequestPayload['user_context'],
-    signal?: AbortSignal,
-  ): Promise<string> {
-    const systemPrompt = this.buildSystemPrompt(
-      userContext.profile,
-      Array.from(this.activePluginManifests.values()),
-    );
-
-    const messages = history
-      .filter((m) => m.role !== 'system')
-      .slice(-20)
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-
-    messages.push({ role: 'user', content: message });
-
-    const payload: AIRequestPayload = {
-      system: systemPrompt,
-      messages,
-      user_context: userContext,
-    };
-
-    const response = await fetch(`${this.agentUrl}/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-        'X-Conversation-Id': conversationId,
-      },
-      body: JSON.stringify(payload),
-      signal,
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`AI API error ${response.status}: ${error}`);
-    }
-
-    const data = (await response.json()) as Record<string, unknown>;
-    return (data.content ?? data.message ?? '') as string;
   }
 }
