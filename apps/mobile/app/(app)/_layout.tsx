@@ -26,6 +26,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
 import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
+import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
 // requiring expo-notifications at module load time (crashes when
@@ -33,8 +34,10 @@ import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 
 function handleNotificationResponse(response: NotificationsType.NotificationResponse) {
   const url = response.notification.request.content.data?.url as string | undefined;
-  if (url) {
+  if (url && isAllowedNotificationRoute(url)) {
     router.push(url as any);
+  } else if (url) {
+    console.warn('[Notifications] Blocked navigation to disallowed route:', url);
   }
 }
 
