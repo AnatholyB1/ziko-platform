@@ -109,6 +109,15 @@ None - no external service configuration required by this plan. Plan 01-02 will 
 - `apps/mobile` now has both native OAuth SDKs installed and the Apple entitlement generation confirmed — ready for plan 01-02's Google Cloud Console checkpoint (Web/Android/iOS OAuth clients + SHA-1 registration) to produce the `iosUrlScheme` value needed to add the google-signin config-plugin entry.
 - No blockers. Note for plan 01-02: the installed `@react-native-google-signin/google-signin` version is `16.1.4` — its TypeScript types should be checked for a custom-nonce parameter (RESEARCH.md assumption A2) before the Supabase "Skip Nonce Check" decision in plan 01-03.
 
+## Self-Check: PASSED
+
+- FOUND: apps/mobile/package.json
+- FOUND: apps/mobile/app.json
+- FOUND: .planning/workstreams/connexion/phases/01-oauth-infrastructure/01-01-SUMMARY.md
+- FOUND: 5ac1df1a (Task 1 commit)
+- FOUND: 85e89352 (Task 2 commit)
+- FOUND: b2fce584 (SUMMARY commit)
+
 ---
 *Phase: 01-oauth-infrastructure*
 *Completed: 2026-08-22*
