@@ -44,8 +44,14 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install backend deps
-        working-directory: backend/api
+      # Installed from the repo root, not backend/api — this is an npm
+      # workspaces monorepo with a single root lockfile. Running `npm ci`
+      # from a workspace subfolder still triggers the root's `postinstall`
+      # (patch-package), but scopes that lifecycle script's PATH to
+      # backend/api/node_modules/.bin, where patch-package's bin doesn't
+      # exist (it's hoisted to the root node_modules/.bin only) — causing
+      # every run to fail with "patch-package: not found".
+      - name: Install deps
         run: npm ci
 
       - name: Write .env.test
