@@ -22,7 +22,10 @@
         "NSHealthUpdateUsageDescription": "Ziko writes workout data back to Apple Health.",
         "NSLocationWhenInUseUsageDescription": "Ziko utilise votre position GPS pour enregistrer vos parcours de course et de vélo.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Ziko utilise votre position GPS pour enregistrer vos parcours en arrière-plan.",
-        "UIBackgroundModes": ["remote-notification", "fetch"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ]
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
