@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useThemeStore } from '../../../src/stores/themeStore';
+import { useAuthStore } from '../../../src/stores/authStore';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import { ErrorScreen } from '@ziko/ui';
@@ -174,10 +175,12 @@ export default function AIChatScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
 
+  const userId = useAuthStore((s) => s.user?.id);
+
   // ── Credits query ─────────────────────────────────────────
 
   const { data: creditsData, isError: creditsError } = useQuery({
-    queryKey: ['userCredits'],
+    queryKey: ['userCredits', userId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -189,6 +192,7 @@ export default function AIChatScreen() {
         .single();
       return data;
     },
+    enabled: !!userId,
     staleTime: 30_000,
   });
 
