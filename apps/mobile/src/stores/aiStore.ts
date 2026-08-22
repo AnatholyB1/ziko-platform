@@ -93,7 +93,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
   },
 
   sendMessage: async (content) => {
-    const { currentConversationId, messages, activePluginContext } = get();
+    const { currentConversationId, activePluginContext } = get();
     const profile = useAuthStore.getState().profile;
     const user = useAuthStore.getState().user;
     if (!user) return;
@@ -113,13 +113,6 @@ export const useAIStore = create<AIStore>()((set, get) => ({
     };
     set((s) => ({ messages: [...s.messages, userMsg] }));
 
-    // Save user message to DB
-    await supabase.from('ai_messages').insert({
-      conversation_id: conversationId,
-      role: 'user',
-      content,
-    });
-
     set({ isStreaming: true, streamingContent: '', pendingActions: [] });
 
     let fullResponse = '';
@@ -131,7 +124,6 @@ export const useAIStore = create<AIStore>()((set, get) => ({
       await aiBridge.sendMessage(
         conversationId,
         content,
-        messages,
         {
           profile,
           today_workout: null,
@@ -153,23 +145,13 @@ export const useAIStore = create<AIStore>()((set, get) => ({
       throw err;
     }
 
-    // Save assistant message to DB
+    // Assistant message: optimistic local append only (backend persists to ai_messages)
     if (!fullResponse) {
       set({ isStreaming: false, streamingContent: '' });
       return;
     }
 
-    const { data: savedMsg } = await supabase
-      .from('ai_messages')
-      .insert({
-        conversation_id: conversationId,
-        role: 'assistant',
-        content: fullResponse,
-      })
-      .select()
-      .single();
-
-    const assistantMsg: AIMessage = savedMsg as AIMessage ?? {
+    const assistantMsg: AIMessage = {
       id: `assistant-${Date.now()}`,
       conversation_id: conversationId,
       role: 'assistant',

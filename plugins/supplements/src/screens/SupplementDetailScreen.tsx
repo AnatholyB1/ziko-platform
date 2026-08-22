@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, Linking, Alert,
+  View, Text, ScrollView, TouchableOpacity, Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useSupplementsStore, MAX_COMPARE } from '../store';
 import type { Supplement, SupplementPrice } from '../store';
 
@@ -141,7 +141,7 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
           onPress={() => {
             if (inCompare) return;
             if (!addToCompare({ ...supplement, latest_price: cheapest })) {
-              Alert.alert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
+              showAlert(t('supplements.compareFull'), t('supplements.compareFullMsg'));
             }
           }}
           style={{

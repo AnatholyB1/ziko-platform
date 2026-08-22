@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Modal,
+  View, Text, TextInput, TouchableOpacity, ScrollView, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useTimerStore } from '../store';
 import type { TimerExercise } from '../store';
 
@@ -72,7 +72,7 @@ export default function TimerEditor({ supabase }: { supabase: any }) {
 
   const saveExercise = () => {
     if (!draftEx.name.trim()) {
-      Alert.alert('Erreur', 'Le nom de l\'exercice est requis');
+      showAlert('Erreur', 'Le nom de l\'exercice est requis');
       return;
     }
     const cleaned: TimerExercise = {
@@ -144,7 +144,7 @@ export default function TimerEditor({ supabase }: { supabase: any }) {
       }
       router.back();
     } catch (err: any) {
-      Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
     } finally {
       setSaving(false);
     }
