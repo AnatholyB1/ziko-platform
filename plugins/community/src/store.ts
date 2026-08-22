@@ -662,59 +662,30 @@ export async function sendXpGift(supabase: any, receiverId: string, amount: numb
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('xp_gifts').insert({
-    sender_id: user.id,
-    receiver_id: receiverId,
-    amount,
-    message,
+  const { data, error } = await supabase.rpc('send_xp_gift', {
+    p_sender_id: user.id,
+    p_receiver_id: receiverId,
+    p_amount: amount,
+    p_message: message ?? null,
   });
 
-  await incrementStat(supabase, user.id, 'xp_gifted', amount);
-  await incrementStat(supabase, receiverId, 'xp_received', amount);
+  if (error) throw new Error(error.message);
+  if (!data.success) throw new Error(data.error);
 }
 
 export async function sendCoinGift(supabase: any, receiverId: string, amount: number, message?: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Deduct from sender
-  const { data: senderProfile } = await supabase
-    .from('user_gamification')
-    .select('coins')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!senderProfile || senderProfile.coins < amount) {
-    throw new Error('Pas assez de pièces');
-  }
-
-  await supabase
-    .from('user_gamification')
-    .update({ coins: senderProfile.coins - amount })
-    .eq('user_id', user.id);
-
-  // Add to receiver
-  await supabase.rpc('increment_coins', { target_user: receiverId, coin_amount: amount }).catch(async () => {
-    // Fallback: manual increment
-    const { data: rp } = await supabase
-      .from('user_gamification')
-      .select('coins')
-      .eq('user_id', receiverId)
-      .single();
-    if (rp) {
-      await supabase.from('user_gamification').update({ coins: rp.coins + amount }).eq('user_id', receiverId);
-    }
+  const { data, error } = await supabase.rpc('send_coin_gift', {
+    p_sender_id: user.id,
+    p_receiver_id: receiverId,
+    p_amount: amount,
+    p_message: message ?? null,
   });
 
-  await supabase.from('coin_gifts').insert({
-    sender_id: user.id,
-    receiver_id: receiverId,
-    amount,
-    message,
-  });
-
-  await incrementStat(supabase, user.id, 'coins_gifted', amount);
-  await incrementStat(supabase, receiverId, 'coins_received', amount);
+  if (error) throw new Error(error.message);
+  if (!data.success) throw new Error(data.error);
 }
 
 // ── Habit Encouragements ────────────────────────────────
@@ -760,23 +731,11 @@ export async function createInvite(supabase: any): Promise<string> {
 // ── Stats helper ────────────────────────────────────────
 
 async function incrementStat(supabase: any, userId: string, field: string, amount = 1) {
-  // Ensure row exists
-  await supabase
-    .from('community_user_stats')
-    .upsert({ user_id: userId }, { onConflict: 'user_id' });
-
-  const { data } = await supabase
-    .from('community_user_stats')
-    .select(field)
-    .eq('user_id', userId)
-    .single();
-
-  if (data) {
-    await supabase
-      .from('community_user_stats')
-      .update({ [field]: (data[field] ?? 0) + amount, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
-  }
+  await supabase.rpc('increment_community_stat', {
+    p_user_id: userId,
+    p_field: field,
+    p_amount: amount,
+  });
 }
 
 // ── Search users (for adding friends) ───────
