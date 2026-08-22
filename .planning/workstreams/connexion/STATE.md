@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-workstream: connexion
 milestone: v1.17
 milestone_name: Connexion Google & Apple
-current_phase: 1
-current_phase_name: OAuth Infrastructure
 status: planning
-stopped_at: Requirements + roadmap defined, not yet planned
-last_updated: "2026-08-23T00:00:00.000Z"
-last_activity: 2026-08-23
-last_activity_desc: Requirements (11 REQ) and roadmap (2 phases) written
+stopped_at: Phase 1 context gathered
+last_updated: "2026-08-22T22:27:10.250Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
+  percent: 0
 ---
 
 # Project State — v1.17 Connexion Google & Apple
@@ -43,9 +39,11 @@ Progress: [░░░░░░░░░░] 0% (0/2 phases complete)
 - Automatic account linking (by verified email) chosen over hard-block on collision — Google/Apple
   both guarantee verified emails, so linking is safe and avoids a confusing "account already
   exists" dead end for users who signed up with email/password first (OAUTH-11)
+
 - Mobile only for this milestone — web coach-platform Google/Apple login deferred to v2 (OAUTH-12)
 - Manual account linking from settings (for an already-logged-in user) deferred to v2 (OAUTH-13) —
   automatic linking on sign-in covers the primary case
+
 - Phase order: infrastructure (native deps, entitlements, Supabase config) before UX — the sign-in
   screens are unbuildable/untestable without the native OAuth clients registered first
 
@@ -57,11 +55,12 @@ None yet.
 
 - Google/Apple OAuth client registration (Google Cloud Console + Apple Developer portal) requires
   human action outside this codebase — cannot be verified or completed from code alone
+
 - Whether Supabase Auth's automatic-linking setting is currently enabled on the live `ziko` project
   is unverifiable from code — must be checked/enabled in the dashboard during Phase 1
 
 ## Session Continuity
 
-Last session: 2026-08-23
-Stopped at: Requirements + roadmap written, not yet committed/planned
-Resume file: None — next step is `/gsd-discuss-phase 1 --ws connexion` or `/gsd-plan-phase 1 --ws connexion`
+Last session: 2026-08-22T22:27:10.229Z
+Stopped at: Phase 1 context gathered
+Resume file: .planning/workstreams/connexion/phases/01-oauth-infrastructure/01-CONTEXT.md
