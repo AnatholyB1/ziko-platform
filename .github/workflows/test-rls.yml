@@ -44,6 +44,20 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # SUPABASE_TEST_URL/SUPABASE_PUBLISHABLE_KEY/SUPABASE_SERVICE_ROLE_KEY
+      # aren't configured as repo secrets yet. Per the header comment, that's
+      # meant to degrade to a skip rather than a hard failure — but nothing
+      # actually implemented that until now, so every run failed instead.
+      - name: Check test secrets configured
+        id: secrets_check
+        run: |
+          if [ -n "$SUPABASE_TEST_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SUPABASE_TEST_URL/SUPABASE_PUBLISHABLE_KEY/SUPABASE_SERVICE_ROLE_KEY are not configured as repo secrets — skipping the RLS suite."
+          fi
+
       # Installed from the repo root, not backend/api — this is an npm
       # workspaces monorepo with a single root lockfile. Running `npm ci`
       # from a workspace subfolder still triggers the root's `postinstall`
@@ -55,6 +69,7 @@ jobs:
         run: npm ci
 
       - name: Write .env.test
+        if: steps.secrets_check.outputs.configured == 'true'
         working-directory: backend/api
         run: |
           cat > .env.test <<EOF
@@ -90,6 +105,7 @@ jobs:
           supabase db push --include-all
 
       - name: Run RLS suite
+        if: steps.secrets_check.outputs.configured == 'true'
         working-directory: backend/api
         run: npm run test:rls -- --run
 
@@ -119,9 +135,20 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Check test secrets configured
+        id: secrets_check
+        run: |
+          if [ -n "$SUPABASE_TEST_URL" ] && [ -n "$SUPABASE_PUBLISHABLE_KEY" ] && [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SUPABASE_TEST_URL/SUPABASE_PUBLISHABLE_KEY/SUPABASE_SERVICE_ROLE_KEY are not configured as repo secrets — skipping the waitlist suite."
+          fi
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run waitlist concurrency + non-disclosure suite
+        if: steps.secrets_check.outputs.configured == 'true'
         working-directory: apps/web
         run: npx vitest run test/actions/waitlist.concurrency.test.ts
