@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.17
 milestone_name: Connexion Google & Apple
-status: executing
-stopped_at: Completed 01-01-PLAN.md (native OAuth SDKs + Apple entitlement)
-last_updated: "2026-08-22T23:57:48.362Z"
+status: blocked
+stopped_at: "01-02-PLAN.md Task 1 — blocked on Google Cloud Console OAuth client registration (human action required)"
+last_updated: "2026-08-23T00:15:00.000Z"
 progress:
   total_phases: 2
   completed_phases: 0
@@ -26,9 +26,9 @@ ou Apple, sans friction et sans doublon de compte.
 
 ## Current Position
 
-Phase: 1 (OAuth Infrastructure) — EXECUTING
+Phase: 1 (OAuth Infrastructure) — BLOCKED
 Plan: 2 of 4
-Status: Ready to execute
+Status: Blocked at Task 1 (Google Cloud Console OAuth client registration — human action required)
 
 Progress: [███░░░░░░░] 25%
 
@@ -56,6 +56,12 @@ None yet.
 
 ### Blockers/Concerns
 
+- **ACTIVE BLOCKER (01-02 Task 1):** Google Cloud Console OAuth client registration (Web, Android,
+  iOS) for `com.ziko.mobile`, plus reading the EAS-managed release keystore SHA-1 via
+  `npx eas-cli@latest credentials`, requires human action outside this codebase. Full step-by-step
+  is in `01-02-PLAN.md` Task 1 `<how-to-verify>`. Resume with the six confirmed values:
+  `WEB_CLIENT_ID`, `ANDROID_CLIENT_ID`, `IOS_CLIENT_ID`, `SHA1_REGISTERED`, `GCP_PROJECT`, `STEP_5_DONE`.
+
 - Google/Apple OAuth client registration (Google Cloud Console + Apple Developer portal) requires
   human action outside this codebase — cannot be verified or completed from code alone
 
@@ -64,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-22T23:57:48.351Z
-Stopped at: Completed 01-01-PLAN.md (native OAuth SDKs + Apple entitlement)
-Resume file: None
+Last session: 2026-08-23T00:15:00.000Z
+Stopped at: 01-02-PLAN.md Task 1 — blocked on Google Cloud Console OAuth client registration
+Resume file: .planning/workstreams/connexion/phases/01-oauth-infrastructure/01-02-PLAN.md (resume at Task 1)
