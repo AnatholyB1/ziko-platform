@@ -1,229 +1,242 @@
 # Pitfalls Research
 
-**Domain:** Bulk third-party dataset merge (exercise data + licensed media) into an existing production Supabase table with FK-referenced history
-**Researched:** 2026-08-14
-**Confidence:** MEDIUM-HIGH — production schema facts read directly from migrations (HIGH); Gym visual license terms quoted directly from source `NOTICE.md` (HIGH); dataset repo structure/field names from GitHub page rendering (MEDIUM, not from a raw file diff — verify field names against the actual `exercises.schema.json` before writing the merge script)
-
-## Existing State (verified from codebase, not the dataset)
-
-- `public.exercises` has **no unique constraint on `name`** (`supabase/migrations/001_initial_schema.sql:33-43`). Duplicate/near-duplicate names already exist in production — e.g. migration `031_exercises_name_fr.sql` assigns the identical French translation `'soulevé de terre jambes tendues élastique'` to at least 3 different exercise UUIDs. Any "match by name" strategy must assume names are **not unique keys** on either side.
-- `program_exercises.exercise_id` and `session_sets.exercise_id` are `NOT NULL REFERENCES public.exercises(id)` with **no `ON DELETE` clause** (`001_initial_schema.sql:72,102`) — Postgres default is `NO ACTION`, meaning **any exercise referenced by a real program or logged set cannot be deleted**, the delete will fail at the DB level. This is a hard blocker for any "wipe and reseed" approach (the current `seed_exercises.sql` does `DELETE FROM exercises WHERE is_custom=FALSE AND user_id IS NULL` — this only works today because no production programs/sessions reference seed rows yet; that assumption breaks the moment this app has real users with logged workouts).
-- Migration `20260527_coach_exercise_id_program_exercises.sql` added a **separate** `coach_exercise_id` FK (`ON DELETE SET NULL`) to `program_exercises` for custom coach exercises (`coach_exercises` table, migration 055) — the coach-created exercise library is a **completely different table** with its own storage bucket (`coach-exercises`, private, per-coach-prefix RLS). Do not conflate the two: this import targets `public.exercises` (global library), not `coach_exercises`.
-- Current `gif_url` values point to `https://v2.exercisedb.io/image/...` — same media-ID pattern and same first exercise name (`"3/4 sit-up"`) as the new `hasaneyldrm/exercises-dataset`. Both datasets almost certainly derive from the same underlying ExerciseDB/Gym visual source, which is *why* name matches will be common — but also why silent near-duplicates (gendered variants like `"astride jumps (male)"`, versioned suffixes like `"v. 2"`, `"v. 3"`) will produce partial, not total, overlap.
-- No `image`/`thumbnail` column exists yet on `exercises` — this import is the first to introduce fixed-resolution licensed thumbnails, which is exactly the surface area the 180×180 legal cap constrains.
+**Domain:** Autonomous AI decision-making layered onto an existing single-orchestrator AI architecture (conversational onboarding, weekly adaptive decision engine, tiered AI-selected rewards, progressive feature unlock, append-only decision journal) — Ziko Platform v1.18 AI Coach Core
+**Researched:** 2026-08-30
+**Confidence:** MEDIUM-HIGH (grounded in existing codebase precedent + verified platform docs; French ANJ loot-box classification is explicitly unsettled law, flagged LOW where noted)
 
 ## Critical Pitfalls
 
-### Pitfall 1: False-negative name matching creates duplicate rows with orphaned/split history
+### Pitfall 1: AI decisions grounded in conversation memory instead of real logged data
 
 **What goes wrong:**
-The merge script fails to match a new-dataset exercise to its existing counterpart (case differences, extra whitespace, `(male)`/`(female)` suffixes, `" v. 2"` suffixes, singular/plural, hyphenation), so it INSERTs a new row instead of UPDATE-ing the existing one. The app now has two rows for "the same" exercise — the old one still referenced by real `program_exercises`/`session_sets` rows (with the old broken `gif_url`), and a new one with correct media but zero history. Users' existing programs keep pointing at the stale, unfixed exercise; the exercise picker in the UI shows visible duplicates.
+The weekly decision engine and the AI tools (`create_goal`, `create_reward`, `create_program`) reason from whatever is in the LLM's context window — including the athlete's own claims in chat ("j'ai fait ma séance") and prior AI-authored summaries in `athlete_decisions` — rather than re-querying `workout_sessions`, `session_sets`, `habit_logs`, etc. at decision time. The model then rewards or escalates a track based on progress that never happened in the database, because LLMs generate plausible continuations of context, they do not verify facts against a source of truth unless forced to.
 
 **Why it happens:**
-Exact-string matching feels sufficient because most names are close, so this class of bug produces no crash and no error — the script "succeeds" while silently fragmenting data. It's compounded here by the fact that `exercises.name` already has no uniqueness guarantee in production (see Existing State above), so even a script author looking at row counts won't notice a handful of new near-duplicates.
+The existing single-orchestrator pattern (`backend/api/src/context/user.ts` → `fetchUserContext`) already injects a snapshot of DB state into the system prompt once per request. It is tempting to reuse that same snapshot for the weekly engine, or worse, to let the model rely on the running `athlete_decisions` journal ("last week I decided X, so this week must be Y") instead of re-fetching current numbers. A single hallucinated "completed 4/4 sessions" then propagates forward because every subsequent decision cites the prior (wrong) decision as fact rather than re-deriving from source tables.
 
 **How to avoid:**
-- Normalize both sides before comparing: lowercase, trim, collapse whitespace, strip trailing parenthetical qualifiers `(male)`/`(female)`, strip `" v. 2"`/`" v.2"`/`" v3"` suffixes into a separate "variant" signal rather than discarding it.
-- Build the match as a 3-tier pipeline, not a single pass: (1) exact normalized-name match, (2) normalized-name + `body_part`/`equipment`/`target_muscle` agreement for near-matches (Levenshtein/trigram similarity threshold), (3) unmatched-on-both-sides list surfaced to a human for manual review before any write — never auto-insert unmatched dataset rows as new "duplicate" table entries without a review gate.
-- Produce a dry-run report (matched / unmatched-legacy / unmatched-new / ambiguous-multi-match) and require it to be reviewed before the script is allowed to write.
+- The weekly decision engine's tool executors must query real tables at call time (not accept model-asserted counts as input) — the same discipline already used by credit-earn hooks, which are idempotent and DB-verified rather than trusting client/model claims.
+- Treat `athlete_decisions` entries as an audit trail, never as the source of truth for "what happened" — always re-derive current-week metrics from `workout_sessions`/`session_sets`/`habit_logs`/`nutrition_logs` directly in the tool executor, and pass only that freshly-queried summary into the prompt for the current run.
+- Reward/goal/track-transition tools should validate their own preconditions server-side (e.g. "escalate track" tool checks `SELECT count(*) FROM workout_sessions WHERE ...` itself) rather than trusting an `input` field the model supplies, mirroring the SECURITY DEFINER + server-side-check pattern already used in `deduct_ai_credits`.
 
 **Warning signs:**
-- Post-merge row count grew by more than the dataset's net new count (1324 vs current ~1318 — anything beyond a delta of a few dozen signals failed matches, not genuinely new exercises).
-- Exercise picker in the mobile app shows two visually similar entries with different media states.
+- A reward or track escalation happens for a week where the underlying activity tables show no matching rows.
+- QA notices the AI citing "as decided last week" language for something that was never actually verified against fresh data.
 
 **Phase to address:**
-Download/merge script phase — the matching algorithm and its dry-run report are the core deliverable of that phase, not an afterthought.
+Moteur de décision adaptatif hebdo (tool executor design) — must be locked before any AI tool is allowed to write `athlete_state`.
 
 ---
 
-### Pitfall 2: False-positive name matching overwrites the wrong exercise and corrupts real user history
+### Pitfall 2: Naive per-athlete cron fan-out blows Vercel duration/cost budget as the user base grows
 
 **What goes wrong:**
-A fuzzy or overly permissive matcher (e.g., matching on first N characters, or on `target_muscle` alone) merges two genuinely different exercises — e.g. "barbell squat" and "barbell front squat" — into one row. The UPDATE silently rewrites `category`, `muscle_groups`, `instructions`, `equipment` on a row that real `program_exercises`/`session_sets` rows already point to. A user's historical set — logged as "barbell squat" — now retroactively displays as "barbell front squat" with different muscle targets, in their logged history and in any AI-generated coaching insight built on that history.
+The existing `coach/ai/monitor-cron` precedent iterates coaches → clients in a single sequential `for` loop inside one Hono route, doing cheap Supabase queries only (no LLM calls). If the weekly AI Coach Core engine is built the same way — one cron invocation that sequentially calls the Claude agent (multi-step tool loop, `stopWhen: stepCountIs(5)`) for every athlete — the function will hit Vercel's hard `maxDuration` ceiling (300s Pro default, 800s max) long before all athletes are processed once the athlete count grows, and cost scales linearly and invisibly with active users regardless of whether they engaged that week.
 
 **Why it happens:**
-This is the inverse failure mode of Pitfall 1, and the two are in tension: loosening the matcher to reduce false negatives directly increases false positives. Because the target table is FK-referenced by real workout history (unlike a typical "reference data" import), this mistake isn't just a data-quality issue — it silently rewrites something a real user logged in the past, which is far more damaging than a duplicate row.
+Copy-pasting the working `monitor-cron` pattern feels safe because it already exists in this codebase, but that pattern was designed for lightweight rule-based DB reads, not multi-step LLM tool-calling loops (each Claude call is 1-5+ seconds, sometimes with 3-5 tool round-trips). At even a few hundred athletes, a single-invocation sequential loop will silently truncate mid-run when the function times out, leaving the remaining athletes' weekly decisions never made — with no error surfaced to anyone.
 
 **How to avoid:**
-- Prefer precision over recall in the matcher: an unmatched dataset row that gets manually reviewed is cheap; a wrongly-matched row that overwrites live history is expensive and hard to detect after the fact.
-- Never let a single fuzzy signal (name similarity OR muscle overlap) trigger an UPDATE alone — require agreement across at least two independent fields (normalized name AND body_part, or normalized name AND equipment) before treating it as an automatic match.
-- Snapshot the pre-merge state of every row about to be UPDATEd (`INSERT INTO exercises_merge_backup SELECT * FROM exercises WHERE id = ANY(...)` before the UPDATE) so any wrong match can be reverted without a full DB restore.
+- Do not process athletes inside a single long-lived cron invocation. Use the cron only as a *trigger* that enqueues per-athlete work (Vercel Queues, or a `SELECT ... WHERE due_at <= now()` batch fetch + `waitUntil`/background dispatch to a per-athlete endpoint), so each athlete's decision run is its own bounded, retryable unit.
+- Design each per-athlete run to be idempotent and reconciliation-based: mark `athlete_state.week_processed_at` (or similar) transactionally as part of the same operation that writes the decision, so a retried or duplicate invocation (Vercel cron delivery is at-least-once) is a safe no-op rather than a double-decision.
+- Budget and log AI cost per weekly run in `ai_cost_log` from day one (reuse v1.4's cost-logging pattern) — an autonomous weekly agent call for every athlete, independent of user-initiated actions, is a new unbounded cost line that the existing €0.75/month/user credit-gated model was never designed to absorb, since these calls are not gated by `creditCheck`/`creditDeduct` (there's no user in the loop to charge).
+- Explicitly decide and document: is the weekly decision cost funded by the platform (opex) or should it consume the athlete's own AI credit allocation? This must be a conscious decision, not a default.
 
 **Warning signs:**
-- Manual spot-check: pick 20 random exercises currently referenced by real `session_sets` rows (i.e. with actual logged history), confirm their post-merge name/category/muscle data is a superset refinement of the pre-merge data, not a replacement with a different exercise's semantics.
+- Cron logs show the function returning after the Vercel timeout with only a subset of athletes processed, and no partial-completion bookkeeping to resume from.
+- `ai_cost_log` shows no entries for weekly-engine calls (cost invisible) or shows entries that spike unpredictably with total-user-count growth rather than engagement.
 
 **Phase to address:**
-Download/merge script phase, with a mandatory verification step before the phase can be marked done — do not let "row counts look right" stand in for "matches are correct."
+Moteur de décision adaptatif hebdo (infrastructure/scheduling design), before any athlete-facing behavior is built on top of it.
 
 ---
 
-### Pitfall 3: Non-idempotent merge script corrupts state on a partial run or re-run
+### Pitfall 3: Reward-pool "AI selects, never rolls dice" mechanic accidentally reintroducing loot-box-adjacent randomness
 
 **What goes wrong:**
-The script downloads ~17MB of JSON and ~2600 binary files, then loops through UPDATE/INSERT statements against production Supabase. If the process is killed midway (Vercel function timeout, GitHub rate limit hit mid-download, laptop sleeps, network drop), the exercises table is left in a half-migrated state: some rows have new `image`/`gif_url` values, others don't, with no record of which. Re-running the script from the top either re-downloads everything (slow, wastes GitHub API quota) or — worse — re-runs the matching+UPDATE logic against an already-partially-migrated table, where names that were already renamed on the first pass no longer match the original matching logic, producing a second wave of false negatives (Pitfall 1) on the retry.
+French law does not have a bright-line statutory definition of "loot box" — the ANJ (Autorité Nationale des Jeux) publicly declined jurisdiction over loot boxes in 2018, and current legal analysis centers on whether a mechanism involves (1) financial sacrifice, (2) chance, and (3) a patrimonial (real-money-equivalent) gain; a 2024-25 legislative push (JONUM — "jeux en ligne numérique monétisables") is actively narrowing that ambiguity for game-like reward mechanics with monetizable digital objects. A design that is "AI picks from a pool, not a random draw" can still slip into ANJ-adjacent territory if: the pool is gated behind a paid tier or credit spend (financial sacrifice), the AI's selection has any non-deterministic/temperature-driven variance that functions like disguised chance, or rewards ever acquire resale/transfer/exchange value (even informally, e.g. tradeable coins, marketplace, or anything resembling an NFT/token).
 
 **Why it happens:**
-One-off migration scripts are typically written and run once, so idempotency and resumability feel like YAGNI. But bulk network I/O against ~2600 external files plus writes to a live production table is exactly the scenario where a mid-run failure is likely, not hypothetical.
+"The AI decides, it's not random" is true at the mechanism level but not automatically true at the outcome level — if the AI's selection is driven by an LLM call with default sampling temperature, two athletes with functionally identical profiles could get different tier-3 rewards on different runs, which is legally indistinguishable from chance to a regulator (and confusing to users: "why did they get X and I got Y for the same effort?"). Separately, monetization pressure tends to creep in later ("let's let users trade their reward coins" or "sell a reward-skip") — each such addition independently re-raises the three ANJ criteria even if the original design avoided them.
 
 **How to avoid:**
-- Download phase and merge phase must be separable and independently resumable: download all assets to a local/staging location first (verify checksums/file count against the manifest), then run the DB merge as a second, distinct step against the fully-downloaded local copy — never merge while still streaming from GitHub.
-- Make the merge step idempotent: track progress in a dedicated table (`exercise_import_log(dataset_exercise_id, matched_row_id, status, processed_at)`) so a re-run skips already-processed rows instead of reprocessing them.
-- Wrap each row's UPDATE (or small batch of rows) in its own transaction, not the whole 1324-row merge in one giant transaction — a single giant transaction either fully succeeds (fine, but means a timeout loses all progress) or fully fails and rolls back with no partial record of what was validated.
+- Make the AI's reward selection deterministic and explainable given the same inputs: pin `temperature: 0` (or as close to deterministic as the model allows) for the reward-selection tool call specifically, and always persist the selection rationale to `athlete_decisions` so "why did I get this reward" is answerable from the log, not from re-asking the model.
+- Hard rule for this milestone (already scoped correctly per PROJECT.md: "pas de tirage aléatoire, conforme ANJ") — never let reward-pool access require spending real money or paid-tier-exclusive credits; keep the earn mechanic tied to the existing gamified coin/points balance (already explicitly separated from the cost-controlled AI-credits balance per the v1.4 dual-balance decision), and never introduce transfer, resale, or exchange of rewards between users or for cash.
+- Document the "why this is not a loot box" rationale explicitly in a decision record (financial-sacrifice = no, chance = no/deterministic AI choice, patrimonial gain = no resale value) so it survives team turnover and product-pressure to "spice it up with randomness later."
+- Flag this area LOW confidence on the legal side — French loot-box/JONUM law is actively evolving; this should be revisited with actual legal counsel before shipping the reward-pool feature broadly, not just validated by engineering judgment.
 
 **Warning signs:**
-- Script has no persisted "resume point" — if you can't answer "which of the 1324 exercises have already been merged" without re-diffing the whole table, it isn't resumable.
-- Any GitHub rate-limit error (`403` / `X-RateLimit-Remaining: 0`) surfaces as a bare crash rather than a clean, resumable stop.
+- A future feature request proposes "surprise" reveal animations, mystery-box framing, or randomized reward previews — these are UX patterns borrowed from loot-box design even if the underlying selection is deterministic, and should be treated as a red flag regardless of the actual mechanism.
+- Any proposal to let coins/rewards be purchased, gifted, traded, or cashed out.
 
 **Phase to address:**
-Download/merge script phase — resumability is an architectural decision for the script, must be designed in from the start, not bolted on after a failed first run against production.
+Récompenses par points/palier (mechanic design), with a documented legal-rationale checkpoint before implementation, not after.
 
 ---
 
-### Pitfall 4: 17MB JSON collides with this project's own Vercel payload limits
+### Pitfall 4: Non-punitive principle undermined by reward-calculation edge cases, not by explicit punishment logic
 
 **What goes wrong:**
-This project already hit and documented a hard constraint: *"Signed URL upload pattern — Vercel hard limit 4.5 MB"* (`.planning/PROJECT.md` Key Decisions, v1.3). The dataset's `data/exercises.json` is ~17MB — nearly 4x that limit. If the download/merge logic is implemented as (or triggered by) a Hono/Vercel serverless function that fetches the file via the GitHub REST Contents API (not `raw.githubusercontent.com`), the response is additionally base64-encoded, inflating it to ~22-23MB, which will fail outright on Vercel's response size ceiling. Even fetching via `raw.githubusercontent.com` directly, a 17MB fetch-and-parse-in-memory inside a serverless function invocation risks hitting memory/duration limits under Vercel's default function configuration.
+The design principle is "never punish under-performance, reward-only" — but real-world non-punitive systems still fail this in practice through *implicit* punishment: a missed week resets progress toward the next tier to zero (functionally identical to losing a streak), a delta-based reward calculation ("effort above what was asked = better reward") produces a *worse-than-baseline* reward when effort is below ask (even if nominally "still positive"), or feature-unlock logic silently regresses a user's plugin drawer back to a restricted state after an inactive week. Industry precedent (Habitica) shows that punitive streak mechanics have measurably poor recovery rates — only ~0.9% of users who lose a 2-3 day streak return to start a new one — which is exactly the outcome a "reward-only" design is trying to avoid, but can reintroduce accidentally through calculation bugs rather than explicit design intent.
 
 **Why it happens:**
-It's tempting to build the import as "just another Hono route" for consistency with the rest of the backend, but this workload is fundamentally a one-off batch/ETL job, not a request/response API endpoint, and the existing serverless constraints that are fine for normal API traffic don't apply the same way to bulk data ingestion.
+Delta-based logic ("compare real effort to what was asked") is inherently relative, and relative calculations naturally produce values below the baseline when performance is below ask — the question is whether that below-baseline outcome is *rendered* as "you get less than last time" (feels punitive) versus "you still get something, and here's how to get more next time" (feels supportive). Developers implementing the delta formula correctly on paper can still ship a UI/copy layer that frames it punitively, or a tier-progression formula that technically only ever adds points but resets the *visible* progress bar to zero at tier boundaries in a way that reads as loss.
 
 **How to avoid:**
-- Run the download + merge script as a local/CI script against the production Supabase connection string (or a scheduled one-off Vercel Cron with `maxDuration` extended, if it must run server-side), never as a synchronous Hono API route triggered by a client request.
-- If any part of the pipeline does run in a serverless function, stream/paginate rather than loading the full 17MB JSON into memory at once, and always fetch from `raw.githubusercontent.com`, never the GitHub Contents API, to avoid the base64 inflation tax.
+- Define a hard floor in the reward calculation: under-performance yields the *same or smaller positive* reward, never negative, never a downgrade from a previously-achieved tier, and never a visible "you lost points/progress" state. Points/tiers should be monotonically non-decreasing per athlete — model it as a ratchet, not a bank balance that can go down.
+- Feature unlocks, once granted, must never auto-revoke due to inactivity or a single bad week — unlock is a one-way gate (test explicitly: "athlete stops logging entirely for 3 weeks — do they keep whatever plugins/tiers they'd already reached?" answer must be yes).
+- Review all user-facing copy and animations for implicit-loss framing (progress bars that visibly shrink, "you missed your goal" messaging, badges that disappear) even when the underlying number never actually decreased.
+- Add this as an explicit automated or manual test case per feature: "simulate zero logged activity for N weeks — assert `athlete_state` fields are monotonic non-decreasing and no unlock is revoked."
 
 **Warning signs:**
-- Any 413 (Payload Too Large) or function timeout error during the download step.
-- Local testing "works fine" but the same code fails when deployed as a Vercel function — a giveaway that memory/payload limits weren't accounted for.
+- Any SQL `UPDATE` to `athlete_state` that can *decrease* a level, tier, or points field.
+- Product copy review surfaces words like "perdu", "manqué", "réinitialisé" attached to a user-visible number.
 
 **Phase to address:**
-Download/merge script phase — decide the execution environment (local/CI script vs. serverless) before writing any fetch code, since it changes the whole implementation shape.
+Système de review/suivi hebdo + Récompenses par palier — the monotonicity invariant should be a stated, tested contract before the reward calculation is implemented, and re-verified at Déblocage progressif implementation.
 
 ---
 
-### Pitfall 5: Missing or degraded Gym visual attribution/resolution compliance in an App Store-distributed product
+### Pitfall 5: Progressive feature unlock traps a user in a restricted state indefinitely, or the inverse — unlocks everything immediately
 
 **What goes wrong:**
-The dataset's `NOTICE.md` states media use requires `"© Gym visual — https://gymvisual.com/"` attribution on every use and is capped at 180×180 resolution; cloning the repo does **not** grant a broader license — "this repository does not grant you any rights to the media beyond what Gym visual's terms allow." Two concrete failure modes: (1) the mobile app resizes/upscales the 180×180 thumbnail or GIF for a larger display context (e.g., an exercise detail screen showing it full-width) without Gym visual's separate written permission for that use, breaching the resolution cap; (2) the app displays the media anywhere (exercise library, workout session screen, AI-generated program preview) without the required attribution text/link visible or discoverable, which is a licensing breach that becomes public and permanent the moment the app ships to the App Store/Play Store — unlike a web app, a shipped mobile binary can't be silently patched for all existing installs.
+Two failure modes on opposite ends: (a) a bug or AI miscalibration means a legitimately-progressing athlete's plugin drawer never expands past the starting restricted set — because the unlock decision depends on a condition that's never satisfied (e.g. waiting for an AI judgment call that the weekly cron never successfully produces due to Pitfall 2, or a threshold calibrated for the wrong track/persona), and there is no fallback or manual override, so the user is silently capped forever; (b) the opposite bug — a calibration or off-by-one error unlocks the full 18/19-plugin drawer immediately regardless of the athlete's actual starting level, defeating the entire "restricted then earned" value proposition and overwhelming beginners with everything at once (which the existing onboarding-conversationnel goal explicitly tries to avoid for fragile beginners: "eau seule... escalade progressive").
 
 **Why it happens:**
-Attribution requirements are easy to treat as a data field to store, not a UI requirement to render — the `attribution` string sits in the JSON/DB but nothing forces a developer building a screen to surface it. Resolution caps are easy to violate accidentally: any `<Image style={{width: 300}}>` on a 180×180 source will upscale by default in React Native unless explicitly constrained, and nothing in the type system stops it.
+Unlock-by-AI-judgment is inherently harder to test exhaustively than a fixed threshold table, because the "judgment" can drift with prompt changes, model version changes (models.ts already centralizes this exact risk for other AI features), or context/token truncation cutting off the decision-relevant data. Without a deterministic floor/ceiling and a way to audit *why* a given unlock decision was (or wasn't) made, these bugs are invisible until a support ticket surfaces "I've been doing everything right for 2 months and nothing unlocked."
 
 **How to avoid:**
-- Store the attribution as a required, structured field on the media record (not folded into free text), and add a shared `<AttributedMedia>` component in `packages/ui/` that every exercise-media consumer must use — bake the "© Gym visual" credit + link into the component itself so it can't be omitted by a screen author forgetting a prop.
-- Enforce the resolution cap at render time: never scale the source image/GIF above 180×180 intrinsic pixels; if a larger visual is wanted, that requires a genuinely different (non-Gym-visual-sourced) asset, not an upscale of the licensed one.
-- Add a legal/attributions page (the project already has a `Mentions legales` pattern for RGPD — extend it, or add a "Credits"/"Licenses" screen in Settings) listing the Gym visual attribution once, in addition to (not instead of) any inline attribution the license requires per-use.
-- Get explicit confirmation (from the user/legal owner of this project) that "distributed at 180×180 only" is being read correctly as "never rendered above 180×180 in the shipped app," since that's the single highest-risk clause for a fitness app whose whole UI is built around exercise visuals.
+- Back the AI's unlock judgment with a deterministic minimum-guarantee ladder (e.g. explicit point/week thresholds that guarantee unlock progression exists even if the AI's discretionary judgment stalls) — AI adjusts pacing within known bounds, it does not have unbounded authority to withhold forever or grant everything at once.
+- Persist the unlock decision and its stated rationale to `athlete_decisions` on every run (including "no change this week, because X") so a stalled user's history is auditable and support/product can diagnose without guessing.
+- Add a coach-side or admin override path (even a manual DB flag initially) to force-unlock or reset a stuck athlete's level — the existing coach-athlete linkage (`coach_client_links`) is a natural fit for a coach-triggered override later, but at minimum an internal escape hatch must exist from day one.
+- Test both extremes explicitly: a synthetic "beginner who logs consistently for 8 weeks" must show visible unlock progression by week N; a synthetic "experienced profile per onboarding" must not receive the same restricted starting drawer as a beginner (already scoped: "expérimenté peut démarrer plus haut").
 
 **Warning signs:**
-- Any screen with an `<Image>`/GIF component sized larger than 180×180 sourced from this dataset.
-- No visible or linked attribution anywhere in the app for Gym visual content — grep the shipped screens for "gymvisual" / "Gym visual" and confirm at least one hit.
+- `athlete_state.level` (or equivalent) shows no change across many consecutive weekly runs for an athlete with clearly-logged consistent activity.
+- Support/QA reports a user with near-zero logged activity who nonetheless has full plugin access.
 
 **Phase to address:**
-Storage upload phase (resolution must never be upscaled during the Supabase Storage upload step either — re-encode/resize at capture time only if reducing further, never enlarging) **and** mobile consumption phase (attribution rendering + display size enforcement). Flag as needing explicit human/legal sign-off before phase completion — this is not purely a technical risk.
+Déblocage progressif de fonctionnalités par niveau — the deterministic floor/ceiling contract must be designed alongside the AI judgment logic, not bolted on after.
 
 ---
 
-### Pitfall 6: Stale mobile cache and bundled fixture data show blank/broken images during rollout
+### Pitfall 6: Append-only decision journal grows unbounded, inflating token cost/latency and causing over-fitting to stale decisions
 
 **What goes wrong:**
-Existing `gif_url` values point to `v2.exercisedb.io`, described in this codebase as "unreliable" (the motivation for this migration). Expo's default `<Image>` component and the OS-level HTTP cache may have already cached the old broken/slow URLs for exercises a user has previously viewed. After the merge updates `exercises.gif_url` to new self-hosted Supabase Storage URLs, users on an older cached app session (or with TanStack Query `staleTime`/`gcTime` still holding the old exercise list in memory) continue to see the old broken images or a mix of old-and-new URLs within the same list until a hard refresh/reinstall. Separately, if any plugin currently has a fixture/mock exercise array bundled in the JS bundle (the project's CLAUDE.md notes "100% fixture elimination — zero domain-data arrays in production screens" was a v1.7 goal, implying this was previously a real problem) that array would go stale immediately and silently diverge from the DB.
+`athlete_decisions` is explicitly designed append-only (GSD STATE.md-inspired) and is read back into the AI's context before every future decision. Left naive, this means: (1) token cost and latency for every weekly decision call grows linearly with tenure — an athlete active for 6-12 months accumulates dozens of journal entries, and re-sending the full log every week both costs money and pushes toward the "lost in the middle" effect where the model's attention degrades on relevant recent entries buried among old ones; (2) the AI can over-anchor on old decisions ("last month I decided a conservative track, so I'll stay conservative") even when the athlete's circumstances have materially changed (injury recovered, new goal, coach reassignment), because nothing in an unbounded append-only log signals "this is now stale, weight it less."
 
 **Why it happens:**
-Image caching and query caching are invisible in day-to-day development (dev client reloads frequently, so caches rarely persist long enough to notice) but very visible in production, where installed apps keep long-lived caches and aren't force-refreshed by a backend data change.
+Append-only is the right choice for auditability (never lose the historical record, mirroring GSD's own STATE.md pattern this design is explicitly inspired by) but auditability and "what gets fed into every future prompt" are two different concerns that get conflated if the same table/read-path serves both. It's tempting to just `SELECT * FROM athlete_decisions WHERE athlete_id = ? ORDER BY created_at` and paste it into the prompt because it's simple and it works fine in early testing with a handful of rows.
 
 **How to avoid:**
-- Change the exercise media URL path/filename on migration (e.g. include a content hash or dataset version in the Supabase Storage object path) rather than reusing the same logical URL with different content — this invalidates any URL-keyed image cache automatically, instead of relying on cache TTLs.
-- Invalidate the relevant TanStack Query cache keys for exercise lists (bump a query key version, e.g. `['exercises', 'v2']`) so clients don't serve a stale in-memory/persisted query cache after the migration ships.
-- Audit for any remaining hardcoded/fixture exercise arrays in plugin code (`grep -r "gif_url\|exercisedb" apps/mobile plugins` before shipping) — any hit is guaranteed to go stale the moment the DB changes.
-- Roll out a loading/placeholder state (not a blank box) for exercise images so the transition period (before a client has re-fetched updated data) degrades gracefully instead of showing broken image icons.
+- Separate the audit trail from the prompt-context feed: keep `athlete_decisions` fully append-only and complete for compliance/debugging, but derive a compact `athlete_state` summary (already explicitly planned per PROJECT.md: "état courant compact + journal append-only vérifiable") that is what actually gets injected into the weekly decision prompt — recompute/refresh that compact state each run rather than replaying the full log.
+- If recent decision history genuinely matters for context (e.g. "don't escalate two weeks in a row"), cap what's read to a bounded recent window (last N entries or last N weeks) rather than the full history, and treat anything older as informing the compact summary only, not raw context.
+- Give the compact `athlete_state` an explicit recency/validity concept — e.g. a field like "weeks since last track change" or "current track set on {date}" — so the model can reason about staleness structurally instead of needing to infer it from reading dozens of old entries.
+- Load-test/token-count this specifically for a synthetic long-tenure athlete (12+ months of weekly entries) before shipping, not just for the fresh-onboarding happy path that early testing will naturally exercise.
 
 **Warning signs:**
-- QA on a build from before the migration ships (simulating an existing installed user) shows a mix of old and new image sources in the same scroll list.
-- Any `grep` hit for `v2.exercisedb.io` or a hardcoded exercise fixture array remaining in `apps/mobile` or `plugins/*/src` after the migration phase is marked complete.
+- Prompt token counts for the weekly decision call rise measurably for older test accounts compared to new ones, with no cap in place.
+- The AI's weekly decisions for a long-tenure athlete start citing very old (months-stale) context as justification for staying conservative, ignoring clearly-changed recent activity.
 
 **Phase to address:**
-Mobile consumption phase — plan the cache-busting URL strategy and query-key versioning as part of the phase's design, not as a post-launch bug-fix.
+Journal de décisions IA par athlète — the compact-state/append-only-log split must be the initial design, not a later refactor once the log is already large in production.
+
+---
 
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|-----------------|------------------|
-| Auto-insert all unmatched new-dataset rows as brand-new exercises (no dedup review) | Faster script, no manual review step | Permanent duplicate exercises cluttering the picker forever (no cleanup path once real programs start referencing them) | Never — always route unmatched rows through a review report first |
-| Store attribution as a comment/free-text note instead of a structured, rendered field | Faster to ship | Silent license non-compliance the moment a new screen displays the media without checking for the note | Never for licensed media |
-| Reuse existing `gif_url` column name/URL pattern for the new self-hosted media without a version marker | No schema change needed | Defeats any URL-based cache invalidation, forces manual cache-busting workarounds later | Never — cache-busting is cheap to add now, expensive to retrofit |
-| Run the full merge as one giant transaction "to keep it simple" | Simple to write | A single timeout/failure loses all progress and gives no partial audit trail of what was validated | Only acceptable for a true dry-run against a disposable staging copy, never against production |
+| Feed the full `athlete_decisions` log into the weekly prompt instead of a compact summary | Faster to build, simplest correct-looking output early | Token cost/latency grows unbounded with tenure (Pitfall 6); becomes expensive to refactor once months of production data exist | Never for production — acceptable only in a throwaway prototype with synthetic short histories |
+| Reuse the existing sequential `monitor-cron` loop pattern for the weekly AI engine | No new infra, ships fast, matches an existing precedent in the codebase | Silent mid-run truncation once user count grows past what fits in one Vercel invocation (Pitfall 2) | Never — the existing pattern is safe only because it does not call an LLM per user; do not copy it for an LLM-per-athlete loop |
+| Let the AI tool accept model-asserted "athlete completed X" as input rather than re-querying | Simpler tool schema, faster to wire up | Reward/decision hallucination risk (Pitfall 1) — silently ungrounded outcomes reach production | Never for anything that writes `athlete_state` or grants a reward |
+| Ship reward-pool selection with default LLM sampling temperature | One less parameter to think about | Introduces outcome-level non-determinism that is hard to distinguish from disguised chance (Pitfall 3, ANJ risk) | Only acceptable for exploratory prototyping, never for the shipped reward-selection call |
+| Skip the deterministic floor/ceiling on progressive unlock and let AI judgment fully decide | Faster to spec, feels "more AI-native" | Users can get permanently stuck or everything-unlocked-day-one (Pitfall 5) | Never — always pair AI discretion with a hard deterministic bound |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
-|--------------|------------------|-------------------|
-| GitHub raw file fetch | Using the GitHub Contents API (base64-encoded, ~33% size inflation, lower rate limits) to fetch `exercises.json` or binary media | Use `raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>` for both JSON and binary assets; reserve the Contents/Git Trees API only for listing file names, not fetching content |
-| GitHub unauthenticated requests | Downloading ~2600 files without a token hits the 60 requests/hour unauthenticated rate limit almost immediately | Use a GitHub personal access token (5000 req/hour authenticated) or, better, download the repo as a single tarball/zip (`codeload.github.com/.../tar.gz/main`) to avoid per-file API requests entirely |
-| Supabase Storage upload of ~2600 files | Sequential upload with no retry/backoff; a single transient failure aborts the whole batch with no record of what succeeded | Batch uploads with concurrency limits + per-file retry, and persist an upload manifest so a re-run only uploads missing files |
-| Supabase Postgres direct connection for a bulk script | Running the merge through the pooled/serverless connection (PgBouncer transaction mode) used by the Hono API, which isn't suited for a long-running batch job with many sequential statements | Use a direct (non-pooled) connection string for the one-off migration script, separate from the app's runtime connection pool |
+|-------------|-----------------|-------------------|
+| Vercel Cron (weekly engine) | Treating cron delivery as exactly-once and building a non-idempotent per-athlete decision write | Vercel cron is at-least-once; make each athlete's weekly run idempotent (transactional "already processed this week" check), same discipline as the existing lazy daily-reset credit pattern |
+| `backend/api/src/tools/registry.ts` (new `create_goal`/`create_reward`/`create_program` tools) | Registering new autonomous-write tools the same way as existing user-initiated tools, without distinguishing "athlete asked for this in chat" from "AI decided this unprompted in a cron run" | New tools that can be invoked from the cron-driven agent need to work with no user JWT in context (same pattern already solved in `coach/ai/monitor-cron` using the service-role client) — audit every tool executor for an implicit assumption that a user session exists |
+| Existing credit-gate middleware (`creditGate.ts`) | Assuming the weekly autonomous engine is naturally covered by `creditCheck`/`creditDeduct` because it's "just another AI route" | It isn't — there's no user-initiated request to gate. Cost must be tracked and capped independently (reuse `ai_cost_log` schema/pattern, but decide funding model explicitly, see Pitfall 2) |
+| `PluginLoader` static 19-plugin map + `manifest.mandatory` | Building progressive unlock as a second, parallel gating layer that doesn't account for `mandatory: true` plugins (e.g. "Mon coach") which must always be pre-loaded regardless of level | Unlock-by-level logic must explicitly exclude `mandatory` plugins from restriction, and should probably live as a new field/check alongside `mandatory` rather than a separate ungoverned mechanism |
+| Existing 7-step onboarding flow being replaced | Cutting over to conversational onboarding for all users at once, including users mid-flow on the old 7-step screens, with no compatibility/migration path | Treat this as a flow migration: version the onboarding state, ensure users already past step N of the old flow aren't dropped into a broken hybrid state; decide explicitly whether existing completed-onboarding athletes get a retroactive AI-computed starting level or are grandfathered |
+| Models config (`backend/api/src/config/models.ts`) | Wiring the weekly decision engine to a hardcoded model ID instead of the centralized constant | Weekly engine (and reward-selection call) must reference the centralized `models.ts` constants exactly like every other AI route, so a future model swap doesn't require hunting across a new module |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|-----------------|
-| Loading the full 1324-row dataset + full 1318-row production table into memory for an O(n×m) fuzzy-match comparison | Script takes minutes and consumes excessive memory for what should be a sub-second operation on ~2600 total rows | Normalize both sides into a name-indexed map first (O(n+m)), only fall back to fuzzy/trigram comparison for the residual unmatched subset | At this dataset's exact scale (~1300 rows) this is already a real risk, not a future one — a naive nested loop is ~1.7M comparisons |
-| Fetching all 2600 media files sequentially, one HTTP request at a time | Download step takes very long, increases the window for a mid-run failure (Pitfall 3) | Bounded concurrency (e.g. 10-20 parallel downloads) with a manifest tracking completed files | Noticeable above a few hundred files; at 2600 files sequential-at-~200ms/file is ~9 minutes minimum even with zero retries |
+| Sequential per-athlete LLM calls inside one cron invocation | Cron function runs to the Vercel `maxDuration` ceiling and returns with a partial athlete list processed, no error surfaced | Fan-out pattern: cron enqueues work, per-athlete processing happens in separate bounded invocations with idempotent completion tracking | Somewhere between "a few dozen" and "a few hundred" athletes depending on average tool-call round-trips per decision, well within this milestone's likely first-year user growth |
+| Unbounded `athlete_decisions` read on every weekly run | Token count and latency per decision creep upward specifically for long-tenure athletes; early testing (all-fresh accounts) won't reveal it | Compact `athlete_state` summary + bounded recent-window log reads (Pitfall 6) | After ~2-3 months of weekly entries per athlete if unaddressed — invisible in the first testing cycles |
+| `fetchUserContext`-style 6-parallel-query pattern reused verbatim for the weekly engine, but now multiplied across every athlete every week | Supabase connection/query load spikes on the scheduled run day/hour rather than being spread out | Stagger per-athlete processing (jittered schedule based on user ID or signup date) rather than firing all athletes at the exact same cron minute | Once athlete count is large enough that a single-minute burst of N×6 queries becomes a visible load spike |
 
 ## Security Mistakes
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Running the merge script with the Supabase `service_role` key hardcoded in a script committed to the repo, or left in shell history | Full-privilege key leak bypassing all RLS, same class of issue already fixed once in this project (`SUPABASE_SERVICE_KEY` was previously removed from the backend per CLAUDE.md "Known Bugs Fixed") | Load the service role key from an untracked `.env` (already the project's established pattern) and never print/log it; run the script locally or via a secrets-managed CI job, not committed anywhere |
-| Trusting the downloaded GitHub content without integrity verification | A compromised or force-pushed upstream repo (or a MITM on an unauthenticated `raw.githubusercontent.com` fetch, though HTTPS mitigates this) could inject unexpected instructions/content text into `exercises` rows served back to users | Pin to a specific commit SHA (not `main`) when fetching, and spot-check a sample of instructions text before writing to production |
+| New `athlete_state`/`athlete_decisions` tables shipped without RLS | Any authenticated user could read/write another athlete's decision journal or state via a direct Supabase client call from mobile | Enable RLS + `auth.uid() = user_id` policy from the first migration that creates these tables, exactly matching the repo's universal RLS pattern — never ship the table before the policy |
+| Cron-triggered tool executors trusting `c.req` input the same way user-initiated routes do | A cron route with a leaked/guessable `CRON_SECRET` (or a route accidentally left reachable without the secret check, as `monitor-cron` explicitly guards against) could be invoked to fabricate rewards/unlocks | Reuse the existing `CRON_SECRET` bearer-check pattern verbatim for the new weekly-engine route, defined before any auth middleware exactly as `monitor-cron` already does, and treat this as a mandatory checklist item for every new cron route |
+| Reward/unlock tool writes using the model's own asserted athlete_id instead of a server-validated one | Prompt injection via chat (athlete manipulates the AI mid-conversation into invoking a privileged tool for a different athlete_id) could grant unearned rewards or unlocks | Tool executors must always resolve the target athlete_id from the authenticated session/cron context server-side, never accept it as a model-supplied argument that gets trusted as-is |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
-|---------|--------------|-------------------|
-| Shipping the merge mid-day against production without a maintenance/rollout window | Users mid-workout-session see an exercise's name/media change under them, or briefly see missing images while the migration is in flight | Run the merge during low-traffic hours, and make the mobile client tolerant of a temporarily-missing `gif_url`/`image` (placeholder, not crash) |
-| Exercise list re-sorts or renumbers after the merge because new rows were inserted with fresh UUIDs at the end (false negatives, Pitfall 1) | A user's "recently used" or "favorites" list (if any plugin tracks exercise_id locally) silently breaks or points to the wrong exercise | Preserve existing UUIDs for every successfully matched exercise (UPDATE in place, never delete+reinsert) so all FK references and any client-side cached IDs remain valid |
+|---------|-------------|-------------------|
+| Reward/tier explanation is entirely opaque ("the AI decided") | Users distrust the system, especially when a peer with similar effort gets a visibly different reward | Surface a short, always-available human-readable rationale per decision (pulled from the persisted `athlete_decisions` entry, not re-generated on demand) — "why this reward" must be answerable without another AI call |
+| Progressive unlock communicated only as a passive drawer change with no signal of *why* or *what's next* | Feels arbitrary/random even though it isn't (undermines the entire "not a loot box" positioning) | Explicitly show the athlete what unlocked and (at least loosely) what's next, reinforcing that progression is earned and legible, not a mystery mechanic |
+| Non-punitive design not reinforced by copy/animation review | Even a strictly non-decreasing points system can *feel* punitive if the UI ever shows a shrinking bar, missed-goal red state, or "you could have gotten more" framing | Explicit copy/animation audit pass against the monotonicity invariant (Pitfall 4) before shipping any reward/unlock screen |
+| Conversational onboarding (mascot, ≤4 questions) fails to disclose that answers drive an automated leveling/track decision | Users may not realize casual chat answers are determining their starting restriction level, feels like a bait-and-switch when they notice fewer features than a friend | Make the onboarding→starting-level link transparent in-flow (a lightweight "here's your starting point, based on what you told me" moment), not hidden behind the mascot chat framing |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Name matching:** Often missing a manual-review gate for ambiguous/unmatched rows — verify a dry-run report was generated and reviewed before any production write ran.
-- [ ] **License compliance:** Often missing the actual rendered attribution in the shipped app (not just stored in the DB) — verify by grepping shipped screen code for the attribution component/text, not just the data layer.
-- [ ] **Resolution cap:** Often missing enforcement at render time — verify no `<Image>`/GIF usage of this media renders above 180×180 intrinsic pixels anywhere in `apps/mobile`.
-- [ ] **Idempotency:** Often missing a resume/progress log — verify the script can be killed mid-run and re-run without re-processing already-completed rows or re-downloading already-downloaded files.
-- [ ] **FK integrity:** Often missing a check that no exercise referenced by real `program_exercises`/`session_sets` rows was deleted or had its `id` change — verify via a pre/post count of FK references per exercise id.
-- [ ] **Mobile cache invalidation:** Often missing a cache-busting strategy for changed media URLs — verify old cached `v2.exercisedb.io` URLs are fully gone from the DB (not just superseded in most rows) and that query cache keys were versioned.
+- [ ] **Weekly decision engine:** Often missing idempotent per-athlete completion tracking — verify a duplicate/retried cron invocation for the same athlete+week does not double-write `athlete_state` or double-grant a reward.
+- [ ] **Reward-pool AI selection:** Often missing a pinned low/zero temperature and persisted rationale — verify two runs with identical synthetic input produce the same selection, and that the rationale is stored, not just displayed transiently.
+- [ ] **Progressive unlock:** Often missing the deterministic floor/ceiling backstop — verify a synthetic "8 weeks of consistent activity" athlete actually unlocks, and a synthetic "zero activity" athlete does not silently unlock everything.
+- [ ] **Non-punitive reward calculation:** Often missing an explicit monotonicity test — verify no code path can decrease `athlete_state.points`/`level`/tier fields, including via a raw SQL migration or admin tool.
+- [ ] **`athlete_decisions` journal:** Often missing the compact-state/full-log split — verify the weekly prompt-building code path reads a bounded summary, not `SELECT *` on the full history table.
+- [ ] **New cron route (`/[whatever]/cron/weekly-decisions` or similar):** Often missing the `CRON_SECRET` bearer check defined before auth middleware — verify by curling the route without the secret and confirming a 401, exactly as the existing `monitor-cron` route does.
+- [ ] **AI cost accounting for the autonomous weekly engine:** Often missing entirely because it's not behind `creditCheck`/`creditDeduct` — verify every weekly-engine LLM call writes to `ai_cost_log` and that someone has actually looked at the aggregate monthly cost projection at expected athlete-count scale.
+- [ ] **RLS on new tables:** Often missing until a security review catches it — verify `athlete_state` and `athlete_decisions` both have RLS enabled and an `auth.uid() = user_id` (or equivalent) policy before any client-facing code reads/writes them directly.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|-----------------|------------------|
-| False-positive match overwrote a real exercise's data (Pitfall 2) | MEDIUM | Restore the affected row(s) from the pre-merge backup table (`exercises_merge_backup`) created before the UPDATE; re-run the matcher for just that row with tightened thresholds |
-| Duplicate rows created from false negatives (Pitfall 1) | LOW-MEDIUM | Since names aren't unique, duplicates are identifiable by comparing `gif_url`/media reference; re-point any `program_exercises`/`session_sets` rows referencing the duplicate to the canonical row, then delete the duplicate (safe now that no FK references it) |
-| Partial/interrupted merge left inconsistent state (Pitfall 3) | LOW, if idempotency was built in; HIGH, if not | With an import-log table: simply re-run, it resumes. Without one: must diff the entire table against the dataset to reconstruct which rows were touched — budget significant manual verification time |
-| License violation shipped to production (missing attribution or oversized media) (Pitfall 5) | HIGH | Requires an app update (App Store/Play Store review cycle, not an instant fix) to correct rendering; in the interim, may require pulling the affected media server-side (swap `gif_url` back to a placeholder) since that part can be fixed without a client release |
+| Cron fan-out timeout mid-run (Pitfall 2) discovered in production | MEDIUM | Add a resumable "processed this week" marker retroactively, re-run the batch job filtered to unprocessed athletes; migrate to a queue-based fan-out before the next scheduled run rather than patching the sequential loop again |
+| Hallucinated reward/decision reached production (Pitfall 1) | MEDIUM-HIGH | Because `athlete_decisions` is append-only, do not delete the bad entry — append a correcting entry, and if a reward was granted based on false data, decide explicitly (product call, not engineering) whether to claw back or honor it (clawing back real-money-adjacent rewards has its own ANJ-adjacency risk, see Pitfall 3) |
+| Unbounded journal token growth (Pitfall 6) discovered only after months of production data | MEDIUM | Backfill a compact `athlete_state` summary computed from the existing full log for all current athletes in a one-time migration, then switch the prompt-building path over; full log stays intact for audit |
+| Progressive-unlock stuck-user bug (Pitfall 5) reported via support | LOW | Manual DB-level override/force-unlock for the affected athlete while the root cause (calibration or a stalled cron) is fixed; this is exactly why the internal escape hatch must exist from day one |
 
 ## Pitfall-to-Phase Mapping
 
 | Pitfall | Prevention Phase | Verification |
 |---------|-------------------|----------------|
-| False-negative name matching / duplicate rows | Download/merge script phase | Dry-run report reviewed; post-merge row count delta matches expected net-new count (~single digits to low dozens, not hundreds) |
-| False-positive name matching / overwritten history | Download/merge script phase | Spot-check 20 exercises with real logged `session_sets` history pre/post merge; pre-merge backup table exists |
-| Non-idempotent script / partial-run corruption | Download/merge script phase | Kill the script mid-run in a staging rehearsal, confirm re-run resumes cleanly without duplicate work or errors |
-| 17MB JSON vs. Vercel payload/serverless limits | Download/merge script phase (environment decision) | Confirm the script runs as a local/CI job or extended-duration Cron, not a synchronous Hono API route; fetch source is `raw.githubusercontent.com`, not the Contents API |
-| Gym visual attribution/resolution compliance | Storage upload phase + Mobile consumption phase | Attribution component present and rendered on every media display; grep confirms no `<Image>` usage exceeds 180×180 for this media; explicit sign-off obtained on license interpretation |
-| Stale mobile cache / broken images during rollout | Mobile consumption phase | QA on a pre-migration build simulating an existing install shows no mixed old/new URLs after a normal app resume (not requiring reinstall); fixture-array grep is clean |
+| AI decisions ungrounded from real DB state | Moteur de décision adaptatif hebdo (tool executor design) | Tool executors independently re-query source tables; test with a chat transcript that falsely claims completed activity and confirm the decision doesn't reflect it |
+| Cron fan-out cost/duration at scale | Moteur de décision adaptatif hebdo (scheduling infra) | Load test with a synthetic athlete count well above current production scale; confirm no single-invocation truncation and confirm `ai_cost_log` coverage |
+| Reward-pool ANJ-adjacent randomness | Récompenses par points/palier (mechanic design + legal-rationale checkpoint) | Two identical synthetic athlete profiles produce the same reward selection; documented rationale reviewed against the three ANJ criteria |
+| Implicit punishment via calculation/UI edge cases | Système de review/suivi hebdo + Récompenses par palier | Automated/manual test: zero-activity weeks never decrease `athlete_state` fields or revoke unlocks; copy/animation audit pass |
+| Progressive-unlock trap (stuck or everything-day-one) | Déblocage progressif de fonctionnalités par niveau | Synthetic consistent-beginner and synthetic zero-activity test cases both produce the expected (opposite) outcomes; manual override path exists and is tested |
+| Unbounded decision-journal context growth | Journal de décisions IA par athlète | Token-count the weekly prompt for a synthetic 12-month-tenure athlete before shipping; confirm compact-state/full-log split is in place from the first migration |
 
 ## Sources
 
-- `C:\ziko-platform\supabase\migrations\001_initial_schema.sql` (exercises, program_exercises, session_sets schema — FK constraints, no unique name constraint) — HIGH confidence, read directly
-- `C:\ziko-platform\supabase\migrations\031_exercises_name_fr.sql` (evidence of duplicate French names across distinct exercise UUIDs) — HIGH confidence, read directly
-- `C:\ziko-platform\supabase\migrations\055_coach_exercises_schema.sql`, `20260527_coach_exercise_id_program_exercises.sql` (separate `coach_exercises` table/FK — not to be conflated with this import) — HIGH confidence, read directly
-- `C:\ziko-platform\supabase\seed_exercises.sql` (current seed pattern, `v2.exercisedb.io` GIF host, delete-then-insert approach) — HIGH confidence, read directly
-- `C:\ziko-platform\.planning\PROJECT.md` (Vercel 4.5MB payload limit constraint, v1.16 workstream description) — HIGH confidence, read directly
-- [hasaneyldrm/exercises-dataset — NOTICE.md](https://github.com/hasaneyldrm/exercises-dataset/blob/main/NOTICE.md) — Gym visual attribution + 180×180 resolution cap terms — HIGH confidence, quoted directly from primary source
-- [hasaneyldrm/exercises-dataset repository](https://github.com/hasaneyldrm/exercises-dataset) — repo structure, `id`/`media_id` file-naming scheme, per-record `attribution` field — MEDIUM confidence, derived from rendered page/README summary, not a raw-file diff; **recommend verifying exact field names against `data/exercises.schema.json` before implementation**
-- [Gym visual Terms and Conditions](https://gymvisual.com/content/3-terms-and-conditions-of-use) (referenced by NOTICE.md, not independently fetched) — MEDIUM confidence, verify directly before finalizing legal/attribution UI copy
-- Direct fetch of `raw.githubusercontent.com/.../data/exercises.json` failed with a 10MB content-size error during this research — empirical confirmation the file is large enough to collide with typical serverless/tool payload limits (Pitfall 4)
+- [Vercel — Managing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs) — at-least-once delivery, idempotency/reconciliation guidance (HIGH confidence, official docs)
+- [Vercel — Configuring Maximum Duration for Vercel Functions](https://vercel.com/docs/functions/configuring-functions/duration) — 300s Pro default / 800s max ceiling (HIGH confidence, official docs)
+- [Vercel — Limits](https://vercel.com/docs/limits) (HIGH confidence, official docs)
+- [Vercel — Queues concepts](https://vercel.com/docs/queues/concepts) — at-least-once delivery for fan-out at scale (HIGH confidence, official docs)
+- [GitHub vercel/community — Can Vercel Cron Jobs timeout?](https://github.com/vercel/community/discussions/3302) (MEDIUM confidence, community-verified)
+- [ANJ — Étude sur l'offre illégale de jeux d'argent et de hasard (2023 report)](https://anj.fr/sites/default/files/2023-12/ANJ_Offre%20ill%C3%A9gale_Rapport%20final_20231215.pdf) (MEDIUM confidence, official regulator source)
+- [Le Mag Juridique — La réglementation des « lootboxes »](https://www.lemag-juridique.com/categories/consommation-15612/articles/la-reglementation-des-lootboxes-2971.htm) — three-criteria test (sacrifice financier, offre publique, espérance de gain patrimonial) (MEDIUM confidence, legal commentary; flag LOW on any specific legal conclusion — recommend counsel review)
+- [Assemblée Nationale — Question n°14570, loot box réglementation](https://questions.assemblee-nationale.fr/q15/15-14570QE.htm) (MEDIUM confidence, official parliamentary record)
+- [JONUM legislative context summary](https://snurl.com/loot-box-jonum-nouvelle-reglementation-jeux-france.html) (LOW-MEDIUM confidence, secondary summary — law is actively evolving, verify current status before shipping)
+- [UX Collective — Gamification: Why Streaks Often Go Wrong](https://uxdesign.cc/gamification-gone-wrong-stop-the-streaks-c3de42618ae) (MEDIUM confidence, industry case study incl. Habitica loss-aversion data)
+- [UX Magazine — The Psychology of Hot Streak Game Design](https://uxmag.com/articles/the-psychology-of-hot-streak-game-design-how-to-keep-players-coming-back-every-day-without-shame) (MEDIUM confidence)
+- [Mem0 — Context Window is RAM, Not Storage](https://mem0.ai/blog/context-window-is-ram-not-storage-why-most-agent-failures-happen-how-to-fix-them-in-2026) — linear token growth with unbounded append, lost-in-the-middle effect (MEDIUM confidence, vendor blog but consistent with broader literature)
+- [Mastra — Long-Term Memory for AI Agents](https://mastra.ai/articles/long-term-memory-ai-agents) (MEDIUM confidence)
+- Internal codebase precedent (HIGH confidence, direct source inspection): `backend/api/src/coach/ai/service.ts` (`monitor-cron` sequential per-coach loop + `CRON_SECRET` guard pattern), `backend/api/vercel.json` (existing 8-cron configuration), `.planning/PROJECT.md` Key Decisions table (v1.4 credit system: SECURITY DEFINER + SELECT FOR UPDATE race prevention, partial unique index idempotency, lazy daily-reset avoiding cron double-reset, dual-balance coin/credit separation)
 
 ---
-*Pitfalls research for: bulk exercise dataset + licensed media import into production Ziko Platform*
-*Researched: 2026-08-14*
+*Pitfalls research for: Autonomous AI decision-making system (rewards, plan adaptation, feature unlocking) added to existing single-orchestrator AI fitness app architecture*
+*Researched: 2026-08-30*
