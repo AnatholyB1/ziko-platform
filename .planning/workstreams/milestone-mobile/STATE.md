@@ -1,38 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: Mobile UX v2
-status: complete
-stopped_at: Phase 41 complete — all 6 automated checks PASS, smoke test APPROVED
-last_updated: "2026-05-28T00:00:00Z"
+milestone: v1.18
+milestone_name: AI Coach Core
+status: planning
+last_updated: "2026-08-30T10:52:16.492Z"
+last_activity: 2026-08-30
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 36
-  completed_plans: 36
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# Project State — v1.7 Mobile UX v2
+# Project State — v1.18 AI Coach Core
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-21)  
-See: .planning/workstreams/milestone-mobile/ROADMAP-v1.7.md  
-See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
+See: .planning/PROJECT.md (updated 2026-08-30)
+See: .planning/workstreams/milestone-mobile/ROADMAP.md (once written)
+See: .planning/workstreams/milestone-mobile/REQUIREMENTS.md (once written)
 
-**Core value:** Full visual redesign of the Ziko mobile app matching 24 canonical mockup files. Design + real data connections done together per screen. Active workout session excluded.
+**Core value:** L'IA devient le pilote central de l'expérience athlète — onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA (objectif/récompense/programme), review/récompenses par palier, déblocage progressif de fonctionnalités par niveau.
+
+**Previous milestone (v1.7 Mobile UX v2):** SHIPPED 2026-05-28. See `.planning/workstreams/milestone-mobile/ROADMAP-v1.7.md` / `REQUIREMENTS-v1.7.md`.
 
 ## Current Position
 
-Phase: **41 — Coach StateC + Final Audit** — COMPLETE ✅ (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28)
-
-Previous: Phase 40 — Extra Screens — COMPLETE ✅ (6/6 plans, 11/11 automated checks PASS, 2026-05-27)
-
-Previous: Phase 39 complete — 26/26 automated checks PASS ✅
-Also complete (missing from prior STATE): Phase 36 — Workout Stack Redesign (12/12 PASS, 2026-05-25) ✅
-
-Progress: [██████████] 100% (10/10 phases complete) — **v1.7 MILESTONE COMPLETE** 🎉
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-08-30 — Milestone v1.18 started
 
 ## Accumulated Context
 

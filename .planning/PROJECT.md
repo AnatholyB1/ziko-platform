@@ -83,6 +83,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 ## Active Parallel Workstreams
 
+**Parallel workstream:** v1.18 AI Coach Core (`milestone-mobile`) — l'IA devient pilote central de l'expérience athlète : onboarding conversationnel qui profile, moteur qui décide des objectifs hebdo adaptés au niveau réel, tools IA (objectif/récompense/programme), review hebdo et récompenses par palier, déblocage progressif de fonctionnalités.
 **Parallel workstream:** v1.9 Retour Vocal Coach (`retour-vocal`) — coach enregistre retour vocal → Whisper + Claude structure avec mémoire athlète → card exploitable.
 **Parallel workstream:** v1.10 Custom Coach Exercises (`custom-coach`) — coach crée ses propres exercices (vidéo + photo), disponibles dans les programmes de ses athlètes.
 **Parallel workstream:** v1.11 Notification System (`notification-mobile`) — push + in-app notifications mobile (Expo Push, APNs/FCM), Hono-triggered, préférences par catégorie.
@@ -91,6 +92,28 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
 **Parallel workstream:** v1.17 Connexion Google & Apple (`connexion`) — remplace les boutons Google/Apple non-fonctionnels de l'écran welcome mobile par de vrais flows OAuth natifs (Supabase Auth), avec linking automatique des comptes par email vérifié.
+
+---
+
+<details>
+<summary>v1.18 AI Coach Core [milestone-mobile] — ongoing</summary>
+
+**Goal:** L'IA devient le pilote central de l'expérience athlète — onboarding conversationnel qui profile la personne, moteur qui décide des objectifs/étapes hebdomadaires adaptés à son niveau réel (pas un plan générique), et système de récompense/déblocage de fonctionnalités qui suit sa progression réelle plutôt qu'un calendrier fixe.
+
+**Target features:**
+- Onboarding conversationnel (mascotte) — ≤4 questions en chat libre, profilage niveau/confiance/contraintes détecté depuis les réponses, plan + micro-action générés en <5min
+- Moteur de décision adaptatif hebdo — l'IA fixe le focus de la semaine selon le profil et l'historique réel (ex: eau seule pour un débutant fragile → escalade progressive; programme complet dès J0 pour un profil expérimenté)
+- Tools IA — création d'objectif, création de récompense, création de programme, exposés à l'orchestrateur existant (`backend/api/src/tools/registry.ts`)
+- Système de review/suivi hebdo — compare l'effort réel loggé à ce qui était demandé (delta au-dessus = meilleure récompense), jamais de punition en cas de sous-performance
+- Récompenses par points/palier — points cumulés → déblocage d'un palier → pool de récompenses possibles → l'IA choisit la plus adaptée (pas de tirage aléatoire, conforme ANJ)
+- Déblocage progressif de fonctionnalités par niveau — plugin drawer restreint puis élargi selon la progression réelle; niveau de départ calculé à l'onboarding (débutant part à 1, expérimenté peut démarrer plus haut)
+- Journal de décisions IA par athlète (`athlete_state` + `athlete_decisions`, pattern inspiré de GSD STATE.md/Key Decisions) — état courant compact + journal append-only vérifiable
+
+**Explicitement hors scope (→ [[SEED-001]], futur milestone):** factions par sport, ligues avec pistes Habitudes/Performance, promotion/relégation, leaderboards, saisons/battle pass, loot cosmétique/skins, mascotte étendue multi-états.
+
+**Source:** Dérivé de la spec Notion "📐 Spec Produit — Système d'engagement & gamification Ziko" (https://app.notion.com/p/3c90a4717ba381338eacc49335823dca), affiné en discussion de cadrage le 2026-08-30.
+
+</details>
 
 ---
 
@@ -325,7 +348,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-18 — v1.16 Exercise Library Import (`image-exo`) SHIPPED: Phase 4 (Mobile Consumption & Attribution) complete and verified — real GIF/thumbnail media, structured bilingual instructions, and mandatory attribution all live in the mobile app. All 4 phases of the milestone complete.*
+*Last updated: 2026-08-30 — v1.18 AI Coach Core (`milestone-mobile`) STARTED: onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA, review/récompenses par palier, déblocage progressif par niveau. Scope cadré en discussion; SEED-001 planté pour la couche RPG/social (factions/ligues) reportée à un milestone suivant.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
