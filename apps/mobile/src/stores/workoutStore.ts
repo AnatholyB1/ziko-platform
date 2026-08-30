@@ -298,10 +298,12 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
+    // Own programs (user_id = self) OR coach-assigned programs
+    // (assigned_to_user_id = self, user_id = coach — see 045 migration).
     const { data } = await supabase
       .from('workout_programs')
       .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr, muscle_groups, category)))')
-      .eq('user_id', user.id)
+      .or(`user_id.eq.${user.id},assigned_to_user_id.eq.${user.id}`)
       .order('created_at', { ascending: false });
 
     if (data) {
@@ -309,10 +311,16 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       let active = programs.find((p) => p.is_active) ?? null;
 
       // Auto-activate if there are programs but none is active
+      // (only auto-activate a program the athlete owns outright — never
+      // flip is_active on a coach-assigned program without the athlete's
+      // own user_id, since coach's other clients share that same row's
+      // coach-side view).
       if (!active && programs.length > 0) {
         const first = programs[0];
-        await supabase.from('workout_programs').update({ is_active: true }).eq('id', first.id);
-        first.is_active = true;
+        if (first.user_id === user.id) {
+          await supabase.from('workout_programs').update({ is_active: true }).eq('id', first.id);
+          first.is_active = true;
+        }
         active = first;
       }
 
