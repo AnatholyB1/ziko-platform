@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { showAlert } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
@@ -386,24 +386,48 @@ function SessionCard({ session, theme }: { session: WorkoutSession; theme: any }
   );
 }
 
-// ── ai_generated_programs JSONB shape ──────────────────────────────────────────
+// ── workout_programs / program_workouts / program_exercises shape ──────────────
+// NOTE: coach-assigned programs have user_id = coach_id, assigned_to_user_id =
+// the athlete's id (see backend/api/src/coach/programs/db.ts assignProgram).
+// Own athlete-created programs have user_id = athlete's id, assigned_to_user_id
+// = null. This screen must show both.
 interface ProgramWeek {
   w: number;
   sessions?: SessionEntry[];
 }
 
-interface AiProgramData {
-  weeks?: ProgramWeek[];
-  description?: string;
+interface ProgramExerciseRow {
+  id: string;
+  exercise_id: string | null;
+  sets: number | null;
+  reps: number | null;
+  reps_min: number | null;
+  reps_max: number | null;
+  order_index: number;
+  exercises?: { name: string; name_fr?: string | null } | null;
 }
 
-interface AiGeneratedProgram {
+interface ProgramWorkoutRow {
+  id: string;
+  day_of_week: number | null;
+  name: string;
+  order_index: number;
+  program_exercises?: ProgramExerciseRow[];
+}
+
+interface WorkoutProgramRow {
   id: string;
   user_id: string;
-  goal: string;
-  split?: string;
-  program_data: AiProgramData | null;
+  assigned_to_user_id?: string | null;
+  created_by_coach_id?: string | null;
+  name: string;
+  description: string | null;
+  goal?: string | null;
+  is_active: boolean;
+  cycle_weeks: number | null;
+  current_cycle_week: number | null;
   created_at: string;
+  program_workouts?: ProgramWorkoutRow[];
 }
 
 // ── Main screen ────────────────────────────────────────────────────────────────
@@ -419,49 +443,110 @@ export default function WorkoutIndexScreen() {
   const loadRecentSessions = useWorkoutStore((s) => s.loadRecentSessions);
 
   const [activeTab, setActiveTab] = useState(0);
+  const queryClient = useQueryClient();
+  const programsQueryKey = ['workout-programs', userId];
 
   useEffect(() => {
     loadRecentSessions(90);
   }, [userId]);
 
-  // TanStack Query for ai_generated_programs
-  const { data: activeProgram, isLoading } = useQuery<AiGeneratedProgram | null>({
-    queryKey: ['active-program', userId],
+  // Real programs: own (user_id = self) + coach-assigned (assigned_to_user_id = self).
+  // Replaces the old ai_generated_programs query — that table holds one-off
+  // AI-suggested single sessions, not the persistent, coach-assignable,
+  // editable program model (workout_programs / program_workouts / program_exercises).
+  const { data: programsData, isLoading } = useQuery<{
+    active: WorkoutProgramRow | null;
+    others: WorkoutProgramRow[];
+  }>({
+    queryKey: programsQueryKey,
     queryFn: async () => {
-      if (!userId) return null;
+      if (!userId) return { active: null, others: [] };
       const { data, error } = await supabase
-        .from('ai_generated_programs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error) return null;
-      return data as AiGeneratedProgram;
+        .from('workout_programs')
+        .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr)))')
+        .or(`user_id.eq.${userId},assigned_to_user_id.eq.${userId}`)
+        .order('created_at', { ascending: false });
+      if (error || !data) return { active: null, others: [] };
+      const programs = data as WorkoutProgramRow[];
+      const active = programs.find((p) => p.is_active) ?? programs[0] ?? null;
+      const others = programs.filter((p) => p.id !== active?.id);
+      return { active, others };
     },
     enabled: !!userId,
   });
 
-  const programData = activeProgram?.program_data ?? null;
-  const weeks = programData?.weeks ?? [];
-  const totalWeeks = weeks.length;
-  const currentWeek = 1; // Most recent program starts at week 1
+  const activeProgram = programsData?.active ?? null;
+  const otherPrograms = programsData?.others ?? [];
+
+  // "Semaine type" — one entry per weekday (1=Mon..7=Sun), null = rest day.
+  const weekSessions: (SessionEntry | null)[] = DAY_LABELS.map((_, i) => {
+    const dayNum = i + 1;
+    const wo = activeProgram?.program_workouts?.find((w) => w.day_of_week === dayNum);
+    if (!wo) return null;
+    return {
+      name: wo.name,
+      exercises: (wo.program_exercises ?? [])
+        .slice()
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((pe) => ({
+          name: pe.exercises?.name ?? 'Exercice',
+          sets: pe.sets ?? 0,
+          reps: pe.reps != null ? String(pe.reps) : pe.reps_min && pe.reps_max ? `${pe.reps_min}-${pe.reps_max}` : '',
+          exercise_id: pe.exercise_id ?? undefined,
+        })),
+    };
+  });
+
+  const totalWeeks = activeProgram?.cycle_weeks ?? 1;
+  const currentWeek = activeProgram?.current_cycle_week ?? 1;
   const progressPct = totalWeeks > 0 ? (currentWeek / totalWeeks) * 100 : 0;
-  const weekSessions = weeks[0]?.sessions ?? [];
+  const filledSessions = weekSessions.filter((s): s is SessionEntry => !!s);
+  const weeks: ProgramWeek[] = Array.from({ length: totalWeeks }, (_, i) => ({
+    w: i + 1,
+    sessions: filledSessions,
+  }));
 
   // Today's session name for sticky CTA
   const todayIndex = (new Date().getDay() + 6) % 7; // 0=Mon … 6=Sun
-  const todaySessionName = weekSessions[todayIndex]?.name ?? weekSessions[0]?.name ?? 'Séance';
+  const todaySessionName = weekSessions[todayIndex]?.name ?? filledSessions[0]?.name ?? 'Séance';
 
-  const tabLabels = ['Semaine type', `${totalWeeks || 'N'} semaines`];
+  const tabLabels = ['Semaine type', `${totalWeeks} semaine${totalWeeks > 1 ? 's' : ''}`];
+
+  const isCoachAssigned = !!activeProgram?.assigned_to_user_id;
+  const ownsProgram = activeProgram?.user_id === userId;
 
   const handleProgramActions = () => {
-    showAlert(activeProgram?.goal ?? 'Programme', undefined, [
-      { text: 'Activer', onPress: () => {} },
-      { text: 'Dupliquer', onPress: () => {} },
-      { text: 'Supprimer', style: 'destructive', onPress: () => {} },
-      { text: 'Annuler', style: 'cancel' },
-    ]);
+    if (!activeProgram) return;
+    const buttons: Array<{ text: string; style?: 'destructive' | 'cancel'; onPress?: () => void }> = [
+      {
+        text: 'Modifier',
+        onPress: () => router.push(`/(app)/workout/${activeProgram.id}` as any),
+      },
+    ];
+    if (!activeProgram.is_active) {
+      buttons.push({
+        text: 'Activer',
+        onPress: async () => {
+          await useWorkoutStore.getState().setActiveProgram(activeProgram.id);
+          queryClient.invalidateQueries({ queryKey: programsQueryKey });
+        },
+      });
+    }
+    // Only the athlete's own programs can be deleted from here — a
+    // coach-assigned program (user_id = coach) has no DELETE RLS grant
+    // for the athlete, and shouldn't be removable from their side anyway.
+    if (ownsProgram) {
+      buttons.push({
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.from('workout_programs').delete().eq('id', activeProgram.id);
+          queryClient.invalidateQueries({ queryKey: programsQueryKey });
+        },
+      });
+    }
+    buttons.push({ text: 'Annuler', style: 'cancel' });
+    showAlert(activeProgram.name, undefined, buttons);
   };
 
   return (
@@ -469,8 +554,8 @@ export default function WorkoutIndexScreen() {
       {/* WSHeader — only when active program */}
       {activeProgram ? (
         <WSHeader
-          title={activeProgram.goal}
-          sub="Coach Ziko · Intermédiaire"
+          title={activeProgram.name}
+          sub={isCoachAssigned ? 'Assigné par ton coach' : 'Programme personnel'}
           right={
             <TouchableOpacity
               onPress={handleProgramActions}
@@ -583,23 +668,25 @@ export default function WorkoutIndexScreen() {
 
               {/* Status badges */}
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                <Text
-                  style={{
-                    fontSize: 10,
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    borderRadius: 999,
-                    backgroundColor: '#FF5C1A',
-                    color: '#fff',
-                    fontWeight: '700',
-                    letterSpacing: 0.6,
-                    textTransform: 'uppercase',
-                    overflow: 'hidden',
-                  }}
-                >
-                  ACTIF
-                </Text>
-                {activeProgram.split ? (
+                {activeProgram.is_active ? (
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 999,
+                      backgroundColor: '#FF5C1A',
+                      color: '#fff',
+                      fontWeight: '700',
+                      letterSpacing: 0.6,
+                      textTransform: 'uppercase',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    ACTIF
+                  </Text>
+                ) : null}
+                {activeProgram.goal ? (
                   <Text
                     style={{
                       fontSize: 10,
@@ -612,7 +699,7 @@ export default function WorkoutIndexScreen() {
                       overflow: 'hidden',
                     }}
                   >
-                    {activeProgram.split}
+                    {activeProgram.goal}
                   </Text>
                 ) : null}
               </View>
@@ -708,7 +795,7 @@ export default function WorkoutIndexScreen() {
             </LinearGradient>
 
             {/* Description */}
-            {programData?.description ? (
+            {activeProgram.description ? (
               <Text
                 style={{
                   fontSize: 12,
@@ -718,7 +805,7 @@ export default function WorkoutIndexScreen() {
                   paddingHorizontal: 4,
                 }}
               >
-                {programData.description}
+                {activeProgram.description}
               </Text>
             ) : null}
 
@@ -734,34 +821,22 @@ export default function WorkoutIndexScreen() {
             <View style={{ marginTop: 8 }}>
               {activeTab === 0 ? (
                 /* Semaine type */
-                weekSessions.length > 0 ? (
-                  weekSessions.map((session, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={DAY_LABELS[i] ?? String(i + 1)}
-                      session={session}
-                      isRest={false}
-                      theme={theme}
-                    />
-                  ))
-                ) : (
-                  DAY_LABELS.map((label, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={label}
-                      session={null}
-                      isRest={true}
-                      theme={theme}
-                    />
-                  ))
-                )
+                weekSessions.map((session, i) => (
+                  <DayRow
+                    key={i}
+                    dayLabel={DAY_LABELS[i] ?? String(i + 1)}
+                    session={session}
+                    isRest={!session}
+                    theme={theme}
+                  />
+                ))
               ) : (
-                /* N semaines */
+                /* N semaines (progressive overload cycle) */
                 weeks.map((week, i) => (
                   <WeekRow
                     key={week.w}
                     week={week}
-                    state={i === 0 ? 'current' : i < 0 ? 'done' : 'future'}
+                    state={i + 1 < currentWeek ? 'done' : i + 1 === currentWeek ? 'current' : 'future'}
                     theme={theme}
                   />
                 ))
@@ -769,6 +844,52 @@ export default function WorkoutIndexScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* Other programs — history + coach-assigned programs not currently active */}
+        {!isLoading && otherPrograms.length > 0 && (
+          <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginBottom: 10 }}>
+              Autres programmes
+            </Text>
+            {otherPrograms.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => router.push(`/(app)/workout/${p.id}` as any)}
+                style={{
+                  backgroundColor: theme.surface,
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
+              >
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    backgroundColor: theme.primary + '18',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="document-text-outline" size={18} color={theme.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, fontWeight: '700', fontSize: 12 }}>{p.name}</Text>
+                  <Text style={{ color: theme.muted, fontSize: 10, marginTop: 2 }}>
+                    {p.assigned_to_user_id ? 'Assigné par ton coach' : 'Programme personnel'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={14} color={theme.muted} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* Empty state — no active program */}
         {!isLoading && !activeProgram && (
