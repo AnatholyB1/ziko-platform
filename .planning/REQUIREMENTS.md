@@ -89,41 +89,41 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | — | Pending |
-| FOUND-02 | — | Pending |
-| FOUND-03 | — | Pending |
-| FOUND-04 | — | Pending |
-| FOUND-05 | — | Pending |
-| ONBOARD-01 | — | Pending |
-| ONBOARD-02 | — | Pending |
-| ONBOARD-03 | — | Pending |
-| ONBOARD-04 | — | Pending |
-| ONBOARD-05 | — | Pending |
-| ONBOARD-06 | — | Pending |
-| ENGINE-01 | — | Pending |
-| ENGINE-02 | — | Pending |
-| ENGINE-03 | — | Pending |
-| ENGINE-04 | — | Pending |
-| ENGINE-05 | — | Pending |
-| ENGINE-06 | — | Pending |
-| REWARD-01 | — | Pending |
-| REWARD-02 | — | Pending |
-| REWARD-03 | — | Pending |
-| REWARD-04 | — | Pending |
-| REWARD-05 | — | Pending |
-| GATE-01 | — | Pending |
-| GATE-02 | — | Pending |
-| GATE-03 | — | Pending |
-| GATE-04 | — | Pending |
-| OPS-01 | — | Pending |
-| OPS-02 | — | Pending |
-| OPS-03 | — | Pending |
+| FOUND-01 | Phase 42 | Mapped |
+| FOUND-02 | Phase 42 | Mapped |
+| FOUND-03 | Phase 42 | Mapped |
+| FOUND-04 | Phase 42 | Mapped |
+| FOUND-05 | Phase 42 | Mapped |
+| ONBOARD-01 | Phase 43 | Mapped |
+| ONBOARD-02 | Phase 43 | Mapped |
+| ONBOARD-03 | Phase 43 | Mapped |
+| ONBOARD-04 | Phase 43 | Mapped |
+| ONBOARD-05 | Phase 43 | Mapped |
+| ONBOARD-06 | Phase 43 | Mapped |
+| ENGINE-01 | Phase 44 | Mapped |
+| ENGINE-02 | Phase 44 | Mapped |
+| ENGINE-03 | Phase 44 | Mapped |
+| ENGINE-04 | Phase 44 | Mapped |
+| ENGINE-05 | Phase 44 | Mapped |
+| ENGINE-06 | Phase 44 | Mapped |
+| REWARD-01 | Phase 45 | Mapped |
+| REWARD-02 | Phase 45 | Mapped |
+| REWARD-03 | Phase 45 | Mapped |
+| REWARD-04 | Phase 45 | Mapped |
+| REWARD-05 | Phase 45 | Mapped |
+| GATE-01 | Phase 46 | Mapped |
+| GATE-02 | Phase 46 | Mapped |
+| GATE-03 | Phase 46 | Mapped |
+| GATE-04 | Phase 46 | Mapped |
+| OPS-01 | Phase 47 | Mapped |
+| OPS-02 | Phase 47 | Mapped |
+| OPS-03 | Phase 47 | Mapped |
 
 **Coverage:**
 - v1 requirements: 29 total
-- Mapped to phases: 0
-- Unmapped: 29 ⚠️ (roadmap not yet created)
+- Mapped to phases: 29
+- Unmapped: 0 ✓ (roadmap created 2026-08-30 — see .planning/workstreams/milestone-mobile/ROADMAP.md, phases 42–47)
 
 ---
 *Requirements defined: 2026-08-30*
-*Last updated: 2026-08-30 after initial definition*
+*Last updated: 2026-08-30 after roadmap creation (29/29 requirements mapped to phases 42–47)*

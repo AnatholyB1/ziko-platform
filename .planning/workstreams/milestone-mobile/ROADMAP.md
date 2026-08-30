@@ -1,204 +1,97 @@
-# Roadmap: v1.7 Mobile UX v2
+# Roadmap: v1.18 AI Coach Core
 
-**Workstream:** milestone-mobile  
-**Milestone:** v1.7 Mobile UX v2  
-**Branch:** gsd/phase-32-design-system-foundation (per phase)  
-**Phase numbering:** continues from v1.6 (31 → 32)
+**Workstream:** milestone-mobile
+**Milestone:** v1.18 AI Coach Core
+**Phase numbering:** continues from v1.7 (41 → 42)
 
 ## Overview
 
-10 phases deliver a full visual redesign of the Ziko mobile app to match the 24 mockup files. Design and real data connections are done together per screen. The active workout session (`workout-active.jsx`) is the only exclusion. Each phase is self-contained: it ships both the visual redesign AND real data wiring for its set of screens.
+6 phases turn the AI orchestrator from a reactive (user-initiated chat) system into one that also makes autonomous, scheduled, per-athlete decisions. The build order is strictly dependency-driven: a compact current-state table plus an append-only decision journal must exist before anything can read or write against it (Phase 42); a new athlete's first `athlete_state` row is written by conversational onboarding (Phase 43); the weekly engine then reads real activity against that state and acts as the safety net that corrects onboarding profiling errors (Phase 44); rewards are selected from the engine's point/level output (Phase 45); feature-gating consumes the same `athlete_state.level` (Phase 46, architecturally decoupled enough to run in parallel with 44/45 if needed); and context wiring, notifications, and cost accounting are wired last, once there is real data to surface (Phase 47).
 
-Phase 32 (Design System) is the prerequisite for all others. Phases 33–41 can be executed sequentially or in small parallel waves once DS-32 is complete.
+Phase 42 (Decision-System Foundation) is the prerequisite for every other phase. Phases 44 and 46 both depend on state populated by 42/43 but are independent of each other. Phase 45 depends on Phase 44's point/level output. Phase 47 depends on all of 43–46 having real data to wire up.
 
 ## Phases
 
-- [x] **Phase 32: Design System Foundation** — Tokens, shared components (FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet, PaywallScreen, RechargeSheet, PluginsDrawer), 3-tab nav restructure
-- [x] **Phase 33: Home Screen Realignment** — Full home redesign + real data (FormeDuJour, MissionCard, AICoachInline, QuickLog, SmartActions, WeekStrip, Recent, PluginsDrawer)
-- [x] **Phase 34: Auth + Onboarding Redesign** — AuthWelcome dark, AuthSignin, AuthSignup (4-segment strength), AuthForgot, 7-step onboarding flow
-- [x] **Phase 35: Profile + Settings Redesign** — Profile hero/tabs/stats, Settings STGroup/STRow system + 3 sub-screens (Notif/Appearance/Integrations)
-- [x] **Phase 36: Workout Stack Redesign** — All workout screens except ActiveSession: Séance tab, ProgramDetail, AIGenerator, ExerciseDetail, ExercisePicker, HistoryDetail, WorkoutSummary, RestTimer
-- [x] **Phase 37: Priority Plugins Redesign** — 6 plugins with SubTabs + AISuggestion + real data: Nutrition, Hydration, Habits, AI Programs, Coach IA (Persona), Community
-- [x] **Phase 38: Remaining Plugins Group 1** — 6 plugins: Stats, Gamification, Stretching, Sleep, Measurements, Timer
-- [x] **Phase 39: Remaining Plugins Group 2** — 6 plugins: Journal, Cardio, Supplements, Wearables, RPE, Pantry
-- [x] **Phase 40: Extra Screens + Cross-cutting** — Notifications, Store, AIChat standalone, Calendar, Search, Help/Legal, EmptyState/ErrorScreen, AvatarUpload, Referral, ProgramBuilder, PostDetail, ChallengeDetail, LiftDetail, GoalEdit
-- [x] **Phase 41: Coach StateC Enhancement + Final Data Audit** — StateC stats row (séances/progression), COACH_DATA fixture replacement, final sweep for remaining hardcoded fixtures (DATA-01/02/03/04)
+- [ ] **Phase 42: Decision-System Foundation** — `athlete_state` + `athlete_decisions` schema, `record_athlete_decision()` SECURITY DEFINER RPC, RLS (SELECT-only for clients), bounded-context summarization discipline
+- [ ] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes)
+- [ ] **Phase 44: Weekly Adaptive Decision Engine** — `coaching-engine/` module, real-activity-vs-focus comparison, idempotent bounded-concurrency weekly cron, `create_goal`/`create_program` tools shared between cron and chat, independent AI cost accounting
+- [ ] **Phase 45: Non-Punitive Tiered Rewards** — new points/tiers/reward-pool data model (distinct from the `gamification` plugin), deterministic AI reward selection (`create_reward`, pinned low/zero temperature), monotonic unlock guarantee
+- [ ] **Phase 46: Progressive Feature Unlock** — `PluginManifest.minLevel`, `PluginLoader` third gating filter (`mandatory` → `minLevel` → `is_enabled`), fail-safe minimum-access floor, locked-plugin UI in the drawer
+- [ ] **Phase 47: Context Wiring, Notifications & Cost Accounting** — `athlete_state` as 7th parallel context query + system-prompt section, weekly-review-complete push notification, `ai_cost_log` coverage for all autonomous (non-credit-gated) AI calls
 
 ---
 
 ## Phase Details
 
-### Phase 32: Design System Foundation
-**Goal:** The design system exists as shared components ready to be consumed by all subsequent phases; the app navigation is restructured to 3 tabs; BugFab is mounted globally.
-**Depends on:** Nothing (workstream foundation)
-**Requirements:** DS-01 through DS-12
+### Phase 42: Decision-System Foundation
+**Goal:** Every athlete has a secure, bounded, server-validated coaching state and decision journal that all downstream AI-Coach-Core work can read and write against.
+**Depends on:** Nothing (workstream foundation for v1.18)
+**Requirements:** FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05
 **Success Criteria:**
-1. `packages/ui/src/design-system.ts` (or equivalent) exports all design tokens.
-2. `FormRing`, `AISuggestion`, `SubTabs`, `PluginHeader`, `WeekStrip`, `BugFab`/`BugSheet`, `PaywallScreen`, `RechargeSheet`, `PluginsDrawer` components exist, are typed, and render correctly in isolation.
-3. The app tab bar has exactly 3 tabs (Accueil / Séance / Profil); existing 4-tab structure removed; TypeScript clean compile.
-4. `BugFab` appears floating over every screen.
+1. Querying `athlete_state` for any athlete returns a single current-state row (niveau, palier, focus actuel, readiness) that reflects the most recent decision — never a growing blob.
+2. Every AI-driven decision (focus assigned, reward granted, level changed) is recorded as an immutable entry in `athlete_decisions`, including its rationale and the real activity data it was based on.
+3. Attempting to write `athlete_state` from anywhere except the single server-side decision path fails; that path re-validates against real activity data before applying any change.
+4. An athlete querying their own state/journal succeeds; querying another athlete's state/journal is denied by RLS; no direct client write to either table is possible.
+5. Building the AI context for an athlete with 12+ months of decision history stays within a bounded token budget — a compact rolling summary plus a small recent window, never a full replay of the journal.
+**Plans:** TBD
 
-**Plans:**
-- 32-01-PLAN.md — Design tokens + component stubs scaffold (FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip)
-- 32-02-PLAN.md — BugFab/BugSheet + PaywallScreen + RechargeSheet
-- 32-03-PLAN.md — PluginsDrawer + 3-tab nav restructure
-- 32-04-PLAN.md — Phase verification: TypeScript compile + snapshot tests
-
-### Phase 33: Home Screen Realignment
-**Goal:** The home screen matches the mockup pixel-for-pixel and all section data is real.
-**Depends on:** Phase 32
-**Requirements:** HOME-01 through HOME-10
+### Phase 43: Conversational Onboarding
+**Goal:** A new athlete is profiled through a short free-text conversation with the mascotte and immediately given one achievable action, complementing (not replacing) the existing 7-step structured onboarding.
+**Depends on:** Phase 42
+**Requirements:** ONBOARD-01, ONBOARD-02, ONBOARD-03, ONBOARD-04, ONBOARD-05, ONBOARD-06
 **Success Criteria:**
-1. FormRing renders with real computed score from 4 live data sources.
-2. MissionCard shows active program assignment or empty state.
-3. AICoachInline shows rule-based tips with working CTAs.
-4. QuickLog buttons successfully log data (water/mood/weight/meal) and show confirmation flash.
-5. WeekStrip shows real session completion dots from `workout_sessions`.
-6. No `PROFILE`, `STREAK`, `TODAY`, `FORME`, `RECENT`, or `ALL_PLUGINS` fixture objects remain.
+1. A new athlete can complete a ≤4-question free-text onboarding chat screen with the mascotte, in addition to (not instead of) the existing 7-step structured onboarding.
+2. After the conversation, the athlete's inferred experience/confidence/adherence-risk profile is stored with a self-reported confidence score per inferred attribute, derived from the free-text answers.
+3. Within 5 minutes of starting the conversational onboarding, the athlete receives a micro-action immediately achievable at their inferred profile level.
+4. Completing that first micro-action triggers a mascotte celebration animation.
+5. Onboarding writes the athlete's starting level/palier/focus into `athlete_state`; athletes who already completed the pre-v1.18 structured onboarding get a starting level retrospectively computed by the AI from their real activity history, never a flat default.
+**Plans:** TBD
+**UI hint:** yes
 
-**Plans:**
-- 33-01-PLAN.md — useHomeData.ts: 8 TanStack Query hooks (profile/streak/sleep/hydration/nutrition/weeklySessions/activeProgram/recent)
-- 33-02-PLAN.md — useAITips.ts (rule-based tips engine + appStorage dismiss) + useSmartActions.ts (time-of-day cards)
-- 33-03-PLAN.md — Wire MissionCard + HomeWeekStrip + Recent section in index.tsx with real data
-- 33-04-PLAN.md — Final assembly: Header + FormRing (@ziko/ui) + AICoachInline + QuickLog fire-and-forget + PluginsDrawer (@ziko/ui) + fixture purge
-- 33-05-PLAN.md — Phase verification: automated grep checks + human smoke test
-
-### Phase 34: Auth + Onboarding Redesign
-**Goal:** Auth flow and onboarding match the mockups; all transitions and error states are wired.
-**Depends on:** Phase 32
-**Requirements:** AUTH-01 through AUTH-05, OB-01 through OB-08
+### Phase 44: Weekly Adaptive Decision Engine
+**Goal:** Each week, every active athlete's next focus is decided from what they actually did, not a fixed calendar — and the decision self-corrects onboarding profiling errors over time.
+**Depends on:** Phase 42, Phase 43
+**Requirements:** ENGINE-01, ENGINE-02, ENGINE-03, ENGINE-04, ENGINE-05, ENGINE-06
 **Success Criteria:**
-1. AuthWelcome has dark gradient background; Apple/Google/Email buttons render; social proof chip visible.
-2. AuthSignup shows 4-segment password strength indicator updating on input.
-3. Onboarding has 7 steps with orange progress bar; each step's selections are saved to `user_profiles` on completion.
-4. OBReady triggers mandatory plugin auto-install.
+1. Each week, the system compares each active athlete's actually-logged activity (not self-declared) against their assigned focus for that week.
+2. The AI decides next week's focus from that comparison plus the athlete's decision history, and can escalate or de-escalate the athlete's trajectory independently of their original onboarding profile.
+3. Running the weekly review twice for the same athlete/week (simulating Vercel's at-least-once cron redelivery) produces exactly one recorded decision, never a duplicate.
+4. The weekly engine's AI cost is logged to `ai_cost_log` under a source that is never deducted from the athlete's own AI credit balance.
+5. `create_goal` and `create_program` tools are registered in the existing orchestrator tool registry and are callable identically from both the weekly cron and interactive chat, producing the same applied effect through one shared write path.
+**Plans:** TBD
 
-**Plans:**
-- 34-01-PLAN.md — AuthWelcome + AuthSignin + AuthSignup (password strength) + AuthForgot
-- 34-02-PLAN.md — Onboarding steps 1–4 (welcome/goal/level/frequency)
-- 34-03-PLAN.md — Onboarding steps 5–7 (equipment/bio/ready + auto-install)
-- 34-04-PLAN.md — Phase verification
-
-### Phase 35: Profile + Settings Redesign
-**Goal:** Profile and settings screens match mockups with real data connections.
-**Depends on:** Phase 32
-**Requirements:** PROF-01 through PROF-06, SET-01 through SET-05
+### Phase 45: Non-Punitive Tiered Rewards
+**Goal:** Athletes are rewarded for meeting or exceeding their weekly focus and never penalized for falling short.
+**Depends on:** Phase 44
+**Requirements:** REWARD-01, REWARD-02, REWARD-03, REWARD-04, REWARD-05
 **Success Criteria:**
-1. Profile shows 160px hero cover, 84px avatar, real stats row (séances/XP/streak), 3 tabs functional.
-2. Settings uses STGroup/STRow system throughout.
-3. NotifSubScreen toggles save to `user_profiles.settings`.
-4. IntegrationsSubScreen reflects real connection state from `health_sync_log`.
+1. After a weekly review, an athlete who met their focus earns a standard-reward point outcome, one who exceeded it earns a better one, and one who fell short earns zero points — never a negative or punitive outcome.
+2. Accumulated points unlock tiers, and each tier has its own pool of eligible rewards.
+3. When a tier unlocks, the AI selects exactly one reward from that tier's eligible pool deterministically (temperature pinned low/zero) — never a random draw.
+4. Once a tier or reward is unlocked for an athlete, it is never revoked or downgraded, including after a subsequent low-performance week.
+5. Points/tiers/rewards live in a new, dedicated data model, entirely separate from the existing `gamification` plugin's coins/shop mechanic.
+**Plans:** TBD
 
-**Plans:**
-- 35-01-PLAN.md — Profile hero + avatar + stats row + followers row
-- 35-02-PLAN.md — Profile Stats/Progression/Badges tabs with real data
-- 35-03-PLAN.md — Settings STGroup/STRow system + NotifSubScreen + AppearanceSubScreen
-- 35-04-PLAN.md — IntegrationsSubScreen + Mon Coach settings section
-- 35-05-PLAN.md — Phase verification
-
-### Phase 36: Workout Stack Redesign
-**Goal:** All workout screens (excluding ActiveSession) match mockups with real data.
-**Depends on:** Phase 32
-**Requirements:** WORK-01 through WORK-10
+### Phase 46: Progressive Feature Unlock
+**Goal:** The plugin drawer reveals capability as an athlete's real level grows, and never traps or over-grants access.
+**Depends on:** Phase 42 (soft dependency — can run in parallel with Phase 44/45 once `athlete_state.level` exists)
+**Requirements:** GATE-01, GATE-02, GATE-03, GATE-04
 **Success Criteria:**
-1. Séance tab shows active program dark hero with real `ai_generated_programs` data.
-2. AIGenerator wizard completes and calls `ai_programs_generate` tool.
-3. ExerciseDetail shows real exercise data + session history from `session_sets`.
-4. WorkoutSummary saves notes and correctly identifies PRs.
-5. RestTimer SVG ring animates and triggers correctly at end of a set.
+1. A plugin manifest can declare a `minLevel`; `PluginLoader` hides plugins above the athlete's current level as a third gating check alongside the existing `mandatory`/`is_enabled` checks.
+2. An athlete with no `athlete_state` row yet (not through the new flow) still sees the minimum guaranteed set of plugins — never blocked to zero access.
+3. The PluginsDrawer component visually marks locked plugins and shows what level is required to unlock them.
+**Plans:** TBD
+**UI hint:** yes
 
-**Plans:**
-- 36-01-PLAN.md — Séance tab + ProgramDetail (hero, weekly schedule, 8-week plan tabs)
-- 36-02-PLAN.md — AIGenerator wizard + loading animation
-- 36-03-PLAN.md — ExerciseDetail + ExercisePicker
-- 36-04-PLAN.md — HistoryDetail + WorkoutSummary (PR detection + HR sparkline + notes)
-- 36-05-PLAN.md — RestTimer SVG ring + animation + controls
-- 36-06-PLAN.md — Phase verification
-
-### Phase 37: Priority Plugins Redesign
-**Goal:** 6 priority plugins match mockups with SubTabs, AISuggestion, and real data.
-**Depends on:** Phase 32
-**Requirements:** PLUG-N-01–07, PLUG-H-01–05, PLUG-HAB-01–06, PLUG-AI-01–06, PLUG-CIA-01–05, PLUG-COM-01–05
+### Phase 47: Context Wiring, Notifications & Cost Accounting
+**Goal:** The AI orchestrator is aware of each athlete's coaching state, athletes are notified when their weekly outcome is ready, and every autonomous AI call is cost-visible.
+**Depends on:** Phase 43, Phase 44, Phase 45, Phase 46
+**Requirements:** OPS-01, OPS-02, OPS-03
 **Success Criteria:**
-1. Each plugin renders SubTabs with correct active tab state.
-2. Each plugin shows AISuggestion with a relevant non-fixture tip.
-3. All fixture objects (`NUTRITION_TODAY`, `WATER`, `HABITS`, `AI_PROGRAMS`, `PERSONAS`, `FEED`) replaced with TanStack Query hooks.
-4. Nutrition calorie ring + macro bars reflect real today data.
-
-**Plans:**
-- 37-01-PLAN.md — Nutrition plugin: 4 tabs + SVG ring + macro bars + real data
-- 37-02-PLAN.md — Hydration plugin: SVG bottle fill + quick log buttons + 7-day chart
-- 37-03-PLAN.md — Habits plugin: completion rows + calendar heatmap + template grid
-- 37-04-PLAN.md — AI Programs plugin: active hero + generator + library list
-- 37-05-PLAN.md — Coach IA plugin: embedded chat + 4-persona selector + settings
-- 37-06-PLAN.md — Community plugin: feed + challenges + groups
-- 37-07-PLAN.md — Phase verification
-
-### Phase 38: Remaining Plugins Group 1
-**Goal:** 6 plugins match mockups with real data.
-**Depends on:** Phase 32
-**Requirements:** PLUG-STA-01–03, PLUG-GAM-01–04, PLUG-STR-01–04, PLUG-SLP-01–04, PLUG-MSR-01–03, PLUG-TMR-01–04
-**Success Criteria:**
-1. Stats MiniBars chart reflects real session volume.
-2. Gamification level card shows real XP from `user_xp`; badges grid shows locked/unlocked state.
-3. Sleep duration display + stage bar show latest `sleep_logs` data.
-4. Timer countdown + presets grid functional with `timer_presets`.
-
-**Plans:**
-- 38-01-PLAN.md — Stats + Gamification plugins
-- 38-02-PLAN.md — Stretching + Sleep plugins
-- 38-03-PLAN.md — Measurements + Timer plugins
-- 38-04-PLAN.md — Phase verification
-
-### Phase 39: Remaining Plugins Group 2
-**Goal:** 6 remaining plugins match mockups with real data.
-**Depends on:** Phase 32
-**Requirements:** PLUG-JNL-01–03, PLUG-CRD-01–04, PLUG-SUP-01–02, PLUG-WER-01–03, PLUG-RPE-01–03, PLUG-PAN-01–04
-**Success Criteria:**
-1. Journal mood picker + context tags log to `journal_entries`.
-2. Cardio activity grid navigates to GPS session start.
-3. RPE calculator computes correct 1RM using `calc1RM` function; last values persisted.
-4. Pantry shows real item counts per category.
-
-**Plans:**
-- 39-01-PLAN.md — Journal + Cardio plugins
-- 39-02-PLAN.md — Supplements + Wearables plugins
-- 39-03-PLAN.md — RPE + Pantry plugins
-- 39-04-PLAN.md — Phase verification
-
-### Phase 40: Extra Screens
-**Goal:** All auxiliary screens match mockups with real data connections.
-**Depends on:** Phase 32
-**Requirements:** EXTRA-01 through EXTRA-12
-**Success Criteria:**
-1. NotificationsScreen filter chips work; NFItem rows show real notifications.
-2. StoreScreen plugin cards reflect real install state from `user_plugins`.
-3. AIChatScreen standalone shows real conversation list from `ai_conversations`.
-4. EmptyState and ErrorScreen components render all 4 variants correctly.
-5. AvatarUploadScreen uploads to Supabase Storage and updates `user_profiles.avatar_url`.
-
-**Plans:**
-- 40-01-PLAN.md — Notifications + Store screens
-- 40-02-PLAN.md — AIChatScreen standalone + AvatarUpload
-- 40-03-PLAN.md — Calendar + Search + Help/Legal
-- 40-04-PLAN.md — ProgramBuilder + PostDetail + ChallengeDetail + LiftDetail + GoalEdit + Referral
-- 40-05-PLAN.md — EmptyState/ErrorScreen components + integration across all screens
-- 40-06-PLAN.md — Phase verification
-
-### Phase 41: Coach StateC Enhancement + Final Data Audit
-**Goal:** Coach plugin StateC shows new stats row; all remaining fixture data is eliminated; full app fixture audit passes.
-**Depends on:** Phases 32–40
-**Requirements:** COACH-01 through COACH-03, DATA-01 through DATA-04
-**Success Criteria:**
-1. Coach StateC shows "Séances suivies" count and "Progression %" from real data.
-2. `StateC` coach card shows "Lié depuis DD/MM/YYYY" row.
-3. A codebase-wide grep for `const [A-Z_]{4,} = {` and `fixture` patterns in production screen files returns zero results.
-4. Loading skeletons present on all data-driven screens; ErrorScreen shown on fetch error; EmptyState shown on empty data.
-
-**Plans:**
-- 41-01-PLAN.md — Coach StateC stats row + linked-since date row + real data
-- 41-02-PLAN.md — Final fixture audit + skeleton/empty/error sweep
-- 41-03-PLAN.md — Phase verification
+1. `athlete_state` is fetched as a 7th parallel query in `context/user.ts` alongside the existing 6, and appears in the AI orchestrator's system prompt for every chat/tool call.
+2. When a weekly review completes with a new focus or a new reward, the athlete receives a push notification describing it.
+3. Every autonomous AI call (`assess_profile`, `create_goal`, `create_reward`, `create_program` run in system/cron mode) is logged to `ai_cost_log`, independent of `creditCheck`/`creditDeduct` gating.
+**Plans:** TBD
 
 ---
 
@@ -206,50 +99,30 @@ Phase 32 (Design System) is the prerequisite for all others. Phases 33–41 can 
 
 | Phase | Plans | Status | Completed |
 |-------|-------|--------|-----------|
-| 32. Design System Foundation | 4 plans | Planned | — |
-| 33. Home Screen Realignment | 5 plans | Planned | — |
-| 34. Auth + Onboarding Redesign | 4 plans | Planned | — |
-| 35. Profile + Settings Redesign | 22 plans | Complete | 2026-05-25 |
-| 36. Workout Stack Redesign | 6 plans | Planned | — |
-| 37. Priority Plugins Redesign | 7 plans | Planned | — |
-| 38. Remaining Plugins Group 1 | 4 plans | Planned | — |
-| 39. Remaining Plugins Group 2 | 4 plans | Planned | — |
-| 40. Extra Screens | 6 plans | Planned | — |
-| 41. Coach StateC + Final Audit | 3 plans | Planned | — |
-
-**Total: 48 plans across 10 phases**
+| 42. Decision-System Foundation | TBD | Not started | — |
+| 43. Conversational Onboarding | TBD | Not started | — |
+| 44. Weekly Adaptive Decision Engine | TBD | Not started | — |
+| 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
+| 46. Progressive Feature Unlock | TBD | Not started | — |
+| 47. Context Wiring, Notifications & Cost Accounting | TBD | Not started | — |
 
 ---
 
 ## Coverage Map
 
 | Req Category | Phase |
-|-------------|-------|
-| DS-01–12 | Phase 32 |
-| HOME-01–10 | Phase 33 |
-| AUTH-01–05 | Phase 34 |
-| OB-01–08 | Phase 34 |
-| PROF-01–06 | Phase 35 |
-| SET-01–05 | Phase 35 |
-| WORK-01–10 | Phase 36 |
-| PLUG-N-01–07 | Phase 37 |
-| PLUG-H-01–05 | Phase 37 |
-| PLUG-HAB-01–06 | Phase 37 |
-| PLUG-AI-01–06 | Phase 37 |
-| PLUG-CIA-01–05 | Phase 37 |
-| PLUG-COM-01–05 | Phase 37 |
-| PLUG-STA-01–03 | Phase 38 |
-| PLUG-GAM-01–04 | Phase 38 |
-| PLUG-STR-01–04 | Phase 38 |
-| PLUG-SLP-01–04 | Phase 38 |
-| PLUG-MSR-01–03 | Phase 38 |
-| PLUG-TMR-01–04 | Phase 38 |
-| PLUG-JNL-01–03 | Phase 39 |
-| PLUG-CRD-01–04 | Phase 39 |
-| PLUG-SUP-01–02 | Phase 39 |
-| PLUG-WER-01–03 | Phase 39 |
-| PLUG-RPE-01–03 | Phase 39 |
-| PLUG-PAN-01–04 | Phase 39 |
-| EXTRA-01–12 | Phase 40 |
-| COACH-01–03 | Phase 41 |
-| DATA-01–04 | Phase 41 |
+|---------------|-------|
+| FOUND-01–05 | Phase 42 |
+| ONBOARD-01–06 | Phase 43 |
+| ENGINE-01–06 | Phase 44 |
+| REWARD-01–05 | Phase 45 |
+| GATE-01–04 | Phase 46 |
+| OPS-01–03 | Phase 47 |
+
+**Coverage:** 29/29 v1 requirements mapped. No orphans.
+
+## Research Flags (carried from `.planning/research/SUMMARY.md`)
+
+- **Phase 44** needs deeper research before planning: Vercel Fluid Compute/`maxDuration` enablement is unverified for this project; cron batching/concurrency numbers need validating; no confirmed consumer-fitness-app precedent for "stepped-care" structural weekly-focus decisions.
+- **Phase 45** needs a legal-rationale checkpoint before shipping broadly: French ANJ/JONUM loot-box-adjacency law is explicitly flagged LOW confidence and actively evolving.
+- **Phases 42, 43, 46** have standard, well-precedented patterns in this codebase (credits schema/RPC shape, `generateObject` structured extraction, `PluginLoader` gating) — research-phase can be light.
