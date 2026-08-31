@@ -147,3 +147,10 @@ None - no external service configuration required for this plan. (A `.env.test` 
 ---
 *Phase: 42-decision-system-foundation*
 *Completed: 2026-08-31*
+
+## Self-Check: PASSED
+
+- FOUND: supabase/migrations/20260831120200_athlete_decisions_rpc.sql
+- FOUND: .planning/workstreams/milestone-mobile/phases/42-decision-system-foundation/42-02-SUMMARY.md
+- FOUND: commit ab0d5682 (Task 1)
+- FOUND: commit 74c02b7f (SUMMARY commit)
