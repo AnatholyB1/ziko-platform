@@ -33,7 +33,13 @@ Phase 42 (Decision-System Foundation) is the prerequisite for every other phase.
 3. Attempting to write `athlete_state` from anywhere except the single server-side decision path fails; that path re-validates against real activity data before applying any change.
 4. An athlete querying their own state/journal succeeds; querying another athlete's state/journal is denied by RLS; no direct client write to either table is possible.
 5. Building the AI context for an athlete with 12+ months of decision history stays within a bounded token budget — a compact rolling summary plus a small recent window, never a full replay of the journal.
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 42-01-PLAN.md — athlete_state + athlete_decisions tables, SELECT-only RLS, FOUND-05 read convention (wave 1)
+- [ ] 42-02-PLAN.md — record_athlete_decision() SECURITY DEFINER RPC + full GRANT/REVOKE write lockdown (wave 2)
+- [ ] 42-03-PLAN.md — RLS/RPC integration specs proving the read scoping and the write lockdown (wave 3)
+- [ ] 42-04-PLAN.md — [BLOCKING] supabase db push, live-project spec run, FOUND-05 sign-off (wave 4, checkpoint)
 
 ### Phase 43: Conversational Onboarding
 **Goal:** A new athlete is profiled through a short free-text conversation with the mascotte and immediately given one achievable action, complementing (not replacing) the existing 7-step structured onboarding.
