@@ -135,3 +135,12 @@ Both tables are live in the migration set with the exact interface (column names
 ---
 *Phase: 42-decision-system-foundation*
 *Completed: 2026-08-31*
+
+## Self-Check: PASSED
+
+- FOUND: supabase/migrations/20260831120000_athlete_state.sql
+- FOUND: supabase/migrations/20260831120100_athlete_decisions.sql
+- FOUND: .planning/workstreams/milestone-mobile/phases/42-decision-system-foundation/42-01-SUMMARY.md
+- FOUND: commit 27495951 (Task 1)
+- FOUND: commit 32a7db4b (Task 2)
+- FOUND: commit 655fd79e (SUMMARY commit)
