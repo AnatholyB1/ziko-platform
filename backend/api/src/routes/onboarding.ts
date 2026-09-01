@@ -6,6 +6,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { getOrCreateConversation, appendMessages } from '../context/conversation.js';
 import { AGENT_MODEL, ONBOARDING_MAX_STEPS } from '../config/models.js';
 import { assessProfileSchema, assess_profile } from '../tools/onboarding.js';
+import { computeRetroactiveProfile } from '../tools/onboarding-retroactive.js';
 
 // ============================================================
 // Phase 43 plan 03 — POST /ai/onboarding/stream (ONBOARD-01, ONBOARD-02,
@@ -236,6 +237,32 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     if (fullResponse) toSave.push({ role: 'assistant', content: fullResponse });
     appendMessages(convo.conversationId, toSave, userToken);
   });
+});
+
+// ─── POST /onboarding/retroactive (ONBOARD-06, plan 43-04) ───────────────
+// Fire-and-forget lazy trigger from apps/mobile/src/lib/onboardingRecompute.ts
+// (authStore.refreshProfile() on app open). Deliberately carries no
+// credit-gating middleware pair, same rationale as /onboarding/stream above:
+// this is a system-initiated repair of a missing athlete_state row for a
+// pre-v1.18 athlete, not discretionary athlete spend. userId is derived
+// exclusively from c.get('auth'); the request body carries no user
+// identifier and is never read here — an athlete may only ever trigger a
+// recompute for themselves (T-43-16).
+onboardingRouter.post('/onboarding/retroactive', async (c) => {
+  const auth = c.get('auth');
+  const userId = auth.userId;
+  const userToken = c.req.header('Authorization')?.slice(7);
+
+  try {
+    const result = await computeRetroactiveProfile(userId, userToken);
+    // Both skip shapes are a normal outcome, not an error — the
+    // fire-and-forget mobile client must never see a 4xx for either one.
+    return c.json(result, 200);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Retroactive recompute failed';
+    console.error('[Onboarding Retroactive Error]', err);
+    return c.json({ error: msg }, 500);
+  }
 });
 
 export { onboardingRouter };
