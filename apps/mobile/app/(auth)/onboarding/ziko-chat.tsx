@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, useI18nStore } from '@ziko/plugin-sdk';
+import { supabase } from '../../../src/lib/supabase';
 
 // ── Inline Markdown Renderer ────────────────────────────────
 // Copied verbatim from apps/mobile/app/(app)/ai/index.tsx per D-05 (the
@@ -115,29 +116,281 @@ type LocalMessage = {
   content: string;
 };
 
+type OutgoingMessage = { role: 'user' | 'assistant'; content: string };
+
+type MissionState = {
+  micro_action: string;
+  mission_title: string;
+  decision_id: string;
+};
+
+type SSEEvent =
+  | { type: 'meta'; conversation_id: string }
+  | { type: 'chunk'; content: string }
+  | { type: 'mission'; mission: MissionState }
+  | { type: 'cap_reached' }
+  | { type: 'error'; error: string };
+
+const ONBOARDING_STREAM_URL = `${process.env.EXPO_PUBLIC_API_URL ?? ''}/ai/onboarding/stream`;
+
 export default function ZikoChatScreen() {
   const theme = useThemeStore((s) => s.theme);
   const { t } = useTranslation();
 
   const [messages, setMessages] = useState<LocalMessage[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
+  // The screen "opens already streaming" (D-05/UI-SPEC) — the very first
+  // paint should already read as in-flight rather than a blank empty state.
+  const [isStreaming, setIsStreaming] = useState(true);
   const [streamingContent, setStreamingContent] = useState('');
-  const [isConnecting, setIsConnecting] = useState(true);
   const [input, setInput] = useState('');
-  const flatlistRef = useRef<FlatList>(null);
+  const [missionState, setMissionState] = useState<MissionState | null>(null);
+  const [errorState, setErrorState] = useState<'stream' | 'capReached' | null>(null);
 
-  // Task 3 fills in the real SSE network layer (resume-on-mount, send,
-  // mission/cap_reached/error handling). This stub keeps the layout
-  // independently reviewable — it deliberately does nothing yet.
-  const sendToZiko = async (_text: string) => {
-    // TODO(Task 3): POST to /ai/onboarding/stream and consume the SSE reply.
+  const flatlistRef = useRef<FlatList>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+  const lastSentRef = useRef<OutgoingMessage[]>([]);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      xhrRef.current?.abort();
+    };
+  }, []);
+
+  // ── Network layer: local XHR + onprogress SSE reader ────────────────
+  // Mirrors packages/ai-client/src/AIBridge.ts's buffer/split/`data: `
+  // parse loop — React Native's `fetch` does not expose a reliable
+  // readable stream here, and AIBridge itself is not extended (it
+  // hardcodes /chat/stream, the credited general-chat endpoint).
+  const runSend = (newMessages: OutgoingMessage[]) => {
+    lastSentRef.current = newMessages;
+    setErrorState(null);
+    setIsStreaming(true);
+    setStreamingContent('');
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!mountedRef.current) return;
+      // T-43-24: a missing session renders the error state, never an
+      // unauthenticated request.
+      if (!token) {
+        setIsStreaming(false);
+        setErrorState('stream');
+        return;
+      }
+
+      const locale = useI18nStore.getState().locale === 'en' ? 'en' : 'fr';
+
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+      xhr.open('POST', ONBOARDING_STREAM_URL);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      if (conversationIdRef.current) {
+        xhr.setRequestHeader('X-Conversation-Id', conversationIdRef.current);
+      }
+
+      let processedLength = 0;
+      let buffer = '';
+      let assistantBuffer = '';
+      let done = false;
+      let sawCapReached = false;
+      let sawError = false;
+
+      const finalize = () => {
+        if (done) return;
+        done = true;
+        if (!mountedRef.current) return;
+        if (assistantBuffer) {
+          const assistantMsg: LocalMessage = {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: assistantBuffer,
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        }
+        setStreamingContent('');
+        setIsStreaming(false);
+        if (sawCapReached) setErrorState('capReached');
+        else if (sawError) setErrorState('stream');
+      };
+
+      const processChunk = (text: string) => {
+        buffer += text;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (!data) continue;
+          if (data === '[DONE]') { finalize(); continue; }
+
+          try {
+            const evt = JSON.parse(data) as SSEEvent;
+            if (evt.type === 'meta') {
+              // Stored in a ref only — subsequent turns and a relaunch
+              // resume reuse it, but it never drives a re-render on its own.
+              conversationIdRef.current = evt.conversation_id;
+            } else if (evt.type === 'chunk') {
+              assistantBuffer += evt.content;
+              if (mountedRef.current) setStreamingContent(assistantBuffer);
+            } else if (evt.type === 'mission') {
+              if (mountedRef.current) setMissionState(evt.mission);
+            } else if (evt.type === 'cap_reached') {
+              sawCapReached = true;
+            } else if (evt.type === 'error') {
+              sawError = true;
+            }
+          } catch {
+            // Ignore JSON parse errors for partial chunks — the buffer
+            // above already holds back any incomplete trailing line.
+          }
+        }
+      };
+
+      xhr.onprogress = () => {
+        if (done) return;
+        const newText = xhr.responseText.slice(processedLength);
+        processedLength = xhr.responseText.length;
+        if (newText) processChunk(newText);
+      };
+
+      xhr.onload = () => {
+        if (done) return;
+        // Every non-2xx status (including the 403 conversation_forbidden
+        // ownership/tag gate) must render the stream-error state, never a
+        // blank screen.
+        if (xhr.status < 200 || xhr.status >= 300) {
+          done = true;
+          if (mountedRef.current) {
+            setStreamingContent('');
+            setIsStreaming(false);
+            setErrorState('stream');
+          }
+          return;
+        }
+        const remaining = xhr.responseText.slice(processedLength);
+        if (remaining) processChunk(remaining);
+        finalize();
+      };
+
+      xhr.onerror = () => {
+        done = true;
+        if (mountedRef.current) {
+          setStreamingContent('');
+          setIsStreaming(false);
+          setErrorState('stream');
+        }
+      };
+      xhr.ontimeout = xhr.onerror;
+
+      xhr.send(
+        JSON.stringify({
+          messages: newMessages,
+          conversation_id: conversationIdRef.current ?? undefined,
+          locale,
+        }),
+      );
+    })();
   };
+
+  // ── Resume-on-mount (D-04) ───────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid) {
+          if (!cancelled) { setIsStreaming(false); setErrorState('stream'); }
+          return;
+        }
+
+        const { data: convRows } = await supabase
+          .from('ai_conversations')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('plugin_context->>type', 'ziko_onboarding')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (cancelled) return;
+
+        const existingConvId = convRows && convRows.length > 0 ? (convRows[0] as { id: string }).id : null;
+
+        if (existingConvId) {
+          conversationIdRef.current = existingConvId;
+
+          const { data: msgRows } = await supabase
+            .from('ai_messages')
+            .select('id, role, content')
+            .eq('conversation_id', existingConvId)
+            .order('created_at', { ascending: true });
+
+          if (cancelled) return;
+
+          if (msgRows && msgRows.length > 0) {
+            // History exists — render it and simply wait for the athlete's
+            // answer, never re-issue an opening turn (would duplicate
+            // Ziko's question).
+            setMessages(
+              msgRows.map((m) => ({
+                id: (m as { id: string }).id,
+                role: (m as { role: 'user' | 'assistant' }).role,
+                content: (m as { content: string }).content,
+              })),
+            );
+            setIsStreaming(false);
+            return;
+          }
+        }
+
+        // History empty (or no conversation exists yet) — kick off the
+        // opening turn. locale is resolved and attached inside runSend.
+        if (!cancelled) runSend([]);
+      } catch {
+        if (!cancelled) {
+          setIsStreaming(false);
+          setErrorState('stream');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSend = () => {
     const text = input.trim();
     if (!text || isStreaming) return;
     setInput('');
-    sendToZiko(text);
+    const userMsg: LocalMessage = { id: `user-${Date.now()}`, role: 'user', content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    runSend([{ role: 'user', content: text }]);
+  };
+
+  const handleRetry = () => {
+    if (isStreaming) return;
+    runSend(lastSentRef.current);
+  };
+
+  const handleForceFinish = () => {
+    if (isStreaming) return;
+    const locale = useI18nStore.getState().locale === 'en' ? 'en' : 'fr';
+    const instruction = locale === 'en'
+      ? 'Please wrap up now and give me my mission.'
+      : "Conclus maintenant et donne-moi ma mission, s'il te plaît.";
+    const userMsg: LocalMessage = { id: `user-${Date.now()}`, role: 'user', content: instruction };
+    setMessages((prev) => [...prev, userMsg]);
+    runSend([{ role: 'user', content: instruction }]);
   };
 
   useEffect(() => {
@@ -146,12 +399,14 @@ export default function ZikoChatScreen() {
     }
   }, [messages.length, isStreaming]);
 
+  const showConnecting = messages.length === 0 && !streamingContent && isStreaming;
+
   const displayMessages: LocalMessage[] = [
     ...messages,
-    ...(isStreaming && streamingContent
+    ...(streamingContent
       ? [{ id: 'streaming', role: 'assistant' as const, content: streamingContent }]
       : []),
-    ...(isConnecting && messages.length === 0 && !isStreaming
+    ...(showConnecting
       ? [{ id: 'connecting', role: 'assistant' as const, content: t('coach.onboarding.connecting') }]
       : []),
   ];
@@ -207,53 +462,89 @@ export default function ZikoChatScreen() {
             contentContainerStyle={{ paddingVertical: 16 }}
           />
 
-          {/* Input row — no credit-cost label, this route is uncredited */}
-          <View
-            style={{
-              padding: 16,
-              borderTopWidth: 1,
-              borderTopColor: theme.border,
-              backgroundColor: theme.background,
-              flexDirection: 'row',
-              alignItems: 'flex-end',
-              gap: 8,
-            }}
-          >
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder={t('coach.onboarding.placeholder')}
-              placeholderTextColor={theme.muted}
-              multiline
+          {errorState ? (
+            // T-43-23 / D-14: an error or cap-reached state never
+            // auto-navigates to /(app) — the athlete stays here until a
+            // real assess_profile mission write succeeds.
+            <View
               style={{
-                flex: 1,
-                backgroundColor: theme.surface,
-                borderWidth: 1,
-                borderColor: theme.border,
-                borderRadius: 20,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-                fontSize: 15,
-                maxHeight: 100,
-                color: theme.text,
-              }}
-            />
-            <TouchableOpacity
-              onPress={handleSend}
-              disabled={!input.trim() || isStreaming}
-              accessibilityLabel={t('coach.onboarding.sendA11y')}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: input.trim() && !isStreaming ? theme.primary : theme.border,
-                alignItems: 'center',
-                justifyContent: 'center',
+                padding: 16,
+                borderTopWidth: 1,
+                borderTopColor: theme.border,
+                backgroundColor: theme.background,
+                gap: 8,
               }}
             >
-              <Ionicons name="send" size={18} color="#fff" />
-            </TouchableOpacity>
-          </View>
+              <Text style={{ color: theme.text, fontSize: 15, lineHeight: 22 }}>
+                {errorState === 'capReached'
+                  ? t('coach.onboarding.error.capReached')
+                  : t('coach.onboarding.error.stream')}
+              </Text>
+              <TouchableOpacity
+                onPress={errorState === 'capReached' ? handleForceFinish : handleRetry}
+                style={{
+                  paddingVertical: 16,
+                  borderRadius: 16,
+                  backgroundColor: theme.primary,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+                  {errorState === 'capReached'
+                    ? t('coach.onboarding.error.forceFinish')
+                    : t('coach.onboarding.error.retry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : missionState ? null : (
+            /* Input row — no credit-cost label, this route is uncredited */
+            <View
+              style={{
+                padding: 16,
+                borderTopWidth: 1,
+                borderTopColor: theme.border,
+                backgroundColor: theme.background,
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                gap: 8,
+              }}
+            >
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder={t('coach.onboarding.placeholder')}
+                placeholderTextColor={theme.muted}
+                multiline
+                style={{
+                  flex: 1,
+                  backgroundColor: theme.surface,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  borderRadius: 20,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  fontSize: 15,
+                  maxHeight: 100,
+                  color: theme.text,
+                }}
+              />
+              <TouchableOpacity
+                onPress={handleSend}
+                disabled={!input.trim() || isStreaming}
+                accessibilityLabel={t('coach.onboarding.sendA11y')}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: input.trim() && !isStreaming ? theme.primary : theme.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="send" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
