@@ -5,37 +5,74 @@ export interface StoredMessage {
   content: string;
 }
 
-/** Get or create a conversation and return its ID + existing messages */
+/**
+ * Get or create a conversation and return its ID + existing messages.
+ *
+ * Phase 43 plan 03 (ONBOARD-01/04): the fourth `pluginContext` parameter is
+ * strictly additive — it is optional, does not reorder existing parameters,
+ * and does not change the create branch's default when omitted (`{}` is
+ * already the column's own DEFAULT). The four existing `routes/ai.ts` call
+ * sites pass three positional arguments and destructure only
+ * `conversationId`/`history`; they remain unaffected by this widened return
+ * shape and continue to type-check without modification.
+ */
 export async function getOrCreateConversation(
   userId: string,
   conversationId?: string,
   userToken?: string,
-): Promise<{ conversationId: string; history: StoredMessage[] }> {
+  pluginContext?: Record<string, unknown>,
+): Promise<{
+  conversationId: string;
+  history: StoredMessage[];
+  pluginContext: Record<string, unknown>;
+  userId: string;
+}> {
   const db = clientForUser(userToken);
 
   if (conversationId) {
-    // Load existing conversation messages
-    const { data: msgs } = await db
-      .from('ai_messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
+    // Load existing conversation messages + the parent row's owner/tag in
+    // parallel — the parent read is what lets callers (e.g. the onboarding
+    // route) enforce an ownership + plugin_context tag gate before any model
+    // call, without a second round trip.
+    const [{ data: msgs }, { data: convoRow, error: convoError }] = await Promise.all([
+      db
+        .from('ai_messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true }),
+      db
+        .from('ai_conversations')
+        .select('user_id, plugin_context')
+        .eq('id', conversationId)
+        .maybeSingle(),
+    ]);
+
+    if (convoError || !convoRow) {
+      throw new Error(`conversation_not_found: ${convoError?.message ?? 'no parent row for conversation ' + conversationId}`);
+    }
 
     return {
       conversationId,
       history: (msgs ?? []) as StoredMessage[],
+      pluginContext: (convoRow.plugin_context ?? {}) as Record<string, unknown>,
+      userId: convoRow.user_id as string,
     };
   }
 
   // Create new conversation
   const { data, error } = await db
     .from('ai_conversations')
-    .insert({ user_id: userId })
-    .select('id')
+    .insert({ user_id: userId, plugin_context: pluginContext ?? {} })
+    .select('id, user_id, plugin_context')
     .single();
 
   if (error || !data) throw new Error(`Failed to create conversation: ${error?.message ?? error?.code ?? 'no data returned'}`);
-  return { conversationId: data.id, history: [] };
+  return {
+    conversationId: data.id,
+    history: [],
+    pluginContext: (data.plugin_context ?? {}) as Record<string, unknown>,
+    userId: data.user_id as string,
+  };
 }
 
 /** Append messages to a conversation */
