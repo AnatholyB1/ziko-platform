@@ -408,22 +408,25 @@ Not applicable in the "library version drift" sense — no external library rese
 | A2 | A starting `level`/`tier` value mapping from the inferred `readiness` enum (`fragile`→level 1? `ready`→level 2 or 3?) is not specified anywhere in CONTEXT.md or Phase 42's docs — this research infers `level: 1, tier: 1` for all readiness values as the safe default (matching `athlete_state`'s own column DEFAULT) but this is a product/design call, not a technical one | Pattern 3 (Code Example) | Medium — if planning proceeds without an explicit decision here, different plans could pick different mappings inconsistently; should be raised as a discretion item during planning, not silently decided by whichever task happens to write the tool executor |
 | A3 | Exempting the onboarding route from `creditCheck`/`creditDeduct` (Pitfall 2's recommended fix) is this research's recommendation, not a decision already made anywhere in CONTEXT.md, ROADMAP.md, or REQUIREMENTS.md | Pitfall 2 | High if unaddressed — shipping with the default `creditCheck('chat')` gate copy-pasted from `/ai/chat/stream` would strand real new users, silently breaking ONBOARD-01/03/05 for exactly the population (brand-new signups) this phase exists to serve |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Dedicated endpoint vs. flag on `/ai/chat/stream`?**
+1. **RESOLVED: Dedicated endpoint vs. flag on `/ai/chat/stream`?**
    - What we know: `ARCHITECTURE.md` (milestone-level) describes an "onboarding branch when `athlete_state.status = 'onboarding'`" inside the *existing* `buildSystemPrompt()`/route, implying reuse of `/ai/chat/stream` with conditional behavior rather than a new route.
    - What's unclear: A conditional branch inside the shared route means the shared route's credit-gating middleware (`creditCheck('chat')`, applied at the route level via Hono's middleware chaining — `router.post('/chat/stream', creditCheck('chat'), creditDeduct('chat'), ...)`) would apply to onboarding messages too, directly colliding with Pitfall 2's finding. A **new dedicated route** (e.g. `POST /ai/onboarding/stream`), separately mountable without `creditCheck`, cleanly avoids this collision and keeps the shared route's tool surface untouched (Anti-Patterns section).
    - Recommendation: **new dedicated route**, sharing `buildSystemPrompt()`'s helper functions and `context/conversation.ts` calls but registered without the credit middleware. This also makes the `stopWhen` constant and restricted tool surface (Pattern 1/Anti-Patterns) trivially route-scoped rather than conditionally branched inside a route that otherwise defaults to the full registry.
+   - **Adopted:** Plan 43-03 implements the dedicated `POST /ai/onboarding/stream` route per this recommendation.
 
-2. **Exact locale-passing contract between mobile and backend.**
+2. **RESOLVED: Exact locale-passing contract between mobile and backend.**
    - What we know: no server-side locale source exists (Pitfall 3); the client must pass it explicitly.
    - What's unclear: whether to pass it as a body field on every onboarding chat request, or once at conversation-creation time and stored in `plugin_context` JSONB alongside the `type` tag.
    - Recommendation: store it once in `plugin_context: { type: 'ziko_onboarding', locale: 'fr' }` at `getOrCreateConversation()` time — avoids re-sending it on every turn and keeps the system-prompt-building code reading from one place (the conversation record) rather than trusting a per-request body field that could drift mid-conversation if the athlete somehow changes locale.
+   - **Adopted:** Plan 43-03 Task 2 implements this exact `plugin_context` shape at conversation-creation time.
 
-3. **Readiness→starting level/tier mapping (A2 above).**
+3. **RESOLVED: Readiness→starting level/tier mapping (A2 above).**
    - What we know: `athlete_state.level`/`tier` both default to `1`; nothing in Phase 42's docs specifies a non-1 starting value for any readiness tier.
    - What's unclear: whether "expérimenté peut démarrer plus haut" (referenced in `FEATURES.md`'s adherence-risk-first skip logic differentiator) should translate into `level > 1` at onboarding time for a `readiness: 'ready'` athlete, or whether level progression is entirely a Phase 44/weekly-engine concern and onboarding should always write `level: 1` regardless of inferred readiness.
    - Recommendation: default to `level: 1, tier: 1` for all readiness values at onboarding time (safest, matches `PluginLoader`'s planned Phase 46 fail-safe-to-level-1 default), and let `readiness` alone (not `level`) carry the "start gentler vs. start further along" signal for now — `readiness` is scoped to Phase 43/44's actual reads, while `level`'s only current consumer (`PluginLoader.minLevel` gating) doesn't exist until Phase 46. Confirm this against ROADMAP.md's Phase 44/46 scope during planning; do not let Phase 43 pre-invent gating logic that belongs to a later phase.
+   - **Adopted:** Plan 43-01 Task 2 adopts this recommendation as the phase-wide answer — `level: 1, tier: 1` regardless of inferred `readiness`.
 
 ## Environment Availability
 
@@ -539,10 +542,10 @@ RLS/RPC specs require `SUPABASE_TEST_URL` matching `SUPABASE_URL` in the test en
 | Architecture | HIGH | Every pattern traced to a specific file/line; two load-bearing gaps (mandatory-gate bypass, credit-gating risk) found via direct inspection |
 | Pitfalls | HIGH | All 4 pitfalls documented here trace to specific, cited files |
 
-### Open Questions
-1. Dedicated `/ai/onboarding/stream` route vs. a flag on `/ai/chat/stream` — recommend dedicated route (avoids credit-gate collision, restricts tool surface cleanly).
-2. Exact locale-passing contract — recommend storing once in `ai_conversations.plugin_context` at conversation-creation time.
-3. Readiness→starting `level`/`tier` mapping is unspecified anywhere upstream — recommend defaulting to `level: 1, tier: 1` for all readiness values and letting `readiness` alone carry the "start gentler" signal, deferring level-based gating logic entirely to Phase 46.
+### Open Questions (RESOLVED)
+1. RESOLVED: Dedicated `/ai/onboarding/stream` route vs. a flag on `/ai/chat/stream` — recommend dedicated route (avoids credit-gate collision, restricts tool surface cleanly). Adopted by plan 43-03.
+2. RESOLVED: Exact locale-passing contract — recommend storing once in `ai_conversations.plugin_context` at conversation-creation time. Adopted by plan 43-03 Task 2.
+3. RESOLVED: Readiness→starting `level`/`tier` mapping is unspecified anywhere upstream — recommend defaulting to `level: 1, tier: 1` for all readiness values and letting `readiness` alone carry the "start gentler" signal, deferring level-based gating logic entirely to Phase 46. Adopted by plan 43-01 Task 2.
 
 ### Ready for Planning
 Research complete. Planner can now create PLAN.md files for Phase 43.
