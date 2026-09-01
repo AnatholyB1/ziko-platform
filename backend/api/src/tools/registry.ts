@@ -12,6 +12,7 @@ import * as WearablesTools from './wearables.js';
 import * as PantryTools from './pantry.js';
 import * as NavigationTools from './navigation.js';
 import * as CoachTools from './coach.js';
+import * as OnboardingTools from './onboarding.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -172,6 +173,13 @@ const executors: Record<string, ToolExecutor['execute']> = {
   app_navigate: NavigationTools.app_navigate,
   coach_get_link: CoachTools.coach_get_link,
   coach_revoke_link: CoachTools.coach_revoke_link,
+  // assess_profile is deliberately absent from allToolSchemas below (Phase 43
+  // plan 01) — it is registered here only so getToolExecutor('assess_profile')
+  // resolves for the onboarding route's narrowed one-tool surface (plan
+  // 43-03). Adding it to allToolSchemas would expose it to /ai/chat/stream,
+  // /ai/chat, and GET /ai/tools, letting the ongoing coach overwrite an
+  // athlete's state mid-conversation.
+  assess_profile: OnboardingTools.assess_profile,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
