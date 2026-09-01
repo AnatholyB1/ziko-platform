@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
+import { onboardingRouter } from './routes/onboarding.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { pushEventsRouter } from './routes/push-events.js';
@@ -60,6 +61,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 
 // Routes
 app.route('/ai', aiRouter);
+app.route('/ai', onboardingRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
 app.route('/push-events', pushEventsRouter);
