@@ -51,8 +51,16 @@ Plans:
 3. Within 5 minutes of starting the conversational onboarding, the athlete receives a micro-action immediately achievable at their inferred profile level.
 4. Completing that first micro-action triggers a mascotte celebration animation.
 5. Onboarding writes the athlete's starting level/palier/focus into `athlete_state`; athletes who already completed the pre-v1.18 structured onboarding get a starting level retrospectively computed by the AI from their real activity history, never a flat default.
-**Plans:** TBD
+**Plans:** 6 plans
 **UI hint:** yes
+
+Plans:
+- [ ] 43-01-PLAN.md — assess_profile tool schema, curated micro-action pool, RPC write path, ONBOARDING_MAX_STEPS (wave 1)
+- [ ] 43-02-PLAN.md — coach.onboarding.* i18n, athleteOnboardingComplete store field, mandatory-gate fix, retroactive trigger (wave 1)
+- [ ] 43-03-PLAN.md — uncredited POST /ai/onboarding/stream with scoped tool surface and locale-tagged conversations (wave 2)
+- [ ] 43-04-PLAN.md — retroactive recompute from real activity aggregates + live RPC/RLS spec (wave 3)
+- [ ] 43-05-PLAN.md — Ziko chat screen, mandatory stack registration, step-7 redirect, SSE + resume (wave 3)
+- [ ] 43-06-PLAN.md — mission card, real-data completion check, celebration overlay, human verification (wave 4, checkpoint)
 
 ### Phase 44: Weekly Adaptive Decision Engine
 **Goal:** Each week, every active athlete's next focus is decided from what they actually did, not a fixed calendar — and the decision self-corrects onboarding profiling errors over time.
