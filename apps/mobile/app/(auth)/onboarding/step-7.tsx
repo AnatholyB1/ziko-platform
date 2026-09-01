@@ -76,7 +76,10 @@ function OBReady() {
       // Trigger mandatory plugin pre-load if available (preloadMandatory is optional static extension)
       await (PluginLoader as any).preloadMandatory?.();
       await refreshProfile();
-      router.replace('/(app)');
+      // D-01: route to Ziko's mandatory onboarding chat, not straight to /(app) —
+      // going straight to /(app) here would strand the athlete with no
+      // athlete_state row (that row is only written once Ziko's chat completes).
+      router.replace('/(auth)/onboarding/ziko-chat');
     } catch (err: any) {
       showAlert('Erreur', err.message ?? 'Une erreur est survenue');
     } finally {
