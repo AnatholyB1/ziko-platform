@@ -117,6 +117,8 @@ deliberate, bounded, one-time reveal beat, not a routine themed screen):
 
 ## Screen & Interaction Contract
 
+**Primary focal point:** the badge icon-circle (76×76, `sparkles` glyph, radial glow, largest shadow in the composition) is the visual anchor the athlete's eye lands on first — headline and subcopy read as supporting text beneath it, and the CTA is the sole secondary anchor. This ordering (badge → headline → subcopy → CTA) drives the `xl`-then-`md`-then-`lg` spacing rhythm below; do not give headline/subcopy typographic weight or color treatment that competes with the badge.
+
 ### Component reuse directive
 
 Phase 43's `CelebrationOverlay` is currently a private, inline component inside
