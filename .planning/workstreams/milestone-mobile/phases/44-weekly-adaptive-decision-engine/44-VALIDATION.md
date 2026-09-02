@@ -45,6 +45,7 @@ created: 2026-09-02
 | 44-XX-XX | TBD | TBD | ENGINE-05 | — | Weekly engine's `ai_cost_log` row has `source='weekly_review_cron'`/`'app_open_fallback'`, never touches `creditCheck`/`creditDeduct` | integration | `npx vitest run test/routes/coaching-engine.spec.ts -t "cost logging"` | ❌ Wave 0 | ⬜ pending |
 | 44-XX-XX | TBD | TBD | ENGINE-06 | T-44-02 | `create_goal`/`create_program` callable identically from cron path and `/ai/chat` tool-call path | integration | `npx vitest run test/tools/coaching-engine.spec.ts -t "shared apply path"` | ❌ Wave 0 | ⬜ pending |
 | 44-XX-XX | TBD | TBD | D-09 (`athlete_goals` RLS) | T-44-03 | Athlete reads own goals only; no client write path | RLS integration | `npx vitest run test/rls/athlete-goals.spec.ts` | ❌ Wave 0 | ⬜ pending |
+| 44-04-03 | 04 | 3 | FOUND-05 | T-44-39, T-44-40 | `rolling_summary` recompaction stays bounded (≤4 entries, ≤2000 chars) for any history length, with zero extra AI cost | unit | `npx vitest run test/tools/coaching-engine.spec.ts -t "rolling summary"` | ❌ Wave 0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
