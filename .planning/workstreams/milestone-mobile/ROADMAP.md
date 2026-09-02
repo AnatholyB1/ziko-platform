@@ -13,7 +13,7 @@ Phase 42 (Decision-System Foundation) is the prerequisite for every other phase.
 ## Phases
 
 - [x] **Phase 42: Decision-System Foundation** — `athlete_state` + `athlete_decisions` schema, `record_athlete_decision()` SECURITY DEFINER RPC, RLS (SELECT-only for clients), bounded-context summarization discipline (completed 2026-08-31)
-- [ ] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes)
+- [x] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes) (completed 2026-09-02)
 - [ ] **Phase 44: Weekly Adaptive Decision Engine** — `coaching-engine/` module, real-activity-vs-focus comparison, idempotent bounded-concurrency weekly cron, `create_goal`/`create_program` tools shared between cron and chat, independent AI cost accounting
 - [ ] **Phase 45: Non-Punitive Tiered Rewards** — new points/tiers/reward-pool data model (distinct from the `gamification` plugin), deterministic AI reward selection (`create_reward`, pinned low/zero temperature), monotonic unlock guarantee
 - [ ] **Phase 46: Progressive Feature Unlock** — `PluginManifest.minLevel`, `PluginLoader` third gating filter (`mandatory` → `minLevel` → `is_enabled`), fail-safe minimum-access floor, locked-plugin UI in the drawer
@@ -51,7 +51,7 @@ Plans:
 3. Within 5 minutes of starting the conversational onboarding, the athlete receives a micro-action immediately achievable at their inferred profile level.
 4. Completing that first micro-action triggers a mascotte celebration animation.
 5. Onboarding writes the athlete's starting level/palier/focus into `athlete_state`; athletes who already completed the pre-v1.18 structured onboarding get a starting level retrospectively computed by the AI from their real activity history, never a flat default.
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 **UI hint:** yes
 
 Plans:
@@ -60,7 +60,7 @@ Plans:
 - [x] 43-03-PLAN.md — uncredited POST /ai/onboarding/stream with scoped tool surface and locale-tagged conversations (wave 2)
 - [x] 43-04-PLAN.md — retroactive recompute from real activity aggregates + live RPC/RLS spec (wave 3)
 - [x] 43-05-PLAN.md — Ziko chat screen, mandatory stack registration, step-7 redirect, SSE + resume (wave 3)
-- [ ] 43-06-PLAN.md — mission card, real-data completion check, celebration overlay, human verification (wave 4, checkpoint)
+- [x] 43-06-PLAN.md — mission card, real-data completion check, celebration overlay, human verification (wave 4, checkpoint)
 
 ### Phase 44: Weekly Adaptive Decision Engine
 **Goal:** Each week, every active athlete's next focus is decided from what they actually did, not a fixed calendar — and the decision self-corrects onboarding profiling errors over time.
@@ -114,7 +114,7 @@ Plans:
 | Phase | Plans | Status | Completed |
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
-| 43. Conversational Onboarding | 5/6 | In Progress|  |
+| 43. Conversational Onboarding | 6/6 | Complete   | 2026-09-02 |
 | 44. Weekly Adaptive Decision Engine | TBD | Not started | — |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
