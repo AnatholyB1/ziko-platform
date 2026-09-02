@@ -195,7 +195,9 @@ export async function create_goal(
     p_decision_type: 'goal_created',
     p_week_of: null,
     p_summary: params.goal_text,
-    p_rationale: params.rationale,
+    // p_rationale has NO database default — an undefined value is dropped by supabase-js and
+    // PostgREST can then no longer resolve the 10-arg signature (42883). Always send a fallback.
+    p_rationale: params.rationale ?? 'Goal created from athlete conversation.',
     p_evidence: params.evidence, // mandatory grounding, FOUND-02
     p_outcome: { goal_text: params.goal_text, target_date: params.target_date },
     p_source: params.source ?? 'onboarding_tool',
