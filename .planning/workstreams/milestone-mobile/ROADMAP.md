@@ -114,7 +114,7 @@ Plans:
 | Phase | Plans | Status | Completed |
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
-| 43. Conversational Onboarding | 6/6 | Complete   | 2026-09-02 |
+| 43. Conversational Onboarding | 6/6 | Complete    | 2026-09-02 |
 | 44. Weekly Adaptive Decision Engine | TBD | Not started | — |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
