@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useThemeStore, useTranslation, useI18nStore } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
+import { useAuthStore } from '../../../src/stores/authStore';
 
 // ── Inline Markdown Renderer ────────────────────────────────
 // Copied verbatim from apps/mobile/app/(app)/ai/index.tsx per D-05 (the
@@ -110,6 +113,235 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
   );
 }
 
+// ── Micro-action mapping (Task 1) ───────────────────────────────────
+// Single module-level source of truth for the three curated micro-action
+// pool values (D-13). The route drives the mission card's CTA deep-link
+// and the completion table drives Task 2's real-data check — keeping both
+// here means the two can never drift apart. Route paths are hardcoded
+// constants, never taken from the server-supplied mission payload
+// (T-43-28: a compromised AI response cannot redirect the athlete to an
+// arbitrary route).
+const MICRO_ACTION_MAP: Record<
+  string,
+  { route: string; ctaKey: string; table: 'hydration_logs' | 'journal_entries' | 'body_measurements' }
+> = {
+  hydration_log: {
+    route: '/(plugins)/hydration/dashboard',
+    ctaKey: 'coach.onboarding.mission.hydration',
+    table: 'hydration_logs',
+  },
+  journal_mood: {
+    route: '/(plugins)/journal/entry',
+    ctaKey: 'coach.onboarding.mission.journal',
+    table: 'journal_entries',
+  },
+  measurements_weight: {
+    route: '/(plugins)/measurements/log',
+    ctaKey: 'coach.onboarding.mission.measurements',
+    table: 'body_measurements',
+  },
+};
+
+function MissionCard({
+  mission,
+  theme,
+  t,
+  onPressCta,
+  onRetry,
+}: {
+  mission: { micro_action: string; mission_title: string; decision_id: string };
+  theme: ReturnType<typeof useThemeStore.getState>['theme'];
+  t: (key: string) => string;
+  onPressCta: () => void;
+  onRetry: () => void;
+}) {
+  const mapping = MICRO_ACTION_MAP[mission.micro_action];
+
+  return (
+    <View style={{ paddingVertical: 4, paddingHorizontal: 16, alignItems: 'flex-start' }}>
+      <View
+        style={{
+          maxWidth: '92%',
+          backgroundColor: theme.surface,
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: 16,
+          padding: 16,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            color: theme.primary,
+            marginBottom: 8,
+          }}
+        >
+          {t('coach.onboarding.missionEyebrow')}
+        </Text>
+        {/* Raw server mission_title verbatim — already in the athlete's
+            locale, never templated or reworded client-side. */}
+        <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, marginBottom: 16 }}>
+          {mission.mission_title}
+        </Text>
+        {mapping ? (
+          <TouchableOpacity
+            onPress={onPressCta}
+            style={{
+              paddingVertical: 16,
+              borderRadius: 16,
+              backgroundColor: theme.primary,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+              {t(mapping.ctaKey)}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          // Defensive fallback: an unrecognized micro_action renders no
+          // CTA and surfaces the shared stream-error/retry affordance
+          // rather than crashing or navigating nowhere.
+          <View style={{ gap: 8 }}>
+            <Text style={{ fontSize: 15, color: theme.text, lineHeight: 22 }}>
+              {t('coach.onboarding.error.stream')}
+            </Text>
+            <TouchableOpacity
+              onPress={onRetry}
+              style={{
+                paddingVertical: 16,
+                borderRadius: 16,
+                backgroundColor: theme.primary,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+                {t('coach.onboarding.error.retry')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ── Real-data completion check (Task 2, D-14) ───────────────────────
+// Device's local calendar date, formatted YYYY-MM-DD. All three
+// completion tables carry `date DATE NOT NULL DEFAULT CURRENT_DATE` — a
+// UTC-based `toISOString().slice(0, 10)` would misfire across timezone
+// boundaries for an athlete logging late in the evening, so this reads
+// the device's local year/month/day directly instead.
+function getLocalDateIso(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+async function checkMicroActionCompleted(microAction: string, userId: string): Promise<boolean> {
+  const mapping = MICRO_ACTION_MAP[microAction];
+  if (!mapping) return false;
+  const todayIso = getLocalDateIso();
+  const { data } = await supabase
+    .from(mapping.table)
+    .select('id')
+    .eq('user_id', userId)
+    .eq('date', todayIso)
+    .limit(1);
+  return !!(data && data.length > 0);
+}
+
+// ── Celebration overlay (Task 2, D-15) ──────────────────────────────
+// Hardcoded hex palette verbatim from OBReady (step-7.tsx) — the single
+// documented exception to the light 60/30/10 split. Full-screen, no
+// skip/dismiss/back gesture: this is the terminal step of the mandatory
+// flow.
+function CelebrationOverlay({
+  theme,
+  t,
+  showError,
+  onCta,
+}: {
+  theme: ReturnType<typeof useThemeStore.getState>['theme'];
+  t: (key: string) => string;
+  showError: boolean;
+  onCta: () => void;
+}) {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#1C1A17' }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: -40,
+          left: '50%',
+          marginLeft: -180,
+          width: 360,
+          height: 360,
+          borderRadius: 180,
+          backgroundColor: 'rgba(255,92,26,0.25)',
+        }}
+        pointerEvents="none"
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: 'center', gap: 32 }}>
+          <Animated.View
+            entering={FadeInUp.springify().damping(12)}
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: 22,
+              backgroundColor: '#FF5C1A',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: 'rgba(255,92,26,0.70)',
+              shadowOffset: { width: 0, height: 12 },
+              shadowRadius: 40,
+              shadowOpacity: 1,
+              elevation: 16,
+            }}
+          >
+            <Ionicons name="checkmark" size={38} color="#fff" />
+          </Animated.View>
+
+          <Text style={{ fontSize: 28, fontWeight: '700', color: '#FFFAF6' }}>
+            {t('coach.onboarding.celebrationHeadline')}
+          </Text>
+
+          <Text style={{ fontSize: 15, fontWeight: '400', color: 'rgba(255,250,246,0.70)', lineHeight: 22 }}>
+            {t('coach.onboarding.celebrationBody')}
+          </Text>
+
+          {showError ? (
+            // refreshProfile() left athleteOnboardingComplete false — the
+            // athlete_state write never landed. Never navigate in this case.
+            <Text style={{ fontSize: 15, fontWeight: '400', color: '#FFFAF6', lineHeight: 22 }}>
+              {t('coach.onboarding.error.stream')}
+            </Text>
+          ) : null}
+
+          <TouchableOpacity
+            onPress={onCta}
+            style={{
+              paddingVertical: 16,
+              borderRadius: 16,
+              backgroundColor: '#FF5C1A',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>
+              {showError ? t('coach.onboarding.error.retry') : t('coach.onboarding.celebrationCta')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
 type LocalMessage = {
   id: string;
   role: 'user' | 'assistant';
@@ -145,6 +377,13 @@ export default function ZikoChatScreen() {
   const [input, setInput] = useState('');
   const [missionState, setMissionState] = useState<MissionState | null>(null);
   const [errorState, setErrorState] = useState<'stream' | 'capReached' | null>(null);
+  // Task 2 / D-14: set only from a real checkMicroActionCompleted() query
+  // result inside the useFocusEffect re-poll below — never from the mission
+  // CTA press handler.
+  const [celebrated, setCelebrated] = useState(false);
+  const [celebrationError, setCelebrationError] = useState(false);
+
+  const refreshProfile = useAuthStore((s) => s.refreshProfile);
 
   const flatlistRef = useRef<FlatList>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
@@ -393,6 +632,57 @@ export default function ZikoChatScreen() {
     runSend([{ role: 'user', content: instruction }]);
   };
 
+  // Mission CTA (Task 1): router.push (never replace/navigate) so the Ziko
+  // chat stays mounted underneath and regains focus — and the useFocusEffect
+  // re-poll (Task 2) — when the athlete returns from the target plugin.
+  const handleMissionCta = () => {
+    if (!missionState) return;
+    const mapping = MICRO_ACTION_MAP[missionState.micro_action];
+    if (!mapping) return;
+    router.push(mapping.route as any);
+  };
+
+  // Real-data completion re-poll (Task 2, D-14). Matches the credit-balance
+  // refetch-on-focus precedent in ai/index.tsx. Runs only when a mission
+  // exists and the celebration has not already fired; fires on every
+  // refocus, so tapping the CTA and returning without logging anything
+  // leaves the athlete on the mission card with the CTA still tappable —
+  // the celebration is set only here, from the query result, never from
+  // the CTA press handler itself.
+  useFocusEffect(
+    useCallback(() => {
+      if (!missionState || celebrated) return;
+      let cancelled = false;
+
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user?.id;
+        if (!uid || cancelled) return;
+        const completed = await checkMicroActionCompleted(missionState.micro_action, uid);
+        if (!cancelled && completed) setCelebrated(true);
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [missionState, celebrated]),
+  );
+
+  // Celebration CTA exit path (Task 2). refreshProfile() MUST be awaited
+  // before router.replace — the (auth)/_layout.tsx gate requires
+  // athleteOnboardingComplete to be true, and navigating first would bounce
+  // the athlete straight back into the onboarding stack.
+  const handleCelebrationCta = async () => {
+    setCelebrationError(false);
+    await refreshProfile();
+    if (useAuthStore.getState().athleteOnboardingComplete) {
+      router.replace('/(app)');
+    } else {
+      // The athlete_state write never landed — do not navigate.
+      setCelebrationError(true);
+    }
+  };
+
   useEffect(() => {
     if (messages.length > 0 || isStreaming) {
       setTimeout(() => flatlistRef.current?.scrollToEnd({ animated: true }), 100);
@@ -410,6 +700,20 @@ export default function ZikoChatScreen() {
       ? [{ id: 'connecting', role: 'assistant' as const, content: t('coach.onboarding.connecting') }]
       : []),
   ];
+
+  // Full-screen celebration replaces the chat screen once the real-data
+  // check passes (D-15) — terminal step of the mandatory flow, no
+  // skip/dismiss/back gesture.
+  if (celebrated) {
+    return (
+      <CelebrationOverlay
+        theme={theme}
+        t={t}
+        showError={celebrationError}
+        onCta={handleCelebrationCta}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -460,6 +764,20 @@ export default function ZikoChatScreen() {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MessageBubble role={item.role} content={item.content} />}
             contentContainerStyle={{ paddingVertical: 16 }}
+            ListFooterComponent={
+              // Renders as the content of the final assistant turn once the
+              // `mission` SSE event has populated state — not a modal, not a
+              // separate screen/route.
+              missionState ? (
+                <MissionCard
+                  mission={missionState}
+                  theme={theme}
+                  t={t}
+                  onPressCta={handleMissionCta}
+                  onRetry={handleRetry}
+                />
+              ) : null
+            }
           />
 
           {errorState ? (
