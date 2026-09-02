@@ -13,7 +13,7 @@ Phase 42 (Decision-System Foundation) is the prerequisite for every other phase.
 ## Phases
 
 - [x] **Phase 42: Decision-System Foundation** — `athlete_state` + `athlete_decisions` schema, `record_athlete_decision()` SECURITY DEFINER RPC, RLS (SELECT-only for clients), bounded-context summarization discipline (completed 2026-08-31)
-- [x] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes) (completed 2026-09-02)
+- [x] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes) (completed 2026-09-02)
 - [ ] **Phase 44: Weekly Adaptive Decision Engine** — `coaching-engine/` module, real-activity-vs-focus comparison, idempotent bounded-concurrency weekly cron, `create_goal`/`create_program` tools shared between cron and chat, independent AI cost accounting
 - [ ] **Phase 45: Non-Punitive Tiered Rewards** — new points/tiers/reward-pool data model (distinct from the `gamification` plugin), deterministic AI reward selection (`create_reward`, pinned low/zero temperature), monotonic unlock guarantee
 - [ ] **Phase 46: Progressive Feature Unlock** — `PluginManifest.minLevel`, `PluginLoader` third gating filter (`mandatory` → `minLevel` → `is_enabled`), fail-safe minimum-access floor, locked-plugin UI in the drawer
@@ -72,7 +72,18 @@ Plans:
 3. Running the weekly review twice for the same athlete/week (simulating Vercel's at-least-once cron redelivery) produces exactly one recorded decision, never a duplicate.
 4. The weekly engine's AI cost is logged to `ai_cost_log` under a source that is never deducted from the athlete's own AI credit balance.
 5. `create_goal` and `create_program` tools are registered in the existing orchestrator tool registry and are callable identically from both the weekly cron and interactive chat, producing the same applied effect through one shared write path.
-**Plans:** TBD
+**Plans:** 8 plans
+**UI hint:** yes
+
+Plans:
+- [ ] 44-01-PLAN.md — athlete_goals table, ai_cost_log.source, record_athlete_decision v2, [BLOCKING] supabase db push (wave 1, checkpoint)
+- [ ] 44-02-PLAN.md — coaching-engine db/types/context, D-08 focus-scoped activity mapping, D-07 met verdict (wave 1)
+- [ ] 44-03-PLAN.md — decide.ts single-shot generateObject + create_goal/create_program executors (wave 2)
+- [ ] 44-04-PLAN.md — apply.ts shared write path, opex cost logging, tool registry registration (wave 3)
+- [ ] 44-05-PLAN.md — /review-check waitUntil trigger, CRON_SECRET safety-net cron, app.ts + vercel.json (wave 4)
+- [ ] 44-06-PLAN.md — athlete_goals RLS spec + weekly_focus idempotency spec against the live project (wave 2)
+- [ ] 44-07-PLAN.md — coach.weeklyReview i18n, WeeklyReviewRevealOverlay, app-open bootstrap hook (wave 5)
+- [ ] 44-08-PLAN.md — concurrent duplicate-fire simulation, full-suite gate, device verification (wave 6, checkpoint)
 
 ### Phase 45: Non-Punitive Tiered Rewards
 **Goal:** Athletes are rewarded for meeting or exceeding their weekly focus and never penalized for falling short.
@@ -85,6 +96,8 @@ Plans:
 4. Once a tier or reward is unlocked for an athlete, it is never revoked or downgraded, including after a subsequent low-performance week.
 5. Points/tiers/rewards live in a new, dedicated data model, entirely separate from the existing `gamification` plugin's coins/shop mechanic.
 **Plans:** TBD
+
+> **Inherited from Phase 44:** the weekly engine writes `athlete_state.readiness` only. `level`, `points` and `tier` are deliberately left untouched by Phase 44 (resolving 44-RESEARCH.md Open Question 1), so Phase 45 is their sole writer. Read the met/exceeded/missed result off the `weekly_focus` decision's `outcome` JSONB (`trajectory`, `met`, `actual_value`, `target_value`) rather than recomputing it.
 
 ### Phase 46: Progressive Feature Unlock
 **Goal:** The plugin drawer reveals capability as an athlete's real level grows, and never traps or over-grants access.
@@ -107,6 +120,8 @@ Plans:
 3. Every autonomous AI call (`assess_profile`, `create_goal`, `create_reward`, `create_program` run in system/cron mode) is logged to `ai_cost_log`, independent of `creditCheck`/`creditDeduct` gating.
 **Plans:** TBD
 
+> **Inherited from Phase 44:** `ai_cost_log.source` already exists (default `'user_chat'`, no CHECK constraint so new autonomous sources need no migration). OPS-03 is now a matter of passing a `source` at the remaining autonomous call sites, not a schema change.
+
 ---
 
 ## Progress
@@ -115,7 +130,7 @@ Plans:
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
 | 43. Conversational Onboarding | 6/6 | Complete    | 2026-09-02 |
-| 44. Weekly Adaptive Decision Engine | TBD | Not started | — |
+| 44. Weekly Adaptive Decision Engine | 0/8 | Planned | — |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
 | 47. Context Wiring, Notifications & Cost Accounting | TBD | Not started | — |
@@ -137,6 +152,6 @@ Plans:
 
 ## Research Flags (carried from `.planning/research/SUMMARY.md`)
 
-- **Phase 44** needs deeper research before planning: Vercel Fluid Compute/`maxDuration` enablement is unverified for this project; cron batching/concurrency numbers need validating; no confirmed consumer-fitness-app precedent for "stepped-care" structural weekly-focus decisions.
+- ~~**Phase 44** needs deeper research before planning~~ — resolved during Phase 44 planning (2026-09-02). Vercel Fluid Compute stays unverified but is no longer a dependency: the safety-net cron declares `maxDuration = 60` inline (matching the three existing precedents) and caps each invocation at 40 athletes processed 8-at-a-time, with unreached athletes rolling to the next trigger. The stepped-care shape resolved to a documented `[ASSUMED]` 2-of-last-3 de-escalation window (44-RESEARCH.md assumption A1), flagged in code.
 - **Phase 45** needs a legal-rationale checkpoint before shipping broadly: French ANJ/JONUM loot-box-adjacency law is explicitly flagged LOW confidence and actively evolving.
 - **Phases 42, 43, 46** have standard, well-precedented patterns in this codebase (credits schema/RPC shape, `generateObject` structured extraction, `PluginLoader` gating) — research-phase can be light.
