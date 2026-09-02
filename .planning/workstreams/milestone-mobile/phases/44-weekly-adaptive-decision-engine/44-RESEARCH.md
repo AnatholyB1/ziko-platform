@@ -452,19 +452,24 @@ export async function create_goal(
 | A3 | `GET /coaching-engine/review-check` as a new minimal route (rather than repurposing an existing endpoint) satisfies D-01's "cheap read that already runs every app open" framing closely enough — it's a new network call, not literally an existing one, but mounted at the same universal trigger point as the one true "every app open" precedent found (`useBrandingBootstrap`) | Architecture Patterns, Pattern 5 | If the product intent was strictly "zero new requests, only piggyback existing traffic," this recommendation adds one small new GET call per app open instead |
 | A4 | Vercel Fluid Compute enablement status for this project remains genuinely unverified — no account/dashboard access available from the repository alone; this session found no new evidence beyond what project-root STACK.md/ARCHITECTURE.md already flagged as MEDIUM confidence | Environment Availability | If Fluid Compute is actually already enabled, the conservative `maxDuration=60`-without-Fluid-Compute recommendation below is unnecessarily cautious (but not wrong — it still works); if it's not enabled, assuming it is would break the cron at deploy time |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All three questions were resolved during phase planning; each is annotated below with the plan and task that resolved it.
 
 1. **Does the weekly engine write `athlete_state.readiness`, `level`, or both?**
+   - **RESOLVED: `readiness` only.** Plan 44-04, Task 2, step 2 pins `p_state_patch` to `{ readiness, current_focus_summary }` and requires a code comment naming this Open Question; plan 44-04, Task 1, spec case 2 asserts the patch contains no `level`, `points` or `tier` key. `level`/`points`/`tier` remain Phase 45's reward-grant concern.
    - What we know: Phase 42's own column comment ties `readiness` explicitly to "Phase 44's escalate/de-escalate logic"; `level`/`points`/`tier` have ratchet semantics in the live RPC that read more naturally as a Phase 45 reward-accrual concern.
    - What's unclear: CONTEXT.md never states this explicitly — ENGINE-03 just says "peut escalader ou désescalader" without naming the column.
    - Recommendation: default to `readiness`-only for this phase (Common Pitfalls #5); confirm explicitly during planning/discuss before implementation, since it affects `apply.ts`'s `p_state_patch` shape and Phase 45's planning assumptions.
 
 2. **Exact numeric "pattern of misses" window for de-escalation (D-05).**
+   - **RESOLVED: 2-of-last-3 weekly-review cycles, carried as `[ASSUMED]`.** Plan 44-02, Task 3, step 7 implements `pattern_of_misses = missed >= 2` over the newest three `weekly_focus` decisions and requires an in-code `[ASSUMED] 2-of-3 window, see 44-RESEARCH.md Open Question 2` comment; step 4 widens the raw `athlete_decisions` read to 12 rows so interleaved `program_created` / `goal_created` rows cannot starve the window. Plan 44-02, Task 2, spec case 8 pins the behaviour, including the interleaved case.
    - What we know: Must not be a single missed week; must be "a pattern" per the locked product decision; no direct consumer-fitness-app precedent exists (already flagged LOW confidence at the project-root research level).
    - What's unclear: The exact N-of-M window.
    - Recommendation: 2-of-last-3 weekly-review cycles showing "missed," read from the bounded recent-window `athlete_decisions` rows (FOUND-05 convention already caps this at ~4 rows) — small enough to implement against the existing bounded-context read, permissive enough that D-05's "not punished for one bad week" promise is meaningfully true. Treat as `[ASSUMED]` (A1 above) pending explicit confirmation.
 
 3. **Should the lazy-trigger `GET /coaching-engine/review-check` route require any request body/params, or is bare-auth sufficient?**
+   - **RESOLVED: bare-auth GET, no params.** Plan 44-05 ships `GET /coaching-engine/review-check` taking only the authenticated `userId` from `authMiddleware`; plan 44-07's `WeeklyReviewRevealOverlay` reads `athlete_state` client-side over RLS for the copy, so no locale or other request field is needed.
    - What we know: The check only needs `userId` (from `authMiddleware`) and reads `athlete_state.next_review_due_at`.
    - What's unclear: Whether the mobile client should pass anything else (e.g. current locale, for the eventual celebration copy) or whether that's better read server-side from `user_profiles` at fire time.
    - Recommendation: bare-auth GET is sufficient; locale/copy concerns belong to D-03's celebration UI, which reads `athlete_state` directly (client-side, RLS-scoped), not to this route's request shape.
