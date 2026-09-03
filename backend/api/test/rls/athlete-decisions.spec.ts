@@ -250,4 +250,257 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const deleteResult = await a.client.from('athlete_decisions').delete().eq('id', decisionId);
     expect(deleteResult.error).not.toBeNull();
   });
+
+  // Phase 44 plan 06 (v1.18, weekly-adaptive-decision-engine) — ENGINE-04.
+  // Migrations under test:
+  //   supabase/migrations/20260831120100_athlete_decisions.sql
+  //     (idx_athlete_decisions_week_idempotency — the arbiter partial index)
+  //   supabase/migrations/20260902100200_record_athlete_decision_v2.sql
+  //     (the duplicate early-return path, before the goal insert and the
+  //     athlete_state UPDATE)
+  // Binding test name per 44-VALIDATION.md's ENGINE-04 filter: the
+  // substring "weekly_focus idempotency" below is load-bearing.
+  // Reuses this file's existing RUN_DB guard, admin client and
+  // cleanupTestUsers afterAll — no second guard or afterAll introduced.
+  describe('weekly_focus idempotency (ENGINE-04)', () => {
+    it('first fire succeeds; second fire for the same user/type/week returns duplicate; exactly one row survives with the first call\'s summary; readiness is not re-applied', async () => {
+      const a = await createTestUser('athlete-decisions-weekly-focus-dup');
+      createdUserIds.push(a.id);
+
+      const weekOf = '2026-09-14';
+
+      const first = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'weekly_focus',
+        p_week_of: weekOf,
+        p_summary: 'week of 2026-09-14 focus — first call',
+        p_rationale: 'first call rationale',
+        p_evidence: { workouts_completed: 3 },
+        p_outcome: {},
+        p_source: 'weekly_review_cron',
+        p_state_patch: { readiness: 'building' },
+      });
+      expect(first.error).toBeNull();
+      expect(first.data.success).toBe(true);
+      expect(typeof first.data.decision_id).toBe('string');
+      expect(first.data.decision_id.length).toBeGreaterThan(0);
+
+      const readinessAfterFirst = await admin
+        .from('athlete_state')
+        .select('readiness')
+        .eq('user_id', a.id);
+      expect(readinessAfterFirst.error).toBeNull();
+      expect(readinessAfterFirst.data?.[0].readiness).toBe('building');
+
+      const second = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'weekly_focus',
+        p_week_of: weekOf,
+        p_summary: 'week of 2026-09-14 focus — second call, should be rejected as duplicate',
+        p_rationale: 'second call rationale — different from the first',
+        p_evidence: { workouts_completed: 5 },
+        p_outcome: {},
+        p_source: 'weekly_review_cron',
+        p_state_patch: { readiness: 'thriving' },
+      });
+      expect(second.error).toBeNull();
+      expect(second.data.success).toBe(false);
+      expect(second.data.error).toBe('duplicate');
+
+      // The second call's state patch (readiness: 'thriving') must NOT have
+      // been applied — the first call's early-return-preceding UPDATE stands.
+      const readinessAfterSecond = await admin
+        .from('athlete_state')
+        .select('readiness')
+        .eq('user_id', a.id);
+      expect(readinessAfterSecond.error).toBeNull();
+      expect(readinessAfterSecond.data?.[0].readiness).toBe('building');
+
+      const rows = await admin
+        .from('athlete_decisions')
+        .select('id, summary')
+        .eq('user_id', a.id)
+        .eq('decision_type', 'weekly_focus')
+        .eq('week_of', weekOf);
+      expect(rows.error).toBeNull();
+      expect(rows.data?.length).toBe(1);
+      expect(rows.data?.[0].summary).toBe('week of 2026-09-14 focus — first call');
+    });
+
+    it('a different week_of for the same athlete inserts a second weekly_focus row — the arbiter is per week, not per athlete', async () => {
+      const a = await createTestUser('athlete-decisions-weekly-focus-next-week');
+      createdUserIds.push(a.id);
+
+      const weekOne = '2026-09-14';
+      const weekTwo = '2026-09-21';
+
+      const firstWeek = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'weekly_focus',
+        p_week_of: weekOne,
+        p_summary: 'week 1 focus',
+        p_rationale: null,
+        p_evidence: { workouts_completed: 3 },
+        p_outcome: {},
+        p_source: 'weekly_review_cron',
+        p_state_patch: {},
+      });
+      expect(firstWeek.error).toBeNull();
+      expect(firstWeek.data.success).toBe(true);
+
+      const secondWeek = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'weekly_focus',
+        p_week_of: weekTwo,
+        p_summary: 'week 2 focus',
+        p_rationale: null,
+        p_evidence: { workouts_completed: 4 },
+        p_outcome: {},
+        p_source: 'weekly_review_cron',
+        p_state_patch: {},
+      });
+      expect(secondWeek.error).toBeNull();
+      expect(secondWeek.data.success).toBe(true);
+
+      const rows = await admin
+        .from('athlete_decisions')
+        .select('id, week_of')
+        .eq('user_id', a.id)
+        .eq('decision_type', 'weekly_focus');
+      expect(rows.error).toBeNull();
+      expect(rows.data?.length).toBe(2);
+    });
+
+    it('p_week_of: null with decision_type goal_created can be called repeatedly without conflict — the partial index excludes non-weekly_focus and null-week rows', async () => {
+      const a = await createTestUser('athlete-decisions-goal-created-repeat');
+      createdUserIds.push(a.id);
+
+      const firstGoal = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'goal_created',
+        p_week_of: null,
+        p_summary: 'first goal_created decision',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'weekly_focus idempotency spec' },
+        p_outcome: {},
+        p_source: 'onboarding_tool',
+        p_state_patch: {},
+      });
+      expect(firstGoal.error).toBeNull();
+      expect(firstGoal.data.success).toBe(true);
+
+      const secondGoal = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'goal_created',
+        p_week_of: null,
+        p_summary: 'second goal_created decision — must not conflict with the first',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'weekly_focus idempotency spec' },
+        p_outcome: {},
+        p_source: 'onboarding_tool',
+        p_state_patch: {},
+      });
+      expect(secondGoal.error).toBeNull();
+      expect(secondGoal.data.success).toBe(true);
+      expect(secondGoal.data.decision_id).not.toBe(firstGoal.data.decision_id);
+
+      const rows = await admin
+        .from('athlete_decisions')
+        .select('id')
+        .eq('user_id', a.id)
+        .eq('decision_type', 'goal_created');
+      expect(rows.error).toBeNull();
+      expect(rows.data?.length).toBe(2);
+    });
+
+    it('next_review_due_at advances on weekly_focus and onboarding_profile decisions, but not on goal_created or program_created', async () => {
+      const a = await createTestUser('athlete-decisions-next-review-due-at');
+      createdUserIds.push(a.id);
+
+      const goalCreated = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'goal_created',
+        p_week_of: null,
+        p_summary: 'goal_created — must not stamp next_review_due_at',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'next_review_due_at spec' },
+        p_outcome: {},
+        p_source: 'onboarding_tool',
+        p_state_patch: {},
+      });
+      expect(goalCreated.error).toBeNull();
+      expect(goalCreated.data.success).toBe(true);
+
+      const afterGoalCreated = await admin
+        .from('athlete_state')
+        .select('next_review_due_at')
+        .eq('user_id', a.id);
+      expect(afterGoalCreated.error).toBeNull();
+      expect(afterGoalCreated.data?.[0].next_review_due_at).toBeNull();
+
+      const programCreated = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'program_created',
+        p_week_of: null,
+        p_summary: 'program_created — must not stamp next_review_due_at',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'next_review_due_at spec' },
+        p_outcome: {},
+        p_source: 'onboarding_tool',
+        p_state_patch: {},
+      });
+      expect(programCreated.error).toBeNull();
+      expect(programCreated.data.success).toBe(true);
+
+      const afterProgramCreated = await admin
+        .from('athlete_state')
+        .select('next_review_due_at')
+        .eq('user_id', a.id);
+      expect(afterProgramCreated.error).toBeNull();
+      expect(afterProgramCreated.data?.[0].next_review_due_at).toBeNull();
+
+      const onboardingProfile = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'onboarding_profile',
+        p_week_of: null,
+        p_summary: 'onboarding_profile — must stamp next_review_due_at',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'next_review_due_at spec' },
+        p_outcome: {},
+        p_source: 'onboarding_tool',
+        p_state_patch: {},
+      });
+      expect(onboardingProfile.error).toBeNull();
+      expect(onboardingProfile.data.success).toBe(true);
+
+      const afterOnboardingProfile = await admin
+        .from('athlete_state')
+        .select('next_review_due_at')
+        .eq('user_id', a.id);
+      expect(afterOnboardingProfile.error).toBeNull();
+      const dueAtAfterOnboarding = afterOnboardingProfile.data?.[0].next_review_due_at;
+      expect(dueAtAfterOnboarding).not.toBeNull();
+
+      const weeklyFocus = await admin.rpc('record_athlete_decision', {
+        p_user_id: a.id,
+        p_decision_type: 'weekly_focus',
+        p_week_of: '2026-09-28',
+        p_summary: 'weekly_focus — must stamp next_review_due_at',
+        p_rationale: null,
+        p_evidence: { seeded_by: 'next_review_due_at spec' },
+        p_outcome: {},
+        p_source: 'weekly_review_cron',
+        p_state_patch: {},
+      });
+      expect(weeklyFocus.error).toBeNull();
+      expect(weeklyFocus.data.success).toBe(true);
+
+      const afterWeeklyFocus = await admin
+        .from('athlete_state')
+        .select('next_review_due_at')
+        .eq('user_id', a.id);
+      expect(afterWeeklyFocus.error).toBeNull();
+      expect(afterWeeklyFocus.data?.[0].next_review_due_at).not.toBeNull();
+    });
+  });
 });
