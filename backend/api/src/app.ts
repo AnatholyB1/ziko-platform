@@ -27,6 +27,7 @@ import { brandingRouter } from './coach/branding/service.js';
 import { exercisesRouter } from './coach/exercises/service.js';
 import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
+import { coachingEngineRouter } from './coaching-engine/routes.js';
 import { formsRouter, formsCronRouter } from './routes/forms.js';
 const app = new Hono();
 
@@ -87,6 +88,7 @@ app.route('/coach/branding', brandingRouter);
 app.route('/coach/exercises', exercisesRouter);
 app.route('/coach/dashboards', dashboardsRouter);
 app.route('/coach/videos', videosRouter);
+app.route('/coaching-engine', coachingEngineRouter);
 app.route('/forms', formsRouter);
 app.route('/forms', formsCronRouter);
 
