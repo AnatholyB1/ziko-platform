@@ -72,7 +72,7 @@ Plans:
 3. Running the weekly review twice for the same athlete/week (simulating Vercel's at-least-once cron redelivery) produces exactly one recorded decision, never a duplicate.
 4. The weekly engine's AI cost is logged to `ai_cost_log` under a source that is never deducted from the athlete's own AI credit balance.
 5. `create_goal` and `create_program` tools are registered in the existing orchestrator tool registry and are callable identically from both the weekly cron and interactive chat, producing the same applied effect through one shared write path.
-**Plans:** 5/8 plans executed
+**Plans:** 6/8 plans executed
 **UI hint:** yes
 
 Plans:
@@ -80,7 +80,7 @@ Plans:
 - [x] 44-02-PLAN.md — coaching-engine db/types/context, D-08 focus-scoped activity mapping, D-07 met verdict (wave 1)
 - [x] 44-03-PLAN.md — decide.ts single-shot generateObject + create_goal/create_program executors (wave 2)
 - [x] 44-04-PLAN.md — apply.ts shared write path, opex cost logging, tool registry registration (wave 3)
-- [ ] 44-05-PLAN.md — /review-check waitUntil trigger, CRON_SECRET safety-net cron, app.ts + vercel.json (wave 4)
+- [x] 44-05-PLAN.md — /review-check waitUntil trigger, CRON_SECRET safety-net cron, app.ts + vercel.json (wave 4)
 - [x] 44-06-PLAN.md — athlete_goals RLS spec + weekly_focus idempotency spec against the live project (wave 2)
 - [ ] 44-07-PLAN.md — coach.weeklyReview i18n, WeeklyReviewRevealOverlay, app-open bootstrap hook (wave 5)
 - [ ] 44-08-PLAN.md — concurrent duplicate-fire simulation, full-suite gate, device verification (wave 6, checkpoint)
@@ -130,7 +130,7 @@ Plans:
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
 | 43. Conversational Onboarding | 6/6 | Complete    | 2026-09-02 |
-| 44. Weekly Adaptive Decision Engine | 5/8 | In Progress|  |
+| 44. Weekly Adaptive Decision Engine | 6/8 | In Progress|  |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
 | 47. Context Wiring, Notifications & Cost Accounting | TBD | Not started | — |
