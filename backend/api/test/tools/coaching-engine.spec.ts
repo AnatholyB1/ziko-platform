@@ -49,6 +49,140 @@ import {
   fetchWeeklyReviewContext,
 } from '../../src/coaching-engine/context.js';
 
+// ─── Mocks for the ENGINE-02 (decide.ts) and ENGINE-06 (tools.ts) blocks ──
+// decide.ts and tools.ts do not exist yet at this task. Their imports below
+// are deliberately dynamic (inside beforeEach, not a static top-level
+// import) so that filtering on `-t "activity aggregation"` never touches
+// them — a static top-level import of a nonexistent module would fail
+// Vitest's module collection for the WHOLE file, breaking the
+// already-passing activity-aggregation block above. Dynamic import scopes
+// the RED failure to only the describe blocks that exercise it.
+const mockGenerateObject = vi.fn();
+
+vi.mock('ai', () => ({
+  generateObject: (...args: unknown[]) => mockGenerateObject(...args),
+  jsonSchema: vi.fn((schema: unknown) => schema),
+}));
+
+// A realistic "raw" JSON Schema carrying every one of the eleven
+// Anthropic-banned keywords, so the banned-keyword assertion below
+// genuinely exercises decide.ts's own stripUnsupportedKeywords copy
+// rather than trivially passing against an empty object.
+const RAW_ZOD_SCHEMA_WITH_BANNED_KEYWORDS = {
+  type: 'object',
+  $schema: 'http://json-schema.org/draft-07/schema#',
+  format: 'weekly-decision',
+  properties: {
+    trajectory: { type: 'string', enum: ['escalate', 'hold', 'de-escalate'] },
+    new_readiness: { type: 'string', enum: ['fragile', 'building', 'ready'] },
+    new_focus_summary: { type: 'string', minLength: 1, maxLength: 300 },
+    rationale: { type: 'string', minLength: 1 },
+    call_create_program: { type: 'boolean' },
+    new_focus_detail: {
+      type: ['object', 'null'],
+      properties: {
+        focus_type: { type: 'string' },
+        target_metric: { type: 'string' },
+        target_value: {
+          type: 'number',
+          minimum: 0,
+          maximum: 10000,
+          exclusiveMinimum: -1,
+          exclusiveMaximum: 10001,
+          multipleOf: 1,
+        },
+      },
+      minItems: 1,
+      maxItems: 1,
+    },
+  },
+  required: ['trajectory', 'new_readiness', 'new_focus_summary', 'rationale', 'call_create_program', 'new_focus_detail'],
+};
+
+vi.mock('@ai-sdk/provider-utils', () => ({
+  zodSchema: vi.fn(() => ({ jsonSchema: RAW_ZOD_SCHEMA_WITH_BANNED_KEYWORDS })),
+}));
+
+const ANTHROPIC_BANNED_KEYWORDS = [
+  'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum',
+  'minLength', 'maxLength', 'minItems', 'maxItems',
+  'multipleOf', '$schema', 'format',
+];
+
+function findBannedKeywords(node: unknown, found: string[] = []): string[] {
+  if (node === null || typeof node !== 'object') return found;
+  if (Array.isArray(node)) {
+    for (const item of node) findBannedKeywords(item, found);
+    return found;
+  }
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (ANTHROPIC_BANNED_KEYWORDS.includes(key)) found.push(key);
+    findBannedKeywords(value, found);
+  }
+  return found;
+}
+
+function buildReviewContext(overrides: Record<string, unknown> = {}) {
+  return {
+    userId: 'user-1',
+    state: {
+      readiness: 'building',
+      current_focus_summary: 'Train 3x this week',
+      current_focus_detail: {
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 3,
+      },
+      rolling_summary: 'Consistent effort over the last month.',
+      next_review_due_at: '2026-08-21T00:00:00Z',
+    },
+    weekOf: '2026-08-21',
+    focus: {
+      focus_type: 'training_volume',
+      target_metric: 'sessions_completed',
+      target_value: 3,
+    },
+    activity: {
+      focus_type: 'training_volume',
+      tables_read: ['workout_sessions'],
+      metrics: { sessions_completed: 4, total_volume_kg: 800 },
+      window_start: '2026-08-14T00:00:00Z',
+      window_end: '2026-08-21T00:00:00Z',
+      evidence_source: 'real_activity_history',
+    },
+    comparison: {
+      target_metric: 'sessions_completed',
+      target_value: 3,
+      actual_value: 4,
+      met: true,
+    },
+    recentDecisions: [
+      {
+        decision_type: 'weekly_focus',
+        week_of: '2026-08-14',
+        summary: 'Held steady',
+        outcome: { met: true },
+        created_at: '2026-08-14T00:00:00Z',
+      },
+    ],
+    missPattern: { window: 3, missed: 1, pattern_of_misses: false },
+    ...overrides,
+  } as any;
+}
+
+const SCRIPTED_WEEKLY_DECISION = {
+  trajectory: 'escalate',
+  new_readiness: 'building',
+  new_focus_summary: 'Add one more session this week.',
+  rationale: 'Hit 4 of 3 target sessions — ready for more.',
+  call_create_program: true,
+  new_focus_detail: {
+    focus_type: 'training_volume',
+    target_metric: 'sessions_completed',
+    target_value: 4,
+  },
+};
+
 function resetTableScripts() {
   for (const key of Object.keys(tableResults)) delete tableResults[key];
   singleResults = {};
@@ -364,5 +498,302 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
 
     expect(context?.weekOf).toBe('2026-07-01');
     expect(context?.weekOf).not.toBe(new Date().toISOString().slice(0, 10));
+  });
+});
+
+describe('coaching-engine — decision schema (ENGINE-02)', () => {
+  let decideWeeklyFocus: typeof import('../../src/coaching-engine/decide.js').decideWeeklyFocus;
+
+  beforeEach(async () => {
+    mockGenerateObject.mockReset();
+    mockGenerateObject.mockResolvedValue({
+      object: SCRIPTED_WEEKLY_DECISION,
+      usage: { inputTokens: 512, outputTokens: 128 },
+    });
+    ({ decideWeeklyFocus } = await import('../../src/coaching-engine/decide.js'));
+  });
+
+  it('the JSON schema handed to generateObject contains none of the eleven Anthropic-banned keywords', async () => {
+    await decideWeeklyFocus(buildReviewContext());
+
+    expect(mockGenerateObject).toHaveBeenCalledTimes(1);
+    const schemaArg = mockGenerateObject.mock.calls[0][0].schema;
+    expect(findBannedKeywords(schemaArg)).toEqual([]);
+  });
+
+  it('decideWeeklyFocus returns the structured object plus token usage from exactly one single-shot generateObject call', async () => {
+    const result = await decideWeeklyFocus(buildReviewContext());
+
+    expect(mockGenerateObject).toHaveBeenCalledTimes(1);
+    const callArgs = mockGenerateObject.mock.calls[0][0];
+    expect(callArgs).not.toHaveProperty('tools');
+    expect(callArgs).not.toHaveProperty('stopWhen');
+    expect(callArgs).not.toHaveProperty('maxSteps');
+
+    expect(result.decision).toMatchObject({
+      trajectory: SCRIPTED_WEEKLY_DECISION.trajectory,
+      new_readiness: SCRIPTED_WEEKLY_DECISION.new_readiness,
+      new_focus_summary: SCRIPTED_WEEKLY_DECISION.new_focus_summary,
+      rationale: SCRIPTED_WEEKLY_DECISION.rationale,
+    });
+    expect(result.usage).toEqual({ inputTokens: 512, outputTokens: 128 });
+    expect(typeof result.modelId).toBe('string');
+  });
+
+  it('the prompt built from a WeeklyReviewContext includes the backend-computed verdict and the miss pattern', async () => {
+    const context = buildReviewContext();
+    await decideWeeklyFocus(context);
+
+    const promptArg = mockGenerateObject.mock.calls[0][0].prompt as string;
+    expect(promptArg).toContain(String(context.comparison.actual_value));
+    expect(promptArg).toContain(String(context.comparison.target_value));
+    expect(promptArg).toContain('met');
+    expect(promptArg).toContain(String(context.missPattern.pattern_of_misses));
+  });
+
+  it('the prompt states the athlete tables_read so the model can see which sources the verdict came from', async () => {
+    const context = buildReviewContext();
+    await decideWeeklyFocus(context);
+
+    const promptArg = mockGenerateObject.mock.calls[0][0].prompt as string;
+    for (const table of context.activity.tables_read) {
+      expect(promptArg).toContain(table);
+    }
+  });
+});
+
+describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
+  let create_goal: typeof import('../../src/coaching-engine/tools.js').create_goal;
+  let create_program: typeof import('../../src/coaching-engine/tools.js').create_program;
+
+  const VALID_ALLOWED_SOURCES = ['weekly_review_cron', 'onboarding_tool', 'app_open_fallback', 'manual_admin'];
+
+  beforeEach(async () => {
+    mockFrom.mockClear();
+    mockRpc.mockReset();
+    mockGenerateObject.mockReset();
+    resetTableScripts();
+
+    // No pre-existing goal — the fixture used by create_goal cases 5-8b.
+    singleResults.athlete_state = {
+      data: {
+        current_focus_detail: {
+          focus_type: 'training_volume',
+          target_metric: 'sessions_completed',
+          target_value: 3,
+        },
+      },
+      error: null,
+    };
+    tableResults.workout_sessions = {
+      data: [{ started_at: '2026-08-18T10:00:00Z', total_volume_kg: 100 }],
+      error: null,
+    };
+
+    mockRpc.mockResolvedValue({
+      data: { success: true, decision_id: 'decision-1', goal_id: 'goal-new' },
+      error: null,
+    });
+
+    ({ create_goal, create_program } = await import('../../src/coaching-engine/tools.js'));
+  });
+
+  it('create_goal calls record_athlete_decision once with goal_created, a non-null p_new_goal, and p_week_of null', async () => {
+    await create_goal(
+      {
+        goal_text: 'Build a base fitness habit by December',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+        target_date: '2026-12-01',
+      },
+      'athlete-1',
+      'token-1',
+    );
+
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    const [rpcName, args] = mockRpc.mock.calls[0];
+    expect(rpcName).toBe('record_athlete_decision');
+    expect(args.p_decision_type).toBe('goal_created');
+    expect(args.p_week_of).toBeNull();
+    expect(args.p_new_goal).toMatchObject({
+      goal_text: 'Build a base fitness habit by December',
+      target_metric: 'sessions_completed',
+      target_value: 4,
+      target_date: '2026-12-01',
+      status: 'active',
+    });
+  });
+
+  it('create_goal uses the userId argument for p_user_id and ignores any user_id present in params', async () => {
+    await create_goal(
+      { user_id: 'attacker-uuid', goal_text: 'Sneaky goal', target_date: '2026-12-01' },
+      'athlete-1',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_user_id).toBe('athlete-1');
+  });
+
+  it('create_goal never forwards a model-supplied evidence field — evidence is always server-derived', async () => {
+    await create_goal(
+      {
+        goal_text: 'Sneaky evidence',
+        target_date: '2026-12-01',
+        evidence: { fabricated: true },
+      },
+      'athlete-1',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_evidence.evidence_source).toBe('real_activity_history');
+    expect(args.p_evidence).not.toHaveProperty('fabricated');
+  });
+
+  it('create_goal passes a p_state_patch.current_focus_detail with no goal_id key and no $NEW_GOAL_ID placeholder', async () => {
+    await create_goal(
+      { goal_text: 'First goal', target_date: '2026-12-01' },
+      'athlete-1',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_state_patch.current_focus_detail).not.toHaveProperty('goal_id');
+    expect(JSON.stringify(args.p_state_patch.current_focus_detail)).not.toContain('$NEW_GOAL_ID');
+  });
+
+  it('create_goal sends p_rationale on every call, including when the model omits it', async () => {
+    await create_goal(
+      { goal_text: 'Explicit rationale', target_date: '2026-12-01', rationale: 'Explicit reason from the model' },
+      'athlete-1',
+      'token-1',
+    );
+    let [, args] = mockRpc.mock.calls[0];
+    expect(args.p_rationale).toBe('Explicit reason from the model');
+
+    mockRpc.mockClear();
+    await create_goal(
+      { goal_text: 'Omitted rationale', target_date: '2026-12-01' },
+      'athlete-1',
+      'token-1',
+    );
+    [, args] = mockRpc.mock.calls[0];
+    expect('p_rationale' in args).toBe(true);
+    expect(typeof args.p_rationale).toBe('string');
+    expect((args.p_rationale as string).length).toBeGreaterThan(0);
+  });
+
+  it('create_program merges its new targets over the existing current_focus_detail, preserving goal_id', async () => {
+    singleResults.athlete_state = {
+      data: {
+        current_focus_detail: {
+          focus_type: 'training_volume',
+          target_metric: 'sessions_completed',
+          target_value: 3,
+          goal_id: 'g-1',
+        },
+      },
+      error: null,
+    };
+
+    await create_program(
+      {
+        focus_summary: 'Push volume this week',
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+        session_type: 'strength',
+      },
+      'athlete-1',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_decision_type).toBe('program_created');
+    expect(args.p_state_patch.current_focus_detail.goal_id).toBe('g-1');
+    expect(args.p_state_patch.current_focus_detail.target_value).toBe(4);
+  });
+
+  it('create_program sends both p_rationale and p_source on every call, normalising an invalid source rather than forwarding it', async () => {
+    // (a) rationale supplied
+    await create_program(
+      {
+        focus_summary: 'x',
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+        rationale: 'Explicit program rationale',
+      },
+      'athlete-1',
+      'token-1',
+    );
+    let [, args] = mockRpc.mock.calls[0];
+    expect(args.p_rationale).toBe('Explicit program rationale');
+
+    // (b) rationale absent — key must still be present with a non-empty string
+    mockRpc.mockClear();
+    await create_program(
+      { focus_summary: 'x', focus_type: 'training_volume', target_metric: 'sessions_completed', target_value: 4 },
+      'athlete-1',
+      'token-1',
+    );
+    [, args] = mockRpc.mock.calls[0];
+    expect('p_rationale' in args).toBe(true);
+    expect(typeof args.p_rationale).toBe('string');
+    expect((args.p_rationale as string).length).toBeGreaterThan(0);
+
+    // (c) p_source present and a member of the allowed enum
+    expect(VALID_ALLOWED_SOURCES).toContain(args.p_source);
+
+    // (d) an invalid source value is never forwarded
+    mockRpc.mockClear();
+    await create_program(
+      {
+        focus_summary: 'x',
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+        source: 'not_an_enum_value',
+      },
+      'athlete-1',
+      'token-1',
+    );
+    [, args] = mockRpc.mock.calls[0];
+    expect(args.p_source).not.toBe('not_an_enum_value');
+    expect(VALID_ALLOWED_SOURCES).toContain(args.p_source);
+  });
+
+  it('create_program never calls /ai/programs/generate or generateObject — it never triggers full program generation', async () => {
+    const fetchSpy =
+      typeof globalThis.fetch === 'function' ? vi.spyOn(globalThis, 'fetch') : null;
+
+    await create_program(
+      { focus_summary: 'x', focus_type: 'training_volume', target_metric: 'sessions_completed', target_value: 4 },
+      'athlete-1',
+      'token-1',
+    );
+
+    if (fetchSpy) {
+      expect(fetchSpy).not.toHaveBeenCalled();
+      fetchSpy.mockRestore();
+    }
+    expect(mockGenerateObject).not.toHaveBeenCalled();
+  });
+
+  it('both executors throw when the RPC returns a success:false payload rather than returning it silently', async () => {
+    mockRpc.mockResolvedValue({ data: { success: false, error: 'evidence_required' }, error: null });
+
+    await expect(
+      create_goal({ goal_text: 'x', target_date: '2026-12-01' }, 'athlete-1', 'token-1'),
+    ).rejects.toThrow();
+
+    await expect(
+      create_program(
+        { focus_summary: 'x', focus_type: 'training_volume', target_metric: 'sessions_completed', target_value: 4 },
+        'athlete-1',
+        'token-1',
+      ),
+    ).rejects.toThrow();
   });
 });
