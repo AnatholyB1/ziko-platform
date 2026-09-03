@@ -1190,3 +1190,201 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
     expect(mockGenerateObject).not.toHaveBeenCalled();
   });
 });
+
+// ─── Block E: composeRollingSummary/ROLLING_SUMMARY_* do not exist yet at
+// this task (Task 2 only exported applyWeeklyDecision/runWeeklyReview) —
+// this dynamic import resolves the module but destructuring the new named
+// exports yields undefined, which is the intended RED state for Task 3.
+describe('coaching-engine — rolling summary (FOUND-05)', () => {
+  let applyWeeklyDecision: typeof import('../../src/coaching-engine/apply.js').applyWeeklyDecision;
+  let runWeeklyReview: typeof import('../../src/coaching-engine/apply.js').runWeeklyReview;
+  let composeRollingSummary: typeof import('../../src/coaching-engine/apply.js').composeRollingSummary;
+
+  beforeEach(async () => {
+    mockFrom.mockClear();
+    mockRpc.mockReset();
+    mockGenerateObject.mockReset();
+    resetTableScripts();
+
+    mockGenerateObject.mockResolvedValue({
+      object: SCRIPTED_WEEKLY_DECISION,
+      usage: { inputTokens: 512, outputTokens: 128 },
+    });
+    mockRpc.mockResolvedValue({
+      data: { success: true, decision_id: 'decision-weekly-1', goal_id: null },
+      error: null,
+    });
+
+    ({ applyWeeklyDecision, runWeeklyReview, composeRollingSummary } = await import(
+      '../../src/coaching-engine/apply.js'
+    ));
+  });
+
+  function buildDecision(overrides: Record<string, unknown> = {}) {
+    return {
+      trajectory: 'escalate',
+      new_readiness: 'ready',
+      new_focus_summary: 'Add one more session this week.',
+      rationale: 'Hit 4 of 3 target sessions — ready for more.',
+      call_create_program: true,
+      new_focus_detail: {
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+      },
+      ...overrides,
+    } as any;
+  }
+
+  it('after a successful apply, p_state_patch.rolling_summary starts with a line naming weekOf and trajectory', async () => {
+    const base = buildReviewContext();
+    const context = buildReviewContext({
+      state: { ...base.state, rolling_summary: 'Consistent effort over the last month.' },
+    });
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    const summary = args.p_state_patch.rolling_summary as string;
+    const firstLine = summary.split('\n')[0];
+    expect(firstLine).toContain(context.weekOf);
+    expect(firstLine).toContain(decision.trajectory);
+  });
+
+  it('the previous summary entries are preserved beneath the new one, in order, newest first', async () => {
+    const previousSummary = '2026-08-14 | hold | sessions_completed 2/3 missed | Held steady last week.';
+    const base = buildReviewContext();
+    const context = buildReviewContext({ state: { ...base.state, rolling_summary: previousSummary } });
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    const lines = (args.p_state_patch.rolling_summary as string).split('\n');
+    expect(lines[0]).toContain(context.weekOf);
+    expect(lines[1]).toBe(previousSummary);
+  });
+
+  it('a synthetic 52-review (12-month-tenure) fold stays within both caps, and 200 iterations proves a fixed point', () => {
+    const context = buildReviewContext();
+    let summary: string | null = null;
+
+    for (let i = 0; i < 52; i++) {
+      const iterDecision = buildDecision({
+        rationale: `Week ${i}: a moderately long rationale describing real, specific evidence values observed this cycle, repeated for length.`,
+      });
+      const iterContext = { ...context, weekOf: `2025-${String((i % 12) + 1).padStart(2, '0')}-01` };
+      summary = composeRollingSummary(summary, iterContext as any, iterDecision);
+    }
+    expect((summary as string).length).toBeLessThanOrEqual(2000);
+    expect((summary as string).split('\n').length).toBeLessThanOrEqual(4);
+
+    for (let i = 0; i < 200; i++) {
+      const iterDecision = buildDecision({
+        rationale: `Iteration ${i}: another moderately long rationale describing real, specific evidence values, repeated for length.`,
+      });
+      summary = composeRollingSummary(summary, context as any, iterDecision);
+    }
+    expect((summary as string).length).toBeLessThanOrEqual(2000);
+    expect((summary as string).split('\n').length).toBeLessThanOrEqual(4);
+  });
+
+  it('a pathological 10000-character previous summary with no newlines still yields a result at most 2000 characters', () => {
+    const context = buildReviewContext();
+    const decision = buildDecision();
+    const pathological = 'x'.repeat(10000);
+
+    const result = composeRollingSummary(pathological, context as any, decision);
+
+    expect(result.length).toBeLessThanOrEqual(2000);
+  });
+
+  it('a rationale containing embedded newlines produces exactly one entry line (forgery guard, T-44-39)', () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      rationale: 'Line one.\nInjected line two.\r\nInjected line three.',
+    });
+
+    const result = composeRollingSummary(null, context as any, decision);
+
+    expect(result.split('\n').length).toBe(1);
+  });
+
+  it('comparison.met === null renders as no_target and never as missed', () => {
+    const base = buildReviewContext();
+    const context = buildReviewContext({
+      comparison: { target_metric: null, target_value: null, actual_value: null, met: null },
+    });
+    const decision = buildDecision();
+
+    const result = composeRollingSummary(null, context as any, decision);
+
+    expect(result).toContain('no_target');
+    expect(result).not.toContain('missed');
+    void base;
+  });
+
+  it('a duplicate apply results in no rolling_summary being persisted — the RPC is called once and short-circuits before any second write', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { success: false, error: 'duplicate' }, error: null });
+    const context = buildReviewContext();
+    const decision = buildDecision();
+
+    const result = await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('mockGenerateObject call count across a full runWeeklyReview remains exactly 1 — the recompaction adds no model call', async () => {
+    singleResults.athlete_state = {
+      data: {
+        next_review_due_at: '2020-01-01T00:00:00Z',
+        last_review_at: '2019-12-25T00:00:00Z',
+        current_focus_detail: {
+          focus_type: 'training_volume',
+          target_metric: 'sessions_completed',
+          target_value: 3,
+        },
+        current_focus_summary: 'Train 3x this week',
+        readiness: 'building',
+        rolling_summary: 'Prior compact summary line.',
+      },
+      error: null,
+    };
+    tableResults.athlete_decisions = { data: [], error: null };
+    tableResults.workout_sessions = {
+      data: [{ started_at: '2026-08-18T10:00:00Z', total_volume_kg: 100 }],
+      error: null,
+    };
+    singleResults.athlete_decisions = { data: null, error: null };
+
+    await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
+
+    expect(mockGenerateObject).toHaveBeenCalledTimes(1);
+  });
+});
