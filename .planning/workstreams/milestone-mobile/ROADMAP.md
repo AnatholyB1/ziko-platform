@@ -72,12 +72,12 @@ Plans:
 3. Running the weekly review twice for the same athlete/week (simulating Vercel's at-least-once cron redelivery) produces exactly one recorded decision, never a duplicate.
 4. The weekly engine's AI cost is logged to `ai_cost_log` under a source that is never deducted from the athlete's own AI credit balance.
 5. `create_goal` and `create_program` tools are registered in the existing orchestrator tool registry and are callable identically from both the weekly cron and interactive chat, producing the same applied effect through one shared write path.
-**Plans:** 8 plans
+**Plans:** 2/8 plans executed
 **UI hint:** yes
 
 Plans:
-- [ ] 44-01-PLAN.md — athlete_goals table, ai_cost_log.source, record_athlete_decision v2, [BLOCKING] supabase db push (wave 1, checkpoint)
-- [ ] 44-02-PLAN.md — coaching-engine db/types/context, D-08 focus-scoped activity mapping, D-07 met verdict (wave 1)
+- [x] 44-01-PLAN.md — athlete_goals table, ai_cost_log.source, record_athlete_decision v2, [BLOCKING] supabase db push (wave 1, checkpoint)
+- [x] 44-02-PLAN.md — coaching-engine db/types/context, D-08 focus-scoped activity mapping, D-07 met verdict (wave 1)
 - [ ] 44-03-PLAN.md — decide.ts single-shot generateObject + create_goal/create_program executors (wave 2)
 - [ ] 44-04-PLAN.md — apply.ts shared write path, opex cost logging, tool registry registration (wave 3)
 - [ ] 44-05-PLAN.md — /review-check waitUntil trigger, CRON_SECRET safety-net cron, app.ts + vercel.json (wave 4)
@@ -130,7 +130,7 @@ Plans:
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
 | 43. Conversational Onboarding | 6/6 | Complete    | 2026-09-02 |
-| 44. Weekly Adaptive Decision Engine | 0/8 | Planned | — |
+| 44. Weekly Adaptive Decision Engine | 2/8 | In Progress|  |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
 | 47. Context Wiring, Notifications & Cost Accounting | TBD | Not started | — |
