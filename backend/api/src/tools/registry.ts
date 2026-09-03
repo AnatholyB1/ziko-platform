@@ -13,6 +13,7 @@ import * as PantryTools from './pantry.js';
 import * as NavigationTools from './navigation.js';
 import * as CoachTools from './coach.js';
 import * as OnboardingTools from './onboarding.js';
+import * as CoachingEngineTools from '../coaching-engine/tools.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -180,6 +181,12 @@ const executors: Record<string, ToolExecutor['execute']> = {
   // /ai/chat, and GET /ai/tools, letting the ongoing coach overwrite an
   // athlete's state mid-conversation.
   assess_profile: OnboardingTools.assess_profile,
+  // create_goal/create_program (Phase 44, ENGINE-06) — unlike the
+  // onboarding executor immediately above, both are ALSO spread into
+  // allToolSchemas below, deliberately, so /ai/chat, /ai/chat/stream and
+  // GET /ai/tools can reach them.
+  create_goal: CoachingEngineTools.create_goal,
+  create_program: CoachingEngineTools.create_program,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -595,6 +602,14 @@ export const allToolSchemas: AITool[] = [
   ...pantryToolSchemas,
   ...navigationToolSchemas,
   ...coachToolSchemas,
+  // create_goal/create_program (Phase 44, ENGINE-06) — deliberately
+  // included here, the inverse of the onboarding executor's deliberate
+  // exclusion from this array (see the `executors` map above): ENGINE-06
+  // requires these two tools be usable both by the weekly engine
+  // (backend/api/src/coaching-engine/apply.ts) and by interactive chat,
+  // so they must reach /ai/chat, /ai/chat/stream and GET /ai/tools. Do
+  // not "fix" this by removing the spread.
+  ...CoachingEngineTools.coachingEngineToolSchemas,
 ];
 
 export function getToolExecutor(name: string): ToolExecutor['execute'] | undefined {
