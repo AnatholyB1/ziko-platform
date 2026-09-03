@@ -16,6 +16,101 @@ import { decideWeeklyFocus } from './decide.js';
 import { create_program } from './tools.js';
 import type { WeeklyDecisionResult, WeeklyReviewContext } from './types.js';
 
+// ── FOUND-05 rolling-summary recompaction ────────────────────────────────
+// Deterministic, no-LLM compaction (declared explicitly, per this task's
+// own contract). The alternative considered and rejected was a second
+// small structured-extraction model call to summarise the journal in
+// prose: the weekly engine already makes exactly one Claude Sonnet call
+// per athlete per review, and a second call would roughly double the
+// engine's per-athlete AI spend for ~4.3 reviews/month against the
+// project's 0.75 EUR/user/month ceiling, for zero functional gain —
+// every input this compaction needs is structured data
+// applyWeeklyDecision already holds in `context` and `decision`. A third
+// option, adding a rolling_summary_update field to decide.ts's existing
+// schema so the model writes the line inside the call it already makes,
+// is genuinely near-zero-cost but would ripple type/schema changes back
+// into plans 44-02/44-03 (both already merged in earlier waves) and
+// would make a bounded-context invariant depend on model compliance.
+// Deterministic composition is chosen because the cap must hold
+// unconditionally.
+
+// The ~500-token budget the athlete_state.rolling_summary COMMENT already
+// states (supabase/migrations/20260831120000_athlete_state.sql lines
+// 59-60), at roughly 4 characters per token.
+export const ROLLING_SUMMARY_MAX_CHARS = 2000;
+// The upper end of 42-CONTEXT.md D-05's "last 3-4 weekly reviews" — this
+// matches the last-4-decisions raw window context.ts already reads, so
+// the two halves of the FOUND-05 read convention (compact prose + last N
+// raw rows) stay symmetric.
+export const ROLLING_SUMMARY_MAX_ENTRIES = 4;
+// How much of the model-written rationale survives into a compacted
+// entry.
+export const ROLLING_SUMMARY_RATIONALE_CHARS = 120;
+
+/**
+ * Sanitises a model-written rationale before it is embedded in a
+ * newline-delimited rolling_summary entry. The newline strip is
+ * load-bearing, not cosmetic (T-44-39): entries are newline-delimited, so
+ * a rationale containing an embedded newline could forge additional
+ * ledger lines in a string that is fed back into a later review's
+ * prompt.
+ */
+function sanitiseRationaleForSummary(rationale: string): string {
+  const collapsed = rationale.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return collapsed.slice(0, ROLLING_SUMMARY_RATIONALE_CHARS);
+}
+
+/**
+ * Composes the next rolling_summary value — pure, no I/O, no clock read,
+ * no model call, so the cap is testable in isolation and cannot be
+ * violated by a network failure mid-review. Returns a string satisfying
+ * both caps (ROLLING_SUMMARY_MAX_ENTRIES / ROLLING_SUMMARY_MAX_CHARS) for
+ * every possible input, including a pathological previous value.
+ */
+export function composeRollingSummary(
+  previous: string | null,
+  context: WeeklyReviewContext,
+  decision: WeeklyDecisionResult,
+): string {
+  const verdict =
+    context.comparison.met === null ? 'no_target' : context.comparison.met ? 'met' : 'missed';
+  const comparisonPart =
+    context.comparison.target_metric !== null
+      ? `${context.comparison.target_metric} ${context.comparison.actual_value ?? 'none'}/${context.comparison.target_value ?? 'none'} ${verdict}`
+      : `no_target ${verdict}`;
+
+  const newEntry = `${context.weekOf} | ${decision.trajectory} | ${comparisonPart} | ${sanitiseRationaleForSummary(decision.rationale)}`;
+
+  // Pre-existing free-prose content (e.g. written by onboarding) has no
+  // entry structure — treat whatever is there as existing lines and let
+  // it age out naturally rather than parsing or discarding it; an
+  // athlete's first four weekly reviews will evict it.
+  const previousEntries = (previous ?? '').split('\n').filter((line) => line.length > 0);
+
+  let entries = [newEntry, ...previousEntries];
+
+  // First drop trailing entries until at most MAX_ENTRIES remain.
+  if (entries.length > ROLLING_SUMMARY_MAX_ENTRIES) {
+    entries = entries.slice(0, ROLLING_SUMMARY_MAX_ENTRIES);
+  }
+
+  // Then, while the joined string exceeds MAX_CHARS, drop the trailing
+  // entry.
+  let joined = entries.join('\n');
+  while (joined.length > ROLLING_SUMMARY_MAX_CHARS && entries.length > 1) {
+    entries = entries.slice(0, -1);
+    joined = entries.join('\n');
+  }
+
+  // If a single entry alone still exceeds the char cap, hard-slice the
+  // final joined string.
+  if (joined.length > ROLLING_SUMMARY_MAX_CHARS) {
+    joined = joined.slice(0, ROLLING_SUMMARY_MAX_CHARS);
+  }
+
+  return joined;
+}
+
 export type WeeklyReviewSource = 'weekly_review_cron' | 'app_open_fallback';
 
 export type ApplyWeeklyDecisionResult =
@@ -55,6 +150,12 @@ export async function applyWeeklyDecision(
     evidence_source: 'real_activity_history' as const,
   };
 
+  // FOUND-05: recompacted as part of the SAME state patch below — no
+  // second RPC call, no second write. rolling_summary is already a
+  // recognised p_state_patch key (20260902100200_record_athlete_decision_v2.sql
+  // line ~129), so this rides the existing atomic write.
+  const rollingSummary = composeRollingSummary(context.state.rolling_summary, context, decision);
+
   const { data, error } = await db.rpc('record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'weekly_focus',
@@ -83,6 +184,7 @@ export async function applyWeeklyDecision(
     p_state_patch: {
       readiness: decision.new_readiness,
       current_focus_summary: decision.new_focus_summary,
+      rolling_summary: rollingSummary,
     },
     p_new_goal: null,
   });
