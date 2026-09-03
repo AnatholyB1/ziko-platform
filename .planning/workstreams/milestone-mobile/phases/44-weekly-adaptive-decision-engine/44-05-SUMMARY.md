@@ -102,3 +102,12 @@ None - no external service configuration required. (The `backend/api/.env.test` 
 ---
 *Phase: 44-weekly-adaptive-decision-engine*
 *Completed: 2026-09-03*
+
+## Self-Check: PASSED
+
+- FOUND: backend/api/src/coaching-engine/routes.ts
+- FOUND: backend/api/test/routes/coaching-engine.spec.ts
+- FOUND: .planning/workstreams/milestone-mobile/phases/44-weekly-adaptive-decision-engine/44-05-SUMMARY.md
+- FOUND: 7ceb3db7 (test commit)
+- FOUND: 2a986993 (feat commit)
+- FOUND: da010b19 (feat commit)
