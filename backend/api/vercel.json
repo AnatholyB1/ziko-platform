@@ -35,6 +35,10 @@
     {
       "path": "/credits/cron/premium-grant",
       "schedule": "0 0 1 * *"
+    },
+    {
+      "path": "/coaching-engine/cron/weekly-review",
+      "schedule": "0 10 * * 0"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."
