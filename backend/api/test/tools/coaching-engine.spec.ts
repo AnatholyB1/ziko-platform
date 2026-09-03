@@ -14,6 +14,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockRpc = vi.fn();
 const tableResults: Record<string, { data: unknown; error: unknown }> = {};
 let singleResults: Record<string, { data: unknown; error: unknown }> = {};
+// Records rows passed to `.insert(...)` per table — used by apply.ts's
+// ai_cost_log fire-and-forget insert assertions (plan 44-04, ENGINE-05).
+let insertedRows: Record<string, unknown[]> = {};
 
 function makeChain(table: string) {
   const chain: any = {
@@ -24,6 +27,10 @@ function makeChain(table: string) {
     in: vi.fn(() => chain),
     order: vi.fn(() => chain),
     limit: vi.fn(() => chain),
+    insert: vi.fn((row: unknown) => {
+      (insertedRows[table] ??= []).push(row);
+      return chain;
+    }),
     maybeSingle: vi.fn(async () => singleResults[table] ?? { data: null, error: null }),
     single: vi.fn(async () => singleResults[table] ?? { data: null, error: null }),
     then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
@@ -186,6 +193,7 @@ const SCRIPTED_WEEKLY_DECISION = {
 function resetTableScripts() {
   for (const key of Object.keys(tableResults)) delete tableResults[key];
   singleResults = {};
+  insertedRows = {};
 }
 
 describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
@@ -795,5 +803,588 @@ describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
         'token-1',
       ),
     ).rejects.toThrow();
+  });
+});
+
+// ─── Mock for ENGINE-05: apply.ts must never touch the credit-gate surface ──
+// A hoisted, file-wide mock — nothing in this file ever legitimately imports
+// creditGate.ts, so the factory only fires (and fails the triggering test)
+// if apply.ts's dependency graph reaches for it, which the weekly engine
+// must never do (opex, not user-credit-deducted).
+vi.mock('../../src/middleware/creditGate.js', () => {
+  throw new Error(
+    'apply.ts (and its dependency graph) must never import creditGate.ts — ENGINE-05 opex isolation',
+  );
+});
+
+// ─── Blocks C & D: apply.ts does not exist yet at this task — both dynamic
+// imports below fail to resolve, which is the intended RED state for Task 1.
+describe('coaching-engine — trajectory application (ENGINE-03)', () => {
+  let applyWeeklyDecision: typeof import('../../src/coaching-engine/apply.js').applyWeeklyDecision;
+
+  beforeEach(async () => {
+    mockFrom.mockClear();
+    mockRpc.mockReset();
+    mockGenerateObject.mockReset();
+    resetTableScripts();
+
+    mockRpc.mockResolvedValue({
+      data: { success: true, decision_id: 'decision-weekly-1', goal_id: null },
+      error: null,
+    });
+
+    ({ applyWeeklyDecision } = await import('../../src/coaching-engine/apply.js'));
+  });
+
+  function buildDecision(overrides: Record<string, unknown> = {}) {
+    return {
+      trajectory: 'escalate',
+      new_readiness: 'ready',
+      new_focus_summary: 'Add one more session this week.',
+      rationale: 'Hit 4 of 3 target sessions — ready for more.',
+      call_create_program: true,
+      new_focus_detail: {
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+      },
+      ...overrides,
+    } as any;
+  }
+
+  it('an escalate decision sets readiness and current_focus_summary in p_state_patch', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_state_patch.readiness).toBe(decision.new_readiness);
+    expect(args.p_state_patch.current_focus_summary).toBe(decision.new_focus_summary);
+  });
+
+  it('the p_state_patch never carries level, points or tier keys (Open Question 1 resolution)', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_state_patch).not.toHaveProperty('level');
+    expect(args.p_state_patch).not.toHaveProperty('points');
+    expect(args.p_state_patch).not.toHaveProperty('tier');
+  });
+
+  it('a de-escalate decision lowering readiness from ready to building is applied without a ratchet guard', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      trajectory: 'de-escalate',
+      new_readiness: 'building',
+      call_create_program: true,
+    });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_state_patch.readiness).toBe('building');
+  });
+
+  it('p_decision_type is always weekly_focus and p_week_of equals context.weekOf exactly, never today', async () => {
+    const pastWeekOf = '2026-01-05';
+    const context = buildReviewContext({ weekOf: pastWeekOf });
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_decision_type).toBe('weekly_focus');
+    expect(args.p_week_of).toBe(pastWeekOf);
+    expect(args.p_week_of).not.toBe(new Date().toISOString().slice(0, 10));
+  });
+
+  it('p_evidence is built from context.activity/comparison and never carries a model-fabricated field', async () => {
+    const context = buildReviewContext();
+    // Simulates a model whose structured output smuggled in an extra field —
+    // decision is what apply.ts receives as the model's structured output.
+    const decision = buildDecision({ fabricated_evidence: 'should never reach the RPC' });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_evidence.evidence_source).toBe('real_activity_history');
+    expect(args.p_evidence.tables_read).toEqual(context.activity.tables_read);
+    expect(args.p_evidence).not.toHaveProperty('fabricated_evidence');
+  });
+
+  it('p_outcome records trajectory, new_readiness and the comparison met boolean', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    expect(args.p_outcome.trajectory).toBe(decision.trajectory);
+    expect(args.p_outcome.new_readiness).toBe(decision.new_readiness);
+    expect(args.p_outcome.met).toBe(context.comparison.met);
+  });
+});
+
+describe('coaching-engine — shared apply path (ENGINE-06)', () => {
+  let applyWeeklyDecision: typeof import('../../src/coaching-engine/apply.js').applyWeeklyDecision;
+  let runWeeklyReview: typeof import('../../src/coaching-engine/apply.js').runWeeklyReview;
+
+  beforeEach(async () => {
+    mockFrom.mockClear();
+    mockRpc.mockReset();
+    mockGenerateObject.mockReset();
+    resetTableScripts();
+
+    mockGenerateObject.mockResolvedValue({
+      object: SCRIPTED_WEEKLY_DECISION,
+      usage: { inputTokens: 512, outputTokens: 128 },
+    });
+    mockRpc.mockResolvedValue({
+      data: { success: true, decision_id: 'decision-weekly-1', goal_id: null },
+      error: null,
+    });
+
+    ({ applyWeeklyDecision, runWeeklyReview } = await import('../../src/coaching-engine/apply.js'));
+  });
+
+  function buildDecision(overrides: Record<string, unknown> = {}) {
+    return {
+      trajectory: 'escalate',
+      new_readiness: 'ready',
+      new_focus_summary: 'Add one more session this week.',
+      rationale: 'Hit 4 of 3 target sessions — ready for more.',
+      call_create_program: true,
+      new_focus_detail: {
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+      },
+      ...overrides,
+    } as any;
+  }
+
+  it('on escalate, applyWeeklyDecision invokes the shared create_program executor once, forwarding rationale and source into its own record_athlete_decision call', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({ trajectory: 'escalate', call_create_program: true });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 512, outputTokens: 128 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    // create_program is imported by name from tools.js (not reimplemented),
+    // so its own RPC call is observable on the same shared mockRpc — this is
+    // what makes "one shared write path" (ENGINE-06) provable end-to-end.
+    const programCalls = mockRpc.mock.calls.filter(([, args]) => args.p_decision_type === 'program_created');
+    expect(programCalls.length).toBe(1);
+    const [, programArgs] = programCalls[0];
+    expect(programArgs.p_user_id).toBe('athlete-1');
+    expect(programArgs.p_rationale).toBe(decision.rationale);
+    expect(programArgs.p_source).toBe('weekly_review_cron');
+  });
+
+  it('on de-escalate, create_program is likewise invoked once', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      trajectory: 'de-escalate',
+      new_readiness: 'building',
+      call_create_program: true,
+    });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 512, outputTokens: 128 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const programCalls = mockRpc.mock.calls.filter(([, args]) => args.p_decision_type === 'program_created');
+    expect(programCalls.length).toBe(1);
+  });
+
+  it('on hold, create_program is NOT invoked at all (D-11)', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      trajectory: 'hold',
+      call_create_program: false,
+      new_focus_detail: null,
+    });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 512, outputTokens: 128 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const programCalls = mockRpc.mock.calls.filter(([, args]) => args.p_decision_type === 'program_created');
+    expect(programCalls.length).toBe(0);
+  });
+
+  it('when the RPC returns duplicate, applyWeeklyDecision returns an unsuccessful result before any program write', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { success: false, error: 'duplicate' }, error: null });
+    const context = buildReviewContext();
+    const decision = buildDecision({ trajectory: 'escalate', call_create_program: true });
+
+    const result = await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 512, outputTokens: 128 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    expect(result.success).toBe(false);
+    // Exactly the one (duplicate) weekly_focus RPC call — create_program's
+    // own RPC call never fires because applyWeeklyDecision short-circuited.
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('a successful apply inserts exactly one ai_cost_log row with the real token counts and the trigger source', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      trajectory: 'hold',
+      call_create_program: false,
+      new_focus_detail: null,
+    });
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 777, outputTokens: 333 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const rows = insertedRows.ai_cost_log ?? [];
+    expect(rows.length).toBe(1);
+    expect(rows[0]).toMatchObject({
+      user_id: 'athlete-1',
+      model: 'claude-sonnet-4-20250514',
+      source: 'weekly_review_cron',
+      input_tokens: 777,
+      output_tokens: 333,
+    });
+  });
+
+  it('never imports or invokes creditCheck/creditDeduct — the weekly engine is opex, not credit-gated (ENGINE-05)', async () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({ trajectory: 'escalate', call_create_program: true });
+
+    await expect(
+      applyWeeklyDecision(
+        'athlete-1',
+        decision,
+        context,
+        'weekly_review_cron',
+        { inputTokens: 512, outputTokens: 128 },
+        'claude-sonnet-4-20250514',
+        'token-1',
+      ),
+    ).resolves.toMatchObject({ success: true });
+  });
+
+  it('runWeeklyReview short-circuits before any model call when fetchWeeklyReviewContext returns null', async () => {
+    // No athlete_state singleResult scripted — fetchWeeklyReviewContext
+    // resolves the row as null, matching an athlete who has never onboarded.
+    const result = await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
+
+    expect(result.ran).toBe(false);
+    expect((result as any).reason).toBe('no_state');
+    expect(mockGenerateObject).not.toHaveBeenCalled();
+  });
+
+  it('runWeeklyReview short-circuits before any model call when a weekly_focus decision already exists for context.weekOf', async () => {
+    singleResults.athlete_state = {
+      data: {
+        next_review_due_at: '2020-01-01T00:00:00Z',
+        last_review_at: '2019-12-25T00:00:00Z',
+        current_focus_detail: {
+          focus_type: 'training_volume',
+          target_metric: 'sessions_completed',
+          target_value: 3,
+        },
+        current_focus_summary: 'Train 3x this week',
+        readiness: 'building',
+        rolling_summary: null,
+      },
+      error: null,
+    };
+    tableResults.athlete_decisions = { data: [], error: null };
+    tableResults.workout_sessions = { data: [], error: null };
+    // The pre-check's own maybeSingle() read finds an existing weekly_focus
+    // row for this week — the cost-efficiency guard this task requires.
+    singleResults.athlete_decisions = { data: { id: 'existing-decision' }, error: null };
+
+    const result = await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
+
+    expect(result.ran).toBe(false);
+    expect((result as any).reason).toBe('already_recorded');
+    expect(mockGenerateObject).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Block E: composeRollingSummary/ROLLING_SUMMARY_* do not exist yet at
+// this task (Task 2 only exported applyWeeklyDecision/runWeeklyReview) —
+// this dynamic import resolves the module but destructuring the new named
+// exports yields undefined, which is the intended RED state for Task 3.
+describe('coaching-engine — rolling summary (FOUND-05)', () => {
+  let applyWeeklyDecision: typeof import('../../src/coaching-engine/apply.js').applyWeeklyDecision;
+  let runWeeklyReview: typeof import('../../src/coaching-engine/apply.js').runWeeklyReview;
+  let composeRollingSummary: typeof import('../../src/coaching-engine/apply.js').composeRollingSummary;
+
+  beforeEach(async () => {
+    mockFrom.mockClear();
+    mockRpc.mockReset();
+    mockGenerateObject.mockReset();
+    resetTableScripts();
+
+    mockGenerateObject.mockResolvedValue({
+      object: SCRIPTED_WEEKLY_DECISION,
+      usage: { inputTokens: 512, outputTokens: 128 },
+    });
+    mockRpc.mockResolvedValue({
+      data: { success: true, decision_id: 'decision-weekly-1', goal_id: null },
+      error: null,
+    });
+
+    ({ applyWeeklyDecision, runWeeklyReview, composeRollingSummary } = await import(
+      '../../src/coaching-engine/apply.js'
+    ));
+  });
+
+  function buildDecision(overrides: Record<string, unknown> = {}) {
+    return {
+      trajectory: 'escalate',
+      new_readiness: 'ready',
+      new_focus_summary: 'Add one more session this week.',
+      rationale: 'Hit 4 of 3 target sessions — ready for more.',
+      call_create_program: true,
+      new_focus_detail: {
+        focus_type: 'training_volume',
+        target_metric: 'sessions_completed',
+        target_value: 4,
+      },
+      ...overrides,
+    } as any;
+  }
+
+  it('after a successful apply, p_state_patch.rolling_summary starts with a line naming weekOf and trajectory', async () => {
+    const base = buildReviewContext();
+    const context = buildReviewContext({
+      state: { ...base.state, rolling_summary: 'Consistent effort over the last month.' },
+    });
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    const summary = args.p_state_patch.rolling_summary as string;
+    const firstLine = summary.split('\n')[0];
+    expect(firstLine).toContain(context.weekOf);
+    expect(firstLine).toContain(decision.trajectory);
+  });
+
+  it('the previous summary entries are preserved beneath the new one, in order, newest first', async () => {
+    const previousSummary = '2026-08-14 | hold | sessions_completed 2/3 missed | Held steady last week.';
+    const base = buildReviewContext();
+    const context = buildReviewContext({ state: { ...base.state, rolling_summary: previousSummary } });
+    const decision = buildDecision();
+
+    await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    const [, args] = mockRpc.mock.calls[0];
+    const lines = (args.p_state_patch.rolling_summary as string).split('\n');
+    expect(lines[0]).toContain(context.weekOf);
+    expect(lines[1]).toBe(previousSummary);
+  });
+
+  it('a synthetic 52-review (12-month-tenure) fold stays within both caps, and 200 iterations proves a fixed point', () => {
+    const context = buildReviewContext();
+    let summary: string | null = null;
+
+    for (let i = 0; i < 52; i++) {
+      const iterDecision = buildDecision({
+        rationale: `Week ${i}: a moderately long rationale describing real, specific evidence values observed this cycle, repeated for length.`,
+      });
+      const iterContext = { ...context, weekOf: `2025-${String((i % 12) + 1).padStart(2, '0')}-01` };
+      summary = composeRollingSummary(summary, iterContext as any, iterDecision);
+    }
+    expect((summary as string).length).toBeLessThanOrEqual(2000);
+    expect((summary as string).split('\n').length).toBeLessThanOrEqual(4);
+
+    for (let i = 0; i < 200; i++) {
+      const iterDecision = buildDecision({
+        rationale: `Iteration ${i}: another moderately long rationale describing real, specific evidence values, repeated for length.`,
+      });
+      summary = composeRollingSummary(summary, context as any, iterDecision);
+    }
+    expect((summary as string).length).toBeLessThanOrEqual(2000);
+    expect((summary as string).split('\n').length).toBeLessThanOrEqual(4);
+  });
+
+  it('a pathological 10000-character previous summary with no newlines still yields a result at most 2000 characters', () => {
+    const context = buildReviewContext();
+    const decision = buildDecision();
+    const pathological = 'x'.repeat(10000);
+
+    const result = composeRollingSummary(pathological, context as any, decision);
+
+    expect(result.length).toBeLessThanOrEqual(2000);
+  });
+
+  it('a rationale containing embedded newlines produces exactly one entry line (forgery guard, T-44-39)', () => {
+    const context = buildReviewContext();
+    const decision = buildDecision({
+      rationale: 'Line one.\nInjected line two.\r\nInjected line three.',
+    });
+
+    const result = composeRollingSummary(null, context as any, decision);
+
+    expect(result.split('\n').length).toBe(1);
+  });
+
+  it('comparison.met === null renders as no_target and never as missed', () => {
+    const base = buildReviewContext();
+    const context = buildReviewContext({
+      comparison: { target_metric: null, target_value: null, actual_value: null, met: null },
+    });
+    const decision = buildDecision();
+
+    const result = composeRollingSummary(null, context as any, decision);
+
+    expect(result).toContain('no_target');
+    expect(result).not.toContain('missed');
+    void base;
+  });
+
+  it('a duplicate apply results in no rolling_summary being persisted — the RPC is called once and short-circuits before any second write', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { success: false, error: 'duplicate' }, error: null });
+    const context = buildReviewContext();
+    const decision = buildDecision();
+
+    const result = await applyWeeklyDecision(
+      'athlete-1',
+      decision,
+      context,
+      'weekly_review_cron',
+      { inputTokens: 500, outputTokens: 100 },
+      'claude-sonnet-4-20250514',
+      'token-1',
+    );
+
+    expect(result.success).toBe(false);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('mockGenerateObject call count across a full runWeeklyReview remains exactly 1 — the recompaction adds no model call', async () => {
+    singleResults.athlete_state = {
+      data: {
+        next_review_due_at: '2020-01-01T00:00:00Z',
+        last_review_at: '2019-12-25T00:00:00Z',
+        current_focus_detail: {
+          focus_type: 'training_volume',
+          target_metric: 'sessions_completed',
+          target_value: 3,
+        },
+        current_focus_summary: 'Train 3x this week',
+        readiness: 'building',
+        rolling_summary: 'Prior compact summary line.',
+      },
+      error: null,
+    };
+    tableResults.athlete_decisions = { data: [], error: null };
+    tableResults.workout_sessions = {
+      data: [{ started_at: '2026-08-18T10:00:00Z', total_volume_kg: 100 }],
+      error: null,
+    };
+    singleResults.athlete_decisions = { data: null, error: null };
+
+    await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
+
+    expect(mockGenerateObject).toHaveBeenCalledTimes(1);
   });
 });
