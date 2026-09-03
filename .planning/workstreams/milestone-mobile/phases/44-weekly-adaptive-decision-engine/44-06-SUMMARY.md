@@ -97,3 +97,11 @@ None - no external service configuration required. To actually run these specs a
 ---
 *Phase: 44-weekly-adaptive-decision-engine*
 *Completed: 2026-09-03*
+
+## Self-Check: PASSED
+
+- FOUND: `backend/api/test/rls/athlete-goals.spec.ts`
+- FOUND: `backend/api/test/rls/athlete-decisions.spec.ts`
+- FOUND: `.planning/workstreams/milestone-mobile/phases/44-weekly-adaptive-decision-engine/44-06-SUMMARY.md`
+- FOUND commit `d700f089` (Task 1)
+- FOUND commit `4b41bfdb` (Task 2)
