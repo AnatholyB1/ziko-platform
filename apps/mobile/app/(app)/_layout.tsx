@@ -26,6 +26,7 @@ import { supabase } from '../../src/lib/supabase';
 import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
 import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
+import { WeeklyReviewRevealOverlay } from '../../src/components/WeeklyReviewRevealOverlay';
 import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
@@ -89,8 +90,38 @@ function useBrandingBootstrap() {
   }, [data?.branding, setCustomTheme, clearCoachTheme]);
 }
 
+// ── Coaching Engine Bootstrap ────────────────────────────────────────────────
+// D-01: the app-open due-check is the primary weekly review trigger on the
+// mobile side. Fires on every authenticated app open (and foreground-after-
+// background, via staleTime matching useBrandingBootstrap) and does nothing
+// with the response — the endpoint returns { ok: true } immediately and runs
+// the review in the background (plan 44-05). No retry, no loading state, no
+// blocking: a failed check is simply picked up by the next app open or the
+// Sunday cron safety net.
+
+function useCoachingEngineBootstrap() {
+  const userId = useAuthStore((s) => s.user?.id);
+
+  useQuery({
+    queryKey: ['coaching-engine-review-check', userId],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/coaching-engine/review-check`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) throw new Error('fetch failed');
+      return res.json();
+    },
+    staleTime: 30_000,
+    enabled: !!userId,
+  });
+}
+
 export default function AppLayout() {
   useBrandingBootstrap();
+  useCoachingEngineBootstrap();
 
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
@@ -255,6 +286,7 @@ export default function AppLayout() {
         onSkip={onSkip}
       />
       <PendingFormsOverlay />
+      <WeeklyReviewRevealOverlay />
     </>
   );
 }

@@ -847,6 +847,9 @@ const fr: TranslationDict = {
   'coach.onboarding.error.retry': 'Réessayer maintenant',
   'coach.onboarding.error.capReached': 'On dirait qu\'on tourne en rond — appuie pour qu\'on conclue quand même.',
   'coach.onboarding.error.forceFinish': 'Terminer quand même',
+  'coach.weeklyReview.headline': 'Ziko a fait le point sur ta semaine.',
+  'coach.weeklyReview.body': 'Ton nouveau focus : {focus}',
+  'coach.weeklyReview.cta': 'Voir mon focus',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1690,6 +1693,9 @@ const en: TranslationDict = {
   'coach.onboarding.error.retry': 'Try again',
   'coach.onboarding.error.capReached': 'Seems like we\'re going in circles — tap to wrap up anyway.',
   'coach.onboarding.error.forceFinish': 'Finish anyway',
+  'coach.weeklyReview.headline': 'Ziko checked in on your week.',
+  'coach.weeklyReview.body': 'Your new focus: {focus}',
+  'coach.weeklyReview.cta': 'See my focus',
 };
 
 // ── All translations ─────────────────────────────────────
