@@ -14,7 +14,7 @@ Phase 42 (Decision-System Foundation) is the prerequisite for every other phase.
 
 - [x] **Phase 42: Decision-System Foundation** — `athlete_state` + `athlete_decisions` schema, `record_athlete_decision()` SECURITY DEFINER RPC, RLS (SELECT-only for clients), bounded-context summarization discipline (completed 2026-08-31)
 - [x] **Phase 43: Conversational Onboarding** — ≤4-question free-text onboarding with the mascotte, `assess_profile` tool, profile inference with self-reported confidence, micro-action + celebration, starting-state write (including retrospective recompute for pre-v1.18 athletes) (completed 2026-09-02)
-- [ ] **Phase 44: Weekly Adaptive Decision Engine** — `coaching-engine/` module, real-activity-vs-focus comparison, idempotent bounded-concurrency weekly cron, `create_goal`/`create_program` tools shared between cron and chat, independent AI cost accounting
+- [x] **Phase 44: Weekly Adaptive Decision Engine** — `coaching-engine/` module, real-activity-vs-focus comparison, idempotent bounded-concurrency weekly cron, `create_goal`/`create_program` tools shared between cron and chat, independent AI cost accounting (completed 2026-09-04)
 - [ ] **Phase 45: Non-Punitive Tiered Rewards** — new points/tiers/reward-pool data model (distinct from the `gamification` plugin), deterministic AI reward selection (`create_reward`, pinned low/zero temperature), monotonic unlock guarantee
 - [ ] **Phase 46: Progressive Feature Unlock** — `PluginManifest.minLevel`, `PluginLoader` third gating filter (`mandatory` → `minLevel` → `is_enabled`), fail-safe minimum-access floor, locked-plugin UI in the drawer
 - [ ] **Phase 47: Context Wiring, Notifications & Cost Accounting** — `athlete_state` as 7th parallel context query + system-prompt section, weekly-review-complete push notification, `ai_cost_log` coverage for all autonomous (non-credit-gated) AI calls
@@ -72,7 +72,7 @@ Plans:
 3. Running the weekly review twice for the same athlete/week (simulating Vercel's at-least-once cron redelivery) produces exactly one recorded decision, never a duplicate.
 4. The weekly engine's AI cost is logged to `ai_cost_log` under a source that is never deducted from the athlete's own AI credit balance.
 5. `create_goal` and `create_program` tools are registered in the existing orchestrator tool registry and are callable identically from both the weekly cron and interactive chat, producing the same applied effect through one shared write path.
-**Plans:** 7/8 plans executed
+**Plans:** 8/8 plans complete
 **UI hint:** yes
 
 Plans:
@@ -83,7 +83,7 @@ Plans:
 - [x] 44-05-PLAN.md — /review-check waitUntil trigger, CRON_SECRET safety-net cron, app.ts + vercel.json (wave 4)
 - [x] 44-06-PLAN.md — athlete_goals RLS spec + weekly_focus idempotency spec against the live project (wave 2)
 - [x] 44-07-PLAN.md — coach.weeklyReview i18n, WeeklyReviewRevealOverlay, app-open bootstrap hook (wave 5)
-- [ ] 44-08-PLAN.md — concurrent duplicate-fire simulation, full-suite gate, device verification (wave 6, checkpoint)
+- [x] 44-08-PLAN.md — concurrent duplicate-fire simulation, full-suite gate, device verification (wave 6, checkpoint)
 
 ### Phase 45: Non-Punitive Tiered Rewards
 **Goal:** Athletes are rewarded for meeting or exceeding their weekly focus and never penalized for falling short.
@@ -130,7 +130,7 @@ Plans:
 |-------|-------|--------|-----------|
 | 42. Decision-System Foundation | 4/4 | Complete   | 2026-08-31 |
 | 43. Conversational Onboarding | 6/6 | Complete    | 2026-09-02 |
-| 44. Weekly Adaptive Decision Engine | 7/8 | In Progress|  |
+| 44. Weekly Adaptive Decision Engine | 8/8 | Complete   | 2026-09-04 |
 | 45. Non-Punitive Tiered Rewards | TBD | Not started | — |
 | 46. Progressive Feature Unlock | TBD | Not started | — |
 | 47. Context Wiring, Notifications & Cost Accounting | TBD | Not started | — |
