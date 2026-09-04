@@ -47,7 +47,7 @@ const router = new Hono();
 router.post('/cron/weekly-review', async (c) => {
   const authHeader = c.req.header('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 

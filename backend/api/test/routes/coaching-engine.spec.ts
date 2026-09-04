@@ -177,6 +177,18 @@ describe('coaching-engine routes', () => {
     expect(res.status).toBe(401);
   });
 
+  it('POST /cron/weekly-review with CRON_SECRET unset fails closed (401), even with a matching-looking Bearer header', async () => {
+    const original = process.env.CRON_SECRET;
+    delete process.env.CRON_SECRET;
+
+    try {
+      const res = await makeCronRequest({ authHeader: 'Bearer test-cron-secret' });
+      expect(res.status).toBe(401);
+    } finally {
+      process.env.CRON_SECRET = original;
+    }
+  });
+
   it('POST /cron/weekly-review with the correct Bearer secret returns 200 and never goes through authMiddleware', async () => {
     scriptedDueAthletes = [];
 
