@@ -1,6 +1,6 @@
 # Plan 44-08 Summary — Phase Close-Out
 
-**Status:** 2/3 tasks complete, blocked at Task 3 (device-verification checkpoint)
+**Status:** 3/3 tasks complete
 
 ## Commits
 - `b40ea946` test(44-08): end-to-end concurrent duplicate-fire simulation for ENGINE-04
@@ -14,12 +14,10 @@
 
 `44-VALIDATION.md` updated: real Task ID/Plan/Wave columns and threat refs filled in for every requirement row, all Phase-44-relevant rows green or correctly skipped, Wave 0 checklist and Validation Sign-Off both fully ticked, `nyquist_compliant: true` and `wave_0_complete: true` set in frontmatter. Manual-Only Verifications table updated to reflect that the duplicate-fire simulation is now automated — only the device check remains manual.
 
-## Task 3 — Human verification of the weekly-review reveal on a device (BLOCKED)
+## Task 3 — Human verification of the weekly-review reveal on a device
 
 **Type:** checkpoint:human-verify, gate=blocking
-**Status:** Not started — cannot be performed autonomously; no device/simulator or live mobile-app session available in this environment.
-
-**What's awaited:** A human running the 8-step device checklist from `44-08-PLAN.md` Task 3 against a real device/simulator connected to the deployed backend:
+**Status:** APPROVED by the user on 2026-09-04. All 8 device-checklist steps confirmed:
 1. App-open fires exactly one `GET /coaching-engine/review-check`, non-blocking
 2. Backgrounding >30s and foregrounding re-fires the check (staleTime re-fire)
 3. A completed review (forced via the RPC path) triggers the full-screen overlay on next app-enter
@@ -29,6 +27,4 @@
 7. Interactive chat: asking for a new goal triggers `create_goal`, producing a real `athlete_goals` row linked from `current_focus_detail.goal_id`
 8. `ai_cost_log` distinguishes the weekly-engine row (`source='app_open_fallback'`/`'weekly_review_cron'`) from the chat row (`source='user_chat'`)
 
-**Resume signal:** "approved" once all 8 steps pass, or a description of what failed.
-
-No further autonomous work is possible on this plan until a human completes the device check.
+Phase 44 (Weekly Adaptive Decision Engine) is complete.

@@ -84,4 +84,4 @@ The one behavior that remains genuinely manual is the on-device reveal-overlay v
 - [x] Feedback latency < 30s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** 2026-09-04 — all automatable coverage confirmed green (or correctly skipped on the known `.env.test` gap, tracked since wave 1). Final sign-off is contingent on plan 44-08 Task 3's device checkpoint.
+**Approval:** 2026-09-04 — all automatable coverage confirmed green (or correctly skipped on the known `.env.test` gap, tracked since wave 1). Plan 44-08 Task 3's device checkpoint approved by the user on 2026-09-04, all 8 steps confirmed. Phase fully signed off.
