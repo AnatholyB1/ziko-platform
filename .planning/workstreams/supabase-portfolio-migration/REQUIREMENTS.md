@@ -75,23 +75,48 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 
 ## Traceability
 
-Filled by the roadmapper during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INV-01..05 | TBD | Pending |
-| SCHEMA-01..05 | TBD | Pending |
-| AUTHMIG-01..05 | TBD | Pending |
-| DATA-01..05 | TBD | Pending |
-| STORAGE-01..04 | TBD | Pending |
-| CUTOVER-01..05 | TBD | Pending |
-| DECOM-01..05 | TBD | Pending |
+| INV-01 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| INV-02 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| INV-03 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| INV-04 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| INV-05 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| SCHEMA-01 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| SCHEMA-02 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| SCHEMA-03 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| SCHEMA-04 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| SCHEMA-05 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| AUTHMIG-01 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-02 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-03 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-04 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-05 | Phase 3 - Auth Merge | Pending |
+| DATA-01 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-02 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-03 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-04 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-05 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| STORAGE-01 | Phase 5 - Storage Migration | Pending |
+| STORAGE-02 | Phase 5 - Storage Migration | Pending |
+| STORAGE-03 | Phase 5 - Storage Migration | Pending |
+| STORAGE-04 | Phase 5 - Storage Migration | Pending |
+| CUTOVER-01 | Phase 6 - Cutover | Pending |
+| CUTOVER-02 | Phase 6 - Cutover | Pending |
+| CUTOVER-03 | Phase 6 - Cutover | Pending |
+| CUTOVER-04 | Phase 6 - Cutover | Pending |
+| CUTOVER-05 | Phase 6 - Cutover | Pending |
+| DECOM-01 | Phase 7 - Monitoring & Decommission | Pending |
+| DECOM-02 | Phase 7 - Monitoring & Decommission | Pending |
+| DECOM-03 | Phase 7 - Monitoring & Decommission | Pending |
+| DECOM-04 | Phase 7 - Monitoring & Decommission | Pending |
+| DECOM-05 | Phase 7 - Monitoring & Decommission | Pending |
 
 **Coverage:**
 - v1 requirements: 34 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 34 ⚠️
+- Mapped to phases: 34 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-21 after initial definition*
+*Last updated: 2026-09-21 after roadmap creation — 7 phases, 34/34 requirements mapped*
