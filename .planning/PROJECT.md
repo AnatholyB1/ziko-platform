@@ -92,6 +92,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
 **Parallel workstream:** v1.17 Connexion Google & Apple (`connexion`) — remplace les boutons Google/Apple non-fonctionnels de l'écran welcome mobile par de vrais flows OAuth natifs (Supabase Auth), avec linking automatique des comptes par email vérifié.
+**Parallel workstream:** v1.19 Migration Supabase ziko → portfolio (`supabase-portfolio-migration`) — migre le schéma (93 tables préfixées `ziko_`), les données et l'auth du projet Supabase `ziko` vers le projet partagé `portfolio`, met à jour tous les env (mobile/web/backend + Vercel), vérifie RLS/données/accès, puis supprime l'ancien projet `ziko`.
 
 ---
 
@@ -112,6 +113,28 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Explicitement hors scope (→ [[SEED-001]], futur milestone):** factions par sport, ligues avec pistes Habitudes/Performance, promotion/relégation, leaderboards, saisons/battle pass, loot cosmétique/skins, mascotte étendue multi-états.
 
 **Source:** Dérivé de la spec Notion "📐 Spec Produit — Système d'engagement & gamification Ziko" (https://app.notion.com/p/3c90a4717ba381338eacc49335823dca), affiné en discussion de cadrage le 2026-08-30.
+
+</details>
+
+---
+
+<details>
+<summary>v1.19 Migration Supabase ziko → portfolio [supabase-portfolio-migration] — ongoing</summary>
+
+**Goal:** Migrer le projet Supabase `ziko` (`slkobhavpwsubnsmuhya`, source de vérité actuelle pour mobile/web/backend, 93 tables, données de production réelles) vers le projet Supabase partagé `portfolio` (`ubxllsvanurkwkohzxau`, héberge déjà d'autres apps sous préfixes `rh_*`/`gecko_*`), puis décommissionner l'ancien projet.
+
+**Target features:**
+- Toutes les tables Ziko (schéma + 73 migrations) recréées dans `portfolio` sous préfixe `ziko_` (ex: `user_profiles` → `ziko_user_profiles`), y compris RLS, triggers, fonctions, RPC (`deduct_ai_credits`, `record_athlete_decision`, `is_coach_of`, etc.)
+- Données de production migrées intégralement et vérifiées (comptage de lignes par table, échantillonnage) — 39 utilisateurs, 1318 exercices, 1495 suppléments, 3106 prix, données coach/CRM, etc.
+- Auth fusionné — les comptes `auth.users` de Ziko migrés dans le pool auth partagé de `portfolio` (IDs préservés pour les FK), aux côtés des comptes existants (gecko, rh)
+- Storage — buckets Ziko (exercise-media, scan-photos, exports, etc.) migrés vers `portfolio`, signed URL flows revérifiés
+- Tous les fichiers env mis à jour : `apps/mobile/.env`, `apps/web/.env.local`, `backend/api/.env.local`, plus les variables d'environnement Vercel (web + backend API projects)
+- Vérification post-migration : RLS activé sur toutes les tables `ziko_*`, données accessibles via l'app mobile/web/backend avec les nouvelles clés, aucune régression sur les autres apps déjà hébergées dans `portfolio` (gecko, rh)
+- Suppression du projet Supabase `ziko` — dernière étape, confirmation explicite séparée après vérification complète
+
+**Explicitement hors scope:** changement de schéma fonctionnel (pas de refonte de tables au-delà du renommage/préfixage), migration vers un autre fournisseur que Supabase.
+
+**Source:** Décisions cadrées en discussion le 2026-09-21 (voir mémoire `project_supabase_portfolio_migration.md`) — préfixe `ziko_` et fusion auth confirmés explicitement par l'utilisateur ; structuré en milestone multi-phases (pas `/gsd-quick`) vu l'ampleur (données de prod, suppression irréversible).
 
 </details>
 
