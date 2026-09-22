@@ -365,17 +365,17 @@ supabase db query --linked --project-ref ubxllsvanurkwkohzxau "SELECT version();
 | A2 | Vercel-marketplace-managed Supabase orgs have no CLI/SQL-exposed plan-tier/quota-ceiling field (only tested that `supabase orgs list` returns no such field; did not exhaustively test every CLI subcommand) | Capacity/Quota Check | If a CLI subcommand does expose it, the plan may include an unnecessary `checkpoint:human-verify` task that could have been automated — low-cost error, not a correctness risk |
 | A3 | The 1 found email collision is a genuine same-string match and not a false positive from encoding/whitespace differences (lowercased comparison only; did not trim whitespace or normalize unicode) | Collision Report | If it's a false positive, Phase 3's collision-resolution task targets a non-issue — low risk, the manual-resolution step (D-01) would simply confirm "not actually colliding" and move on |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact storage quota ceiling for `portfolio`'s current Vercel-marketplace Supabase plan**
    - What we know: current combined usage post-migration would be ~1.4 GB storage, 62 MB DB, both projects report `max_connections=60`
    - What's unclear: the plan's actual ceiling for storage/connections (pooler client limit specifically, not raw Postgres `max_connections`)
-   - Recommendation: planner should insert a `checkpoint:human-verify` task pointing at the Vercel dashboard's Storage/Integrations tab (or Supabase dashboard Settings → Billing for `ubxllsvanurkwkohzxau`) before Phase 5/6 proceed, per D-03's "stop and report, don't auto-upgrade" policy
+   - RESOLVED: routed to 01-01 Task 3's blocking `checkpoint:human-verify` task, pointing at the Vercel dashboard's Storage/Integrations tab (or Supabase dashboard Settings → Billing for `ubxllsvanurkwkohzxau`), per D-03's "stop and report, don't auto-upgrade" policy
 
 2. **Whether `ziko`'s `pg_net`/`unaccent` usage is load-bearing for any migrated function**
    - What we know: both extensions are installed on ziko, neither on portfolio; ziko has 29 SECURITY DEFINER functions total
    - What's unclear: whether any of those functions actually call `net.*`/`unaccent()` (this phase counted/named functions but did not grep every function body for extension-specific calls — that's arguably Phase 2's job, not Phase 1's, since it's about the *rewrite*, not the *inventory*)
-   - Recommendation: Phase 2's function-rewrite research/planning should grep `pg_proc.prosrc` for `net\.` and `unaccent(` across all 37 ziko functions as its own pre-flight step; this phase's job (confirming the extensions themselves are/aren't present) is done
+   - RESOLVED: explicitly out of scope for this phase, deferred to Phase 2's function-rewrite research/planning, which should grep `pg_proc.prosrc` for `net\.` and `unaccent(` across all 37 ziko functions as its own pre-flight step
 
 ## Environment Availability
 
