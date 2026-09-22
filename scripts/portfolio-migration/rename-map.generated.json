@@ -138,12 +138,12 @@
   "types": {},
   "required_extensions": {
     "unaccent": {
-      "required": null,
-      "evidence": null
+      "required": true,
+      "evidence": "search_users_fuzzy's function body (pg_proc.prosrc) calls unaccent(lower(...)) three times -- confirmed live via 'SELECT proname, prosrc FROM pg_proc ... WHERE prosrc ~* ''yunaccents*('' against ziko (slkobhavpwsubnsmuhya); 1 matching row: search_users_fuzzy."
     },
     "pg_net": {
-      "required": null,
-      "evidence": null
+      "required": true,
+      "evidence": "push_user_xp_level_up and push_workout_session_end trigger definitions (pg_get_triggerdef) both call supabase_functions.http_request(...) -- confirmed live via a pg_trigger/pg_get_triggerdef grep against ziko (slkobhavpwsubnsmuhya), extended beyond pg_proc.prosrc per RESEARCH.md Pitfall 2/Pattern 3 (a prosrc-only grep returns zero rows and would falsely conclude pg_net is not needed). No function body matches net.* directly -- the dependency is via these two trigger definitions only."
     }
   }
 }
