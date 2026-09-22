@@ -44,7 +44,16 @@ Plans:
   3. RLS is enabled with correct policies active on all ~93 `ziko_*` tables
   4. An automated grep of `pg_policies`/`pg_proc` confirms zero unprefixed table-name references
   5. A full dry run of the rename has completed successfully on a scratch Supabase project before being applied to portfolio
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Generate the rename map from ziko's live schema (tables/functions/types, extension-owned functions excluded), resolve D-04's pg_net/unaccent dependency from live evidence (SCHEMA-01)
+- [ ] 02-02-PLAN.md — Provision the scratch Supabase project via the Vercel dashboard (Pitfall 1, checkpoint) and link it locally (SCHEMA-05)
+- [ ] 02-03-PLAN.md — Dump and rewrite ziko's schema into the new ziko_-prefixed migration series (tables/RLS + functions/triggers/grants) (SCHEMA-01, SCHEMA-02, SCHEMA-03)
+- [ ] 02-04-PLAN.md — Build the stale-reference grep + authenticated RLS smoke-test verification tooling (SCHEMA-03, SCHEMA-04)
+- [ ] 02-05-PLAN.md — [BLOCKING] Apply the migration series to the scratch project and run full verification (SCHEMA-05, SCHEMA-04, SCHEMA-03)
+- [ ] 02-06-PLAN.md — Checkpoint: human confirms the scratch dry run before the real portfolio apply (SCHEMA-05)
+- [ ] 02-07-PLAN.md — [BLOCKING] Apply the migration series to portfolio for real and run full verification — phase completion (SCHEMA-01, SCHEMA-02, SCHEMA-03, SCHEMA-04, SCHEMA-05)
 
 ### Phase 3: Auth Merge
 **Goal**: Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects from shared `auth.users` triggers
@@ -113,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
-| 2. Schema Rename & Function/RLS Rewrite | 0/TBD | Not started | - |
+| 2. Schema Rename & Function/RLS Rewrite | 0/7 | Not started | - |
 | 3. Auth Merge | 0/TBD | Not started | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
