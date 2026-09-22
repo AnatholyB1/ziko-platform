@@ -7,11 +7,11 @@
 
 ### Inventaire & Pre-Flight (INV)
 
-- [ ] **INV-01**: Inventaire complet de `ziko` (tables, fonctions, RLS, triggers, buckets, extensions, realtime) via `information_schema` live — pas via comptage des fichiers de migration
-- [ ] **INV-02**: Inventaire complet de `portfolio` existant (rh_*, gecko_*: tables, fonctions, triggers sur `auth.users`, buckets, extensions)
-- [ ] **INV-03**: Rapport de collision email/ID entre les 39 users `ziko` et les users existants `portfolio`
-- [ ] **INV-04**: Vérification parité version Postgres + extensions entre les deux projets
-- [ ] **INV-05**: Vérification capacité/quota disponible sur `portfolio` (DB size, connexions, storage)
+- [x] **INV-01**: Inventaire complet de `ziko` (tables, fonctions, RLS, triggers, buckets, extensions, realtime) via `information_schema` live — pas via comptage des fichiers de migration
+- [x] **INV-02**: Inventaire complet de `portfolio` existant (rh_*, gecko_*: tables, fonctions, triggers sur `auth.users`, buckets, extensions)
+- [x] **INV-03**: Rapport de collision email/ID entre les 39 users `ziko` et les users existants `portfolio`
+- [x] **INV-04**: Vérification parité version Postgres + extensions entre les deux projets
+- [x] **INV-05**: Vérification capacité/quota disponible sur `portfolio` (DB size, connexions, storage)
 
 ### Schéma, RLS & Fonctions (SCHEMA)
 
@@ -77,11 +77,11 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INV-01 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
-| INV-02 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
-| INV-03 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
-| INV-04 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
-| INV-05 | Phase 1 - Inventory & Pre-Flight Audit | Pending |
+| INV-01 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
+| INV-02 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
+| INV-03 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
+| INV-04 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
+| INV-05 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
 | SCHEMA-01 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
 | SCHEMA-02 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
 | SCHEMA-03 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
