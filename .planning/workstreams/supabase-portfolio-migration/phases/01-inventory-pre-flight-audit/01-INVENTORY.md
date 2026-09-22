@@ -541,3 +541,32 @@ No version mismatches found among the 5 shared extensions — all report identic
 - `pg_net` (ziko-only, 0.20.0): used for async HTTP calls from Postgres. Two of ziko's public-schema triggers (`push_user_xp_level_up`, `push_workout_session_end`) call `supabase_functions.http_request(...)` directly (confirmed live in the ziko Triggers section above) — this is the Supabase-managed `supabase_functions` wrapper, not a raw `net.http_post` call, so it is unclear from this phase's inspection alone whether `pg_net` itself (vs. the `supabase_functions` schema helper) is the actual dependency. Per D-02 and `01-RESEARCH.md` Open Question 2, Phase 2 must grep `pg_proc.prosrc` across all 37 ziko functions for `net\.` calls to confirm whether `CREATE EXTENSION IF NOT EXISTS pg_net;` is required on `portfolio` before any renamed `ziko_*` function/trigger is created there. Not resolved as blocking in this phase — documented per D-02, not auto-installed.
 - `unaccent` (ziko-only, 1.1): likely backs `search_users_fuzzy` (confirmed present in ziko's function list above) — a text-normalization extension. Per D-02, add `CREATE EXTENSION IF NOT EXISTS unaccent;` as an explicit Phase 2 pre-step, gated on Phase 2's own confirmation that `search_users_fuzzy`'s body references `unaccent(...)`. Not auto-installed in this phase.
 - `pg_cron` (portfolio-only, 1.6.4): no action needed for ziko's migration — ziko's scheduled jobs run as Vercel crons (per CLAUDE.md), not `pg_cron`. Do not disturb portfolio's existing `pg_cron` usage.
+
+## Capacity & Quota Check (INV-05)
+
+All measured figures below reuse the DB size, per-bucket storage size, and `max_connections` values already captured live in the ziko and portfolio sections above (same session, 2026-09-22T06:38:15Z) — not carried over from `01-RESEARCH.md`.
+
+| Dimension | ziko usage | portfolio usage (pre-migration) | Combined post-migration | Assessment |
+|---|---|---|---|---|
+| DB size | 42 MB | 20 MB | **62 MB** | No concern at any Supabase plan tier — trivially small even for Free tier's ~500 MB framing. |
+| Storage | ~205 MB (2,699 objects across 10 buckets) | ~1,227 MB (2,125 objects across 7 buckets) | **~1,432 MB (~1.4 GB)** | Needs plan-tier confirmation — portfolio alone already exceeds the commonly-cited Free-tier 1 GB storage allowance (consistent with it being an active paid multi-tenant project), but the exact plan and its storage ceiling is not resolvable via SQL/CLI for this org type (see below). |
+| `max_connections` (Postgres-level) | 60 | 60 | n/a — shared single pool after merge, not additive | Both projects report the same Postgres-level ceiling. This is the **direct** connection limit, not the Supavisor pooler's client-facing limit (typically higher, and the one application code actually hits) — Phase 6 cutover should use the pooler connection string, not raw Postgres, consistent with STACK.md's existing session-mode-vs-transaction-pooler guidance. |
+
+### Org type confirmation
+
+`supabase orgs list` (run live this session):
+```json
+{"organizations":[{"id":"vercel_icfg_y5brWcl0o23xn4A50p4NAUFG","slug":"vercel_icfg_y5brWcl0o23xn4A50p4NAUFG","name":"anatholyb1's projects"}]}
+```
+
+The org slug carries the **`vercel_icfg_` prefix**, confirming this is a **Vercel Marketplace-managed Supabase integration**, not a native Supabase org. Per `01-RESEARCH.md` Pitfall 4, billing/plan-tier and quota ceilings (storage quota, Supavisor pooler client-connection limit) for this org type are **not exposed via any `supabase orgs`/`projects` CLI subcommand and not SQL-introspectable** — this is a Dashboard-only check (Vercel dashboard → Storage/Integrations tab for the Supabase integration, or Supabase dashboard → Settings → Billing for `ubxllsvanurkwkohzxau`).
+
+### Plan-tier ceiling
+
+**OPEN — pending human dashboard verification.** Per D-03 (report exact deficit, never auto-upgrade, never silently assume sufficiency), this figure requires a human to check the Vercel/Supabase dashboard and report back either:
+- **"sufficient"** with the confirmed storage-quota ceiling and pooler client-connection limit numbers, or
+- **"insufficient: deficit is `<exact numbers>`"** — in which case this phase stops here and a separate plan-upgrade decision is required before Phase 5 (Storage Migration) proceeds.
+
+See the `checkpoint:human-verify` response below for the recorded verdict.
+
+<!-- CHECKPOINT-RESPONSE: awaiting human verdict — do not fill in until the user replies "sufficient" or "insufficient: <deficit>" -->
