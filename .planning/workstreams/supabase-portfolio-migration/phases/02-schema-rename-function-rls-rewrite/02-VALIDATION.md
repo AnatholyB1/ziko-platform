@@ -2,8 +2,8 @@
 phase: 2
 slug: schema-rename-function-rls-rewrite
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-09-22
 ---
 
@@ -39,7 +39,7 @@ created: 2026-09-22
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 02-01-* | 01 | 1 | SCHEMA-01 | — | New migration applies cleanly, table count matches | integration (SQL) | `psql ... -f 03-verify-post-apply.sql` (table-count section) | ❌ W0 | ⬜ pending |
-| 02-01-* | 01 | 1 | SCHEMA-02 | T-2-01 | `SECURITY DEFINER` functions execute successfully against renamed tables | integration (SQL/manual RPC call) | `SELECT ziko_is_coach_of('<test-uuid>','<test-uuid>');` (and equivalents per function) | ❌ W0 | ⬜ pending |
+| 02-05-* / 02-07-* | 05, 07 | 3, 5 | SCHEMA-02 | T-2-01 | `SECURITY DEFINER` functions execute successfully against renamed tables | integration (SQL/manual RPC call) | `SELECT ziko_is_coach_of('<test-uuid>','<test-uuid>');` — run against scratch in Plan 05 Task 2 and against `portfolio` in Plan 07 Task 2 (and equivalents per function) | ❌ W0 | ⬜ pending |
 | 02-01-* | 01 | 1 | SCHEMA-03 | T-2-01 | RLS enabled + correct policies on all `ziko_*` tables | integration (SQL) | `03-verify-post-apply.sql` query 3 (relrowsecurity check) | ❌ W0 | ⬜ pending |
 | 02-01-* | 01 | 1 | SCHEMA-04 | T-2-01, T-2-02 | Zero unprefixed references in `pg_policies`/`pg_proc` (extended to `pg_trigger`) | integration (SQL) | `03-verify-post-apply.sql` queries 1-2 | ❌ W0 | ⬜ pending |
 | 02-01-* | 01 | 1 | SCHEMA-05 | — | Full dry run succeeds on scratch project before `portfolio` | manual-only (gate) | N/A — phase's own top-level sequencing gate, not a single automated check | — | ⬜ pending |
@@ -68,11 +68,11 @@ created: 2026-09-22
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — every `auto` task across the 7 finalized plans (02-01 through 02-07) carries an `<automated>` verify command; Wave 0 script gaps (above) are explicitly tracked and produced by Plans 01/02/04 before being consumed
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify — confirmed across the finalized plan set (02-01 through 02-07), no watch-mode flags used in any verify command
+- [x] Wave 0 covers all MISSING references — the four Wave 0 script gaps above are all produced by name (01-generate-rename-map.sql, 02-dump-and-rewrite.js, 03-run-verify.mjs, 04-rls-smoke-test.js) before any plan consumes them, per `depends_on` chains
+- [x] No watch-mode flags — all automated verify commands are one-shot (`supabase db push`, `node ...`, `psql ... -f`)
+- [x] Feedback latency < 60s — SQL-query-based verification against a small (~99-table) schema, confirmed by Test Infrastructure's estimated runtime
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-22

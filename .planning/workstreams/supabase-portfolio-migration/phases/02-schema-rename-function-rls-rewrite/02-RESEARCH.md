@@ -36,7 +36,6 @@ None — discussion stayed within phase scope. (Storage bucket prefixing was rai
 | SCHEMA-03 | All RLS policies re-created and verified enabled on ~93 `ziko_*` tables | See "RLS Verification Approach" — `pg_policies`/`pg_class.relrowsecurity` queries + per-table authenticated-query smoke test pattern |
 | SCHEMA-04 | Automated grep confirming zero unprefixed table-name references in `pg_policies`/`pg_proc` | See "RLS Verification Approach" — concrete SQL, extended per Pitfall 3 to also cover `pg_trigger`/`pg_get_triggerdef()` (not just `pg_proc.prosrc`) |
 | SCHEMA-05 | Full dry run on scratch Supabase project before applying to `portfolio` | See "Scratch Project Creation and Dry-Run Mechanics" — **Pitfall 1 is a blocking correction to D-03's assumed CLI/MCP mechanics**: `portfolio`'s org is Vercel-Marketplace-managed, and Supabase's own docs state project creation for such orgs is Vercel-dashboard-only |
-</phase_requirements>
 
 ## Summary
 
@@ -362,17 +361,27 @@ Note: the generated rename map (Pattern 1) should drive the actual regex/pattern
 
 **If this table is empty:** N/A — see entries above.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the phase's exit gate reuse `backend/api/test/rls`/`test/coach` as-is, or is a wholly separate verification script required?**
    - What we know: Those 17+ RLS spec files already encode the exact "owner sees >0 rows, non-owner sees 0 rows" assertion pattern SCHEMA-03's exit gate needs (Don't Hand-Roll section). CONTEXT.md's Integration Points section explicitly notes call-site rewrite (`.from()`/`.rpc()`) may be scoped to this phase or deferred to Phase 6 — "planner to confirm."
    - What's unclear: If call-site rewrite is deferred, `test/rls`/`test/coach` cannot run against the renamed scratch schema at all (they reference unprefixed table names and point at `ziko`'s env vars, not the scratch project's). This phase would then need a **new**, purpose-built verification script (per CONTEXT.md's "Claude's Discretion" note) rather than reusing the existing suite.
    - Recommendation: The planner should explicitly decide and record whether call-site rewrite is in-scope for Phase 2 (which would let `test:rls`/`test:coach` run for real against the scratch project with only env-var repointing) or out-of-scope (which means Phase 2 needs its own lightweight SQL-only verification script, per Code Examples above, and `test:rls`/`test:coach` only becomes a valid gate once Phase 6/cutover rewrites call sites). Given the phase's stated success criteria are DB-object-only, the latter (own SQL-only verification script) appears to be the better fit, but this is a scope call for the planner, not something this research can resolve unilaterally.
+   - **RESOLVED:** Call-site (`.from()`/`.rpc()`) rewrite is out of scope for Phase 2 — Phase 2's success criteria are DB-object-only (schema, functions, RLS, extensions). Phase 2 uses its own purpose-built SQL-only verification scripts (`scripts/portfolio-migration/03-run-verify.mjs`, `04-rls-smoke-test.js`), not the existing `backend/api/test/rls`/`test/coach` suites. The existing suites remain valid future gates once the application call-site rewrite happens (see "Carried Forward for Roadmap" below — that rewrite currently has no owning phase).
 
 2. **What is `portfolio`'s current maximum applied migration timestamp?**
    - What we know: `ziko`'s local migration history tops out at `20260902100200_record_athlete_decision_v2.sql`. The new series must sort after **`portfolio`'s** history, not ziko's (per Claude's Discretion note in CONTEXT.md), and this repo has zero visibility into `portfolio`'s migration file history (it was never developed from this repo).
    - What's unclear: The actual max version currently in `portfolio`'s `supabase_migrations.schema_migrations` table.
    - Recommendation: Query `SELECT version FROM supabase_migrations.schema_migrations ORDER BY version DESC LIMIT 1;` against `portfolio` as a first pre-flight step, but in practice, generating the new migration filename from the **current wall-clock timestamp at execution time** (`date -u +%Y%m%d%H%M%S`) trivially satisfies "sorts after any real historical migration" as long as no migration in either project's history is timestamped in the future relative to execution — a near-certain assumption for any real migration history. This is the simplest correct approach and avoids needing to query `portfolio` at all for this specific purpose.
+   - **RESOLVED:** Use the execution-time wall-clock timestamp (`date -u +%Y%m%d%H%M%S`) for the new migration series filename, per the recommendation above. No pre-flight query against `portfolio`'s `supabase_migrations.schema_migrations` table is required.
+
+## Carried Forward for Roadmap (Unowned Scope — Flag for Human)
+
+**D-01's stated consequence has no owning phase yet.** D-01 (02-CONTEXT.md) extends the defensive `ziko_` function-prefixing decision to also cover "every `.rpc()` call site across `backend/api`, `apps/mobile`, `apps/web`, and the 19 plugin packages — same scripted mechanism [as the ~758-call-site table-name rename], not manual editing." Phase 2 correctly does **not** perform this rewrite — Phase 2's ROADMAP success criteria are 100% DB-object-scoped (schema/functions/RLS/extensions only), and the application-layer `.from()`/`.rpc()` call-site rewrite is an app-tier concern, not a DB-tier one (see Architectural Responsibility Map above).
+
+However, a check of `ROADMAP.md` (Phase 6: Cutover, requirements `CUTOVER-01..05`) and `REQUIREMENTS.md` confirms **no phase in the roadmap currently claims ownership of this rewrite**. `CUTOVER-01..05` cover env-file/Vercel-var repointing, ordered backend→web→mobile bascule, regression verification, and CI/secrets repointing — none of them mention rewriting `.from()`/`.rpc()` call sites to use the new `ziko_`-prefixed table/function names.
+
+**This is a flag for the human/roadmap owner, not a Phase 2 task.** The ~758-call-site rewrite (table names per the base migration rename map + function names per D-01) must be explicitly assigned to Phase 6 (Cutover) — where it logically belongs, since call sites can only be safely repointed once `portfolio` is the live target — or to a new dedicated phase before Phase 6's cutover work begins. Until an owning phase is assigned, D-01's full scope (defensive prefixing protecting against a future 4th-tenant collision) remains only half-realized: the DB objects will be `ziko_`-prefixed, but the application code will still reference the old unprefixed names until this rewrite happens.
 
 ## Environment Availability
 
