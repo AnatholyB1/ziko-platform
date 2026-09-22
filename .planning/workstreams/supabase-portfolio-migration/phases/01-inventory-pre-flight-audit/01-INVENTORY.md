@@ -573,3 +573,27 @@ The org slug carries the **`vercel_icfg_` prefix**, confirming this is a **Verce
 > - Connection-pooler client limit for Micro Compute was not independently re-confirmed on this specific settings page (it did not surface a distinct pooler-vs-raw-Postgres number beyond the already-measured max_connections=60), but given usage is 44 total users (39 ziko + 5 portfolio, not concurrent connections) against any standard Micro-tier pooler allowance, this is not a binding constraint — recorded as "not separately exposed on this page; raw max_connections=60 confirmed, pooler client limit assumed non-binding given the tiny scale."
 
 **Assessment:** Both measured dimensions (DB size, storage) sit well under 2% of their respective plan-tier ceilings — no capacity deficit exists for this migration. The one sub-item not separately re-confirmed (Supavisor pooler client-connection limit, distinct from the already-measured raw Postgres `max_connections=60`) is assessed non-binding given the scale (44 total users, not concurrent connections) rather than silently assumed — per D-03, this is recorded as an explicit, reasoned non-binding assessment, not a blank/skipped field. No plan-upgrade action taken (none needed).
+
+## Collision Report (INV-03)
+
+Computed live this session (2026-09-22) by comparing lowercased `auth.users.email` sets between `ziko` and `portfolio`. Per the PII-handling protocol (`01-RESEARCH.md`, `01-CONTEXT.md` D-01), both raw email lists were queried into the environment's ephemeral scratchpad directory (outside this repository, never under `.planning/`), diffed with a one-off Node script run directly from that scratch location, and both the query result files and the diff script were deleted immediately after the collision count and masked identifiers below were extracted. No raw email address was written to this file or any other git-tracked path.
+
+### Aggregate Counts
+
+| Metric | Count |
+|---|---|
+| ziko `auth.users` rows | **39** |
+| portfolio `auth.users` rows | **5** |
+| Email collisions found | **1** |
+
+The ziko count (39) matches the count already recorded in this session's "ziko Live Inventory" section above (INV-01) — no drift between that query and this one, both run in the same execution session.
+
+### Flagged Collisions
+
+Per D-01, every flagged collision is recorded here for **manual human resolution only** — never auto-merged, never auto-suffixed. Resolution must happen as an explicit human decision before Phase 3 (Auth Merge) proceeds for this account.
+
+| ziko `auth.users.id` | Masked email | Resolution status |
+|---|---|---|
+| `ea0f0b65-6681-4780-8ee0-dbf20b95d4d9` | `a***@***.com` | Pending — manual resolution required before Phase 3 |
+
+**Note for Phase 3 planning:** this is a real, concrete collision (not a hypothetical placeholder) — size a dedicated task for resolving this one flagged account rather than a generic "handle collisions if any are found" step. Per `01-RESEARCH.md`'s recommendation, re-run this collision check again immediately before the actual Phase 3 auth-write cutover, since `ziko` remains live and accepting signups until then and the collision set can grow between this audit snapshot and execution.
