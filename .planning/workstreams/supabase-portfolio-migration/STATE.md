@@ -4,8 +4,8 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 2 context gathered
-last_updated: "2026-09-22T14:24:19.159Z"
-last_activity: 2026-09-22 -- Phase 2 planning complete
+last_updated: "2026-09-22T14:27:11.003Z"
+last_activity: 2026-09-22 -- Phase 2 execution started
 progress:
   total_phases: 7
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 2 — schema rename & function/rls rewrite
+**Current focus:** Phase 2 — Schema Rename & Function/RLS Rewrite
 
 ## Current Position
 
-Phase: 2 of 7 (schema rename & function/rls rewrite)
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-09-22 -- Phase 2 planning complete
+Phase: 2 (Schema Rename & Function/RLS Rewrite) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 2
+Last activity: 2026-09-22 -- Phase 2 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
