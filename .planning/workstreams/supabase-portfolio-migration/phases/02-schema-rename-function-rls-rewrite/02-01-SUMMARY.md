@@ -121,3 +121,13 @@ None - no external service configuration required. This plan is read-only intros
 ---
 *Phase: 02-schema-rename-function-rls-rewrite*
 *Completed: 2026-09-22*
+
+## Self-Check: PASSED
+
+- FOUND: `scripts/portfolio-migration/01-generate-rename-map.sql`
+- FOUND: `scripts/portfolio-migration/01-generate-rename-map.mjs`
+- FOUND: `scripts/portfolio-migration/rename-map.generated.json`
+- FOUND: `.planning/workstreams/supabase-portfolio-migration/phases/02-schema-rename-function-rls-rewrite/02-01-SUMMARY.md`
+- FOUND: commit `780158c3` (Task 1)
+- FOUND: commit `d2dad5ad` (Task 2)
+- FOUND: commit `ec777929` (plan metadata / this file)
