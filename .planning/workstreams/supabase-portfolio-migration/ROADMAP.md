@@ -31,7 +31,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — ziko + portfolio live inventory, version/extension diff, capacity/quota check with human plan-tier checkpoint (INV-01, INV-02, INV-04, INV-05)
+- [x] 01-01-PLAN.md — ziko + portfolio live inventory, version/extension diff, capacity/quota check with human plan-tier checkpoint (INV-01, INV-02, INV-04, INV-05)
 - [ ] 01-02-PLAN.md — PII-safe collision report, finalize and commit 01-INVENTORY.md (INV-03)
 
 ### Phase 2: Schema Rename & Function/RLS Rewrite
@@ -112,7 +112,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Inventory & Pre-Flight Audit | 0/2 | Planned | - |
+| 1. Inventory & Pre-Flight Audit | 1/2 | In Progress|  |
 | 2. Schema Rename & Function/RLS Rewrite | 0/TBD | Not started | - |
 | 3. Auth Merge | 0/TBD | Not started | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
