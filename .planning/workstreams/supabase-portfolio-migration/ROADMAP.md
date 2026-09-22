@@ -28,7 +28,11 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
   3. A collision report lists every email/ID overlap between ziko's 39 users and portfolio's existing users
   4. Postgres version and extension versions are diffed between the two projects, with any mismatch documented
   5. portfolio's available DB size, connection, and storage quota are confirmed sufficient for ziko's data volume
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — ziko + portfolio live inventory, version/extension diff, capacity/quota check with human plan-tier checkpoint (INV-01, INV-02, INV-04, INV-05)
+- [ ] 01-02-PLAN.md — PII-safe collision report, finalize and commit 01-INVENTORY.md (INV-03)
 
 ### Phase 2: Schema Rename & Function/RLS Rewrite
 **Goal**: Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical to the original, with zero stale unprefixed references anywhere in DDL, function bodies, or policies
@@ -108,7 +112,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Inventory & Pre-Flight Audit | 0/TBD | Not started | - |
+| 1. Inventory & Pre-Flight Audit | 0/2 | Planned | - |
 | 2. Schema Rename & Function/RLS Rewrite | 0/TBD | Not started | - |
 | 3. Auth Merge | 0/TBD | Not started | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
