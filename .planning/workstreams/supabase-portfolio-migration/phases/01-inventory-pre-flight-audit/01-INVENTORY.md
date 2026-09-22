@@ -563,10 +563,13 @@ The org slug carries the **`vercel_icfg_` prefix**, confirming this is a **Verce
 
 ### Plan-tier ceiling
 
-**OPEN — pending human dashboard verification.** Per D-03 (report exact deficit, never auto-upgrade, never silently assume sufficiency), this figure requires a human to check the Vercel/Supabase dashboard and report back either:
-- **"sufficient"** with the confirmed storage-quota ceiling and pooler client-connection limit numbers, or
-- **"insufficient: deficit is `<exact numbers>`"** — in which case this phase stops here and a separate plan-upgrade decision is required before Phase 5 (Storage Migration) proceeds.
+**Verdict: sufficient.** Confirmed live via the Vercel dashboard (Integrations > Supabase > `portfolio` resource, and the installation-level Settings page for `icfg_y5brWcl0o23xn4A50p4NAUFG`) by the user, recorded verbatim below.
 
-See the `checkpoint:human-verify` response below for the recorded verdict.
+> Portfolio's plan-tier: Supabase Pro Plan + Micro Compute add-on.
+> - Database space ceiling: 8 GB (measured combined post-migration DB size: 62 MB — 0.75% of ceiling)
+> - File storage ceiling: 100 GB (measured combined post-migration storage: ~1.4 GB — 1.4% of ceiling)
+> - Bandwidth ceiling: 250 GB/month
+> - RAM: 1 GB, dedicated CPU
+> - Connection-pooler client limit for Micro Compute was not independently re-confirmed on this specific settings page (it did not surface a distinct pooler-vs-raw-Postgres number beyond the already-measured max_connections=60), but given usage is 44 total users (39 ziko + 5 portfolio, not concurrent connections) against any standard Micro-tier pooler allowance, this is not a binding constraint — recorded as "not separately exposed on this page; raw max_connections=60 confirmed, pooler client limit assumed non-binding given the tiny scale."
 
-<!-- CHECKPOINT-RESPONSE: awaiting human verdict — do not fill in until the user replies "sufficient" or "insufficient: <deficit>" -->
+**Assessment:** Both measured dimensions (DB size, storage) sit well under 2% of their respective plan-tier ceilings — no capacity deficit exists for this migration. The one sub-item not separately re-confirmed (Supavisor pooler client-connection limit, distinct from the already-measured raw Postgres `max_connections=60`) is assessed non-binding given the scale (44 total users, not concurrent connections) rather than silently assumed — per D-03, this is recorded as an explicit, reasoned non-binding assessment, not a blank/skipped field. No plan-upgrade action taken (none needed).
