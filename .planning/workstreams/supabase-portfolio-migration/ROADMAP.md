@@ -10,7 +10,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 
 - [x] **Phase 1: Inventory & Pre-Flight Audit** - Both Supabase projects' live state (schema, auth, storage, extensions) is fully known and cross-checked before any migration code is written (completed 2026-09-22)
 - [x] **Phase 2: Schema Rename & Function/RLS Rewrite** - Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical, with zero stale unprefixed references (completed 2026-10-01)
-- [ ] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects
+- [x] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects (completed 2026-10-01)
 - [ ] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity
 - [ ] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
 - [ ] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
@@ -80,7 +80,7 @@ Plans:
 - [x] 03-09-PLAN.md — Checkpoint: access token; config merge rehearsal on scratch + portfolio preview (AUTHMIG-04)
 - [x] 03-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + typed-phrase checkpoint before first portfolio write (AUTHMIG-01..04)
 - [x] 03-11-PLAN.md — [BLOCKING] Portfolio import, triggers, sequence, full verification; uuid-remap.json for Phase 4 (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
-- [ ] 03-12-PLAN.md — [BLOCKING] Portfolio uri_allow_list merge + diff (if authorized); retire token unconditionally (AUTHMIG-04)
+- [x] 03-12-PLAN.md — [BLOCKING] Portfolio uri_allow_list merge + diff (if authorized); retire token unconditionally (AUTHMIG-04)
 - [x] 03-13-PLAN.md — In-app re-login notice (mobile): one-time showAlert, date-driven, inert until Phase 6 (AUTHMIG-05, partial)
 
 ### Phase 4: Data Copy & Integrity Verification
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
-| 3. Auth Merge | 12/13 | In Progress|  |
+| 3. Auth Merge | 13/13 | Complete   | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
