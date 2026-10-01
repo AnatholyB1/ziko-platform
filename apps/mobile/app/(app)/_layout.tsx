@@ -21,7 +21,9 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
-import { useTranslation } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, useI18nStore } from '@ziko/plugin-sdk';
+import { appStorage } from '../../src/lib/storage';
+import { getReloginNoticeState, reloginAckKey } from '../../src/lib/reloginNotice';
 import { supabase } from '../../src/lib/supabase';
 import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
@@ -164,6 +166,36 @@ export default function AppLayout() {
         }
       });
   }, [userId]);
+
+  // D-12 re-login notice: shown once per configured cutover date; inert when unset.
+  useEffect(() => {
+    const cutoverIso = process.env.EXPO_PUBLIC_ZIKO_RELOGIN_CUTOVER_DATE;
+    const state = getReloginNoticeState(new Date(), cutoverIso);
+    if (!state.visible || !state.cutover || !cutoverIso) return;
+    const ackKey = reloginAckKey(cutoverIso);
+    let cancelled = false;
+    appStorage.getString(ackKey).then((acked) => {
+      if (cancelled || acked) return;
+      const locale = useI18nStore.getState().locale;
+      const dateLabel = state.cutover!.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+      showAlert(
+        t('reloginNotice.title'),
+        t(state.phase === 'before' ? 'reloginNotice.body_before' : 'reloginNotice.body_after', {
+          date: dateLabel,
+        }),
+        [{ text: t('general.confirm'), onPress: () => { void appStorage.set(ackKey, true); } }],
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Notification response listener (handles background/killed → opened by tap)
   useEffect(() => {
