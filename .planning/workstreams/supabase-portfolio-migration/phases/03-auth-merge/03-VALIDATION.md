@@ -34,11 +34,18 @@ created: 2026-10-01
 |-----|----------|-----------|-------------------|--------|
 | AUTHMIG-01 | 38 ziko ids imported with identical hash/metadata/timestamps; collision id absent; GoTrue accepts rows | live-SQL + integration | `06-verify.mjs --check users` / `--check gotrue` | ⬜ pending |
 | AUTHMIG-02 | identities present for all 39, collision identity re-pointed to portfolio UUID | live-SQL | `06-verify.mjs --check identities` | ⬜ pending |
-| AUTHMIG-03 | exactly 2 `ziko_` triggers on `auth.users`; unflagged signup → 0 Ziko rows, flagged → profile+credits | live-SQL (rolled-back probe) | `06-verify.mjs --check triggers` | ⬜ pending |
+| AUTHMIG-03 | exactly 2 `ziko_` triggers on `auth.users`; unflagged signup → 0 Ziko rows, flagged → profile+credits | live-SQL (rolled-back probe on portfolio); real GoTrue signup on scratch only | `06-verify.mjs --check triggers` (portfolio + scratch), `06-verify.mjs --check signup` (scratch only) | ⬜ pending |
 | AUTHMIG-04 | `uri_allow_list` superset of snapshot; other config fields equal | API diff | `node scripts/auth-merge/05-auth-config-merge.mjs --diff` | ⬜ pending |
-| AUTHMIG-05 | recipient count == non-test ziko users; FR+EN render | dry-run | `node scripts/auth-merge/07-notify-relogin.mjs --dry-run` | ⬜ pending |
+| AUTHMIG-05 | recipient count == non-test ziko users; FR+EN render (tooling only — the send is a Phase 6 task) | dry-run | `node scripts/auth-merge/07-notify-relogin.mjs --dry-run` | ⬜ partial by design (complete only after the Phase 6 send) |
 | SC6 | `ziko_waitlist_founder_seq` equals ziko live `last_value`/`is_called` | live-SQL | `06-verify.mjs --check sequence` | ⬜ pending |
 | Regression | portfolio pre-existing users and `rh_*/gecko_*` counts unchanged | live-SQL | `06-verify.mjs --check tenants` | ⬜ pending |
+
+## Phase Notes
+
+- **SC3 proof method (recorded per plan-checker revision):** On `portfolio` (shared production), success criterion 3 / D-07 is proven by the self-rolling-back SQL probe `scripts/auth-merge/sql/trigger-gate-probe.sql` run through `06-verify.mjs --check triggers` (unflagged insert → 0/0/0 Ziko rows, flagged insert → 1/1/1, whole block rolled back, zero residual probe rows). Real GoTrue signups (`06-verify.mjs --check signup`, admin API create + delete) run on the scratch project only (Plan 08), so no test user is ever created in the shared rh_/gecko_ auth pool. The verifier must accept this split as the SC3 evidence.
+- **AUTHMIG-05 / SC5:** Phase 3 delivers the template, live recipient list, send script (dry-run proven) and the inert in-app surfaces (Plans 03, 04, 13). The actual send is a Phase 6 task (D-12). AUTHMIG-05 and SC5 must NOT be marked complete on Phase 3 dry-run evidence; the verifier reports SC5 as deferred to Phase 6.
+- **UI-SPEC waiver:** no `03-UI-SPEC.md`; the only visual deliverables are a text-only web notice strip reusing the existing banner pattern (Plan 04) and a mobile `showAlert` (Plan 13). Waiver documented in both plans.
+- **Production-write gate:** Plan 10 disables `workflow._auto_chain_active` and requires the typed phrase `approve ubxllsvanurkwkohzxau <option>`; Plans 11 and 12 mechanically refuse portfolio writes without the recorded `Typed authorization:` line. Plan 12's token retirement is unconditional.
 
 ## Wave 0 Requirements
 
@@ -51,7 +58,8 @@ created: 2026-10-01
 | Behavior | Requirement | Why Manual | Instructions |
 |----------|-------------|------------|--------------|
 | Management API access token | AUTHMIG-04 | No token in-session | User supplies PAT or dashboard values |
-| Real send of re-login notice | AUTHMIG-05 | Date chosen in Phase 6 | Dry-run only in Phase 3 |
+| Real send of re-login notice | AUTHMIG-05 | Date chosen in Phase 6 | Dry-run only in Phase 3; the send is a Phase 6 task and AUTHMIG-05 stays open until then |
+| Go/no-go before first portfolio write | AUTHMIG-01..04 | Shared production; never auto-approvable | User types `approve ubxllsvanurkwkohzxau <option>` (Plan 10) |
 
 ## Validation Sign-Off
 
