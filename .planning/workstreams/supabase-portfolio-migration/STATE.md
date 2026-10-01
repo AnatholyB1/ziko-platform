@@ -4,13 +4,13 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 3 context gathered
-last_updated: "2026-10-01T12:39:37.360Z"
+last_updated: "2026-10-01T12:43:11.876Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 22
-  completed_plans: 10
+  completed_plans: 11
   percent: 29
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 3 (Auth Merge) — EXECUTING
-Plan: 2 of 13
+Plan: 3 of 13
 Status: Ready to execute
 Last activity: 2026-10-01
 
-Progress: [█████░░░░░] 45%
+Progress: [█████░░░░░] 50%
 
 ## Accumulated Context
 
@@ -40,6 +40,7 @@ Progress: [█████░░░░░] 45%
 - Auth merge (Phase 3) hard-gated before data copy (Phase 4) — FKs to `auth.users(id)` require the referenced rows to exist first
 - Decommission (Phase 7) structurally separated from Cutover (Phase 6) by a monitoring/rollback window; deletion requires its own explicit, separate human confirmation — never bundled with cutover sign-off
 - [Phase ?]: Phase 03-01: volatile auth columns defined once in scripts/auth-merge/lib.mjs; use glob form for node --test on Node 26
+- [Phase 03]: 03-02: ziko auth trigger functions gated on app=ziko, search_path public, pg_temp; triggers attached in separate post-import file
 
 ### Pending Todos
 
@@ -54,6 +55,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T12:39:27.651Z
+Last session: 2026-10-01T12:42:54.454Z
 Stopped at: Phase 3 context gathered
 Resume file: None
