@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: planning
+status: executing
 stopped_at: Phase 3 context gathered
-last_updated: "2026-10-01T11:12:56.284Z"
+last_updated: "2026-10-01T12:39:37.360Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 22
+  completed_plans: 10
   percent: 29
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 3 — auth merge
+**Current focus:** Phase 3 — Auth Merge
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
-Status: Ready to plan
+Phase: 3 (Auth Merge) — EXECUTING
+Plan: 2 of 13
+Status: Ready to execute
 Last activity: 2026-10-01
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 45%
 
 ## Accumulated Context
 
@@ -39,6 +39,7 @@ Progress: [░░░░░░░░░░] 0%
 - 7-phase structure derived from research SUMMARY.md, aligned to the 7 requirement categories (INV/SCHEMA/AUTHMIG/DATA/STORAGE/CUTOVER/DECOM); Storage (Phase 5) is architecturally independent and may run parallel to Phases 2-4
 - Auth merge (Phase 3) hard-gated before data copy (Phase 4) — FKs to `auth.users(id)` require the referenced rows to exist first
 - Decommission (Phase 7) structurally separated from Cutover (Phase 6) by a monitoring/rollback window; deletion requires its own explicit, separate human confirmation — never bundled with cutover sign-off
+- [Phase ?]: Phase 03-01: volatile auth columns defined once in scripts/auth-merge/lib.mjs; use glob form for node --test on Node 26
 
 ### Pending Todos
 
@@ -53,6 +54,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T11:12:56.259Z
+Last session: 2026-10-01T12:39:27.651Z
 Stopped at: Phase 3 context gathered
-Resume file: .planning/workstreams/supabase-portfolio-migration/phases/03-auth-merge/03-CONTEXT.md
+Resume file: None

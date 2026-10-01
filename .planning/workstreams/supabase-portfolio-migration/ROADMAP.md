@@ -69,7 +69,7 @@ Plans:
 **Plans**: 13 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Wave 0: scripts/auth-merge/lib.mjs + node:test, read-only portfolio baseline snapshot (AUTHMIG-01, AUTHMIG-04)
+- [x] 03-01-PLAN.md — Wave 0: scripts/auth-merge/lib.mjs + node:test, read-only portfolio baseline snapshot (AUTHMIG-01, AUTHMIG-04)
 - [ ] 03-02-PLAN.md — Gated trigger functions + separate trigger DDL + rolled-back probe; Phase 6 signup-path hand-off; Phase 4 UUID-remap spec (AUTHMIG-03, AUTHMIG-01)
 - [ ] 03-03-PLAN.md — ReloginNotice email template (FR/EN) + dry-run-default Resend send script (AUTHMIG-05)
 - [ ] 03-04-PLAN.md — In-app re-login notice (web): coach CRM banner, date-driven, inert until Phase 6 (AUTHMIG-05, partial)
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
-| 3. Auth Merge | 0/12 | Planned | - |
+| 3. Auth Merge | 1/13 | In Progress|  |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
