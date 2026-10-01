@@ -15,11 +15,11 @@
 
 ### Schéma, RLS & Fonctions (SCHEMA)
 
-- [ ] **SCHEMA-01**: Nouvelle série de migrations (jamais l'historique `ziko` modifié) avec toutes les tables préfixées `ziko_`
-- [ ] **SCHEMA-02**: Toutes les fonctions/RPC `SECURITY DEFINER` re-créées avec références de table réécrites (`deduct_ai_credits`, `is_coach_of`, `record_athlete_decision`, etc.)
-- [ ] **SCHEMA-03**: Toutes les policies RLS re-créées et vérifiées activées sur les ~93 tables `ziko_*`
-- [ ] **SCHEMA-04**: Grep automatisé post-application confirmant zéro référence à un nom de table non-préfixé dans `pg_policies`/`pg_proc`
-- [ ] **SCHEMA-05**: Dry run complet du rename sur un projet Supabase scratch avant application à `portfolio`
+- [x] **SCHEMA-01**: Nouvelle série de migrations (jamais l'historique `ziko` modifié) avec toutes les tables préfixées `ziko_`
+- [x] **SCHEMA-02**: Toutes les fonctions/RPC `SECURITY DEFINER` re-créées avec références de table réécrites (`deduct_ai_credits`, `is_coach_of`, `record_athlete_decision`, etc.)
+- [x] **SCHEMA-03**: Toutes les policies RLS re-créées et vérifiées activées sur les ~93 tables `ziko_*`
+- [x] **SCHEMA-04**: Grep automatisé post-application confirmant zéro référence à un nom de table non-préfixé dans `pg_policies`/`pg_proc`
+- [x] **SCHEMA-05**: Dry run complet du rename sur un projet Supabase scratch avant application à `portfolio`
 
 ### Fusion Auth (AUTHMIG)
 
@@ -82,11 +82,11 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | INV-03 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
 | INV-04 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
 | INV-05 | Phase 1 - Inventory & Pre-Flight Audit | Complete |
-| SCHEMA-01 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
-| SCHEMA-02 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
-| SCHEMA-03 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
-| SCHEMA-04 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
-| SCHEMA-05 | Phase 2 - Schema Rename & Function/RLS Rewrite | Pending |
+| SCHEMA-01 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
+| SCHEMA-02 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
+| SCHEMA-03 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
+| SCHEMA-04 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
+| SCHEMA-05 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
 | AUTHMIG-01 | Phase 3 - Auth Merge | Pending |
 | AUTHMIG-02 | Phase 3 - Auth Merge | Pending |
 | AUTHMIG-03 | Phase 3 - Auth Merge | Pending |

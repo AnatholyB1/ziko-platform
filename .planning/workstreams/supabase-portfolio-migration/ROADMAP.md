@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
-| 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete   | 2026-10-01 |
+| 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 0/TBD | Not started | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
