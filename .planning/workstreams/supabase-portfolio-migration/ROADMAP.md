@@ -66,7 +66,21 @@ Plans:
   4. portfolio's auth config (redirect URLs, email templates) contains both ziko's entries and the pre-existing ones, with nothing overwritten
   5. Ziko users have been informed that a re-login will be required post-cutover
   6. `ziko_waitlist_founder_seq` is set to ziko's live value (87 on 2026-10-01 — re-read live before setting) via `setval`; Phase 2 creates the sequence fresh and does not carry the value
-**Plans**: TBD
+**Plans**: 12 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0: scripts/auth-merge/lib.mjs + node:test, read-only portfolio baseline snapshot (AUTHMIG-01, AUTHMIG-04)
+- [ ] 03-02-PLAN.md — Gated trigger functions + separate trigger DDL + rolled-back probe; Phase 6 signup-path hand-off; Phase 4 UUID-remap spec (AUTHMIG-03, AUTHMIG-01)
+- [ ] 03-03-PLAN.md — ReloginNotice email template (FR/EN) + dry-run-default Resend send script (AUTHMIG-05)
+- [ ] 03-04-PLAN.md — In-app re-login notice: web coach banner + mobile one-time alert, date-driven (AUTHMIG-05)
+- [ ] 03-05-PLAN.md — Collision gate + idempotent single-transaction auth import + scratch collision seeding (AUTHMIG-01, AUTHMIG-02)
+- [ ] 03-06-PLAN.md — Stage-aware trigger apply, live waitlist setval, 06-verify suite (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
+- [ ] 03-07-PLAN.md — Management API read-merge-write for uri_allow_list + RUNBOOK (AUTHMIG-04)
+- [ ] 03-08-PLAN.md — Scratch rehearsal: import, GoTrue login proof, idempotence, triggers, real signups, full verify (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
+- [ ] 03-09-PLAN.md — Checkpoint: access token; config merge rehearsal on scratch + portfolio preview (AUTHMIG-04)
+- [ ] 03-10-PLAN.md — Read-only portfolio pre-flight + checkpoint: confirm before first portfolio write (AUTHMIG-01..04)
+- [ ] 03-11-PLAN.md — [BLOCKING] Portfolio import, triggers, sequence, full verification; uuid-remap.json for Phase 4 (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
+- [ ] 03-12-PLAN.md — [BLOCKING] Portfolio uri_allow_list merge + diff; retire token (AUTHMIG-04)
 
 ### Phase 4: Data Copy & Integrity Verification
 **Goal**: All ziko production data exists in portfolio with verified integrity and zero loss
@@ -124,7 +138,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
-| 3. Auth Merge | 0/TBD | Not started | - |
+| 3. Auth Merge | 0/12 | Planned | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
