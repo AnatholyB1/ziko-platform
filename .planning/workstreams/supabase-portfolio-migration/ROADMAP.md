@@ -65,6 +65,7 @@ Plans:
   3. `handle_new_user`/`handle_new_user_credits` fire only for Ziko signups after the merge — verified by a test signup on rh_*/gecko_* producing zero Ziko-side effects
   4. portfolio's auth config (redirect URLs, email templates) contains both ziko's entries and the pre-existing ones, with nothing overwritten
   5. Ziko users have been informed that a re-login will be required post-cutover
+  6. `ziko_waitlist_founder_seq` is set to ziko's live value (87 on 2026-10-01 — re-read live before setting) via `setval`; Phase 2 creates the sequence fresh and does not carry the value
 **Plans**: TBD
 
 ### Phase 4: Data Copy & Integrity Verification

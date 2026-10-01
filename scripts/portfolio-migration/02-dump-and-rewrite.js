@@ -3,10 +3,10 @@
  * Dump ziko's LIVE public schema and rewrite it, name by name via
  * rename-map.generated.json (Plan 01 output), into a two-file migration series:
  *
- *   supabase/migrations/<TS>_portfolio_ziko_schema.sql
+ *   supabase/portfolio-migrations/<TS>_portfolio_ziko_schema.sql
  *     ziko_-prefixed sequence, tables, constraints, indexes, grants, RLS enable,
  *     RLS policies that do NOT call a ziko function.
- *   supabase/migrations/<TS+1s>_portfolio_ziko_functions.sql
+ *   supabase/portfolio-migrations/<TS+1s>_portfolio_ziko_functions.sql
  *     CREATE EXTENSION (gated on required_extensions), the 33 ziko_-prefixed
  *     functions (+ search_path pin, GRANT/REVOKE), the 18 public-schema
  *     triggers, and the RLS policies that call a ziko function (they cannot be
@@ -28,7 +28,7 @@
  * Usage:
  *   node scripts/portfolio-migration/02-dump-and-rewrite.js
  *        [--project-ref <ref>]   (default: ziko, slkobhavpwsubnsmuhya)
- *        [--out-dir <dir>]       (default: <repo>/supabase/migrations)
+ *        [--out-dir <dir>]       (default: <repo>/supabase/portfolio-migrations)
  *        [--ts <YYYYMMDDHHMMSS>] (default: current UTC time)
  *
  * SECURITY: the live push-trigger definitions embed an X-Webhook-Secret literal.
@@ -64,7 +64,7 @@ function parseArgs(argv) {
     `${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}`;
   return {
     projectRef: get('--project-ref', DEFAULT_PROJECT_REF),
-    outDir: get('--out-dir', path.join(__dirname, '..', '..', 'supabase', 'migrations')),
+    outDir: get('--out-dir', path.join(__dirname, '..', '..', 'supabase', 'portfolio-migrations')),
     ts: get('--ts', defaultTs),
   };
 }
