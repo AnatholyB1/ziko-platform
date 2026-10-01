@@ -81,7 +81,7 @@ Plans:
 - [ ] 03-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + typed-phrase checkpoint before first portfolio write (AUTHMIG-01..04)
 - [ ] 03-11-PLAN.md — [BLOCKING] Portfolio import, triggers, sequence, full verification; uuid-remap.json for Phase 4 (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
 - [ ] 03-12-PLAN.md — [BLOCKING] Portfolio uri_allow_list merge + diff (if authorized); retire token unconditionally (AUTHMIG-04)
-- [ ] 03-13-PLAN.md — In-app re-login notice (mobile): one-time showAlert, date-driven, inert until Phase 6 (AUTHMIG-05, partial)
+- [x] 03-13-PLAN.md — In-app re-login notice (mobile): one-time showAlert, date-driven, inert until Phase 6 (AUTHMIG-05, partial)
 
 ### Phase 4: Data Copy & Integrity Verification
 **Goal**: All ziko production data exists in portfolio with verified integrity and zero loss
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
-| 3. Auth Merge | 3/13 | In Progress|  |
+| 3. Auth Merge | 4/13 | In Progress|  |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
