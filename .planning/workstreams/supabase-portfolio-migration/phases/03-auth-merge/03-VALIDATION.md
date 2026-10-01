@@ -3,7 +3,7 @@ phase: 3
 slug: auth-merge
 status: draft
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-10-01
 ---
 
@@ -49,8 +49,8 @@ created: 2026-10-01
 
 ## Wave 0 Requirements
 
-- [ ] `scripts/auth-merge/lib.mjs` + helper unit tests (mask, column intersection, URL-list union)
-- [ ] Baseline snapshot of portfolio (tenant row counts, hashes of existing user rows, auth config) BEFORE any write
+- [x] `scripts/auth-merge/lib.mjs` + helper unit tests (mask, column intersection, URL-list union)
+- [x] Baseline snapshot of portfolio (tenant row counts, hashes of existing user rows, auth config) BEFORE any write
 - [ ] Scratch project seeded from a ziko export (PII to scratchpad only)
 
 ## Manual-Only Verifications

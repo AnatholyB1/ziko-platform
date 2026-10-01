@@ -39,3 +39,8 @@ scripts/purge-test-accounts/exports/
 # (~128MB of images/ + videos/) — too large to commit, redundant with the
 # Supabase Storage delivery path Phase 3 uses.
 scripts/exercise-import/.dataset-cache/
+
+# Phase 3 auth-merge (supabase-portfolio-migration) — secrets and PII-bearing scratch, never commit
+scripts/auth-merge/.access-token
+scripts/auth-merge/.tmp-*
+scripts/auth-merge/exports/
