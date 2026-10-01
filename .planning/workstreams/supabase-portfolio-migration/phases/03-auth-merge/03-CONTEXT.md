@@ -16,7 +16,7 @@ Ziko's 39 `auth.users` (+ `auth.identities`) are written into `portfolio`'s shar
 ### Email Collision (1 account)
 - **D-01:** The colliding user (ziko `auth.users.id` `ea0f0b65-6681-4780-8ee0-dbf20b95d4d9`, masked `a***@***.com`) is confirmed by the user to be the **same person** as the existing portfolio account.
 - **D-02:** **Portfolio's UUID wins.** The existing portfolio `auth.users` row is untouched (zero regression on `rh_*`/`gecko_*`). Phase 4's data copy must remap `user_id` `ea0f0b65…` → the portfolio UUID across every `ziko_*` table/column that references it (scripted, with a dedicated verification step). This is the single exception to "IDs preserved".
-- **D-03:** For the merged user, **keep portfolio's password**; copy any ziko `auth.identities` (OAuth links) re-pointed to the portfolio UUID. Do not copy ziko's `encrypted_password` for this user. The user is told via the re-login notice (D-12).
+- **D-03 (revised after research):** Portfolio's copy of the colliding account has a NULL `encrypted_password` and no identities. For the merged user, **keep portfolio's row, but fill `encrypted_password` and the email `auth.identities` row from ziko only where portfolio's value is NULL** (re-pointed to the portfolio UUID). Never overwrite a non-NULL portfolio value. Ziko has no OAuth identities (all 39 are `provider='email'`). The user is told via the re-login notice (D-12).
 - **D-04:** Re-run the collision check immediately before the real write and again at final delta sync (ziko is live; the collision set can grow). Any *new* collision is a blocking human checkpoint, never auto-resolved (Phase 1 D-01).
 
 ### Trigger Scoping
@@ -33,7 +33,13 @@ Ziko's 39 `auth.users` (+ `auth.identities`) are written into `portfolio`'s shar
 - **D-11:** Document the JWT-secret consequence: ziko sessions cannot carry over, all 39 users must re-login after cutover.
 - **D-12:** Notify users by **email via Resend (FR primary, EN) plus an in-app banner/alert on the current ziko app**. Phase 3 delivers the recipient list, template and send script; the actual send date is chosen during Phase 6 planning (a few days before cutover).
 
+### Research-driven constraints (see 03-RESEARCH.md)
+- **D-13:** `signInWithOAuth` cannot carry the `app: 'ziko'` metadata flag, so D-05 does not cover OAuth signups. Google OAuth is disabled on both projects today; Phase 6 must keep it off or add the lazy-provisioning fallback. Phase 3 documents this.
+- **D-14:** AUTHMIG-04 uses a read-merge-write against the Management API patching only `uri_allow_list` — never `supabase config push`. A human checkpoint supplies the access token (none available in-session).
+- **D-15:** Waitlist sequence is set by a direct `setval` copying ziko's `last_value` and `is_called` (next value 88 as of 2026-10-01), not via `ziko_reset_waitlist_founder_sequence`.
+
 ### Claude's Discretion
+- Whether gated functions/triggers ship as a migration file or a script step.
 - Script language/location for import, collision check, and verification (must follow repo conventions; `.js` import suffix rule applies to backend TS).
 - Exact set of `auth.users` columns copied (all non-generated columns, excluding anything instance-specific such as `instance_id` which must be set to portfolio's value).
 - Format of the auth-config before/after snapshot and PII-safe handling (no raw emails in git-tracked files, per Phase 1 protocol).
