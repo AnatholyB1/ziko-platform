@@ -4,7 +4,7 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 3 context gathered
-last_updated: "2026-10-01T14:55:51.098Z"
+last_updated: "2026-10-01T15:32:49.323Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 3 (Auth Merge) — EXECUTING
-Plan: 11 of 13
+Plan: 12 of 13
 Status: Ready to execute
 Last activity: 2026-10-01
 
-Progress: [█████████░] 86%
+Progress: [██████████] 95%
 
 ## Accumulated Context
 
@@ -42,6 +42,7 @@ Progress: [█████████░] 86%
 - [Phase ?]: Phase 03-01: volatile auth columns defined once in scripts/auth-merge/lib.mjs; use glob form for node --test on Node 26
 - [Phase 03]: 03-02: ziko auth trigger functions gated on app=ziko, search_path public, pg_temp; triggers attached in separate post-import file
 - [Phase 03]: 03-08: NULL instance_id blocks GoTrue login on scratch; Plan 10 must pick the instance-id fix option
+- [Phase 03]: 03-11: user-authorized guarded NULL-to-empty fill of 4 GoTrue token columns on the collision row (--fill-null-token-columns, --allow-token-fill)
 
 ### Pending Todos
 
@@ -57,6 +58,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T14:38:14.529Z
+Last session: 2026-10-01T15:32:39.699Z
 Stopped at: Phase 3 context gathered
 Resume file: None
