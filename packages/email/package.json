@@ -12,6 +12,11 @@
       "import": "./dist/WeeklyDigest.mjs",
       "require": "./dist/WeeklyDigest.cjs",
       "types": "./dist/WeeklyDigest.d.ts"
+    },
+    "./templates/ReloginNotice": {
+      "import": "./dist/ReloginNotice.mjs",
+      "require": "./dist/ReloginNotice.cjs",
+      "types": "./dist/ReloginNotice.d.ts"
     }
   },
   "files": ["dist"],
