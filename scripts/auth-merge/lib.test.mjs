@@ -129,3 +129,17 @@ test('volatile column lists and constants', () => {
   assert.ok(Object.isFrozen(PROJECTS));
   assert.deepEqual([...KNOWN_COLLISION_SOURCE_IDS], ['ea0f0b65-6681-4780-8ee0-dbf20b95d4d9']);
 });
+
+test('pickApiKeys skips masked sb_secret keys and falls back to legacy service_role', async () => {
+  const { pickApiKeys } = await import('./lib.mjs');
+  const keys = [
+    { type: 'legacy', name: 'anon', api_key: 'eyJanon' },
+    { type: 'legacy', name: 'service_role', api_key: 'eyJservice' },
+    { type: 'publishable', name: 'default', api_key: 'sb_publishable_abc' },
+    { type: 'secret', name: 'default', api_key: 'sb_secret_ab••••' },
+  ];
+  assert.deepEqual(pickApiKeys(keys), { publishable: 'sb_publishable_abc', secret: 'eyJservice' });
+  keys[3].api_key = 'sb_secret_full';
+  assert.equal(pickApiKeys(keys).secret, 'sb_secret_full');
+  assert.equal(pickApiKeys([keys[0]]), null);
+});

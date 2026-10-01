@@ -316,12 +316,22 @@ export async function getProjectApiKeys(ref) {
   } catch (err) {
     throw new Error(redactPii(`Could not fetch api keys for ${ref}: ${err.message}`).replace(/eyJ[\w.-]+/g, '[jwt]'));
   }
-  const keys = JSON.parse(stdout);
-  const pick = (pred) => keys.find(pred)?.api_key;
+  const picked = pickApiKeys(JSON.parse(stdout));
+  if (!picked) throw new Error(`Missing publishable or usable secret api key for project ${ref}`);
+  return picked;
+}
+
+/**
+ * Pure key picker. The CLI returns new-style `sb_secret_*` keys MASKED (non-printable bullet
+ * characters), which GoTrue rejects as "Invalid API key". A masked secret key is skipped and the
+ * revealed legacy service_role JWT is used instead.
+ */
+export function pickApiKeys(keys) {
+  const usable = (k) => typeof k?.api_key === 'string' && /^[\x21-\x7e]+$/.test(k.api_key);
+  const pick = (pred) => keys.find((k) => pred(k) && usable(k))?.api_key;
   const publishable = pick((k) => k.type === 'publishable') ?? pick((k) => k.name === 'anon');
   const secret = pick((k) => k.type === 'secret') ?? pick((k) => k.name === 'service_role');
-  if (!publishable || !secret) throw new Error(`Missing publishable or secret api key for project ${ref}`);
-  return { publishable, secret };
+  return publishable && secret ? { publishable, secret } : null;
 }
 
 export async function loadAccessToken() {
