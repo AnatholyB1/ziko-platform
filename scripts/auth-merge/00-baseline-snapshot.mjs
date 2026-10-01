@@ -64,7 +64,9 @@ export async function collectBaseline(ref) {
     `SELECT u.id::text AS id,
             (u.encrypted_password IS NOT NULL) AS has_password,
             (u.instance_id IS NULL) AS instance_id_null,
-            md5((to_jsonb(u) - 'confirmed_at' - 'encrypted_password' - 'instance_id' - ${sqlList(VOLATILE_AUTH_USER_COLUMNS)})::text) AS stable_hash
+            md5((to_jsonb(u) - 'confirmed_at' - 'encrypted_password' - 'instance_id' - ${sqlList(VOLATILE_AUTH_USER_COLUMNS)})::text) AS stable_hash,
+            md5(((to_jsonb(u) || jsonb_build_object('confirmation_token', NULL, 'recovery_token', NULL, 'email_change_token_new', NULL, 'email_change', NULL)) - 'confirmed_at' - 'encrypted_password' - 'instance_id' - ${sqlList(VOLATILE_AUTH_USER_COLUMNS)})::text) AS stable_hash_tokens_nulled,
+            (coalesce(u.confirmation_token, 'x') = '' AND coalesce(u.recovery_token, 'x') = '' AND coalesce(u.email_change_token_new, 'x') = '' AND coalesce(u.email_change, 'x') = '') AS token_cols_empty
        FROM auth.users u ORDER BY u.id`
   );
   const auth_users = userRows.map((r) => ({
@@ -72,6 +74,8 @@ export async function collectBaseline(ref) {
     has_password: r.has_password,
     instance_id_null: r.instance_id_null,
     stable_hash: r.stable_hash,
+    stable_hash_tokens_nulled: r.stable_hash_tokens_nulled,
+    token_cols_empty: r.token_cols_empty,
   }));
 
   const identRows = await runSql(

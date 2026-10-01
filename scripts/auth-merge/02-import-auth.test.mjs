@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { buildImportSql } from './02-import-auth.mjs';
+import { buildImportSql, mergeRemaps, TOKEN_COLUMNS } from './02-import-auth.mjs';
 
 const HASH = '$2a$10$' + 'x'.repeat(53);
 const userCols = ['id', 'email', 'encrypted_password', 'instance_id', 'raw_user_meta_data'];
@@ -146,7 +146,7 @@ test('count assertion DO block against expectedPresent', () => {
 test('dry-run replaces COMMIT by a rollback RAISE with counts', () => {
   const { sql } = build({ mode: 'dry-run', fillNullInstanceId: true });
   assert.ok(!sql.includes('COMMIT;'));
-  assert.ok(sql.includes("RAISE EXCEPTION 'DRYRUN users_present=% identities_present=% collision_password_filled=% collision_identity_added=% instance_id_filled=% passwords_updated=%'"));
+  assert.ok(sql.includes("RAISE EXCEPTION 'DRYRUN users_present=% identities_present=% collision_password_filled=% collision_identity_added=% instance_id_filled=% passwords_updated=% token_columns_filled=%'"));
 });
 
 test('dollar tag wraps payloads; tag inside payload throws', () => {
@@ -167,4 +167,39 @@ test('UUIDs and identifiers are validated', () => {
     () => buildImportSql({ userCols: ['id', 'a"b'], identityCols, users, identities, collisions: [], expectedPresent: 0 }),
     /Unsafe column/
   );
+});
+
+test('token column fill: off by default, guarded per column on the collision target only', () => {
+  const off = build();
+  assert.ok(!off.sql.includes('SET confirmation_token'));
+  assert.equal(count(off.sql, /'token_columns_filled'/g) >= 2, true);
+  const on = build({ fillNullTokenColumns: true });
+  assert.deepEqual([...TOKEN_COLUMNS], ['confirmation_token', 'recovery_token', 'email_change_token_new', 'email_change']);
+  for (const col of TOKEN_COLUMNS) {
+    assert.ok(on.sql.includes(`UPDATE auth.users SET ${col} = '' WHERE id = '${on.collision.targetId}' AND ${col} IS NULL`));
+  }
+  assert.equal(count(on.sql, /UPDATE auth\.users SET (confirmation_token|recovery_token|email_change_token_new|email_change) = ''/g), 4);
+  assert.ok(on.sql.includes('AS token_columns_filled'));
+  assert.ok(!/SET (confirmation_token|recovery_token|email_change_token_new|email_change) = [^']/.test(on.sql));
+});
+
+test('token column fill never targets the source id nor a bulk row', () => {
+  const on = build({ fillNullTokenColumns: true });
+  const updates = on.sql.split('\n').filter((l) => /SET (confirmation_token|recovery_token|email_change_token_new|email_change) =/.test(l));
+  assert.equal(updates.length, 4);
+  for (const l of updates) {
+    assert.ok(l.includes(`WHERE id = '${on.collision.targetId}'`));
+    assert.ok(!l.includes(on.collision.sourceId));
+  }
+});
+
+test('mergeRemaps ORs booleans and sums token_columns_filled, keeps first-apply history', () => {
+  const k = { source_user_id: 's', target_user_id: 't' };
+  const first = [{ ...k, password_filled: true, identity_inserted: true, instance_id_filled: true }];
+  const second = [{ ...k, password_filled: false, identity_inserted: false, instance_id_filled: false, token_columns_filled: 4 }];
+  const m = mergeRemaps(first, second);
+  assert.equal(m.length, 1);
+  assert.deepEqual(m[0], { ...k, password_filled: true, identity_inserted: true, instance_id_filled: true, token_columns_filled: 4 });
+  assert.deepEqual(mergeRemaps([], second), second);
+  assert.equal(mergeRemaps(m, second)[0].token_columns_filled, 4 + 4);
 });

@@ -73,6 +73,10 @@ node scripts/auth-merge/06-verify.mjs --project-ref ubxllsvanurkwkohzxau --sourc
 
 Add `--allow-instance-id-fill` to the verify calls only in that same `option-approve-instance-fix` case.
 
+`--check tenants` needs `--source-ref slkobhavpwsubnsmuhya` after the import, otherwise the approved collision fills are reported as unexpected.
+
+Token columns: portfolio's pre-existing collision row can carry NULL in `confirmation_token`, `recovery_token`, `email_change_token_new`, `email_change` (GoTrue admin GET then returns HTTP 500; the other rows hold `''`). Add `--fill-null-token-columns` to the import (collision target only, `WHERE id = <target> AND <col> IS NULL`, reported as `token_columns_filled`) and `--allow-token-fill` to the tenants/all verify calls. This is a separate write that needs its own explicit user authorization recorded in the SUMMARY. Re-running `--apply` on an already-imported project is idempotent and merges into the existing remap file (booleans OR-ed, token counts summed).
+
 ```bash
 node scripts/auth-merge/03-apply-trigger-gate.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --stage all --confirm-ref ubxllsvanurkwkohzxau
 node scripts/auth-merge/04-sync-waitlist-seq.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --confirm-ref ubxllsvanurkwkohzxau

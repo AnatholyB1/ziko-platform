@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node scripts/auth-merge/06-verify.mjs --project-ref <target> --check <name>
- *        [--source-ref <ziko>] [--baseline <file>] [--allow-instance-id-fill]
+ *        [--source-ref <ziko>] [--baseline <file>] [--allow-instance-id-fill] [--allow-token-fill]
  *
  * Checks: users | identities | gotrue | triggers | signup | sequence | tenants | all
  *
@@ -58,6 +58,9 @@ Conditional:
 Optional:
   --allow-instance-id-fill   Accept NULL -> all-zeros instance_id on the collision row (use only when
                              the import ran with --fill-null-instance-id).
+  --allow-token-fill         Accept NULL -> '' on confirmation_token/recovery_token/email_change_token_new/
+                             email_change of the collision row (use only when the import ran with
+                             --fill-null-token-columns).
   --help, -h                 Show this help.
 
 signup is accepted on the scratch project only. Exit codes: 0 pass; 1 fail; 2 bad arguments.
@@ -92,11 +95,12 @@ export function digestColumns(table, cols) {
  * Compare a fresh baseline snapshot with the stored one. Users/identities absent from the baseline
  * (new imports, new tenant signups) are ignored. Approved fills are one-directional (NULL -> value).
  */
-export function evaluateTenants(baseline, current, { allowedPasswordFillIds = [], allowedInstanceIdFillIds = [] } = {}) {
+export function evaluateTenants(baseline, current, { allowedPasswordFillIds = [], allowedInstanceIdFillIds = [], allowedTokenFillIds = [] } = {}) {
   const failures = [];
   const warnings = [];
   const pwOk = new Set(allowedPasswordFillIds);
   const instOk = new Set(allowedInstanceIdFillIds);
+  const tokOk = new Set(allowedTokenFillIds);
 
   for (const [table, before] of Object.entries(baseline.tenant_tables ?? {})) {
     if (!(table in (current.tenant_tables ?? {}))) {
@@ -114,7 +118,12 @@ export function evaluateTenants(baseline, current, { allowedPasswordFillIds = []
       failures.push(`baseline auth user missing: ${b.id}`);
       continue;
     }
-    if (c.stable_hash !== b.stable_hash) failures.push(`auth user changed (stable hash): ${b.id}`);
+    if (c.stable_hash !== b.stable_hash) {
+      // Approved NULL -> '' fill of the four GoTrue token columns: the row must be identical to the baseline
+      // once those four columns are masked to NULL, and the four columns must now be exactly ''.
+      const tokenFillOnly = tokOk.has(b.id) && c.token_cols_empty === true && c.stable_hash_tokens_nulled === b.stable_hash;
+      if (!tokenFillOnly) failures.push(`auth user changed (stable hash): ${b.id}`);
+    }
     if (b.has_password && !c.has_password) failures.push(`password removed: ${b.id}`);
     else if (!b.has_password && c.has_password && !pwOk.has(b.id)) failures.push(`unexpected password fill: ${b.id}`);
     if (!b.instance_id_null && c.instance_id_null) failures.push(`instance_id reset to NULL: ${b.id}`);
@@ -416,6 +425,7 @@ async function checkTenants(ctx) {
   const { failures, warnings } = evaluateTenants(baseline, current, {
     allowedPasswordFillIds: collisionTargets,
     allowedInstanceIdFillIds: ctx.args.allowInstanceIdFill ? collisionTargets : [],
+    allowedTokenFillIds: ctx.args.allowTokenFill ? collisionTargets : [],
   });
   for (const w of warnings) console.log(`  [WARN] ${w}`);
   const detail = `baseline users=${baseline.auth_users.length} warnings=${warnings.length}`;
@@ -439,6 +449,7 @@ async function main() {
     check: 'string',
     baseline: 'string',
     'allow-instance-id-fill': 'boolean',
+    'allow-token-fill': 'boolean',
   });
   if (args.help) {
     console.log(HELP);

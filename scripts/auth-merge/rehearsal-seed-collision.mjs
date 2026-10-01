@@ -2,7 +2,7 @@
  * SCRATCH-ONLY rehearsal helper. This file must never be pointed at portfolio or ziko;
  * the ref check below is the first statement executed (exit 2 otherwise, no SQL sent).
  *
- *   --seed   insert a portfolio-shaped collision row (NULL password, NULL instance_id, no identity)
+ *   --seed   insert a portfolio-shaped collision row (NULL password, NULL instance_id, NULL token columns, no identity)
  *            for each known collision email, if no row with that email exists on scratch
  *   --reset  delete every auth.users row on scratch (cascades identities and scratch ziko_* rows)
  *
@@ -49,7 +49,7 @@ ins AS (
     email_change, email_change_token_current, phone_change, phone_change_token, reauthentication_token,
     is_sso_user, is_anonymous, created_at, updated_at)
   SELECT gen_random_uuid(), NULL, 'authenticated', 'authenticated', e.email, NULL, now(),
-    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, '', '', '', '', '', '', '', '',
+    '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, NULL, NULL, NULL, NULL, '', '', '', '',
     false, false, now(), now()
   FROM e WHERE NOT EXISTS (SELECT 1 FROM auth.users x WHERE lower(x.email) = lower(e.email))
   RETURNING id)

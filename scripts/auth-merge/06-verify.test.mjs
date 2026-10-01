@@ -154,3 +154,19 @@ test('evaluateTenants: non-ziko trigger change fails, ziko_ trigger addition doe
   const b = base({ auth_user_triggers: [{ name: 'rh_trigger', enabled: 'O' }] });
   assert.equal(evaluateTenants(b, base()).failures.length, 1);
 });
+
+test('evaluateTenants: token column fill passes only when allowed, masked hash equals baseline and columns are empty', () => {
+  const cur = clone(base());
+  cur.auth_users[0].stable_hash = 'h2';
+  cur.auth_users[0].stable_hash_tokens_nulled = 'h1';
+  cur.auth_users[0].token_cols_empty = true;
+  assert.deepEqual(evaluateTenants(base(), cur, { allowedTokenFillIds: [ID_A] }).failures, []);
+  assert.equal(evaluateTenants(base(), cur).failures.length, 1);
+  assert.equal(evaluateTenants(base(), cur, { allowedTokenFillIds: [ID_B] }).failures.length, 1);
+  const notEmpty = clone(cur);
+  notEmpty.auth_users[0].token_cols_empty = false;
+  assert.equal(evaluateTenants(base(), notEmpty, { allowedTokenFillIds: [ID_A] }).failures.length, 1);
+  const other = clone(cur);
+  other.auth_users[0].stable_hash_tokens_nulled = 'hX';
+  assert.equal(evaluateTenants(base(), other, { allowedTokenFillIds: [ID_A] }).failures.length, 1);
+});

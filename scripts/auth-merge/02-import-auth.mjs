@@ -13,7 +13,7 @@
  * Console output: UUIDs, counts, booleans, masked values only. Payload lives in an OS temp file (lib).
  */
 
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import {
   PROJECTS,
   KNOWN_COLLISION_SOURCE_IDS,
@@ -35,6 +35,30 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const DIGEST_RE = /^[0-9a-f]{32}$/;
 const IDENT_RE = /^[a-z_][a-z0-9_]*$/;
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+/** auth.users token columns GoTrue scans as non-NULL strings; a NULL here makes admin GET return HTTP 500. */
+export const TOKEN_COLUMNS = Object.freeze(['confirmation_token', 'recovery_token', 'email_change_token_new', 'email_change']);
+
+/**
+ * Merge a freshly produced remap list into a previously written one (idempotent re-runs must not erase
+ * the historical truth of the first apply). Booleans are OR-ed, token_columns_filled counts are summed.
+ */
+export function mergeRemaps(existing, fresh) {
+  const key = (r) => `${r.source_user_id}>${r.target_user_id}`;
+  const out = new Map((existing ?? []).map((r) => [key(r), { ...r }]));
+  for (const r of fresh ?? []) {
+    const prev = out.get(key(r));
+    if (!prev) {
+      out.set(key(r), { ...r });
+      continue;
+    }
+    for (const [k, v] of Object.entries(r)) {
+      if (typeof v === 'boolean') prev[k] = Boolean(prev[k]) || v;
+      else if (k === 'token_columns_filled') prev[k] = Number(prev[k] ?? 0) + Number(v ?? 0);
+      else prev[k] = v;
+    }
+  }
+  return [...out.values()];
+}
 
 function uuid(v, label) {
   if (typeof v !== 'string' || !UUID_RE.test(v)) throw new Error(`Invalid UUID for ${label}`);
@@ -62,6 +86,7 @@ export function buildImportSql({
   mode = 'apply',
   expectedPresent,
   fillNullInstanceId = false,
+  fillNullTokenColumns = false,
   passwordUpdates = [],
   tag,
 }) {
@@ -130,6 +155,16 @@ export function buildImportSql({
     } else {
       out.push(`INSERT INTO _am_counts VALUES ('instance_id_filled', '${c.targetId}', 0);`);
     }
+    if (fillNullTokenColumns) {
+      // Collision target only; each column touched solely where it is currently NULL (never overwrites a value).
+      for (const col of TOKEN_COLUMNS) {
+        out.push(
+          `WITH t AS (UPDATE auth.users SET ${col} = '' WHERE id = '${c.targetId}' AND ${col} IS NULL RETURNING 1) INSERT INTO _am_counts SELECT 'token_columns_filled', '${c.targetId}', count(*) FROM t;`
+        );
+      }
+    } else {
+      out.push(`INSERT INTO _am_counts VALUES ('token_columns_filled', '${c.targetId}', 0);`);
+    }
   }
 
   if (passwordUpdates.length > 0) {
@@ -155,12 +190,13 @@ END $chk$;`
 
   if (mode === 'dry-run') {
     out.push(
-      `DO $dry$ DECLARE a int; b int; c int; d int; e int; f int; BEGIN
+      `DO $dry$ DECLARE a int; b int; c int; d int; e int; f int; g int; BEGIN
   SELECT coalesce(max(v) FILTER (WHERE k = 'users_present'), 0), coalesce(max(v) FILTER (WHERE k = 'identities_present'), 0),
          coalesce(sum(v) FILTER (WHERE k = 'password_filled'), 0), coalesce(sum(v) FILTER (WHERE k = 'identity_inserted'), 0),
-         coalesce(sum(v) FILTER (WHERE k = 'instance_id_filled'), 0), coalesce(sum(v) FILTER (WHERE k = 'passwords_updated'), 0)
-    INTO a, b, c, d, e, f FROM _am_counts;
-  RAISE EXCEPTION 'DRYRUN users_present=% identities_present=% collision_password_filled=% collision_identity_added=% instance_id_filled=% passwords_updated=%', a, b, c, d, e, f;
+         coalesce(sum(v) FILTER (WHERE k = 'instance_id_filled'), 0), coalesce(sum(v) FILTER (WHERE k = 'passwords_updated'), 0),
+         coalesce(sum(v) FILTER (WHERE k = 'token_columns_filled'), 0)
+    INTO a, b, c, d, e, f, g FROM _am_counts;
+  RAISE EXCEPTION 'DRYRUN users_present=% identities_present=% collision_password_filled=% collision_identity_added=% instance_id_filled=% passwords_updated=% token_columns_filled=%', a, b, c, d, e, f, g;
 END $dry$;`
     );
   } else {
@@ -171,11 +207,13 @@ END $dry$;`
        coalesce(max(v) FILTER (WHERE k = 'identities_present'), 0) AS identities_present,
        coalesce(sum(v) FILTER (WHERE k = 'passwords_updated'), 0) AS passwords_updated,
        coalesce(sum(v) FILTER (WHERE k = 'instance_id_filled'), 0) AS instance_id_filled,
+       coalesce(sum(v) FILTER (WHERE k = 'token_columns_filled'), 0) AS token_columns_filled,
        (SELECT coalesce(jsonb_agg(jsonb_build_object(
           'source_user_id', e->>'source', 'target_user_id', e->>'target',
           'password_filled', coalesce((SELECT sum(v) FROM _am_counts WHERE k = 'password_filled' AND ref = e->>'target'), 0) > 0,
           'identity_inserted', coalesce((SELECT sum(v) FROM _am_counts WHERE k = 'identity_inserted' AND ref = e->>'target'), 0) > 0,
-          'instance_id_filled', coalesce((SELECT sum(v) FROM _am_counts WHERE k = 'instance_id_filled' AND ref = e->>'target'), 0) > 0)), '[]'::jsonb)
+          'instance_id_filled', coalesce((SELECT sum(v) FROM _am_counts WHERE k = 'instance_id_filled' AND ref = e->>'target'), 0) > 0,
+          'token_columns_filled', coalesce((SELECT sum(v) FROM _am_counts WHERE k = 'token_columns_filled' AND ref = e->>'target'), 0)::int)), '[]'::jsonb)
           FROM jsonb_array_elements('${collJson}'::jsonb) e) AS collisions
   FROM _am_counts;`
     );
@@ -187,7 +225,7 @@ END $dry$;`
 
 const HELP = `Usage: node scripts/auth-merge/02-import-auth.mjs --source-ref <ref> --project-ref <ref> [mode]
 Modes: --plan (default) | --dry-run | --apply --remap-out <path> | --delta-report
-Flags: --confirm-ref <ref> --fill-null-instance-id --apply-password-updates --allow-unmatched-known-collision --help`;
+Flags: --confirm-ref <ref> --fill-null-instance-id --fill-null-token-columns --apply-password-updates --allow-unmatched-known-collision --help`;
 
 const SPEC = {
   'source-ref': 'string',
@@ -199,6 +237,7 @@ const SPEC = {
   'delta-report': 'boolean',
   'remap-out': 'string',
   'fill-null-instance-id': 'boolean',
+  'fill-null-token-columns': 'boolean',
   'apply-password-updates': 'boolean',
   'allow-unmatched-known-collision': 'boolean',
 };
@@ -331,6 +370,7 @@ async function main() {
     mode: mode === 'apply' ? 'apply' : 'dry-run',
     expectedPresent: nonCollision.length,
     fillNullInstanceId: args.fillNullInstanceId,
+    fillNullTokenColumns: args.fillNullTokenColumns,
     passwordUpdates,
   });
 
@@ -344,12 +384,23 @@ async function main() {
   const rows = await runSql(targetRef, sql);
   const row = rows[0];
   console.log(
-    `users_present=${row.users_present} identities_present=${row.identities_present} passwords_updated=${row.passwords_updated} instance_id_filled=${row.instance_id_filled}`
+    `users_present=${row.users_present} identities_present=${row.identities_present} passwords_updated=${row.passwords_updated} instance_id_filled=${row.instance_id_filled} token_columns_filled=${row.token_columns_filled}`
   );
   const remaps = typeof row.collisions === 'string' ? JSON.parse(row.collisions) : row.collisions;
+  let prior = [];
+  try {
+    const old = JSON.parse(await readFile(args.remapOut, 'utf8'));
+    if (old.source_ref === sourceRef && old.target_ref === targetRef) prior = old.remaps ?? [];
+  } catch {
+    /* no previous remap file */
+  }
   await writeFile(
     args.remapOut,
-    JSON.stringify({ generated_at: new Date().toISOString(), source_ref: sourceRef, target_ref: targetRef, remaps }, null, 2),
+    JSON.stringify(
+      { generated_at: new Date().toISOString(), source_ref: sourceRef, target_ref: targetRef, remaps: mergeRemaps(prior, remaps) },
+      null,
+      2
+    ),
     'utf8'
   );
   console.log(`remap_written collisions=${remaps.length}`);
