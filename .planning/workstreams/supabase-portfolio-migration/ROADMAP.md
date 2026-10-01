@@ -9,7 +9,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 **Phase Numbering:** Independent numbering for this workstream (`supabase-portfolio-migration`), starting at Phase 1. Not continuous with the root project or other workstreams.
 
 - [x] **Phase 1: Inventory & Pre-Flight Audit** - Both Supabase projects' live state (schema, auth, storage, extensions) is fully known and cross-checked before any migration code is written (completed 2026-09-22)
-- [ ] **Phase 2: Schema Rename & Function/RLS Rewrite** - Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical, with zero stale unprefixed references
+- [x] **Phase 2: Schema Rename & Function/RLS Rewrite** - Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical, with zero stale unprefixed references (completed 2026-10-01)
 - [ ] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects
 - [ ] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity
 - [ ] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
@@ -52,8 +52,8 @@ Plans:
 - [x] 02-03-PLAN.md — Dump and rewrite ziko's schema into the new ziko_-prefixed migration series (tables/RLS + functions/triggers/grants) (SCHEMA-01, SCHEMA-02, SCHEMA-03)
 - [x] 02-04-PLAN.md — Build the stale-reference grep + authenticated RLS smoke-test verification tooling (SCHEMA-03, SCHEMA-04)
 - [x] 02-05-PLAN.md — [BLOCKING] Apply the migration series to the scratch project and run full verification (SCHEMA-05, SCHEMA-04, SCHEMA-03)
-- [ ] 02-06-PLAN.md — Checkpoint: human confirms the scratch dry run before the real portfolio apply (SCHEMA-05)
-- [ ] 02-07-PLAN.md — [BLOCKING] Apply the migration series to portfolio for real and run full verification — phase completion (SCHEMA-01, SCHEMA-02, SCHEMA-03, SCHEMA-04, SCHEMA-05)
+- [x] 02-06-PLAN.md — Checkpoint: human confirms the scratch dry run before the real portfolio apply (SCHEMA-05)
+- [x] 02-07-PLAN.md — [BLOCKING] Apply the migration series to portfolio for real and run full verification — phase completion (SCHEMA-01, SCHEMA-02, SCHEMA-03, SCHEMA-04, SCHEMA-05)
 
 ### Phase 3: Auth Merge
 **Goal**: Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects from shared `auth.users` triggers
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
-| 2. Schema Rename & Function/RLS Rewrite | 5/7 | In Progress|  |
+| 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete   | 2026-10-01 |
 | 3. Auth Merge | 0/TBD | Not started | - |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
