@@ -4,13 +4,13 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 3 context gathered
-last_updated: "2026-10-01T14:38:14.538Z"
+last_updated: "2026-10-01T14:55:51.098Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 22
-  completed_plans: 19
+  completed_plans: 21
   percent: 29
 ---
 
@@ -53,6 +53,7 @@ None yet.
 - True table/function count discrepancy (PROJECT.md says 73 migrations/93 tables; live grep found ~90 files/~100 `CREATE TABLE` statements) must be reconciled against `ziko`'s live `information_schema`, not migration file counts
 - Mobile-tail strategy (OTA vs. native rebuild, acceptable drain window before Phase 7 decommission) is a product decision, not resolved by research — needs explicit discussion before Phase 6/7 planning
 - Whether `portfolio`'s plan tier supports "pause" as an intermediate step before hard deletion is unverified — check before finalizing the Phase 7 runbook
+- 03-11: portfolio collision row 2b6a60fa has NULL token columns -> GoTrue admin HTTP 500; needs user-approved guarded fill before trigger stage
 
 ## Session Continuity
 
