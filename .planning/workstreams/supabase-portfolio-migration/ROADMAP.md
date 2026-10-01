@@ -77,7 +77,7 @@ Plans:
 - [x] 03-06-PLAN.md — Stage-aware trigger apply, live waitlist setval, 06-verify suite (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
 - [x] 03-07-PLAN.md — Management API read-merge-write for uri_allow_list + RUNBOOK (AUTHMIG-04)
 - [x] 03-08-PLAN.md — Scratch rehearsal: import, GoTrue login proof, idempotence, triggers, real signups, full verify (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
-- [ ] 03-09-PLAN.md — Checkpoint: access token; config merge rehearsal on scratch + portfolio preview (AUTHMIG-04)
+- [x] 03-09-PLAN.md — Checkpoint: access token; config merge rehearsal on scratch + portfolio preview (AUTHMIG-04)
 - [ ] 03-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + typed-phrase checkpoint before first portfolio write (AUTHMIG-01..04)
 - [ ] 03-11-PLAN.md — [BLOCKING] Portfolio import, triggers, sequence, full verification; uuid-remap.json for Phase 4 (AUTHMIG-01, AUTHMIG-02, AUTHMIG-03)
 - [ ] 03-12-PLAN.md — [BLOCKING] Portfolio uri_allow_list merge + diff (if authorized); retire token unconditionally (AUTHMIG-04)
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 |-------|----------------|--------|-----------|
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
-| 3. Auth Merge | 9/13 | In Progress|  |
+| 3. Auth Merge | 10/13 | In Progress|  |
 | 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
