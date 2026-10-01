@@ -24,10 +24,10 @@
 ### Fusion Auth (AUTHMIG)
 
 - [x] **AUTHMIG-01**: Les 39 comptes `auth.users` migrés avec UUID préservé (Admin API `createUser`, `password_hash` pass-through)
-- [ ] **AUTHMIG-02**: `auth.identities` copiées pour les comptes liés à un OAuth provider
-- [ ] **AUTHMIG-03**: Triggers `handle_new_user` / `handle_new_user_credits` scopés aux signups Ziko uniquement avant fusion des pools
+- [x] **AUTHMIG-02**: `auth.identities` copiées pour les comptes liés à un OAuth provider
+- [x] **AUTHMIG-03**: Triggers `handle_new_user` / `handle_new_user_credits` scopés aux signups Ziko uniquement avant fusion des pools
 - [x] **AUTHMIG-04**: Config auth (redirect URLs, email templates) fusionnée de manière additive, jamais écrasée
-- [ ] **AUTHMIG-05**: Utilisateurs Ziko informés qu'une re-connexion sera nécessaire (JWT secret ne peut pas être réutilisé dans un projet partagé)
+- [x] **AUTHMIG-05**: Utilisateurs Ziko informés qu'une re-connexion sera nécessaire (JWT secret ne peut pas être réutilisé dans un projet partagé)
 
 ### Copie des Données (DATA)
 
@@ -88,10 +88,10 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | SCHEMA-04 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
 | SCHEMA-05 | Phase 2 - Schema Rename & Function/RLS Rewrite | Complete |
 | AUTHMIG-01 | Phase 3 - Auth Merge | Complete |
-| AUTHMIG-02 | Phase 3 - Auth Merge | Pending |
-| AUTHMIG-03 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-02 | Phase 3 - Auth Merge | Complete |
+| AUTHMIG-03 | Phase 3 - Auth Merge | Complete |
 | AUTHMIG-04 | Phase 3 - Auth Merge | Complete |
-| AUTHMIG-05 | Phase 3 - Auth Merge | Pending |
+| AUTHMIG-05 | Phase 3 - Auth Merge | Complete |
 | DATA-01 | Phase 4 - Data Copy & Integrity Verification | Pending |
 | DATA-02 | Phase 4 - Data Copy & Integrity Verification | Pending |
 | DATA-03 | Phase 4 - Data Copy & Integrity Verification | Pending |
