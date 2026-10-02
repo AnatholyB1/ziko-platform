@@ -260,6 +260,14 @@ function mkPolicies(n) {
   }));
 }
 
+test('normalizePolicyExpr ignores search_path schema qualification of function calls', () => {
+  assert.equal(
+    normalizePolicyExpr("(x AND public.ziko_is_coach_of(auth.uid(), y))"),
+    normalizePolicyExpr("(x AND ziko_is_coach_of(auth.uid(), y))"),
+  );
+  assert.notEqual(normalizePolicyExpr('(public.a(1))'), normalizePolicyExpr('(public.b(1))'));
+});
+
 test('evaluatePolicies', () => {
   const expected = mkPolicies(25);
   const others = ['alb_read', 'alb_write'];

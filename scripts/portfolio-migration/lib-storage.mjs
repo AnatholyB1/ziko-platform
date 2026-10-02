@@ -236,6 +236,8 @@ export function findStalePolicyRefs(policies, { bucketIds, functionNames }) {
 
 export function normalizePolicyExpr(expr) {
   return String(expr ?? '')
+    // pg_policies deparses function calls without the schema when it is on the search_path
+    .replace(/(?<![A-Za-z0-9_])public\.(?=[a-z_]+\()/g, '')
     .replace(/\s+/g, ' ')
     .replace(/\(\s+/g, '(')
     .replace(/\s+\)/g, ')')
