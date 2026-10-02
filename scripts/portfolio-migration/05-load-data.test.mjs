@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   resolveRun,
   defaultMode,
@@ -9,6 +10,9 @@ import {
   buildSourceUuidOccurrenceSql,
   buildTruncatePrivilegeSql,
   FOREIGN_REFERRERS_SQL,
+  DEFAULT_BUCKET_MAP,
+  loadBucketIds,
+  buildSourceUrlScanSql,
 } from './05-load-data.mjs';
 
 const ZIKO = 'slkobhavpwsubnsmuhya';
@@ -104,4 +108,52 @@ test('groupColumns keeps ordinal order per table', () => {
     { tbl: 'b', name: 'id', type: 'uuid' },
   ]);
   assert.deepEqual(m.get('a'), [{ name: 'id', type: 'uuid' }, { name: 'n', type: 'text' }]);
+});
+
+test('resolveRun defaults the bucket map path next to the script', () => {
+  const r = resolveRun(base({ apply: true }));
+  assert.equal(r.bucketMapFile, DEFAULT_BUCKET_MAP);
+  assert.ok(DEFAULT_BUCKET_MAP.replaceAll('\\', '/').endsWith('scripts/portfolio-migration/bucket-map.generated.json'));
+  assert.equal(resolveRun(base({ apply: true, bucketMap: 'custom.json' })).bucketMapFile, 'custom.json');
+});
+
+test('loadBucketIds exits 2 on a missing or invalid bucket map', async () => {
+  await assert.rejects(loadBucketIds('does-not-exist.json'), (e) => e.exitCode === 2);
+  const real = await loadBucketIds(DEFAULT_BUCKET_MAP);
+  assert.ok(real.length > 0);
+});
+
+test('buildSourceUrlScanSql validates inputs and anchors on host and buckets', () => {
+  const sql = buildSourceUrlScanSql(['user_profiles'], { ref: ZIKO, buckets: ['avatars', 'a-b'] });
+  assert.ok(sql.includes('public."user_profiles"'));
+  assert.ok(sql.includes('r::text ~'));
+  assert.ok(sql.includes('(avatars|a-b)'));
+  assert.throws(() => buildSourceUrlScanSql(['bad name'], { ref: ZIKO, buckets: ['a'] }));
+  assert.throws(() => buildSourceUrlScanSql(['t'], { ref: ZIKO, buckets: [] }));
+  assert.throws(() => buildSourceUrlScanSql(['t'], { ref: ZIKO, buckets: ["x'y"] }));
+});
+
+test('buildLoadReport records url_rewrites per table and in total, and stays PII-safe', () => {
+  const r = buildLoadReport({
+    targetRef: SCRATCH,
+    mode: 'apply',
+    triggerMode: 'replica',
+    tables: [
+      { table: 'ziko_a', sourceCount: 3, streamedRows: 3, targetCount: 3, urlRewrites: 2 },
+      { table: 'ziko_b', sourceCount: 1, streamedRows: 1, targetCount: 1, urlRewrites: 1 },
+      { table: 'ziko_c', sourceCount: 1, streamedRows: 1, targetCount: 1 },
+    ],
+    sequences: [],
+  });
+  assert.deepEqual(r.tables.map((t) => t.url_rewrites), [2, 1, 0]);
+  assert.equal(r.url_rewrites_total, 3);
+});
+
+test('loadTable pipeline runs the url rewrite after the remap and has no post-hoc UPDATE', () => {
+  const src = readFileSync(new URL('./05-load-data.mjs', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('export async function loadTable'), src.indexOf('async function readSeqState'));
+  assert.match(body, /createUrlRewriteTransform\(/);
+  assert.match(body, /transform,\s*urlTransform,\s*dst\.query\(copyFrom/);
+  assert.match(body, /url transform row mismatch/);
+  assert.ok(!/UPDATE public\.|UPDATE ziko_/.test(src));
 });

@@ -46,6 +46,7 @@ import {
   compareColumnLists,
   parseRemapFile,
   createRemapTransform,
+  createUrlRewriteTransform,
   topoSortTables,
   assertNoForeignReferrers,
   evaluateLoadedTable,
@@ -65,15 +66,18 @@ import {
   assertReportSafe,
 } from './lib-verify.mjs';
 import { connectClient, redactSecrets } from './lib-conn.mjs';
+import { SOURCE_BUCKET_RE } from './lib-storage.mjs';
 
 const { to: copyTo, from: copyFrom } = copyStreams;
 const __dirname = dirname(fileURLToPath(import.meta.url));
+export const DEFAULT_BUCKET_MAP = join(__dirname, 'bucket-map.generated.json');
 
 const SPEC = {
   'source-ref': 'string',
   'project-ref': 'string',
   'confirm-ref': 'string',
   'remap-file': 'string',
+  'bucket-map': 'string',
   plan: 'boolean',
   probe: 'boolean',
   apply: 'boolean',
@@ -86,10 +90,12 @@ const HELP = `Phase 4 data loader (ziko -> ziko_* tables)
 
   node scripts/portfolio-migration/05-load-data.mjs --source-ref <ref> --project-ref <ref> --remap-file <path>
        [--confirm-ref <ref>] [--plan | --probe | --apply]
-       [--trigger-mode auto|replica|disable-trigger] [--ca-file <path>] [--report-out <path>]
+       [--bucket-map <path>] [--trigger-mode auto|replica|disable-trigger] [--ca-file <path>] [--report-out <path>]
 
 Default mode is --plan (read-only). --probe and --apply need SUPABASE_ACCESS_TOKEN
 (or scripts/auth-merge/.access-token). Writing to portfolio needs --confirm-ref <portfolio ref>.
+--bucket-map defaults to scripts/portfolio-migration/bucket-map.generated.json; storage URLs stored in rows
+are rewritten in-flight to the target host and ziko-<bucket> (needed by --plan and --apply).
 Exit codes: 0 ok, 1 failure, 2 bad arguments.`;
 
 const TRIGGER_MODES = ['auto', 'replica', 'disable-trigger'];
@@ -145,8 +151,38 @@ export function resolveRun(args) {
     sourceRef: args.sourceRef,
     targetRef: args.projectRef,
     remapFile: args.remapFile ?? null,
+    bucketMapFile: args.bucketMap ?? DEFAULT_BUCKET_MAP,
     triggerMode,
   };
+}
+
+/** Bucket ids from the generated bucket map (never a literal list). Exit 2 if unreadable or invalid. */
+export async function loadBucketIds(file) {
+  let obj;
+  try {
+    obj = JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    throw new CliError('bucket map could not be read or parsed (run the bucket-map generator first)', 2);
+  }
+  const ids = Array.isArray(obj?.buckets) ? obj.buckets.map((b) => b?.id) : [];
+  if (ids.length === 0) throw new CliError('bucket map has no buckets', 2);
+  for (const id of ids) {
+    if (typeof id !== 'string' || !SOURCE_BUCKET_RE.test(id)) throw new CliError('bucket map contains an invalid bucket id', 2);
+  }
+  return ids;
+}
+
+/** Source-side (unprefixed tables) count of rows holding a ziko storage URL in any column (row-as-text). */
+export function buildSourceUrlScanSql(names, { ref, buckets }) {
+  inList(names);
+  if (!/^[a-z0-9]+$/.test(ref)) throw new Error('invalid project ref');
+  if (!Array.isArray(buckets) || buckets.length === 0) throw new Error('empty bucket list');
+  for (const b of buckets) if (!SOURCE_BUCKET_RE.test(b)) throw new Error('invalid bucket id');
+  const alt = buckets.join('|');
+  const pattern = `${ref}\\.supabase\\.co/storage/v1/(object|render/image)/(public|sign|authenticated)/(${alt})([^A-Za-z0-9_-]|$)`;
+  return names
+    .map((n) => `SELECT '${n}' AS tbl, count(*)::bigint AS n FROM public."${n}" r WHERE r::text ~ '${pattern}'`)
+    .join('\nUNION ALL\n');
 }
 
 /** Names/counts/booleans/masked UUIDs only; throws if anything PII-shaped slips in. */
@@ -166,6 +202,7 @@ export function buildLoadReport({ targetRef, mode, triggerMode, tables, sequence
       target_count: Number(t.targetCount),
       remap_rows_touched: Number(t.rowsTouched ?? 0),
       remap_replacements: Number(t.replacements ?? 0),
+      url_rewrites: Number(t.urlRewrites ?? 0),
     })),
     sequences: (sequences ?? []).map((s) => ({
       name: s.name,
@@ -173,6 +210,7 @@ export function buildLoadReport({ targetRef, mode, triggerMode, tables, sequence
       after: s.after ?? null,
     })),
     total_rows: (tables ?? []).reduce((a, t) => a + Number(t.targetCount), 0),
+    url_rewrites_total: (tables ?? []).reduce((a, t) => a + Number(t.urlRewrites ?? 0), 0),
   };
   assertReportSafe(report);
   return report;
@@ -310,6 +348,15 @@ async function runPlan(run, log) {
   }
   log(`total source rows: ${total}`);
 
+  const buckets = await loadBucketIds(run.bucketMapFile);
+  const urlScan = await runSql(run.sourceRef, buildSourceUrlScanSql(sources, { ref: run.sourceRef, buckets }));
+  let urlTotal = 0;
+  for (const r of urlScan.filter((x) => num(x.n) > 0)) {
+    urlTotal += num(r.n);
+    log(`source storage urls in ${r.tbl}: ${num(r.n)} rows`);
+  }
+  log(`total rows with ziko storage urls (rewritten in-flight on apply): ${urlTotal}`);
+
   const srcOcc = await runSql(run.sourceRef, buildSourceUuidOccurrenceSql(sources, remap.sourceUuid));
   const tgtOcc = await runSql(run.targetRef, buildUuidOccurrenceSql(targets, remap.targetUuid));
   for (const r of srcOcc.filter((x) => num(x.n) > 0)) log(`source uuid ${maskUuid(remap.sourceUuid)} in ${r.tbl}: ${num(r.n)} rows`);
@@ -427,10 +474,11 @@ async function runProbe(run, caPem, log) {
  * only, never row content) on any exception. The transaction commits only if
  * source snapshot count = streamed rows = target count.
  */
-export async function loadTable({ src, dst, entry, columns, sourceUuid, targetUuid, triggerMode, sourceCount }) {
+export async function loadTable({ src, dst, entry, columns, sourceUuid, targetUuid, triggerMode, sourceCount, sourceRef, targetRef, buckets }) {
   const { source, target } = entry;
   const disable = triggerMode === 'disable-trigger';
   const transform = createRemapTransform(sourceUuid, targetUuid);
+  const urlTransform = createUrlRewriteTransform({ sourceRef, targetRef, buckets });
   let committed = false;
   let phase = 'begin';
   try {
@@ -447,6 +495,7 @@ export async function loadTable({ src, dst, entry, columns, sourceUuid, targetUu
     await pipeline(
       src.query(copyTo(buildCopyToSql(source, columns))),
       transform,
+      urlTransform,
       dst.query(copyFrom(buildCopyFromSql(target, columns)))
     );
     phase = 'trigger-restore';
@@ -461,12 +510,16 @@ export async function loadTable({ src, dst, entry, columns, sourceUuid, targetUu
     });
     if (!ev.ok) {
       await dst.query('ROLLBACK');
-      return { ok: false, reason: ev.reason, streamedRows: transform.stats.rows, targetCount, stats: transform.stats };
+      return { ok: false, reason: ev.reason, streamedRows: transform.stats.rows, targetCount, stats: transform.stats, urlStats: urlTransform.stats };
+    }
+    if (urlTransform.stats.rows !== transform.stats.rows) {
+      await dst.query('ROLLBACK');
+      return { ok: false, reason: 'url transform row mismatch', streamedRows: transform.stats.rows, targetCount, stats: transform.stats, urlStats: urlTransform.stats };
     }
     phase = 'commit';
     await dst.query('COMMIT');
     committed = true;
-    return { ok: true, reason: null, streamedRows: transform.stats.rows, targetCount, stats: transform.stats };
+    return { ok: true, reason: null, streamedRows: transform.stats.rows, targetCount, stats: transform.stats, urlStats: urlTransform.stats };
   } catch (err) {
     await dst.query('ROLLBACK').catch(() => {});
     throw new CliError(`${target}: ${phase} phase failed (${err && err.code ? err.code : 'error'})`, 1);
@@ -485,6 +538,7 @@ async function runApply(run, caPem, args, log) {
   const { plan, remap } = await readPlanData(run);
   const sources = plan.map((p) => p.source);
   const targets = plan.map((p) => p.target);
+  const buckets = await loadBucketIds(run.bucketMapFile);
   const opened = await openClients(run, caPem);
   const { src, dst } = opened;
   let snapshotOpen = false;
@@ -549,9 +603,12 @@ async function runApply(run, caPem, args, log) {
         targetUuid: remap.targetUuid,
         triggerMode,
         sourceCount: srcCounts.get(entry.target),
+        sourceRef: run.sourceRef,
+        targetRef: run.targetRef,
+        buckets,
       });
       if (!res.ok) throw new CliError(`count assertion failed, rolled back: ${res.reason}`, 1);
-      log(`loaded ${entry.target} rows=${res.targetCount} remapped_rows=${res.stats.rowsTouched}`);
+      log(`loaded ${entry.target} rows=${res.targetCount} remapped_rows=${res.stats.rowsTouched} url_rewrites=${res.urlStats.replacements}`);
       results.push({
         table: entry.target,
         sourceCount: srcCounts.get(entry.target),
@@ -559,6 +616,7 @@ async function runApply(run, caPem, args, log) {
         targetCount: res.targetCount,
         rowsTouched: res.stats.rowsTouched,
         replacements: res.stats.replacements,
+        urlRewrites: res.urlStats.replacements,
       });
     }
 
