@@ -420,8 +420,192 @@ async function runProbe(run, caPem, log) {
 // --apply
 // ---------------------------------------------------------------------------
 
-async function runApply() {
-  throw new CliError('--apply not implemented yet', 1);
+/**
+ * One table, one target transaction. Integration-only (needs live clients).
+ * Returns { ok, reason, streamedRows, targetCount, stats }; throws CliError (table + phase + SQLSTATE
+ * only, never row content) on any exception. The transaction commits only if
+ * source snapshot count = streamed rows = target count.
+ */
+export async function loadTable({ src, dst, entry, columns, sourceUuid, targetUuid, triggerMode, sourceCount }) {
+  const { source, target } = entry;
+  const disable = triggerMode === 'disable-trigger';
+  const transform = createRemapTransform(sourceUuid, targetUuid);
+  let committed = false;
+  let phase = 'begin';
+  try {
+    await dst.query('BEGIN');
+    phase = 'trigger-setup';
+    if (disable) {
+      await dst.query(buildTriggerToggleSql(target, false));
+    } else {
+      await dst.query('SET LOCAL session_replication_role = replica');
+      const r = await rows(dst, "SELECT current_setting('session_replication_role') AS v");
+      if (r[0]?.v !== 'replica') throw new Error('replica role not in effect');
+    }
+    phase = 'copy';
+    await pipeline(
+      src.query(copyTo(buildCopyToSql(source, columns))),
+      transform,
+      dst.query(copyFrom(buildCopyFromSql(target, columns)))
+    );
+    phase = 'trigger-restore';
+    if (disable) await dst.query(buildTriggerToggleSql(target, true));
+    phase = 'count';
+    const targetCount = num((await rows(dst, `SELECT count(*)::bigint AS n FROM public."${target}"`))[0].n);
+    const ev = evaluateLoadedTable({
+      table: target,
+      sourceCount,
+      streamedRows: transform.stats.rows,
+      targetCount,
+    });
+    if (!ev.ok) {
+      await dst.query('ROLLBACK');
+      return { ok: false, reason: ev.reason, streamedRows: transform.stats.rows, targetCount, stats: transform.stats };
+    }
+    phase = 'commit';
+    await dst.query('COMMIT');
+    committed = true;
+    return { ok: true, reason: null, streamedRows: transform.stats.rows, targetCount, stats: transform.stats };
+  } catch (err) {
+    await dst.query('ROLLBACK').catch(() => {});
+    throw new CliError(`${target}: ${phase} phase failed (${err && err.code ? err.code : 'error'})`, 1);
+  } finally {
+    // ROLLBACK already restores trigger state; the extra statement is defensive.
+    if (disable && !committed) await dst.query(buildTriggerToggleSql(target, true)).catch(() => {});
+  }
+}
+
+async function readSeqState(client, name, side) {
+  const r = await rows(client, buildSequenceStateSql(name, side));
+  return { last_value: String(r[0].last_value), is_called: r[0].is_called === true };
+}
+
+async function runApply(run, caPem, args, log) {
+  const { plan, remap } = await readPlanData(run);
+  const sources = plan.map((p) => p.source);
+  const targets = plan.map((p) => p.target);
+  const opened = await openClients(run, caPem);
+  const { src, dst } = opened;
+  let snapshotOpen = false;
+  try {
+    // (1) re-run guards on the live connections before any write
+    assertNoForeignReferrers(await rows(dst, FOREIGN_REFERRERS_SQL));
+    const srcCols = groupColumns(await rows(src, buildColumnsSql(sources)));
+    const tgtCols = groupColumns(await rows(dst, buildColumnsSql(targets)));
+    assertColumnsMatch(plan, srcCols, tgtCols);
+    log('guards ok: no foreign referrers, column lists identical');
+
+    // (2) trigger mode and table order
+    const triggerMode = await resolveTriggerMode(run.triggerMode, dst);
+    log(`trigger mode: ${triggerMode}`);
+    let order = plan;
+    if (triggerMode === 'disable-trigger') {
+      const edges = (await rows(dst, FK_LIST_SQL)).map((r) => ({ child: r.child, parent: r.parent_table }));
+      const sorted = topoSortTables(targets, edges);
+      const byTarget = new Map(plan.map((p) => [p.target, p]));
+      order = sorted.map((t) => byTarget.get(t));
+    }
+
+    // (3) previous target sequence states
+    const seqNames = (await rows(src, SEQUENCE_LIST_SQL)).map((r) => r.sequencename);
+    const previous = new Map();
+    for (const s of seqNames) {
+      const t = mapSequenceName(s);
+      previous.set(s, await readSeqState(dst, t, 'target'));
+    }
+
+    // (4) guarded truncate, its own transaction
+    try {
+      await dst.query('BEGIN');
+      await dst.query(buildTruncateSql(targets));
+      await dst.query('COMMIT');
+    } catch (err) {
+      await dst.query('ROLLBACK').catch(() => {});
+      throw new CliError(`truncate phase failed (${err && err.code ? err.code : 'error'})`, 1);
+    }
+    log(`truncated ${targets.length} ziko_ tables`);
+
+    // (5) the target UUID must not pre-exist anywhere in the target tables
+    const occ = await rows(dst, buildUuidOccurrenceSql(targets, remap.targetUuid));
+    const pre = occ.filter((r) => num(r.n) > 0);
+    if (pre.length > 0) throw new CliError(`target uuid ${maskUuid(remap.targetUuid)} already present in ${pre.length} tables after truncate`, 1);
+
+    // (6) one consistent source snapshot for the whole run
+    await src.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+    snapshotOpen = true;
+    const srcCounts = countMap(await rows(src, buildCountsSql(plan, 'source')));
+
+    // (7) per table load
+    const results = [];
+    for (const entry of order) {
+      const columns = srcCols.get(entry.source).map((c) => c.name);
+      const res = await loadTable({
+        src,
+        dst,
+        entry,
+        columns,
+        sourceUuid: remap.sourceUuid,
+        targetUuid: remap.targetUuid,
+        triggerMode,
+        sourceCount: srcCounts.get(entry.target),
+      });
+      if (!res.ok) throw new CliError(`count assertion failed, rolled back: ${res.reason}`, 1);
+      log(`loaded ${entry.target} rows=${res.targetCount} remapped_rows=${res.stats.rowsTouched}`);
+      results.push({
+        table: entry.target,
+        sourceCount: srcCounts.get(entry.target),
+        streamedRows: res.streamedRows,
+        targetCount: res.targetCount,
+        rowsTouched: res.stats.rowsTouched,
+        replacements: res.stats.replacements,
+      });
+    }
+
+    // (8) close the snapshot
+    await src.query('COMMIT');
+    snapshotOpen = false;
+
+    // (9) sequences from ziko's live state; the sequence-advancing function is never used
+    const sequences = [];
+    for (const s of seqNames) {
+      const target = mapSequenceName(s);
+      const state = await readSeqState(src, s, 'source');
+      const prev = previous.get(s);
+      if (BigInt(state.last_value) < BigInt(prev.last_value)) {
+        throw new CliError(`${target}: source value is below the previous target value; refusing to regress`, 1);
+      }
+      await dst.query(buildSetvalSql(target, state));
+      const after = await readSeqState(dst, target, 'target');
+      sequences.push({ name: target, before: Number(prev.last_value), after: Number(after.last_value) });
+      log(`sequence ${target}: ${prev.last_value} -> ${after.last_value}`);
+    }
+
+    // (10) no user trigger may remain disabled
+    const trig = evaluateTriggers(await rows(dst, TRIGGER_STATE_SQL));
+    log(`triggers: ${trig.detail}`);
+    if (!trig.ok) throw new CliError(`trigger assertion failed: ${trig.data.notEnabled.length} triggers not enabled`, 1);
+
+    // (11) report
+    const report = buildLoadReport({
+      targetRef: run.targetRef,
+      mode: 'apply',
+      triggerMode,
+      tables: results,
+      sequences,
+      remap,
+    });
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const out = args.reportOut ?? join(__dirname, `.tmp-load-${run.targetRef}-${stamp}.json`);
+    await writeFile(out, JSON.stringify(report, null, 2), 'utf8');
+    log(`total rows loaded: ${report.total_rows} across ${results.length} tables`);
+    log(`report written: ${out}`);
+  } catch (err) {
+    if (snapshotOpen) await src.query('ROLLBACK').catch(() => {});
+    if (err instanceof CliError) throw err;
+    throw new CliError(`apply failed (${err && err.code ? err.code : 'error'})`, 1);
+  } finally {
+    await closeClients(run, opened);
+  }
 }
 
 // ---------------------------------------------------------------------------
