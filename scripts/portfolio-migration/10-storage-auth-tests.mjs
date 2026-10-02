@@ -530,6 +530,9 @@ async function execCase(c, state, mode, { admin, targetRef, anon }) {
     case 'baseline-public-url': {
       const { data } = cl.storage.from(bucketId).getPublicUrl(p);
       const res = await fetch(data.publicUrl);
+      // Always drain the body: an unread response keeps its pooled connection busy and stalls the
+      // next request (observed hanging the smoke run on portfolio with large real objects).
+      await res.arrayBuffer().catch(() => undefined);
       if (c.op === 'public-read') return res.status === 200 ? 'allow' : 'deny';
       return res.status === 200 ? 'allow' : 'baseline';
     }
