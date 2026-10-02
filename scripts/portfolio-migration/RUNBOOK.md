@@ -175,11 +175,101 @@ otherwise their rows would be orphaned FKs. Then run the identical `05-load-data
 ### 4.7 Known open items (not Phase 4 scope)
 
 - 3 ziko rows (`user_profiles` 2, `body_measurements` 1) store full storage URLs containing the
-  ziko project ref. They are copied verbatim and must be handled in Phase 5/6 (RESEARCH Pitfall 7).
+  ziko project ref. They are copied verbatim and must be handled in Phase 5/6 (RESEARCH Pitfall 7). Resolved in Phase 5: see section 5.4.
 - The UUID remap also rewrites `<uuid>/file` storage paths inside rows, so Phase 5 must key the
-  collision user's objects by the target UUID (spec section 8).
+  collision user's objects by the target UUID (spec section 8). Resolved in Phase 5: see section 5.4.
 
 ### 4.8 Token retirement
 
 At phase end, on every path, delete `scripts/auth-merge/.access-token` and revoke the PAT at
+https://supabase.com/dashboard/account/tokens.
+
+## Phase 5 — Storage migration
+
+Refs: ziko `slkobhavpwsubnsmuhya` (source, read-only), portfolio `ubxllsvanurkwkohzxau`,
+scratch `rkirvurggtgjlkeuhded`. Scripts: `07-generate-storage-policies.mjs`, `08-copy-storage.mjs`,
+`05-load-data.mjs` (URL rewrite hook), `06-verify-data.mjs`, `09-verify-storage.mjs`,
+`10-storage-auth-tests.mjs`, `11-codemod-buckets.mjs`. Buckets are renamed `ziko-<id>`; policies `ziko_*`.
+
+### 5.1 Prerequisites
+
+- Supabase CLI logged in. The plan/check/verify commands use only this.
+- A short-lived PAT named `ziko-storage-phase5` (project scope: portfolio, ziko, scratch) in the gitignored
+  `scripts/auth-merge/.access-token` or `SUPABASE_ACCESS_TOKEN`. It is needed for loader `--probe`/`--apply`,
+  the global storage limit read, and the storage auth harness (API keys).
+- Supabase root CA at `scripts/portfolio-migration/.ca/supabase-ca.crt`, passed as `--ca-file` to loader commands.
+- Regenerate-and-check rule: `bucket-map.generated.json` and the policies migration are generated read-only from
+  live ziko. Before every apply run `07-generate-storage-policies.mjs --check --source-ref slkobhavpwsubnsmuhya`;
+  if it reports drift or stale references, regenerate with `--generate`, review the diff, commit, and only then continue.
+- One writer per target at a time. Never delete objects or buckets by hand.
+
+### 5.2 Scratch rehearsal (exact order; verified PASS)
+
+1. Auth precondition (same as 4.2 step 1; regenerates the scratch remap `R=scripts/portfolio-migration/.tmp-uuid-remap.scratch.json`).
+2. Tenant baseline: `node scripts/portfolio-migration/09-verify-storage.mjs --project-ref rkirvurggtgjlkeuhded --snapshot-tenants --out scripts/portfolio-migration/.tmp-scratch-storage-tenants.json`
+3. Policies FIRST (before any bucket or object write):
+
+        node scripts/portfolio-migration/07-generate-storage-policies.mjs --check --source-ref slkobhavpwsubnsmuhya
+        node scripts/portfolio-migration/07-generate-storage-policies.mjs --apply --project-ref rkirvurggtgjlkeuhded
+
+4. Copy: `08-copy-storage.mjs --source-ref slkobhavpwsubnsmuhya --project-ref rkirvurggtgjlkeuhded --remap-file $R --plan`, then `--apply --report-out scripts/portfolio-migration/reports/scratch-storage-copy.json`.
+5. Loader re-run with URL rewrite: `05-load-data.mjs ... --remap-file $R --ca-file scripts/portfolio-migration/.ca/supabase-ca.crt` with `--plan`, `--probe`, `--apply --report-out scripts/portfolio-migration/reports/scratch-load-phase5.json`; then `06-verify-data.mjs --project-ref rkirvurggtgjlkeuhded --source-ref slkobhavpwsubnsmuhya --remap-file $R --check all`.
+6. `09-verify-storage.mjs --project-ref rkirvurggtgjlkeuhded --source-ref slkobhavpwsubnsmuhya --remap-file $R --baseline scripts/portfolio-migration/.tmp-scratch-storage-tenants.json --check all --json-out scripts/portfolio-migration/reports/scratch-storage-verify.json`
+7. Auth matrix (run `git apply --check` of the patch first, see 5.6a): `10-storage-auth-tests.mjs --project-ref rkirvurggtgjlkeuhded --mode full --with-codemod-patch scripts/portfolio-migration/patches/05-bucket-codemod.patch --report-out scripts/portfolio-migration/reports/scratch-storage-auth.json`; afterwards `git status --porcelain -- apps backend plugins packages/plugin-sdk scripts/exercise-import` must be empty.
+8. Idempotence: repeat the copy `--apply` (expect copied 0, destination-only 0) and `09-verify-storage --check all`.
+
+### 5.3 Portfolio gate
+
+- Auto-chain is disabled. Read-only pre-flight:
+
+        node scripts/portfolio-migration/07-generate-storage-policies.mjs --check --source-ref slkobhavpwsubnsmuhya
+        node scripts/portfolio-migration/08-copy-storage.mjs --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --plan
+        node scripts/portfolio-migration/09-verify-storage.mjs --project-ref ubxllsvanurkwkohzxau --snapshot-tenants --out scripts/portfolio-migration/baseline/portfolio-storage-tenants-preload.json
+
+- The operator types the exact phrase `approve ubxllsvanurkwkohzxau option-storage-migration`; it is recorded in the plan SUMMARY and grepped mechanically before any write.
+
+### 5.4 Portfolio run order
+
+policies -> copy -> loader re-run -> `06-verify-data --check all` -> `09-verify-storage --check all` -> auth smoke -> tenants.
+Every write command passes `--confirm-ref ubxllsvanurkwkohzxau`; `--baseline` is the pre-load tenant snapshot:
+
+        07-generate-storage-policies.mjs --apply --project-ref ubxllsvanurkwkohzxau --confirm-ref ubxllsvanurkwkohzxau
+        08-copy-storage.mjs ... --project-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --confirm-ref ubxllsvanurkwkohzxau --apply
+        05-load-data.mjs ... --confirm-ref ubxllsvanurkwkohzxau --probe, then --apply   (rewrites the 3 ziko storage URL rows in flight)
+        06-verify-data.mjs ... --check all
+        09-verify-storage.mjs ... --check all --baseline <pre-load snapshot>
+        10-storage-auth-tests.mjs --project-ref ubxllsvanurkwkohzxau --mode smoke --confirm-ref ubxllsvanurkwkohzxau
+
+The collision user's objects are keyed by the target UUID via the remap file (36 objects on the rehearsal).
+
+### 5.5 Recovery
+
+Re-run `08-copy-storage --apply` (idempotent, add/replace only). Never delete objects, buckets or policies by hand.
+Loader failures: follow 4.5 (re-run `--apply`).
+
+### 5.6 Phase 6 delta
+
+Auth delta, then loader reload, then `08-copy-storage --apply` (add-only), `09-verify-storage --check all`, and a manual
+review of any destination-only objects. Re-apply the codemod on a fresh main
+(`11-codemod-buckets.mjs --apply`, or rebase `gsd/phase-5-bucket-codemod`) and merge it together with the Vercel env flip.
+
+### 5.6a Codemod patch drift
+
+If HEAD gains commits touching any file listed in `scripts/portfolio-migration/patches/05-bucket-codemod.manifest.txt`
+after 05-08 (and before 05-11 or Phase 6), the patch is stale. Run `git apply --check` of the patch before every
+`--with-codemod-patch` use. On failure regenerate the patch with the script (repeat 05-08 Task 1 steps 1-6: `--scan`,
+`--apply --manifest-out`, `--check`, residual grep gate, capture, restore) before any `git apply`. Never hand-merge the patch.
+
+### 5.7 Known items
+
+- profile-photos quirk (D-02): bucket is private yet a public-role SELECT policy exists and there is no DELETE policy. Carried as is; the matrix records the baseline observations.
+- Cache-control (A2): raw-header uploads preserved the source cache-control on scratch (0 mismatches over 2699 objects).
+- The Storage CDN caches an authenticated response already served, so a revoked coach can re-download the same already-read path for the cache lifetime. The policy itself denies (fresh path, signed URL and SQL simulation all deny). Pre-existing platform behavior, not a migration defect.
+- Policy comparison ignores the `public.` schema prefix on function calls (pg_policies deparses without it).
+- `created_at` is reset on copied objects (scan-photos cleanup clock restarts).
+- Backend coach routes that query unprefixed tables are `deferred-table-codemod` and become named Phase 6 smoke items.
+
+### 5.8 Token retirement
+
+At phase end, on every path, delete `scripts/auth-merge/.access-token` and revoke the PAT `ziko-storage-phase5` at
 https://supabase.com/dashboard/account/tokens.
