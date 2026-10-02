@@ -4,13 +4,13 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: "2026-10-02T11:37:50.495Z"
+last_updated: "2026-10-02T11:40:55.905Z"
 last_activity: 2026-10-02
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 29
-  completed_plans: 25
+  completed_plans: 26
   percent: 43
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 4 (Data Copy & Integrity Verification) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-10-02
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 90%
 
 ## Accumulated Context
 
@@ -43,6 +43,7 @@ Progress: [█████████░] 86%
 - [Phase 03]: 03-02: ziko auth trigger functions gated on app=ziko, search_path public, pg_temp; triggers attached in separate post-import file
 - [Phase 03]: 03-08: NULL instance_id blocks GoTrue login on scratch; Plan 10 must pick the instance-id fix option
 - [Phase 03]: 03-11: user-authorized guarded NULL-to-empty fill of 4 GoTrue token columns on the collision row (--fill-null-token-columns, --allow-token-fill)
+- [Phase 4]: Phase 4-03: FOREIGN_REFERRERS_SQL lives in 05-load-data.mjs (04-02 REFERRERS_SQL has sequence semantics)
 
 ### Pending Todos
 
@@ -58,6 +59,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-02T11:37:42.172Z
+Last session: 2026-10-02T11:40:44.789Z
 Stopped at: Phase 4 context gathered
 Resume file: None
