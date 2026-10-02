@@ -93,7 +93,16 @@ Plans:
   3. Row counts match exactly between ziko (source) and portfolio (destination) for every table
   4. All FK constraints pass `VALIDATE CONSTRAINT` with zero orphaned rows detected
   5. The verification suite (row counts, RLS-enabled check, FK orphans) is committed to the repo and re-runnable on demand
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Wave 0: install pg/pg-copy-streams, gitignore, lib-data pure loader helpers (table plan, ziko_-only builders, remap transform) + tests (DATA-01)
+- [ ] 04-02-PLAN.md — lib-verify pure checks (counts, RLS, triggers, corrected FK discovery, orphans, sequences without nextval, remap, tenants, report sanitizer) + tests (DATA-02..05)
+- [ ] 04-03-PLAN.md — lib-conn (login-role, session pooler, verified TLS) + 05-load-data CLI (--plan/--probe/--apply, guarded truncate, per-table replica COPY, setval) (DATA-01, DATA-02)
+- [ ] 04-04-PLAN.md — 06-verify-data re-runnable suite (--check all, JSON + masked summary) + RUNBOOK Phase 4 section (DATA-03..05)
+- [ ] 04-05-PLAN.md — Checkpoint PAT; scratch auth precondition, probe, full load + verify, reload + verify (DATA-01..05)
+- [ ] 04-06-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + tenants baseline, typed-phrase checkpoint (DATA-01, DATA-03, DATA-04)
+- [ ] 04-07-PLAN.md — [BLOCKING] Portfolio load + --check all + tenants; retire token on every path (DATA-01..05)
 
 ### Phase 5: Storage Migration
 **Goal**: All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
@@ -140,7 +149,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
-| 4. Data Copy & Integrity Verification | 0/TBD | Not started | - |
+| 4. Data Copy & Integrity Verification | 0/7 | Planned | - |
 | 5. Storage Migration | 0/TBD | Not started | - |
 | 6. Cutover | 0/TBD | Not started | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
