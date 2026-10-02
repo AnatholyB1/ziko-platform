@@ -119,3 +119,10 @@ Backend, web, and mobile all run against `portfolio` in production, flipped one 
 
 *Phase: 6-Cutover*
 *Context gathered: 2026-10-03*
+
+## Amendments after research (2026-10-03, user-confirmed)
+
+- **D-01/D-04 SUPERSEDED:** OTA cannot reach installed binaries (no `runtimeVersion`/`updates.url` in app.json, no EAS channel, `expo.modules.updates.ENABLED=false` in the native manifest). **The native build is the mobile flip**: build/distribute a new binary pointing at portfolio, last in the order. Old binaries hard-cut per D-02. No expo-updates enablement in this phase.
+- **D-16:** Route to main: **merge the working branch into main first** (lands Phases 1-5 scripts, bucket codemod, mobile-audit work), then a small cutover PR on top. The merge itself must not push migrations to any project: neutralize/guard the `migrate-supabase` CI job before or within that merge (it pushes unprefixed ziko DDL and repairs ~90 foreign versions into portfolio history). Portfolio's `ziko_` series lives in `supabase/portfolio-migrations/`.
+- **D-17:** **Table-name codemod is in scope, built in Wave 0**: script-driven from `scripts/portfolio-migration/rename-map.generated.json` (99 tables, 33 functions), covering ~788 `.from()` sites/169 files, 19 `.rpc` names, ~33 embedded selects (rewrite with alias, e.g. `user_profiles:ziko_user_profiles!inner(...)`, to keep response keys stable), the dynamic table map in `ziko-chat.tsx`, RLS tests and `scripts/exercise-import`; avoid TanStack query-key false positives; `--check` residual pass; gated by tests + RLS suite.
+- **D-18:** Test fixture `backend/api/test/rls/fixtures.ts` `createTestUser` must set `user_metadata.app='ziko'` (gated triggers).
