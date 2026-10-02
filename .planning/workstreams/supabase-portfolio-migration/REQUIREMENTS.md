@@ -39,10 +39,10 @@
 
 ### Migration Storage (STORAGE)
 
-- [ ] **STORAGE-01**: 9 buckets recréés dans `portfolio` avec préfixe `ziko-`
-- [ ] **STORAGE-02**: Objets copiés (download/reupload script) avec vérification count/checksum
-- [ ] **STORAGE-03**: Policies RLS storage (pattern `storage.foldername`) reconstruites à la main sur les buckets renommés
-- [ ] **STORAGE-04**: Flows signed-URL re-testés avec une vraie session authentifiée (pas service-role) par plugin concerné
+- [x] **STORAGE-01**: 9 buckets recréés dans `portfolio` avec préfixe `ziko-`
+- [x] **STORAGE-02**: Objets copiés (download/reupload script) avec vérification count/checksum
+- [x] **STORAGE-03**: Policies RLS storage (pattern `storage.foldername`) reconstruites à la main sur les buckets renommés
+- [x] **STORAGE-04**: Flows signed-URL re-testés avec une vraie session authentifiée (pas service-role) par plugin concerné
 
 ### Cutover (CUTOVER)
 
@@ -97,10 +97,10 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | DATA-03 | Phase 4 - Data Copy & Integrity Verification | Complete |
 | DATA-04 | Phase 4 - Data Copy & Integrity Verification | Complete |
 | DATA-05 | Phase 4 - Data Copy & Integrity Verification | Complete |
-| STORAGE-01 | Phase 5 - Storage Migration | Pending |
-| STORAGE-02 | Phase 5 - Storage Migration | Pending |
-| STORAGE-03 | Phase 5 - Storage Migration | Pending |
-| STORAGE-04 | Phase 5 - Storage Migration | Pending |
+| STORAGE-01 | Phase 5 - Storage Migration | Complete |
+| STORAGE-02 | Phase 5 - Storage Migration | Complete |
+| STORAGE-03 | Phase 5 - Storage Migration | Complete |
+| STORAGE-04 | Phase 5 - Storage Migration | Complete |
 | CUTOVER-01 | Phase 6 - Cutover | Pending |
 | CUTOVER-02 | Phase 6 - Cutover | Pending |
 | CUTOVER-03 | Phase 6 - Cutover | Pending |

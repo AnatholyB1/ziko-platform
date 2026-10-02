@@ -12,7 +12,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 - [x] **Phase 2: Schema Rename & Function/RLS Rewrite** - Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical, with zero stale unprefixed references (completed 2026-10-01)
 - [x] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects (completed 2026-10-01)
 - [x] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity (completed 2026-10-02)
-- [ ] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
+- [x] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions (completed 2026-10-02)
 - [ ] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
 - [ ] **Phase 7: Monitoring & Decommission** - ziko is retired and deleted only after a monitored rollback window, full verification, and a second explicit human confirmation
 
@@ -124,9 +124,9 @@ Plans:
 - [x] 05-06-PLAN.md — Loader in-flight storage-URL rewrite (D-05) + live URL scan in --plan (STORAGE-02)
 - [x] 05-07-PLAN.md — STORAGE-04 auth harness: throwaway users, real JWTs, backend in-process + web live spec, guaranteed cleanup (STORAGE-04)
 - [x] 05-08-PLAN.md — Apply codemod, type-check/test, capture patch + unmerged branch gsd/phase-5-bucket-codemod, restore tree (STORAGE-01, STORAGE-04)
-- [ ] 05-09-PLAN.md — Checkpoint PAT; scratch rehearsal: policies, copy, loader re-run, verify all, full auth matrix, idempotent re-run, RUNBOOK (STORAGE-01..04)
-- [ ] 05-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + baselines, typed-phrase checkpoint (STORAGE-01..04)
-- [ ] 05-11-PLAN.md — [BLOCKING] Portfolio policies, copy, loader re-run, verify all, auth smoke; retire token on every path (STORAGE-01..04)
+- [x] 05-09-PLAN.md — Checkpoint PAT; scratch rehearsal: policies, copy, loader re-run, verify all, full auth matrix, idempotent re-run, RUNBOOK (STORAGE-01..04)
+- [x] 05-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + baselines, typed-phrase checkpoint (STORAGE-01..04)
+- [x] 05-11-PLAN.md — [BLOCKING] Portfolio policies, copy, loader re-run, verify all, auth smoke; retire token on every path (STORAGE-01..04)
 
 ### Phase 6: Cutover
 **Goal**: Backend, web, and mobile all run against portfolio in production, sequenced and verified one surface at a time, with zero regression on existing tenants
@@ -182,6 +182,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
-| 5. Storage Migration | 8/11 | In Progress|  |
+| 5. Storage Migration | 11/11 | Complete   | 2026-10-02 |
 | 6. Cutover | 0/TBD | Not started | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |

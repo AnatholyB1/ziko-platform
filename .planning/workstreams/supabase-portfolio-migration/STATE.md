@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
-stopped_at: "Phase 5: plans 01-08 done; awaiting Management API token for 05-09 scratch rehearsal"
-last_updated: "2026-10-02T15:52:45.247Z"
-last_activity: 2026-10-02 -- Phase 5 execution started
+stopped_at: Completed 05-11-PLAN.md (user must revoke PAT ziko-storage-phase5)
+last_updated: "2026-10-02T19:34:31.738Z"
+last_activity: 2026-10-02
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 40
-  completed_plans: 37
-  percent: 57
+  completed_plans: 40
+  percent: 71
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 5 (Storage Migration) — EXECUTING
-Plan: 1 of 11
-Status: Executing Phase 5
-Last activity: 2026-10-02 -- Phase 5 execution started
+Plan: 2 of 11
+Status: Ready to execute
+Last activity: 2026-10-02
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -44,6 +44,7 @@ Progress: [█████████░] 93%
 - [Phase 03]: 03-08: NULL instance_id blocks GoTrue login on scratch; Plan 10 must pick the instance-id fix option
 - [Phase 03]: 03-11: user-authorized guarded NULL-to-empty fill of 4 GoTrue token columns on the collision row (--fill-null-token-columns, --allow-token-fill)
 - [Phase 4]: Phase 4-03: FOREIGN_REFERRERS_SQL lives in 05-load-data.mjs (04-02 REFERRERS_SQL has sequence semantics)
+- [Phase 05]: 05-11: smoke harness drains public-read bodies (fetch stall fix, scratch-validated); portfolio storage migrated and verified
 
 ### Pending Todos
 
@@ -75,6 +76,6 @@ Progress: [█████████░] 93%
 
 ## Session Continuity
 
-Last session: 2026-10-02T15:52:45.223Z
-Stopped at: Phase 5: plans 01-08 done; awaiting Management API token for 05-09 scratch rehearsal
-Resume file: .planning/workstreams/supabase-portfolio-migration/phases/05-storage-migration/05-09-PLAN.md
+Last session: 2026-10-02T19:34:31.721Z
+Stopped at: Completed 05-11-PLAN.md (user must revoke PAT ziko-storage-phase5)
+Resume file: None
