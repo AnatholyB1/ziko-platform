@@ -268,3 +268,16 @@ test('evaluateLoadedTable', () => {
     assert.match(r.reason, new RegExp(String(o.sourceCount)));
   }
 });
+
+test('buildCopyToSql rejects unsafe source identifier', () => {
+  assert.throws(() => buildCopyToSql('a;drop', ['id']));
+  assert.throws(() => buildCopyToSql('a', ['I"d']));
+});
+
+test('topoSortTables is deterministic for independent tables', () => {
+  assert.deepEqual(topoSortTables(['ziko_z', 'ziko_a', 'ziko_m'], []), ['ziko_a', 'ziko_m', 'ziko_z']);
+});
+
+test('parseRemapFile rejects non-object input', () => {
+  assert.throws(() => parseRemapFile(null, ctx));
+});
