@@ -18,6 +18,7 @@ import {
   compareColumnLists,
   parseRemapFile,
   createRemapTransform,
+  createUrlRewriteTransform,
   topoSortTables,
   assertNoForeignReferrers,
   evaluateLoadedTable,
@@ -280,4 +281,93 @@ test('topoSortTables is deterministic for independent tables', () => {
 
 test('parseRemapFile rejects non-object input', () => {
   assert.throws(() => parseRemapFile(null, ctx));
+});
+
+// ---------------------------------------------------------------------------
+// createUrlRewriteTransform (Phase 5 plan 06, D-05)
+// ---------------------------------------------------------------------------
+
+const U_SRC = 'zikosrcref';
+const U_TGT = 'portfoliotgt';
+const U_BUCKETS = ['profile-photos', 'progress-photos'];
+const U_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+const U_IN = `x\thttps://${U_SRC}.supabase.co/storage/v1/object/public/profile-photos/${U_UUID}/a.jpg\tcafé 😀\nnext\tplain\n`;
+const U_OUT = `x\thttps://${U_TGT}.supabase.co/storage/v1/object/public/ziko-profile-photos/${U_UUID}/a.jpg\tcafé 😀\nnext\tplain\n`;
+
+async function runUrl(chunks, opts = { sourceRef: U_SRC, targetRef: U_TGT, buckets: U_BUCKETS }) {
+  const t = createUrlRewriteTransform(opts);
+  let out = '';
+  await pipeline(
+    Readable.from(chunks),
+    t,
+    new Writable({
+      write(c, _e, cb) {
+        out += c.toString('utf8');
+        cb();
+      },
+    }),
+  );
+  return { out, stats: t.stats };
+}
+
+test('url transform rewrites host and bucket, counts stats', async () => {
+  const { out, stats } = await runUrl([Buffer.from(U_IN)]);
+  assert.equal(out, U_OUT);
+  assert.deepEqual(stats, { rows: 2, replacements: 1, rowsTouched: 1 });
+});
+
+test('url transform is chunk-safe at every byte offset (multibyte included)', async () => {
+  const buf = Buffer.from(U_IN, 'utf8');
+  for (let k = 1; k < buf.length; k++) {
+    const { out, stats } = await runUrl([buf.subarray(0, k), buf.subarray(k)]);
+    assert.equal(out, U_OUT, 'offset ' + k);
+    assert.deepEqual(stats, { rows: 2, replacements: 1, rowsTouched: 1 }, 'stats offset ' + k);
+  }
+});
+
+test('url transform preserves line count', async () => {
+  const input = 'a\n\nb\n' + U_IN;
+  const { out } = await runUrl([Buffer.from(input)]);
+  assert.equal(out.split('\n').length, input.split('\n').length);
+});
+
+test('url transform leaves ziko- urls, foreign hosts and unknown buckets alone', async () => {
+  const input = [
+    `https://${U_SRC}.supabase.co/storage/v1/object/public/ziko-profile-photos/a.jpg`,
+    `https://other.supabase.co/storage/v1/object/public/profile-photos/a.jpg`,
+    `https://${U_SRC}.supabase.co/storage/v1/object/public/unknown-bucket/a.jpg`,
+  ].join('\n') + '\n';
+  const { out, stats } = await runUrl([Buffer.from(input)]);
+  assert.equal(out, input);
+  assert.equal(stats.replacements, 0);
+  assert.equal(stats.rowsTouched, 0);
+  assert.equal(stats.rows, 3);
+});
+
+test('remap then url rewrite compose on one line', async () => {
+  const line = `${SRC}\thttps://${U_SRC}.supabase.co/storage/v1/object/public/profile-photos/${SRC}/a.jpg\n`;
+  const remap = createRemapTransform(SRC, TGT);
+  const url = createUrlRewriteTransform({ sourceRef: U_SRC, targetRef: U_TGT, buckets: U_BUCKETS });
+  let out = '';
+  await pipeline(
+    Readable.from([Buffer.from(line)]),
+    remap,
+    url,
+    new Writable({
+      write(c, _e, cb) {
+        out += c.toString('utf8');
+        cb();
+      },
+    }),
+  );
+  assert.equal(
+    out,
+    `${TGT}\thttps://${U_TGT}.supabase.co/storage/v1/object/public/ziko-profile-photos/${TGT}/a.jpg\n`,
+  );
+  assert.equal(remap.stats.rows, url.stats.rows);
+});
+
+test('url transform constructor guards', () => {
+  assert.throws(() => createUrlRewriteTransform({ sourceRef: U_SRC, targetRef: U_TGT, buckets: [] }));
+  assert.throws(() => createUrlRewriteTransform({ sourceRef: U_SRC, targetRef: U_SRC, buckets: U_BUCKETS }));
 });
