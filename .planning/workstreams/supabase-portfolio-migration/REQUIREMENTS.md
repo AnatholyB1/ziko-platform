@@ -32,10 +32,10 @@
 ### Copie des Données (DATA)
 
 - [x] **DATA-01**: Toutes les tables `ziko_*` chargées via COPY avec triggers désactivés pendant le chargement
-- [ ] **DATA-02**: Séquences réconciliées (`setval`) pour les PK non-UUID
-- [ ] **DATA-03**: Parité row-count vérifiée table par table (source vs destination)
-- [ ] **DATA-04**: Contraintes FK re-validées (`VALIDATE CONSTRAINT`) + détection de lignes orphelines
-- [ ] **DATA-05**: Suite de vérification automatisée réutilisable (row counts, RLS enabled, FK orphans) versionnée dans le repo
+- [x] **DATA-02**: Séquences réconciliées (`setval`) pour les PK non-UUID
+- [x] **DATA-03**: Parité row-count vérifiée table par table (source vs destination)
+- [x] **DATA-04**: Contraintes FK re-validées (`VALIDATE CONSTRAINT`) + détection de lignes orphelines
+- [x] **DATA-05**: Suite de vérification automatisée réutilisable (row counts, RLS enabled, FK orphans) versionnée dans le repo
 
 ### Migration Storage (STORAGE)
 
@@ -93,10 +93,10 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | AUTHMIG-04 | Phase 3 - Auth Merge | Complete |
 | AUTHMIG-05 | Phase 3 - Auth Merge | Complete |
 | DATA-01 | Phase 4 - Data Copy & Integrity Verification | Complete |
-| DATA-02 | Phase 4 - Data Copy & Integrity Verification | Pending |
-| DATA-03 | Phase 4 - Data Copy & Integrity Verification | Pending |
-| DATA-04 | Phase 4 - Data Copy & Integrity Verification | Pending |
-| DATA-05 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-02 | Phase 4 - Data Copy & Integrity Verification | Complete |
+| DATA-03 | Phase 4 - Data Copy & Integrity Verification | Complete |
+| DATA-04 | Phase 4 - Data Copy & Integrity Verification | Complete |
+| DATA-05 | Phase 4 - Data Copy & Integrity Verification | Complete |
 | STORAGE-01 | Phase 5 - Storage Migration | Pending |
 | STORAGE-02 | Phase 5 - Storage Migration | Pending |
 | STORAGE-03 | Phase 5 - Storage Migration | Pending |
