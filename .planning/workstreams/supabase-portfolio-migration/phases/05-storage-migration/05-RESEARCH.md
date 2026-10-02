@@ -325,14 +325,14 @@ Real code paths: call the Hono app in-process (`app.request(...)`, default expor
 | A5 | Portfolio global storage file-size limit >= 25 MB | Pitfall 6 | `ai-imports` bucket create/upload fails; check via Management API before apply |
 | A6 | Each `ai-imports` object is < 25 MB (total 27.2 MB over 9 objects) | Pattern 2 | Upload rejection; confirm via SQL max(size) in `--plan` |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Loader re-run on portfolio in Phase 5?**
    - Known: D-05 requires zero leftover URLs on portfolio; current portfolio rows are stale; D-05 forbids post-hoc UPDATE.
-   - Recommendation: include a plan task that re-runs the loader (scratch rehearsal first, then typed-phrase checkpoint on portfolio, PAT provided by the user) and then runs `06-verify-data.mjs --check all` plus the new `urls` check. The alternative is deferring the zero-leftover assertion to Phase 6, which contradicts the Phase 5 success criterion.
-2. **Backend legacy bucket-name aliasing.** The user-facing `ALLOWED_BUCKETS` list rejects unknown names. Old mobile binaries cannot reach portfolio auth anyway (ziko env baked in), so aliasing is probably unnecessary; recommend the new allowlist only, confirm with the user at the Phase 6 mobile-tail discussion.
-3. **Codemod hosting:** branch vs patch artifact. Recommend `gsd/phase-5-bucket-codemod` unmerged, plus the script so Phase 6 can re-run `--apply` on a fresh `main`.
-4. **Where to execute the typed-phrase checkpoint on scratch vs portfolio:** follow `04-06` format (user types their own message). The planner should include two separate checkpoints (policies+buckets+copy; loader re-run) or one combined with explicit scope.
+   - RESOLVED: loader re-run included (scratch in 05-09, portfolio in 05-11 behind typed phrase). Recommendation was: include a plan task that re-runs the loader (scratch rehearsal first, then typed-phrase checkpoint on portfolio, PAT provided by the user) and then runs `06-verify-data.mjs --check all` plus the new `urls` check. The alternative is deferring the zero-leftover assertion to Phase 6, which contradicts the Phase 5 success criterion.
+2. **Backend legacy bucket-name aliasing.** The user-facing `ALLOWED_BUCKETS` list rejects unknown names. Old mobile binaries cannot reach portfolio auth anyway (ziko env baked in), so aliasing is probably unnecessary; recommend the new allowlist only, confirm with the user at the Phase 6 mobile-tail discussion. RESOLVED: no aliasing in Phase 5; revisit in Phase 6.
+3. **Codemod hosting:** branch vs patch artifact. Recommend `gsd/phase-5-bucket-codemod` unmerged, plus the script so Phase 6 can re-run `--apply` on a fresh `main`. RESOLVED: branch + patch + script (05-08).
+4. **Where to execute the typed-phrase checkpoint on scratch vs portfolio:** follow `04-06` format (user types their own message). The planner should include two separate checkpoints (policies+buckets+copy; loader re-run) or one combined with explicit scope. RESOLVED: one combined typed-phrase checkpoint with explicit scope (05-10).
 
 ## Environment Availability
 
