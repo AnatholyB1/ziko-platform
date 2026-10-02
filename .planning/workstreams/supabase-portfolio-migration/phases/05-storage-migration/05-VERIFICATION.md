@@ -1,7 +1,7 @@
 ---
 phase: 05-storage-migration
 verified: 2026-10-02T20:00:00Z
-status: human_needed
+status: passed
 score: 4/4 roadmap success criteria verified (SC4 with a documented, handed-off scope limit)
 overrides_applied: 0
 re_verification: false
@@ -22,7 +22,7 @@ human_verification:
 # Phase 5: Storage Migration Verification Report
 
 **Goal:** All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions.
-**Status:** human_needed. Every must-have is evidenced and there are no code gaps. Two human items remain: PAT revocation and the deviation judgement.
+**Status:** passed. Every must-have is evidenced and there are no code gaps. Human items resolved 2026-10-02: PAT ziko-storage-phase5 revoked in the dashboard; user accepted the a1c2c7cc harness-fix deviation (typed: accept).
 **Re-verification:** No (initial).
 
 ## Evidence basis (read this first)
@@ -98,7 +98,7 @@ None blocking. A scan of the touched phase files found no TBD/FIXME/XXX debt mar
 
 ## Gaps Summary
 
-No blocking gaps. Phase 5 delivers the goal for the storage layer. Status is `human_needed` only because of the two items above, so by the decision tree the phase cannot be `passed` yet.
+No blocking gaps. Phase 5 delivers the goal for the storage layer. Both human items are now resolved (token revoked; deviation a1c2c7cc accepted by the user), so the status is `passed`.
 
 ---
 _Verified: 2026-10-02_
