@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   CHECK_NAMES,
@@ -17,6 +17,22 @@ import {
   evaluateTriggers,
   evaluateFks,
   evaluateOrphans,
+  SEQUENCE_LIST_SQL,
+  OWNED_SEQUENCE_COLUMNS_SQL,
+  REFERRERS_SQL,
+  TENANT_TABLES_SQL,
+  SEQUENCE_CONSUMERS,
+  buildSequenceStateSql,
+  buildSetvalSql,
+  buildConsumerMaxSql,
+  mapSequenceName,
+  buildUuidOccurrenceSql,
+  buildTenantCountsSql,
+  evaluateSequences,
+  evaluateRemap,
+  evaluateTenants,
+  maskUuid,
+  assertReportSafe,
 } from './lib-verify.mjs';
 
 const plan3 = [
@@ -198,4 +214,170 @@ test('evaluateOrphans', () => {
   assert.equal(bad.ok, false);
   assert.match(bad.detail, /a/);
   assert.match(bad.detail, /3/);
+});
+
+// ---------------------------------------------------------------------------
+// Task 2: sequences, remap, tenants, report safety
+// ---------------------------------------------------------------------------
+
+test('sequence catalog SQL and constants', () => {
+  assert.ok(SEQUENCE_LIST_SQL.includes('pg_sequences'));
+  assert.ok(SEQUENCE_LIST_SQL.includes("schemaname = 'public'"));
+  assert.ok(OWNED_SEQUENCE_COLUMNS_SQL.includes('pg_depend'));
+  assert.ok(OWNED_SEQUENCE_COLUMNS_SQL.includes("'a'"));
+  assert.ok(OWNED_SEQUENCE_COLUMNS_SQL.includes("'i'"));
+  assert.ok(typeof REFERRERS_SQL === 'string' && REFERRERS_SQL.includes('pg_attrdef'));
+  assert.deepEqual(SEQUENCE_CONSUMERS, [
+    { sequence: 'ziko_waitlist_founder_seq', table: 'ziko_waitlist_signups', column: 'founder_rank' },
+  ]);
+});
+
+test('mapSequenceName', () => {
+  assert.equal(mapSequenceName('waitlist_founder_seq'), 'ziko_waitlist_founder_seq');
+  assert.throws(() => mapSequenceName('ziko_waitlist_founder_seq'));
+  assert.throws(() => mapSequenceName('Bad Name'));
+});
+
+test('buildSequenceStateSql', () => {
+  assert.equal(
+    buildSequenceStateSql('ziko_waitlist_founder_seq'),
+    'SELECT last_value, is_called FROM public."ziko_waitlist_founder_seq"',
+  );
+  assert.equal(
+    buildSequenceStateSql('waitlist_founder_seq', 'source'),
+    'SELECT last_value, is_called FROM public."waitlist_founder_seq"',
+  );
+  assert.equal(buildSequenceStateSql('waitlist_founder_seq'), 'SELECT last_value, is_called FROM public."waitlist_founder_seq"');
+  assert.throws(() => buildSequenceStateSql('waitlist_founder_seq', 'target'));
+  assert.throws(() => buildSequenceStateSql('a"b', 'source'));
+});
+
+test('buildSetvalSql validates the value', () => {
+  assert.equal(
+    buildSetvalSql('ziko_waitlist_founder_seq', { last_value: '87', is_called: true }),
+    "SELECT setval('public.ziko_waitlist_founder_seq', 87, true)",
+  );
+  assert.equal(
+    buildSetvalSql('ziko_waitlist_founder_seq', { last_value: 5, is_called: false }),
+    "SELECT setval('public.ziko_waitlist_founder_seq', 5, false)",
+  );
+  for (const bad of ['87; drop', '-1', '1.5', 0, '0', '']) {
+    assert.throws(() => buildSetvalSql('ziko_waitlist_founder_seq', { last_value: bad, is_called: true }), String(bad));
+  }
+  assert.throws(() => buildSetvalSql('waitlist_founder_seq', { last_value: '1', is_called: true }));
+});
+
+test('buildConsumerMaxSql', () => {
+  assert.equal(
+    buildConsumerMaxSql(SEQUENCE_CONSUMERS[0]),
+    'SELECT coalesce(max("founder_rank"), 0)::bigint AS m FROM public."ziko_waitlist_signups"',
+  );
+});
+
+const seqPair = (over = {}) => ({
+  source: 'waitlist_founder_seq',
+  target: 'ziko_waitlist_founder_seq',
+  sourceState: { last_value: '87', is_called: true },
+  targetState: { last_value: '87', is_called: true },
+  previousTargetState: { last_value: '87', is_called: true },
+  consumerMax: '80',
+  ...over,
+});
+
+test('evaluateSequences', () => {
+  const ok = evaluateSequences({ pairs: [seqPair()], ownedColumns: [] });
+  assert.equal(ok.ok, true);
+  assert.match(ok.detail, /sequence-backed columns: 0/);
+  assert.equal(evaluateSequences({ pairs: [seqPair({ targetState: { last_value: '86', is_called: true } })], ownedColumns: [] }).ok, false);
+  assert.equal(evaluateSequences({ pairs: [seqPair({ targetState: { last_value: 87, is_called: false } })], ownedColumns: [] }).ok, false);
+  // regression below the previous Phase 3 value
+  assert.equal(
+    evaluateSequences({
+      pairs: [seqPair({ sourceState: { last_value: '50', is_called: true }, targetState: { last_value: '50', is_called: true } })],
+      ownedColumns: [],
+    }).ok,
+    false,
+  );
+  // consumer max above last_value
+  assert.equal(evaluateSequences({ pairs: [seqPair({ consumerMax: '88' })], ownedColumns: [] }).ok, false);
+  // missing target
+  assert.equal(evaluateSequences({ pairs: [seqPair({ target: null, targetState: null })], ownedColumns: [] }).ok, false);
+  // owned column whose max exceeds last_value
+  const owned = [{ sequence: 'ziko_waitlist_founder_seq', table: 'ziko_t', column: 'id', tableMax: '100' }];
+  const r = evaluateSequences({ pairs: [seqPair()], ownedColumns: owned });
+  assert.equal(r.ok, false);
+  assert.match(r.detail, /sequence-backed columns: 1/);
+  // no previousTargetState and no consumer is fine
+  assert.equal(evaluateSequences({ pairs: [seqPair({ previousTargetState: undefined, consumerMax: undefined })], ownedColumns: [] }).ok, true);
+});
+
+const U1 = '11111111-2222-4333-8444-555555555555';
+
+test('buildUuidOccurrenceSql', () => {
+  const s = buildUuidOccurrenceSql(['ziko_a', 'ziko_b'], U1);
+  assert.ok(s.includes(`SELECT 'ziko_a' AS tbl, count(*)::bigint AS n FROM public."ziko_a" t WHERE t::text ILIKE '%${U1}%'`));
+  assert.ok(s.includes('UNION ALL'));
+  assert.throws(() => buildUuidOccurrenceSql(['ziko_a'], "x'; drop"));
+  assert.throws(() => buildUuidOccurrenceSql(['ziko_a'], '%'));
+  assert.throws(() => buildUuidOccurrenceSql(['Bad"'], U1));
+});
+
+test('evaluateRemap', () => {
+  const zero = [{ tbl: 'ziko_a', n: 0 }, { tbl: 'ziko_b', n: '0' }];
+  const base = {
+    targetSourceOcc: zero,
+    targetTargetOcc: [{ tbl: 'ziko_a', n: 3 }, { tbl: 'ziko_b', n: 0 }],
+    sourceSourceOcc: [{ tbl: 'ziko_a', n: '3' }, { tbl: 'ziko_b', n: 0 }],
+  };
+  assert.equal(evaluateRemap(base).ok, true);
+  assert.equal(evaluateRemap({ ...base, targetSourceOcc: [{ tbl: 'ziko_a', n: 1 }] }).ok, false);
+  assert.equal(evaluateRemap({ ...base, targetTargetOcc: [{ tbl: 'ziko_a', n: 2 }, { tbl: 'ziko_b', n: 0 }] }).ok, false);
+  assert.equal(evaluateRemap({ ...base, preLoadTargetOcc: zero }).ok, true);
+  assert.equal(evaluateRemap({ ...base, preLoadTargetOcc: [{ tbl: 'ziko_a', n: 1 }] }).ok, false);
+});
+
+test('tenant SQL builders', () => {
+  assert.ok(TENANT_TABLES_SQL.includes("NOT LIKE 'ziko\\_%'"));
+  assert.ok(TENANT_TABLES_SQL.includes("'auth.users'"));
+  const s = buildTenantCountsSql(['rh_a', 'gecko_b']);
+  assert.ok(s.includes(`'rh_a' AS tbl, count(*)::bigint AS n FROM public."rh_a"`));
+  assert.throws(() => buildTenantCountsSql(['bad"x']));
+});
+
+test('evaluateTenants', () => {
+  const baseline = {
+    tables: [{ tbl: 'rh_a', n: 10 }, { tbl: 'gecko_b', n: 0 }],
+    authUsers: 100,
+    authTriggers: [{ tgname: 't1', tgenabled: 'O' }],
+  };
+  const same = evaluateTenants(baseline, baseline);
+  assert.equal(same.ok, true);
+  const grown = evaluateTenants(baseline, { ...baseline, tables: [{ tbl: 'rh_a', n: 12 }, { tbl: 'gecko_b', n: 0 }], authUsers: 150 });
+  assert.equal(grown.ok, true);
+  assert.ok(grown.warnings.length >= 1);
+  assert.equal(evaluateTenants(baseline, { ...baseline, tables: [{ tbl: 'gecko_b', n: 0 }] }).ok, false);
+  assert.equal(evaluateTenants(baseline, { ...baseline, tables: [{ tbl: 'rh_a', n: 0 }, { tbl: 'gecko_b', n: 0 }] }).ok, false);
+  assert.equal(evaluateTenants(baseline, { ...baseline, authUsers: 99 }).ok, false);
+  assert.equal(evaluateTenants(baseline, { ...baseline, authTriggers: [{ tgname: 't1', tgenabled: 'D' }] }).ok, false);
+});
+
+test('maskUuid and assertReportSafe', () => {
+  assert.equal(maskUuid('ea0f0b65-6681-4780-8ee0-dbf20b95d4d9'), 'ea0f0b65-…');
+  assert.doesNotThrow(() => assertReportSafe({ tables: ['ziko_a'], n: 3, ok: true, id: maskUuid(U1) }));
+  assert.throws(() => assertReportSafe({ x: 'someone@example.com' }));
+  assert.throws(() => assertReportSafe({ nested: [{ id: U1 }] }));
+  assert.throws(() => assertReportSafe({ x: U1.toUpperCase() }));
+});
+
+test('no script in scripts/portfolio-migration calls the sequence-advancing function', () => {
+  const dir = fileURLToPath(new URL('.', import.meta.url));
+  const files = readdirSync(dir).filter((f) => /\.(mjs|js)$/.test(f) && !/\.test\.(mjs|js)$/.test(f));
+  assert.ok(files.includes('lib-verify.mjs'));
+  for (const f of files) {
+    const code = readFileSync(dir + f, 'utf8')
+      .split(/\r?\n/)
+      .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+      .join('\n');
+    assert.ok(!/nextval\s*\(/i.test(code), `${f} must not call nextval`);
+  }
 });
