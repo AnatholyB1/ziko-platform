@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: ready_to_plan
-stopped_at: Phase 5 complete (11/11) — ready to discuss Phase 6
-last_updated: 2026-10-02T21:46:29.645Z
+status: planning
+stopped_at: Phase 6 context gathered
+last_updated: "2026-10-02T22:03:56.578Z"
 last_activity: 2026-10-02
 progress:
   total_phases: 7
@@ -76,6 +76,6 @@ Progress: [██████████] 100%
 
 ## Session Continuity
 
-Last session: 2026-10-02T19:34:31.721Z
-Stopped at: Completed 05-11-PLAN.md (user must revoke PAT ziko-storage-phase5)
-Resume file: None
+Last session: 2026-10-02T22:03:56.566Z
+Stopped at: Phase 6 context gathered
+Resume file: .planning/workstreams/supabase-portfolio-migration/phases/06-cutover/06-CONTEXT.md
