@@ -64,7 +64,7 @@ import {
   maskUuid,
   assertReportSafe,
 } from './lib-verify.mjs';
-import { connectClient, deleteLoginRoles, redactSecrets } from './lib-conn.mjs';
+import { connectClient, redactSecrets } from './lib-conn.mjs';
 
 const { to: copyTo, from: copyFrom } = copyStreams;
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -345,8 +345,9 @@ async function closeClients(run, opened) {
   for (const c of [opened.src, opened.dst]) {
     if (c) await c.end().catch(() => {});
   }
-  await deleteLoginRoles(run.sourceRef, { token: opened.token });
-  await deleteLoginRoles(run.targetRef, { token: opened.token });
+  // Login roles are deliberately NOT deleted here: deleting a role and re-creating the same name made
+  // the next pooler connection fail (auth failure / stale role OID, observed in the scratch
+  // rehearsal). They are short-lived and are revoked with the token at the end (plan 04-07).
 }
 
 async function rows(client, sql) {

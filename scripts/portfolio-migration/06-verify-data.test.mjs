@@ -71,3 +71,12 @@ test('buildJsonReport rejects emails and full UUIDs', () => {
       results: { a: { ok: true, detail: '11111111-2222-3333-4444-555555555555' } },
     }));
 });
+
+test('buildSourceUuidOccurrenceSql accepts unprefixed source tables and rejects bad input', async () => {
+  const { buildSourceUuidOccurrenceSql } = await import('./06-verify-data.mjs');
+  const u = '11111111-2222-3333-4444-555555555555';
+  const sql = buildSourceUuidOccurrenceSql(['ai_conversations', 'habits'], u);
+  assert.match(sql, /public\."ai_conversations"/);
+  assert.throws(() => buildSourceUuidOccurrenceSql(['x"; drop'], u));
+  assert.throws(() => buildSourceUuidOccurrenceSql(['habits'], 'nope'));
+});

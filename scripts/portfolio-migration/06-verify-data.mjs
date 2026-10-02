@@ -220,6 +220,20 @@ async function checkSequence(ctx) {
   return evaluateSequences({ pairs, ownedColumns });
 }
 
+/** Source-side variant of buildUuidOccurrenceSql: source tables carry no ziko_ prefix. */
+export function buildSourceUuidOccurrenceSql(names, uuid) {
+  if (typeof uuid !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(uuid)) {
+    throw new Error('invalid uuid literal');
+  }
+  if (!Array.isArray(names) || names.length === 0) throw new Error('no tables');
+  return names
+    .map((n) => {
+      if (typeof n !== 'string' || !/^[a-z][a-z0-9_]*$/.test(n)) throw new Error('invalid source table name');
+      return `SELECT '${n}' AS tbl, count(*)::bigint AS n FROM public."${n}" t WHERE t::text ILIKE '%${uuid}%'`;
+    })
+    .join('\nUNION ALL\n');
+}
+
 async function checkRemap(ctx) {
   const { sourceUuid, targetUuid } = parseRemapFile(JSON.parse(await readFile(ctx.args.remapFile, 'utf8')), {
     projectRef: ctx.target,
@@ -227,7 +241,7 @@ async function checkRemap(ctx) {
   });
   const plan = await getPlan();
   const toTarget = new Map(plan.map((p) => [p.source, p.target]));
-  const srcRows = await runSql(ctx.source, buildUuidOccurrenceSql(plan.map((p) => p.source), sourceUuid));
+  const srcRows = await runSql(ctx.source, buildSourceUuidOccurrenceSql(plan.map((p) => p.source), sourceUuid));
   const sourceSourceOcc = srcRows.map((r) => ({ tbl: toTarget.get(r.tbl) ?? r.tbl, n: r.n }));
   const targetNames = plan.map((p) => p.target);
   const targetSourceOcc = await runSql(ctx.target, buildUuidOccurrenceSql(targetNames, sourceUuid));
