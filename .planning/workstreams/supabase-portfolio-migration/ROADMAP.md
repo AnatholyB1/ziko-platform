@@ -116,14 +116,14 @@ Plans:
 **Plans**: 11 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Wave 0 TDD: lib-storage pure helpers (bucket map/config diff, re-key, policy rewrite, URL rewrite, evaluators) (STORAGE-01, STORAGE-02, STORAGE-03)
-- [ ] 05-02-PLAN.md — Bucket-name codemod script (--scan/--apply/--check, per-deployable STORAGE_BUCKETS constants) + fixture tests (STORAGE-01, STORAGE-04)
-- [ ] 05-03-PLAN.md — Generate bucket map + ziko_ storage policies migration from live ziko, stale-reference check, guarded apply (STORAGE-01, STORAGE-03)
-- [ ] 05-04-PLAN.md — 08-copy-storage: read-only plan + add-only idempotent apply, live bucket config, re-key, SHA-256 round trip, no delete path (STORAGE-01, STORAGE-02)
-- [ ] 05-05-PLAN.md — 09-verify-storage suite: buckets/policies/objects/hashes/rekey/urls/tenants, PII-safe JSON (STORAGE-01, STORAGE-02, STORAGE-03)
-- [ ] 05-06-PLAN.md — Loader in-flight storage-URL rewrite (D-05) + live URL scan in --plan (STORAGE-02)
-- [ ] 05-07-PLAN.md — STORAGE-04 auth harness: throwaway users, real JWTs, backend in-process + web live spec, guaranteed cleanup (STORAGE-04)
-- [ ] 05-08-PLAN.md — Apply codemod, type-check/test, capture patch + unmerged branch gsd/phase-5-bucket-codemod, restore tree (STORAGE-01, STORAGE-04)
+- [x] 05-01-PLAN.md — Wave 0 TDD: lib-storage pure helpers (bucket map/config diff, re-key, policy rewrite, URL rewrite, evaluators) (STORAGE-01, STORAGE-02, STORAGE-03)
+- [x] 05-02-PLAN.md — Bucket-name codemod script (--scan/--apply/--check, per-deployable STORAGE_BUCKETS constants) + fixture tests (STORAGE-01, STORAGE-04)
+- [x] 05-03-PLAN.md — Generate bucket map + ziko_ storage policies migration from live ziko, stale-reference check, guarded apply (STORAGE-01, STORAGE-03)
+- [x] 05-04-PLAN.md — 08-copy-storage: read-only plan + add-only idempotent apply, live bucket config, re-key, SHA-256 round trip, no delete path (STORAGE-01, STORAGE-02)
+- [x] 05-05-PLAN.md — 09-verify-storage suite: buckets/policies/objects/hashes/rekey/urls/tenants, PII-safe JSON (STORAGE-01, STORAGE-02, STORAGE-03)
+- [x] 05-06-PLAN.md — Loader in-flight storage-URL rewrite (D-05) + live URL scan in --plan (STORAGE-02)
+- [x] 05-07-PLAN.md — STORAGE-04 auth harness: throwaway users, real JWTs, backend in-process + web live spec, guaranteed cleanup (STORAGE-04)
+- [x] 05-08-PLAN.md — Apply codemod, type-check/test, capture patch + unmerged branch gsd/phase-5-bucket-codemod, restore tree (STORAGE-01, STORAGE-04)
 - [ ] 05-09-PLAN.md — Checkpoint PAT; scratch rehearsal: policies, copy, loader re-run, verify all, full auth matrix, idempotent re-run, RUNBOOK (STORAGE-01..04)
 - [ ] 05-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + baselines, typed-phrase checkpoint (STORAGE-01..04)
 - [ ] 05-11-PLAN.md — [BLOCKING] Portfolio policies, copy, loader re-run, verify all, auth smoke; retire token on every path (STORAGE-01..04)
@@ -138,6 +138,25 @@ Plans:
   3. Backend, then web, then mobile are each independently smoke-tested and confirmed working against portfolio before the next surface flips — never simultaneously
   4. rh_* and gecko_* functionality shows zero regression after the merge
   5. CI's `migrate-supabase` job and GitHub secrets are repointed to portfolio, and a subsequent CI run succeeds
+**Carried from Phase 5 (explicit smoke-test items):**
+- [ ] backend (ziko-coach-kyc): GET /coach/clients/links/me: full-route smoke against portfolio after the table-name codemod
+- [ ] backend (ziko-coach-videos): POST /coach/videos/upload-url: full-route smoke against portfolio after the table-name codemod
+- [ ] backend (ziko-coach-videos): GET /coach/videos/:videoId/signed-url: full-route smoke against portfolio after the table-name codemod
+- [ ] backend (ziko-coach-videos): GET /coach/videos/annotations/:annotationId/audio-url: full-route smoke against portfolio after the table-name codemod
+- [ ] backend (ziko-coach-exercises): GET /coach/exercises/:id/media-url: full-route smoke against portfolio after the table-name codemod
+- [ ] backend (ziko-ai-imports): POST /coach/imports: full-route smoke against portfolio after the table-name codemod
+- [ ] mobile profile (ziko-avatars): avatar upload and display (D-10 UI-level flow)
+- [ ] mobile profile (ziko-profile-photos): profile photo upload, display and remove (D-02 quirk expected: private bucket, public SELECT policy, no DELETE policy)
+- [ ] mobile workout (ziko-exercise-media): exercise media display in the exercise screen and picker
+- [ ] plugin-nutrition (ziko-scan-photos): scan photo upload via /storage/upload-url and display
+- [ ] plugin-coach (ziko-coach-logos): coach logo display
+- [ ] web coach (ziko-coach-kyc): KYC document upload and api/photo display
+- [ ] web coach (ziko-coach-exercises): coach exercise media upload
+- [ ] web coach (ziko-coach-logos): coach logo upload and branding preview
+- [ ] web coach (ziko-ai-imports): coach AI import upload
+- [ ] mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view
+- [ ] codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before
+
 **Plans**: TBD
 
 ### Phase 7: Monitoring & Decommission
@@ -163,6 +182,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
-| 5. Storage Migration | 0/11 | Planned | - |
+| 5. Storage Migration | 8/11 | In Progress|  |
 | 6. Cutover | 0/TBD | Not started | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-10-02T14:21:14.926Z"
-last_activity: 2026-10-02
+status: executing
+stopped_at: "Phase 5: plans 01-08 done; awaiting Management API token for 05-09 scratch rehearsal"
+last_updated: "2026-10-02T15:52:45.247Z"
+last_activity: 2026-10-02 -- Phase 5 execution started
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 29
-  completed_plans: 29
+  total_plans: 40
+  completed_plans: 37
   percent: 57
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 5 — storage migration
+**Current focus:** Phase 5 — Storage Migration
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-02
+Phase: 5 (Storage Migration) — EXECUTING
+Plan: 1 of 11
+Status: Executing Phase 5
+Last activity: 2026-10-02 -- Phase 5 execution started
 
 Progress: [█████████░] 93%
 
@@ -47,7 +47,23 @@ Progress: [█████████░] 93%
 
 ### Pending Todos
 
-None yet.
+- Phase 6 smoke (from Phase 5): backend (ziko-coach-kyc): GET /coach/clients/links/me: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): backend (ziko-coach-videos): POST /coach/videos/upload-url: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): backend (ziko-coach-videos): GET /coach/videos/:videoId/signed-url: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): backend (ziko-coach-videos): GET /coach/videos/annotations/:annotationId/audio-url: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): backend (ziko-coach-exercises): GET /coach/exercises/:id/media-url: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): backend (ziko-ai-imports): POST /coach/imports: full-route smoke against portfolio after the table-name codemod
+- Phase 6 smoke (from Phase 5): mobile profile (ziko-avatars): avatar upload and display (D-10 UI-level flow)
+- Phase 6 smoke (from Phase 5): mobile profile (ziko-profile-photos): profile photo upload, display and remove (D-02 quirk expected: private bucket, public SELECT policy, no DELETE policy)
+- Phase 6 smoke (from Phase 5): mobile workout (ziko-exercise-media): exercise media display in the exercise screen and picker
+- Phase 6 smoke (from Phase 5): plugin-nutrition (ziko-scan-photos): scan photo upload via /storage/upload-url and display
+- Phase 6 smoke (from Phase 5): plugin-coach (ziko-coach-logos): coach logo display
+- Phase 6 smoke (from Phase 5): web coach (ziko-coach-kyc): KYC document upload and api/photo display
+- Phase 6 smoke (from Phase 5): web coach (ziko-coach-exercises): coach exercise media upload
+- Phase 6 smoke (from Phase 5): web coach (ziko-coach-logos): coach logo upload and branding preview
+- Phase 6 smoke (from Phase 5): web coach (ziko-ai-imports): coach AI import upload
+- Phase 6 smoke (from Phase 5): mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view
+- Phase 6 smoke (from Phase 5): codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before
 
 ### Blockers/Concerns
 
@@ -59,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-02T14:21:14.899Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/workstreams/supabase-portfolio-migration/phases/05-storage-migration/05-CONTEXT.md
+Last session: 2026-10-02T15:52:45.223Z
+Stopped at: Phase 5: plans 01-08 done; awaiting Management API token for 05-09 scratch rehearsal
+Resume file: .planning/workstreams/supabase-portfolio-migration/phases/05-storage-migration/05-09-PLAN.md
