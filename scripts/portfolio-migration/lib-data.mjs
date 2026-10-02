@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { Transform } from 'node:stream';
 import { StringDecoder } from 'node:string_decoder';
 import { PROJECTS, KNOWN_COLLISION_SOURCE_IDS } from '../auth-merge/lib.mjs';
+import { rewriteStorageUrls } from './lib-storage.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -161,6 +162,55 @@ export function createRemapTransform(sourceUuid, targetUuid) {
       stats.rowsTouched += 1;
     }
     return out;
+  };
+
+  const t = new Transform({
+    transform(chunk, _enc, cb) {
+      carry += decoder.write(chunk);
+      const parts = carry.split('\n');
+      carry = parts.pop();
+      if (parts.length > 0) {
+        let out = '';
+        for (const p of parts) {
+          stats.rows += 1;
+          out += rewrite(p) + '\n';
+        }
+        this.push(out, 'utf8');
+      }
+      cb();
+    },
+    flush(cb) {
+      carry += decoder.end();
+      if (carry.length > 0) this.push(rewrite(carry), 'utf8');
+      carry = '';
+      cb();
+    },
+  });
+  t.stats = stats;
+  return t;
+}
+
+/**
+ * Per-line storage-URL rewrite over COPY text output (D-05, in-flight). Same buffering as
+ * createRemapTransform. COPY text leaves '/' and '.' unescaped so a per-line regex is safe.
+ * Rewrites https://<sourceRef>.supabase.co/storage/v1/<kind>/<bucket> to the target host and
+ * ziko-<bucket>. stats: rows = newline-terminated lines, replacements, rowsTouched.
+ */
+export function createUrlRewriteTransform({ sourceRef, targetRef, buckets }) {
+  if (!Array.isArray(buckets) || buckets.length === 0) throw new Error('url rewrite: empty bucket list');
+  if (sourceRef === targetRef) throw new Error('url rewrite: source and target ref are identical');
+  const opts = { sourceRef, targetRef, buckets };
+  const decoder = new StringDecoder('utf8');
+  const stats = { rows: 0, replacements: 0, rowsTouched: 0 };
+  let carry = '';
+
+  const rewrite = (line) => {
+    const { text, count } = rewriteStorageUrls(line, opts);
+    if (count > 0) {
+      stats.replacements += count;
+      stats.rowsTouched += 1;
+    }
+    return text;
   };
 
   const t = new Transform({
