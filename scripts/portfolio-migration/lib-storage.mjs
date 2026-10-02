@@ -9,6 +9,11 @@
 //     land in a portfolio-owned bucket.
 //   - output structures carry bucket ids, counts and hashed keys only.
 
+import { createHash } from 'node:crypto';
+import { maskUuid, assertReportSafe } from './lib-verify.mjs';
+
+export { maskUuid };
+
 export const SOURCE_BUCKET_RE = /^[a-z0-9][a-z0-9-]*$/;
 export const TARGET_BUCKET_RE = /^ziko-[a-z0-9-]+$/;
 
@@ -310,4 +315,149 @@ export function buildUrlScanSql(tables, { ref, buckets, mode }) {
       return `SELECT '${t}' AS tbl, count(*)::bigint AS n FROM public."${t}" r WHERE r::text ~ '${pattern}'`;
     })
     .join('\nUNION ALL\n');
+}
+
+// ---------------------------------------------------------------------------
+// Object / hash / re-key / tenant evaluators (counts only)
+// ---------------------------------------------------------------------------
+
+function nz(v) {
+  return v === undefined || v === null || v === '' ? null : String(v);
+}
+
+function objKey(bucket, name) {
+  return `${bucket}\u0000${name}`;
+}
+
+export function evaluateObjects({ source, target, remap }) {
+  const tgt = new Map();
+  const perBucket = {};
+  const slot = (b) => (perBucket[b] ??= { sourceCount: 0, sourceBytes: 0, targetCount: 0, targetBytes: 0 });
+  for (const t of target ?? []) {
+    tgt.set(objKey(t.bucket_id, t.name), t);
+    if (TARGET_BUCKET_RE.test(t.bucket_id)) {
+      const s = slot(t.bucket_id);
+      s.targetCount += 1;
+      s.targetBytes += Number(t.size);
+    }
+  }
+  let missing = 0;
+  let sizeMismatch = 0;
+  let mimeMismatch = 0;
+  let cacheControlMismatch = 0;
+  const expected = new Set();
+  for (const s of source ?? []) {
+    const tb = targetBucketId(s.bucket_id);
+    const key = rekeyObjectName(s.name, remap).key;
+    const k = objKey(tb, key);
+    expected.add(k);
+    const sl = slot(tb);
+    sl.sourceCount += 1;
+    sl.sourceBytes += Number(s.size);
+    const t = tgt.get(k);
+    if (!t) {
+      missing += 1;
+      continue;
+    }
+    if (Number(t.size) !== Number(s.size)) sizeMismatch += 1;
+    if (nz(t.mimetype) !== nz(s.mimetype)) mimeMismatch += 1;
+    if (nz(t.cacheControl) !== nz(s.cacheControl)) cacheControlMismatch += 1;
+  }
+  let destOnly = 0;
+  for (const [k, t] of tgt) {
+    if (TARGET_BUCKET_RE.test(t.bucket_id) && !expected.has(k)) destOnly += 1;
+  }
+  const ok = missing === 0 && sizeMismatch === 0 && mimeMismatch === 0 && destOnly === 0;
+  return { ok, perBucket, missing, sizeMismatch, mimeMismatch, cacheControlMismatch, destOnly };
+}
+
+export function evaluateHashes(pairs) {
+  const list = pairs ?? [];
+  const mismatched = list.filter((p) => !p.srcSha || !p.dstSha || p.srcSha !== p.dstSha).length;
+  return { ok: mismatched === 0, compared: list.length, mismatched };
+}
+
+function firstSegmentIs(name, uuid) {
+  const i = name.indexOf('/');
+  return (i === -1 ? name : name.slice(0, i)).toLowerCase() === uuid.toLowerCase();
+}
+
+export function evaluateRekey({ source, target, remap }) {
+  if (!remap) return { ok: true, sourceUuidObjects: 0, targetUuidObjects: 0, leftoverSourceKeys: 0 };
+  const tgt = new Set((target ?? []).map((t) => objKey(t.bucket_id, t.name)));
+  let sourceUuidObjects = 0;
+  let targetUuidObjects = 0;
+  for (const s of source ?? []) {
+    if (!firstSegmentIs(s.name, remap.sourceUuid)) continue;
+    sourceUuidObjects += 1;
+    if (tgt.has(objKey(targetBucketId(s.bucket_id), rekeyObjectName(s.name, remap).key))) targetUuidObjects += 1;
+  }
+  const leftoverSourceKeys = (target ?? []).filter(
+    (t) => TARGET_BUCKET_RE.test(t.bucket_id) && firstSegmentIs(t.name, remap.sourceUuid),
+  ).length;
+  return {
+    ok: targetUuidObjects === sourceUuidObjects && leftoverSourceKeys === 0,
+    sourceUuidObjects,
+    targetUuidObjects,
+    leftoverSourceKeys,
+  };
+}
+
+export function evaluateStorageTenants(baseline, current) {
+  const failures = [];
+  const warnings = [];
+  const isOwn = (id) => String(id).startsWith('ziko-');
+  const curBuckets = new Map((current?.buckets ?? []).map((b) => [b.id, Number(b.objects)]));
+  for (const b of baseline?.buckets ?? []) {
+    if (isOwn(b.id)) continue;
+    if (!curBuckets.has(b.id)) {
+      failures.push(`bucket ${b.id}: missing`);
+      continue;
+    }
+    const was = Number(b.objects);
+    const now = curBuckets.get(b.id);
+    if (now < was) failures.push(`bucket ${b.id}: object count decreased ${was} -> ${now}`);
+    else if (now > was) warnings.push(`bucket ${b.id}: object count ${was} -> ${now}`);
+  }
+  const curPolicies = new Map((current?.policies ?? []).map((p) => [p.name, p.hash]));
+  for (const p of baseline?.policies ?? []) {
+    if (String(p.name).startsWith('ziko_')) continue;
+    if (!curPolicies.has(p.name)) failures.push(`policy ${p.name}: missing`);
+    else if (curPolicies.get(p.name) !== p.hash) failures.push(`policy ${p.name}: definition changed`);
+  }
+  return { ok: failures.length === 0, failures, warnings };
+}
+
+// ---------------------------------------------------------------------------
+// Hashing, masking, cache-control, static guard
+// ---------------------------------------------------------------------------
+
+export function sha256Hex(buf) {
+  return createHash('sha256').update(buf).digest('hex');
+}
+
+export function maskObjectKey(bucket, key) {
+  const out = `${bucket}#${sha256Hex(String(key)).slice(0, 10)}`;
+  assertReportSafe({ out });
+  return out;
+}
+
+export function parseCacheControl(value) {
+  if (value === null || value === undefined || value === '') return { mode: 'max-age', seconds: 3600 };
+  const m = /^max-age=(\d+)$/.exec(String(value).trim());
+  if (m) return { mode: 'max-age', seconds: Number(m[1]) };
+  return { mode: 'raw', value: String(value) };
+}
+
+const DELETE_PATTERNS = [
+  ['.remove(', /\.remove\(/],
+  ['deleteBucket', /deleteBucket/],
+  ['emptyBucket', /emptyBucket/],
+  ['DELETE FROM', /DELETE\s+FROM/i],
+  ["method: 'DELETE'", /method:\s*['"]DELETE['"]/],
+];
+
+export function findDeleteCalls(sourceText) {
+  const text = String(sourceText);
+  return DELETE_PATTERNS.filter(([, re]) => re.test(text)).map(([label]) => label);
 }
