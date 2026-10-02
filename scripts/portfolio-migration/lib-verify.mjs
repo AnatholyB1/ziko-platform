@@ -277,6 +277,7 @@ JOIN pg_class t ON t.oid = d.refobjid
 JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
 WHERE s.relkind = 'S'
   AND s.relnamespace = 'public'::regnamespace
+  AND left(t.relname, 5) = 'ziko_'
 ORDER BY s.relname`;
 
 // Column defaults that depend on a public sequence (serial-style referrers).

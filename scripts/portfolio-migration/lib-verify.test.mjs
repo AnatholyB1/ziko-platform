@@ -381,3 +381,7 @@ test('no script in scripts/portfolio-migration calls the sequence-advancing func
     assert.ok(!/nextval\s*\(/i.test(code), `${f} must not call nextval`);
   }
 });
+
+test('owned-sequence SQL is scoped to ziko_ tables (shared project has gecko_/rh_ sequences)', () => {
+  assert.ok(OWNED_SEQUENCE_COLUMNS_SQL.includes("left(t.relname, 5) = 'ziko_'"));
+});
