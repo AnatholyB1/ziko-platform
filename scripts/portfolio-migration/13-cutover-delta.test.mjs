@@ -56,7 +56,8 @@ function makeDeps({ script = {}, files = {} } = {}) {
     tmpdir: 'tmp',
     log: () => {},
     errlog: () => {},
-    readText: async (p) => {
+    readText: async (p0) => {
+      const p = String(p0).replaceAll('\\', '/');
       if (p in files) return files[p];
       throw new Error(`ENOENT ${p}`);
     },
@@ -228,5 +229,5 @@ test('D10: the written report contains no email, UUID or JWT', async () => {
   assert.ok(!all.includes('@'));
   assert.ok(!/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(all));
   assert.ok(!all.includes('eyJ'));
-  assert.ok(all.includes('"rows":42'));
+  assert.ok(/"rows": 42/.test(all));
 });
