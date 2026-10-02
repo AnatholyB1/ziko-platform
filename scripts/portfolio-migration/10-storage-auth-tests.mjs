@@ -171,12 +171,14 @@ export const MATRIX = Object.freeze([
 
   // coach-videos (private, video mimes) with link lifecycle
   mk('cv-upload-own', 'plugin-coach', 'coach-videos', 'A', 'upload', 'allow', FULL, { file: 'own.mp4', mime: 'video/mp4' }),
+  // never read while linked: the Storage CDN caches an already-served authenticated response, so the revoked read uses a fresh path
+  mk('cv-upload-second', 'plugin-coach', 'coach-videos', 'A', 'upload', 'allow', FULL, { file: 'second.mp4', mime: 'video/mp4' }),
   mk('cv-wrong-mime', 'plugin-coach', 'coach-videos', 'A', 'upload', 'reject', FULL, { file: 'bad.txt', mime: 'text/plain' }),
   mk('cv-link', 'plugin-coach', 'coach-videos', 'service', 'link', 'allow', FULL),
   mk('cv-coach-read-linked', 'plugin-coach', 'coach-videos', 'C', 'read', 'allow', FULL, { folder: 'A', file: 'own.mp4' }),
   mk('cv-outsider-read', 'plugin-coach', 'coach-videos', 'D', 'read', 'deny', FULL, { folder: 'A', file: 'own.mp4' }),
   mk('cv-revoke', 'plugin-coach', 'coach-videos', 'service', 'revoke', 'allow', FULL),
-  mk('cv-coach-read-revoked', 'plugin-coach', 'coach-videos', 'C', 'read', 'deny', FULL, { folder: 'A', file: 'own.mp4' }),
+  mk('cv-coach-read-revoked', 'plugin-coach', 'coach-videos', 'C', 'read', 'deny', FULL, { folder: 'A', file: 'second.mp4' }),
 
   // backend coach routes: every one queries an unprefixed table (table codemod not in Phase 5)
   mk('bk-clients-links-me', 'backend', 'coach-kyc', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'GET /coach/clients/links/me' }),
