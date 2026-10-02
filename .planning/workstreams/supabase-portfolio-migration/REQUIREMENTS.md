@@ -39,7 +39,7 @@
 
 ### Migration Storage (STORAGE)
 
-- [x] **STORAGE-01**: 9 buckets recréés dans `portfolio` avec préfixe `ziko-`
+- [x] **STORAGE-01**: 10 buckets recréés dans `portfolio` avec préfixe `ziko-`
 - [x] **STORAGE-02**: Objets copiés (download/reupload script) avec vérification count/checksum
 - [x] **STORAGE-03**: Policies RLS storage (pattern `storage.foldername`) reconstruites à la main sur les buckets renommés
 - [x] **STORAGE-04**: Flows signed-URL re-testés avec une vraie session authentifiée (pas service-role) par plugin concerné

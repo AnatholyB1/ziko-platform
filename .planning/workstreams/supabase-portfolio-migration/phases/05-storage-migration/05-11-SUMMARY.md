@@ -26,7 +26,7 @@ completed: 2026-10-02
 
 # Phase 5 Plan 11: Portfolio storage migration Summary
 
-Result: Tasks 1-3 PASS on portfolio, token file retired (Task 4 local half done). **One action remains for the user: revoke the PAT `ziko-storage-phase5` at https://supabase.com/dashboard/account/tokens** (file deleted locally; the dashboard token is still valid until revoked). User confirmation of revocation is NOT yet recorded.
+Result: Tasks 1-3 PASS on portfolio, token file retired (Task 4 local half done). **One action remains for the user: revoke the PAT `ziko-storage-phase5` at https://supabase.com/dashboard/account/tokens** (file deleted locally; the dashboard token is still valid until revoked). UPDATE 2026-10-02: the orchestrator deleted the dashboard token ziko-storage-phase5 (dashboard showed Successfully deleted access token); revocation confirmed.
 
 ## Step 0 gate
 
@@ -81,7 +81,7 @@ The first copy run and the first smoke launch were hit by the tool session limit
 
 Deleted `scripts/auth-merge/.access-token`; deleted all `scripts/portfolio-migration/.tmp-*` (scratch remap, copy detail, scratch tenant snapshot, my throwaway scripts); verified absent; `git status --porcelain | grep -cE "access-token|\.tmp-"` returns 0. The token was never printed, logged or committed. No `SUPABASE_ACCESS_TOKEN` env var was set in the shell. The public CA file stays (gitignored). Service-role keys lived in memory only; temporary DB login roles are removed by the loader.
 
-**User action required:** open https://supabase.com/dashboard/account/tokens, revoke `ziko-storage-phase5`, and reply `revoked`. Recorded status: PENDING.
+**User action required:** open https://supabase.com/dashboard/account/tokens, revoke `ziko-storage-phase5`, and reply `revoked`. Recorded status: DONE (revoked by the orchestrator in the dashboard, 2026-10-02).
 
 ## Residual notes (carried, not new)
 
