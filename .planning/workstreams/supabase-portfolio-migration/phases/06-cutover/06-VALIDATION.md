@@ -1,8 +1,8 @@
 ---
 phase: 6
 slug: cutover
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-10-03
 ---
@@ -35,15 +35,19 @@ See `06-RESEARCH.md` § Validation Architecture (authoritative).
 | CUTOVER-04 | rh_/gecko_ unchanged | `06-verify-data --check tenants`, `09-verify-storage --check tenants`, `14-signup-isolation.mjs` |
 | CUTOVER-05 | CI linked to portfolio, no unprefixed push | CI run with read-only link step |
 
-## Wave 0 Requirements
+## Wave 0 Requirements (mapped to plan waves)
 
-- [ ] `12-codemod-tables.mjs` + test
-- [ ] `13-cutover-delta.mjs` orchestrator + test
-- [ ] `14-signup-isolation.mjs`
-- [ ] `15-smoke-core-flows.mjs`
-- [ ] drop `deferred-table-codemod` list in `10-storage-auth-backend.ts`
-- [ ] `createTestUser` sets `user_metadata.app='ziko'`
-- [ ] manual device checklist for the 17 items
+- [ ] `12-codemod-tables.mjs` + test - 06-01 (Wave 1)
+- [ ] `13-cutover-delta.mjs` orchestrator + test - 06-02 (Wave 1)
+- [ ] `14-signup-isolation.mjs` + `lib-cutover.mjs` - 06-03 (Wave 1)
+- [ ] `15-smoke-core-flows.mjs` + test - 06-03 (Wave 1)
+- [ ] `16-ci-migration-guard.mjs` + ci.yml (migrate job dormant, dispatch marker) - 06-04 (Wave 1)
+- [ ] `17-env-switch.mjs` + test - 06-05 (Wave 1)
+- [ ] `createTestUser` sets `user_metadata.app='ziko'` - 06-06 (Wave 2)
+- [ ] manual device/web checklist for the 17 carried items - 06-06 (Wave 2)
+- [ ] drop `deferred-table-codemod` list in `10-storage-auth-backend.ts` (needs the applied codemod) - 06-09 (Wave 5, on gsd/phase-6-cutover)
+
+`wave_0_complete` stays false until 06-09 is executed.
 
 ## Manual-Only Verifications
 

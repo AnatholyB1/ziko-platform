@@ -313,16 +313,22 @@ Gate: `20261002090000_portfolio_ziko_auth_gate_functions.sql` returns early unle
 | A6 | `SUPABASE_URL` etc. GitHub secrets point to ziko or a test project | CI | `verify` job live tests may hit wrong project |
 | A7 | Integration auto-sync on Vercel will not overwrite manual env changes | Vercel | Env reverts silently |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **D-01 OTA is not feasible for installed binaries. Re-decide?**
    - Known: updates disabled natively, no runtimeVersion/url/channel. Unknown: what the store binary actually is.
    - Recommendation: treat the native build as the mobile flip (D-02 already accepts hard cut); optionally enable expo-updates in that build. Ask user to confirm before planning mobile tasks.
+   - RESOLVED: 06-CONTEXT amendments (2026-10-03) supersede D-01/D-04: the native build is the mobile flip; no OTA, no expo-updates enablement (plans 06-18, 06-19).
 2. **Integration route to main.** `main` is 363 commits behind the working branch; cutover PR carries Phases 1-5 artifacts and prior app work. Recommend: single PR from the cutover branch, squash vs merge decided with CI hazard in mind (neutralize migrate job in the same PR). Need user preference.
+   - RESOLVED: 06-CONTEXT D-16: merge the working branch into main first with migrate-supabase neutralized (06-04, 06-07), then a small cutover PR (06-15).
 3. **Is the table codemod in scope as planned work?** It is implied by D-08 ("table-name codemod included") but nothing exists. Recommend Plan 1.
+   - RESOLVED: 06-CONTEXT D-17: table codemod in scope, built in Wave 0 (06-01) and applied in 06-08.
 4. **Which project do `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`/`SUPABASE_SERVICE_ROLE_KEY` GitHub secrets target?** Unreadable; decide repoint vs remove live tests from `verify`.
+   - RESOLVED: explicit user choice at a checkpoint backed by a per-suite write analysis; first evaluated in 06-15 Task 1 (cutover PR checks) and finalized at the 06-17 Task 2 decision (`verify-secrets: keep|scratch|portfolio`).
 5. **Do `scripts/purge-test-accounts`, `waitlist-erasure`, `founder-offer-go-live` need to run against portfolio after cutover?** Out of scope unless user says otherwise.
+   - RESOLVED: out of scope for Phase 6; excluded from the codemod residual pass and tracked as Phase 7 follow-ups in the 06-01 SUMMARY exclusion list and RUNBOOK 6.6 (06-06).
 6. **Late-night preview**: Does the preview API need the mobile app? No, API+web preview only; mobile preview build is for the manual checklist.
+   - RESOLVED: API + web previews only (06-12); mobile internal build for the checklist (06-18) per the 06-CONTEXT amendment.
 
 ## Environment Availability
 
