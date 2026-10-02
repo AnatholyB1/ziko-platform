@@ -18,7 +18,16 @@ import {
   buildStorageUrlRegex,
   rewriteStorageUrls,
   buildUrlScanSql,
+  evaluateObjects,
+  evaluateHashes,
+  evaluateRekey,
+  evaluateStorageTenants,
+  sha256Hex,
+  maskObjectKey,
+  parseCacheControl,
+  findDeleteCalls,
 } from './lib-storage.mjs';
+import { assertReportSafe } from './lib-verify.mjs';
 
 const PNG_GIF = ['image/png', 'image/gif'];
 const LIVE_ROWS = [
@@ -333,4 +342,154 @@ test('buildUrlScanSql builds guarded scan queries', () => {
   assert.throws(() => buildUrlScanSql(['ziko_x'], { ref: SRC, buckets: IDS, mode: 'nope' }));
   assert.throws(() => buildUrlScanSql(['ziko_x'], { ref: "a'b", buckets: IDS, mode: 'leftover' }));
   assert.throws(() => buildUrlScanSql(['ziko_x; drop'], { ref: SRC, buckets: IDS, mode: 'leftover' }));
+});
+
+// --------------------------------------------------------------------------
+// evaluators, masking, cache-control, delete guard
+// --------------------------------------------------------------------------
+
+const obj = (bucket_id, name, over = {}) => ({ bucket_id, name, size: 10, mimetype: 'image/png', cacheControl: 'max-age=3600', ...over });
+const mapTo = (o) => ({ ...o, bucket_id: `ziko-${o.bucket_id}` });
+
+test('evaluateObjects: equal sets pass with per-bucket totals', () => {
+  const source = [obj('avatars', 'u/a.png'), obj('avatars', 'u/b.png', { size: 5 }), obj('exports', 'u/c.csv')];
+  const target = source.map(mapTo);
+  const r = evaluateObjects({ source, target, remap: null });
+  assert.equal(r.ok, true);
+  assert.equal(r.perBucket['ziko-avatars'].sourceCount, 2);
+  assert.equal(r.perBucket['ziko-avatars'].sourceBytes, 15);
+  assert.equal(r.perBucket['ziko-avatars'].targetCount, 2);
+  assert.equal(r.perBucket['ziko-avatars'].targetBytes, 15);
+  assert.equal(r.missing, 0);
+  assertReportSafe(r);
+});
+
+test('evaluateObjects: gates and warnings', () => {
+  const source = [obj('avatars', 'u/a.png'), obj('avatars', 'u/b.png')];
+  const tgt = () => source.map(mapTo);
+
+  const missing = evaluateObjects({ source, target: tgt().slice(1), remap: null });
+  assert.equal(missing.ok, false);
+  assert.equal(missing.missing, 1);
+
+  const size = tgt();
+  size[0] = { ...size[0], size: 11 };
+  const rs = evaluateObjects({ source, target: size, remap: null });
+  assert.equal(rs.sizeMismatch, 1);
+  assert.equal(rs.ok, false);
+
+  const mime = tgt();
+  mime[0] = { ...mime[0], mimetype: 'image/gif' };
+  const rm = evaluateObjects({ source, target: mime, remap: null });
+  assert.equal(rm.mimeMismatch, 1);
+  assert.equal(rm.ok, false);
+
+  const cc = tgt();
+  cc[0] = { ...cc[0], cacheControl: 'no-cache' };
+  const rc = evaluateObjects({ source, target: cc, remap: null });
+  assert.equal(rc.cacheControlMismatch, 1);
+  assert.equal(rc.ok, true);
+
+  const extra = evaluateObjects({ source, target: [...tgt(), mapTo(obj('avatars', 'u/zzz.png'))], remap: null });
+  assert.equal(extra.destOnly, 1);
+  assert.equal(extra.ok, false);
+
+  const foreignBucket = evaluateObjects({ source, target: [...tgt(), obj('album-x', 'p/q.png')], remap: null });
+  assert.equal(foreignBucket.destOnly, 0);
+  assert.equal(foreignBucket.ok, true);
+});
+
+test('evaluateObjects compares re-keyed objects under their target key', () => {
+  const sourceUuid = randomUUID();
+  const targetUuid = randomUUID();
+  const remap = { sourceUuid, targetUuid };
+  const source = [obj('avatars', `${sourceUuid}/a.png`)];
+  const good = evaluateObjects({ source, target: [mapTo(obj('avatars', `${targetUuid}/a.png`))], remap });
+  assert.equal(good.ok, true);
+  const bad = evaluateObjects({ source, target: [mapTo(obj('avatars', `${sourceUuid}/a.png`))], remap });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.missing, 1);
+  assert.equal(bad.destOnly, 1);
+  assertReportSafe(good);
+  assertReportSafe(bad);
+});
+
+test('evaluateHashes', () => {
+  const ok = evaluateHashes([{ bucket: 'avatars', srcSha: 'aa', dstSha: 'aa' }, { bucket: 'avatars', srcSha: 'bb', dstSha: 'bb' }]);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.compared, 2);
+  assert.equal(ok.mismatched, 0);
+  const bad = evaluateHashes([{ bucket: 'avatars', srcSha: 'aa', dstSha: 'cc' }, { bucket: 'x', srcSha: 'bb', dstSha: undefined }]);
+  assert.equal(bad.ok, false);
+  assert.equal(bad.mismatched, 2);
+  assert.equal(evaluateHashes([]).ok, true);
+  assertReportSafe(bad);
+});
+
+test('evaluateRekey', () => {
+  const sourceUuid = randomUUID();
+  const targetUuid = randomUUID();
+  const remap = { sourceUuid, targetUuid };
+  const source = [obj('avatars', `${sourceUuid}/a.png`), obj('coach-kyc', `${sourceUuid}/k.pdf`), obj('avatars', 'other/o.png')];
+  const target = [
+    mapTo(obj('avatars', `${targetUuid}/a.png`)),
+    mapTo(obj('coach-kyc', `${targetUuid}/k.pdf`)),
+    mapTo(obj('avatars', 'other/o.png')),
+  ];
+  const ok = evaluateRekey({ source, target, remap });
+  assert.deepEqual(ok, { ok: true, sourceUuidObjects: 2, targetUuidObjects: 2, leftoverSourceKeys: 0 });
+
+  const leftover = evaluateRekey({ source, target: [...target, mapTo(obj('avatars', `${sourceUuid}/a.png`))], remap });
+  assert.equal(leftover.ok, false);
+  assert.equal(leftover.leftoverSourceKeys, 1);
+
+  const absent = evaluateRekey({ source, target: target.slice(1), remap });
+  assert.equal(absent.ok, false);
+  assert.equal(absent.targetUuidObjects, 1);
+  assertReportSafe(absent);
+});
+
+test('evaluateStorageTenants', () => {
+  const base = {
+    buckets: [{ id: 'album', objects: 5 }, { id: 'ziko-avatars', objects: 2 }],
+    policies: [{ name: 'album_read', hash: 'h1' }, { name: 'ziko_x', hash: 'z' }],
+  };
+  assert.deepEqual(evaluateStorageTenants(base, JSON.parse(JSON.stringify(base))), { ok: true, failures: [], warnings: [] });
+
+  const removed = evaluateStorageTenants(base, { ...base, buckets: [{ id: 'ziko-avatars', objects: 2 }] });
+  assert.equal(removed.ok, false);
+
+  const fewer = evaluateStorageTenants(base, { ...base, buckets: [{ id: 'album', objects: 4 }, { id: 'ziko-avatars', objects: 2 }] });
+  assert.equal(fewer.ok, false);
+
+  const hash = evaluateStorageTenants(base, { ...base, policies: [{ name: 'album_read', hash: 'h2' }, { name: 'ziko_x', hash: 'z' }] });
+  assert.equal(hash.ok, false);
+
+  const more = evaluateStorageTenants(base, { ...base, buckets: [{ id: 'album', objects: 6 }, { id: 'ziko-avatars', objects: 99 }] });
+  assert.equal(more.ok, true);
+  assert.equal(more.warnings.length, 1);
+
+  const zikoChange = evaluateStorageTenants(base, { ...base, policies: [{ name: 'album_read', hash: 'h1' }] });
+  assert.equal(zikoChange.ok, true);
+});
+
+test('sha256Hex and maskObjectKey', () => {
+  assert.equal(sha256Hex(Buffer.from('abc')), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  const key = `${randomUUID()}/passport-scan.pdf`;
+  const m = maskObjectKey('coach-kyc', key);
+  assert.match(m, /^coach-kyc#[0-9a-f]{10}$/);
+  assert.ok(!m.includes('passport'));
+  assertReportSafe({ m });
+});
+
+test('parseCacheControl', () => {
+  assert.deepEqual(parseCacheControl('max-age=3600'), { mode: 'max-age', seconds: 3600 });
+  assert.deepEqual(parseCacheControl('no-cache'), { mode: 'raw', value: 'no-cache' });
+  assert.deepEqual(parseCacheControl(null), { mode: 'max-age', seconds: 3600 });
+});
+
+test('findDeleteCalls', () => {
+  assert.deepEqual(findDeleteCalls('const a = 1;\nawait client.storage.from(b).upload(k, v);'), []);
+  const dirty = "x.remove(['a']); deleteBucket('b'); emptyBucket('b'); sql = 'DELETE FROM storage.objects'; call(u, { method: 'DELETE' });";
+  assert.equal(findDeleteCalls(dirty).length, 5);
 });
