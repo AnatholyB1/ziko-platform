@@ -157,7 +157,29 @@ Plans:
 - [ ] mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view
 - [ ] codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before
 
-**Plans**: TBD
+**Plans**: 20 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Wave 0 TDD: 12-codemod-tables.mjs, map-driven table/RPC/embed(alias)/realtime codemod with fail-closed scan and repo-wide --check (CUTOVER-01)
+- [ ] 06-02-PLAN.md — Wave 0: 13-cutover-delta.mjs single-gate delta orchestrator (auth -> reload -> add-only storage -> --check all) + tests (CUTOVER-03, CUTOVER-04)
+- [ ] 06-03-PLAN.md — Wave 0: lib-cutover + 14-signup-isolation + 15-smoke-core-flows, self-cleaning temp users (CUTOVER-03, CUTOVER-04)
+- [ ] 06-04-PLAN.md — Wave 0: 16-ci-migration-guard, frozen legacy manifest, migrate-supabase replaced by dormant ref-locked migrate-portfolio (CUTOVER-05)
+- [ ] 06-05-PLAN.md — Wave 0: 17-env-switch (local/Vercel/EAS, audited matrix, flip = rollback with --target) (CUTOVER-01, CUTOVER-02)
+- [ ] 06-06-PLAN.md — RLS fixture app flag (D-18), smoke checklist (17 carried items + core flows), authorization log, RUNBOOK Phase 6 (CUTOVER-03, CUTOVER-04)
+- [ ] 06-07-PLAN.md — [BLOCKING] Disable auto-chain; merge working line into main with migrate job dormant (typed phrase) (CUTOVER-05, CUTOVER-03)
+- [ ] 06-08-PLAN.md — gsd/phase-6-cutover: apply bucket + table codemods, fkey hint map, zero residuals, green checks (CUTOVER-01)
+- [ ] 06-09-PLAN.md — Signup flag at every call-site (D-14); 6 deferred coach routes become real harness cases (CUTOVER-03, CUTOVER-04)
+- [ ] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
+- [ ] 06-11-PLAN.md — Local env files -> portfolio; local backend/web/mobile run proofs, read-only (CUTOVER-01)
+- [ ] 06-12-PLAN.md — [BLOCKING] Vercel previews with branch-scoped env -> portfolio; scripted smoke + tenant diff (typed phrase) (CUTOVER-02, CUTOVER-03, CUTOVER-04)
+- [ ] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
+- [ ] 06-14-PLAN.md — [BLOCKING] Final delta on portfolio + --check all; human review (CUTOVER-03, CUTOVER-04)
+- [ ] 06-15-PLAN.md — [BLOCKING] Backend flip: API prod env, merge cutover PR, pin web, prod API smoke, rollback path (CUTOVER-02, CUTOVER-03, CUTOVER-04)
+- [ ] 06-16-PLAN.md — [BLOCKING] Web flip: prod env, rebuild + promote, scripted + manual web smoke (CUTOVER-02, CUTOVER-03, CUTOVER-04)
+- [ ] 06-17-PLAN.md — [BLOCKING] CI repoint: secrets + PORTFOLIO_MIGRATIONS_ENABLED, proving CI run (CUTOVER-05)
+- [ ] 06-18-PLAN.md — [BLOCKING] Mobile flip: EAS env, version 1.5.0, internal build, device checklist + signup-landing proof (CUTOVER-03, CUTOVER-04)
+- [ ] 06-19-PLAN.md — [BLOCKING] v1.5.0 store release via release.yml; submission states (CUTOVER-03)
+- [ ] 06-20-PLAN.md — Final tenant regression, leftovers, crons; docs + Phase 7 hand-off; credential retirement on every path (CUTOVER-01..05)
 
 ### Phase 7: Monitoring & Decommission
 **Goal**: ziko is retired and deleted only after a monitored rollback window, full per-table/per-bucket verification, and a second, separate human confirmation — never bundled with cutover sign-off
@@ -183,5 +205,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 0/TBD | Not started | - |
+| 6. Cutover | 0/20 | Planned | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
