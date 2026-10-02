@@ -31,7 +31,7 @@
 
 ### Copie des Données (DATA)
 
-- [ ] **DATA-01**: Toutes les tables `ziko_*` chargées via COPY avec triggers désactivés pendant le chargement
+- [x] **DATA-01**: Toutes les tables `ziko_*` chargées via COPY avec triggers désactivés pendant le chargement
 - [ ] **DATA-02**: Séquences réconciliées (`setval`) pour les PK non-UUID
 - [ ] **DATA-03**: Parité row-count vérifiée table par table (source vs destination)
 - [ ] **DATA-04**: Contraintes FK re-validées (`VALIDATE CONSTRAINT`) + détection de lignes orphelines
@@ -92,7 +92,7 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | AUTHMIG-03 | Phase 3 - Auth Merge | Complete |
 | AUTHMIG-04 | Phase 3 - Auth Merge | Complete |
 | AUTHMIG-05 | Phase 3 - Auth Merge | Complete |
-| DATA-01 | Phase 4 - Data Copy & Integrity Verification | Pending |
+| DATA-01 | Phase 4 - Data Copy & Integrity Verification | Complete |
 | DATA-02 | Phase 4 - Data Copy & Integrity Verification | Pending |
 | DATA-03 | Phase 4 - Data Copy & Integrity Verification | Pending |
 | DATA-04 | Phase 4 - Data Copy & Integrity Verification | Pending |
