@@ -44,3 +44,7 @@ scripts/exercise-import/.dataset-cache/
 scripts/auth-merge/.access-token
 scripts/auth-merge/.tmp-*
 scripts/auth-merge/exports/
+
+# Phase 4 data copy (supabase-portfolio-migration) — temp files, CA cert, remap scratch copies, never commit
+scripts/portfolio-migration/.tmp-*
+scripts/portfolio-migration/.ca/
