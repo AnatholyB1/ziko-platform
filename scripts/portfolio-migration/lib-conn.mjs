@@ -124,25 +124,61 @@ export function buildClientConfig({ host, port = 5432, role, ref, password, caPe
   };
 }
 
+/** Pure: parent role of a temporary CLI login role (cli_login_postgres -> postgres). */
+export function parentRoleOf(loginRole) {
+  const m = /^cli_login_([a-z_][a-z0-9_]*)$/.exec(String(loginRole ?? ''));
+  if (!m) throw new Error('unexpected login role name');
+  return m[1];
+}
+
 /**
- * One pg.Client (no Pool, no reconnect). Connects immediately after role creation because the
- * login role TTL may be very short. The password is not retained after connect.
+ * The temporary login role is only a member of its parent (NOINHERIT, no BYPASSRLS of its own).
+ * SET ROLE to the parent (session scoped, no RESET) gives the parent's table privileges and
+ * BYPASSRLS. Verified: the effective role must bypass RLS, otherwise COPY could drop rows.
  */
-export async function connectClient(ref, { readOnly = false, token, caPem, fetchImpl = fetch } = {}) {
+export async function assumeParentRole(client, loginRole) {
+  const parent = parentRoleOf(loginRole);
+  await client.query(`SET ROLE "${parent}"`);
+  const r = await client.query(
+    'SELECT current_user AS u, (SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user) AS bypass'
+  );
+  if (r.rows[0]?.u !== parent || r.rows[0]?.bypass !== true) {
+    throw new Error(`effective role ${parent} does not bypass RLS`);
+  }
+  return parent;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * One pg.Client (no Pool, no reconnect after success). Connects immediately after role creation
+ * because the login role TTL may be very short. The password is not retained after connect.
+ * A pooler can briefly hold stale state for a just-recreated role name, so the connect plus
+ * SET ROLE sequence is retried (fresh role each time) a few times before failing.
+ */
+export async function connectClient(ref, { readOnly = false, token, caPem, fetchImpl = fetch, attempts = 4, delayMs = 4000 } = {}) {
   assertProjectRefFormat(ref);
   const { host, port } = await getSessionPooler(ref, { token, fetchImpl });
-  let { role, password } = await createLoginRole(ref, { readOnly }, { token, fetchImpl });
-  const secrets = [token, password];
-  const client = new pg.Client(buildClientConfig({ host, port, role, ref, password, caPem }));
-  client.on('error', (err) => {
-    process.stderr.write(`${redactSecrets(`pg client error on ${ref}: ${err.message}`, secrets)}\n`);
-  });
-  try {
-    await client.connect();
-  } catch (err) {
-    throw fail(`connect failed on ${ref}: ${err.message}`, secrets);
-  } finally {
-    password = null;
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    let { role, password } = await createLoginRole(ref, { readOnly }, { token, fetchImpl });
+    const secrets = [token, password];
+    const client = new pg.Client(buildClientConfig({ host, port, role, ref, password, caPem }));
+    client.on('error', (err) => {
+      process.stderr.write(`${redactSecrets(`pg client error on ${ref}: ${err.message}`, secrets)}
+`);
+    });
+    try {
+      await client.connect();
+      const effective = await assumeParentRole(client, role);
+      return { client, role, effective };
+    } catch (err) {
+      lastErr = fail(`connect failed on ${ref} (attempt ${i}/${attempts}): ${err.message}`, secrets);
+      await client.end().catch(() => {});
+      if (i < attempts) await sleep(delayMs);
+    } finally {
+      password = null;
+    }
   }
-  return { client, role };
+  throw lastErr;
 }

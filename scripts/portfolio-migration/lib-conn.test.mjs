@@ -67,3 +67,26 @@ test('network functions reject an invalid ref before any fetch', async () => {
   assert.equal(await deleteLoginRoles('bad', { token: 't', fetchImpl }), false);
   assert.equal(calls.length, 0);
 });
+
+test('parentRoleOf maps cli login roles to their parent and rejects others', async () => {
+  const { parentRoleOf } = await import('./lib-conn.mjs');
+  assert.equal(parentRoleOf('cli_login_postgres'), 'postgres');
+  assert.equal(parentRoleOf('cli_login_supabase_read_only_user'), 'supabase_read_only_user');
+  assert.throws(() => parentRoleOf('postgres'));
+  assert.throws(() => parentRoleOf('cli_login_x"; drop'));
+});
+
+test('assumeParentRole sets the parent role and requires BYPASSRLS', async () => {
+  const { assumeParentRole } = await import('./lib-conn.mjs');
+  const calls = [];
+  const mk = (row) => ({
+    query: async (sql) => {
+      calls.push(sql);
+      return { rows: sql.startsWith('SELECT') ? [row] : [] };
+    },
+  });
+  assert.equal(await assumeParentRole(mk({ u: 'postgres', bypass: true }), 'cli_login_postgres'), 'postgres');
+  assert.equal(calls[0], 'SET ROLE "postgres"');
+  await assert.rejects(assumeParentRole(mk({ u: 'postgres', bypass: false }), 'cli_login_postgres'));
+  await assert.rejects(assumeParentRole(mk({ u: 'cli_login_postgres', bypass: true }), 'cli_login_postgres'));
+});

@@ -96,8 +96,13 @@ scratch `rkirvurggtgjlkeuhded`. Loader: `05-load-data.mjs`. Verifier: `06-verify
   `db query --linked`); no PAT and no DB password.
 - `--probe` and `--apply` also need a short-lived PAT named `ziko-data-copy-phase4`, exported as
   `SUPABASE_ACCESS_TOKEN` or written to the gitignored `scripts/auth-merge/.access-token`.
-- If TLS verification fails with system CAs, save the Supabase root CA certificate under the
-  gitignored `scripts/portfolio-migration/.ca/` and pass `--ca-file <path>`.
+- System CAs do not validate the pooler chain (observed in the scratch rehearsal), so the Supabase
+  root CA is required: save it under the gitignored `scripts/portfolio-migration/.ca/` and pass
+  `--ca-file <path>`. Never disable TLS verification.
+- Login roles (`cli_login_<parent>`) are NOINHERIT members of their parent and have no BYPASSRLS or
+  table grants of their own. `lib-conn` therefore runs `SET ROLE <parent>` (session scoped) after
+  connect and refuses to continue unless the effective role has BYPASSRLS. The pooler may briefly
+  reject or serve stale state for a just-recreated role name, so connect is retried (fresh role).
 - Never reset any project's postgres password: other tenants depend on portfolio's.
 - One client per side (max_connections is 60); never run two loads or verifiers concurrently.
 
