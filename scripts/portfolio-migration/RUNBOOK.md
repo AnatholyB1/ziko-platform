@@ -82,3 +82,99 @@ verified clean against the scratch project first.
 exercised once in this session against the discarded `agrkkwqhgdiunovcpeju` project — confirmed
 working). Teardown of the scratch project used for the real dry run is out of scope for this
 phase; do it once Plan 07 has completed and the migration is confirmed live on `portfolio`.
+
+---
+
+## Phase 4 — Data copy & integrity verification
+
+Refs: ziko `slkobhavpwsubnsmuhya` (source, read-only), portfolio `ubxllsvanurkwkohzxau`,
+scratch `rkirvurggtgjlkeuhded`. Loader: `05-load-data.mjs`. Verifier: `06-verify-data.mjs`.
+
+### 4.1 Prerequisites
+
+- Supabase CLI logged in. The verify suite and `05-load-data --plan` need only this (they use
+  `db query --linked`); no PAT and no DB password.
+- `--probe` and `--apply` also need a short-lived PAT named `ziko-data-copy-phase4`, exported as
+  `SUPABASE_ACCESS_TOKEN` or written to the gitignored `scripts/auth-merge/.access-token`.
+- If TLS verification fails with system CAs, save the Supabase root CA certificate under the
+  gitignored `scripts/portfolio-migration/.ca/` and pass `--ca-file <path>`.
+- Never reset any project's postgres password: other tenants depend on portfolio's.
+- One client per side (max_connections is 60); never run two loads or verifiers concurrently.
+
+### 4.2 Scratch rehearsal
+
+1. Auth precondition on scratch:
+
+        node scripts/auth-merge/rehearsal-seed-collision.mjs --project-ref rkirvurggtgjlkeuhded --reset
+        node scripts/auth-merge/rehearsal-seed-collision.mjs --project-ref rkirvurggtgjlkeuhded --seed
+        node scripts/auth-merge/02-import-auth.mjs --source-ref slkobhavpwsubnsmuhya --project-ref rkirvurggtgjlkeuhded --apply --remap-out scripts/portfolio-migration/.tmp-uuid-remap.scratch.json
+        node scripts/auth-merge/06-verify.mjs --project-ref rkirvurggtgjlkeuhded --source-ref slkobhavpwsubnsmuhya --check users
+        node scripts/auth-merge/06-verify.mjs --project-ref rkirvurggtgjlkeuhded --source-ref slkobhavpwsubnsmuhya --check identities
+
+2. Load, in order:
+
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref rkirvurggtgjlkeuhded --remap-file scripts/portfolio-migration/.tmp-uuid-remap.scratch.json --plan
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref rkirvurggtgjlkeuhded --remap-file scripts/portfolio-migration/.tmp-uuid-remap.scratch.json --probe
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref rkirvurggtgjlkeuhded --remap-file scripts/portfolio-migration/.tmp-uuid-remap.scratch.json --apply
+
+3. Verify:
+
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref rkirvurggtgjlkeuhded --source-ref slkobhavpwsubnsmuhya --check all --remap-file scripts/portfolio-migration/.tmp-uuid-remap.scratch.json
+
+4. Prove idempotence (D-03): run `--apply` a second time and the same `--check all` again; results
+   must be identical (the load begins with a guarded truncate).
+
+Counts are exact with no exclusions. If `counts` fails because ziko took writes after the load,
+re-run load then verify back-to-back; never exclude a table.
+
+### 4.3 Portfolio gate
+
+- Auto-chain is disabled for this step. Read-only pre-flight first:
+
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --plan
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check rls
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check triggers
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check fk
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check orphans
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check sequence
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --snapshot-tenants --out scripts/portfolio-migration/baseline/portfolio-tenants-preload.json
+
+- The operator types the exact phrase `approve ubxllsvanurkwkohzxau option-load-data`; it is
+  recorded in `04-06-SUMMARY.md`.
+
+### 4.4 Portfolio load
+
+1. Mechanically grep the recorded typed line in `04-06-SUMMARY.md` before proceeding.
+2. Run `--probe`, then `--apply`, with `--confirm-ref ubxllsvanurkwkohzxau`:
+
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --confirm-ref ubxllsvanurkwkohzxau --probe
+        node scripts/portfolio-migration/05-load-data.mjs --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --confirm-ref ubxllsvanurkwkohzxau --apply
+
+3. Verify, including the tenant regression guard:
+
+        node scripts/portfolio-migration/06-verify-data.mjs --project-ref ubxllsvanurkwkohzxau --source-ref slkobhavpwsubnsmuhya --check all --remap-file scripts/auth-merge/uuid-remap.json --baseline scripts/portfolio-migration/baseline/portfolio-tenants-preload.json --json-out <report path>
+
+### 4.5 Recovery (D-06)
+
+Any failure leaves earlier tables committed and later ones empty. Recovery is to re-run `--apply`
+from the start (it begins with the guarded truncate). Never hand-edit rows, never
+`TRUNCATE ... CASCADE`, never `UPDATE` to fix the remap after the load.
+
+### 4.6 Phase 6 reuse (D-03)
+
+Inside the write-freeze, run the Phase 3 auth delta first (`scripts/auth-merge/RUNBOOK.md`
+section 4) so that new ziko signups exist in portfolio `auth.users` before the data reload;
+otherwise their rows would be orphaned FKs. Then run the identical `05-load-data --apply` and
+`06-verify-data --check all`. With ziko frozen, counts must match exactly.
+
+### 4.7 Known open items (not Phase 4 scope)
+
+- 3 ziko rows (`user_profiles` 2, `body_measurements` 1) store full storage URLs containing the
+  ziko project ref. They are copied verbatim and must be handled in Phase 5/6 (RESEARCH Pitfall 7).
+- The UUID remap also rewrites `<uuid>/file` storage paths inside rows, so Phase 5 must key the
+  collision user's objects by the target UUID (spec section 8).
+
+### 4.8 Token retirement
+
+At phase end, on every path, delete `scripts/auth-merge/.access-token` and revoke the PAT at
+https://supabase.com/dashboard/account/tokens.
