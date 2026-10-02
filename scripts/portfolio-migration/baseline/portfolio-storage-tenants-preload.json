@@ -1,0 +1,176 @@
+{
+  "generated_at": "2026-10-02T17:04:43.172Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "buckets": [
+    {
+      "id": "album-backgrounds",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null,
+      "objects": 33,
+      "bytes": 34103888
+    },
+    {
+      "id": "album-covers",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null,
+      "objects": 37,
+      "bytes": 33945908
+    },
+    {
+      "id": "album-photos",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null,
+      "objects": 1877,
+      "bytes": 1122942331
+    },
+    {
+      "id": "gecko-menu-images",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null,
+      "objects": 0,
+      "bytes": 0
+    },
+    {
+      "id": "portfolio-photos",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null,
+      "objects": 192,
+      "bytes": 115016727
+    },
+    {
+      "id": "product-images",
+      "public": true,
+      "file_size_limit": 5242880,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/avif"
+      ],
+      "objects": 0,
+      "bytes": 0
+    },
+    {
+      "id": "sellerie-preview-product-images",
+      "public": true,
+      "file_size_limit": 5242880,
+      "allowed_mime_types": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/avif"
+      ],
+      "objects": 0,
+      "bytes": 0
+    }
+  ],
+  "policies": [
+    {
+      "name": "Admins can delete gecko menu images",
+      "cmd": "DELETE",
+      "roles": "{public}",
+      "hash": "0b89c9271bb49df6742425e90babf054"
+    },
+    {
+      "name": "Admins can upload gecko menu images",
+      "cmd": "INSERT",
+      "roles": "{public}",
+      "hash": "76a413576efa58e631d1f75ade4c2ac1"
+    },
+    {
+      "name": "Public can view gecko menu images",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "hash": "0416189a9b3210e0cd1a81b952801e2c"
+    },
+    {
+      "name": "auth delete album-backgrounds",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "hash": "d57d0a1c40edaab5fad19d819023dd1a"
+    },
+    {
+      "name": "auth delete album-covers",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "hash": "983ce649823422e750ad5604f902c486"
+    },
+    {
+      "name": "auth delete album-photos",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "hash": "f900533930e64d102331635b4f7d3bd8"
+    },
+    {
+      "name": "auth delete portfolio-photos",
+      "cmd": "DELETE",
+      "roles": "{authenticated}",
+      "hash": "09f873cc811f64e5da3dae55c43a93c4"
+    },
+    {
+      "name": "auth upload album-backgrounds",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "hash": "f7d9f9edf0e04a052c72a66cf674c2b9"
+    },
+    {
+      "name": "auth upload album-covers",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "hash": "9e5a7c538a1ebcacf85bfbd968f1e113"
+    },
+    {
+      "name": "auth upload album-photos",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "hash": "88ce63cdce49dac12ef6254fc5195d30"
+    },
+    {
+      "name": "auth upload portfolio-photos",
+      "cmd": "INSERT",
+      "roles": "{authenticated}",
+      "hash": "669d8ea5032fdec6a7e253e801d00f0c"
+    },
+    {
+      "name": "product_images_select_all",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "hash": "713cdf5349201fefa9d8dc3a934822c6"
+    },
+    {
+      "name": "public read album-backgrounds",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "hash": "d57d0a1c40edaab5fad19d819023dd1a"
+    },
+    {
+      "name": "public read album-covers",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "hash": "983ce649823422e750ad5604f902c486"
+    },
+    {
+      "name": "public read album-photos",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "hash": "f900533930e64d102331635b4f7d3bd8"
+    },
+    {
+      "name": "public read portfolio-photos",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "hash": "09f873cc811f64e5da3dae55c43a93c4"
+    },
+    {
+      "name": "sellerie_preview_product_images_select_all",
+      "cmd": "SELECT",
+      "roles": "{anon,authenticated}",
+      "hash": "a989de950f7bec323b08e0406aee8020"
+    }
+  ]
+}
