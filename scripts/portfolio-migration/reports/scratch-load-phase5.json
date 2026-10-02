@@ -1,0 +1,912 @@
+{
+  "target_ref": "rkirvurggtgjlkeuhded",
+  "mode": "apply",
+  "trigger_mode": "replica",
+  "generated_at": "2026-10-02T16:25:27.282Z",
+  "remap": {
+    "source": "ea0f0b65-…",
+    "target": "a2251cd8-…"
+  },
+  "tables": [
+    {
+      "table": "ziko_ai_conversations",
+      "source_count": 81,
+      "streamed_rows": 81,
+      "target_count": 81,
+      "remap_rows_touched": 61,
+      "remap_replacements": 61,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_cost_log",
+      "source_count": 35,
+      "streamed_rows": 35,
+      "target_count": 35,
+      "remap_rows_touched": 26,
+      "remap_replacements": 26,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_credit_transactions",
+      "source_count": 123,
+      "streamed_rows": 123,
+      "target_count": 123,
+      "remap_rows_touched": 28,
+      "remap_replacements": 28,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_generated_programs",
+      "source_count": 17,
+      "streamed_rows": 17,
+      "target_count": 17,
+      "remap_rows_touched": 2,
+      "remap_replacements": 2,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_imports",
+      "source_count": 10,
+      "streamed_rows": 10,
+      "target_count": 10,
+      "remap_rows_touched": 10,
+      "remap_replacements": 19,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_messages",
+      "source_count": 190,
+      "streamed_rows": 190,
+      "target_count": 190,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_ai_tool_audit",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_app_config",
+      "source_count": 3,
+      "streamed_rows": 3,
+      "target_count": 3,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_app_invites",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_athlete_decisions",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_athlete_goals",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_athlete_state",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_badge_definitions",
+      "source_count": 11,
+      "streamed_rows": 11,
+      "target_count": 11,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_body_measurements",
+      "source_count": 3,
+      "streamed_rows": 3,
+      "target_count": 3,
+      "remap_rows_touched": 2,
+      "remap_replacements": 3,
+      "url_rewrites": 1
+    },
+    {
+      "table": "ziko_bug_reports",
+      "source_count": 19,
+      "streamed_rows": 19,
+      "target_count": 19,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_cardio_sessions",
+      "source_count": 5,
+      "streamed_rows": 5,
+      "target_count": 5,
+      "remap_rows_touched": 2,
+      "remap_replacements": 2,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_challenge_participants",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_challenge_teams",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_challenges",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_alerts",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_branding",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 2,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_client_links",
+      "source_count": 7,
+      "streamed_rows": 7,
+      "target_count": 7,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_client_notes",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_client_tags",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_client_videos",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_exercises",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 2,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_forms",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_invitations",
+      "source_count": 5,
+      "streamed_rows": 5,
+      "target_count": 5,
+      "remap_rows_touched": 5,
+      "remap_replacements": 5,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_memory",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_metric_thresholds",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_profiles",
+      "source_count": 2,
+      "streamed_rows": 2,
+      "target_count": 2,
+      "remap_rows_touched": 1,
+      "remap_replacements": 3,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_program_folders",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_video_annotations",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coach_vocal_feedbacks",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coin_gifts",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_coin_transactions",
+      "source_count": 53,
+      "streamed_rows": 53,
+      "target_count": 53,
+      "remap_rows_touched": 39,
+      "remap_replacements": 39,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_community_conversations",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_community_messages",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_community_posts",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_community_user_stats",
+      "source_count": 2,
+      "streamed_rows": 2,
+      "target_count": 2,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_conversation_members",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_dashboard_configs",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_exercise_import_log",
+      "source_count": 3498,
+      "streamed_rows": 3498,
+      "target_count": 3498,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_exercises",
+      "source_count": 1318,
+      "streamed_rows": 1318,
+      "target_count": 1318,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_exercises_merge_backup",
+      "source_count": 1318,
+      "streamed_rows": 1318,
+      "target_count": 1318,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_food_database",
+      "source_count": 7932,
+      "streamed_rows": 7932,
+      "target_count": 7932,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_food_products",
+      "source_count": 13,
+      "streamed_rows": 13,
+      "target_count": 13,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_form_instances",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_form_responses",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_friendships",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_group_workout_participants",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_group_workouts",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_habit_encouragements",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_habit_logs",
+      "source_count": 29,
+      "streamed_rows": 29,
+      "target_count": 29,
+      "remap_rows_touched": 20,
+      "remap_replacements": 20,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_habits",
+      "source_count": 19,
+      "streamed_rows": 19,
+      "target_count": 19,
+      "remap_rows_touched": 4,
+      "remap_replacements": 4,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_health_sync_log",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_hydration_logs",
+      "source_count": 42,
+      "streamed_rows": 42,
+      "target_count": 42,
+      "remap_rows_touched": 36,
+      "remap_replacements": 36,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_journal_entries",
+      "source_count": 6,
+      "streamed_rows": 6,
+      "target_count": 6,
+      "remap_rows_touched": 5,
+      "remap_replacements": 5,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_level_definitions",
+      "source_count": 12,
+      "streamed_rows": 12,
+      "target_count": 12,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_notification_log",
+      "source_count": 5,
+      "streamed_rows": 5,
+      "target_count": 5,
+      "remap_rows_touched": 5,
+      "remap_replacements": 5,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_notification_preferences",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_notification_tokens",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_nutrition_logs",
+      "source_count": 94,
+      "streamed_rows": 94,
+      "target_count": 94,
+      "remap_rows_touched": 50,
+      "remap_replacements": 50,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_pantry_items",
+      "source_count": 21,
+      "streamed_rows": 21,
+      "target_count": 21,
+      "remap_rows_touched": 6,
+      "remap_replacements": 6,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_persona_settings",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_plugin_reviews",
+      "source_count": 1,
+      "streamed_rows": 1,
+      "target_count": 1,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_plugins_registry",
+      "source_count": 19,
+      "streamed_rows": 19,
+      "target_count": 19,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_post_comments",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_post_likes",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_program_exercises",
+      "source_count": 368,
+      "streamed_rows": 368,
+      "target_count": 368,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_program_workouts",
+      "source_count": 77,
+      "streamed_rows": 77,
+      "target_count": 77,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_promo_codes",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_screen_reactions",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_session_exercises",
+      "source_count": 101,
+      "streamed_rows": 101,
+      "target_count": 101,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_session_sets",
+      "source_count": 191,
+      "streamed_rows": 191,
+      "target_count": 191,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_shared_programs",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_shop_items",
+      "source_count": 34,
+      "streamed_rows": 34,
+      "target_count": 34,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_sleep_logs",
+      "source_count": 10,
+      "streamed_rows": 10,
+      "target_count": 10,
+      "remap_rows_touched": 6,
+      "remap_replacements": 6,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_stretching_logs",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_stretching_routines",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_supplement_brands",
+      "source_count": 11,
+      "streamed_rows": 11,
+      "target_count": 11,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_supplement_categories",
+      "source_count": 12,
+      "streamed_rows": 12,
+      "target_count": 12,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_supplement_prices",
+      "source_count": 3169,
+      "streamed_rows": 3169,
+      "target_count": 3169,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_supplements",
+      "source_count": 1499,
+      "streamed_rows": 1499,
+      "target_count": 1499,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_timer_presets",
+      "source_count": 2,
+      "streamed_rows": 2,
+      "target_count": 2,
+      "remap_rows_touched": 2,
+      "remap_replacements": 2,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_ai_credits",
+      "source_count": 39,
+      "streamed_rows": 39,
+      "target_count": 39,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_badges",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_gamification",
+      "source_count": 12,
+      "streamed_rows": 12,
+      "target_count": 12,
+      "remap_rows_touched": 1,
+      "remap_replacements": 1,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_inventory",
+      "source_count": 55,
+      "streamed_rows": 55,
+      "target_count": 55,
+      "remap_rows_touched": 14,
+      "remap_replacements": 14,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_plugins",
+      "source_count": 125,
+      "streamed_rows": 125,
+      "target_count": 125,
+      "remap_rows_touched": 19,
+      "remap_replacements": 19,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_profiles",
+      "source_count": 39,
+      "streamed_rows": 39,
+      "target_count": 39,
+      "remap_rows_touched": 1,
+      "remap_replacements": 2,
+      "url_rewrites": 2
+    },
+    {
+      "table": "ziko_user_promo_redemptions",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_user_supplement_favorites",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_waitlist_signups",
+      "source_count": 86,
+      "streamed_rows": 86,
+      "target_count": 86,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_wearable_daily_summary",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_workout_programs",
+      "source_count": 28,
+      "streamed_rows": 28,
+      "target_count": 28,
+      "remap_rows_touched": 5,
+      "remap_replacements": 6,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_workout_sessions",
+      "source_count": 103,
+      "streamed_rows": 103,
+      "target_count": 103,
+      "remap_rows_touched": 49,
+      "remap_replacements": 49,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_xp_gifts",
+      "source_count": 0,
+      "streamed_rows": 0,
+      "target_count": 0,
+      "remap_rows_touched": 0,
+      "remap_replacements": 0,
+      "url_rewrites": 0
+    },
+    {
+      "table": "ziko_xp_transactions",
+      "source_count": 37,
+      "streamed_rows": 37,
+      "target_count": 37,
+      "remap_rows_touched": 26,
+      "remap_replacements": 26,
+      "url_rewrites": 0
+    }
+  ],
+  "sequences": [
+    {
+      "name": "ziko_waitlist_founder_seq",
+      "before": 87,
+      "after": 87
+    }
+  ],
+  "total_rows": 20897,
+  "url_rewrites_total": 3
+}
