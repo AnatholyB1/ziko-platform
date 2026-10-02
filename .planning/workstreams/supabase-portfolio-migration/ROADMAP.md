@@ -11,7 +11,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 - [x] **Phase 1: Inventory & Pre-Flight Audit** - Both Supabase projects' live state (schema, auth, storage, extensions) is fully known and cross-checked before any migration code is written (completed 2026-09-22)
 - [x] **Phase 2: Schema Rename & Function/RLS Rewrite** - Every ziko schema object exists in portfolio under a `ziko_` prefix, functionally identical, with zero stale unprefixed references (completed 2026-10-01)
 - [x] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects (completed 2026-10-01)
-- [ ] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity
+- [x] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity (completed 2026-10-02)
 - [ ] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
 - [ ] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
 - [ ] **Phase 7: Monitoring & Decommission** - ziko is retired and deleted only after a monitored rollback window, full verification, and a second explicit human confirmation
@@ -101,19 +101,32 @@ Plans:
 - [x] 04-03-PLAN.md — lib-conn (login-role, session pooler, verified TLS) + 05-load-data CLI (--plan/--probe/--apply, guarded truncate, per-table replica COPY, setval) (DATA-01, DATA-02)
 - [x] 04-04-PLAN.md — 06-verify-data re-runnable suite (--check all, JSON + masked summary) + RUNBOOK Phase 4 section (DATA-03..05)
 - [x] 04-05-PLAN.md — Checkpoint PAT; scratch auth precondition, probe, full load + verify, reload + verify (DATA-01..05)
-- [ ] 04-06-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + tenants baseline, typed-phrase checkpoint (DATA-01, DATA-03, DATA-04)
-- [ ] 04-07-PLAN.md — [BLOCKING] Portfolio load + --check all + tenants; retire token on every path (DATA-01..05)
+- [x] 04-06-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + tenants baseline, typed-phrase checkpoint (DATA-01, DATA-03, DATA-04)
+- [x] 04-07-PLAN.md — [BLOCKING] Portfolio load + --check all + tenants; retire token on every path (DATA-01..05)
 
 ### Phase 5: Storage Migration
 **Goal**: All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions
 **Depends on**: Phase 1 (bucket inventory) — architecturally independent of Phases 2-4, can run in parallel
 **Requirements**: STORAGE-01, STORAGE-02, STORAGE-03, STORAGE-04
 **Success Criteria** (what must be TRUE):
-  1. All 9 buckets exist in portfolio, renamed with a `ziko-` prefix
+  1. All 9 buckets exist in portfolio, renamed with a `ziko-` prefix (live inventory 2026-10-02: 10 buckets incl. empty `coach-videos`; the live count governs)
   2. Object count and checksums match between source and destination buckets
   3. Storage RLS policies (`storage.foldername` pattern) are rebuilt and enforce the same per-user access as on ziko
   4. Signed-URL upload/download flows succeed end-to-end using a real authenticated (non-service-role) session, re-tested per plugin that uses storage
-**Plans**: TBD
+**Plans**: 11 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Wave 0 TDD: lib-storage pure helpers (bucket map/config diff, re-key, policy rewrite, URL rewrite, evaluators) (STORAGE-01, STORAGE-02, STORAGE-03)
+- [ ] 05-02-PLAN.md — Bucket-name codemod script (--scan/--apply/--check, per-deployable STORAGE_BUCKETS constants) + fixture tests (STORAGE-01, STORAGE-04)
+- [ ] 05-03-PLAN.md — Generate bucket map + ziko_ storage policies migration from live ziko, stale-reference check, guarded apply (STORAGE-01, STORAGE-03)
+- [ ] 05-04-PLAN.md — 08-copy-storage: read-only plan + add-only idempotent apply, live bucket config, re-key, SHA-256 round trip, no delete path (STORAGE-01, STORAGE-02)
+- [ ] 05-05-PLAN.md — 09-verify-storage suite: buckets/policies/objects/hashes/rekey/urls/tenants, PII-safe JSON (STORAGE-01, STORAGE-02, STORAGE-03)
+- [ ] 05-06-PLAN.md — Loader in-flight storage-URL rewrite (D-05) + live URL scan in --plan (STORAGE-02)
+- [ ] 05-07-PLAN.md — STORAGE-04 auth harness: throwaway users, real JWTs, backend in-process + web live spec, guaranteed cleanup (STORAGE-04)
+- [ ] 05-08-PLAN.md — Apply codemod, type-check/test, capture patch + unmerged branch gsd/phase-5-bucket-codemod, restore tree (STORAGE-01, STORAGE-04)
+- [ ] 05-09-PLAN.md — Checkpoint PAT; scratch rehearsal: policies, copy, loader re-run, verify all, full auth matrix, idempotent re-run, RUNBOOK (STORAGE-01..04)
+- [ ] 05-10-PLAN.md — Disable auto-chain, read-only portfolio pre-flight + baselines, typed-phrase checkpoint (STORAGE-01..04)
+- [ ] 05-11-PLAN.md — [BLOCKING] Portfolio policies, copy, loader re-run, verify all, auth smoke; retire token on every path (STORAGE-01..04)
 
 ### Phase 6: Cutover
 **Goal**: Backend, web, and mobile all run against portfolio in production, sequenced and verified one surface at a time, with zero regression on existing tenants
@@ -149,7 +162,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 1. Inventory & Pre-Flight Audit | 2/2 | Complete   | 2026-09-22 |
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
-| 4. Data Copy & Integrity Verification | 5/7 | In Progress|  |
-| 5. Storage Migration | 0/TBD | Not started | - |
+| 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
+| 5. Storage Migration | 0/11 | Planned | - |
 | 6. Cutover | 0/TBD | Not started | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
