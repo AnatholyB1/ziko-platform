@@ -182,6 +182,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 2. Schema Rename & Function/RLS Rewrite | 7/7 | Complete    | 2026-10-01 |
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
-| 5. Storage Migration | 11/11 | Complete   | 2026-10-02 |
+| 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 0/TBD | Not started | - |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |

@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: executing
-stopped_at: Completed 05-11-PLAN.md (user must revoke PAT ziko-storage-phase5)
-last_updated: "2026-10-02T19:34:31.738Z"
+status: ready_to_plan
+stopped_at: Phase 5 complete (11/11) — ready to discuss Phase 6
+last_updated: 2026-10-02T21:46:29.645Z
 last_activity: 2026-10-02
 progress:
   total_phases: 7
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 5 — Storage Migration
+**Current focus:** Phase 6 — cutover
 
 ## Current Position
 
-Phase: 5 (Storage Migration) — EXECUTING
-Plan: 2 of 11
-Status: Ready to execute
+Phase: 6
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-10-02
 
 Progress: [██████████] 100%
