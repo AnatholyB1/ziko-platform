@@ -286,3 +286,144 @@ test('bucket ids come only from the map', () => {
   assert.match(out, /STORAGE_BUCKETS\.fooBar/);
   assert.match(out, /from\('avatars'\)/);
 });
+
+// ---------------------------------------------------------------- CLI (temp-tree only)
+
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const CLI = path.join(path.dirname(fileURLToPath(import.meta.url)), '11-codemod-buckets.mjs');
+
+function makeTree() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codemod-'));
+  const put = (rel, text) => {
+    fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+    fs.writeFileSync(path.join(root, rel), text);
+  };
+  put(
+    'backend/api/src/routes/storage.ts',
+    "import { Hono } from 'hono';\nconst ALLOWED_BUCKETS = ['profile-photos', 'exports'] as const;\nawait db.storage\n  .from('scan-photos')\n  .remove([p]);\n",
+  );
+  put(
+    'apps/web/src/components/Up.tsx',
+    "import x from 'x';\nconst u = `/api/storage/upload-url?bucket=coach-kyc&path=1`;\nconst c = s.storage.from('coach-logos');\n",
+  );
+  put(
+    'apps/mobile/src/a.ts',
+    "import { showAlert } from '@ziko/plugin-sdk';\nconst c = supabase.storage.from('avatars');\n",
+  );
+  put('packages/plugin-sdk/src/index.ts', "export * from './i18n';\n");
+  put('backend/api/test/a.spec.ts', "expect(x).toBe('ai-imports');\n");
+  const mapDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codemod-map-'));
+  const mapFile = path.join(mapDir, 'map.json');
+  fs.writeFileSync(
+    mapFile,
+    JSON.stringify({ buckets: IDS.map((id) => ({ id, target_id: `ziko-${id}`, key: camelKey(id) })) }),
+  );
+  return { root, put, mapFile };
+}
+
+const run = (mode, { root, mapFile }, extra = []) =>
+  spawnSync(process.execPath, [CLI, mode, '--map', mapFile, '--root', root, ...extra], { encoding: 'utf8' });
+
+const snapshot = (root) => {
+  const out = {};
+  const walkDir = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walkDir(p);
+      else out[path.relative(root, p)] = fs.readFileSync(p, 'utf8');
+    }
+  };
+  walkDir(root);
+  return out;
+};
+
+test('cli: missing map exits 2', () => {
+  const r = spawnSync(process.execPath, [CLI, '--scan', '--map', 'scripts/portfolio-migration/does-not-exist.json'], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+});
+
+test('cli: exactly one mode is required', () => {
+  const t = makeTree();
+  const r = spawnSync(process.execPath, [CLI, '--map', t.mapFile, '--root', t.root], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+});
+
+test('cli: --scan is read-only and reports counts; unclassified exits 1 with file:line', () => {
+  const t = makeTree();
+  const before = snapshot(t.root);
+  const ok = run('--scan', t);
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.match(ok.stdout, /TOTAL: 7 occurrence/);
+  assert.deepEqual(snapshot(t.root), before);
+  t.put('backend/api/src/routes/bad.ts', "import a from 'a';\nconst x = thing.from('exports');\n");
+  const bad = run('--scan', t);
+  assert.equal(bad.status, 1);
+  assert.match(bad.stdout, /backend\/api\/src\/routes\/bad\.ts:2/);
+});
+
+test('cli: --apply refuses on unclassified occurrences and writes nothing', () => {
+  const t = makeTree();
+  t.put('backend/api/src/routes/bad.ts', "import a from 'a';\nconst x = thing.from('exports');\n");
+  const before = snapshot(t.root);
+  const r = run('--apply', t);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /bad\.ts:2/);
+  assert.deepEqual(snapshot(t.root), before);
+});
+
+test('cli: apply then check passes; second apply changes zero files; manifest lists new files', () => {
+  const t = makeTree();
+  const manifest = path.join(path.dirname(t.mapFile), 'manifest.txt');
+  const first = run('--apply', t, ['--manifest-out', manifest]);
+  assert.equal(first.status, 0, first.stderr);
+  const lines = fs.readFileSync(manifest, 'utf8').trim().split('\n');
+  assert.ok(lines.includes('A backend/api/src/config/buckets.ts'));
+  assert.ok(lines.includes('A apps/web/src/lib/buckets.ts'));
+  assert.ok(lines.includes('A packages/plugin-sdk/src/buckets.ts'));
+  assert.ok(lines.includes('packages/plugin-sdk/src/index.ts'));
+  assert.ok(lines.includes('backend/api/src/routes/storage.ts'));
+  const idx = fs.readFileSync(path.join(t.root, 'packages/plugin-sdk/src/index.ts'), 'utf8');
+  assert.match(idx, /export \{ STORAGE_BUCKETS \} from '\.\/buckets';/);
+  assert.match(idx, /export type \{ StorageBucket \} from '\.\/buckets';/);
+  const mobile = fs.readFileSync(path.join(t.root, 'apps/mobile/src/a.ts'), 'utf8');
+  assert.match(mobile, /import \{ showAlert, STORAGE_BUCKETS \} from '@ziko\/plugin-sdk'/);
+  const chk = run('--check', t);
+  assert.equal(chk.status, 0, chk.stderr);
+  const after = snapshot(t.root);
+  const second = run('--apply', t, ['--manifest-out', manifest]);
+  assert.equal(second.status, 0, second.stderr);
+  assert.match(second.stdout, /changed 0 file/);
+  assert.deepEqual(snapshot(t.root), after);
+});
+
+test('cli: --check fails before apply and on missing constant modules', () => {
+  const t = makeTree();
+  const r = run('--check', t);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /constant module missing/);
+});
+
+test('cli: --check repo-wide pass catches literals outside SCAN_ROOTS but honours exclusions', () => {
+  const t = makeTree();
+  assert.equal(run('--apply', t).status, 0);
+  assert.equal(run('--check', t).status, 0);
+  t.put('supabase/migrations/001_x.sql', "insert into storage.buckets (id) values ('avatars');\n");
+  t.put('scripts/purge-test-accounts/x.ts', "const d = join(__dirname, 'exports');\n");
+  t.put('node_modules/pkg/index.js', "const a = 'avatars';\n");
+  assert.equal(run('--check', t).status, 0);
+  t.put('supabase/seed.sql', "insert into storage.buckets (id) values ('avatars');\n");
+  const r = run('--check', t);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /supabase\/seed\.sql:1/);
+  t.put('supabase/seed.sql', "insert into storage.buckets (id) values ('ziko-avatars');\n");
+  assert.equal(run('--check', t).status, 0);
+  t.put('backend/api/src/routes/c.ts', 'const a = STORAGE_BUCKETS.avatars;\n');
+  const r2 = run('--check', t);
+  assert.equal(r2.status, 1);
+  assert.match(r2.stderr, /without importing/);
+});
