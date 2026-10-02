@@ -256,3 +256,236 @@ export function evaluateOrphans(rows) {
     data: { checked: list.length, orphaned: bad },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Sequences (read-only: last_value / is_called, never advanced)
+// ---------------------------------------------------------------------------
+
+export const SEQUENCE_LIST_SQL = `SELECT sequencename
+FROM pg_sequences
+WHERE schemaname = 'public'
+ORDER BY sequencename`;
+
+// Sequences owned by (or identity-linked to) a table column.
+export const OWNED_SEQUENCE_COLUMNS_SQL = `SELECT s.relname AS sequence, t.relname AS "table", a.attname AS "column"
+FROM pg_class s
+JOIN pg_depend d ON d.objid = s.oid
+  AND d.classid = 'pg_class'::regclass
+  AND d.refclassid = 'pg_class'::regclass
+  AND d.deptype IN ('a', 'i')
+JOIN pg_class t ON t.oid = d.refobjid
+JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+WHERE s.relkind = 'S'
+  AND s.relnamespace = 'public'::regnamespace
+ORDER BY s.relname`;
+
+// Column defaults that depend on a public sequence (serial-style referrers).
+export const REFERRERS_SQL = `SELECT s.relname AS sequence, t.relname AS "table", a.attname AS "column"
+FROM pg_class s
+JOIN pg_depend d ON d.refobjid = s.oid AND d.classid = 'pg_attrdef'::regclass AND d.deptype = 'n'
+JOIN pg_attrdef ad ON ad.oid = d.objid
+JOIN pg_class t ON t.oid = ad.adrelid
+JOIN pg_attribute a ON a.attrelid = ad.adrelid AND a.attnum = ad.adnum
+WHERE s.relkind = 'S'
+  AND s.relnamespace = 'public'::regnamespace
+ORDER BY s.relname`;
+
+// The only consumer: the waitlist RPC writes the sequence value into founder_rank.
+export const SEQUENCE_CONSUMERS = [
+  { sequence: 'ziko_waitlist_founder_seq', table: 'ziko_waitlist_signups', column: 'founder_rank' },
+];
+
+export function mapSequenceName(source) {
+  ident(source, 'source sequence');
+  if (source.startsWith('ziko_')) throw new Error(`sequence already prefixed: ${source}`);
+  return zikoIdent(`ziko_${source}`, 'target sequence');
+}
+
+export function buildSequenceStateSql(name, side) {
+  if (side === 'target') zikoIdent(name, 'target sequence');
+  else ident(name, 'sequence');
+  return `SELECT last_value, is_called FROM public.${q(name)}`;
+}
+
+const POS_INT_RE = /^[1-9][0-9]*$/;
+
+export function buildSetvalSql(target, state) {
+  zikoIdent(target, 'target sequence');
+  const v = String(state?.last_value);
+  if (!POS_INT_RE.test(v)) throw new Error('last_value must be a positive integer');
+  return `SELECT setval('public.${target}', ${v}, ${state.is_called === true ? 'true' : 'false'})`;
+}
+
+export function buildConsumerMaxSql(consumer) {
+  zikoIdent(consumer.table, 'consumer table');
+  ident(consumer.column, 'consumer column');
+  return `SELECT coalesce(max(${q(consumer.column)}), 0)::bigint AS m FROM public.${q(consumer.table)}`;
+}
+
+export function evaluateSequences({ pairs, ownedColumns }) {
+  const problems = [];
+  const owned = ownedColumns ?? [];
+  const byName = new Map();
+  for (const p of pairs ?? []) {
+    const label = p.source ?? p.target ?? '?';
+    if (!p.target || !p.targetState || !p.sourceState) {
+      problems.push(`${label}: missing on target`);
+      continue;
+    }
+    byName.set(p.target, p);
+    byName.set(p.source, p);
+    const tv = big(p.targetState.last_value);
+    if (tv !== big(p.sourceState.last_value) || Boolean(p.targetState.is_called) !== Boolean(p.sourceState.is_called)) {
+      problems.push(`${p.target}: last_value/is_called differ from source`);
+    }
+    if (p.previousTargetState && tv < big(p.previousTargetState.last_value)) {
+      problems.push(`${p.target}: regressed below previous target value`);
+    }
+    if (p.consumerMax !== undefined && p.consumerMax !== null && tv < big(p.consumerMax)) {
+      problems.push(`${p.target}: last_value below max of consumer column`);
+    }
+  }
+  for (const o of owned) {
+    const pair = byName.get(o.sequence);
+    if (!pair || !pair.targetState) problems.push(`${o.sequence}: owned column without compared pair`);
+    else if (o.tableMax !== undefined && big(o.tableMax) > big(pair.targetState.last_value)) {
+      problems.push(`${o.sequence}: ${o.table}.${o.column} max exceeds last_value`);
+    }
+  }
+  const ok = problems.length === 0;
+  return {
+    ok,
+    detail: `${(pairs ?? []).length} sequences compared, sequence-backed columns: ${owned.length}${ok ? '' : `; ${problems.join('; ')}`}`,
+    data: { sequences: (pairs ?? []).length, sequenceBackedColumns: owned.length, problems },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// UUID remap occurrence checks
+// ---------------------------------------------------------------------------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function buildUuidOccurrenceSql(names, uuid) {
+  if (typeof uuid !== 'string' || !UUID_RE.test(uuid)) throw new Error('invalid uuid literal');
+  if (!Array.isArray(names) || names.length === 0) throw new Error('no tables');
+  return names
+    .map((n) => {
+      zikoIdent(n);
+      return `SELECT '${n}' AS tbl, count(*)::bigint AS n FROM public.${q(n)} t WHERE t::text ILIKE '%${uuid}%'`;
+    })
+    .join('\nUNION ALL\n');
+}
+
+function occIndex(rows) {
+  const m = new Map();
+  for (const r of rows ?? []) m.set(r.tbl, big(r.n));
+  return m;
+}
+
+function nonZero(rows) {
+  return (rows ?? []).filter((r) => big(r.n) > 0n).map((r) => r.tbl);
+}
+
+export function evaluateRemap({ targetSourceOcc, targetTargetOcc, sourceSourceOcc, preLoadTargetOcc }) {
+  const problems = [];
+  const sourceOnTarget = nonZero(targetSourceOcc);
+  if (sourceOnTarget.length > 0) problems.push(`source UUID present on target in ${sourceOnTarget.length} tables`);
+  const tt = occIndex(targetTargetOcc);
+  const ss = occIndex(sourceSourceOcc);
+  const diff = [];
+  for (const tbl of new Set([...tt.keys(), ...ss.keys()])) {
+    if ((tt.get(tbl) ?? 0n) !== (ss.get(tbl) ?? 0n)) diff.push(tbl);
+  }
+  if (diff.length > 0) problems.push(`target UUID occurrence differs from source in ${diff.length} tables`);
+  let preLoad = null;
+  if (preLoadTargetOcc !== undefined && preLoadTargetOcc !== null) {
+    preLoad = nonZero(preLoadTargetOcc);
+    if (preLoad.length > 0) problems.push(`pre-load occurrences in ${preLoad.length} tables`);
+  }
+  const ok = problems.length === 0;
+  return {
+    ok,
+    detail: ok
+      ? 'source UUID absent on target; target UUID occurrences match source'
+      : problems.join('; '),
+    data: {
+      sourceOnTargetTables: sourceOnTarget,
+      occurrenceDiffTables: diff,
+      preLoadTables: preLoad,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tenant (non-ziko) regression guard
+// ---------------------------------------------------------------------------
+
+export const TENANT_TABLES_SQL = `SELECT table_name AS tbl
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE'
+  AND table_name NOT LIKE 'ziko\\_%'
+UNION ALL
+SELECT 'auth.users' AS tbl
+ORDER BY tbl`;
+
+export function buildTenantCountsSql(names) {
+  if (!Array.isArray(names) || names.length === 0) throw new Error('no tables');
+  return names
+    .map((n) => {
+      if (n === 'auth.users') return `SELECT 'auth.users' AS tbl, count(*)::bigint AS n FROM auth.users`;
+      ident(n, 'tenant table');
+      return `SELECT '${n}' AS tbl, count(*)::bigint AS n FROM public.${q(n)}`;
+    })
+    .join('\nUNION ALL\n');
+}
+
+export function evaluateTenants(baseline, current) {
+  const problems = [];
+  const warnings = [];
+  const cur = occIndex(current?.tables);
+  for (const r of baseline?.tables ?? []) {
+    const b = big(r.n);
+    if (!cur.has(r.tbl)) {
+      problems.push(`${r.tbl}: missing`);
+      continue;
+    }
+    const c = cur.get(r.tbl);
+    if (b > 0n && c === 0n) problems.push(`${r.tbl}: emptied`);
+    else if (c !== b) warnings.push(`${r.tbl}: ${b} -> ${c}`);
+  }
+  if (big(current?.authUsers ?? 0) < big(baseline?.authUsers ?? 0)) problems.push('auth.users count decreased');
+  else if (big(current?.authUsers ?? 0) !== big(baseline?.authUsers ?? 0)) {
+    warnings.push(`auth.users: ${baseline.authUsers} -> ${current.authUsers}`);
+  }
+  const trig = (rows) => JSON.stringify([...(rows ?? [])].map((t) => [t.tgname, t.tgenabled]).sort());
+  if (trig(baseline?.authTriggers) !== trig(current?.authTriggers)) problems.push('auth.users trigger state differs');
+  const ok = problems.length === 0;
+  return {
+    ok,
+    warnings,
+    detail: ok
+      ? `tenant tables intact (${(baseline?.tables ?? []).length} tables, ${warnings.length} row-count deltas)`
+      : problems.join('; '),
+    data: { problems, warnings },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Report safety
+// ---------------------------------------------------------------------------
+
+export function maskUuid(uuid) {
+  return `${String(uuid).slice(0, 8)}-…`;
+}
+
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/;
+const FULL_UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+export function assertReportSafe(obj) {
+  const text = JSON.stringify(obj);
+  if (EMAIL_RE.test(text)) throw new Error('report contains an email address');
+  if (FULL_UUID_RE.test(text)) throw new Error('report contains a full UUID');
+  return true;
+}
