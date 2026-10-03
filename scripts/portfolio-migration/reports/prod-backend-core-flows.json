@@ -1,0 +1,80 @@
+{
+  "target": "portfolio",
+  "passed": true,
+  "cases": [
+    {
+      "id": "api-health",
+      "expect": 200,
+      "observed": 200,
+      "ok": true,
+      "ms": 2310
+    },
+    {
+      "id": "login-athlete",
+      "expect": "session",
+      "observed": "session",
+      "ok": true,
+      "ms": 408
+    },
+    {
+      "id": "read-credits",
+      "expect": "ok",
+      "observed": "ok",
+      "ok": true,
+      "ms": 1182
+    },
+    {
+      "id": "read-own-profile",
+      "expect": 1,
+      "observed": 1,
+      "ok": true,
+      "ms": 35
+    },
+    {
+      "id": "write-own-row",
+      "expect": "ok",
+      "observed": "ok",
+      "ok": true,
+      "ms": 53
+    },
+    {
+      "id": "read-back",
+      "expect": 1,
+      "observed": 1,
+      "ok": true,
+      "ms": 60
+    },
+    {
+      "id": "delete-own-row",
+      "expect": "ok",
+      "observed": "ok",
+      "ok": true,
+      "ms": 122
+    },
+    {
+      "id": "coach-crm-read",
+      "expect": 200,
+      "observed": 200,
+      "ok": true,
+      "ms": 820
+    },
+    {
+      "id": "unauth-denied",
+      "expect": 401,
+      "observed": 401,
+      "ok": true,
+      "ms": 140
+    },
+    {
+      "id": "cleanup-zero-leftovers",
+      "expect": 0,
+      "observed": 0,
+      "ok": true,
+      "ms": 0
+    }
+  ],
+  "cleanup": {
+    "leftoverUsers": 0,
+    "leftoverRows": 0
+  }
+}
