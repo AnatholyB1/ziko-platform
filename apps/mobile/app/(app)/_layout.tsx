@@ -21,11 +21,15 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
-import { useTranslation } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, useI18nStore } from '@ziko/plugin-sdk';
+import { appStorage } from '../../src/lib/storage';
+import { getReloginNoticeState, reloginAckKey } from '../../src/lib/reloginNotice';
 import { supabase } from '../../src/lib/supabase';
 import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
 import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
+import { WeeklyReviewRevealOverlay } from '../../src/components/WeeklyReviewRevealOverlay';
+import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
 // requiring expo-notifications at module load time (crashes when
@@ -33,8 +37,10 @@ import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 
 function handleNotificationResponse(response: NotificationsType.NotificationResponse) {
   const url = response.notification.request.content.data?.url as string | undefined;
-  if (url) {
+  if (url && isAllowedNotificationRoute(url)) {
     router.push(url as any);
+  } else if (url) {
+    console.warn('[Notifications] Blocked navigation to disallowed route:', url);
   }
 }
 
@@ -86,8 +92,38 @@ function useBrandingBootstrap() {
   }, [data?.branding, setCustomTheme, clearCoachTheme]);
 }
 
+// ── Coaching Engine Bootstrap ────────────────────────────────────────────────
+// D-01: the app-open due-check is the primary weekly review trigger on the
+// mobile side. Fires on every authenticated app open (and foreground-after-
+// background, via staleTime matching useBrandingBootstrap) and does nothing
+// with the response — the endpoint returns { ok: true } immediately and runs
+// the review in the background (plan 44-05). No retry, no loading state, no
+// blocking: a failed check is simply picked up by the next app open or the
+// Sunday cron safety net.
+
+function useCoachingEngineBootstrap() {
+  const userId = useAuthStore((s) => s.user?.id);
+
+  useQuery({
+    queryKey: ['coaching-engine-review-check', userId],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/coaching-engine/review-check`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) throw new Error('fetch failed');
+      return res.json();
+    },
+    staleTime: 30_000,
+    enabled: !!userId,
+  });
+}
+
 export default function AppLayout() {
   useBrandingBootstrap();
+  useCoachingEngineBootstrap();
 
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
@@ -130,6 +166,36 @@ export default function AppLayout() {
         }
       });
   }, [userId]);
+
+  // D-12 re-login notice: shown once per configured cutover date; inert when unset.
+  useEffect(() => {
+    const cutoverIso = process.env.EXPO_PUBLIC_ZIKO_RELOGIN_CUTOVER_DATE;
+    const state = getReloginNoticeState(new Date(), cutoverIso);
+    if (!state.visible || !state.cutover || !cutoverIso) return;
+    const ackKey = reloginAckKey(cutoverIso);
+    let cancelled = false;
+    appStorage.getString(ackKey).then((acked) => {
+      if (cancelled || acked) return;
+      const locale = useI18nStore.getState().locale;
+      const dateLabel = state.cutover!.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      });
+      showAlert(
+        t('reloginNotice.title'),
+        t(state.phase === 'before' ? 'reloginNotice.body_before' : 'reloginNotice.body_after', {
+          date: dateLabel,
+        }),
+        [{ text: t('general.confirm'), onPress: () => { void appStorage.set(ackKey, true); } }],
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Notification response listener (handles background/killed → opened by tap)
   useEffect(() => {
@@ -252,6 +318,7 @@ export default function AppLayout() {
         onSkip={onSkip}
       />
       <PendingFormsOverlay />
+      <WeeklyReviewRevealOverlay />
     </>
   );
 }

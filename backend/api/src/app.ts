@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
+import { onboardingRouter } from './routes/onboarding.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { pushEventsRouter } from './routes/push-events.js';
@@ -26,6 +27,7 @@ import { brandingRouter } from './coach/branding/service.js';
 import { exercisesRouter } from './coach/exercises/service.js';
 import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
+import { coachingEngineRouter } from './coaching-engine/routes.js';
 import { formsRouter, formsCronRouter } from './routes/forms.js';
 const app = new Hono();
 
@@ -60,6 +62,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 
 // Routes
 app.route('/ai', aiRouter);
+app.route('/ai', onboardingRouter);
 app.route('/plugins', pluginsRouter);
 app.route('/webhooks', webhooksRouter);
 app.route('/push-events', pushEventsRouter);
@@ -85,6 +88,7 @@ app.route('/coach/branding', brandingRouter);
 app.route('/coach/exercises', exercisesRouter);
 app.route('/coach/dashboards', dashboardsRouter);
 app.route('/coach/videos', videosRouter);
+app.route('/coaching-engine', coachingEngineRouter);
 app.route('/forms', formsRouter);
 app.route('/forms', formsCronRouter);
 

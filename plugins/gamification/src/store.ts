@@ -131,23 +131,10 @@ function computeLevelProgress(xp: number, levels: LevelDef[]) {
   return { currentLevel, nextLevel, xpToNext, xpProgress };
 }
 
-// ── Ensure profile exists ───────────────────────────────
+// ── Ensure profile exists (server-side, bypasses the now-locked-down INSERT) ──
 async function ensureProfile(supabase: any, userId: string): Promise<GamificationProfile> {
-  const { data } = await supabase
-    .from('user_gamification')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
-  if (data) return data;
-
-  const { data: created } = await supabase
-    .from('user_gamification')
-    .insert({ user_id: userId })
-    .select('*')
-    .single();
-
-  return created;
+  const { data } = await supabase.rpc('ensure_gamification_profile', { p_user_id: userId });
+  return data;
 }
 
 // ── Load all gamification data ──────────────────────────
@@ -224,99 +211,21 @@ async function updateStreak(supabase: any, userId: string, profile: Gamification
       const coinAmount = COIN_REWARDS[coinKey] ?? 0;
 
       if (xpAmount > 0) {
-        await addXP(supabase, userId, xpAmount, 'streak_bonus', null, `🔥 Streak ${milestone} jours !`);
+        await supabase.rpc('award_xp', {
+          p_user_id: userId, p_amount: xpAmount, p_source: 'streak_bonus',
+          p_source_id: null, p_description: `🔥 Streak ${milestone} jours !`,
+        });
       }
       if (coinAmount > 0) {
-        await addCoins(supabase, userId, coinAmount, 'streak_bonus', null, `🔥 Bonus streak ${milestone} jours`);
+        await supabase.rpc('award_coins', {
+          p_user_id: userId, p_amount: coinAmount, p_source: 'streak_bonus',
+          p_source_id: null, p_description: `🔥 Bonus streak ${milestone} jours`,
+        });
       }
     }
   }
 
   return data ?? profile;
-}
-
-// ── Add XP (with level-up check) ────────────────────────
-async function addXP(
-  supabase: any,
-  userId: string,
-  amount: number,
-  source: string,
-  sourceId: string | null,
-  description: string,
-) {
-  // Record transaction
-  await supabase.from('xp_transactions').insert({
-    user_id: userId, amount, source, source_id: sourceId, description,
-  });
-
-  // Get current profile
-  const { data: profile } = await supabase
-    .from('user_gamification')
-    .select('xp, level')
-    .eq('user_id', userId)
-    .single();
-
-  if (!profile) return;
-
-  const newXP = profile.xp + amount;
-
-  // Check level up
-  const { data: levels } = await supabase
-    .from('level_definitions')
-    .select('*')
-    .lte('xp_required', newXP)
-    .order('level', { ascending: false })
-    .limit(1);
-
-  const newLevel = levels?.[0]?.level ?? profile.level;
-  const leveledUp = newLevel > profile.level;
-
-  await supabase
-    .from('user_gamification')
-    .update({ xp: newXP, level: newLevel, updated_at: new Date().toISOString() })
-    .eq('user_id', userId);
-
-  // Level-up bonus coins
-  if (leveledUp) {
-    const { data: levelDef } = await supabase
-      .from('level_definitions')
-      .select('reward_coins, title')
-      .eq('level', newLevel)
-      .single();
-
-    if (levelDef?.reward_coins > 0) {
-      await addCoins(supabase, userId, levelDef.reward_coins, 'level_up', null,
-        `🎉 Niveau ${newLevel} atteint : ${levelDef.title} !`);
-    }
-  }
-}
-
-// ── Add Coins ───────────────────────────────────────────
-async function addCoins(
-  supabase: any,
-  userId: string,
-  amount: number,
-  source: string,
-  sourceId: string | null,
-  description: string,
-) {
-  await supabase.from('coin_transactions').insert({
-    user_id: userId, amount, source, source_id: sourceId, description,
-  });
-
-  // Update balance
-  const { data: profile } = await supabase
-    .from('user_gamification')
-    .select('coins')
-    .eq('user_id', userId)
-    .single();
-
-  if (profile) {
-    await supabase
-      .from('user_gamification')
-      .update({ coins: profile.coins + amount, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
-  }
 }
 
 // ── Award Workout Completion ────────────────────────────
@@ -325,17 +234,16 @@ export async function awardWorkoutXP(supabase: any, sessionId: string) {
   if (!user) return;
 
   const profile = await ensureProfile(supabase, user.id);
-
-  // Update streak
   await updateStreak(supabase, user.id, profile);
 
-  // Award XP
-  await addXP(supabase, user.id, XP_REWARDS.workout, 'workout', sessionId,
-    `💪 Séance terminée : +${XP_REWARDS.workout} XP`);
-
-  // Award coins
-  await addCoins(supabase, user.id, COIN_REWARDS.workout, 'workout', sessionId,
-    `💰 Séance terminée : +${COIN_REWARDS.workout} pièces`);
+  await supabase.rpc('award_xp', {
+    p_user_id: user.id, p_amount: XP_REWARDS.workout, p_source: 'workout',
+    p_source_id: sessionId, p_description: `💪 Séance terminée : +${XP_REWARDS.workout} XP`,
+  });
+  await supabase.rpc('award_coins', {
+    p_user_id: user.id, p_amount: COIN_REWARDS.workout, p_source: 'workout',
+    p_source_id: sessionId, p_description: `💰 Séance terminée : +${COIN_REWARDS.workout} pièces`,
+  });
 }
 
 // ── Award Habit Completion ──────────────────────────────
@@ -344,17 +252,16 @@ export async function awardHabitXP(supabase: any, habitName: string) {
   if (!user) return;
 
   const profile = await ensureProfile(supabase, user.id);
-
-  // Update streak
   await updateStreak(supabase, user.id, profile);
 
-  // Award XP
-  await addXP(supabase, user.id, XP_REWARDS.habit, 'habit', null,
-    `✅ ${habitName} : +${XP_REWARDS.habit} XP`);
-
-  // Award coins
-  await addCoins(supabase, user.id, COIN_REWARDS.habit, 'habit', null,
-    `💰 ${habitName} : +${COIN_REWARDS.habit} pièces`);
+  await supabase.rpc('award_xp', {
+    p_user_id: user.id, p_amount: XP_REWARDS.habit, p_source: 'habit',
+    p_source_id: null, p_description: `✅ ${habitName} : +${XP_REWARDS.habit} XP`,
+  });
+  await supabase.rpc('award_coins', {
+    p_user_id: user.id, p_amount: COIN_REWARDS.habit, p_source: 'habit',
+    p_source_id: null, p_description: `💰 ${habitName} : +${COIN_REWARDS.habit} pièces`,
+  });
 }
 
 // ── Purchase Item ───────────────────────────────────────
@@ -362,40 +269,13 @@ export async function purchaseItem(supabase: any, itemId: string): Promise<{ suc
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Non connecté' };
 
-  const profile = await ensureProfile(supabase, user.id);
-
-  // Get item
-  const { data: item } = await supabase
-    .from('shop_items')
-    .select('*')
-    .eq('id', itemId)
-    .single();
-
-  if (!item) return { success: false, error: 'Article introuvable' };
-  if (profile.level < item.level_required) return { success: false, error: `Niveau ${item.level_required} requis` };
-  if (profile.coins < item.price) return { success: false, error: 'Pas assez de pièces' };
-
-  // Check if already owned
-  const { data: existing } = await supabase
-    .from('user_inventory')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('item_id', itemId)
-    .single();
-
-  if (existing) return { success: false, error: 'Déjà possédé' };
-
-  // Deduct coins
-  await addCoins(supabase, user.id, -item.price, 'purchase', itemId,
-    `🛒 Achat : ${item.name}`);
-
-  // Add to inventory
-  await supabase.from('user_inventory').insert({
-    user_id: user.id,
-    item_id: itemId,
+  const { data, error } = await supabase.rpc('purchase_shop_item', {
+    p_user_id: user.id,
+    p_item_id: itemId,
   });
 
-  return { success: true };
+  if (error) return { success: false, error: error.message };
+  return data as { success: boolean; error?: string };
 }
 
 // ── Equip Item ──────────────────────────────────────────

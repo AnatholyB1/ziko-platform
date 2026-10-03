@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Alert,
+  View, Text, ScrollView, TouchableOpacity, TextInput,
   Share, RefreshControl,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -43,9 +43,9 @@ export default function InviteScreen({ supabase }: { supabase: any }) {
   }, []);
 
   const handleSendGift = async () => {
-    if (!giftFriendId) return Alert.alert('Erreur', 'Choisis un ami');
+    if (!giftFriendId) return showAlert('Erreur', 'Choisis un ami');
     const amount = parseInt(giftAmount) || 0;
-    if (amount <= 0) return Alert.alert('Erreur', 'Montant invalide');
+    if (amount <= 0) return showAlert('Erreur', 'Montant invalide');
 
     setSending(true);
     try {
@@ -54,25 +54,25 @@ export default function InviteScreen({ supabase }: { supabase: any }) {
       } else {
         await sendCoinGift(supabase, giftFriendId, amount, giftMessage || undefined);
       }
-      Alert.alert('Envoyé !', `${amount} ${giftType === 'xp' ? 'XP' : '🪙'} envoyé(es)`);
+      showAlert('Envoyé !', `${amount} ${giftType === 'xp' ? 'XP' : '🪙'} envoyé(es)`);
       setGiftAmount('10');
       setGiftMessage('');
     } catch (e: any) {
-      Alert.alert('Erreur', e.message || 'Envoi échoué');
+      showAlert('Erreur', e.message || 'Envoi échoué');
     } finally {
       setSending(false);
     }
   };
 
   const handleSendEncouragement = async () => {
-    if (!encFriendId) return Alert.alert('Erreur', 'Choisis un ami');
+    if (!encFriendId) return showAlert('Erreur', 'Choisis un ami');
     setSending(true);
     try {
       await sendEncouragement(supabase, encFriendId, undefined, encEmoji, encMessage || undefined);
-      Alert.alert('Envoyé !', 'Encouragement envoyé 🎉');
+      showAlert('Envoyé !', 'Encouragement envoyé 🎉');
       setEncMessage('');
     } catch {
-      Alert.alert('Erreur', 'Envoi échoué');
+      showAlert('Erreur', 'Envoi échoué');
     } finally {
       setSending(false);
     }
@@ -84,7 +84,7 @@ export default function InviteScreen({ supabase }: { supabase: any }) {
       const code = await createInvite(supabase);
       setGeneratedCode(code);
     } catch {
-      Alert.alert('Erreur', 'Impossible de créer le code');
+      showAlert('Erreur', 'Impossible de créer le code');
     } finally {
       setCreatingInvite(false);
     }

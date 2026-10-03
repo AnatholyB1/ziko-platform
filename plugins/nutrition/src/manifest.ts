@@ -98,7 +98,7 @@ You have access to the user's daily nutrition logs. When discussing food or diet
     {
       path: '/(plugins)/nutrition/log',
       title: 'Log Meal',
-      icon: 'fork-knife',
+      icon: 'restaurant',
       showInTabBar: false,
     },
     {

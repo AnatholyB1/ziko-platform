@@ -1,0 +1,362 @@
+[
+  {
+    "file": "001_initial_schema.sql",
+    "sha256": "567e00927cf89ef4edc4de20c3b3ec0e1de7f20edd134090d6e8e1924cdc4926"
+  },
+  {
+    "file": "002_habits_schema.sql",
+    "sha256": "ea0414363ad3d6eb150f9bd9da49c4a72ff72306c88b15581abefb45cf2aec1d"
+  },
+  {
+    "file": "003_nutrition_schema.sql",
+    "sha256": "796cf6b377b2b4a000ddf6ff24285c5689e6ca5088aa809bc003eeba13e52deb"
+  },
+  {
+    "file": "004_exercises_extended.sql",
+    "sha256": "eb0c8ad19861abeb1d796b926eb0589e7a81f97ca16c94b7cf97bd411606ef40"
+  },
+  {
+    "file": "005_program_exercises_extended.sql",
+    "sha256": "8aa79254264d38be92115e009f98294e77551794dec23a4c7f485f920d2b6a6a"
+  },
+  {
+    "file": "006_session_analytics.sql",
+    "sha256": "3f0fc436383b2982968a67b96282a59ec98186ac4e605dac2fd4ab3c4513a915"
+  },
+  {
+    "file": "007_gamification_schema.sql",
+    "sha256": "58d185d592f697e782244a5120b767a40e01beca8be0a44938f8bc52848427dd"
+  },
+  {
+    "file": "008_plugin_reviews.sql",
+    "sha256": "8e7df472ab3f8c84044d0500ea7d483e58414ef213be1cfb3bbec83fda656575"
+  },
+  {
+    "file": "009_community_schema.sql",
+    "sha256": "80d038b9499ff887806e909cf106c5401d88701a770ad7bf4fb701fe0b24eb72"
+  },
+  {
+    "file": "010_banners_themes.sql",
+    "sha256": "8a80787a39a00321a673321b7d4ec728ac033eb5dc95c8a993ce884a243ab49f"
+  },
+  {
+    "file": "011_name_fr.sql",
+    "sha256": "830062295c01076a1a7ee4273454c826171db25cb10f98ffb81e405984f3540b"
+  },
+  {
+    "file": "012_new_plugins_schema.sql",
+    "sha256": "7f01fdae9022de60aa0b0f3711fb13749b023d3aafac0293e4ec9b6f877c40e8"
+  },
+  {
+    "file": "013_stretching_routines.sql",
+    "sha256": "9ade382dc73e34c3d4c187f3da88078118bbf2066c2fd31af5ab1e869d1ef7c2"
+  },
+  {
+    "file": "014_wearables_schema.sql",
+    "sha256": "f745e089753bfb8e3f297e51087e578f1710728f29068ed0159cf3412bc0072c"
+  },
+  {
+    "file": "015_bug_reports_schema.sql",
+    "sha256": "978e8306853febdf956dad59df7556c6b94370f7069bcdccbfd3f60ab2324d36"
+  },
+  {
+    "file": "016_program_cycles_schema.sql",
+    "sha256": "0bfb9fb6472110cdabd30231c06e952cf97c1412cac94b486d3f7b69c613f62a"
+  },
+  {
+    "file": "017_avatars_storage.sql",
+    "sha256": "bef1d6ec90f51e6852aa1f6811f130364f9d58a912436f9a86203c172707613d"
+  },
+  {
+    "file": "018_supplements_schema.sql",
+    "sha256": "262756fd0df1f166e9b2a5dd4ac6771a13c1cde1bbeafcef49fbce39607d5b7a"
+  },
+  {
+    "file": "019_remove_dead_brands.sql",
+    "sha256": "a02f549a554b2fd31916cba2ec91e1143316f5021240ddcda79a848d95a1d740"
+  },
+  {
+    "file": "020_timer_exercises_hyrox.sql",
+    "sha256": "28a1d191a988144c16a9c476e482bbb40d7a653b46d207d362baed1a46a40af7"
+  },
+  {
+    "file": "021_cardio_gps.sql",
+    "sha256": "07f0815737a6104073171e8bcdfeace139780b66ee2e6cd0469717c67ccc84a9"
+  },
+  {
+    "file": "022_default_theme_unlock.sql",
+    "sha256": "f8be8e80ed5062ffc9912b8a08c1eb9502d275f73bd07635ffe1eaf2e110133c"
+  },
+  {
+    "file": "023_shopping_list.sql",
+    "sha256": "21a4b9447b08f670f4808a9e36722b99787921ecaa71bcdd3aa2185a07014371"
+  },
+  {
+    "file": "024_food_products.sql",
+    "sha256": "bc5e949ce0f1631ffcc4d189783b5e619fd209460dbe57d918eac909ca7e4df6"
+  },
+  {
+    "file": "025_storage_buckets.sql",
+    "sha256": "5a4731764e5e55e07e798bd527ee80d99efd4aea13e08d46b6d928bd6919f92e"
+  },
+  {
+    "file": "026_ai_credits.sql",
+    "sha256": "b0872a890192972e2414016fd214ac9e19d5b722723c9fd82be55c9c3b1ec792"
+  },
+  {
+    "file": "027_ai_cost_log.sql",
+    "sha256": "6498fe951f3d4ca07f406dbaeed15fbc25c716b34e057f763e220df72142e734"
+  },
+  {
+    "file": "028_fix_earn_rpc_and_quota_tracking.sql",
+    "sha256": "3be6e405a8f5ba34721800da74f464aa37b5c7fad3e3e88d55d5cdae207fcec7"
+  },
+  {
+    "file": "029_persona_coaching_style.sql",
+    "sha256": "297299e76edd58636ae55b5ed155ea407c39c0f09574dc6b2964b0785f7b63dc"
+  },
+  {
+    "file": "030_habits_source_constraint.sql",
+    "sha256": "b2ea269010514a55244e5375807d8779bf7fc4e6d22d11fd883a2ccdae933a4b"
+  },
+  {
+    "file": "031_exercises_name_fr.sql",
+    "sha256": "356c4507aaa8d5e8febead6bcda5aae70b532af694a023663a7d88882f0fad9f"
+  },
+  {
+    "file": "032_onboarding_profile_fields.sql",
+    "sha256": "d1cecb806dc681233b1f8d93ffc944f178c3ff7addfd7adc496632fd6ececa6e"
+  },
+  {
+    "file": "033_community_posts.sql",
+    "sha256": "3442fdbae4a87b68e98289a98340aa97710291d40eedd60b9e6399b68c0a9a0e"
+  },
+  {
+    "file": "034_coach_role_profiles.sql",
+    "sha256": "3dca16d68e149b115f1215f2d088deaeb2384c136d638d29af81f1dc054a18cb"
+  },
+  {
+    "file": "035_coach_invitations_links_rls.sql",
+    "sha256": "1df0284a109c45d020f268efacad6f7ee5ef397145bfcc6e464e55051c82488b"
+  },
+  {
+    "file": "036_workout_programs_ai_imports.sql",
+    "sha256": "81c8689a769d7582d9fb867b3738d92af33422abea0068e9df5a0a18baf85209"
+  },
+  {
+    "file": "037_coach_kyc_bucket.sql",
+    "sha256": "539d64c7eaca99684c6c35033f6f3c157a46e6b31e2f6a2387ee66a08a9312aa"
+  },
+  {
+    "file": "038_avatar_color.sql",
+    "sha256": "24245bb029100bc1e3d925ae8670844f105b0b63e3d73e0216c92f327497d6dd"
+  },
+  {
+    "file": "039_avatars_delete_policy.sql",
+    "sha256": "90c4228a096b8da6602e7339857ee75ada0490f8f24e5273751f84a01ecf81df"
+  },
+  {
+    "file": "040_peek_invitation_function.sql",
+    "sha256": "d5bb20629126071fb1411bff83262d91659ba1e101f34bc982827534c72dfffb"
+  },
+  {
+    "file": "041_coach_client_tags_notes.sql",
+    "sha256": "ab55fcd62228a0b13f58de0531dd8d5eb7a953e630bfc203be112bf72a84ce8b"
+  },
+  {
+    "file": "042_coach_profiles_public_read.sql",
+    "sha256": "9b9a4953e75848e78639470a59ba312e92982ec10cf1524088e48ea2a9a5f466"
+  },
+  {
+    "file": "043_coach_invitations_authenticated_read.sql",
+    "sha256": "01805c5fe587967d08be92ec507f1ffadb0b02742dde9d33182d713536e6f02a"
+  },
+  {
+    "file": "044_user_profiles_coach_read.sql",
+    "sha256": "da41b839e69996373c89756ee0f7d353e31c33bfce219475f81bbcb3d0922b84"
+  },
+  {
+    "file": "20260519090000_pantry_schema.sql",
+    "sha256": "2d6f421c5aec9bf7af36fa5e97b186b4cf0ba9f4fe958f4f57116d2c2b75bbec"
+  },
+  {
+    "file": "20260519093000_earn_rpc.sql",
+    "sha256": "5ade8cf26fcfdffdf85becb3df2b140ab37458611fc086662542d0423e89ae3d"
+  },
+  {
+    "file": "20260520214714_coaching_programs_schema.sql",
+    "sha256": "56ea80e02c15d1dff5eacb598b533bf219e725438255acf8636e473ecb65d27f"
+  },
+  {
+    "file": "20260520220108_coaching_programs_seeds.sql",
+    "sha256": "dbf45cdbbf88d9f5c9dbd679f6d91aff1c4ddfd366751bfa9493709fa273a7f7"
+  },
+  {
+    "file": "20260521082622_coach_plugin_registry.sql",
+    "sha256": "1e0e9c1af67bf9f54486208410be4261e936132dcf00144fe7c9f86829569b69"
+  },
+  {
+    "file": "20260521125605_ai_imports_credit_fk.sql",
+    "sha256": "93e8fef88a19155fbb8de3adc2f804e0a66c8a2bec4e3a7ea4a60e1eec88cbcb"
+  },
+  {
+    "file": "20260521174343_ai_imports_bucket.sql",
+    "sha256": "0acfcfa58d7ddba6f4d2a416deec033dedc0fd3c094995ec6d8d1e5c0b346db0"
+  },
+  {
+    "file": "20260522114339_coach_ai_schema.sql",
+    "sha256": "23c85e5520f7dff13a2b6e49b3b97d5050d080b3b0c5550a47643338a2e05963"
+  },
+  {
+    "file": "20260522143410_profile_settings_gap.sql",
+    "sha256": "904b0fc6d2b82582cd7afd3025af4142a3d0fa74780ad10c07a19d060d8c72a2"
+  },
+  {
+    "file": "20260526101947_forms_schema.sql",
+    "sha256": "698820f5604c0532d66dd1fbef6ee9ac59bb9596721bd60bb79cb56f3a87a4fc"
+  },
+  {
+    "file": "20260526103032_coach_branding.sql",
+    "sha256": "d6f395a771bb2a1c967efed3d536bab5839c678b80b40d41dfe4d5808eb39a10"
+  },
+  {
+    "file": "20260526120820_dashboard_widgets.sql",
+    "sha256": "8474c3cfc6979c03b301dff0acdfb323438c63ca094a1f77c0660d849c8f4570"
+  },
+  {
+    "file": "20260526121018_coach_videos_schema.sql",
+    "sha256": "19c5d40b50a42208497ccd462bbb76878e370a6e31ae17a43926201560eb4fd2"
+  },
+  {
+    "file": "20260527110132_form_trigger_engine.sql",
+    "sha256": "4bfbe8277eded385217342340014decb28016c374d69cfb4224aba3532de0141"
+  },
+  {
+    "file": "20260527120544_coach_exercises_schema.sql",
+    "sha256": "bc96588fe83d99fb1bf207e41f31b12285f8493d40df8e216c3eb8ef47ba4243"
+  },
+  {
+    "file": "20260527120550_coach_exercise_id_program_exercises.sql",
+    "sha256": "a1a09283baba6307940840aba9bfaa42aebe323583937afa47b1cb38fdbf8bf0"
+  },
+  {
+    "file": "20260527120956_coach_exercises_gif_path.sql",
+    "sha256": "682aecfb414f73b83d2574a2b572dd7c4923fe329b6d8f23df730bec450514a1"
+  },
+  {
+    "file": "20260527133251_coach_read_client_own_programs.sql",
+    "sha256": "c302be85b46644fe34972c00139f6402ddbd8aba971187752efcc4c668d84b03"
+  },
+  {
+    "file": "20260527134709_coach_update_client_programs.sql",
+    "sha256": "2be2499a24a747149146c7b715f2f099b8fe65fce41a6826d40e3dd7323b0533"
+  },
+  {
+    "file": "20260527134853_coach_read_client_program_workouts.sql",
+    "sha256": "9fb75b6a73e4f7931b1a036283a0480856a7d58b1e40efd47dafd29f636cbe5e"
+  },
+  {
+    "file": "20260527202747_coach_vocal_feedbacks.sql",
+    "sha256": "e9dddb76ab0394646c9198b873a8cff42192498e4cbf7a1c5820ef2defa6f32b"
+  },
+  {
+    "file": "20260528215148_notification_schema.sql",
+    "sha256": "2dcd57a902833a43b48ce0f2998faa967c38e65817ffc8cadf8495d4fcd77edb"
+  },
+  {
+    "file": "20260528215154_workout_reminder_prefs.sql",
+    "sha256": "d045bd0861f9ecff7f3ef9a9b367790878b429bf0765c4836f7fa9058e0971cc"
+  },
+  {
+    "file": "20260529224843_fix_trigger_n_sessions.sql",
+    "sha256": "cdad55ae969faa73408a853af2b6678abb03545ad84f7faf3956773a3087b72c"
+  },
+  {
+    "file": "20260530200608_unaccent_user_search.sql",
+    "sha256": "f71e84d75abf2e9ceb11bdde062f9c7eb3558cf49949087a8278e0d0caa86a91"
+  },
+  {
+    "file": "20260813182644_waitlist_founder_offer.sql",
+    "sha256": "3f5d63de2dbef0b9d1bce7115331aef27d956c01e7995a394b4f050d399580a0"
+  },
+  {
+    "file": "20260814000000_exercise_media_schema.sql",
+    "sha256": "cfbc1b4b3e8f93ba6530c12d815ddab274aa01892b365a64a83f4f442fba4d51"
+  },
+  {
+    "file": "20260815000000_exercises_merge_backup_and_i18n.sql",
+    "sha256": "d32e80fc3e75be4c2803ecb8f161d7a22287031423589ecbccc8fb752fca47fd"
+  },
+  {
+    "file": "20260818190601_premium_credit_grant.sql",
+    "sha256": "c819d6724c0ebfda67e7981a8b8b78c4bb404d6957d5839632221d3a1ba61d55"
+  },
+  {
+    "file": "20260818191135_waitlist_retention_config.sql",
+    "sha256": "3afeeaf584ec1b4e31f3e38a17663d34f552127f81c853ba4a2c5d0e8e414ae6"
+  },
+  {
+    "file": "20260818191157_premium_credit_flag.sql",
+    "sha256": "ac2a99c80187df0176f3ce49d6533cf4e4bf70aca55b84c982bf34cb880de812"
+  },
+  {
+    "file": "20260819065412_language_region.sql",
+    "sha256": "8feb5e1306b0f4b41e056cd21e702f33c816e463734be7ac9163ae27e138511c"
+  },
+  {
+    "file": "20260819065428_referral_schema.sql",
+    "sha256": "ac24b80226c0d7196d1eb32cd78081ba87e838c1c1821c56d076a878e362659c"
+  },
+  {
+    "file": "20260819065437_coach_metric_thresholds.sql",
+    "sha256": "e917710cce87097dc16451d70e21a76f62350c19199f55c781f3137c73169361"
+  },
+  {
+    "file": "20260819065601_add_user_profiles_settings.sql",
+    "sha256": "f92f26402bf7f2404898b892efbe411a7beb5fc88c942fd75105b48cfb189010"
+  },
+  {
+    "file": "20260819065607_workout_sessions_friends_rls.sql",
+    "sha256": "dbf45d21a5b87ee9a270b9f2e9ff027992b146fd25419563833950df92c1bb42"
+  },
+  {
+    "file": "20260822120000_gamification_economy_rpc.sql",
+    "sha256": "c4c8d0604efb49f220a919f4fb36660ed9000f2260461e701dc9d7b54b0db331"
+  },
+  {
+    "file": "20260822130000_community_gifts_rpc.sql",
+    "sha256": "90e371cdfe4718c5db7f7fc166ac96d7fed39cd287bb8942fcd207e058b70ebb"
+  },
+  {
+    "file": "20260822140000_session_sets_unique.sql",
+    "sha256": "ea834d06b8da193731b39e968d95c7a006b2284b0a9d62a47bdf56b49ba3cdf0"
+  },
+  {
+    "file": "20260831120000_athlete_state.sql",
+    "sha256": "f1a6ae56cda5dc0b5191be4ff6af6bdc561dae4b81f0286c8e3eefe7c4f74cc6"
+  },
+  {
+    "file": "20260831120100_athlete_decisions.sql",
+    "sha256": "659240e7b9fbece5dea41feaacfe4c77de42c703d351e6fc83f4de24bc13aeb4"
+  },
+  {
+    "file": "20260831120200_athlete_decisions_rpc.sql",
+    "sha256": "e865c579397fcac9ccf1c3873dce17ebb81d00bcbfb4898da334963205c29b53"
+  },
+  {
+    "file": "20260831213147_athlete_state_revoke_anon.sql",
+    "sha256": "773febd0e03317e993f117ddeeda8154e0e07103adde5bec4188146a78e060e7"
+  },
+  {
+    "file": "20260902100000_athlete_goals.sql",
+    "sha256": "a448a7ef8ce4976ae076a60b95775373dbd05a44973a729e7c0e1df0cf523474"
+  },
+  {
+    "file": "20260902100100_ai_cost_log_source.sql",
+    "sha256": "efe4bc101069b282fd7651d0a68831aeeacb843cde039c7a22a93ec1add245f0"
+  },
+  {
+    "file": "20260902100200_record_athlete_decision_v2.sql",
+    "sha256": "4595d287243cc727f8479a8258a2c50f5940725be8f6520ad6cfa6942eb6110f"
+  }
+]

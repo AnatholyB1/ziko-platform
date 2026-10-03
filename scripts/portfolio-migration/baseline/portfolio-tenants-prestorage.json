@@ -1,0 +1,173 @@
+{
+  "generated_at": "2026-10-02T17:04:53.518Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "tables": [
+    {
+      "tbl": "album_photos",
+      "n": "1830"
+    },
+    {
+      "tbl": "albums",
+      "n": "30"
+    },
+    {
+      "tbl": "categories",
+      "n": "4"
+    },
+    {
+      "tbl": "gecko_admins",
+      "n": "3"
+    },
+    {
+      "tbl": "gecko_announcement",
+      "n": "1"
+    },
+    {
+      "tbl": "gecko_menu_categories",
+      "n": "0"
+    },
+    {
+      "tbl": "gecko_menu_items",
+      "n": "0"
+    },
+    {
+      "tbl": "gecko_menu_pages",
+      "n": "0"
+    },
+    {
+      "tbl": "gecko_opening_hours",
+      "n": "7"
+    },
+    {
+      "tbl": "gecko_phone_verifications",
+      "n": "1"
+    },
+    {
+      "tbl": "gecko_reservations",
+      "n": "6"
+    },
+    {
+      "tbl": "gecko_restaurant_settings",
+      "n": "2"
+    },
+    {
+      "tbl": "gecko_special_hours",
+      "n": "0"
+    },
+    {
+      "tbl": "gecko_table_assignments",
+      "n": "0"
+    },
+    {
+      "tbl": "gecko_table_configuration_tables",
+      "n": "1"
+    },
+    {
+      "tbl": "gecko_table_configurations",
+      "n": "1"
+    },
+    {
+      "tbl": "gecko_tables",
+      "n": "1"
+    },
+    {
+      "tbl": "orders",
+      "n": "15"
+    },
+    {
+      "tbl": "portfolio_photos",
+      "n": "65"
+    },
+    {
+      "tbl": "products",
+      "n": "10"
+    },
+    {
+      "tbl": "prospects",
+      "n": "1"
+    },
+    {
+      "tbl": "rh_chat_messages",
+      "n": "0"
+    },
+    {
+      "tbl": "rh_chat_sessions",
+      "n": "2"
+    },
+    {
+      "tbl": "rh_employee_sites",
+      "n": "19"
+    },
+    {
+      "tbl": "rh_employees",
+      "n": "19"
+    },
+    {
+      "tbl": "rh_leave_requests",
+      "n": "3"
+    },
+    {
+      "tbl": "rh_notifications",
+      "n": "1"
+    },
+    {
+      "tbl": "rh_shift_swaps",
+      "n": "1"
+    },
+    {
+      "tbl": "rh_shift_types",
+      "n": "3"
+    },
+    {
+      "tbl": "rh_shifts",
+      "n": "350"
+    },
+    {
+      "tbl": "rh_sites",
+      "n": "3"
+    },
+    {
+      "tbl": "rh_tenants",
+      "n": "1"
+    },
+    {
+      "tbl": "rh_unavailabilities",
+      "n": "1"
+    },
+    {
+      "tbl": "rh_users",
+      "n": "2"
+    },
+    {
+      "tbl": "sv_admins",
+      "n": "1"
+    },
+    {
+      "tbl": "sv_client_members",
+      "n": "1"
+    },
+    {
+      "tbl": "sv_clients",
+      "n": "1"
+    },
+    {
+      "tbl": "sv_tenants",
+      "n": "1"
+    },
+    {
+      "tbl": "sv_throttle",
+      "n": "18"
+    }
+  ],
+  "authUsers": "45",
+  "authTriggers": [
+    {
+      "tgname": "ziko_on_auth_user_created",
+      "tgenabled": "O"
+    },
+    {
+      "tgname": "ziko_on_auth_user_created_credits",
+      "tgenabled": "O"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ export default function GroupsScreen({ supabase: _supabase }: Props) {
   const theme = useThemeStore((s) => s.theme);
 
   return (
-    <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
       {/* AI suggestion */}
       <View style={{
         backgroundColor: theme.info + '10', borderRadius: 14, padding: 14,

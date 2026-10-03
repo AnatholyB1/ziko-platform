@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 
-const SESSION_KEY = 'workout:activeSession';
+const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
 interface ActiveSet {
   exerciseId: string;
@@ -108,8 +108,10 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
   // Restore an in-progress session after app restart (fix #19)
   restoreSession: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user) return;
     try {
-      const raw = await AsyncStorage.getItem(SESSION_KEY);
+      const raw = await AsyncStorage.getItem(sessionKey(user.id));
       if (!raw) return;
       const session = JSON.parse(raw) as WorkoutSession;
       // Validate the session still exists and is not ended
@@ -122,10 +124,10 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       if (data) {
         set({ currentSession: data as WorkoutSession });
       } else {
-        await AsyncStorage.removeItem(SESSION_KEY);
+        await AsyncStorage.removeItem(sessionKey(user.id));
       }
     } catch {
-      await AsyncStorage.removeItem(SESSION_KEY);
+      await AsyncStorage.removeItem(sessionKey(user.id));
     }
   },
 
@@ -187,12 +189,13 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     if (!error && data) {
       const session = data as WorkoutSession;
       set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
-      AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session)).catch(() => {});
+      AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
     }
   },
 
   endSession: async () => {
     const { currentSession } = get();
+    const user = useAuthStore.getState().user;
     if (!currentSession) return;
 
     // Only set ended_at if not already set (saveSessionStats may have already updated it)
@@ -211,7 +214,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       }
     });
 
-    AsyncStorage.removeItem(SESSION_KEY).catch(() => {});
+    if (user) AsyncStorage.removeItem(sessionKey(user.id)).catch(() => {});
     set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },
 
@@ -229,15 +232,18 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     );
     if (!setData) return;
 
-    await supabase.from('session_sets').insert({
-      session_id: currentSession.id,
-      exercise_id: exerciseId,
-      set_number: setNumber,
-      reps: setData.reps,
-      weight_kg: setData.weight_kg,
-      duration_seconds: setData.duration_seconds,
-      completed: true,
-    });
+    await supabase.from('session_sets').upsert(
+      {
+        session_id: currentSession.id,
+        exercise_id: exerciseId,
+        set_number: setNumber,
+        reps: setData.reps,
+        weight_kg: setData.weight_kg,
+        duration_seconds: setData.duration_seconds,
+        completed: true,
+      },
+      { onConflict: 'session_id,exercise_id,set_number' },
+    );
 
     set((s) => ({
       activeSets: s.activeSets.map((a) =>

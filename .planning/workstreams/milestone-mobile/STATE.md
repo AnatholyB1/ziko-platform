@@ -1,110 +1,107 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: Mobile UX v2
-status: complete
-stopped_at: Phase 41 complete — all 6 automated checks PASS, smoke test APPROVED
-last_updated: "2026-05-28T00:00:00Z"
+milestone: v1.18
+milestone_name: milestone
+status: executing
+stopped_at: Phase 44 complete — verified 5/5, device checkpoint approved
+last_updated: "2026-09-04T11:34:46.437Z"
+last_activity: 2026-09-02 -- Phase 44 execution started
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 36
-  completed_plans: 36
-  percent: 100
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 18
+  completed_plans: 18
+  percent: 50
 ---
 
-# Project State — v1.7 Mobile UX v2
+# Project State — v1.18 AI Coach Core
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-21)  
-See: .planning/workstreams/milestone-mobile/ROADMAP-v1.7.md  
-See: .planning/workstreams/milestone-mobile/REQUIREMENTS-v1.7.md
+See: .planning/PROJECT.md (updated 2026-08-30)
+See: .planning/workstreams/milestone-mobile/ROADMAP.md
+See: .planning/workstreams/milestone-mobile/REQUIREMENTS.md
 
-**Core value:** Full visual redesign of the Ziko mobile app matching 24 canonical mockup files. Design + real data connections done together per screen. Active workout session excluded.
+**Core value:** L'IA devient le pilote central de l'expérience athlète — onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA (objectif/récompense/programme), review/récompenses par palier, déblocage progressif de fonctionnalités par niveau.
+
+**Previous milestone (v1.7 Mobile UX v2):** SHIPPED 2026-05-28. See `.planning/workstreams/milestone-mobile/ROADMAP-v1.7.md` / `REQUIREMENTS-v1.7.md`.
 
 ## Current Position
 
-Phase: **41 — Coach StateC + Final Audit** — COMPLETE ✅ (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28)
+Phase: 44 (Weekly Adaptive Decision Engine) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 44
+Last activity: 2026-09-02 -- Phase 44 execution started
 
-Previous: Phase 40 — Extra Screens — COMPLETE ✅ (6/6 plans, 11/11 automated checks PASS, 2026-05-27)
+Progress: [░░░░░░░░░░] 0%
 
-Previous: Phase 39 complete — 26/26 automated checks PASS ✅
-Also complete (missing from prior STATE): Phase 36 — Workout Stack Redesign (12/12 PASS, 2026-05-25) ✅
+## Performance Metrics
 
-Progress: [██████████] 100% (10/10 phases complete) — **v1.7 MILESTONE COMPLETE** 🎉
+**Velocity:**
+
+- Total plans completed: 6
+- Average duration: — (no data yet for v1.18)
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 43 | 6 | - | - |
+
+**Recent Trend:**
+
+- Last 5 plans: — (none yet)
+- Trend: — (no data yet)
 
 ## Accumulated Context
 
 ### Key Decisions
 
-- Active workout session (`workout-active.jsx`) is the ONLY exclusion from the redesign
-- Design + data connections handled together per screen (not two separate passes)
-- 3-tab nav (Accueil/Séance/Profil) — PluginsDrawer replaces any separate plugin tab
-- New shared components go in `packages/ui/`: FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip
-- AICoachInline uses rule-based tips (not AI chat) — saves credits for real coaching
-- Phase numbering continues from v1.6: phases 32–41
-- 24 mockup files analyzed: all fixture data inventoried, all new components identified
-- **Apparences screen:** Theme section removed; only Langue + Région + Unités kept, wired to DB
-- **Parrainage rewards:** track-only (status `reward_pending`); no automated disbursement; admin credits manually; user sees "Récompense en attente — validation sous 48h"
-- **useUnits() hook:** centralized unit conversion hook in `apps/mobile/src/hooks/useUnits.ts`; all measurement screens must consume it
-
-### Fixture Inventory (to be replaced)
-
-- `home.jsx`: PROFILE, STREAK, TODAY, FORME, RECENT, ALL_PLUGINS — ✅ DONE (Phase 33)
-- `plugins.jsx`: NUTRITION_TODAY, WATER, HABITS, AI_PROGRAMS, PERSONAS, COACH_MESSAGES, FEED — ✅ DONE (Phase 37)
-- `plugins-2.jsx`: STATS, SLEEP_DATA, GAMIFICATION, PANTRY, RECIPE data
-- `coach.jsx`: COACH_DATA
-- `workout-data.jsx`: SESSION_DATA
-- `workout-program-ai.jsx`: PROGRAM_DETAIL, HISTORY_DETAIL
-- `workout-rest-summary.jsx`: SUMMARY_DATA
-
-### New Components Required (Phase 32) — all built ✅
-
-- FormRing, AISuggestion, SubTabs, PluginHeader, WeekStrip, BugFab/BugSheet
-- PaywallScreen, RechargeSheet, PluginsDrawer
+- Phase numbering continues from v1.7: phases 42–47 (v1.7 ended at Phase 41)
+- Foundation-first build order: `athlete_state`/`athlete_decisions` schema (Phase 42) blocks every other phase — no tool, cron, or gating check can be built without it
+- `athlete_state` modeled on the tighter `user_ai_credits`/`ai_credit_transactions` precedent (SECURITY DEFINER RPC write path), not the looser `gamification` schema — `level` is security-relevant (drives plugin gating)
+- Weekly decision engine (Phase 44) uses single-shot `generateObject` fed pre-aggregated real activity, NOT the interactive multi-step agent loop; must not copy `coach/ai/monitor-cron`'s sequential per-user loop pattern — that pattern has no LLM call in the loop and would blow duration/cost budgets here
+- Reward selection (Phase 45) pinned to temperature 0, deterministic pool selection only — never randomized (French ANJ/JONUM regulatory constraint, not just UX preference)
+- New reward data model (Phase 45) is explicitly separate from the existing `gamification` plugin's coins/shop (fixed-price purchase model is incompatible with AI pool selection)
+- Feature-gating (Phase 46) is a third `PluginLoader` filter (`mandatory` → `minLevel` → `is_enabled`), fail-safe to level 1 when no `athlete_state` row exists yet
+- Weekly engine AI cost (`ai_cost_log`) is funded as platform opex, never deducted from the athlete's own AI credit balance — these are autonomous/system-initiated calls, not user-initiated
+- Explicitly out of scope for v1.18 (seeded to SEED-001 for a future milestone): factions/leagues/leaderboards/battle-pass, cosmetic loot/skins, extended multi-state mascotte, coach-curated reward pools, logprob-based confidence scoring
 
 ### Pending Todos
 
-- [x] Phase 32 — Design System Foundation — COMPLETE
-- [x] Phase 33 — Home Screen Realignment — COMPLETE (all 5 plans, verified)
-- [x] Phase 34 — Auth + Onboarding Redesign — COMPLETE (all 4 plans, verified)
-- [x] Phase 35 — Profile + Settings Redesign — automated PASS; human smoke test gaps found
-  - [x] 35-01 through 35-15 executed + verified (30/30 automated checks)
-  - [ ] 35-G01 — Cache invalidation + mutation wiring
-  - [ ] 35-G02 — Password change spinner fix
-  - [ ] 35-G03 — Progress photo FormData + column fix
-  - [ ] 35-G04 — Crédits IA real balance
-  - [ ] 35-G05 — Apparences: remove theme, add language/region migration 052, useUnits hook
-  - [ ] 35-G06 — Parrainage: migration 053 + Hono routes + mobile screen
-  - [ ] 35-G07 — Gap verification (automated + smoke test re-run)
-- [x] Phase 37 — Priority Plugins Redesign — COMPLETE (7/7 plans, smoke test APPROVED 2026-05-26)
-- [x] Phase 38 — Remaining Plugins Group 1 — COMPLETE (4/4 plans, automated 10/10 PASS, smoke test APPROVED 2026-05-27)
-- [x] Phase 36 — Workout Stack Redesign — COMPLETE (6/6 plans, automated 12/12 PASS, 2026-05-25) ← was missing from previous STATE
-- [x] Phase 39 — Remaining Plugins Group 2 — COMPLETE (4/4 plans, automated 26/26 PASS, 2026-05-27)
-- [x] Phase 40 — Extra Screens — COMPLETE (6/6 plans, 11/11 automated checks PASS, 2026-05-27) ✅
-  - [x] 40-01 — Notifications + Store redesign
-  - [x] 40-02 — AIChatScreen + AvatarUpload
-  - [x] 40-03 — Calendar + Search + Help/Legal
-  - [x] 40-04 — ProgramBuilder + Community stubs + LiftDetail + GoalEdit + Referral — DONE (0afabd7)
-  - [x] 40-05 — EmptyState + ErrorScreen components + integrations
-  - [x] 40-06 — Phase verification — DONE (11/11 PASS)
-- [x] Phase 41 — Coach StateC + Final Audit — COMPLETE (3/3 plans, 6/6 automated checks PASS, smoke test APPROVED, 2026-05-28) ✅
-  - [x] 41-01 — Coach StateC label fix (progress_label → "Habitudes aujourd'hui" / "Today's habits")
-  - [x] 41-02 — INITIAL_MESSAGES fixture removed; loading/empty/error sweep (5 plugins + 3 data fixtures eliminated)
-  - [x] 41-03 — Phase verification — DONE (6/6 PASS + smoke test APPROVED)
+None yet for v1.18 — roadmap just created, no plans generated.
 
 ### Blockers/Concerns
 
-- Phase 35 gaps (35-G01–G07) still open — referral (35-G06) may overlap with Phase 40 plan 40-04. Coordinate or merge.
+- **Phase 44 research gap:** Vercel Fluid Compute / `maxDuration` enablement is unverified on this project; cron batching/concurrency numbers need validating against real or projected athlete volume before committing to a batch size.
+- **Phase 44 research gap:** No confirmed consumer-fitness-app precedent for "stepped-care" structural weekly-focus decisions (LOW confidence, inferred from behavioral-health literature) — flagged for a dedicated research pass before finalizing decision logic shape.
+- **Phase 45 legal checkpoint:** French ANJ/JONUM loot-box-adjacency law is explicitly LOW confidence and actively evolving — recommend legal/counsel review before shipping broadly, not just an engineering read of current research.
+- **Product decision still open:** funding model for autonomous AI calls (platform opex vs. athlete credit allocation) — flagged in research as needing a conscious decision before Phase 44/47 implementation.
+- Carried from v1.7 close: Phase 35 gaps (35-G01–G07) — cache invalidation, password spinner, progress photo, crédits IA, apparences, parrainage — status unknown, not re-verified during v1.18 roadmap creation. See Deferred Items below.
+
+## Deferred Items
+
+Items acknowledged and carried forward from previous milestone close:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| UX gaps | Phase 35 gaps (35-G01–G07): cache invalidation, password change spinner, progress photo, crédits IA balance, apparences (theme removal/lang/region), parrainage rewards | Unresolved (not re-audited for v1.18) | v1.7 close (2026-05-28) |
+| Scope | Factions/ligues/leaderboards/battle-pass/loot cosmétique/mascotte étendue (SEED-001) | Deferred to future milestone | v1.18 scoping discussion (2026-08-30) |
 
 ## Session Continuity
 
-Last session: 2026-05-28
-Stopped at: Phase 41 complete — v1.7 milestone fully shipped.
-Resume: Phase 35 gaps (35-G01–G07) remain open — tracked separately, do not block v1.7.
+Last session: 2026-09-04T11:34:46.399Z
+Stopped at: Phase 44 complete — verified 5/5, device checkpoint approved
+Resume file: .planning/workstreams/milestone-mobile/phases/44-weekly-adaptive-decision-engine/44-VERIFICATION.md
 
 ---
+
+## Archive — v1.7 Mobile UX v2 (SHIPPED 2026-05-28)
+
+Phases 32–41 complete (48 plans across 10 phases). Full visual redesign matching 24 canonical mockups; design + real data per screen; GPS Cardio live tracker; Coach StateC real stats. See `.planning/workstreams/milestone-mobile/ROADMAP-v1.7.md` and `REQUIREMENTS-v1.7.md` for full detail.
+
+**Known gaps at close (unresolved as of v1.18 roadmap creation):** Phase 35 gaps 35-G01–G07 — see Deferred Items above.
 
 ## Archive — v1.6 Mobile v2 (SHIPPED 2026-05-21)
 

@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-10-02T15:27:55.601Z",
+  "source_ref": "slkobhavpwsubnsmuhya",
+  "buckets": [
+    {
+      "id": "ai-imports",
+      "target_id": "ziko-ai-imports",
+      "key": "aiImports",
+      "public": false,
+      "file_size_limit": 26214400,
+      "allowed_mime_types": [
+        "application/pdf",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+    },
+    {
+      "id": "avatars",
+      "target_id": "ziko-avatars",
+      "key": "avatars",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "coach-exercises",
+      "target_id": "ziko-coach-exercises",
+      "key": "coachExercises",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "coach-kyc",
+      "target_id": "ziko-coach-kyc",
+      "key": "coachKyc",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "coach-logos",
+      "target_id": "ziko-coach-logos",
+      "key": "coachLogos",
+      "public": true,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "coach-videos",
+      "target_id": "ziko-coach-videos",
+      "key": "coachVideos",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": [
+        "video/mp4",
+        "video/quicktime",
+        "video/x-m4v"
+      ]
+    },
+    {
+      "id": "exercise-media",
+      "target_id": "ziko-exercise-media",
+      "key": "exerciseMedia",
+      "public": true,
+      "file_size_limit": 2097152,
+      "allowed_mime_types": [
+        "image/gif",
+        "image/png"
+      ]
+    },
+    {
+      "id": "exports",
+      "target_id": "ziko-exports",
+      "key": "exports",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "profile-photos",
+      "target_id": "ziko-profile-photos",
+      "key": "profilePhotos",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    },
+    {
+      "id": "scan-photos",
+      "target_id": "ziko-scan-photos",
+      "key": "scanPhotos",
+      "public": false,
+      "file_size_limit": null,
+      "allowed_mime_types": null
+    }
+  ]
+}

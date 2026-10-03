@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useTimerStore } from '../store';
 import type { TimerPreset } from '../store';
 
@@ -47,7 +47,7 @@ export default function TimerManager({ supabase }: { supabase: any }) {
   }, [supabase]);
 
   const handleDelete = (preset: TimerPreset) => {
-    Alert.alert(
+    showAlert(
       'Supprimer',
       `Supprimer "${preset.name}" ?`,
       [
@@ -64,7 +64,7 @@ export default function TimerManager({ supabase }: { supabase: any }) {
               if (error) throw error;
               removeCustomPreset(preset.id);
             } catch (err: any) {
-              Alert.alert('Erreur', err.message ?? 'Impossible de supprimer');
+              showAlert('Erreur', err.message ?? 'Impossible de supprimer');
             }
           },
         },

@@ -1,4 +1,8 @@
 {
+  "reloginNotice": {
+    "before": "Le {date}, Ziko change d'infrastructure : vous devrez vous reconnecter une fois avec la même adresse e-mail et le même mot de passe. Aucune donnée n'est perdue.",
+    "after": "Ziko a changé d'infrastructure le {date} : si vous êtes déconnecté, reconnectez-vous avec la même adresse e-mail et le même mot de passe."
+  },
   "Header": {
     "logo": "Ziko",
     "cta": "Télécharger l'app",

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Alert,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useJournalStore } from '../store';
 
 const MOOD_EMOJI = ['😞', '😕', '😐', '🙂', '😄'];
@@ -58,7 +58,7 @@ export default function JournalEntry({ supabase }: { supabase: any }) {
       addEntry(data);
       router.back();
     } catch (err: any) {
-      Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
     } finally {
       setSaving(false);
     }

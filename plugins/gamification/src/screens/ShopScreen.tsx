@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, Dimensions,
+  View, Text, ScrollView, TouchableOpacity, RefreshControl, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import {
   useGamificationStore, loadGamification, purchaseItem, equipItem,
   type ShopItem,
 } from '../store';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 
 type Category = 'all' | 'title' | 'badge' | 'theme' | 'banner';
 
@@ -51,7 +51,7 @@ export default function ShopScreen({ supabase, onEquip }: { supabase: any; onEqu
       return;
     }
 
-    Alert.alert(
+    showAlert(
       `Acheter ${item.icon ?? ''} ${item.name} ?`,
       `Coût : ${item.price} pièces`,
       [
@@ -64,7 +64,7 @@ export default function ShopScreen({ supabase, onEquip }: { supabase: any; onEqu
             if (result.success) {
               await load();
             } else {
-              Alert.alert('Erreur', result.error ?? 'Achat impossible');
+              showAlert('Erreur', result.error ?? 'Achat impossible');
             }
             setPurchasing(null);
           },

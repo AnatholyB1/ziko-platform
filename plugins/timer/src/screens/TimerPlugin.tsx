@@ -51,9 +51,20 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
   const [rounds, setRounds] = useState(10);
   const [sets, setSets] = useState(3);
 
+  // Fetch current user
+  const { data: userInfo } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+  const userId = userInfo?.id ?? null;
+
   // ── Query: timer presets ─────────────────────────────────────────────────
   const { data: dbPresets, isLoading: presetsLoading, isError: presetsError, refetch: presetsRefetch } = useQuery({
-    queryKey: ['timer_presets', 'user'],
+    queryKey: ['timer_presets', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const {
         data: { user },

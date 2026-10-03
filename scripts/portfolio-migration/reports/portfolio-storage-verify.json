@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-10-02T17:41:46.620Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "source_ref": "slkobhavpwsubnsmuhya",
+  "passed": true,
+  "checks": {
+    "buckets": {
+      "ok": true,
+      "detail": "10 source buckets, 10 ziko- buckets on target; missing 0, config mismatches 0, target-only 0",
+      "warnings": []
+    },
+    "policies": {
+      "ok": true,
+      "detail": "25/25 policies match; 25 ziko_ policies on target (live ziko 25), 0 stale",
+      "warnings": []
+    },
+    "objects": {
+      "ok": true,
+      "detail": "source 2699 objects/214205001 bytes, target 2699 objects/214205001 bytes; missing 0, size mismatch 0, content-type mismatch 0, destination-only 0; ziko-ai-imports: n=9 bytes=27234830, ziko-avatars: n=2 bytes=163805, ziko-coach-exercises: n=5 bytes=2948150, ziko-coach-kyc: n=6 bytes=13936337, ziko-coach-logos: n=1 bytes=760224, ziko-exercise-media: n=2660 bytes=150974615, ziko-profile-photos: n=3 bytes=1633983, ziko-scan-photos: n=13 bytes=16553057",
+      "warnings": []
+    },
+    "hashes": {
+      "ok": true,
+      "detail": "2699 objects hashed on both sides (no sampling), 0 mismatched; empty buckets (compared=0): coach-videos, exports",
+      "warnings": []
+    },
+    "rekey": {
+      "ok": true,
+      "detail": "ea0f0b65-… -> 2b6a60fa-…: 36 source objects, 36 found re-keyed on target, 0 target keys still under the source uuid",
+      "warnings": []
+    },
+    "urls": {
+      "ok": true,
+      "detail": "99 tables scanned; 0 tables with leftover ziko/bare-bucket URLs; rewritten URL rows source 3 vs target 3; 0 tables unequal",
+      "warnings": []
+    },
+    "tenants": {
+      "ok": true,
+      "detail": "7 non-ziko buckets, 17 non-ziko storage policies vs baseline; 0 regressions",
+      "warnings": []
+    }
+  }
+}

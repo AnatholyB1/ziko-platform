@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useStretchingStore } from '../store';
 import type { StretchExercise, StretchRoutine } from '../store';
 
@@ -73,10 +73,10 @@ export default function RoutineEditor({ supabase }: { supabase: any }) {
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return Alert.alert('Erreur', 'Donne un nom à ta routine');
-    if (exercises.length === 0) return Alert.alert('Erreur', 'Ajoute au moins un exercice');
+    if (!name.trim()) return showAlert('Erreur', 'Donne un nom à ta routine');
+    if (exercises.length === 0) return showAlert('Erreur', 'Ajoute au moins un exercice');
     const empty = exercises.find((e) => !e.name.trim());
-    if (empty) return Alert.alert('Erreur', 'Tous les exercices doivent avoir un nom');
+    if (empty) return showAlert('Erreur', 'Tous les exercices doivent avoir un nom');
 
     setSaving(true);
     const routine: StretchRoutine = {
@@ -114,7 +114,7 @@ export default function RoutineEditor({ supabase }: { supabase: any }) {
       }
       router.back();
     } catch (e: any) {
-      Alert.alert('Erreur', e.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', e.message ?? 'Impossible de sauvegarder');
     }
     setSaving(false);
   };

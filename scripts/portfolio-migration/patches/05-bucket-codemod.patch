@@ -1,0 +1,696 @@
+diff --git a/apps/mobile/app/(app)/profile/avatar.tsx b/apps/mobile/app/(app)/profile/avatar.tsx
+index eeda28db..5f0d263e 100644
+--- a/apps/mobile/app/(app)/profile/avatar.tsx
++++ b/apps/mobile/app/(app)/profile/avatar.tsx
+@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
+ import * as ImagePicker from 'expo-image-picker';
+ import * as ImageManipulator from 'expo-image-manipulator';
+ import { useThemeStore } from '../../../src/stores/themeStore';
+-import { showAlert } from '@ziko/plugin-sdk';
++import { showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import { supabase } from '../../../src/lib/supabase';
+ import { useAuthStore } from '../../../src/stores/authStore';
+ 
+@@ -94,7 +94,7 @@ export default function AvatarUploadScreen() {
+     formData.append('file', { uri: finalUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
+ 
+     const { error } = await supabase.storage
+-      .from('avatars')
++      .from(STORAGE_BUCKETS.avatars)
+       .upload(path, formData, { upsert: true, contentType: 'image/jpeg' });
+ 
+     clearInterval(progressInterval);
+@@ -106,7 +106,7 @@ export default function AvatarUploadScreen() {
+     }
+ 
+     setUploadProgress(1);
+-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
++    const { data } = supabase.storage.from(STORAGE_BUCKETS.avatars).getPublicUrl(path);
+     // Bust cache so the new image loads immediately
+     return `${data.publicUrl}?t=${Date.now()}`;
+   }
+@@ -214,7 +214,7 @@ export default function AvatarUploadScreen() {
+ 
+               // Delete from storage (best-effort)
+               await supabase.storage
+-                .from('avatars')
++                .from(STORAGE_BUCKETS.avatars)
+                 .remove([`${user.id}/avatar.jpg`]);
+ 
+               await supabase
+diff --git a/apps/mobile/app/(app)/profile/edit.tsx b/apps/mobile/app/(app)/profile/edit.tsx
+index cd8ee781..70aed30d 100644
+--- a/apps/mobile/app/(app)/profile/edit.tsx
++++ b/apps/mobile/app/(app)/profile/edit.tsx
+@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
+ import { router } from 'expo-router';
+ import { Ionicons } from '@expo/vector-icons';
+ import { useQueryClient } from '@tanstack/react-query';
+-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
++import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import { useAuthStore } from '../../../src/stores/authStore';
+ import { supabase } from '../../../src/lib/supabase';
+ import * as ImagePicker from 'expo-image-picker';
+@@ -133,7 +133,7 @@ export default function EditProfileScreen() {
+       const blob = await response.blob();
+ 
+       const { error: uploadError } = await supabase.storage
+-        .from('avatars')
++        .from(STORAGE_BUCKETS.avatars)
+         .upload(`${userId}/avatar.jpg`, blob, {
+           contentType: 'image/jpeg',
+           upsert: true,
+@@ -145,7 +145,7 @@ export default function EditProfileScreen() {
+       }
+ 
+       const { data: urlData } = supabase.storage
+-        .from('avatars')
++        .from(STORAGE_BUCKETS.avatars)
+         .getPublicUrl(`${userId}/avatar.jpg`);
+ 
+       const publicUrl = urlData.publicUrl;
+diff --git a/apps/mobile/app/(app)/profile/index.tsx b/apps/mobile/app/(app)/profile/index.tsx
+index 561a90c0..720d0bba 100644
+--- a/apps/mobile/app/(app)/profile/index.tsx
++++ b/apps/mobile/app/(app)/profile/index.tsx
+@@ -5,7 +5,7 @@ import {
+ import { router } from 'expo-router';
+ import { Ionicons } from '@expo/vector-icons';
+ import { useQuery, useQueryClient } from '@tanstack/react-query';
+-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
++import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import * as ImagePicker from 'expo-image-picker';
+ import { ProfileHero, PRStatCard } from '@ziko/ui';
+ import { useAuthStore } from '../../../src/stores/authStore';
+@@ -211,10 +211,10 @@ function PRProgressTab({
+       formData.append('file', { uri, name: `${Date.now()}.jpg`, type: 'image/jpeg' } as any);
+       const fileName = `${userId}/${Date.now()}.jpg`;
+       const { error: uploadError } = await supabase.storage
+-        .from('profile-photos')
++        .from(STORAGE_BUCKETS.profilePhotos)
+         .upload(fileName, formData, { contentType: 'multipart/form-data', upsert: false });
+       if (uploadError) throw uploadError;
+-      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
++      const { data: urlData } = supabase.storage.from(STORAGE_BUCKETS.profilePhotos).getPublicUrl(fileName);
+       const photoUrl = urlData.publicUrl;
+       const { error: insertError } = await supabase.from('body_measurements').insert({
+         user_id: userId,
+@@ -248,10 +248,10 @@ function PRProgressTab({
+           style: 'destructive',
+           onPress: async () => {
+             // Extraire le path du storage depuis l'URL publique
+-            // URL format: .../storage/v1/object/public/profile-photos/{userId}/{timestamp}.jpg
+-            const urlParts = photoUrl.split('/profile-photos/');
++            // URL format: .../storage/v1/object/public/ziko-profile-photos/{userId}/{timestamp}.jpg
++            const urlParts = photoUrl.split('/ziko-profile-photos/');
+             if (urlParts.length > 1) {
+-              await supabase.storage.from('profile-photos').remove([urlParts[1]]);
++              await supabase.storage.from(STORAGE_BUCKETS.profilePhotos).remove([urlParts[1]]);
+             }
+             await supabase.from('body_measurements').delete().eq('id', id);
+             queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
+diff --git a/apps/mobile/app/(app)/workout/exercise/[exerciseId].tsx b/apps/mobile/app/(app)/workout/exercise/[exerciseId].tsx
+index 83bfc78e..c5f5351a 100644
+--- a/apps/mobile/app/(app)/workout/exercise/[exerciseId].tsx
++++ b/apps/mobile/app/(app)/workout/exercise/[exerciseId].tsx
+@@ -12,7 +12,7 @@ import { MotiView } from 'moti';
+ import { useQuery } from '@tanstack/react-query';
+ import { formatDistanceToNow } from 'date-fns';
+ import { fr } from 'date-fns/locale';
+-import { useThemeStore } from '@ziko/plugin-sdk';
++import { useThemeStore, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import { showAlert } from '@ziko/plugin-sdk';
+ import { useTranslation } from '@ziko/plugin-sdk';
+ import { AttributedMedia, EmptyState } from '@ziko/ui';
+@@ -50,7 +50,7 @@ export default function ExerciseDetailScreen() {
+   });
+ 
+   const publicGifUrl = exercise?.gif
+-    ? supabase.storage.from('exercise-media').getPublicUrl(exercise.gif).data.publicUrl
++    ? supabase.storage.from(STORAGE_BUCKETS.exerciseMedia).getPublicUrl(exercise.gif).data.publicUrl
+     : null;
+ 
+   // Fetch user session for userId
+diff --git a/apps/mobile/src/components/ExercisePicker.tsx b/apps/mobile/src/components/ExercisePicker.tsx
+index 50e7fbb6..0742d54d 100644
+--- a/apps/mobile/src/components/ExercisePicker.tsx
++++ b/apps/mobile/src/components/ExercisePicker.tsx
+@@ -12,7 +12,7 @@ import { MotiView } from 'moti';
+ import { useQuery } from '@tanstack/react-query';
+ import { LinearGradient } from 'expo-linear-gradient';
+ import { Image } from 'expo-image';
+-import { useThemeStore } from '@ziko/plugin-sdk';
++import { useThemeStore, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import { showAlert } from '@ziko/plugin-sdk';
+ import { supabase } from '../lib/supabase';
+ import WSHeader from '../components/WSHeader';
+@@ -242,7 +242,7 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
+             {filteredExercises.map((ex, index) => {
+               const isSelected = selectedIds.includes(ex.id);
+               const publicThumbUrl = ex.image
+-                ? supabase.storage.from('exercise-media').getPublicUrl(ex.image).data.publicUrl
++                ? supabase.storage.from(STORAGE_BUCKETS.exerciseMedia).getPublicUrl(ex.image).data.publicUrl
+                 : null;
+               return (
+                 <MotiView
+diff --git a/apps/web/src/app/api/photo/route.ts b/apps/web/src/app/api/photo/route.ts
+index b14df9eb..e26b188d 100644
+--- a/apps/web/src/app/api/photo/route.ts
++++ b/apps/web/src/app/api/photo/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createServerSupabase } from '@/lib/supabase/server';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ export async function GET(request: NextRequest) {
+   const path = request.nextUrl.searchParams.get('path');
+@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
+   }
+ 
+   const { data, error } = await supabase.storage
+-    .from('coach-kyc')
++    .from(STORAGE_BUCKETS.coachKyc)
+     .createSignedUrl(path, 300); // 5-minute window
+ 
+   if (error || !data?.signedUrl) {
+diff --git a/apps/web/src/app/api/storage/upload-url/route.ts b/apps/web/src/app/api/storage/upload-url/route.ts
+index 840258b0..4fb7a799 100644
+--- a/apps/web/src/app/api/storage/upload-url/route.ts
++++ b/apps/web/src/app/api/storage/upload-url/route.ts
+@@ -1,7 +1,8 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { createServerSupabase } from '@/lib/supabase/server';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+-const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports', 'coach-kyc', 'coach-exercises'] as const;
++const ALLOWED_BUCKETS = [STORAGE_BUCKETS.profilePhotos, STORAGE_BUCKETS.scanPhotos, STORAGE_BUCKETS.exports, STORAGE_BUCKETS.coachKyc, STORAGE_BUCKETS.coachExercises] as const;
+ type AllowedBucket = (typeof ALLOWED_BUCKETS)[number];
+ 
+ export async function GET(request: NextRequest) {
+diff --git a/apps/web/src/components/coach/BrandingPreviewCard.tsx b/apps/web/src/components/coach/BrandingPreviewCard.tsx
+index c54cbc7f..a01bb4b5 100644
+--- a/apps/web/src/components/coach/BrandingPreviewCard.tsx
++++ b/apps/web/src/components/coach/BrandingPreviewCard.tsx
+@@ -13,6 +13,7 @@ import {
+ } from 'react-icons/io5';
+ import gsap from 'gsap';
+ import { createClientSupabase } from '@/lib/supabase/client';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ // ── Derived palette swatches ────────────────────────────
+ const PALETTE_SWATCHES = [
+@@ -53,7 +54,7 @@ export function BrandingPreviewCard({
+   const accent = validColor ?? '#FF5C1A';
+ 
+   const logoUrl: string | null = logoPath
+-    ? createClientSupabase().storage.from('coach-logos').getPublicUrl(logoPath).data.publicUrl
++    ? createClientSupabase().storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(logoPath).data.publicUrl
+     : null;
+ 
+   const toneLabel = tone ? (TONE_LABELS[tone] ?? null) : null;
+diff --git a/apps/web/src/components/coach/ExerciseMediaUpload.tsx b/apps/web/src/components/coach/ExerciseMediaUpload.tsx
+index baa13ce8..c0e57641 100644
+--- a/apps/web/src/components/coach/ExerciseMediaUpload.tsx
++++ b/apps/web/src/components/coach/ExerciseMediaUpload.tsx
+@@ -93,7 +93,7 @@ function UploadRow({
+     try {
+       const safeName = `${Date.now()}-${file.name}`;
+       const urlRes = await fetch(
+-        `/api/storage/upload-url?bucket=coach-exercises&path=${userId}/${safeName}`,
++        `/api/storage/upload-url?bucket=ziko-coach-exercises&path=${userId}/${safeName}`,
+         { headers: { Authorization: `Bearer ${jwt}` } },
+       );
+       if (!urlRes.ok) throw new Error('Upload URL failed');
+diff --git a/apps/web/src/components/coach/ExerciseRow.tsx b/apps/web/src/components/coach/ExerciseRow.tsx
+index 281bf850..1d18a610 100644
+--- a/apps/web/src/components/coach/ExerciseRow.tsx
++++ b/apps/web/src/components/coach/ExerciseRow.tsx
+@@ -10,6 +10,7 @@ import {
+ } from 'react-icons/io5';
+ import { createClientSupabase } from '@/lib/supabase/client';
+ import type { CoachExercise } from '@/types/coach';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ const MAX_VISIBLE_MUSCLES = 3;
+ 
+@@ -30,7 +31,7 @@ export function ExerciseRow({ exercise, onEdit, onDelete }: ExerciseRowProps) {
+     (async () => {
+       const supabase = createClientSupabase();
+       const { data } = await supabase.storage
+-        .from('coach-exercises')
++        .from(STORAGE_BUCKETS.coachExercises)
+         .createSignedUrl(exercise.photo_path!, 3600);
+       if (!cancelled && data?.signedUrl) {
+         setPhotoSignedUrl(data.signedUrl);
+diff --git a/apps/web/src/components/coach/FileUploadRow.tsx b/apps/web/src/components/coach/FileUploadRow.tsx
+index f9f3615c..57cce3e6 100644
+--- a/apps/web/src/components/coach/FileUploadRow.tsx
++++ b/apps/web/src/components/coach/FileUploadRow.tsx
+@@ -1,6 +1,7 @@
+ 'use client';
+ import { useState, useRef } from 'react';
+ import { createClientSupabase } from '@/lib/supabase/client';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+@@ -49,14 +50,14 @@ export function FileUploadRow({
+     try {
+       const filename = `${docType}-${Date.now()}-${file.name}`;
+       const urlRes = await fetch(
+-        `/api/storage/upload-url?bucket=coach-kyc&path=${userId}/${filename}`,
++        `/api/storage/upload-url?bucket=ziko-coach-kyc&path=${userId}/${filename}`,
+         { headers: { Authorization: `Bearer ${jwt}` } },
+       );
+       if (!urlRes.ok) throw new Error('Upload URL failed');
+       const { path, token } = await urlRes.json() as { upload_url: string; path: string; token: string };
+       const supabase = createClientSupabase();
+       const { error: uploadError } = await supabase.storage
+-        .from('coach-kyc')
++        .from(STORAGE_BUCKETS.coachKyc)
+         .uploadToSignedUrl(path, token, file);
+       if (uploadError) throw uploadError;
+       // Store path (not signed URL) — Pitfall 7: signed URLs expire
+diff --git a/apps/web/src/components/coach/LogoUpload.tsx b/apps/web/src/components/coach/LogoUpload.tsx
+index 345fec91..15209476 100644
+--- a/apps/web/src/components/coach/LogoUpload.tsx
++++ b/apps/web/src/components/coach/LogoUpload.tsx
+@@ -3,6 +3,7 @@ import { useState } from 'react';
+ import { IoPersonOutline, IoCloudUploadOutline } from 'react-icons/io5';
+ import gsap from 'gsap';
+ import { createClientSupabase } from '@/lib/supabase/client';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ const ALLOWED_TYPES = ['image/png', 'image/svg+xml'];
+ const MAX_BYTES = 2 * 1024 * 1024;
+@@ -23,7 +24,7 @@ export function LogoUpload({ userId, currentPath, onUploaded, onRemoved }: LogoU
+   const displayUrl: string | null =
+     localPreviewUrl ??
+     (currentPath
+-      ? createClientSupabase().storage.from('coach-logos').getPublicUrl(currentPath).data.publicUrl
++      ? createClientSupabase().storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(currentPath).data.publicUrl
+       : null);
+ 
+   function shakeError() {
+@@ -57,7 +58,7 @@ export function LogoUpload({ userId, currentPath, onUploaded, onRemoved }: LogoU
+       const path = `${userId}/logo.${ext}`;
+       const supabase = createClientSupabase();
+       const { error: uploadError } = await supabase.storage
+-        .from('coach-logos')
++        .from(STORAGE_BUCKETS.coachLogos)
+         .upload(path, file, { upsert: true });
+       if (uploadError) throw uploadError;
+       onUploaded(path);
+diff --git a/apps/web/src/components/coach/PhotoUpload.tsx b/apps/web/src/components/coach/PhotoUpload.tsx
+index 91d97b52..20e4ba7c 100644
+--- a/apps/web/src/components/coach/PhotoUpload.tsx
++++ b/apps/web/src/components/coach/PhotoUpload.tsx
+@@ -2,6 +2,7 @@
+ import { useState } from 'react';
+ import Image from 'next/image';
+ import { createClientSupabase } from '@/lib/supabase/client';
++import { STORAGE_BUCKETS } from '@/lib/buckets';
+ 
+ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+@@ -40,14 +41,14 @@ export function PhotoUpload({
+       const ext = file.name.split('.').pop() ?? 'jpg';
+       const path = `${userId}/photo.${ext}`;
+       const urlRes = await fetch(
+-        `/api/storage/upload-url?bucket=coach-kyc&path=${path}`,
++        `/api/storage/upload-url?bucket=ziko-coach-kyc&path=${path}`,
+         { headers: { Authorization: `Bearer ${jwt}` } },
+       );
+       if (!urlRes.ok) throw new Error('Upload URL request failed');
+       const { path: uploadPath, token } = await urlRes.json() as { upload_url: string; path: string; token: string };
+       const supabase = createClientSupabase();
+       const { error: uploadError } = await supabase.storage
+-        .from('coach-kyc')
++        .from(STORAGE_BUCKETS.coachKyc)
+         .uploadToSignedUrl(uploadPath, token, file);
+       if (uploadError) throw uploadError;
+       // Store PATH (not signed URL) — see RESEARCH Pitfall 7
+diff --git a/apps/web/src/lib/buckets.ts b/apps/web/src/lib/buckets.ts
+new file mode 100644
+index 00000000..a260829e
+--- /dev/null
++++ b/apps/web/src/lib/buckets.ts
+@@ -0,0 +1,16 @@
++// Generated by scripts/portfolio-migration/11-codemod-buckets.mjs from bucket-map.generated.json.
++// Do not edit by hand.
++export const STORAGE_BUCKETS = {
++  aiImports: 'ziko-ai-imports',
++  avatars: 'ziko-avatars',
++  coachExercises: 'ziko-coach-exercises',
++  coachKyc: 'ziko-coach-kyc',
++  coachLogos: 'ziko-coach-logos',
++  coachVideos: 'ziko-coach-videos',
++  exerciseMedia: 'ziko-exercise-media',
++  exports: 'ziko-exports',
++  profilePhotos: 'ziko-profile-photos',
++  scanPhotos: 'ziko-scan-photos',
++} as const;
++
++export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
+diff --git a/backend/api/src/coach/clients/db.ts b/backend/api/src/coach/clients/db.ts
+index 7a5d42a9..bea36083 100644
+--- a/backend/api/src/coach/clients/db.ts
++++ b/backend/api/src/coach/clients/db.ts
+@@ -11,8 +11,9 @@ import type {
+   ClientSummary,
+ } from './types.js';
+ import { getBranding, type BrandingRow } from '../branding/db.js';
++import { STORAGE_BUCKETS } from '../../config/buckets.js';
+ 
+-const COACH_PHOTO_BUCKET = 'coach-kyc';
++const COACH_PHOTO_BUCKET = STORAGE_BUCKETS.coachKyc;
+ const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes per RESEARCH.md §Don't Hand-Roll
+ 
+ // Service client for storage signing — coach-kyc bucket restricts reads to owner,
+diff --git a/backend/api/src/coach/exercises/db.ts b/backend/api/src/coach/exercises/db.ts
+index aeaed895..b61cb5e5 100644
+--- a/backend/api/src/coach/exercises/db.ts
++++ b/backend/api/src/coach/exercises/db.ts
+@@ -5,6 +5,7 @@ import type {
+   CreateExerciseBody,
+   UpdateExerciseBody,
+ } from './types.js';
++import { STORAGE_BUCKETS } from '../../config/buckets.js';
+ 
+ export function createUserClient(jwt: string) {
+   return createClient(
+@@ -78,7 +79,7 @@ export async function getMediaUrls(
+ 
+   if (exercise.video_path) {
+     const { data: videoSigned, error: videoErr } = await adminDb.storage
+-      .from('coach-exercises')
++      .from(STORAGE_BUCKETS.coachExercises)
+       .createSignedUrl(exercise.video_path, 3600);
+     if (videoErr) {
+       console.warn('[coach/exercises] getMediaUrls video sign error:', videoErr.message);
+@@ -89,7 +90,7 @@ export async function getMediaUrls(
+ 
+   if (exercise.photo_path) {
+     const { data: photoSigned, error: photoErr } = await adminDb.storage
+-      .from('coach-exercises')
++      .from(STORAGE_BUCKETS.coachExercises)
+       .createSignedUrl(exercise.photo_path, 3600);
+     if (photoErr) {
+       console.warn('[coach/exercises] getMediaUrls photo sign error:', photoErr.message);
+@@ -100,7 +101,7 @@ export async function getMediaUrls(
+ 
+   if ((exercise as any).gif_path) {
+     const { data: gifSigned, error: gifErr } = await adminDb.storage
+-      .from('coach-exercises')
++      .from(STORAGE_BUCKETS.coachExercises)
+       .createSignedUrl((exercise as any).gif_path, 3600);
+     if (gifErr) {
+       console.warn('[coach/exercises] getMediaUrls gif sign error:', gifErr.message);
+@@ -202,13 +203,13 @@ export async function deleteExercise(
+ 
+   // Step 3: Delete storage files if paths exist (user JWT — RLS allows own-prefix DELETE)
+   if (row.video_path) {
+-    await db.storage.from('coach-exercises').remove([row.video_path]);
++    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.video_path]);
+   }
+   if (row.photo_path) {
+-    await db.storage.from('coach-exercises').remove([row.photo_path]);
++    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.photo_path]);
+   }
+   if ((row as any).gif_path) {
+-    await db.storage.from('coach-exercises').remove([(row as any).gif_path]);
++    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([(row as any).gif_path]);
+   }
+ 
+   // Step 4: Delete the DB row
+diff --git a/backend/api/src/coach/imports/service.ts b/backend/api/src/coach/imports/service.ts
+index 3eed6c74..4717323f 100644
+--- a/backend/api/src/coach/imports/service.ts
++++ b/backend/api/src/coach/imports/service.ts
+@@ -24,6 +24,7 @@ import { parseExcel } from './parse/excel.js';
+ import { parseWord } from './parse/word.js';
+ import { parseWithVision, parseWithText, NoObjectGeneratedError } from './parse/claude.js';
+ import type { CreateImportBody, CommitImportBody } from './types.js';
++import { STORAGE_BUCKETS } from '../../config/buckets.js';
+ 
+ // Vercel max duration for the parse route (D-15, IMPORT-05)
+ export const maxDuration = 60;
+@@ -122,7 +123,7 @@ importsRouter.post('/', async (c) => {
+ 
+     // Generate signed upload URL (private bucket, D-21)
+     const { data, error: storageError } = await adminSupabase.storage
+-      .from('ai-imports')
++      .from(STORAGE_BUCKETS.aiImports)
+       .createSignedUploadUrl(storagePath);
+ 
+     if (storageError || !data) {
+@@ -260,7 +261,7 @@ importsRouter.post('/:id/parse', async (c) => {
+         // Step 1: Download file from Supabase Storage
+         const storagePath = importRow.file_url; // set by POST / handler
+         const { data: blobData, error: downloadError } = await adminSupabase.storage
+-          .from('ai-imports')
++          .from(STORAGE_BUCKETS.aiImports)
+           .download(storagePath);
+ 
+         if (downloadError || !blobData) {
+diff --git a/backend/api/src/coach/videos/service.ts b/backend/api/src/coach/videos/service.ts
+index 4018bf1b..22e1f3d4 100644
+--- a/backend/api/src/coach/videos/service.ts
++++ b/backend/api/src/coach/videos/service.ts
+@@ -29,6 +29,7 @@ import type {
+   CreateAnnotationBody,
+   UpdateAnnotationBody,
+ } from './types.js';
++import { STORAGE_BUCKETS } from '../../config/buckets.js';
+ 
+ // ─── Claude cleaning prompt (D-05) ───────────────────────────────────────────
+ const CLEANING_SYSTEM_PROMPT =
+@@ -76,7 +77,7 @@ videosRouter.post('/upload-url', async (c) => {
+   // The TTL is controlled server-side in the Supabase bucket config (set to 900s there).
+   // This mirrors the existing pattern in backend/api/src/routes/storage.ts.
+   const { data, error } = await supabaseAdmin.storage
+-    .from('coach-videos')
++    .from(STORAGE_BUCKETS.coachVideos)
+     .createSignedUploadUrl(path);
+ 
+   if (error || !data) {
+@@ -320,7 +321,7 @@ videosRouter.get('/:videoId/signed-url', async (c) => {
+ 
+   // Use createSignedUrl (read), not createSignedUploadUrl (write) — V6 / D-11
+   const { data, error } = await supabaseAdmin.storage
+-    .from('coach-videos')
++    .from(STORAGE_BUCKETS.coachVideos)
+     .createSignedUrl(video.storage_path, 900); // 900s = 15 minutes
+ 
+   if (error || !data) {
+@@ -464,7 +465,7 @@ videosRouter.post(
+       const path = `${video.athlete_id}/annotations/${randomUUID()}.${ext}`;
+ 
+       const { error: uploadError } = await supabaseAdmin.storage
+-        .from('coach-videos')
++        .from(STORAGE_BUCKETS.coachVideos)
+         .upload(path, buffer, { contentType: mimeType });
+ 
+       if (uploadError) {
+@@ -533,7 +534,7 @@ videosRouter.get('/annotations/:annotationId/audio-url', async (c) => {
+ 
+   // Create 15-min signed read URL (900s = 15 minutes)
+   const { data, error } = await supabaseAdmin.storage
+-    .from('coach-videos')
++    .from(STORAGE_BUCKETS.coachVideos)
+     .createSignedUrl(annotation.audio_path, 900);
+ 
+   if (error || !data) {
+diff --git a/backend/api/src/config/buckets.ts b/backend/api/src/config/buckets.ts
+new file mode 100644
+index 00000000..a260829e
+--- /dev/null
++++ b/backend/api/src/config/buckets.ts
+@@ -0,0 +1,16 @@
++// Generated by scripts/portfolio-migration/11-codemod-buckets.mjs from bucket-map.generated.json.
++// Do not edit by hand.
++export const STORAGE_BUCKETS = {
++  aiImports: 'ziko-ai-imports',
++  avatars: 'ziko-avatars',
++  coachExercises: 'ziko-coach-exercises',
++  coachKyc: 'ziko-coach-kyc',
++  coachLogos: 'ziko-coach-logos',
++  coachVideos: 'ziko-coach-videos',
++  exerciseMedia: 'ziko-exercise-media',
++  exports: 'ziko-exports',
++  profilePhotos: 'ziko-profile-photos',
++  scanPhotos: 'ziko-scan-photos',
++} as const;
++
++export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
+diff --git a/backend/api/src/routes/ai.ts b/backend/api/src/routes/ai.ts
+index 9db0fdf5..0c03c354 100644
+--- a/backend/api/src/routes/ai.ts
++++ b/backend/api/src/routes/ai.ts
+@@ -12,6 +12,7 @@ import {
+ } from '../context/conversation.js';
+ import { AGENT_MODEL, VISION_MODEL } from '../config/models.js';
+ import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
++import { STORAGE_BUCKETS } from '../config/buckets.js';
+ 
+ const router = new Hono();
+ router.use('*', authMiddleware);
+@@ -376,7 +377,7 @@ router.post('/vision/nutrition', creditCheck('scan'), creditDeduct('scan'), asyn
+       { global: { headers: { Authorization: `Bearer ${userToken}` } }, auth: { autoRefreshToken: false, persistSession: false } }
+     );
+     const { data, error } = await userSupabase.storage
+-      .from('scan-photos')
++      .from(STORAGE_BUCKETS.scanPhotos)
+       .download(storage_path);
+     if (error || !data) {
+       return c.json({ error: 'Failed to fetch image from storage' }, 400);
+diff --git a/backend/api/src/routes/storage.ts b/backend/api/src/routes/storage.ts
+index dbc9a7fd..390ba2cf 100644
+--- a/backend/api/src/routes/storage.ts
++++ b/backend/api/src/routes/storage.ts
+@@ -1,6 +1,7 @@
+ import { createClient } from '@supabase/supabase-js';
+ import { Hono } from 'hono';
+ import { authMiddleware } from '../middleware/auth.js';
++import { STORAGE_BUCKETS } from '../config/buckets.js';
+ 
+ const supabaseUrl = process.env.SUPABASE_URL!;
+ const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
+@@ -9,7 +10,7 @@ const supabase = createClient(supabaseUrl, serviceKey, {
+   auth: { autoRefreshToken: false, persistSession: false },
+ });
+ 
+-const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports', 'coach-kyc', 'ai-imports', 'coach-exercises'] as const;
++const ALLOWED_BUCKETS = [STORAGE_BUCKETS.profilePhotos, STORAGE_BUCKETS.scanPhotos, STORAGE_BUCKETS.exports, STORAGE_BUCKETS.coachKyc, STORAGE_BUCKETS.aiImports, STORAGE_BUCKETS.coachExercises] as const;
+ type AllowedBucket = typeof ALLOWED_BUCKETS[number];
+ 
+ // ── User-facing storage router (requires JWT auth) ────────
+@@ -137,8 +138,8 @@ storageCleanupRouter.post('/cron/cleanup', async (c) => {
+   }
+ 
+   try {
+-    const scanResult = await cleanupBucket('scan-photos', SCAN_PHOTOS_RETENTION_MS);
+-    const exportsResult = await cleanupBucket('exports', EXPORTS_RETENTION_MS);
++    const scanResult = await cleanupBucket(STORAGE_BUCKETS.scanPhotos, SCAN_PHOTOS_RETENTION_MS);
++    const exportsResult = await cleanupBucket(STORAGE_BUCKETS.exports, EXPORTS_RETENTION_MS);
+     const allErrors = [...scanResult.errors, ...exportsResult.errors];
+ 
+     if (allErrors.length > 0) {
+diff --git a/backend/api/test/coach/imports.spec.ts b/backend/api/test/coach/imports.spec.ts
+index 84156fd1..8f5bbc5b 100644
+--- a/backend/api/test/coach/imports.spec.ts
++++ b/backend/api/test/coach/imports.spec.ts
+@@ -172,7 +172,7 @@ describe('imports routes', () => {
+     _mockStorageFromImpl = vi.fn().mockReturnValue({
+       createSignedUploadUrl: vi.fn().mockResolvedValue({
+         data: {
+-          signedUrl: 'https://supabase.co/storage/v1/object/sign/ai-imports/signed',
++          signedUrl: 'https://supabase.co/storage/v1/object/sign/ziko-ai-imports/signed',
+           path: `test-user-id/${TEST_UUID}/test.pdf`,
+           token: 'test-token',
+         },
+diff --git a/packages/plugin-sdk/src/buckets.ts b/packages/plugin-sdk/src/buckets.ts
+new file mode 100644
+index 00000000..a260829e
+--- /dev/null
++++ b/packages/plugin-sdk/src/buckets.ts
+@@ -0,0 +1,16 @@
++// Generated by scripts/portfolio-migration/11-codemod-buckets.mjs from bucket-map.generated.json.
++// Do not edit by hand.
++export const STORAGE_BUCKETS = {
++  aiImports: 'ziko-ai-imports',
++  avatars: 'ziko-avatars',
++  coachExercises: 'ziko-coach-exercises',
++  coachKyc: 'ziko-coach-kyc',
++  coachLogos: 'ziko-coach-logos',
++  coachVideos: 'ziko-coach-videos',
++  exerciseMedia: 'ziko-exercise-media',
++  exports: 'ziko-exports',
++  profilePhotos: 'ziko-profile-photos',
++  scanPhotos: 'ziko-scan-photos',
++} as const;
++
++export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
+diff --git a/packages/plugin-sdk/src/index.ts b/packages/plugin-sdk/src/index.ts
+index 3fd0c921..029849bb 100644
+--- a/packages/plugin-sdk/src/index.ts
++++ b/packages/plugin-sdk/src/index.ts
+@@ -20,3 +20,5 @@ export type {
+ } from './hooks';
+ export { useCreditStore } from './creditStore';
+ export type { CreditExhaustionData } from './creditStore';
++export { STORAGE_BUCKETS } from './buckets';
++export type { StorageBucket } from './buckets';
+diff --git a/plugins/coach/src/screens/CoachScreen.tsx b/plugins/coach/src/screens/CoachScreen.tsx
+index c2f37210..b408d8cb 100644
+--- a/plugins/coach/src/screens/CoachScreen.tsx
++++ b/plugins/coach/src/screens/CoachScreen.tsx
+@@ -30,7 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
+ import { useQuery, useQueryClient } from '@tanstack/react-query';
+ import { format } from 'date-fns';
+ import { fr, enUS } from 'date-fns/locale';
+-import { useThemeStore, useTranslation, showAlert, coachStorage } from '@ziko/plugin-sdk';
++import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+ import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
+ 
+ // ── Types ──────────────────────────────────────────────────────────────────
+@@ -339,7 +339,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
+     displayName: string;
+   }) => {
+     const effectiveUri = logoUrl
+-      ? supabase.storage.from('coach-logos').getPublicUrl(logoUrl).data.publicUrl
++      ? supabase.storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(logoUrl).data.publicUrl
+       : photoUrl ?? null;
+ 
+     return effectiveUri ? (
+diff --git a/plugins/nutrition/src/screens/LogMealScreen.tsx b/plugins/nutrition/src/screens/LogMealScreen.tsx
+index 34dd0f6f..9d29704f 100644
+--- a/plugins/nutrition/src/screens/LogMealScreen.tsx
++++ b/plugins/nutrition/src/screens/LogMealScreen.tsx
+@@ -227,7 +227,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
+       // Step 1: get signed upload URL for scan-photos bucket (per D-22)
+       const scanPath = `${userId}/scan-${Date.now()}.jpg`;
+       const urlRes = await fetch(
+-        `${apiUrl}/storage/upload-url?bucket=scan-photos&path=${scanPath}`,
++        `${apiUrl}/storage/upload-url?bucket=ziko-scan-photos&path=${scanPath}`,
+         { headers: { Authorization: `Bearer ${token}` } }
+       );
+       if (!urlRes.ok) {
+diff --git a/scripts/exercise-import/lib/merge-row.test.ts b/scripts/exercise-import/lib/merge-row.test.ts
+index 289ae91c..78185926 100644
+--- a/scripts/exercise-import/lib/merge-row.test.ts
++++ b/scripts/exercise-import/lib/merge-row.test.ts
+@@ -453,6 +453,6 @@ describe('FK safety', () => {
+ 
+ describe('EXERCISE_MEDIA_BUCKET', () => {
+   it('is the exercise-media bucket name', () => {
+-    expect(EXERCISE_MEDIA_BUCKET).toBe('exercise-media');
++    expect(EXERCISE_MEDIA_BUCKET).toBe('ziko-exercise-media');
+   });
+ });
+diff --git a/scripts/exercise-import/lib/merge-row.ts b/scripts/exercise-import/lib/merge-row.ts
+index 65a0f69a..fc6385af 100644
+--- a/scripts/exercise-import/lib/merge-row.ts
++++ b/scripts/exercise-import/lib/merge-row.ts
+@@ -23,7 +23,7 @@ import { mapDatasetCategory } from './category';
+ 
+ // The Storage bucket every uploaded thumbnail/GIF lands in (Phase 1
+ // 20260814_exercise_media_schema.sql — public read, service-role write).
+-export const EXERCISE_MEDIA_BUCKET = 'exercise-media';
++export const EXERCISE_MEDIA_BUCKET = 'ziko-exercise-media';
+ 
+ // A thrown error's message is truncated to this length before becoming
+ // result.errorMessage, so one pathological error can't bloat the import
+diff --git a/scripts/exercise-import/merge.ts b/scripts/exercise-import/merge.ts
+index 16304c78..776838d6 100644
+--- a/scripts/exercise-import/merge.ts
++++ b/scripts/exercise-import/merge.ts
+@@ -8,7 +8,7 @@
+  * runs). It reads the human-approved `.planning/workstreams/image-exo/
+  * reports/match-report.json`, writes to `public.exercises`,
+  * `public.exercises_merge_backup`, `public.exercise_import_log`, and the
+- * `exercise-media` Storage bucket, and never issues a DELETE anywhere.
++ * `ziko-exercise-media` Storage bucket, and never issues a DELETE anywhere.
+  *
+  * It requires an interactive TTY confirmation and has NO bypass flag by
+  * design — see the `isTTY` guard at the very top of `main()` below. There

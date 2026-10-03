@@ -64,7 +64,7 @@ export default function ConversationScreen({ supabase }: { supabase: any }) {
   const messages = activeConversationId === id ? activeMessages : [];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, paddingBottom: 100 }}>
       {/* Header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20,

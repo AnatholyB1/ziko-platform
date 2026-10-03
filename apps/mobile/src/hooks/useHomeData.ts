@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
+import { localDateKey } from '../lib/localDate';
 
 // ── Fallback constants ────────────────────────────────────────
 // daily_water_goal_ml, weekly_goal, and sleep_goal do NOT exist
@@ -67,7 +68,7 @@ export function useSessionStreak() {
       const cursor = new Date();
       cursor.setHours(0, 0, 0, 0);
 
-      while (uniqueDays.has(cursor.toISOString().split('T')[0])) {
+      while (uniqueDays.has(localDateKey(cursor))) {
         streak++;
         cursor.setTime(cursor.getTime() - 86400000);
       }
@@ -103,7 +104,7 @@ export function useStreak() {
       let cursor = new Date();
       cursor.setHours(0, 0, 0, 0);
 
-      while (uniqueDays.has(cursor.toISOString().split('T')[0])) {
+      while (uniqueDays.has(localDateKey(cursor))) {
         streak++;
         cursor = new Date(cursor.getTime() - 86400000);
       }
@@ -122,7 +123,7 @@ export function useSleepToday() {
   return useQuery({
     queryKey: ['sleep', 'today', userId],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data, error } = await supabase
         .from('sleep_logs')
         .select('duration_hours, quality, bedtime, wake_time')
@@ -145,7 +146,7 @@ export function useHydrationToday() {
   return useQuery({
     queryKey: ['hydration', 'today', userId],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data, error } = await supabase
         .from('hydration_logs')
         .select('amount_ml')
@@ -171,7 +172,7 @@ export function useNutritionToday() {
   return useQuery({
     queryKey: ['nutrition', 'today', userId],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data, error } = await supabase
         .from('nutrition_logs')
         .select('calories, protein_g, carbs_g, fat_g')

@@ -1,4 +1,8 @@
 {
+  "reloginNotice": {
+    "before": "On {date}, Ziko is moving to new infrastructure: you will need to sign in once again with the same email address and password. No data is lost.",
+    "after": "Ziko moved to new infrastructure on {date}: if you have been signed out, sign in again with the same email address and password."
+  },
   "Header": {
     "logo": "Ziko",
     "cta": "Download the app",

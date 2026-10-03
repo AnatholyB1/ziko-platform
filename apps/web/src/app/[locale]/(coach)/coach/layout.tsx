@@ -5,6 +5,7 @@ export const revalidate = 0;
 import { getCachedCoachUser, getCachedAlertCount } from '@/lib/coach/auth';
 import { CoachSidebar } from '@/components/coach/CoachSidebar';
 import { MobileNav } from '@/components/coach/MobileNav';
+import { ReloginNoticeBanner } from '@/components/coach/ReloginNoticeBanner';
 
 export default async function CoachLayout({
   children,
@@ -26,6 +27,7 @@ export default async function CoachLayout({
     <div className="flex min-h-screen bg-background">
       <CoachSidebar locale={locale} unreadAlertCount={unreadAlertCount} />
       <main className="flex-1 flex flex-col overflow-hidden h-screen">
+        <ReloginNoticeBanner locale={locale} />
         <div className="lg:hidden flex items-center h-14 px-4 border-b border-border bg-white flex-shrink-0">
           <span className="text-2xl font-bold text-primary">ZIKO</span>
         </div>

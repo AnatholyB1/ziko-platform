@@ -4,8 +4,14 @@ import { useAuthStore } from '../../src/stores/authStore';
 export default function AuthLayout() {
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
+  const athleteOnboardingComplete = useAuthStore((s) => s.athleteOnboardingComplete);
 
-  if (session && profile?.onboarding_done) {
+  // Both flags are required (D-02): onboarding_done is set by step-7.tsx
+  // before the Ziko chat runs, so it alone cannot express "the mandatory
+  // flow finished". athlete_state.status === 'active' is written only by
+  // the assess_profile tool and is therefore the authoritative completion
+  // signal.
+  if (session && profile?.onboarding_done && athleteOnboardingComplete) {
     return <Redirect href="/(app)" />;
   }
 

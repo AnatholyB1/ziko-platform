@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +11,7 @@ import { useWorkoutStore } from '../src/stores/workoutStore';
 import { PluginLoader } from '../src/lib/PluginLoader';
 import { useThemeStore } from '../src/stores/themeStore';
 import { supabase } from '../src/lib/supabase';
+import { queryClient } from '../src/lib/queryClient';
 import CustomAlert from '../src/components/CustomAlert';
 import { BugFab, BugSheet } from '@ziko/ui';
 import CreditEarnToast from '../src/components/CreditEarnToast';
@@ -40,15 +41,6 @@ ErrorUtils.setGlobalHandler((error, isFatal) => {
 
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 2,
-    },
-  },
-});
-
 function RootLayout() {
   const initialize = useAuthStore((s) => s.initialize);
   const isInitialized = useAuthStore((s) => s.isInitialized);
@@ -66,7 +58,8 @@ function RootLayout() {
   });
 
   useEffect(() => {
-    initialize();
+    const cleanup = initialize();
+    return cleanup;
   }, []);
 
   // Restore any in-progress workout session after restart (fix #19)

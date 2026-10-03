@@ -1,0 +1,19 @@
+{
+  "taken_at": "2026-10-01T13:18:36.444Z",
+  "project_ref": "rkirvurggtgjlkeuhded",
+  "tenant_tables": {},
+  "auth_users": [
+    {
+      "id": "e904040f-5e4a-4ae1-84bc-0c2fcc5ef523",
+      "has_password": false,
+      "instance_id_null": true,
+      "stable_hash": "07e7d47ad5af16809a22b57faddd743a"
+    }
+  ],
+  "auth_identities": [],
+  "auth_user_triggers": [],
+  "ziko_waitlist_seq": {
+    "last_value": 1,
+    "is_called": false
+  }
+}

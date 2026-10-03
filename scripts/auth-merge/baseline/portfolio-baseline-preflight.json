@@ -1,0 +1,109 @@
+{
+  "taken_at": "2026-10-01T14:39:42.369Z",
+  "project_ref": "ubxllsvanurkwkohzxau",
+  "tenant_tables": {
+    "album_photos": 1830,
+    "albums": 30,
+    "categories": 4,
+    "gecko_admins": 3,
+    "gecko_announcement": 1,
+    "gecko_menu_categories": 0,
+    "gecko_menu_items": 0,
+    "gecko_menu_pages": 0,
+    "gecko_opening_hours": 7,
+    "gecko_phone_verifications": 1,
+    "gecko_reservations": 6,
+    "gecko_restaurant_settings": 2,
+    "gecko_special_hours": 0,
+    "gecko_table_assignments": 0,
+    "gecko_table_configuration_tables": 1,
+    "gecko_table_configurations": 1,
+    "gecko_tables": 1,
+    "orders": 15,
+    "portfolio_photos": 65,
+    "products": 10,
+    "prospects": 1,
+    "rh_chat_messages": 0,
+    "rh_chat_sessions": 2,
+    "rh_employee_sites": 19,
+    "rh_employees": 19,
+    "rh_leave_requests": 3,
+    "rh_notifications": 1,
+    "rh_shift_swaps": 1,
+    "rh_shift_types": 3,
+    "rh_shifts": 350,
+    "rh_sites": 3,
+    "rh_tenants": 1,
+    "rh_unavailabilities": 1,
+    "rh_users": 2
+  },
+  "auth_users": [
+    {
+      "id": "2b6a60fa-f37a-45a8-bf3f-e6b6681917e5",
+      "has_password": false,
+      "instance_id_null": true,
+      "stable_hash": "ac819633e07c2405c12ebd14411ec3c9"
+    },
+    {
+      "id": "2cc79459-0d95-4ca4-b099-23a6aa4c452b",
+      "has_password": true,
+      "instance_id_null": false,
+      "stable_hash": "20ed5ada6069fd6f0ee08f9eea55f1ee"
+    },
+    {
+      "id": "417acfc9-2e86-4317-890a-8618e8cfbe52",
+      "has_password": true,
+      "instance_id_null": false,
+      "stable_hash": "65daa2dc2433573757c61634a0933eec"
+    },
+    {
+      "id": "61b6f720-5af1-480d-bec1-67bb5d7dcc0f",
+      "has_password": true,
+      "instance_id_null": false,
+      "stable_hash": "6482af37ded02c0b1f09e68bb769c3dc"
+    },
+    {
+      "id": "77dc3949-7673-4a17-880c-4e6fc078ee8c",
+      "has_password": true,
+      "instance_id_null": false,
+      "stable_hash": "4f33b1209bd5e46180c2f7c74b94f0cc"
+    },
+    {
+      "id": "ac6405e1-e924-4fea-87d6-82ebb503c914",
+      "has_password": true,
+      "instance_id_null": false,
+      "stable_hash": "cfd4dc070c14a529bba0580bf649d83d"
+    }
+  ],
+  "auth_identities": [
+    {
+      "id": "57008d7c-dee6-42dc-858e-ffa6e0a61168",
+      "user_id": "77dc3949-7673-4a17-880c-4e6fc078ee8c",
+      "provider": "email",
+      "stable_hash": "c8f4d592dd030fd6610151f6de85b503"
+    },
+    {
+      "id": "6b009b49-b029-4776-8c42-1bde7316e583",
+      "user_id": "2cc79459-0d95-4ca4-b099-23a6aa4c452b",
+      "provider": "email",
+      "stable_hash": "c676fe284651a775b53a73392de77674"
+    },
+    {
+      "id": "b6b1280b-9e42-477a-bd9c-7f81e557b427",
+      "user_id": "ac6405e1-e924-4fea-87d6-82ebb503c914",
+      "provider": "email",
+      "stable_hash": "80514268835bf8d3cdb196ed29cfe783"
+    },
+    {
+      "id": "ddd2ec9e-0e64-4c83-8f90-811a3be27594",
+      "user_id": "417acfc9-2e86-4317-890a-8618e8cfbe52",
+      "provider": "email",
+      "stable_hash": "0e335cb20a7bdcc390f35aac8d24075c"
+    }
+  ],
+  "auth_user_triggers": [],
+  "ziko_waitlist_seq": {
+    "last_value": 1,
+    "is_called": false
+  }
+}

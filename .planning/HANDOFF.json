@@ -30,5 +30,24 @@
   ],
   "uncommitted_files": [],
   "next_action": "/gsd-execute-phase 25 --gaps-only — fix focus trap in revoke modal (minor, 1 gap)",
-  "context_notes": "Phase 25 fully executed. UAT ran this session via automated browser verification. One minor gap: Tab focus trap in RevokeModal doesn't wrap. Build error in login.ts was found and fixed mid-UAT."
+  "context_notes": "Phase 25 fully executed. UAT ran this session via automated browser verification. One minor gap: Tab focus trap in RevokeModal doesn't wrap. Build error in login.ts was found and fixed mid-UAT.",
+  "phase6_smoke_items_from_phase5": [
+    {"id":"bk-clients-links-me","surface":"backend","bucket":"ziko-coach-kyc","item":"GET /coach/clients/links/me: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"bk-videos-upload-url","surface":"backend","bucket":"ziko-coach-videos","item":"POST /coach/videos/upload-url: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"bk-videos-signed-url","surface":"backend","bucket":"ziko-coach-videos","item":"GET /coach/videos/:videoId/signed-url: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"bk-videos-audio-url","surface":"backend","bucket":"ziko-coach-videos","item":"GET /coach/videos/annotations/:annotationId/audio-url: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"bk-exercises-media-url","surface":"backend","bucket":"ziko-coach-exercises","item":"GET /coach/exercises/:id/media-url: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"bk-imports-create","surface":"backend","bucket":"ziko-ai-imports","item":"POST /coach/imports: full-route smoke against portfolio after the table-name codemod"},
+    {"id":"ui-mobile-avatar","surface":"mobile profile","bucket":"ziko-avatars","item":"avatar upload and display (D-10 UI-level flow)"},
+    {"id":"ui-mobile-profile-photo","surface":"mobile profile","bucket":"ziko-profile-photos","item":"profile photo upload, display and remove (D-02 quirk expected: private bucket, public SELECT policy, no DELETE policy)"},
+    {"id":"ui-mobile-exercise-media","surface":"mobile workout","bucket":"ziko-exercise-media","item":"exercise media display in the exercise screen and picker"},
+    {"id":"ui-nutrition-scan","surface":"plugin-nutrition","bucket":"ziko-scan-photos","item":"scan photo upload via /storage/upload-url and display"},
+    {"id":"ui-plugin-coach-logo","surface":"plugin-coach","bucket":"ziko-coach-logos","item":"coach logo display"},
+    {"id":"ui-web-kyc","surface":"web coach","bucket":"ziko-coach-kyc","item":"KYC document upload and api/photo display"},
+    {"id":"ui-web-exercise-media","surface":"web coach","bucket":"ziko-coach-exercises","item":"coach exercise media upload"},
+    {"id":"ui-web-logo","surface":"web coach","bucket":"ziko-coach-logos","item":"coach logo upload and branding preview"},
+    {"id":"ui-web-ai-import","surface":"web coach","bucket":"ziko-ai-imports","item":"coach AI import upload"},
+    {"id":"ui-athlete-video","surface":"mobile athlete + web coach","bucket":"ziko-coach-videos","item":"athlete video upload and coach view"},
+    {"id":"codemod-merge","surface":"codemod","bucket":"all ziko- buckets","item":"re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before"}
+  ]
 }

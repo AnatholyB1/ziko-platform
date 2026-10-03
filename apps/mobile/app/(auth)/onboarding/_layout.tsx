@@ -60,6 +60,7 @@ export default function OnboardingLayout() {
         <Stack.Screen name="step-5" />
         <Stack.Screen name="step-6" />
         <Stack.Screen name="step-7" />
+        <Stack.Screen name="ziko-chat" />
       </Stack>
     </OBContext.Provider>
   );

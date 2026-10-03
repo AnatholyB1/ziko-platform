@@ -1,149 +1,170 @@
 # Project Research Summary
 
-**Project:** Ziko Platform — v1.16 Exercise Library Import (`image-exo`)
-**Domain:** One-off bulk third-party dataset (data + licensed media) import/merge into an existing FK-referenced production table
-**Researched:** 2026-08-14
-**Confidence:** HIGH
+**Project:** Ziko Platform — v1.18 AI Coach Core (`milestone-mobile` workstream)
+**Domain:** Autonomous per-athlete AI decision system — conversational onboarding, weekly adaptive decision engine, non-punitive tiered rewards, progressive feature unlock, verifiable append-only decision journal — integrated into an existing single-orchestrator AI fitness platform
+**Researched:** 2026-08-30
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-This is not a new product capability — it's a data-migration problem with an unusually sharp blast radius: replacing/enriching `public.exercises` (currently ~1318 rows seeded from a Kaggle dataset with broken `v2.exercisedb.io` media links) with the richer `hasaneyldrm/exercises-dataset` (1,324 exercises, real GIF + 180×180 thumbnail media, structured muscle/equipment taxonomy, step-by-step instructions). The table is already FK-referenced by real `program_exercises` and `session_sets` rows with no `ON DELETE` clause, `exercises.name` has no uniqueness constraint (confirmed duplicates already exist), and the media carries a hard legal constraint: Gym visual's license caps distributed resolution at 180×180px and requires attribution on every display surface, non-negotiable for an App-Store-shipped product.
+This milestone is an **integration**, not a greenfield build: it bolts a new class of *autonomous* (unprompted, scheduled) AI decision-making onto a codebase whose only existing AI surface is *reactive* (user-initiated chat with a bounded 5-step tool loop). No new runtime dependencies are needed — `ai` v6, `@ai-sdk/anthropic` v3, Hono, Vercel Cron, and Postgres+RLS are already in place and sufficient. The work is entirely schema design (a current-state table + an append-only journal, modeled directly on the existing `user_ai_credits`/`ai_credit_transactions` pair, not the looser gamification pair), a new `coaching-engine/` module mirroring the existing `coach/*` module shape, and a scheduling strategy that explicitly avoids the one existing near-precedent (`coach/ai/monitor-cron`'s sequential per-user loop) because that pattern was designed for cheap rule checks, not per-user LLM calls, and would silently truncate mid-run as the athlete base grows.
 
-The recommended approach across all four research streams converges on one shape: a local/CI Node script (never a Hono API route — the 17MB dataset JSON alone triples this project's own documented 4.5MB Vercel payload limit), structured as three separable phases — fetch (git clone/tarball, zero new dependencies), match (pure, side-effect-free, produces a dry-run report), and merge (human-reviewed report only, upsert-by-name via `@supabase/supabase-js`, resumable via a new `exercise_import_log` table). Media goes into a new public, service-role-write-only Storage bucket (`exercise-media`), consumed directly via public URL — no signed-URL machinery needed since this is global reference data, not per-user content.
+The recommended approach converges across all four research streams on the same shape: (1) a compact `athlete_state` (current level/tier/focus, RLS SELECT-only, written only via a `SECURITY DEFINER` RPC) plus an append-only `athlete_decisions` journal whose full history is never replayed into a prompt — only a bounded recent window plus a periodically-recompacted rolling summary; (2) the weekly decision itself is a **single-shot `generateObject` call with real activity data pre-fetched and embedded in the prompt**, not a multi-step tool-calling agent loop inside the cron, run with bounded concurrency and idempotent per-athlete-per-week writes (Vercel cron delivery is at-least-once — this codebase already learned that lesson once, via the v1.4 lazy-credit-reset decision, and must apply the same discipline here); (3) reward selection is AI-*curated from a fixed pool*, never randomized, with pinned low/zero temperature and a persisted rationale — a French-regulatory (ANJ/JONUM) requirement, not just a UX preference; (4) feature-gating is a third, new axis (`PluginManifest.minLevel`) enforced centrally in `PluginLoader`, deliberately kept a flat numeric threshold rather than the richer track/faction system explicitly deferred to a future milestone.
 
-The two risks that dominate every research file are (1) match-quality — false negatives create duplicate exercises with orphaned history, false positives silently overwrite a real user's logged workout data with a different exercise's semantics — and (2) license compliance — missing attribution or upscaled media is a permanent, non-hotfixable App Store violation once shipped. Both are mitigated architecturally, not just procedurally: a 3-tier precision-first matcher with a mandatory human review gate before any write, a pre-UPDATE backup table for revertibility, and a shared `<AttributedMedia>` component in `packages/ui/` that structurally prevents a screen from rendering the media without the attribution badge and the 180×180 cap.
+The dominant risk across the research is **implicit violation of stated invariants through calculation/plumbing bugs, not through explicit bad design**: AI decisions quietly grounded in the model's own prior claims instead of freshly-queried tables (Pitfall 1), a "never punish" principle undermined by a delta-formula edge case or a UI progress bar that visibly shrinks (Pitfall 4), and a decision journal that is architecturally correct on day one but silently degrades (token cost, "lost in the middle," over-anchoring on stale decisions) after months of production tenure if the compact-summary/full-log split isn't built in from the start (Pitfall 6). All of these are addressed by architectural choices already specified in ARCHITECTURE.md — the risk is in *skipping* them under time pressure, not in not knowing about them.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Zero new production dependencies. `git clone --depth 1` (not GitHub's REST/raw-content APIs, which are rate-limited and were tightened in 2025) fetches the 17MB JSON + ~2600 media files in one shallow clone. `@supabase/supabase-js` (already a root dependency, `^2.99.2`) handles both the Postgres upsert and Storage bulk upload — same client already used in `backend/api/src/routes/storage.ts` and `scripts/food-data/import-foods.mjs`. No ORM, no queue, no `p-limit` (its current major requires Node ≥20, stricter than this repo's `>=18.0.0` floor) — hand-rolled `Promise.allSettled` batching of ~15-20 concurrent calls, precedented in the existing `cleanupBucket` code.
+No new packages. Everything is composition of what's already installed and used elsewhere in this exact codebase: `ai` v6's `stopWhen`/`isStepCount`/`hasToolCall` composable stop-conditions (used for the *interactive* onboarding/chat turn only — raise from 5 to a named constant like 8, never touch the shared `/ai/chat` default), `@ai-sdk/anthropic` v3's `providerOptions.anthropic.cacheControl` for prompt-caching the stable per-athlete context block (not currently used anywhere in the codebase — first adoption, scoped to just the new routes), `@vercel/functions`' `waitUntil()` for deferred/batch dispatch (already used 3x in this backend), and Vercel Cron + `vercel.json` for the weekly trigger (8 crons already run this way). No vector DB / pgvector — the decision journal is a single-athlete linear-recency problem, not a similarity-search problem, and no vector extension is installed.
 
-**Core technologies:**
-- `git clone --depth 1` (child_process): dataset fetch — avoids GitHub rate limits entirely via git's smart-HTTP transport, no new dependency
-- `@supabase/supabase-js` (existing): Postgres upsert (match-by-name UPDATE/INSERT) + Storage bulk upload — matches existing repo patterns exactly
-- New public Storage bucket (`exercise-media`): serves media via `getPublicUrl()`, avoiding the signed-URL machinery built for private per-user buckets
-- Dated migration filename convention (`YYYYMMDD_description.sql`): matches what the repo's most recent migrations actually use, not the older `NNN_` convention
+**Core technologies (apply existing, add nothing new):**
+- `ai` ^6.0.116 + `stopWhen: [isStepCount(8), hasToolCall('grant_reward')]` — bounds the onboarding/interactive agentic turn without opening the SDK's 20-step default
+- `@ai-sdk/anthropic` ^3.0.58 `cacheControl: { type: 'ephemeral' }` — amortizes repeated per-athlete context across multi-step turns and weekly reviews
+- `generateObject` (not `streamText`/tool-loop) for the weekly decision itself — single-shot, deterministic-shaped output from pre-fetched real data
+- Postgres structured `rolling_summary` + recent-window raw rows — explicitly not pgvector/embeddings
+- Vercel Cron (`CRON_SECRET`-gated, same shape as `coach/ai/monitor-cron`) as the scheduling trigger, paired with a lazy on-app-open fallback
 
 ### Expected Features
 
-**Must have (table stakes / v1):**
-- Idempotent match-by-name upsert import (data + media) preserving `program_exercises`/`session_sets` FKs, excluding `is_custom` coach exercises
-- Real GIF + thumbnail rendering in the exercise detail screen, replacing the current fake video placeholder (which shows a false `Démo · 0:42` / `HD` badge with no real video asset behind it)
-- Mandatory, co-located attribution (`© Gym visual`) on every media display surface — a global legal page alone is explicitly non-compliant per the license's "must accompany every use" wording
-- `instruction_steps` array wired into the existing numbered-steps UI, replacing a fragile `JSON.parse`/`.split('\n')` fallback chain
-- FR/EN bilingual name + instructions, matching the existing `name_fr` i18n convention
+**Must have (table stakes / P1 — all load-bearing, per PROJECT.md there is no soft-optional subset):**
+- Conversational onboarding, ≤4 free-text questions, `generateObject`-based structured extraction into an experience/confidence/adherence-risk profile with a self-reported confidence field
+- Immediately-completable micro-action + first celebration, scaled to the inferred profile, delivered within 5 minutes
+- `athlete_state` + `athlete_decisions` journal — the required foundation everything else reads/writes
+- Weekly adaptive decision engine reading **real logged activity** (not self-report) vs. assigned focus, producing next week's single focus objective — this doubles as the safety net that corrects onboarding profiling errors, so it cannot be scoped as strictly "later" than onboarding
+- Non-punitive point accrual: met-or-exceeded target -> standard-or-better reward signal; under-performed -> no reward, **never negative**
+- AI-curated tiered reward pool, deterministic single-id selection (never randomized) — this is both the standout differentiator and the item with the clearest regulatory rationale (French ANJ)
+- Feature-gating: plugin drawer visibility driven by readiness/level computed at onboarding and updated weekly
 
-**Should have (competitive, v1.x):**
-- Data-driven filter chips (replace hardcoded `FILTER_CHIPS` array) with FR label mapping, once taxonomy is populated
-- Thumbnails in `ExercisePicker` list rows with tap-to-animate GIF (not autoplay, to avoid scroll jank at 200+ rows)
+**Should have (differentiators):**
+- Free-text -> structured profile inference (vs. competitors' slider/multi-choice quizzes) — thin precedent, MEDIUM-HIGH build complexity
+- Adherence-risk-first skip logic (experienced athletes bypass the ramp-up) — real false-positive risk, mitigated by the weekly engine acting as an override signal
+- Real-activity-driven weekly *structural* focus decisions (which domain to focus on, not just difficulty) — closer to stepped-care behavior-change design than to any found fitness-app precedent; flagged for a dedicated research pass before the weekly-engine phase is planned
 
-**Defer (v2+):**
-- Automated/admin-triggered resync workflow — a manually re-run idempotent script is sufficient; no product surface needed yet
-- Additional dataset languages beyond FR/EN — no current user demand
-- Upscaling media above 180×180 — explicitly forbidden by license, not just deferred
+**Defer (v2+, explicitly out of scope per PROJECT.md SEED-001):**
+- Factions/leagues/leaderboards/battle-pass and any social/competitive layer
+- Cosmetic loot/skins
+- Extended multi-state animated mascot (current scope is chat-only for onboarding)
+- Logprob-based confidence scoring (self-reported confidence field is the v1 approach; only revisit if manual review shows systematic over/under-confidence)
+- Coach-authored/customizable reward pools (seed a fixed pool first)
 
 ### Architecture Approach
 
-Three-phase local/CI script (`scripts/import-exercises/{fetch,match,merge}.ts`), never a Hono route — sibling to the repo's existing `scripts/csv-to-seed.js`/`json-to-seed.js` precedent, not part of the deployed API surface. Schema changes land first (new `image` column, `exercise_import_log` table, `exercise-media` bucket + public-read policy), then the download+merge script runs against a direct (non-pooled) Postgres connection, then mobile consumption code (`ExercisePicker.tsx`, `[exerciseId].tsx`) is updated last, only once real URLs exist in production.
+The new work lives in a self-contained `backend/api/src/coaching-engine/` module (mirroring the existing `coach/*` per-domain shape: `db.ts`, `context.ts`, `tools.ts`, `apply.ts`, `types.ts`, plus a new cron route) that plugs into three existing seams without restructuring them: `context/user.ts` gains `athlete_state` as a 7th parallel query (compact, always-on, same rationale as the existing 6); `tools/registry.ts` registers 4 new tool schemas exactly like every other plugin's tools; `PluginLoader` gains a third gating filter (`mandatory` -> `minLevel` -> `is_enabled`) ahead of screen mount, not inside the screen. The weekly decision itself is deliberately **not** the interactive multi-step agent — it's a single `generateObject` call fed pre-aggregated real-activity data, with the actual DB write funneled through one shared `apply.ts` function called identically by both the cron path and the interactive tool-call path, so the AI-authored decision and the applied effect can never diverge.
 
 **Major components:**
-1. `fetch.ts` — pure download/extract, no Supabase calls, verifies file count against manifest
-2. `match.ts` — pure computation, dry-run report only (matched/unmatched-legacy/unmatched-new/ambiguous), never writes to Supabase
-3. `merge.ts` — consumes the *human-reviewed* report only; uploads media, UPDATEs matched rows in place, INSERTs unmatched-new rows, logs every row to `exercise_import_log` for resumability
-4. `exercise-media` bucket — public, service-role-write-only, no per-user prefix (unlike the app's other 6 private buckets)
-5. Mobile consumption layer — versioned TanStack Query key (`['exercises', 'v2']`) to force cache invalidation, plus a shared `<AttributedMedia>` component enforcing the 180×180 cap and attribution badge structurally
+1. `athlete_state` (current-state, PK=user_id, SELECT-only RLS, written only via `record_athlete_decision()` SECURITY DEFINER RPC) — models the tighter `user_ai_credits` precedent, not the looser `user_gamification` one, because `level` is security-relevant (drives plugin gating)
+2. `athlete_decisions` (append-only journal, SELECT-only RLS, partial unique index for weekly idempotency) — audit trail only; never the source read for "what happened," and never fully replayed into a prompt
+3. `coaching-engine/apply.ts` — the single deterministic write path shared by AI tool executors and the cron, re-validating evidence server-side rather than trusting the model's structured output
+4. `coaching-engine/weekly-review-cron.ts` — `CRON_SECRET`-gated route; cheap SQL eligibility scan -> real-activity aggregate fetch -> single `generateObject` call -> `apply.ts`, run at bounded concurrency (8-10), never a sequential per-athlete tool-loop
+5. `PluginLoader` + `PluginManifest.minLevel` — the new third gating axis, fail-safe to level 1 when no `athlete_state` row exists yet
 
 ### Critical Pitfalls
 
-1. **False-negative name matching creates duplicate rows with orphaned history** — avoid via a 3-tier match pipeline (exact normalized → fuzzy + independent-field agreement → human-reviewed unmatched bucket), never auto-inserting unmatched rows.
-2. **False-positive name matching silently overwrites real user history** — the inverse, more damaging failure; avoid by requiring agreement across ≥2 independent fields before an automatic match, and snapshotting every row to a backup table immediately before UPDATE.
-3. **Non-idempotent script corrupts state on partial run/re-run** — a killed process (rate limit, network drop, timeout) leaves the table half-migrated with no resume record; avoid via separable fetch/merge phases, a durable `exercise_import_log`, and per-row (not one giant) transactions.
-4. **17MB JSON collides with this project's own documented Vercel 4.5MB payload limit** — this must run as a local/CI script, never a Hono API route; GitHub's Contents API additionally inflates payloads ~33% via base64 and must be avoided in favor of tarball/raw fetch.
-5. **Missing attribution or media upscaling breaches the Gym visual license in a shipped App Store binary** — non-hotfixable once live; avoid via a structural shared component (not a prop developers can forget) and explicit human/legal sign-off before phase completion.
-
-(A sixth pitfall — stale mobile image/query cache showing broken or mixed old/new URLs post-migration — is addressed via content-versioned Storage paths and a bumped TanStack Query key; see PITFALLS.md Pitfall 6.)
+1. **AI decisions grounded in conversation memory instead of real logged data** — tool executors must re-query `workout_sessions`/`habit_logs`/etc. at call time; never accept model-asserted counts as input, and never treat `athlete_decisions` entries as source-of-truth for "what happened."
+2. **Naive sequential per-athlete cron loop blows Vercel's duration/cost budget as the user base grows** — do not copy `monitor-cron`'s pattern verbatim (it's safe there only because it has no LLM call in the loop); use bounded-concurrency batches with self-scheduling `next_review_due_at`, and budget/log AI cost independently since these calls aren't behind `creditCheck`/`creditDeduct`.
+3. **Reward-pool "AI selects" mechanic accidentally reintroducing loot-box-adjacent randomness** — pin `temperature: 0` for the reward-selection call, never gate the pool behind paid credits or real-money spend, never allow transfer/resale, and document the "why this isn't a loot box" rationale explicitly (ANJ/JONUM law is actively evolving — flag for legal review before broad shipping).
+4. **Non-punitive principle undermined by calculation/UI edge cases, not explicit punishment logic** — points/tiers/unlocks must be a strict ratchet (monotonic non-decreasing); audit copy and animations for implicit-loss framing (shrinking bars, "missed goal" messaging) even when the underlying number never actually decreased.
+5. **Append-only decision journal grows unbounded** — separate the audit trail (`athlete_decisions`, full and complete) from what's fed into every future prompt (a compact, periodically-recompacted `athlete_state.rolling_summary` + a small bounded recent window); load-test token counts against a synthetic 12-month-tenure athlete before shipping, not just the fresh-onboarding happy path.
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on combined research, suggested phase structure (dependency-driven, per ARCHITECTURE.md's build order, grouped into roadmap-sized phases):
 
-### Phase 1: Schema & Storage Foundation
-**Rationale:** Nothing downstream can run until the `image` column, `exercise_import_log` table, and `exercise-media` bucket exist — all four research files agree schema must land first (Architecture "Build Order" is explicit on this).
-**Delivers:** `20260814_exercises_image_column.sql`, `20260814_exercise_import_log.sql`, public `exercise-media` bucket + read-only RLS policy (no client write policy — service-role only).
-**Uses:** Dated migration naming convention (matches current repo practice); public-bucket pattern (Architecture Pattern 2), distinct from the app's existing per-user private-bucket pattern.
-**Avoids:** Anti-Pattern 2 (copy-pasting per-user-prefix RLS onto global reference data).
+### Phase 1: Decision-System Foundation (schema + journal design)
+**Rationale:** Nothing else — no tool, no cron, no gating check — can be built or tested without `athlete_state`/`athlete_decisions` existing first. Also the phase where the compact-state/full-log split (Pitfall 6) and the RLS/RPC write discipline (Pitfall 1's server-side re-validation pattern) must be locked in, since retrofitting either after data exists is materially more expensive.
+**Delivers:** `athlete_state` + `athlete_decisions` migrations, `record_athlete_decision()` SECURITY DEFINER RPC, RLS policies (tighter than the gamification precedent — SELECT-only for clients, all writes via RPC/service role).
+**Addresses:** Foundation requirement noted in FEATURES.md dependency graph (every other capability depends on this).
+**Avoids:** Pitfall 6 (unbounded journal growth) and the RLS-missing security mistake flagged in PITFALLS.md — both must be designed in from the first migration, not bolted on later.
 
-### Phase 2: Download & Match (dry-run only, no writes)
-**Rationale:** Match quality is the highest-risk part of this milestone (Pitfalls 1 & 2) and must be inspectable before any production write happens — Architecture explicitly separates this into its own side-effect-free step.
-**Delivers:** `fetch.ts` (git clone, verified against manifest) + `match.ts` (3-tier precision-first matcher) producing a `.staging/match-report.json` and a human-readable summary (`review-report.ts`) for manual review.
-**Addresses:** FEATURES.md's "idempotent match-by-name import" requirement; the explicit `is_custom`/`coach_exercises` exclusion.
-**Avoids:** Pitfall 1 (false-negative duplicates) and Pitfall 2 (false-positive history corruption) via the mandatory human review gate.
+### Phase 2: Conversational Onboarding
+**Rationale:** First *writer* of `athlete_state` — a new athlete has no row until onboarding runs, so this must land before the weekly engine or feature-gating can act on real data (gating fails-safe to level 1 in the interim).
+**Delivers:** `assess_profile` AI tool, onboarding branch in `routes/ai.ts` system-prompt building, structured `generateObject` extraction with self-reported confidence field, micro-action assignment scaled to inferred profile, starting level/tier write.
+**Addresses:** Table-stakes conversational intake + adaptive first-session difficulty + quick-win celebration (FEATURES.md P1 items).
+**Avoids:** Pitfall 1's grounding discipline should be established here too — even onboarding's initial profile should be understood as noisy/unverified, with the weekly engine as its designed safety net (not an incidental benefit).
 
-### Phase 3: Merge (resumable write, human-approved report only)
-**Rationale:** Only runs after Phase 2's report is reviewed and approved; depends on Phase 1's schema and Phase 2's report artifact.
-**Delivers:** `merge.ts` — per-row/small-batch transactions, pre-UPDATE backup snapshot (`exercises_merge_backup`), Storage upload with `upsert: true`, `exercise_import_log` write per row for resumability.
-**Uses:** Direct (non-pooled) Postgres connection, bounded concurrency (10-20) for Storage uploads, same `Promise.allSettled` pattern as existing `storage.ts`.
-**Avoids:** Pitfall 3 (non-idempotent script) and Anti-Pattern 3 (one giant transaction).
+### Phase 3: Weekly Adaptive Decision Engine
+**Rationale:** Depends on Phase 1 (schema/idempotency fields) and conceptually on Phase 2 (a profile to correct/build on). This is the highest-risk phase per PITFALLS.md (2 of 6 critical pitfalls map directly here) and the one ARCHITECTURE.md and STACK.md most explicitly diverge from the closest existing precedent (`monitor-cron`) — needs the most scrutiny at plan time.
+**Delivers:** `coaching-engine/context.ts` (`fetchWeeklyReviewContext()`), `apply.ts` shared apply-logic, `create_goal`/`create_program` tools, `weekly-review-cron.ts` (bounded-concurrency, idempotent, single-shot `generateObject`, lazy on-app-open fallback).
+**Uses:** `generateObject` (not the interactive agent loop), `waitUntil()`, `CRON_SECRET` cron pattern, prompt-caching for the stable per-athlete context block.
+**Implements:** The `coaching-engine/` module's core; the shared apply-path architecture that keeps the cron and interactive tool executors behaviorally identical.
 
-### Phase 4: Mobile Consumption & Attribution
-**Rationale:** Only makes sense once Phase 3 has populated real URLs in production — shipping this earlier would show blank/placeholder states for every exercise, which is safe but pointless.
-**Delivers:** Real GIF/thumbnail rendering in `[exerciseId].tsx` (replacing the fake video placeholder) and `ExercisePicker.tsx`, a shared `<AttributedMedia>` component in `packages/ui/` enforcing the 180×180 cap and co-located attribution badge, `instruction_steps` wiring into the existing numbered-steps UI, bumped TanStack Query key (`['exercises', 'v2']`).
-**Addresses:** FEATURES.md P1 items (real media rendering, mandatory attribution, structured instructions).
-**Avoids:** Pitfall 5 (license compliance) via a structural component rather than a per-screen convention; Pitfall 6 (stale cache) via query-key versioning and content-hashed Storage paths.
+### Phase 4: Non-Punitive Tiered Rewards
+**Rationale:** Depends on Phase 3's points/decision output existing to select against. Kept as its own phase because it carries a distinct risk profile (regulatory) from the engine itself and needs an explicit legal-rationale checkpoint before implementation, not bundled into general engine work.
+**Delivers:** Reward pool data model (new tables, explicitly *not* reusing `plugins/gamification`'s coin/shop mechanic), AI reward-selection tool (`create_reward`, pinned low/zero temperature, persisted rationale), monotonicity-invariant enforcement and test coverage.
+**Addresses:** The AI-curated fixed-pool differentiator (FEATURES.md) and the explicit anti-features (randomized loot-box, punitive reset) it must avoid.
+**Avoids:** Pitfall 3 (ANJ-adjacent randomness) and Pitfall 4 (implicit punishment via calculation/UI edge cases) — both require design-time contracts (deterministic selection, ratchet-only fields) plus a copy/animation audit pass before shipping.
+
+### Phase 5: Progressive Feature Unlock
+**Rationale:** Depends on `athlete_state.level` being populated by Phase 2/3 to be meaningful, but is architecturally independent enough (a pure `PluginLoader` gating filter) that it could ship earlier than the full reward mechanic if sequencing pressure requires — flagged in ARCHITECTURE.md as a soft-decoupling point.
+**Delivers:** `PluginManifest.minLevel`, `PluginLoader` gating filter (`mandatory` > `minLevel` > `is_enabled`, fail-safe to level 1), `PluginsDrawer` locked-badge presentational UI, deterministic floor/ceiling backstop so AI judgment can't trap or over-grant users.
+**Addresses:** Progressive disclosure table-stakes pattern (FEATURES.md).
+**Avoids:** Pitfall 5 (stuck-forever or unlock-everything-immediately) — requires a deterministic minimum-guarantee ladder alongside AI discretion, plus a manual/admin override escape hatch from day one.
+
+### Phase 6: Context Wiring, Notifications & Cost Accounting
+**Rationale:** Mechanically low-risk, best done last once the upstream data is real and meaningful (a 7th context query is only useful once Phase 2 is producing rows).
+**Delivers:** `context/user.ts` 7th-query wiring + `## Athlete State` system-prompt section, weekly-review-completion push notification (reusing existing `notificationService.send()` idempotency pattern), `ai_cost_log` coverage for the new autonomous (non-`creditCheck`-gated) calls, explicit product decision on funding model (platform opex vs. athlete credit allocation).
+**Closes:** Visibility/cost-accounting gaps flagged across STACK.md and PITFALLS.md.
 
 ### Phase Ordering Rationale
 
-- Strict dependency chain confirmed by Architecture's "Build Order": schema → data/media → mobile. Each phase's inputs are the prior phase's committed outputs, not parallelizable in a meaningful way despite mobile code being technically writable earlier.
-- Splitting "download" from "match" from "merge" (rather than one script) directly operationalizes the two highest-severity pitfalls (1, 2, 3) as phase boundaries with an explicit human gate between Phase 2 and Phase 3 — this is a deliberate risk-reduction structure, not arbitrary task-splitting.
-- Attribution/resolution-cap enforcement is deferred to Phase 4 only in terms of *rendering*; the underlying legal requirement (never store/serve media above 180×180) must be respected as early as Phase 3's Storage upload step (no upscaling during upload either).
+- Schema-first (Phase 1) is non-negotiable — every other phase's own research file (STACK, ARCHITECTURE, PITFALLS) independently arrives at "nothing else can be built without `athlete_state`/`athlete_decisions` existing."
+- Onboarding before the weekly engine (Phase 2 -> 3) because onboarding is the first writer of state the engine needs to read, but the two are tightly coupled — the weekly engine is explicitly the safety net for onboarding profiling errors, so they should be planned as a connected pair even though built sequentially.
+- Rewards (Phase 4) and feature-gating (Phase 5) are both downstream consumers of the engine's output (points, level) and can be parallelized or reordered relative to each other, but both must come after Phase 3 produces real point/level deltas to act on.
+- Cost accounting and notification polish (Phase 6) deliberately last — it's real but low-risk work best validated against actual data volume from the earlier phases rather than speculated on up front.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 2 (Match):** the exact field names in the dataset's `exercises.schema.json` were not independently verified (PITFALLS.md notes MEDIUM confidence here, page-rendering-derived not raw-file-diff-derived) — verify field names directly before writing the matcher.
-- **Phase 4 (Mobile Consumption):** exact visual treatment of the attribution badge (font size, placement, color) was explicitly deferred to a UI-SPEC pass by FEATURES.md, not resolved in this research.
+- **Phase 3 (Weekly Adaptive Decision Engine):** Vercel Fluid Compute enablement/`maxDuration` configuration is unverified against this specific project (MEDIUM confidence in STACK.md/ARCHITECTURE.md); cron batching/concurrency numbers need validating against actual or projected athlete volume before committing to a specific batch size. Also flagged: no confirmed consumer-fitness-app precedent for "stepped-care" structural weekly-focus decisions (LOW confidence in FEATURES.md) — worth a dedicated research pass before finalizing the decision logic's shape.
+- **Phase 4 (Non-Punitive Tiered Rewards):** French ANJ/JONUM loot-box-adjacency law is explicitly flagged LOW confidence and actively evolving — recommend a legal-rationale checkpoint (and ideally counsel review) before this phase ships broadly, not just an engineering read of the current research.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Schema & Storage):** directly precedented by existing migrations (`025_storage_buckets.sql`) and the current dated-migration convention — no new pattern needed.
-- **Phase 3 (Merge):** directly precedented by `backend/api/src/routes/storage.ts`'s existing `Promise.allSettled` chunking and `scripts/food-data/import-foods.mjs`'s bulk-import shape.
+- **Phase 1 (Foundation):** Directly modeled on two already-shipped, working precedents in this exact codebase (`user_ai_credits`/`ai_credit_transactions` schema shape, `deduct_ai_credits` RPC pattern) — HIGH confidence, standard extension of established convention.
+- **Phase 2 (Conversational Onboarding):** `generateObject` structured extraction is official, current Vercel AI SDK v6 documented pattern (HIGH confidence, Context7-verified) using the same SDK version already in production here.
+- **Phase 5 (Progressive Feature Unlock):** `PluginLoader` already has an identical-shape gating precedent (`mandatory`-bypass, `is_enabled` filter) — adding a third filter is a well-documented mechanical extension, not novel design.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Verified GitHub rate-limit docs directly, `npm view` package versions confirmed locally, all recommended tools already present in the repo — no new-dependency risk |
-| Features | MEDIUM-HIGH | Attribution requirement verified directly from source `NOTICE.md` (HIGH); UX conventions (per-surface vs. global attribution) inferred from a different license's precedent (Unsplash, MEDIUM) since no directly comparable Gym visual UI precedent exists |
-| Architecture | HIGH | Every integration point grounded in files read directly from this codebase (migrations, existing bucket/RLS patterns, existing scripts/ precedent) — a wiring problem, not a technology-choice problem |
-| Pitfalls | MEDIUM-HIGH | Production schema facts (FK constraints, no unique name constraint) verified directly from migrations (HIGH); dataset repo structure/field names derived from GitHub page rendering, not a raw schema-file diff (MEDIUM) — flagged explicitly for verification before implementation |
+| Stack | MEDIUM-HIGH | Context7-verified current AI SDK v6 APIs (`stopWhen`, `cacheControl`) + direct codebase inspection confirming existing dependency versions/usage; Vercel platform limits WebSearch-verified against official docs and changelog |
+| Features | MEDIUM | Table-stakes patterns (Duolingo placement test, Freeletics weekly adaptation) are well-sourced from official/verified content; the specific combination this milestone asks for (deterministic AI-curated reward pool as loot-box substitute, stepped-care structural weekly adaptation) has thin-to-no direct product precedent and is flagged LOW in those specific sub-areas |
+| Architecture | HIGH | Every recommendation is anchored to a specific, already-shipped file/pattern in this repo (credits schema, `monitor-cron`, `context/user.ts`, `PluginLoader`) rather than external genericism; the one MEDIUM-confidence item is Vercel Fluid Compute's exact configuration state on this specific project, unverified this session |
+| Pitfalls | MEDIUM-HIGH | Grounded in both verified official Vercel docs (cron at-least-once delivery, duration limits) and direct codebase precedent (v1.4 lazy-reset decision, `monitor-cron` shape); the French ANJ/loot-box legal classification is explicitly flagged LOW confidence — unsettled, evolving law, not an engineering judgment call |
 
-**Overall confidence:** HIGH
+**Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-- **Exact dataset field names** (`exercises.schema.json`): not verified against a raw file diff — verify during Phase 2 planning/implementation before the matcher is written, per PITFALLS.md's explicit recommendation.
-- **Live production constraint check on `exercises.name`**: STACK.md notes the "no unique constraint" conclusion should be double-checked with `\d exercises` against the actual live table before writing the script, in case a later migration beyond what was read added one.
-- **Legal sign-off on the 180×180 resolution-cap interpretation**: PITFALLS.md flags this as needing explicit confirmation from the project's legal/product owner — "distributed at 180×180 only" should be confirmed as meaning "never rendered above 180×180 in the shipped app" before Phase 4 is marked done, not assumed.
-- **Attribution badge visual design**: FEATURES.md defers exact placement/styling to a UI-SPEC pass — needs a dedicated design step before or during Phase 4 planning.
+- **Vercel Fluid Compute enablement on this specific project is unverified** — confirm status and explicitly set `maxDuration` on the weekly-review cron route before finalizing Phase 3's batch-size assumptions; do not assume the 800s ceiling is available by default.
+- **Funding model for autonomous (non-user-initiated) AI calls is undecided** — the weekly engine's LLM cost isn't naturally covered by `creditCheck`/`creditDeduct` (no user in the loop to charge); must be a conscious product decision (platform opex vs. athlete credit allocation) before Phase 3/6 implementation, not a default.
+- **Stepped-care / structural weekly-focus decision design has no confirmed consumer-fitness-app precedent** (LOW confidence in FEATURES.md, inferred from clinical/behavioral-health literature) — recommend a dedicated research pass scoped to this specific mechanic before Phase 3 planning locks the decision logic's shape.
+- **ANJ/JONUM reward-pool legal classification is unsettled French law, actively evolving** — treat the current research as an engineering-judgment starting point only; get legal counsel review before Phase 4 ships broadly, and revisit if any future proposal adds resale/transfer/paid-tier-gating to the reward pool.
+- **Migration path for athletes already past the existing 7-step onboarding is undecided** — explicit product call needed: do already-onboarded athletes get a retroactive AI-computed starting level, or are they grandfathered at a default? Flagged as an Integration Gotcha in PITFALLS.md, not yet resolved.
+- **Whether onboarding's confidence-scoring approach (self-reported field vs. logprob-based) needs revisiting** is explicitly deferred pending real usage data — flag as a v1.x follow-up trigger (manual review shows systematic over/under-confidence), not a Phase 2 blocker.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [GitHub Docs — Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
-- [GitHub Changelog — Updated rate limits for unauthenticated requests (2025-05-08)](https://github.blog/changelog/2025-05-08-updated-rate-limits-for-unauthenticated-requests/)
-- [hasaneyldrm/exercises-dataset — NOTICE.md](https://github.com/hasaneyldrm/exercises-dataset/blob/main/NOTICE.md) — direct source of attribution/resolution license terms
-- Context7 `/supabase/supabase-js` — Storage `upload`/`update`/`getPublicUrl`/`createSignedUrl` API surface
-- Direct repo reads: `supabase/migrations/001_initial_schema.sql`, `004_exercises_extended.sql`, `025_storage_buckets.sql`, `031_exercises_name_fr.sql`, `055_coach_exercises_schema.sql`, `20260527_coach_exercise_id_program_exercises.sql`, `supabase/seed_exercises.sql`, `backend/api/src/routes/storage.ts`, `scripts/food-data/import-foods.mjs`, `.planning/PROJECT.md`, `package.json`
+- Context7 `/vercel/ai` — `isStepCount()`, `stopWhen` composable conditions, `hasToolCall`, `providerOptions.anthropic.cacheControl`, structured-extraction (`generateObject`) patterns — current v6 docs
+- Direct repository inspection — `backend/api/src/context/user.ts`, `backend/api/src/tools/registry.ts`, `backend/api/src/routes/ai.ts`, `backend/api/src/routes/notifications-cron.ts`, `backend/api/src/coach/ai/service.ts`, `backend/api/vercel.json`, `apps/mobile/src/lib/PluginLoader.tsx`, `packages/plugin-sdk/src/types.ts`, `supabase/migrations/007_gamification_schema.sql`, `supabase/migrations/026_ai_credits.sql`, `.planning/PROJECT.md` Key Decisions (v1.4 lazy-reset precedent, dual-balance decision)
+- Vercel official docs — Managing Cron Jobs, Configuring Maximum Duration, Limits, Queues concepts — at-least-once delivery + duration ceiling confirmation
+- Duolingo — official partial-credit placement test engineering blog
+- Vercel Academy — Structured Data Extraction — official AI SDK docs, same SDK/version family in use here
 
 ### Secondary (MEDIUM confidence)
-- [hasaneyldrm/exercises-dataset — repository](https://github.com/hasaneyldrm/exercises-dataset) — dataset shape, derived from rendered page, not raw schema diff
-- [wger-project/wger — Administration Commands (`sync_exercises`)](https://wger.readthedocs.io/en/latest/administration/commands.html) — confirms "update matched, don't touch manual entries" as the domain-standard sync pattern
-- [Unsplash API Attribution Examples](https://medium.com/@unsplash/unsplash-api-attribution-examples-a4f0a02b33d0) — validates per-surface attribution UX pattern, different license terms
+- Freeletics Coach blog; Streak/milestone gamification roundups (AppStorys, Plotline); Noom onboarding critiques (The Behavioral Scientist, RevenueCat); Progressive disclosure UX sources (AI UX Playground, UXPin)
+- ANJ 2023 report, Le Mag Juridique loot-box regulation analysis, Assemblee Nationale Question n14570 — official/institutional French legal sources, cross-referenced but explicitly noted as an evolving/unsettled area
+- UX Collective — Gamification: Why Streaks Often Go Wrong (incl. Habitica loss-aversion data); Mem0 — Context Window is RAM, Not Storage; Mastra — Long-Term Memory for AI Agents
+- Frontiers in Sports and Active Living — adherence predictors — peer-reviewed, supports the real-activity-driven weekly engine design
 
 ### Tertiary (LOW confidence)
-- [ExerciseDB.io FAQ](https://exercisedb.io/faq) — ecosystem context only, not authoritative for this project's actual license (different provider)
-- [Gym visual Terms and Conditions](https://gymvisual.com/content/3-terms-and-conditions-of-use) — referenced by NOTICE.md but not independently fetched; verify directly before finalizing legal copy
+- JONUM legislative context summary — secondary summary, law actively evolving, verify current status before shipping Phase 4 broadly
+- data40.com "AI-driven loot boxes" — single source, treated cautiously; conflates odds-tuning with deterministic selection (see FEATURES.md Anti-Features)
+- Stepped-care/structural weekly-focus adaptation — inferred from general behavioral-health literature via training knowledge, not verified this session against any consumer-fitness-app precedent
 
 ---
-*Research completed: 2026-08-14*
+*Research completed: 2026-08-30*
 *Ready for roadmap: yes*

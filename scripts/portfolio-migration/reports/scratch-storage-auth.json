@@ -1,0 +1,638 @@
+{
+  "generated_at": "2026-10-02T16:49:41.106Z",
+  "target_ref": "rkirvurggtgjlkeuhded",
+  "mode": "full",
+  "passed": true,
+  "counts": {
+    "passed": 50,
+    "failed": 0,
+    "deferred": 6,
+    "missing": 0
+  },
+  "perSurface": {
+    "mobile-profile": {
+      "pass": 10,
+      "fail": 0,
+      "deferred": 0
+    },
+    "web-coach": {
+      "pass": 14,
+      "fail": 0,
+      "deferred": 0
+    },
+    "plugin-coach": {
+      "pass": 12,
+      "fail": 0,
+      "deferred": 0
+    },
+    "storage-only": {
+      "pass": 5,
+      "fail": 0,
+      "deferred": 0
+    },
+    "plugin-nutrition": {
+      "pass": 5,
+      "fail": 0,
+      "deferred": 0
+    },
+    "backend": {
+      "pass": 4,
+      "fail": 0,
+      "deferred": 6
+    }
+  },
+  "deferredRoutes": [
+    {
+      "id": "bk-clients-links-me",
+      "route": "GET /coach/clients/links/me"
+    },
+    {
+      "id": "bk-videos-upload-url",
+      "route": "POST /coach/videos/upload-url"
+    },
+    {
+      "id": "bk-videos-signed-url",
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-audio-url",
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-exercises-media-url",
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-imports-create",
+      "route": "POST /coach/imports"
+    }
+  ],
+  "cases": [
+    {
+      "id": "av-upload-own",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "A",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "av-update-own",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "A",
+      "op": "update",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "av-public-read",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "av-foreign-write",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "B",
+      "op": "upload",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "av-delete-own",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "A",
+      "op": "delete",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cl-upload-own",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-logos",
+      "actor": "C",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cl-public-read",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-logos",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cl-foreign-write",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-logos",
+      "actor": "D",
+      "op": "upload",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "em-public-read",
+      "surface": "plugin-coach",
+      "bucket": "ziko-exercise-media",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "em-auth-upload",
+      "surface": "plugin-coach",
+      "bucket": "ziko-exercise-media",
+      "actor": "A",
+      "op": "upload",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "em-service-oversize",
+      "surface": "storage-only",
+      "bucket": "ziko-exercise-media",
+      "actor": "service",
+      "op": "service-upload",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "em-service-textplain",
+      "surface": "storage-only",
+      "bucket": "ziko-exercise-media",
+      "actor": "service",
+      "op": "service-upload",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "pp-upload-own",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "A",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "pp-signed-read",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "A",
+      "op": "sign-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "pp-foreign-write",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "B",
+      "op": "upload",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "pp-baseline-public-url",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "anon",
+      "op": "baseline-public-url",
+      "expect": "baseline",
+      "observed": "baseline",
+      "ok": true
+    },
+    {
+      "id": "pp-baseline-remove",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "A",
+      "op": "baseline-remove",
+      "expect": "baseline",
+      "observed": "baseline",
+      "ok": true
+    },
+    {
+      "id": "sp-signed-upload-own",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "signed-upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-sign-upload-own",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "sign-upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-read-own",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-backend-own",
+      "surface": "backend",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-backend-foreign",
+      "surface": "backend",
+      "bucket": "ziko-scan-photos",
+      "actor": "B",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "sp-foreign-read",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "sp-delete-own",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "delete",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-signed-upload",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "signed-upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-own",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "D",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-unknown-bucket",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "ck-web-photo-own",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-photo",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-photo-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "A",
+      "op": "route-photo",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-foreign-read",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "D",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-upsert-overwrite",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "update",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ce-upload-own",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-exercises",
+      "actor": "C",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ce-foreign-read",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-exercises",
+      "actor": "D",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ex-read-own",
+      "surface": "storage-only",
+      "bucket": "ziko-exports",
+      "actor": "A",
+      "op": "read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ex-foreign-read",
+      "surface": "storage-only",
+      "bucket": "ziko-exports",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ex-upload-denied",
+      "surface": "storage-only",
+      "bucket": "ziko-exports",
+      "actor": "A",
+      "op": "upload",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ai-signed-upload-pdf",
+      "surface": "web-coach",
+      "bucket": "ziko-ai-imports",
+      "actor": "A",
+      "op": "signed-upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ai-wrong-mime",
+      "surface": "web-coach",
+      "bucket": "ziko-ai-imports",
+      "actor": "A",
+      "op": "upload",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "ai-foreign-read",
+      "surface": "web-coach",
+      "bucket": "ziko-ai-imports",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ai-backend-own",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "A",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ai-backend-foreign",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "B",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "cv-upload-own",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cv-upload-second",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cv-wrong-mime",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "upload",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "cv-link",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "service",
+      "op": "link",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cv-coach-read-linked",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "C",
+      "op": "read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cv-outsider-read",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "D",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "cv-revoke",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "service",
+      "op": "revoke",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cv-coach-read-revoked",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-videos",
+      "actor": "C",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "bk-clients-links-me",
+      "surface": "backend",
+      "bucket": "ziko-coach-kyc",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "GET /coach/clients/links/me"
+    },
+    {
+      "id": "bk-videos-upload-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "POST /coach/videos/upload-url"
+    },
+    {
+      "id": "bk-videos-signed-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "C",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-audio-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-exercises-media-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-exercises",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-imports-create",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "deferred-table-codemod",
+      "observed": "deferred-table-codemod",
+      "ok": true,
+      "route": "POST /coach/imports"
+    }
+  ]
+}

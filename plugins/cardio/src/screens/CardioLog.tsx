@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Alert,
+  View, Text, TextInput, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS } from '../store';
 
 const ACTIVITY_TYPES = Object.entries(ACTIVITY_LABELS);
@@ -69,7 +69,7 @@ export default function CardioLog({ supabase }: { supabase: any }) {
       addSession(data);
       router.back();
     } catch (err: any) {
-      Alert.alert('Erreur', err.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
     } finally {
       setSaving(false);
     }

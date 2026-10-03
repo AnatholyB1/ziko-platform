@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { useSleepStore } from '../store';
 
 function pad(n: number) {
@@ -92,7 +92,7 @@ export default function SleepLog({ supabase }: { supabase: any }) {
       if (data) addLog(data);
       router.back();
     } catch (e: any) {
-      Alert.alert('Erreur', e.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', e.message ?? 'Impossible de sauvegarder');
     }
     setSaving(false);
   };
