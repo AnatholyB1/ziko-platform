@@ -160,11 +160,11 @@ Plans:
 **Plans**: 20 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Wave 0 TDD: 12-codemod-tables.mjs, map-driven table/RPC/embed(alias)/realtime codemod with fail-closed scan and repo-wide --check (CUTOVER-01)
-- [ ] 06-02-PLAN.md — Wave 0: 13-cutover-delta.mjs single-gate delta orchestrator (auth -> reload -> add-only storage -> --check all) + tests (CUTOVER-03, CUTOVER-04)
-- [ ] 06-03-PLAN.md — Wave 0: lib-cutover + 14-signup-isolation + 15-smoke-core-flows, self-cleaning temp users (CUTOVER-03, CUTOVER-04)
-- [ ] 06-04-PLAN.md — Wave 0: 16-ci-migration-guard, frozen legacy manifest, migrate-supabase replaced by dormant ref-locked migrate-portfolio (CUTOVER-05)
-- [ ] 06-05-PLAN.md — Wave 0: 17-env-switch (local/Vercel/EAS, audited matrix, flip = rollback with --target) (CUTOVER-01, CUTOVER-02)
+- [x] 06-01-PLAN.md — Wave 0 TDD: 12-codemod-tables.mjs, map-driven table/RPC/embed(alias)/realtime codemod with fail-closed scan and repo-wide --check (CUTOVER-01)
+- [x] 06-02-PLAN.md — Wave 0: 13-cutover-delta.mjs single-gate delta orchestrator (auth -> reload -> add-only storage -> --check all) + tests (CUTOVER-03, CUTOVER-04)
+- [x] 06-03-PLAN.md — Wave 0: lib-cutover + 14-signup-isolation + 15-smoke-core-flows, self-cleaning temp users (CUTOVER-03, CUTOVER-04)
+- [x] 06-04-PLAN.md — Wave 0: 16-ci-migration-guard, frozen legacy manifest, migrate-supabase replaced by dormant ref-locked migrate-portfolio (CUTOVER-05)
+- [x] 06-05-PLAN.md — Wave 0: 17-env-switch (local/Vercel/EAS, audited matrix, flip = rollback with --target) (CUTOVER-01, CUTOVER-02)
 - [ ] 06-06-PLAN.md — RLS fixture app flag (D-18), smoke checklist (17 carried items + core flows), authorization log, RUNBOOK Phase 6 (CUTOVER-03, CUTOVER-04)
 - [ ] 06-07-PLAN.md — [BLOCKING] Disable auto-chain; merge working line into main with migrate job dormant (typed phrase) (CUTOVER-05, CUTOVER-03)
 - [ ] 06-08-PLAN.md — gsd/phase-6-cutover: apply bucket + table codemods, fkey hint map, zero residuals, green checks (CUTOVER-01)
@@ -205,5 +205,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 0/20 | Planned | - |
+| 6. Cutover | 5/20 | In Progress|  |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
