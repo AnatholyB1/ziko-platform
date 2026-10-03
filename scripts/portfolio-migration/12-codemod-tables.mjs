@@ -102,6 +102,7 @@ export const RESIDUAL_EXCLUDE_PREFIXES = [
   'scripts/portfolio-migration/',
   'scripts/auth-merge/',
   'scripts/purge-test-accounts/',
+  'apps/web/test/legal/retention-config.test.ts', // asserts the TEXT of a legacy (immutable) migration file; already ENOENT on main
   'apps/web/test/purge/', // unit tests of scripts/purge-test-accounts (ziko-side, itself excluded)
   'scripts/waitlist-erasure/', // Phase 7 follow-up: operates on ziko by ref (SUPABASE_URL env)
   'scripts/food-data/', // Phase 7 follow-up: operates on ziko by ref (SUPABASE_URL env)
