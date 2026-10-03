@@ -1,13 +1,15 @@
 ---
 phase: 06-cutover
 plan: 16
-status: awaiting-user-ui-review (Task 4)
+status: complete
 requirements: [CUTOVER-02, CUTOVER-03, CUTOVER-04]
 ---
 
 # 06-16 Summary: production web flip to portfolio
 
 WEB FLIP SMOKE (scripted): PASS
+
+WEB FLIP SMOKE: PASS (W-01 and W-04 accepted as covered by scripted tests, by user decision)
 
 Task 4 (the user's UI checklist W-01, W-02, W-03, W-04, W-06) is NOT done. The final `WEB FLIP SMOKE: PASS` line is deliberately not written yet: it depends on the user's results. W-05 stays pending 06-18.
 
@@ -70,3 +72,13 @@ User's Task 4: W-01, W-02, W-03, W-04, W-06 on https://ziko-app.com (re-login ex
 ## Known Stubs
 
 None.
+
+
+## Task 4 outcome (browser check on production ziko-app.com, coach login)
+- W-06 client list: PASS (1 client listed).
+- W-03 branding: PASS on display (existing migrated logo renders in the athlete preview). Logo replace not exercised, to avoid overwriting the real logo.
+- W-02 exercise media: upload accepted (storage write to portfolio OK); not saved, removed from the form. One tiny test PNG remains orphaned in the ziko-coach-exercises bucket.
+- W-01 KYC: documents section lists the migrated document; no upload or open performed (sensitive ID documents).
+- W-04 AI import: page loads with migrated history; upload not exercised (costs 1 AI credit and creates a record).
+- User reply (verbatim): "accept scripted": W-01 and W-04 accepted as covered by the scripted production runs (26/26 storage/route harness, 13/13 core flows). W-05 stays pending 06-18.
+- Open items: Preview/Development Vercel env scopes for shared web records may still hold ziko values (user decision); SUPABASE_PUBLISHABLE_KEY on ziko-web untouched; orphan test PNG in ziko-coach-exercises.
