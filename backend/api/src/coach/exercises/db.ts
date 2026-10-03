@@ -5,6 +5,7 @@ import type {
   CreateExerciseBody,
   UpdateExerciseBody,
 } from './types.js';
+import { STORAGE_BUCKETS } from '../../config/buckets.js';
 
 export function createUserClient(jwt: string) {
   return createClient(
@@ -78,7 +79,7 @@ export async function getMediaUrls(
 
   if (exercise.video_path) {
     const { data: videoSigned, error: videoErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl(exercise.video_path, 3600);
     if (videoErr) {
       console.warn('[coach/exercises] getMediaUrls video sign error:', videoErr.message);
@@ -89,7 +90,7 @@ export async function getMediaUrls(
 
   if (exercise.photo_path) {
     const { data: photoSigned, error: photoErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl(exercise.photo_path, 3600);
     if (photoErr) {
       console.warn('[coach/exercises] getMediaUrls photo sign error:', photoErr.message);
@@ -100,7 +101,7 @@ export async function getMediaUrls(
 
   if ((exercise as any).gif_path) {
     const { data: gifSigned, error: gifErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl((exercise as any).gif_path, 3600);
     if (gifErr) {
       console.warn('[coach/exercises] getMediaUrls gif sign error:', gifErr.message);
@@ -202,13 +203,13 @@ export async function deleteExercise(
 
   // Step 3: Delete storage files if paths exist (user JWT — RLS allows own-prefix DELETE)
   if (row.video_path) {
-    await db.storage.from('coach-exercises').remove([row.video_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.video_path]);
   }
   if (row.photo_path) {
-    await db.storage.from('coach-exercises').remove([row.photo_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.photo_path]);
   }
   if ((row as any).gif_path) {
-    await db.storage.from('coach-exercises').remove([(row as any).gif_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([(row as any).gif_path]);
   }
 
   // Step 4: Delete the DB row

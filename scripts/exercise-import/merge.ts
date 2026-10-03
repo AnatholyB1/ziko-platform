@@ -8,7 +8,7 @@
  * runs). It reads the human-approved `.planning/workstreams/image-exo/
  * reports/match-report.json`, writes to `public.exercises`,
  * `public.exercises_merge_backup`, `public.exercise_import_log`, and the
- * `exercise-media` Storage bucket, and never issues a DELETE anywhere.
+ * `ziko-exercise-media` Storage bucket, and never issues a DELETE anywhere.
  *
  * It requires an interactive TTY confirmation and has NO bypass flag by
  * design — see the `isTTY` guard at the very top of `main()` below. There

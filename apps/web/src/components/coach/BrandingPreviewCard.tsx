@@ -13,6 +13,7 @@ import {
 } from 'react-icons/io5';
 import gsap from 'gsap';
 import { createClientSupabase } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
 // ── Derived palette swatches ────────────────────────────
 const PALETTE_SWATCHES = [
@@ -53,7 +54,7 @@ export function BrandingPreviewCard({
   const accent = validColor ?? '#FF5C1A';
 
   const logoUrl: string | null = logoPath
-    ? createClientSupabase().storage.from('coach-logos').getPublicUrl(logoPath).data.publicUrl
+    ? createClientSupabase().storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(logoPath).data.publicUrl
     : null;
 
   const toneLabel = tone ? (TONE_LABELS[tone] ?? null) : null;

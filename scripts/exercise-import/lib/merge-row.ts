@@ -23,7 +23,7 @@ import { mapDatasetCategory } from './category';
 
 // The Storage bucket every uploaded thumbnail/GIF lands in (Phase 1
 // 20260814_exercise_media_schema.sql — public read, service-role write).
-export const EXERCISE_MEDIA_BUCKET = 'exercise-media';
+export const EXERCISE_MEDIA_BUCKET = 'ziko-exercise-media';
 
 // A thrown error's message is truncated to this length before becoming
 // result.errorMessage, so one pathological error can't bloat the import

@@ -172,7 +172,7 @@ describe('imports routes', () => {
     _mockStorageFromImpl = vi.fn().mockReturnValue({
       createSignedUploadUrl: vi.fn().mockResolvedValue({
         data: {
-          signedUrl: 'https://supabase.co/storage/v1/object/sign/ai-imports/signed',
+          signedUrl: 'https://supabase.co/storage/v1/object/sign/ziko-ai-imports/signed',
           path: `test-user-id/${TEST_UUID}/test.pdf`,
           token: 'test-token',
         },

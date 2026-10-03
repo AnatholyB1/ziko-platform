@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { IoPersonOutline, IoCloudUploadOutline } from 'react-icons/io5';
 import gsap from 'gsap';
 import { createClientSupabase } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
 const ALLOWED_TYPES = ['image/png', 'image/svg+xml'];
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -23,7 +24,7 @@ export function LogoUpload({ userId, currentPath, onUploaded, onRemoved }: LogoU
   const displayUrl: string | null =
     localPreviewUrl ??
     (currentPath
-      ? createClientSupabase().storage.from('coach-logos').getPublicUrl(currentPath).data.publicUrl
+      ? createClientSupabase().storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(currentPath).data.publicUrl
       : null);
 
   function shakeError() {
@@ -57,7 +58,7 @@ export function LogoUpload({ userId, currentPath, onUploaded, onRemoved }: LogoU
       const path = `${userId}/logo.${ext}`;
       const supabase = createClientSupabase();
       const { error: uploadError } = await supabase.storage
-        .from('coach-logos')
+        .from(STORAGE_BUCKETS.coachLogos)
         .upload(path, file, { upsert: true });
       if (uploadError) throw uploadError;
       onUploaded(path);

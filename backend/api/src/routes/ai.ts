@@ -12,6 +12,7 @@ import {
 } from '../context/conversation.js';
 import { AGENT_MODEL, VISION_MODEL } from '../config/models.js';
 import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
+import { STORAGE_BUCKETS } from '../config/buckets.js';
 
 const router = new Hono();
 router.use('*', authMiddleware);
@@ -376,7 +377,7 @@ router.post('/vision/nutrition', creditCheck('scan'), creditDeduct('scan'), asyn
       { global: { headers: { Authorization: `Bearer ${userToken}` } }, auth: { autoRefreshToken: false, persistSession: false } }
     );
     const { data, error } = await userSupabase.storage
-      .from('scan-photos')
+      .from(STORAGE_BUCKETS.scanPhotos)
       .download(storage_path);
     if (error || !data) {
       return c.json({ error: 'Failed to fetch image from storage' }, 400);

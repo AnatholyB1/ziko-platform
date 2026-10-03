@@ -453,6 +453,6 @@ describe('FK safety', () => {
 
 describe('EXERCISE_MEDIA_BUCKET', () => {
   it('is the exercise-media bucket name', () => {
-    expect(EXERCISE_MEDIA_BUCKET).toBe('exercise-media');
+    expect(EXERCISE_MEDIA_BUCKET).toBe('ziko-exercise-media');
   });
 });

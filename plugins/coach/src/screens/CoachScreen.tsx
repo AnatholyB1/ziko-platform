@@ -30,7 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import { useThemeStore, useTranslation, showAlert, coachStorage } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -339,7 +339,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     displayName: string;
   }) => {
     const effectiveUri = logoUrl
-      ? supabase.storage.from('coach-logos').getPublicUrl(logoUrl).data.publicUrl
+      ? supabase.storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(logoUrl).data.publicUrl
       : photoUrl ?? null;
 
     return effectiveUri ? (

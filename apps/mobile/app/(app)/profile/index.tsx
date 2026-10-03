@@ -5,7 +5,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -211,10 +211,10 @@ function PRProgressTab({
       formData.append('file', { uri, name: `${Date.now()}.jpg`, type: 'image/jpeg' } as any);
       const fileName = `${userId}/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
+        .from(STORAGE_BUCKETS.profilePhotos)
         .upload(fileName, formData, { contentType: 'multipart/form-data', upsert: false });
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from(STORAGE_BUCKETS.profilePhotos).getPublicUrl(fileName);
       const photoUrl = urlData.publicUrl;
       const { error: insertError } = await supabase.from('body_measurements').insert({
         user_id: userId,
@@ -248,10 +248,10 @@ function PRProgressTab({
           style: 'destructive',
           onPress: async () => {
             // Extraire le path du storage depuis l'URL publique
-            // URL format: .../storage/v1/object/public/profile-photos/{userId}/{timestamp}.jpg
-            const urlParts = photoUrl.split('/profile-photos/');
+            // URL format: .../storage/v1/object/public/ziko-profile-photos/{userId}/{timestamp}.jpg
+            const urlParts = photoUrl.split('/ziko-profile-photos/');
             if (urlParts.length > 1) {
-              await supabase.storage.from('profile-photos').remove([urlParts[1]]);
+              await supabase.storage.from(STORAGE_BUCKETS.profilePhotos).remove([urlParts[1]]);
             }
             await supabase.from('body_measurements').delete().eq('id', id);
             queryClient.invalidateQueries({ queryKey: ['measurements', userId] });

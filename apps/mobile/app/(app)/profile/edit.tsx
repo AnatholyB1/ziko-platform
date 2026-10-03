@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
@@ -133,7 +133,7 @@ export default function EditProfileScreen() {
       const blob = await response.blob();
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from(STORAGE_BUCKETS.avatars)
         .upload(`${userId}/avatar.jpg`, blob, {
           contentType: 'image/jpeg',
           upsert: true,
@@ -145,7 +145,7 @@ export default function EditProfileScreen() {
       }
 
       const { data: urlData } = supabase.storage
-        .from('avatars')
+        .from(STORAGE_BUCKETS.avatars)
         .getPublicUrl(`${userId}/avatar.jpg`);
 
       const publicUrl = urlData.publicUrl;

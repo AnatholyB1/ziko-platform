@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth.js';
+import { STORAGE_BUCKETS } from '../config/buckets.js';
 
 const supabaseUrl = process.env.SUPABASE_URL!;
 const serviceKey = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!;
@@ -9,7 +10,7 @@ const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports', 'coach-kyc', 'ai-imports', 'coach-exercises'] as const;
+const ALLOWED_BUCKETS = [STORAGE_BUCKETS.profilePhotos, STORAGE_BUCKETS.scanPhotos, STORAGE_BUCKETS.exports, STORAGE_BUCKETS.coachKyc, STORAGE_BUCKETS.aiImports, STORAGE_BUCKETS.coachExercises] as const;
 type AllowedBucket = typeof ALLOWED_BUCKETS[number];
 
 // ── User-facing storage router (requires JWT auth) ────────
@@ -137,8 +138,8 @@ storageCleanupRouter.post('/cron/cleanup', async (c) => {
   }
 
   try {
-    const scanResult = await cleanupBucket('scan-photos', SCAN_PHOTOS_RETENTION_MS);
-    const exportsResult = await cleanupBucket('exports', EXPORTS_RETENTION_MS);
+    const scanResult = await cleanupBucket(STORAGE_BUCKETS.scanPhotos, SCAN_PHOTOS_RETENTION_MS);
+    const exportsResult = await cleanupBucket(STORAGE_BUCKETS.exports, EXPORTS_RETENTION_MS);
     const allErrors = [...scanResult.errors, ...exportsResult.errors];
 
     if (allErrors.length > 0) {

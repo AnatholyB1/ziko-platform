@@ -29,6 +29,7 @@ import type {
   CreateAnnotationBody,
   UpdateAnnotationBody,
 } from './types.js';
+import { STORAGE_BUCKETS } from '../../config/buckets.js';
 
 // ─── Claude cleaning prompt (D-05) ───────────────────────────────────────────
 const CLEANING_SYSTEM_PROMPT =
@@ -76,7 +77,7 @@ videosRouter.post('/upload-url', async (c) => {
   // The TTL is controlled server-side in the Supabase bucket config (set to 900s there).
   // This mirrors the existing pattern in backend/api/src/routes/storage.ts.
   const { data, error } = await supabaseAdmin.storage
-    .from('coach-videos')
+    .from(STORAGE_BUCKETS.coachVideos)
     .createSignedUploadUrl(path);
 
   if (error || !data) {
@@ -320,7 +321,7 @@ videosRouter.get('/:videoId/signed-url', async (c) => {
 
   // Use createSignedUrl (read), not createSignedUploadUrl (write) — V6 / D-11
   const { data, error } = await supabaseAdmin.storage
-    .from('coach-videos')
+    .from(STORAGE_BUCKETS.coachVideos)
     .createSignedUrl(video.storage_path, 900); // 900s = 15 minutes
 
   if (error || !data) {
@@ -464,7 +465,7 @@ videosRouter.post(
       const path = `${video.athlete_id}/annotations/${randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
-        .from('coach-videos')
+        .from(STORAGE_BUCKETS.coachVideos)
         .upload(path, buffer, { contentType: mimeType });
 
       if (uploadError) {
@@ -533,7 +534,7 @@ videosRouter.get('/annotations/:annotationId/audio-url', async (c) => {
 
   // Create 15-min signed read URL (900s = 15 minutes)
   const { data, error } = await supabaseAdmin.storage
-    .from('coach-videos')
+    .from(STORAGE_BUCKETS.coachVideos)
     .createSignedUrl(annotation.audio_path, 900);
 
   if (error || !data) {

@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 
@@ -94,7 +94,7 @@ export default function AvatarUploadScreen() {
     formData.append('file', { uri: finalUri, name: 'avatar.jpg', type: 'image/jpeg' } as any);
 
     const { error } = await supabase.storage
-      .from('avatars')
+      .from(STORAGE_BUCKETS.avatars)
       .upload(path, formData, { upsert: true, contentType: 'image/jpeg' });
 
     clearInterval(progressInterval);
@@ -106,7 +106,7 @@ export default function AvatarUploadScreen() {
     }
 
     setUploadProgress(1);
-    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { data } = supabase.storage.from(STORAGE_BUCKETS.avatars).getPublicUrl(path);
     // Bust cache so the new image loads immediately
     return `${data.publicUrl}?t=${Date.now()}`;
   }
@@ -214,7 +214,7 @@ export default function AvatarUploadScreen() {
 
               // Delete from storage (best-effort)
               await supabase.storage
-                .from('avatars')
+                .from(STORAGE_BUCKETS.avatars)
                 .remove([`${user.id}/avatar.jpg`]);
 
               await supabase

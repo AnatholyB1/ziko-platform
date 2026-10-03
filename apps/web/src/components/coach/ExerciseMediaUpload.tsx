@@ -93,7 +93,7 @@ function UploadRow({
     try {
       const safeName = `${Date.now()}-${file.name}`;
       const urlRes = await fetch(
-        `/api/storage/upload-url?bucket=coach-exercises&path=${userId}/${safeName}`,
+        `/api/storage/upload-url?bucket=ziko-coach-exercises&path=${userId}/${safeName}`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!urlRes.ok) throw new Error('Upload URL failed');

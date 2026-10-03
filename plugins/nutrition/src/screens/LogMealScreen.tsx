@@ -227,7 +227,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
       // Step 1: get signed upload URL for scan-photos bucket (per D-22)
       const scanPath = `${userId}/scan-${Date.now()}.jpg`;
       const urlRes = await fetch(
-        `${apiUrl}/storage/upload-url?bucket=scan-photos&path=${scanPath}`,
+        `${apiUrl}/storage/upload-url?bucket=ziko-scan-photos&path=${scanPath}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!urlRes.ok) {

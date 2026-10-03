@@ -10,6 +10,7 @@ import {
 } from 'react-icons/io5';
 import { createClientSupabase } from '@/lib/supabase/client';
 import type { CoachExercise } from '@/types/coach';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
 const MAX_VISIBLE_MUSCLES = 3;
 
@@ -30,7 +31,7 @@ export function ExerciseRow({ exercise, onEdit, onDelete }: ExerciseRowProps) {
     (async () => {
       const supabase = createClientSupabase();
       const { data } = await supabase.storage
-        .from('coach-exercises')
+        .from(STORAGE_BUCKETS.coachExercises)
         .createSignedUrl(exercise.photo_path!, 3600);
       if (!cancelled && data?.signedUrl) {
         setPhotoSignedUrl(data.signedUrl);

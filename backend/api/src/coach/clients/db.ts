@@ -11,8 +11,9 @@ import type {
   ClientSummary,
 } from './types.js';
 import { getBranding, type BrandingRow } from '../branding/db.js';
+import { STORAGE_BUCKETS } from '../../config/buckets.js';
 
-const COACH_PHOTO_BUCKET = 'coach-kyc';
+const COACH_PHOTO_BUCKET = STORAGE_BUCKETS.coachKyc;
 const SIGNED_URL_TTL_SECONDS = 300; // 5 minutes per RESEARCH.md §Don't Hand-Roll
 
 // Service client for storage signing — coach-kyc bucket restricts reads to owner,
