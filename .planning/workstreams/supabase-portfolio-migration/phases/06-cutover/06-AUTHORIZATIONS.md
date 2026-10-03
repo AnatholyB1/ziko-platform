@@ -35,3 +35,8 @@ Reply: "approve main option-merge-working-branch"
 Typed authorization: approve ubxllsvanurkwkohzxau option-preview-smoke
 Timestamp: 2026-10-03T12:21:49Z
 Reply: "approve ubxllsvanurkwkohzxau option-preview-smoke"
+
+### 06-13 final delta
+Typed authorization: approve ubxllsvanurkwkohzxau option-cutover-delta
+Timestamp: 2026-10-03T13:51:10Z
+Reply: "approve ubxllsvanurkwkohzxau option-cutover-delta"
