@@ -699,7 +699,7 @@ export async function main(argv) {
     console.log(HELP);
     return 0;
   }
-  if (args.withCodemodPatch !== undefined) {
+  if (args.withCodemodPatch !== undefined && args.withCodemodPatch !== null) {
     console.error('obsolete: codemods are in the tree');
     return 2;
   }
