@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -33,49 +34,80 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-  # ─── Migrations Supabase (only on push to main) ─────────────────────────
-  # Note: Vercel handles API + web deployments via GitHub integration.
-  migrate-supabase:
-    name: Apply Supabase migrations
-    needs: [verify]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  # ─── Guard: frozen legacy migrations + ziko_-only portfolio SQL (D-16) ──
+  migration-guard:
+    name: migration-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Legacy migrations are frozen
+        run: node scripts/portfolio-migration/16-ci-migration-guard.mjs --check-legacy
+      - name: Portfolio migrations are ziko_-only
+        run: node scripts/portfolio-migration/16-ci-migration-guard.mjs --check-portfolio
+
+  # ─── Portfolio migrations (dormant until PORTFOLIO_MIGRATIONS_ENABLED=true) ─
+  # Applies only ziko_ portfolio migrations newer than scripts/portfolio-migration/portfolio-migrations.watermark;
+  # bump the watermark in the commit after a successful apply. Legacy supabase/migrations/ is frozen
+  # (ziko history, never pushed).
+  # Note: Vercel handles API + web deployments via GitHub integration.
+  migrate-portfolio:
+    name: migrate-portfolio
+    needs: [verify, migration-guard]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') && vars.PORTFOLIO_MIGRATIONS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
           fetch-depth: 2
-
-      - name: Check for migration changes
-        id: migrations
-        run: |
-          if git diff --name-only HEAD~1 HEAD | grep -q '^supabase/migrations/'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Setup Supabase CLI
-        if: steps.migrations.outputs.changed == 'true'
         uses: supabase/setup-cli@v1
         with:
-          version: latest
-
-      - name: Push migrations
-        if: steps.migrations.outputs.changed == 'true'
+          version: 2.116.0
+      - name: Refuse any project other than portfolio
         run: |
-          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
-          # Mark all existing migrations as applied except the new ones,
-          # so db push only runs the new files.
-          NEW=$(git diff --name-only HEAD~1 HEAD | grep '^supabase/migrations/' | xargs -I{} basename {} .sql)
-          for f in supabase/migrations/*.sql; do
-            version=$(basename "$f" .sql)
-            if ! echo "$NEW" | grep -qx "$version"; then
-              supabase migration repair --status applied "$version" 2>/dev/null || true
-            fi
+          if [ "$SUPABASE_PROJECT_ID" != "ubxllsvanurkwkohzxau" ]; then
+            echo "refusing: not portfolio"
+            exit 1
+          fi
+          echo "project ref ok"
+      - name: Link portfolio project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Read-only proof of link
+        run: |
+          supabase db query --linked -o json "select count(*)::int as ziko_tables from pg_tables where schemaname = 'public' and left(tablename, 5) = 'ziko_'" > proof.json
+          node -e "
+            const raw = require('fs').readFileSync('proof.json', 'utf8');
+            const m = raw.match(/\"ziko_tables\"\s*:\s*(\d+)/);
+            const n = m ? Number(m[1]) : -1;
+            console.log('ziko_ tables:', n);
+            if (n < 99) { console.error('FAIL: expected >= 99 ziko_ tables'); process.exit(1); }
+          "
+      - name: Apply pending portfolio migrations
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            PENDING=$(node scripts/portfolio-migration/16-ci-migration-guard.mjs --pending --base HEAD~1)
+          else
+            PENDING=""
+          fi
+          if [ -z "$PENDING" ]; then
+            echo "no pending portfolio migrations"
+            exit 0
+          fi
+          for f in $PENDING; do
+            echo "applying $f"
+            supabase db query --linked -f "$f"
           done
-          supabase db push --include-all
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   # ─── Guard: no SERVICE_ROLE under coach/ (ARCH-02, D-12) ────────────────
   no-service-role-in-coach:
