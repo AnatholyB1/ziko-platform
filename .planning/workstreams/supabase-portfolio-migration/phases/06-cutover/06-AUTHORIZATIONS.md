@@ -30,3 +30,8 @@ Each phrase is listed in an example block prefixed `Phrase:` so that no line sta
 Typed authorization: approve main option-merge-working-branch
 Timestamp: 2026-10-03T00:18:55Z
 Reply: "approve main option-merge-working-branch"
+
+### 06-12 preview smoke
+Typed authorization: approve ubxllsvanurkwkohzxau option-preview-smoke
+Timestamp: 2026-10-03T12:21:49Z
+Reply: "approve ubxllsvanurkwkohzxau option-preview-smoke"
