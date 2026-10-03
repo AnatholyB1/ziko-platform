@@ -360,3 +360,13 @@ recording rules are documented there. Only the user's verbatim reply is recorded
 - expo-updates enablement.
 - Token retirement: delete `scripts/auth-merge/.access-token` and revoke PAT `ziko-cutover-phase6` at
   https://supabase.com/dashboard/account/tokens.
+
+### 6.7 As executed (2026-10-03, UTC)
+
+- Backend flip: API production env flip 14:29:36 to 14:29:56, cutover PR #38 merged 14:30:34, web and API merge deployments READY about 14:31:30 and 14:32:00, web pinned to its previous deployment 14:37:35 to 14:37:40, smoke 14:39:58 to 14:43:54 (core flows 10/10, storage/route harness 26/26, signup isolation). Rollback targets kept: API ziko-5zc66dk2x, web ziko-7xwkvllrp.
+- Web flip: production env flip (5 names) 15:00:00 to 15:00:37, fresh no-cache redeploy from 15:02:37, READY about 15:04:37, promote 15:07:35 to 15:08:02 (dpl_3awm4RAZcYwA...), smoke 15:09 to 15:13 (core flows 13/13, harness 26/26 incl. web live spec 6/6).
+- CI repoint (06-17): dispatched run 37139860455 green. Needed PRs #39 (TS6307, stale paths) and #40 (two remote timing specs skip on CI). First CI token had a trailing newline in the stored secret; replaced by a second token.
+- Mobile (06-18): EAS env switched for production and preview; version 1.5.0 via PR #41; PR #42 added SENTRY_DISABLE_AUTO_UPLOAD to the preview profile; preview build d05e6e41 finished in about 25.6 min (first attempt errored on Sentry upload). Device checklist waived by the user.
+- Store release (06-19): v1.5.0 failed at Setup EAS (Node 20 vs eas-cli 24.10), fixed by PR #43 (Node 22); v1.5.1 built Android (953d5957) but iOS (8ed39a53) failed on the Sign in with Apple provisioning profile; Android 1.5.0 (versionCode 16) submitted manually to the Play production track (submission finished). iOS unreleased.
+- Deviations: web ran new code against ziko env for about 6 minutes after the PR #38 merge before the pin; AI chat checks waived throughout (Anthropic balance empty); W-01 and W-04 accepted as covered by scripted tests; mobile device checklist waived; API crons return 401 (pre-existing, not caused by the flip).
+- Final regression (06-20): data, storage and auth tenant checks vs the pre-cutover baselines pass with 0 rh_/gecko_ change; sv_* drift (and one new sv-documents bucket) is live Sevalys traffic. Evidence: reports/portfolio-cutover-final.json.

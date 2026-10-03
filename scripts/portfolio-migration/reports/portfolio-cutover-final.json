@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-10-03T21:55:00Z",
+  "target": "portfolio",
+  "note": "Run although 06-19 did not write MOBILE FLIP: PASS (user-directed). Read-only.",
+  "tenants": {
+    "data": {
+      "check": "06-verify-data --check tenants vs portfolio-tenants-precutover.json",
+      "result": "PASS",
+      "tables": 55,
+      "row_count_deltas": 4,
+      "deltas": { "sv_mail_outbox": "10 -> 22", "sv_project_fact_notes": "1 -> 4", "sv_project_facts": "5 -> 8", "sv_throttle": "25 -> 23" },
+      "rh_gecko_changes": 0,
+      "explanation": "sv_* (Sevalys) live traffic on the shared project, not Ziko and not rh_/gecko_"
+    },
+    "storage": {
+      "check": "09-verify-storage --check tenants vs portfolio-storage-tenants-precutover.json",
+      "result": "PASS",
+      "non_ziko_policies": 17,
+      "non_ziko_buckets_now": 9,
+      "non_ziko_buckets_baseline": 8,
+      "regressions": 0,
+      "explanation": "one new bucket sv-documents (Sevalys); no baseline bucket or policy changed"
+    },
+    "auth": {
+      "check": "scripts/auth-merge/06-verify --check tenants vs portfolio-baseline-precutover.json",
+      "result": "PASS",
+      "users_now": 46,
+      "users_baseline": 46,
+      "sv_row_drift_warnings": 4
+    }
+  },
+  "integrity": {
+    "rls": "PASS 99/99 tables",
+    "triggers": "PASS 18 inspected, 0 not enabled",
+    "fk": "PASS 144 constraints validated",
+    "orphans": "PASS 0 orphans"
+  },
+  "leftovers": {
+    "temp_test_users_example_domain": 0,
+    "ziko_profiles_for_example_domain_users": 0,
+    "ziko_profiles_total": 39,
+    "ziko_users_created_since_flip": 0,
+    "users_created_last_24h": 1,
+    "users_created_last_24h_note": "created before the pre-cutover baseline (included in 46), not a ziko account"
+  },
+  "production_health": {
+    "api_lilac_health": 200,
+    "api_custom_domain_health": 200,
+    "web_apex": 200,
+    "web_login": 200
+  },
+  "crons": {
+    "flip_time_backend_utc": "2026-10-03T14:29:36Z",
+    "ran_since_flip": [
+      { "path": "/notifications/cron/streak-at-risk", "at": "2026-10-03T21:00Z", "status": 401 }
+    ],
+    "pre_flip_history": "every cron run seen in the last 7 days returned 401 (e.g. 2026-09-29 to 2026-10-03, all paths), on deployments before and after the flip",
+    "verdict": "NOT 2xx. Pre-existing CRON_SECRET/Bearer mismatch, not caused by the cutover. Open item for Phase 7.",
+    "next_scheduled_utc": {
+      "/notifications/cron/check-receipts": "2026-10-04T05:00Z",
+      "/storage/cron/cleanup": "2026-10-04T04:00Z",
+      "/forms/cron/trigger-fixed-date": "2026-10-04T06:00Z",
+      "/coach/ai/monitor-cron": "2026-10-04T07:00Z",
+      "/coaching-engine/cron/weekly-review": "2026-10-04T10:00Z",
+      "/notifications/cron/weekly-digest": "2026-10-04T09:00Z"
+    }
+  }
+}

@@ -61,3 +61,7 @@ verify-secrets: scratch
 Typed authorization: approve ubxllsvanurkwkohzxau option-mobile-build
 Timestamp: 2026-10-03T19:04:04Z
 Reply: "approve ubxllsvanurkwkohzxau option-mobile-build"
+
+### 06-19 store release decision
+Release decision: release v1.5.0 without device check (user reply: "release"), after being told the device checklist was waived and the 1.5.0 APK was never exercised against portfolio. The MOBILE INTERNAL CHECKLIST: PASS gate of 06-19 is replaced by this explicit user decision. Existing authorization: approve ubxllsvanurkwkohzxau option-mobile-build.
+Timestamp: 2026-10-03T21:01:19Z

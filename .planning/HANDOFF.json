@@ -49,5 +49,27 @@
     {"id":"ui-web-ai-import","surface":"web coach","bucket":"ziko-ai-imports","item":"coach AI import upload"},
     {"id":"ui-athlete-video","surface":"mobile athlete + web coach","bucket":"ziko-coach-videos","item":"athlete video upload and coach view"},
     {"id":"codemod-merge","surface":"codemod","bucket":"all ziko- buckets","item":"re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before"}
-  ]
+  ],
+  "phase7_handoff_from_phase6": {
+    "backend_flip_at": "2026-10-03T14:29:36Z",
+    "web_flip_at": "2026-10-03T15:08:02Z",
+    "mobile_release_tag": "v1.5.1 (Android build 1.5.0 versionCode 16 submitted to Play production; v1.5.0 tag failed at Setup EAS; iOS not released)",
+    "rollback_window_starts_at": "2026-10-03T14:29:36Z",
+    "ziko_untouched": true,
+    "phase6_status": "not complete: mobile flip not achieved (06-19 partial, 06-18 device checklist waived); 06-20 Task 3 credential retirement pending",
+    "open_items": [
+      "iOS release: Sign in with Apple missing from the provisioning profile; enable it on the App ID, regenerate via eas credentials, tag v1.5.2",
+      "Play Console: confirm state of Android 1.5.0 (versionCode 16) production release",
+      "App never device-tested against portfolio (M-01..M-12 waived); 6 mobile UI carried items have API-level evidence only",
+      "Anthropic balance empty: AI chat never verified on portfolio",
+      "API crons return 401 (pre-existing since at least 2026-09-29); check CRON_SECRET",
+      "Preview/Development Vercel env scopes of shared web records may still hold ziko values; SUPABASE_PUBLISHABLE_KEY on ziko-web untouched",
+      "Orphan test PNG in ziko-coach-exercises bucket",
+      "Revoke stale CI token ziko-ci-portfolio (keep ziko-ci-portfolio-2, CI uses it)",
+      "Revoke PAT ziko-cutover-phase6; rotate the Vercel protection bypass secret",
+      "CI verify secrets point at scratch; two remote timing specs skip on CI (PR #40)",
+      "Sevalys (sv_*) tenant drift on portfolio is live traffic, not ours",
+      "Old mobile binaries pointing at ziko keep writing to ziko until users update: define the Phase 7 drain window before decommission"
+    ]
+  }
 }
