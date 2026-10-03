@@ -339,7 +339,13 @@ export async function runEnvSwitch(argv, deps = {}) {
         listing = ls.stdout + ls.stderr;
       }
     } finally {
-      if (tmp) rmSync(tmp, { recursive: true, force: true });
+      if (tmp) {
+        try {
+          rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+        } catch {
+          // best effort (Windows EPERM)
+        }
+      }
     }
     const has = (n) => new RegExp(`(^|[^A-Z0-9_])${n}([^A-Z0-9_]|$)`).test(listing);
     const missing = names.filter((n) => !has(n));
@@ -392,14 +398,20 @@ export async function runEnvSwitch(argv, deps = {}) {
           const linkArgs = ['link', '--yes', '--project', args.vercelProject, '--cwd', tmp, ...(args.vercelScope ? ['--scope', args.vercelScope] : [])];
           if (run('vercel', linkArgs).status !== 0) throw new Error('vercel link failed');
           for (const c of cmds) {
-            const r = run('vercel', [...c.args, '--cwd', tmp], c.stdin ? { input: values[c.name] } : {});
+            // Vercel refuses to guess the type for NEXT_PUBLIC_*KEY names; publishable keys are public config.
+            const typeArgs = c.op === 'add' && /^NEXT_PUBLIC_.*KEY$/.test(c.name) ? ['--type', 'config'] : [];
+            const r = run('vercel', [...c.args, ...typeArgs, '--cwd', tmp], c.stdin ? { input: values[c.name] } : {});
             if (r.status !== 0) {
               const absent = c.tolerateAbsent && /not found|does not exist|no environment variable/i.test(r.stdout + r.stderr);
               if (!absent) throw new Error(`vercel ${c.op} ${c.name} failed`);
             }
           }
         } finally {
-          rmSync(tmp, { recursive: true, force: true });
+          try {
+            rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+          } catch {
+            // Windows may hold the temp dir briefly (EPERM); it holds no secrets (env values go via stdin).
+          }
         }
       } else {
         const cmds = buildEasCommands({ environment: args.easEnv, authorizationText });
