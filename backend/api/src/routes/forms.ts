@@ -17,7 +17,7 @@ router.get('/coach/forms', async (c) => {
   const { userId } = c.get('auth');
   try {
     const { data, error } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .select('*')
       .eq('coach_id', userId)
       .order('created_at', { ascending: false });
@@ -47,7 +47,7 @@ router.post('/coach/forms', async (c) => {
     }
 
     const { data, error } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .insert({
         coach_id: userId,
         title: title.trim(),
@@ -86,7 +86,7 @@ router.patch('/coach/forms/:id', async (c) => {
     if (status !== undefined) updates.status = status;
 
     const { data, error } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .update(updates)
       .eq('id', id)
       .eq('coach_id', userId)
@@ -121,7 +121,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
     }
 
     const { data, error } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .update({ status: 'active', updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('coach_id', userId)
@@ -139,7 +139,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
     // Distribute form instances after activation
     if (target === 'one' && client_id) {
       // Send to one specific client
-      const { error: rpcErr } = await supabase.rpc('create_form_instances_for_trigger', {
+      const { error: rpcErr } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
         p_trigger_type: 'manual',
         p_athlete_id: client_id,
         p_coach_id: userId,
@@ -148,7 +148,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
     } else {
       // Send to all linked clients (target === 'all' or omitted)
       const { data: linkedClients, error: clientsErr } = await supabase
-        .from('coach_client_links')
+        .from('ziko_coach_client_links')
         .select('client_id')
         .eq('coach_id', userId)
         .is('revoked_at', null);
@@ -157,7 +157,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
         console.warn('[POST /coach/forms/:id/publish] clients fetch error:', clientsErr.message);
       } else {
         for (const link of linkedClients ?? []) {
-          const { error: rpcErr } = await supabase.rpc('create_form_instances_for_trigger', {
+          const { error: rpcErr } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
             p_trigger_type: 'manual',
             p_athlete_id: link.client_id,
             p_coach_id: userId,
@@ -194,7 +194,7 @@ router.post('/coach/forms/:id/send', async (c) => {
     }
 
     const { data: form, error: formErr } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .select('id, status')
       .eq('id', id)
       .eq('coach_id', userId)
@@ -210,7 +210,7 @@ router.post('/coach/forms/:id/send', async (c) => {
 
     let totalCount = 0;
     for (const athleteId of athlete_ids as string[]) {
-      const { data, error } = await supabase.rpc('create_form_instances_for_trigger', {
+      const { data, error } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
         p_trigger_type: 'manual',
         p_athlete_id: athleteId,
         p_coach_id: userId,
@@ -233,7 +233,7 @@ router.get('/athlete/forms/pending', async (c) => {
   const { userId } = c.get('auth');
   try {
     const { data, error } = await supabase
-      .from('form_instances')
+      .from('ziko_form_instances')
       .select(`
         id,
         form_id,
@@ -283,7 +283,7 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
 
     // Fetch the instance and verify ownership
     const { data: instance, error: fetchError } = await supabase
-      .from('form_instances')
+      .from('ziko_form_instances')
       .select('id, status, form_id')
       .eq('id', instanceId)
       .eq('athlete_id', userId)
@@ -299,7 +299,7 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
 
     // Insert form_responses
     const { data: responseRow, error: insertError } = await supabase
-      .from('form_responses')
+      .from('ziko_form_responses')
       .insert({
         instance_id: instanceId,
         athlete_id: userId,
@@ -312,7 +312,7 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
 
     // Update instance status
     const { error: updateError } = await supabase
-      .from('form_instances')
+      .from('ziko_form_instances')
       .update({ status: 'submitted', submitted_at: new Date().toISOString() })
       .eq('id', instanceId);
 
@@ -339,7 +339,7 @@ cronRouter.get('/cron/trigger-fixed-date', async (c) => {
     const todayISO = new Date().toISOString().slice(0, 10);
 
     const { data: forms, error: formsErr } = await supabase
-      .from('coach_forms')
+      .from('ziko_coach_forms')
       .select('id, coach_id, trigger_config')
       .eq('status', 'active')
       .filter('trigger_config->>type', 'eq', 'fixed_date');
@@ -355,7 +355,7 @@ cronRouter.get('/cron/trigger-fixed-date', async (c) => {
 
     for (const form of matchingForms) {
       const { data: athletes, error: athletesErr } = await supabase
-        .from('coach_client_links')
+        .from('ziko_coach_client_links')
         .select('client_id')
         .eq('coach_id', form.coach_id)
         .is('revoked_at', null);
@@ -367,7 +367,7 @@ cronRouter.get('/cron/trigger-fixed-date', async (c) => {
 
       for (const athlete of athletes ?? []) {
         const { data, error: rpcErr } = await supabase.rpc(
-          'create_form_instances_for_trigger',
+          'ziko_create_form_instances_for_trigger',
           {
             p_trigger_type: 'fixed_date',
             p_athlete_id: athlete.client_id,

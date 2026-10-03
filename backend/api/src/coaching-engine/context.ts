@@ -31,27 +31,27 @@ type Db = ReturnType<typeof clientForUser>;
  */
 export const FOCUS_SOURCE_MAP: Record<FocusType, { tables: string[]; metrics: string[] }> = {
   training_volume: {
-    tables: ['workout_sessions'],
+    tables: ['ziko_workout_sessions'],
     metrics: ['sessions_completed', 'total_volume_kg'],
   },
   habit_consistency: {
-    tables: ['habit_logs', 'journal_entries'],
+    tables: ['ziko_habit_logs', 'ziko_journal_entries'],
     metrics: ['habit_log_days', 'journal_entry_days', 'distinct_active_days'],
   },
   nutrition: {
-    tables: ['nutrition_logs'],
+    tables: ['ziko_nutrition_logs'],
     metrics: ['nutrition_log_days'],
   },
   hydration: {
-    tables: ['hydration_logs'],
+    tables: ['ziko_hydration_logs'],
     metrics: ['hydration_log_days', 'total_ml'],
   },
   recovery: {
-    tables: ['sleep_logs'],
+    tables: ['ziko_sleep_logs'],
     metrics: ['sleep_log_days', 'avg_duration_hours'],
   },
   cardio: {
-    tables: ['cardio_sessions'],
+    tables: ['ziko_cardio_sessions'],
     metrics: ['cardio_sessions_completed', 'total_duration_min'],
   },
   // Deliberate fallback for a freshly-onboarded athlete whose
@@ -60,7 +60,7 @@ export const FOCUS_SOURCE_MAP: Record<FocusType, { tables: string[]; metrics: st
   // but produces met: null, and plan 44-03's prompt forbids de-escalating
   // on a null verdict.
   unassigned: {
-    tables: ['workout_sessions', 'habit_logs'],
+    tables: ['ziko_workout_sessions', 'ziko_habit_logs'],
     metrics: ['sessions_completed', 'habit_log_days'],
   },
 };
@@ -99,9 +99,9 @@ export async function fetchFocusScopedActivity(
 
   switch (focusType) {
     case 'training_volume': {
-      tablesRead.push('workout_sessions');
+      tablesRead.push('ziko_workout_sessions');
       const { data } = await db
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, started_at, total_volume_kg')
         .eq('user_id', userId)
         .gte('started_at', windowStartIso)
@@ -119,10 +119,10 @@ export async function fetchFocusScopedActivity(
       if (targetMetric === 'sets_completed') {
         // session_sets has no user_id column — reached only via the ids of
         // the sessions already fetched, which are already scoped to userId.
-        tablesRead.push('session_sets');
+        tablesRead.push('ziko_session_sets');
         const sessionIds = rows.map((r) => r.id);
         const { data: setsData } = await db
-          .from('session_sets')
+          .from('ziko_session_sets')
           .select('completed')
           .in('session_id', sessionIds)
           .eq('completed', true);
@@ -132,16 +132,16 @@ export async function fetchFocusScopedActivity(
     }
 
     case 'habit_consistency': {
-      tablesRead.push('habit_logs', 'journal_entries');
+      tablesRead.push('ziko_habit_logs', 'ziko_journal_entries');
       const [habitRes, journalRes] = await Promise.all([
         db
-          .from('habit_logs')
+          .from('ziko_habit_logs')
           .select('date')
           .eq('user_id', userId)
           .gte('date', windowStartDate)
           .lte('date', windowEndDate),
         db
-          .from('journal_entries')
+          .from('ziko_journal_entries')
           .select('date')
           .eq('user_id', userId)
           .gte('date', windowStartDate)
@@ -163,9 +163,9 @@ export async function fetchFocusScopedActivity(
     }
 
     case 'nutrition': {
-      tablesRead.push('nutrition_logs');
+      tablesRead.push('ziko_nutrition_logs');
       const { data } = await db
-        .from('nutrition_logs')
+        .from('ziko_nutrition_logs')
         .select('date')
         .eq('user_id', userId)
         .gte('date', windowStartDate)
@@ -176,9 +176,9 @@ export async function fetchFocusScopedActivity(
     }
 
     case 'hydration': {
-      tablesRead.push('hydration_logs');
+      tablesRead.push('ziko_hydration_logs');
       const { data } = await db
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .select('date, amount_ml')
         .eq('user_id', userId)
         .gte('date', windowStartDate)
@@ -190,9 +190,9 @@ export async function fetchFocusScopedActivity(
     }
 
     case 'recovery': {
-      tablesRead.push('sleep_logs');
+      tablesRead.push('ziko_sleep_logs');
       const { data } = await db
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('date, duration_hours')
         .eq('user_id', userId)
         .gte('date', windowStartDate)
@@ -205,9 +205,9 @@ export async function fetchFocusScopedActivity(
     }
 
     case 'cardio': {
-      tablesRead.push('cardio_sessions');
+      tablesRead.push('ziko_cardio_sessions');
       const { data } = await db
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .select('date, duration_min')
         .eq('user_id', userId)
         .gte('date', windowStartDate)
@@ -220,16 +220,16 @@ export async function fetchFocusScopedActivity(
 
     case 'unassigned':
     default: {
-      tablesRead.push('workout_sessions', 'habit_logs');
+      tablesRead.push('ziko_workout_sessions', 'ziko_habit_logs');
       const [workoutsRes, habitRes] = await Promise.all([
         db
-          .from('workout_sessions')
+          .from('ziko_workout_sessions')
           .select('started_at')
           .eq('user_id', userId)
           .gte('started_at', windowStartIso)
           .lte('started_at', windowEndIso),
         db
-          .from('habit_logs')
+          .from('ziko_habit_logs')
           .select('date')
           .eq('user_id', userId)
           .gte('date', windowStartDate)
@@ -271,7 +271,7 @@ export async function fetchWeeklyReviewContext(
   // 1. athlete_state — an athlete with no state row has never been
   //    onboarded and is not reviewable.
   const { data: stateRow } = await db
-    .from('athlete_state')
+    .from('ziko_athlete_state')
     .select(
       'next_review_due_at, last_review_at, current_focus_detail, current_focus_summary, readiness, rolling_summary',
     )
@@ -321,7 +321,7 @@ export async function fetchWeeklyReviewContext(
   //    2-of-last-3 rule of the data D-05 depends on. recentDecisions (the
   //    prompt-facing slice) stays at 4 rows — the FOUND-05 convention.
   const { data: decisionsData } = await db
-    .from('athlete_decisions')
+    .from('ziko_athlete_decisions')
     .select('decision_type, week_of, summary, outcome, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })

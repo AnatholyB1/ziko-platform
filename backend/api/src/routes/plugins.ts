@@ -14,7 +14,7 @@ router.use('*', authMiddleware);
 /** GET /plugins — list all registry plugins */
 router.get('/', async (c) => {
   const { data, error } = await adminClient
-    .from('plugins_registry')
+    .from('ziko_plugins_registry')
     .select('*')
     .eq('is_active', true)
     .order('name');
@@ -29,7 +29,7 @@ router.post('/:id/install', async (c) => {
 
   // Verify plugin exists
   const { data: plugin, error: pluginErr } = await adminClient
-    .from('plugins_registry')
+    .from('ziko_plugins_registry')
     .select('id, name')
     .eq('id', pluginId)
     .eq('is_active', true)
@@ -37,7 +37,7 @@ router.post('/:id/install', async (c) => {
 
   if (pluginErr || !plugin) return c.json({ error: 'Plugin not found' }, 404);
 
-  const { error } = await adminClient.from('user_plugins').upsert({
+  const { error } = await adminClient.from('ziko_user_plugins').upsert({
     user_id: auth.userId,
     plugin_id: pluginId,
     is_enabled: true,
@@ -54,7 +54,7 @@ router.delete('/:id/uninstall', async (c) => {
   const auth = c.get('auth');
 
   const { error } = await adminClient
-    .from('user_plugins')
+    .from('ziko_user_plugins')
     .delete()
     .eq('user_id', auth.userId)
     .eq('plugin_id', pluginId);
@@ -70,7 +70,7 @@ router.patch('/:id/toggle', async (c) => {
   const { is_enabled } = await c.req.json<{ is_enabled: boolean }>();
 
   const { error } = await adminClient
-    .from('user_plugins')
+    .from('ziko_user_plugins')
     .update({ is_enabled })
     .eq('user_id', auth.userId)
     .eq('plugin_id', pluginId);

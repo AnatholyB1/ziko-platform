@@ -65,7 +65,7 @@ export function creditCheck(action: CreditAction) {
     // read (or any non-boolean-true value, e.g. the JSONB trap of a JS
     // string 'true') evaluates to flag-off, the fail-safe direction.
     const { data: config } = await supabase
-      .from('app_config')
+      .from('ziko_app_config')
       .select('value')
       .eq('key', 'premium_credit_cap_enabled')
       .single();
@@ -82,7 +82,7 @@ export function creditCheck(action: CreditAction) {
       // condition below never actually resolved true in production,
       // regardless of tier.
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('tier')
         .eq('id', userId)
         .single();
@@ -108,7 +108,7 @@ export function creditCheck(action: CreditAction) {
       // D-09: Add earned_today sources for exhaustion sheet
       const todayUTC = new Date().toISOString().split('T')[0];
       const { data: earnedRows } = await supabase
-        .from('ai_credit_transactions')
+        .from('ziko_ai_credit_transactions')
         .select('source')
         .eq('user_id', userId)
         .eq('type', 'earn')

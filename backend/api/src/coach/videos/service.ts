@@ -372,7 +372,7 @@ videosRouter.post('/:videoId/send-feedback', async (c) => {
   let coachName = '';
   try {
     const { data: profile } = await supabaseAdmin
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('name')
       .eq('id', coachId)
       .maybeSingle();

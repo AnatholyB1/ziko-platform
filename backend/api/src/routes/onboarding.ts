@@ -40,7 +40,7 @@ function logOnboardingTokenUsage(
   totalUsage: { inputTokens: number | undefined; outputTokens: number | undefined },
 ) {
   Promise.resolve(
-    supabase.from('ai_cost_log').insert({
+    supabase.from('ziko_ai_cost_log').insert({
       user_id: userId,
       model: modelId,
       input_tokens: totalUsage.inputTokens ?? 0,

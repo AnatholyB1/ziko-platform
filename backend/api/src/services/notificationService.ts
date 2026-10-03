@@ -96,7 +96,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
 
   // ── Step 1: Check notification_preferences ──────────────────
   const { data: prefs } = await getSupabaseAdmin()
-    .from('notification_preferences')
+    .from('ziko_notification_preferences')
     .select('*')
     .eq('user_id', recipientUserId)
     .single();
@@ -132,7 +132,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
 
   // ── Step 3: Idempotency INSERT into notification_log ─────────
   const { data: logRows } = await getSupabaseAdmin()
-    .from('notification_log')
+    .from('ziko_notification_log')
     .insert({
       idempotency_key: idempotencyKey,
       user_id: recipientUserId,
@@ -153,7 +153,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
 
   // ── Step 4: Fetch active tokens ───────────────────────────────
   const { data: tokenRows } = await getSupabaseAdmin()
-    .from('notification_tokens')
+    .from('ziko_notification_tokens')
     .select('token')
     .eq('user_id', recipientUserId)
     .eq('is_active', true);
@@ -169,7 +169,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
     } else {
       // Mark invalid tokens as inactive
       await getSupabaseAdmin()
-        .from('notification_tokens')
+        .from('ziko_notification_tokens')
         .update({ is_active: false })
         .eq('token', token);
     }
@@ -178,7 +178,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
   if (validTokens.length === 0) {
     // No valid tokens — mark as skipped
     await getSupabaseAdmin()
-      .from('notification_log')
+      .from('ziko_notification_log')
       .update({ status: 'skipped' })
       .eq('idempotency_key', idempotencyKey);
     return { sent: false, reason: 'no_valid_tokens' };
@@ -219,7 +219,7 @@ async function send(payload: NotificationPayload): Promise<SendResult> {
 
   // ── Step 8: UPDATE notification_log with result ───────────────
   await getSupabaseAdmin()
-    .from('notification_log')
+    .from('ziko_notification_log')
     .update({
       status: 'sent',
       receipt_ids: receiptIds,
@@ -257,7 +257,7 @@ async function processReceipts(receiptIds: string[]): Promise<void> {
       if (receipt.status === 'ok') {
         // Mark delivered — find log rows that contain this receipt_id
         await getSupabaseAdmin()
-          .from('notification_log')
+          .from('ziko_notification_log')
           .update({ status: 'delivered' })
           .contains('receipt_ids', [receiptId]);
       } else if (receipt.status === 'error') {
@@ -267,12 +267,12 @@ async function processReceipts(receiptIds: string[]): Promise<void> {
           // The receipt_id correlates to a token, but expo-server-sdk receipts don't return the token.
           // Best we can do: mark log as failed and let the next send attempt clean up via Step 5.
           await getSupabaseAdmin()
-            .from('notification_log')
+            .from('ziko_notification_log')
             .update({ status: 'failed', error_code: 'DeviceNotRegistered' })
             .contains('receipt_ids', [receiptId]);
         } else {
           await getSupabaseAdmin()
-            .from('notification_log')
+            .from('ziko_notification_log')
             .update({
               status: 'failed',
               error_code: errorReceipt.details?.error ?? 'unknown',

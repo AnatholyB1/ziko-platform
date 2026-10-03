@@ -128,7 +128,7 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
       const athleteId = userId;
       const linkId = result.link.id;
       adminClient
-        .rpc('create_form_instances_for_trigger', {
+        .rpc('ziko_create_form_instances_for_trigger', {
           p_trigger_type: 'first_contact',
           p_athlete_id: athleteId,
           p_coach_id: coachId,
@@ -141,7 +141,7 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
         (async () => {
           // Resolve athlete display name from user_profiles
           const { data: profileRow } = await adminClient
-            .from('user_profiles')
+            .from('ziko_user_profiles')
             .select('name')
             .eq('id', athleteId)
             .limit(1)

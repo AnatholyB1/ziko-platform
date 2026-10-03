@@ -71,12 +71,12 @@ router.post('/recipes/suggest', async (c) => {
 
   const [pantryRes, nutritionRes] = await Promise.all([
     db
-      .from('pantry_items')
+      .from('ziko_pantry_items')
       .select('id, name, quantity, unit, food_category, storage_location')
       .eq('user_id', userId)
       .order('name'),
     db
-      .from('nutrition_logs')
+      .from('ziko_nutrition_logs')
       .select('calories, protein_g, carbs_g, fat_g')
       .eq('user_id', userId)
       .eq('date', today),

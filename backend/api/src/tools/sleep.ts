@@ -29,7 +29,7 @@ export async function sleep_log(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('sleep_logs')
+    .from('ziko_sleep_logs')
     .upsert(
       {
         user_id: userId,
@@ -61,7 +61,7 @@ export async function sleep_get_history(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('sleep_logs')
+    .from('ziko_sleep_logs')
     .select('*')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])
@@ -102,13 +102,13 @@ export async function sleep_get_recovery_score(
 
   const [sleepRes, workoutRes] = await Promise.all([
     db
-      .from('sleep_logs')
+      .from('ziko_sleep_logs')
       .select('duration_hours, quality')
       .eq('user_id', userId)
       .gte('date', since.toISOString().split('T')[0])
       .order('date', { ascending: false }),
     db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('total_volume_kg')
       .eq('user_id', userId)
       .gte('started_at', since.toISOString())

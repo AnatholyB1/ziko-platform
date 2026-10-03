@@ -60,7 +60,7 @@ export async function runAllScrapers(supabase: SupabaseClient): Promise<ScrapeRu
 
       // Resolve brand ID
       const { data: brand } = await supabase
-        .from('supplement_brands')
+        .from('ziko_supplement_brands')
         .select('id')
         .eq('slug', scraper.brandSlug)
         .single();
@@ -75,7 +75,7 @@ export async function runAllScrapers(supabase: SupabaseClient): Promise<ScrapeRu
         try {
           // Resolve category
           const { data: category } = await supabase
-            .from('supplement_categories')
+            .from('ziko_supplement_categories')
             .select('id')
             .eq('slug', product.categorySlug)
             .single();
@@ -93,7 +93,7 @@ export async function runAllScrapers(supabase: SupabaseClient): Promise<ScrapeRu
 
           // Upsert supplement
           const { data: supp, error: suppErr } = await supabase
-            .from('supplements')
+            .from('ziko_supplements')
             .upsert({
               brand_id: brand.id,
               category_id: category.id,
@@ -127,7 +127,7 @@ export async function runAllScrapers(supabase: SupabaseClient): Promise<ScrapeRu
             : null;
 
           const { data: lastPrice } = await supabase
-            .from('supplement_prices')
+            .from('ziko_supplement_prices')
             .select('price, currency, in_stock')
             .eq('supplement_id', supp.id)
             .eq('source', scraper.brandName)
@@ -144,7 +144,7 @@ export async function runAllScrapers(supabase: SupabaseClient): Promise<ScrapeRu
 
           if (priceChanged) {
             const { error: priceErr } = await supabase
-              .from('supplement_prices')
+              .from('ziko_supplement_prices')
               .insert({
                 supplement_id: supp.id,
                 price: product.price,

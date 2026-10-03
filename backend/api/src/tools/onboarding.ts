@@ -162,7 +162,7 @@ export async function assess_profile(
     evidence_source: 'onboarding_conversation',
   };
 
-  const { data, error } = await db.rpc('record_athlete_decision', {
+  const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'onboarding_profile',
     p_week_of: null,

@@ -13,7 +13,7 @@ export async function hydration_log(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('hydration_logs')
+    .from('ziko_hydration_logs')
     .insert({
       user_id: userId,
       amount_ml,
@@ -26,7 +26,7 @@ export async function hydration_log(
 
   // Get updated total for today
   const { data: todayLogs } = await db
-    .from('hydration_logs')
+    .from('ziko_hydration_logs')
     .select('amount_ml')
     .eq('user_id', userId)
     .eq('date', today());
@@ -46,12 +46,12 @@ export async function hydration_get_today(
 
   const [logsRes, profileRes] = await Promise.all([
     db
-      .from('hydration_logs')
+      .from('ziko_hydration_logs')
       .select('id, amount_ml, created_at')
       .eq('user_id', userId)
       .eq('date', today())
       .order('created_at'),
-    db.from('user_profiles').select('weight_kg').eq('id', userId).single(),
+    db.from('ziko_user_profiles').select('weight_kg').eq('id', userId).single(),
   ]);
 
   if (logsRes.error) throw new Error(logsRes.error.message);
@@ -82,7 +82,7 @@ export async function hydration_set_goal(
   // Store goal in user_plugins settings for the hydration plugin
   const db = clientForUser(userToken);
   const { error } = await db
-    .from('user_plugins')
+    .from('ziko_user_plugins')
     .update({ settings: { daily_goal_ml: goal_ml } })
     .eq('user_id', userId)
     .eq('plugin_id', 'hydration');

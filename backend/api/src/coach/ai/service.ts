@@ -40,7 +40,7 @@ function logTokenUsage(
   totalUsage: { inputTokens: number | undefined; outputTokens: number | undefined },
 ) {
   Promise.resolve(
-    supabase.from('ai_cost_log').insert({
+    supabase.from('ziko_ai_cost_log').insert({
       user_id: userId,
       model: modelId,
       input_tokens: totalUsage.inputTokens ?? 0,
@@ -226,12 +226,12 @@ router.post('/monitor-cron', async (c) => {
         // Fetch linked clients and coach profile in parallel via service client
         const [{ data: links }, { data: coachProfile }] = await Promise.all([
           supabase
-            .from('coach_client_links')
+            .from('ziko_coach_client_links')
             .select('client_id')
             .eq('coach_id', coachId)
             .is('revoked_at', null),
           supabase
-            .from('coach_profiles')
+            .from('ziko_coach_profiles')
             .select('display_name')
             .eq('id', coachId)
             .single(),
@@ -250,7 +250,7 @@ router.post('/monitor-cron', async (c) => {
         for (const clientId of clientIds) {
           // Missed sessions
           const { data: recentSessions } = await supabase
-            .from('workout_sessions')
+            .from('ziko_workout_sessions')
             .select('id')
             .eq('user_id', clientId)
             .gte('created_at', sevenDaysAgo)
@@ -268,8 +268,8 @@ router.post('/monitor-cron', async (c) => {
 
           // Sleep drop
           const [recentSleepRes, baselineSleepRes] = await Promise.all([
-            supabase.from('sleep_logs').select('duration_hours').eq('user_id', clientId).gte('date', threeDaysAgo),
-            supabase.from('sleep_logs').select('duration_hours').eq('user_id', clientId).gte('date', tenDaysAgo).lt('date', threeDaysAgo),
+            supabase.from('ziko_sleep_logs').select('duration_hours').eq('user_id', clientId).gte('date', threeDaysAgo),
+            supabase.from('ziko_sleep_logs').select('duration_hours').eq('user_id', clientId).gte('date', tenDaysAgo).lt('date', threeDaysAgo),
           ]);
           const recentSleep = (recentSleepRes.data ?? []).map((r: any) => Number(r.duration_hours));
           const baselineSleep = (baselineSleepRes.data ?? []).map((r: any) => Number(r.duration_hours));
@@ -290,8 +290,8 @@ router.post('/monitor-cron', async (c) => {
 
           // Mood decline
           const [recentMoodRes, baselineMoodRes] = await Promise.all([
-            supabase.from('journal_entries').select('mood').eq('user_id', clientId).gte('created_at', sevenDaysAgo),
-            supabase.from('journal_entries').select('mood').eq('user_id', clientId).gte('created_at', fourteenDaysAgo).lt('created_at', sevenDaysAgo),
+            supabase.from('ziko_journal_entries').select('mood').eq('user_id', clientId).gte('created_at', sevenDaysAgo),
+            supabase.from('ziko_journal_entries').select('mood').eq('user_id', clientId).gte('created_at', fourteenDaysAgo).lt('created_at', sevenDaysAgo),
           ]);
           const recentMood = (recentMoodRes.data ?? []).map((r: any) => Number(r.mood));
           const baselineMood = (baselineMoodRes.data ?? []).map((r: any) => Number(r.mood));
@@ -333,7 +333,7 @@ router.post('/monitor-cron', async (c) => {
               weekStart.setUTCHours(0, 0, 0, 0);
 
               const { data: weekAlerts } = await supabase
-                .from('coach_alerts')
+                .from('ziko_coach_alerts')
                 .select('client_id, severity, summary')
                 .eq('coach_id', coachId)
                 .gte('created_at', weekStart.toISOString());
@@ -343,7 +343,7 @@ router.post('/monitor-cron', async (c) => {
               const clientIdToName: Record<string, string> = {};
               for (const link of (links ?? [])) {
                 const { data: profile } = await supabase
-                  .from('user_profiles')
+                  .from('ziko_user_profiles')
                   .select('id, name')
                   .eq('id', (link as any).client_id)
                   .single();
@@ -470,7 +470,7 @@ router.post(
         const db = createUserClient(jwt);
         if (conversationId) {
           const { data: msgs } = await db
-            .from('ai_messages')
+            .from('ziko_ai_messages')
             .select('role, content')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true });
@@ -480,7 +480,7 @@ router.post(
           };
         }
         const { data, error } = await db
-          .from('ai_conversations')
+          .from('ziko_ai_conversations')
           .insert({ user_id: coachId, plugin_context: { context: 'coach' } })
           .select('id')
           .single();

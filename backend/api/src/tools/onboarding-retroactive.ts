@@ -119,14 +119,14 @@ export async function fetchActivityAggregates(
 
   const [workoutsRes, habitLogsRes, nutritionLogsRes, cardioRes, measurementsRes] = await Promise.all([
     db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('started_at, total_volume_kg')
       .eq('user_id', userId)
       .gte('started_at', windowStartIso),
-    db.from('habit_logs').select('date, value').eq('user_id', userId).gte('date', windowStartDate),
-    db.from('nutrition_logs').select('date').eq('user_id', userId).gte('date', windowStartDate),
-    db.from('cardio_sessions').select('date').eq('user_id', userId).gte('date', windowStartDate),
-    db.from('body_measurements').select('date').eq('user_id', userId).gte('date', windowStartDate),
+    db.from('ziko_habit_logs').select('date, value').eq('user_id', userId).gte('date', windowStartDate),
+    db.from('ziko_nutrition_logs').select('date').eq('user_id', userId).gte('date', windowStartDate),
+    db.from('ziko_cardio_sessions').select('date').eq('user_id', userId).gte('date', windowStartDate),
+    db.from('ziko_body_measurements').select('date').eq('user_id', userId).gte('date', windowStartDate),
   ]);
 
   const workouts = (workoutsRes.data ?? []) as Array<{ started_at: string; total_volume_kg: number | null }>;
@@ -213,7 +213,7 @@ export async function computeRetroactiveProfile(
   // profiled (fresh onboarding, a prior retroactive run, or the fixed-date
   // trigger). No model call, no RPC call, on this path.
   const { data: existingState, error: stateReadError } = await db
-    .from('athlete_state')
+    .from('ziko_athlete_state')
     .select('user_id')
     .eq('user_id', userId)
     .maybeSingle();
@@ -229,7 +229,7 @@ export async function computeRetroactiveProfile(
   // qualifies for this path — a brand-new signup goes through the
   // conversational Ziko flow (43-03) instead, never this one.
   const { data: profile, error: profileReadError } = await db
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('onboarding_done')
     .eq('id', userId)
     .maybeSingle();
@@ -271,7 +271,7 @@ export async function computeRetroactiveProfile(
   // activity across 90 days is itself real, meaningful evidence that
   // legitimately maps to readiness: 'fragile'; it must be reported as such,
   // not papered over.
-  const { data, error } = await db.rpc('record_athlete_decision', {
+  const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'onboarding_profile',
     p_week_of: null,

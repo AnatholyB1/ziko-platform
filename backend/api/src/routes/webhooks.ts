@@ -24,10 +24,10 @@ router.post('/supabase', async (c) => {
   const { type, table, record } = payload;
 
   // Example: handle new user profile creation
-  if (table === 'user_profiles' && type === 'INSERT') {
+  if (table === 'ziko_user_profiles' && type === 'INSERT') {
     console.log(`New user registered: ${record.id}`);
     // TODO: send welcome notification via FCM/APNs
-  } else if (table === 'workout_sessions' && type === 'INSERT') {
+  } else if (table === 'ziko_workout_sessions' && type === 'INSERT') {
     try {
       const athleteId = record.user_id as string | null
       const programId = record.program_id as string | null
@@ -39,7 +39,7 @@ router.post('/supabase', async (c) => {
 
       // Find the athlete's active coach
       const { data: linkRow, error: linkErr } = await adminClient
-        .from('coach_client_links')
+        .from('ziko_coach_client_links')
         .select('coach_id')
         .eq('client_id', athleteId)
         .is('revoked_at', null)
@@ -52,7 +52,7 @@ router.post('/supabase', async (c) => {
 
       // Count total sessions for this athlete in the same program
       let sessionQuery = adminClient
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', athleteId)
       if (programId) {
@@ -67,7 +67,7 @@ router.post('/supabase', async (c) => {
 
       // Fire after_n_sessions trigger
       const { data, error: rpcErr } = await adminClient.rpc(
-        'create_form_instances_for_trigger',
+        'ziko_create_form_instances_for_trigger',
         {
           p_trigger_type: 'after_n_sessions',
           p_athlete_id: athleteId,

@@ -44,38 +44,38 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
 
   const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes, formResponsesRes] =
     await Promise.all([
-      db.from('user_profiles')
+      db.from('ziko_user_profiles')
         .select('name, age, weight_kg, height_cm, goal, units, settings')
         .eq('id', userId)
         .single(),
-      db.from('user_plugins')
+      db.from('ziko_user_plugins')
         .select('plugin_id')
         .eq('user_id', userId)
         .eq('is_enabled', true),
-      db.from('workout_sessions')
+      db.from('ziko_workout_sessions')
         .select('name, started_at, total_volume_kg')
         .eq('user_id', userId)
         .order('started_at', { ascending: false })
         .limit(5),
-      db.from('nutrition_logs')
+      db.from('ziko_nutrition_logs')
         .select('calories, protein_g, carbs_g, fat_g')
         .eq('user_id', userId)
         .eq('date', date),
-      db.from('habits')
+      db.from('ziko_habits')
         .select('id, target')
         .eq('user_id', userId)
         .eq('is_active', true),
-      db.from('habit_logs')
+      db.from('ziko_habit_logs')
         .select('habit_id, value')
         .eq('user_id', userId)
         .eq('date', date),
-      db.from('form_responses')
+      db.from('ziko_form_responses')
         .select(`
           answers,
           submitted_at,
-          form_instances!inner(
+          form_instances:ziko_form_instances!inner(
             form_id,
-            coach_forms!inner(
+            coach_forms:ziko_coach_forms!inner(
               title,
               questions
             )

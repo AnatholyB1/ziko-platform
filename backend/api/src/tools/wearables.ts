@@ -13,7 +13,7 @@ export async function wearables_get_steps(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('wearable_daily_summary')
+    .from('ziko_wearable_daily_summary')
     .select('date, steps')
     .eq('user_id', userId)
     .gte('date', startDate)
@@ -45,7 +45,7 @@ export async function wearables_get_heart_rate(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('wearable_daily_summary')
+    .from('ziko_wearable_daily_summary')
     .select('date, heart_rate_avg, heart_rate_resting, heart_rate_min, heart_rate_max')
     .eq('user_id', userId)
     .gte('date', startDate)
@@ -72,7 +72,7 @@ export async function wearables_get_summary(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('wearable_daily_summary')
+    .from('ziko_wearable_daily_summary')
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
@@ -122,7 +122,7 @@ export async function wearables_sync_status(
 
   // Get latest sync per data type
   const { data, error } = await db
-    .from('health_sync_log')
+    .from('ziko_health_sync_log')
     .select('data_type, synced_at, platform, record_count')
     .eq('user_id', userId)
     .order('synced_at', { ascending: false })
@@ -140,7 +140,7 @@ export async function wearables_sync_status(
 
   // Get the most recent daily summary
   const { data: latestSummary } = await db
-    .from('wearable_daily_summary')
+    .from('ziko_wearable_daily_summary')
     .select('date, synced_at, platform')
     .eq('user_id', userId)
     .order('synced_at', { ascending: false })

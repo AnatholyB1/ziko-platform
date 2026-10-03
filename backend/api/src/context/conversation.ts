@@ -36,12 +36,12 @@ export async function getOrCreateConversation(
     // call, without a second round trip.
     const [{ data: msgs }, { data: convoRow, error: convoError }] = await Promise.all([
       db
-        .from('ai_messages')
+        .from('ziko_ai_messages')
         .select('role, content')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true }),
       db
-        .from('ai_conversations')
+        .from('ziko_ai_conversations')
         .select('user_id, plugin_context')
         .eq('id', conversationId)
         .maybeSingle(),
@@ -61,7 +61,7 @@ export async function getOrCreateConversation(
 
   // Create new conversation
   const { data, error } = await db
-    .from('ai_conversations')
+    .from('ziko_ai_conversations')
     .insert({ user_id: userId, plugin_context: pluginContext ?? {} })
     .select('id, user_id, plugin_context')
     .single();
@@ -90,7 +90,7 @@ export async function appendMessages(
     content: m.content,
   }));
 
-  const { error } = await db.from('ai_messages').insert(rows);
+  const { error } = await db.from('ziko_ai_messages').insert(rows);
   if (error) console.error('[Conversation] Failed to persist messages:', error.message);
 }
 
@@ -102,7 +102,7 @@ export async function updateConversationTitle(
 ): Promise<void> {
   const db = clientForUser(userToken);
   await db
-    .from('ai_conversations')
+    .from('ziko_ai_conversations')
     .update({ title: title.slice(0, 100), updated_at: new Date().toISOString() })
     .eq('id', conversationId);
 }

@@ -12,7 +12,7 @@ export async function stretching_get_routines(
 
   // Return recent stretching logs as "routines" — the app stores completed routines
   let query = db
-    .from('stretching_logs')
+    .from('ziko_stretching_logs')
     .select('*')
     .eq('user_id', userId)
     .order('date', { ascending: false })
@@ -54,7 +54,7 @@ export async function stretching_log_session(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('stretching_logs')
+    .from('ziko_stretching_logs')
     .insert({
       user_id: userId,
       routine_name: routine_id ?? 'Custom Session',
@@ -84,7 +84,7 @@ export async function stretching_get_history(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('stretching_logs')
+    .from('ziko_stretching_logs')
     .select('*')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])

@@ -13,8 +13,8 @@ export async function habits_get_today(
   const date = today();
 
   const [habitsRes, logsRes] = await Promise.all([
-    db.from('habits').select('*').eq('user_id', userId).eq('is_active', true).order('sort_order'),
-    db.from('habit_logs').select('*').eq('user_id', userId).eq('date', date),
+    db.from('ziko_habits').select('*').eq('user_id', userId).eq('is_active', true).order('sort_order'),
+    db.from('ziko_habit_logs').select('*').eq('user_id', userId).eq('date', date),
   ]);
 
   if (habitsRes.error) throw new Error(habitsRes.error.message);
@@ -50,7 +50,7 @@ export async function habits_log(
 
   // Verify habit belongs to user
   const { data: habit, error: habitErr } = await db
-    .from('habits')
+    .from('ziko_habits')
     .select('id, name, target')
     .eq('id', habit_id)
     .eq('user_id', userId)
@@ -58,7 +58,7 @@ export async function habits_log(
 
   if (habitErr || !habit) throw new Error('Habit not found');
 
-  const { error } = await db.from('habit_logs').upsert(
+  const { error } = await db.from('ziko_habit_logs').upsert(
     { habit_id, user_id: userId, date: today(), value: value ?? 1 },
     { onConflict: 'habit_id,date' },
   );
@@ -81,8 +81,8 @@ export async function habits_get_streaks(
   const db = clientForUser(userToken);
 
   const [habitsRes, logsRes] = await Promise.all([
-    db.from('habits').select('id, name, emoji').eq('user_id', userId).eq('is_active', true),
-    db.from('habit_logs')
+    db.from('ziko_habits').select('id, name, emoji').eq('user_id', userId).eq('is_active', true),
+    db.from('ziko_habit_logs')
       .select('habit_id, date, value')
       .eq('user_id', userId)
       .order('date', { ascending: false })
@@ -133,7 +133,7 @@ export async function habits_create(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('habits')
+    .from('ziko_habits')
     .insert({ user_id: userId, name, emoji, type, target, unit: unit ?? null, source: 'manual' })
     .select('id, name')
     .single();

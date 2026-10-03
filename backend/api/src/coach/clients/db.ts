@@ -62,7 +62,7 @@ export async function getActiveLink(
 }> {
   const db = createUserClient(jwt);
   const { data: linkRow, error: linkErr } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select(
       'id, coach_id, client_id, created_at',
     )
@@ -78,7 +78,7 @@ export async function getActiveLink(
 
   // Fetch coach profile — readable by all authenticated users via migration 042 policy.
   const { data: cp, error: cpErr } = await db
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('display_name, bio, specialties, photo_url, kyc_status')
     .eq('user_id', linkRow.coach_id)
     .maybeSingle();
@@ -121,7 +121,7 @@ export async function peekInvitation(
   | { ok: false; error_code: 'INVALID_OR_EXPIRED'; preview: null }
 > {
   const db = createUserClient(jwt);
-  const { data, error } = await db.rpc('peek_invitation', {
+  const { data, error } = await db.rpc('ziko_peek_invitation', {
     code_input: payload.code,
   });
 if (error) {
@@ -159,7 +159,7 @@ export async function redeemInvitation(
   | { ok: false; error_code: 'INVALID_OR_EXPIRED'; link: null; preview: null }
 > {
   const db = createUserClient(jwt);
-  const { data, error } = await db.rpc('redeem_invitation_code', {
+  const { data, error } = await db.rpc('ziko_redeem_invitation_code', {
     code_input: payload.code,
   });
   if (error) {
@@ -190,7 +190,7 @@ export async function redeemInvitation(
 
   // Fetch the inserted link row + coach preview in one round-trip each.
   const { data: linkRow, error: linkErr } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('id, coach_id, client_id, created_at')
     .eq('id', rpc.link_id)
     .single();
@@ -208,7 +208,7 @@ export async function redeemInvitation(
   }
 
   const { data: cp } = await db
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('display_name, bio, specialties, photo_url, kyc_status')
     .eq('user_id', linkRow.coach_id)
     .maybeSingle();
@@ -239,7 +239,7 @@ export async function revokeLink(
 ): Promise<{ id: string; revoked_at: string | null }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .update({ revoked_at: new Date().toISOString() })
     .eq('id', id)
     .eq('client_id', clientId) // belt + suspenders; RLS enforces
@@ -262,7 +262,7 @@ export async function listCoachClients(
 
   // Step 1: get all active client UUIDs for this coach
   const { data: links, error: linkErr } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('client_id')
     .eq('coach_id', coachId)
     .is('revoked_at', null);
@@ -283,14 +283,14 @@ export async function listCoachClients(
   for (const clientId of clientIds) {
     // Profile
     const { data: profile } = await db
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('id, name, avatar_url')
       .eq('id', clientId)
       .maybeSingle();
 
     // Last active (latest workout session)
     const { data: lastSession } = await db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('created_at')
       .eq('user_id', clientId)
       .order('created_at', { ascending: false })
@@ -299,7 +299,7 @@ export async function listCoachClients(
 
     // Signal: missed sessions (no session in last 14 days)
     const { data: recentSessions } = await db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('id')
       .eq('user_id', clientId)
       .gte('created_at', fourteenDaysAgo)
@@ -307,7 +307,7 @@ export async function listCoachClients(
 
     // Signal: stale measurements (no body_measurements in last 28 days)
     const { data: recentMeasurements } = await db
-      .from('body_measurements')
+      .from('ziko_body_measurements')
       .select('id')
       .eq('user_id', clientId)
       .gte('created_at', twentyEightDaysAgo)
@@ -315,7 +315,7 @@ export async function listCoachClients(
 
     // Signal: mood declining (last-3 avg < prev-3 avg)
     const { data: moodEntries } = await db
-      .from('journal_entries')
+      .from('ziko_journal_entries')
       .select('mood')
       .eq('user_id', clientId)
       .order('created_at', { ascending: false })
@@ -332,7 +332,7 @@ export async function listCoachClients(
 
     // Sessions this week
     const { data: thisWeekSessions } = await db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('id')
       .eq('user_id', clientId)
       .gte('created_at', weekStartIso);
@@ -341,11 +341,11 @@ export async function listCoachClients(
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const sevenDaysAgoDate = sevenDaysAgo.toISOString().split('T')[0];
     const { data: habits } = await db
-      .from('habits')
+      .from('ziko_habits')
       .select('id')
       .eq('user_id', clientId);
     const { data: habitLogs } = await db
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('date, value')
       .eq('user_id', clientId)
       .gte('date', sevenDaysAgoDate);
@@ -377,7 +377,7 @@ export async function listCoachClients(
 export async function listClientTags(jwt: string, coachId: string, clientId: string): Promise<ClientTag[]> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_client_tags')
+    .from('ziko_coach_client_tags')
     .select('id, coach_id, client_id, tag, created_at')
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -394,7 +394,7 @@ export async function createClientTag(
 ): Promise<ClientTag> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_client_tags')
+    .from('ziko_coach_client_tags')
     .insert({ coach_id: coachId, client_id: clientId, tag: tag.trim() })
     .select('id, coach_id, client_id, tag, created_at')
     .single();
@@ -409,7 +409,7 @@ export async function deleteClientTag(
 ): Promise<void> {
   const db = createUserClient(jwt);
   const { error } = await db
-    .from('coach_client_tags')
+    .from('ziko_coach_client_tags')
     .delete()
     .eq('id', tagId)
     .eq('coach_id', coachId); // belt + suspenders; RLS also enforces
@@ -424,7 +424,7 @@ export async function getClientNote(
 ): Promise<ClientNote | null> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_client_notes')
+    .from('ziko_coach_client_notes')
     .select('id, coach_id, client_id, content, updated_at')
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -441,7 +441,7 @@ export async function upsertClientNote(
 ): Promise<ClientNote> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_client_notes')
+    .from('ziko_coach_client_notes')
     .upsert(
       { coach_id: coachId, client_id: clientId, content, updated_at: new Date().toISOString() },
       { onConflict: 'coach_id,client_id' },
@@ -462,7 +462,7 @@ export async function revokeClientLinkByCoach(
   const db = createUserClient(jwt);
   const revokedAt = new Date().toISOString();
   const { error } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .update({ revoked_at: revokedAt })
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -485,14 +485,14 @@ export async function getClientSummary(
   weekStart.setHours(0, 0, 0, 0);
   weekStart.setDate(now.getDate() - now.getDay()); // Sunday start
   const { data: weekSessions } = await db
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('id')
     .eq('user_id', clientId)
     .gte('created_at', weekStart.toISOString());
 
   // Last workout
   const { data: lastSession } = await db
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -501,7 +501,7 @@ export async function getClientSummary(
 
   // Latest weight
   const { data: latestMeasurement } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('weight_kg, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -512,9 +512,9 @@ export async function getClientSummary(
   const sevenDaysAgoDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     .toISOString().split('T')[0];
   const { data: habits } = await db
-    .from('habits').select('id').eq('user_id', clientId);
+    .from('ziko_habits').select('id').eq('user_id', clientId);
   const { data: habitLogs } = await db
-    .from('habit_logs').select('date, value')
+    .from('ziko_habit_logs').select('date, value')
     .eq('user_id', clientId).gte('date', sevenDaysAgoDate);
   let habitsPct: number | null = null;
   if (habits && habits.length > 0 && habitLogs) {
@@ -526,7 +526,7 @@ export async function getClientSummary(
   // Mood trend: last 7d avg vs prev 7d avg (D-10)
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
   const { data: moodRows } = await db
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .select('mood, created_at')
     .eq('user_id', clientId)
     .gte('created_at', fourteenDaysAgo)
@@ -568,7 +568,7 @@ export async function getClientSummary(
 export async function getClientSessions(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('id, name, created_at, started_at, ended_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -580,7 +580,7 @@ export async function getClientSessions(jwt: string, clientId: string, limit = 3
 export async function getClientMeasurements(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('id, weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, hip_cm, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -593,8 +593,8 @@ export async function getClientHabits(jwt: string, clientId: string) {
   const db = createUserClient(jwt);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [{ data: habits, error: hErr }, { data: logs, error: lErr }] = await Promise.all([
-    db.from('habits').select('id, name, type, target, emoji, color').eq('user_id', clientId).limit(30),
-    db.from('habit_logs').select('habit_id, date, value').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
+    db.from('ziko_habits').select('id, name, type, target, emoji, color').eq('user_id', clientId).limit(30),
+    db.from('ziko_habit_logs').select('habit_id, date, value').eq('user_id', clientId).gte('date', thirtyDaysAgo).limit(30),
   ]);
   if (hErr) throw new Error(hErr.message);
   if (lErr) throw new Error(lErr.message);
@@ -604,7 +604,7 @@ export async function getClientHabits(jwt: string, clientId: string) {
 export async function getClientNutrition(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .select('id, meal_type, food_name, calories, protein_g, carbs_g, fat_g, serving_g, date')
     .eq('user_id', clientId)
     .order('date', { ascending: false })
@@ -616,7 +616,7 @@ export async function getClientNutrition(jwt: string, clientId: string, limit = 
 export async function getClientSleep(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('sleep_logs')
+    .from('ziko_sleep_logs')
     .select('id, bedtime, wake_time, duration_hours, quality, date')
     .eq('user_id', clientId)
     .order('date', { ascending: false })
@@ -628,7 +628,7 @@ export async function getClientSleep(jwt: string, clientId: string, limit = 30) 
 export async function getClientCardio(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('id, activity_type, duration_min, distance_km, calories_burned, avg_pace_sec_per_km, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -640,7 +640,7 @@ export async function getClientCardio(jwt: string, clientId: string, limit = 30)
 export async function getClientJournal(jwt: string, clientId: string, limit = 30) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .select('id, mood, energy, stress, context, notes, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
@@ -666,7 +666,7 @@ export async function listCompareData(
 
   // Validate that the calling coach is linked to all requested clients (D-15 defense-in-depth)
   const { data: links } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('client_id')
     .eq('coach_id', coachId)
     .is('revoked_at', null)
@@ -680,7 +680,7 @@ export async function listCompareData(
   for (const clientId of validClientIds) {
     if (metric === 'weight') {
       const { data } = await db
-        .from('body_measurements')
+        .from('ziko_body_measurements')
         .select('created_at, weight_kg')
         .eq('user_id', clientId)
         .gte('created_at', since)
@@ -688,7 +688,7 @@ export async function listCompareData(
       result[clientId] = (data ?? []).map((r: any) => ({ date: r.created_at.split('T')[0], value: r.weight_kg }));
     } else if (metric === 'sessions') {
       const { data } = await db
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('created_at')
         .eq('user_id', clientId)
         .gte('created_at', since);
@@ -705,7 +705,7 @@ export async function listCompareData(
         .map(([date, value]) => ({ date, value }));
     } else if (metric === 'sleep') {
       const { data } = await db
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('date, duration_hours')
         .eq('user_id', clientId)
         .gte('date', since.split('T')[0])
@@ -713,7 +713,7 @@ export async function listCompareData(
       result[clientId] = (data ?? []).map((r: any) => ({ date: r.date, value: r.duration_hours }));
     } else if (metric === 'mood') {
       const { data } = await db
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('created_at, mood')
         .eq('user_id', clientId)
         .gte('created_at', since)
@@ -737,7 +737,7 @@ export async function getProgramsForClient(
   const db = createUserClient(jwt);
 
   const { data: programs, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .select('id, name, description, goal, weeks_count, is_template, created_by_coach_id, assigned_to_user_id, template_source_id, start_date, weeks_data')
     .or(`assigned_to_user_id.eq.${clientId},and(user_id.eq.${clientId},assigned_to_user_id.is.null)`)
     .order('start_date', { ascending: false, nullsFirst: false });
@@ -774,7 +774,7 @@ export async function getProgramsForClient(
 
       // Count workout_sessions that reference this program and were logged this week
       const { count: doneCount } = await db
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id', { count: 'exact', head: true })
         .eq('source_program_id', prog.id)
         .gte('created_at', mondayIso);
@@ -823,7 +823,7 @@ export async function upsertSharedNote(
   const db = createUserClient(jwt);
 
   const { data, error } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .update({ shared_note: note })
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -867,8 +867,8 @@ export async function getFormsForClient(
 
   // Step 2 — Fetch all form_instances for this athlete, joining coach_forms
   const { data: instances, error: instErr } = await db
-    .from('form_instances')
-    .select('id, form_id, status, submitted_at, coach_forms!inner(title, questions, coach_id)')
+    .from('ziko_form_instances')
+    .select('id, form_id, status, submitted_at, coach_forms:ziko_coach_forms!inner(title, questions, coach_id)')
     .eq('athlete_id', clientId);
 
   if (instErr) throw new Error(instErr.message);
@@ -887,7 +887,7 @@ export async function getFormsForClient(
 
   if (submittedIds.length > 0) {
     const { data: responses, error: respErr } = await db
-      .from('form_responses')
+      .from('ziko_form_responses')
       .select('instance_id, answers')
       .in('instance_id', submittedIds);
 

@@ -38,7 +38,7 @@ export async function measurements_log(
   if (hip_cm != null) entry.hip_cm = hip_cm;
 
   const { data, error } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .insert(entry)
     .select('id, date, weight_kg, body_fat_pct')
     .single();
@@ -63,7 +63,7 @@ export async function measurements_get_history(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('*')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])
@@ -84,7 +84,7 @@ export async function measurements_get_progress(
 
   // Get latest measurement
   const { data: latest } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('*')
     .eq('user_id', userId)
     .order('date', { ascending: false })
@@ -95,7 +95,7 @@ export async function measurements_get_progress(
   const pastDate = new Date();
   pastDate.setDate(pastDate.getDate() - compareDays);
   const { data: pastEntries } = await db
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('*')
     .eq('user_id', userId)
     .lte('date', pastDate.toISOString().split('T')[0])

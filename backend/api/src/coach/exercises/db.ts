@@ -42,7 +42,7 @@ export async function getMediaUrls(
 
   // Step 1: Fetch the exercise row — coach_id derived server-side (IDOR prevention)
   const { data: exercise, error: exerciseErr } = await adminDb
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('coach_id, video_path, photo_path')
     .eq('id', exerciseId)
     .maybeSingle();
@@ -57,7 +57,7 @@ export async function getMediaUrls(
 
   // Step 2: Validate active coach-athlete relationship via coach_client_links
   const { data: link, error: linkErr } = await adminDb
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('id')
     .eq('coach_id', exercise.coach_id)
     .eq('client_id', athleteUserId)
@@ -120,7 +120,7 @@ export async function listExercises(
 ): Promise<{ exercises: CoachExercise[] }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('*')
     .eq('coach_id', coachId)
     .order('created_at', { ascending: false });
@@ -136,7 +136,7 @@ export async function createExercise(
 ): Promise<CoachExercise> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .insert({
       coach_id: coachId,
       name: body.name,
@@ -171,7 +171,7 @@ export async function updateExercise(
   if (body.gif_path !== undefined) updates.gif_path = body.gif_path;
 
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .update(updates)
     .eq('id', id)
     .eq('coach_id', coachId)
@@ -191,7 +191,7 @@ export async function deleteExercise(
 
   // Step 1: Fetch the row to get storage paths (IDOR guard: coach_id filter)
   const { data: row, error: fetchErr } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('video_path, photo_path, gif_path')
     .eq('id', id)
     .eq('coach_id', coachId)
@@ -214,7 +214,7 @@ export async function deleteExercise(
 
   // Step 4: Delete the DB row
   const { error: deleteErr } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .delete()
     .eq('id', id)
     .eq('coach_id', coachId);

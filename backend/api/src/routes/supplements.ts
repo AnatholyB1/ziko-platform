@@ -15,7 +15,7 @@ const router = new Hono();
 /** GET /supplements/categories */
 router.get('/categories', async (c) => {
   const { data, error } = await adminClient
-    .from('supplement_categories')
+    .from('ziko_supplement_categories')
     .select('*')
     .order('display_order');
   if (error) return c.json({ error: error.message }, 500);
@@ -25,7 +25,7 @@ router.get('/categories', async (c) => {
 /** GET /supplements/brands */
 router.get('/brands', async (c) => {
   const { data, error } = await adminClient
-    .from('supplement_brands')
+    .from('ziko_supplement_brands')
     .select('*')
     .order('name');
   if (error) return c.json({ error: error.message }, 500);
@@ -40,8 +40,8 @@ router.get('/search', async (c) => {
   const limit = Math.min(parseInt(c.req.query('limit') ?? '50', 10), 100);
 
   let query = adminClient
-    .from('supplements')
-    .select('*, supplement_brands(*), supplement_categories(*)');
+    .from('ziko_supplements')
+    .select('*, supplement_brands:ziko_supplement_brands(*), supplement_categories:ziko_supplement_categories(*)');
 
   if (q) query = query.ilike('name', `%${q}%`);
   if (category) query = query.eq('category_id', category);
@@ -58,12 +58,12 @@ router.get('/:id', async (c) => {
 
   const [{ data: supplement, error: suppErr }, { data: prices, error: priceErr }] = await Promise.all([
     adminClient
-      .from('supplements')
-      .select('*, supplement_brands(*), supplement_categories(*)')
+      .from('ziko_supplements')
+      .select('*, supplement_brands:ziko_supplement_brands(*), supplement_categories:ziko_supplement_categories(*)')
       .eq('id', id)
       .single(),
     adminClient
-      .from('supplement_prices')
+      .from('ziko_supplement_prices')
       .select('*')
       .eq('supplement_id', id)
       .order('price', { ascending: true }),
@@ -77,7 +77,7 @@ router.get('/:id', async (c) => {
 router.get('/:id/prices', async (c) => {
   const id = c.req.param('id');
   const { data, error } = await adminClient
-    .from('supplement_prices')
+    .from('ziko_supplement_prices')
     .select('*')
     .eq('supplement_id', id)
     .order('scraped_at', { ascending: false })
@@ -92,8 +92,8 @@ router.get('/:id/prices', async (c) => {
 router.get('/favorites/list', authMiddleware, async (c) => {
   const auth = c.get('auth');
   const { data, error } = await adminClient
-    .from('user_supplement_favorites')
-    .select('supplement_id, supplements(*, supplement_brands(*), supplement_categories(*))')
+    .from('ziko_user_supplement_favorites')
+    .select('supplement_id, supplements:ziko_supplements(*, supplement_brands:ziko_supplement_brands(*), supplement_categories:ziko_supplement_categories(*))')
     .eq('user_id', auth.userId);
   if (error) return c.json({ error: error.message }, 500);
   return c.json({ favorites: data });
@@ -103,7 +103,7 @@ router.get('/favorites/list', authMiddleware, async (c) => {
 router.post('/favorites/:supplementId', authMiddleware, async (c) => {
   const auth = c.get('auth');
   const supplementId = c.req.param('supplementId');
-  const { error } = await adminClient.from('user_supplement_favorites').insert({
+  const { error } = await adminClient.from('ziko_user_supplement_favorites').insert({
     user_id: auth.userId,
     supplement_id: supplementId,
   });
@@ -116,7 +116,7 @@ router.delete('/favorites/:supplementId', authMiddleware, async (c) => {
   const auth = c.get('auth');
   const supplementId = c.req.param('supplementId');
   const { error } = await adminClient
-    .from('user_supplement_favorites')
+    .from('ziko_user_supplement_favorites')
     .delete()
     .eq('user_id', auth.userId)
     .eq('supplement_id', supplementId);

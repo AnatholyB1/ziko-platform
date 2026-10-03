@@ -13,7 +13,7 @@ export async function nutrition_get_today(
   const date = (params.date as string | undefined) ?? today();
 
   const { data, error } = await db
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
@@ -50,7 +50,7 @@ export async function nutrition_log_meal(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .insert({
       user_id: userId,
       date: today(),
@@ -84,8 +84,8 @@ export async function nutrition_get_summary(
 
   // Get logs + user profile for goals
   const [logsRes, profileRes] = await Promise.all([
-    db.from('nutrition_logs').select('calories,protein_g,carbs_g,fat_g').eq('user_id', userId).eq('date', date),
-    db.from('user_profiles').select('weight_kg,height_cm,goal').eq('id', userId).single(),
+    db.from('ziko_nutrition_logs').select('calories,protein_g,carbs_g,fat_g').eq('user_id', userId).eq('date', date),
+    db.from('ziko_user_profiles').select('weight_kg,height_cm,goal').eq('id', userId).single(),
   ]);
 
   const logs = logsRes.data ?? [];
@@ -134,7 +134,7 @@ export async function nutrition_delete_entry(
 
   const db = clientForUser(userToken);
   const { error } = await db
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .delete()
     .eq('id', entry_id)
     .eq('user_id', userId); // RLS double-check
