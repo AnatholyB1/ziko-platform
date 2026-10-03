@@ -417,17 +417,25 @@ export function hintQuerySql() {
     '  (SELECT array_agg(a.attname ORDER BY k.ord)',
     '     FROM unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord)',
     '     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum) AS "columns",',
-    '  rcl.relname AS ref_table',
+    '  rcl.relname AS ref_table, rn.nspname AS ref_schema',
     'FROM pg_constraint c',
     'JOIN pg_class cl ON cl.oid = c.conrelid',
     'JOIN pg_namespace n ON n.oid = cl.relnamespace',
     'JOIN pg_class rcl ON rcl.oid = c.confrelid',
+    'JOIN pg_namespace rn ON rn.oid = rcl.relnamespace',
     "WHERE c.contype = 'f' AND n.nspname = 'public'",
     'ORDER BY 1, 2',
   ].join('\n');
 }
 
-const colKey = (cols) => (Array.isArray(cols) ? cols : []).join(',');
+// The Supabase CLI returns array_agg as Postgres array text ("{a,b}"), not a JSON array.
+const colKey = (cols) =>
+  (Array.isArray(cols)
+    ? cols
+    : typeof cols === 'string'
+      ? cols.replace(/^\{|\}$/g, '').split(',').filter(Boolean)
+      : []
+  ).join(',');
 
 /**
  * Match each ziko FK constraint X on T(cols)->R to the portfolio constraint on
@@ -436,9 +444,10 @@ const colKey = (cols) => (Array.isArray(cols) ? cols : []).join(',');
 export function buildHintMap(sourceRows, targetRows) {
   const out = {};
   for (const s of sourceRows) {
+    // FKs into other schemas (e.g. auth.users) keep their referenced table name; only public refs are prefixed.
+    const expectedRef = s.ref_schema && s.ref_schema !== 'public' ? s.ref_table : `ziko_${s.ref_table}`;
     const cands = targetRows.filter(
-      (r) =>
-        r.table === `ziko_${s.table}` && r.ref_table === `ziko_${s.ref_table}` && colKey(r.columns) === colKey(s.columns),
+      (r) => r.table === `ziko_${s.table}` && r.ref_table === expectedRef && colKey(r.columns) === colKey(s.columns),
     );
     if (cands.length === 0) {
       throw new Error(`no portfolio constraint matches ${s.table}.${s.constraint} (${colKey(s.columns)} -> ${s.ref_table})`);

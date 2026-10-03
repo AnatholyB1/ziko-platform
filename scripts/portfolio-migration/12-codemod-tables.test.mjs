@@ -290,3 +290,15 @@ function cli(args, tmp) {
     { encoding: 'utf8' },
   );
 }
+
+test('B16b buildHintMap handles pg array text columns and non-public referenced schemas', () => {
+  const src = [
+    { table: 'ai_tool_audit', constraint: 'a_coach_fkey', columns: '{coach_id}', ref_table: 'users', ref_schema: 'auth' },
+    { table: 'ai_tool_audit', constraint: 'a_client_fkey', columns: '{target_client_id}', ref_table: 'users', ref_schema: 'auth' },
+  ];
+  const tgt = [
+    { table: 'ziko_ai_tool_audit', constraint: 'z_coach_fkey', columns: '{coach_id}', ref_table: 'users', ref_schema: 'auth' },
+    { table: 'ziko_ai_tool_audit', constraint: 'z_client_fkey', columns: '{target_client_id}', ref_table: 'users', ref_schema: 'auth' },
+  ];
+  assert.deepEqual(buildHintMap(src, tgt), { a_coach_fkey: 'z_coach_fkey', a_client_fkey: 'z_client_fkey' });
+});
