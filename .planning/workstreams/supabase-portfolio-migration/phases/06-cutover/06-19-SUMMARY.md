@@ -35,3 +35,9 @@ Status: FAILED. v1.5.0 failed at Setup EAS (Node 20 vs eas-cli 24.10); fixed by 
 Pipeline failure not fixed, per instructions. v1.5.0 must NOT be re-tagged. A fix (e.g. Node 22 in release.yml, or pin eas-version to a Node-20-compatible release) needs a branch + PR and a new tag v1.5.1, pending a user decision. The v1.5.0 tag now exists on the remote pointing at a commit with no release artifacts.
 
 MOBILE FLIP: NOT ACHIEVED
+
+## Android-only submission (user decision "submit android")
+- After v1.5.1 built Android (EAS build 953d5957-7470-4c8c-a3ca-460e24428e98, app version 1.5.0, version code 16, built 2026-10-03 23:20 local) but failed iOS (provisioning profile lacks Sign in with Apple), the user explicitly chose `submit android`.
+- Submitted manually with `eas submit --platform android --profile production --id 953d5957-... --non-interactive` (Google service account key from EAS servers, track production, release status COMPLETED, not sent for review: false). Submission 8cbdf65c-303f-49fd-a318-ef40c54435db: FINISHED.
+- Status: MOBILE FLIP PARTIAL: Android 1.5.0 (versionCode 16) submitted to the Play production track; iOS NOT released (needs the user to enable Sign in with Apple on App ID com.ziko.mobile, regenerate the provisioning profile via `eas credentials`, then tag v1.5.2). The app was never device-tested against portfolio (checklist waived).
+- Open for the user (Task 2): confirm in Play Console the production release state (in review or rolling out).
