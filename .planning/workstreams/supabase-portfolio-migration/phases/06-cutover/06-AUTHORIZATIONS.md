@@ -56,3 +56,8 @@ Typed authorization: approve ubxllsvanurkwkohzxau option-ci-repoint
 Timestamp: 2026-10-03T15:50:44Z
 Reply: "approve ubxllsvanurkwkohzxau option-ci-repoint" / "verify-secrets: scratch"
 verify-secrets: scratch
+
+### 06-18 mobile build
+Typed authorization: approve ubxllsvanurkwkohzxau option-mobile-build
+Timestamp: 2026-10-03T19:04:04Z
+Reply: "approve ubxllsvanurkwkohzxau option-mobile-build"
