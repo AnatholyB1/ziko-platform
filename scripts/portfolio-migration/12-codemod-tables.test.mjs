@@ -189,6 +189,7 @@ test('B12 dynamic .from arguments are unrecognized unless allowlisted', () => {
   assert.equal(rw(`supabase.from(variable)`).unrecognized.length, 1);
   assert.equal(rw('supabase.from(`${x}`)').unrecognized.length, 1);
   assert.equal(rw(`const a = Array.from(items)`).unrecognized.length, 0);
+  assert.equal(rw(`gsap.from(ref.current, { y: 1 }); gsap.from('.card')`).unrecognized.length, 0);
   const ok = rw(`supabase.from(variable)`, { falsePositives: [{ file: FILE, pattern: '.from(variable)' }] });
   assert.equal(ok.unrecognized.length, 0);
 });
