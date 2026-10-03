@@ -273,3 +273,90 @@ after 05-08 (and before 05-11 or Phase 6), the patch is stale. Run `git apply --
 
 At phase end, on every path, delete `scripts/auth-merge/.access-token` and revoke the PAT `ziko-storage-phase5` at
 https://supabase.com/dashboard/account/tokens.
+
+## Phase 6 — Cutover
+
+Refs: ziko `slkobhavpwsubnsmuhya` (source, rollback target), portfolio `ubxllsvanurkwkohzxau`,
+scratch `rkirvurggtgjlkeuhded`. Scripts: `12-codemod-tables.mjs`, `13-cutover-delta.mjs`,
+`14-signup-isolation.mjs`, `15-smoke-core-flows.mjs`, `16-ci-migration-guard.mjs`, `17-env-switch.mjs`.
+Manual checklist: `.planning/workstreams/supabase-portfolio-migration/phases/06-cutover/06-CUTOVER-SMOKE-CHECKLIST.md`.
+
+### 6.1 Prerequisites
+
+- PAT `ziko-cutover-phase6` with portfolio, ziko and scratch access, in the gitignored
+  `scripts/auth-merge/.access-token` (or `SUPABASE_ACCESS_TOKEN`).
+- Supabase root CA at `scripts/portfolio-migration/.ca/supabase-ca.crt`, passed as `--ca-file`.
+- Vercel CLI logged in with access to the API project and the ziko-web project.
+- `gh` authenticated. EAS is run through `npx` (eas-cli is pinned by `17-env-switch`).
+
+### 6.2 Order
+
+1. 06-07: merge the working branch into main with the migrate job dormant.
+2. 06-08 / 06-09: on `gsd/phase-6-cutover`, apply both codemods (buckets and tables), the signup flag and the harness.
+3. 06-10: scratch rehearsal.
+4. 06-11: local env switch.
+5. 06-12: preview smoke (branch-scoped Preview env).
+6. 06-13 / 06-14: cutover delta.
+7. 06-15: API production env, merge the cutover PR; web stays pinned by rollback.
+8. 06-16: web production env, redeploy, promote.
+9. 06-17: CI secrets and `PORTFOLIO_MIGRATIONS_ENABLED`.
+10. 06-18: EAS env and native build.
+
+### 6.3 Commands
+
+Codemod (read-only unless `--apply`):
+
+        node scripts/portfolio-migration/12-codemod-tables.mjs --scan
+        node scripts/portfolio-migration/12-codemod-tables.mjs --apply
+        node scripts/portfolio-migration/12-codemod-tables.mjs --check
+        node scripts/portfolio-migration/12-codemod-tables.mjs --gen-hints --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau
+
+Cutover delta (`--mode plan` is read-only; `--mode apply` needs `--confirm-ref` and, on portfolio, the authorization file and phrase):
+
+        node scripts/portfolio-migration/13-cutover-delta.mjs --mode plan --source-ref slkobhavpwsubnsmuhya --project-ref <ref> --remap-file <remap> --ca-file scripts/portfolio-migration/.ca/supabase-ca.crt
+        node scripts/portfolio-migration/13-cutover-delta.mjs --mode apply --source-ref slkobhavpwsubnsmuhya --project-ref ubxllsvanurkwkohzxau --confirm-ref ubxllsvanurkwkohzxau --remap-file scripts/auth-merge/uuid-remap.json --ca-file scripts/portfolio-migration/.ca/supabase-ca.crt --authorization-file .planning/workstreams/supabase-portfolio-migration/phases/06-cutover/06-AUTHORIZATIONS.md --authorization-phrase "approve ubxllsvanurkwkohzxau option-cutover-delta"
+
+Signup isolation and core-flow smoke (portfolio runs also need `--authorization-file` and `--authorization-phrase`):
+
+        node scripts/portfolio-migration/14-signup-isolation.mjs --project-ref <ref> --confirm-ref <ref>
+        node scripts/portfolio-migration/15-smoke-core-flows.mjs --project-ref <ref> --confirm-ref <ref> --api-url <url> [--web-url <url>] [--skip-ai] [--skip-web] [--report-out <path>]
+
+CI migration guard (no network):
+
+        node scripts/portfolio-migration/16-ci-migration-guard.mjs --check-legacy
+        node scripts/portfolio-migration/16-ci-migration-guard.mjs --check-portfolio
+        node scripts/portfolio-migration/16-ci-migration-guard.mjs --pending --base <sha>
+
+Env switch (`--plan` prints names and fingerprints only; the flip and the rollback are the same command with a different `--target`):
+
+        node scripts/portfolio-migration/17-env-switch.mjs --surface api --target portfolio --dest vercel --vercel-env production --plan
+        node scripts/portfolio-migration/17-env-switch.mjs --surface api --target portfolio --dest vercel --vercel-env production --apply --confirm-ref ubxllsvanurkwkohzxau --authorization-file <06-AUTHORIZATIONS.md>
+        node scripts/portfolio-migration/17-env-switch.mjs --surface web --target portfolio --dest vercel --vercel-env production --apply --confirm-ref ubxllsvanurkwkohzxau --authorization-file <06-AUTHORIZATIONS.md>
+        node scripts/portfolio-migration/17-env-switch.mjs --surface mobile --target portfolio --dest eas --eas-env <env> --apply --confirm-ref ubxllsvanurkwkohzxau --authorization-file <06-AUTHORIZATIONS.md>
+        node scripts/portfolio-migration/17-env-switch.mjs --surface <api|web|mobile> --target portfolio --dest <local|vercel|eas> --audit
+        node scripts/portfolio-migration/17-env-switch.mjs --surface <api|web> --target portfolio --dest vercel --verify-remote
+
+Run `--help` on a script for any option not listed here.
+
+### 6.4 Typed phrases
+
+Every gate greps the exact line `Typed authorization: <phrase>` in
+`.planning/workstreams/supabase-portfolio-migration/phases/06-cutover/06-AUTHORIZATIONS.md`. The seven phrases and the
+recording rules are documented there. Only the user's verbatim reply is recorded.
+
+### 6.5 Rollback per surface (D-10 as amended)
+
+- API: `node scripts/portfolio-migration/17-env-switch.mjs --surface api --target ziko --dest vercel --vercel-env production --apply`, then `vercel rollback <pre-merge API deployment>`.
+- Web: `node scripts/portfolio-migration/17-env-switch.mjs --surface web --target ziko --dest vercel --vercel-env production --apply`, then `vercel rollback <pre-flip web deployment>`.
+- Pitfall 9: a rolled-back deployment keeps the env it was built with, and `NEXT_PUBLIC_` values are inlined at build time. Rolling back the env alone does not change an already-built deployment, so do both steps.
+- CI: unset `PORTFOLIO_MIGRATIONS_ENABLED`.
+- Mobile (D-01/D-04 superseded): halt the store rollout or do not promote the internal build. Rebuild with the `--target ziko` EAS env if needed.
+- Data written to portfolio after a flip is not copied back to ziko. Accepted: short window, no active users.
+
+### 6.6 Out of scope follow-ups
+
+- `purge-test-accounts` and the other ops scripts that still reference the ziko ref (listed by 06-01).
+- Scratch project teardown (section 4).
+- expo-updates enablement.
+- Token retirement: delete `scripts/auth-merge/.access-token` and revoke PAT `ziko-cutover-phase6` at
+  https://supabase.com/dashboard/account/tokens.
