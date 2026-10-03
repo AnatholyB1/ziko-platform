@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-10-03T15:13:01.130Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "mode": "smoke",
+  "spec": "apps/web/src/app/api/__live__/storage-routes.live.test.ts",
+  "note": "Driven by 10-storage-auth-tests --mode smoke (read-only fixture run); web-coach surface cases extracted. Full report: prod-web-storage-auth.json",
+  "passed": true,
+  "counts": {
+    "passed": 6,
+    "failed": 0
+  },
+  "cases": [
+    {
+      "id": "cl-public-read",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-logos",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-own",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "D",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-unknown-bucket",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "ck-web-photo-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "A",
+      "op": "route-photo",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ai-foreign-read",
+      "surface": "web-coach",
+      "bucket": "ziko-ai-imports",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 
 Manual verification for the carried Phase 5 UI items and the D-12 core flows.
 
-- Build / deployment under test:
+- Build / deployment under test: Web (Section B): ziko-web production dpl_3awm4RAZcYwAGzXiRXk1EgfTaNW4 (promoted 2026-10-03T15:08Z, served on ziko-app.com)
 - Tester:
-- Date:
+- Date: Web deployment promoted 2026-10-03 (Section B awaiting the user's run)
 - Device model and OS (no account emails):
 
 **Rule:** any FAIL = STOP and run the surface rollback in `scripts/portfolio-migration/RUNBOOK.md` (Phase 6, section 6.5).
