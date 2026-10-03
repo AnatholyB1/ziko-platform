@@ -169,7 +169,7 @@ Plans:
 - [x] 06-07-PLAN.md — [BLOCKING] Disable auto-chain; merge working line into main with migrate job dormant (typed phrase) (CUTOVER-05, CUTOVER-03)
 - [x] 06-08-PLAN.md — gsd/phase-6-cutover: apply bucket + table codemods, fkey hint map, zero residuals, green checks (CUTOVER-01)
 - [x] 06-09-PLAN.md — Signup flag at every call-site (D-14); 6 deferred coach routes become real harness cases (CUTOVER-03, CUTOVER-04)
-- [ ] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
+- [x] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
 - [ ] 06-11-PLAN.md — Local env files -> portfolio; local backend/web/mobile run proofs, read-only (CUTOVER-01)
 - [ ] 06-12-PLAN.md — [BLOCKING] Vercel previews with branch-scoped env -> portfolio; scripted smoke + tenant diff (typed phrase) (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [ ] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
@@ -205,5 +205,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 9/20 | In Progress|  |
+| 6. Cutover | 10/20 | In Progress|  |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
