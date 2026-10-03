@@ -24,6 +24,15 @@ describe('fixtures', () => {
     expect(data.user?.id).toBe(u.id);
   });
 
+  it('createTestUser stamps app ziko', async () => {
+    const u = await createTestUser('fixture-app');
+    createdUserIds.push(u.id);
+    const admin = getAdminClient();
+    const { data, error } = await admin.auth.admin.getUserById(u.id);
+    expect(error).toBeNull();
+    expect(data.user?.user_metadata?.app).toBe('ziko');
+  });
+
   it('two createTestUser calls produce distinct ids', async () => {
     const a = await createTestUser('fixture');
     const b = await createTestUser('fixture');

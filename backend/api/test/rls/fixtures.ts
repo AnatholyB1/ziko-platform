@@ -43,6 +43,8 @@ export async function createTestUser(prefix: string): Promise<TestUser> {
     email,
     password,
     email_confirm: true,
+    // D-18: gated ziko auth triggers only create profile/credit rows for app = 'ziko'
+    user_metadata: { app: 'ziko' },
   });
   if (error || !data.user) {
     throw new Error(`createTestUser(${prefix}): ${error?.message ?? 'no user returned'}`);
