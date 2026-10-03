@@ -37,7 +37,7 @@ export default function RegisterScreen() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } },
+        options: { data: { app: 'ziko', full_name: name } },
       });
       if (error) throw error;
       router.replace('/(auth)/onboarding/step-1');
