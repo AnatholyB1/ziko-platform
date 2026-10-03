@@ -172,7 +172,7 @@ Plans:
 - [x] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
 - [x] 06-11-PLAN.md — Local env files -> portfolio; local backend/web/mobile run proofs, read-only (CUTOVER-01)
 - [x] 06-12-PLAN.md — [BLOCKING] Vercel previews with branch-scoped env -> portfolio; scripted smoke + tenant diff (typed phrase) (CUTOVER-02, CUTOVER-03, CUTOVER-04)
-- [ ] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
+- [x] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
 - [ ] 06-14-PLAN.md — [BLOCKING] Final delta on portfolio + --check all; human review (CUTOVER-03, CUTOVER-04)
 - [ ] 06-15-PLAN.md — [BLOCKING] Backend flip: API prod env, merge cutover PR, pin web, prod API smoke, rollback path (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [ ] 06-16-PLAN.md — [BLOCKING] Web flip: prod env, rebuild + promote, scripted + manual web smoke (CUTOVER-02, CUTOVER-03, CUTOVER-04)
@@ -205,5 +205,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 12/20 | In Progress|  |
+| 6. Cutover | 13/20 | In Progress|  |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
