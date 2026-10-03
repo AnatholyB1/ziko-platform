@@ -70,7 +70,7 @@ function needsReviewInput(overrides: Partial<MergeRowInput> = {}): MergeRowInput
 // ─── Stub client builder ────────────────────────────────────────────────────
 
 interface StubOptions {
-  failOn?: string; // exact call label to fail, e.g. 'exercises_merge_backup.insert'
+  failOn?: string; // exact call label to fail, e.g. 'ziko_exercises_merge_backup.insert'
   selectData?: Record<string, unknown>; // what exercises.select().eq().single() returns
 }
 
@@ -242,7 +242,7 @@ describe('IMPORT-03 — unmatched_new rows INSERT', () => {
     expect(uploadCalls.length).toBeGreaterThan(0);
     expect(uploadCalls.every((c) => c.path.startsWith('new-uuid-0001/'))).toBe(true);
 
-    const insertIndex = calls.indexOf('exercises.insert');
+    const insertIndex = calls.indexOf('ziko_exercises.insert');
     const uploadIndexes = calls
       .map((c, i) => (c.startsWith('storage.') ? i : -1))
       .filter((i) => i !== -1);
@@ -287,7 +287,7 @@ describe('IMPORT-05 — needs_review rows are untouched', () => {
     expect(result.status).toBe('needs_review');
     expect(result.errorMessage).toBeNull();
     expect(result.exerciseId).toBe('legacy-uuid-9999');
-    expect(calls.some((c) => c.startsWith('exercises.'))).toBe(false);
+    expect(calls.some((c) => c.startsWith('ziko_exercises.'))).toBe(false);
     expect(calls.some((c) => c.startsWith('storage.'))).toBe(false);
   });
 });
@@ -301,8 +301,8 @@ describe('MEDIA-04 — backup precedes UPDATE', () => {
 
     await processRow(input, deps);
 
-    const backupIndex = calls.indexOf('exercises_merge_backup.insert');
-    const updateIndex = calls.indexOf('exercises.update');
+    const backupIndex = calls.indexOf('ziko_exercises_merge_backup.insert');
+    const updateIndex = calls.indexOf('ziko_exercises.update');
     expect(backupIndex).toBeGreaterThanOrEqual(0);
     expect(updateIndex).toBeGreaterThanOrEqual(0);
     expect(backupIndex).toBeLessThan(updateIndex);
@@ -312,7 +312,7 @@ describe('MEDIA-04 — backup precedes UPDATE', () => {
   });
 
   it('a failed backup insert leaves update uncalled and returns a non-null errorMessage', async () => {
-    const { client, calls } = makeStubClient({ failOn: 'exercises_merge_backup.insert' });
+    const { client, calls } = makeStubClient({ failOn: 'ziko_exercises_merge_backup.insert' });
     const deps = makeDeps(client);
     const input = matchedInput({ exerciseId: 'orig-uuid-1234' });
 
@@ -320,7 +320,7 @@ describe('MEDIA-04 — backup precedes UPDATE', () => {
 
     expect(result.errorMessage).not.toBeNull();
     expect(result.status).toBe('matched');
-    expect(calls).not.toContain('exercises.update');
+    expect(calls).not.toContain('ziko_exercises.update');
   });
 });
 
@@ -380,7 +380,7 @@ describe('D-06 — failures are contained', () => {
   });
 
   it('resolves (never rejects) when the backup insert fails', async () => {
-    const { client } = makeStubClient({ failOn: 'exercises_merge_backup.insert' });
+    const { client } = makeStubClient({ failOn: 'ziko_exercises_merge_backup.insert' });
     const deps = makeDeps(client);
     const input = matchedInput({ exerciseId: 'orig-uuid-1234' });
 
@@ -392,7 +392,7 @@ describe('D-06 — failures are contained', () => {
   });
 
   it('resolves (never rejects) when the exercises write fails', async () => {
-    const { client } = makeStubClient({ failOn: 'exercises.update' });
+    const { client } = makeStubClient({ failOn: 'ziko_exercises.update' });
     const deps = makeDeps(client);
     const input = matchedInput({ exerciseId: 'orig-uuid-1234' });
 
@@ -434,13 +434,13 @@ describe('category guard', () => {
     expect(result.exerciseId).toBeNull();
     expect(result.errorMessage).not.toBeNull();
     expect(result.errorMessage).toContain('bogus-category');
-    expect(calls).not.toContain('exercises.insert');
+    expect(calls).not.toContain('ziko_exercises.insert');
   });
 });
 
 describe('FK safety', () => {
   it('a failed unmatched_new insert returns exerciseId: null so a follow-up import-log FK cannot be violated', async () => {
-    const { client } = makeStubClient({ failOn: 'exercises.insert' });
+    const { client } = makeStubClient({ failOn: 'ziko_exercises.insert' });
     const deps = makeDeps(client);
     const input = unmatchedNewInput();
 
