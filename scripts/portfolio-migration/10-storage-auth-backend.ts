@@ -5,39 +5,25 @@
  * SUPABASE_SERVICE_KEY of the TARGET project and ZIKO_STORAGE_LIVE_FIXTURE (gitignored .tmp file).
  * Prints exactly one JSON object ({ results: [{ id, status, route? }] }) on stdout. Never prints tokens.
  *
- * Coach storage-signing code paths (verified by reading the source in plan 05-07):
- *   - coach/clients/db.ts signCoachPhoto is not exported and is only reached through listCoachClients /
- *     getActiveLink, which query coach_client_links / coach_profiles.
- *   - coach/videos/service.ts upload-url calls getActiveCoachForAthlete (table query); signed-url and
- *     audio-url load coach_videos / annotation rows first.
- *   - coach/exercises/db.ts getMediaUrls queries coach_exercises + coach_client_links before signing.
- *   - coach/imports/service.ts POST / inserts an ai_imports row before signing.
- * The code still names unprefixed tables (the table-name codemod is not part of Phase 5), so none of
- * these can run against scratch/portfolio yet: they are reported as deferred-table-codemod and become
- * named Phase 6 smoke items. They are never reported as pass.
+ * Carried coach routes (06-09): the table-name codemod is in the tree, so the 6 routes that were deferred in
+ * Phase 5 run for real against fixture rows the orchestrator inserted (fixture.route: videoId,
+ * annotationId, exerciseId, plus an active coach C -> athlete A link). Handlers return 200/201 for
+ * allowed calls and 403 for foreign callers, except GET /coach/exercises/:id/media-url which degrades
+ * to 200 with all-null URLs for an unlinked caller; that shape is mapped to 'deny' here.
  *
  * `--selfcheck` imports the app with dummy env and exits 0 without any network access.
  */
 import { readFileSync } from 'node:fs';
 
-type Status = 'allow' | 'deny' | 'reject' | 'error' | 'deferred-table-codemod';
+type Status = 'allow' | 'deny' | 'reject' | 'error';
 interface Result {
   id: string;
   status: Status;
   route?: string;
 }
 
-const DEFERRED: Array<{ id: string; route: string }> = [
-  { id: 'bk-clients-links-me', route: 'GET /coach/clients/links/me' },
-  { id: 'bk-videos-upload-url', route: 'POST /coach/videos/upload-url' },
-  { id: 'bk-videos-signed-url', route: 'GET /coach/videos/:videoId/signed-url' },
-  { id: 'bk-videos-audio-url', route: 'GET /coach/videos/annotations/:annotationId/audio-url' },
-  { id: 'bk-exercises-media-url', route: 'GET /coach/exercises/:id/media-url' },
-  { id: 'bk-imports-create', route: 'POST /coach/imports' },
-];
-
 function statusFromHttp(code: number): Status {
-  if (code === 200) return 'allow';
+  if (code === 200 || code === 201) return 'allow';
   if (code === 401 || code === 403) return 'deny';
   if (code === 400) return 'reject';
   return 'error';
@@ -58,6 +44,7 @@ async function main(): Promise<void> {
   const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
     users: Record<'A' | 'B' | 'C' | 'D', { id: string; jwt: string }>;
     buckets: Record<string, string>;
+    route: { videoId: string; annotationId: string; exerciseId: string };
   };
 
   // env (target project) is already set by the orchestrator, import only after that.
@@ -89,7 +76,58 @@ async function main(): Promise<void> {
   await uploadUrl('ai-backend-own', 'ai-imports', 'A', 'A');
   await uploadUrl('ai-backend-foreign', 'ai-imports', 'B', 'A');
 
-  for (const d of DEFERRED) results.push({ id: d.id, status: 'deferred-table-codemod', route: d.route });
+  type Check = (body: any) => boolean;
+  async function call(
+    id: string,
+    route: string,
+    actor: 'A' | 'B' | 'C' | 'D',
+    method: 'GET' | 'POST',
+    url: string,
+    jsonBody: unknown,
+    check: Check,
+    denyWhenNullBody?: (body: any) => boolean,
+  ) {
+    try {
+      const headers: Record<string, string> = { Authorization: `Bearer ${fixture.users[actor].jwt}` };
+      if (jsonBody !== undefined) headers['Content-Type'] = 'application/json';
+      const res = await app.request(url, {
+        method,
+        headers,
+        body: jsonBody === undefined ? undefined : JSON.stringify(jsonBody),
+      });
+      let status = statusFromHttp(res.status);
+      if (status === 'allow') {
+        const body = await res.json();
+        if (denyWhenNullBody?.(body)) status = 'deny';
+        else if (!check(body)) status = 'error';
+      }
+      results.push({ id, status, route });
+    } catch {
+      results.push({ id, status: 'error', route });
+    }
+  }
+
+  const { videoId, annotationId, exerciseId } = fixture.route;
+  const hasUrl: Check = (b) => typeof b?.signedUrl === 'string' && b.signedUrl.length > 0;
+  const allNullMedia = (b: any) => !b?.video_url && !b?.photo_url && !b?.gif_url;
+
+  await call('bk-clients-links-me', 'GET /coach/clients/links/me', 'A', 'GET', '/coach/clients/links/me', undefined,
+    (b) => b?.link?.coach_id === fixture.users.C.id && b?.link?.client_id === fixture.users.A.id);
+  await call('bk-videos-upload-url', 'POST /coach/videos/upload-url', 'A', 'POST', '/coach/videos/upload-url', {},
+    (b) => hasUrl(b) && typeof b.videoId === 'string');
+  await call('bk-videos-signed-url', 'GET /coach/videos/:videoId/signed-url', 'C', 'GET', `/coach/videos/${videoId}/signed-url`, undefined, hasUrl);
+  await call('bk-videos-signed-url-foreign', 'GET /coach/videos/:videoId/signed-url', 'D', 'GET', `/coach/videos/${videoId}/signed-url`, undefined, hasUrl);
+  await call('bk-videos-audio-url', 'GET /coach/videos/annotations/:annotationId/audio-url', 'C', 'GET', `/coach/videos/annotations/${annotationId}/audio-url`, undefined, hasUrl);
+  await call('bk-videos-audio-url-foreign', 'GET /coach/videos/annotations/:annotationId/audio-url', 'D', 'GET', `/coach/videos/annotations/${annotationId}/audio-url`, undefined, hasUrl);
+  await call('bk-exercises-media-url', 'GET /coach/exercises/:id/media-url', 'A', 'GET', `/coach/exercises/${exerciseId}/media-url`, undefined,
+    (b) => !allNullMedia(b), allNullMedia);
+  await call('bk-exercises-media-url-foreign-athlete', 'GET /coach/exercises/:id/media-url', 'B', 'GET', `/coach/exercises/${exerciseId}/media-url`, undefined,
+    () => true, allNullMedia);
+  await call('bk-exercises-media-url-foreign-coach', 'GET /coach/exercises/:id/media-url', 'D', 'GET', `/coach/exercises/${exerciseId}/media-url`, undefined,
+    () => true, allNullMedia);
+  await call('bk-imports-create', 'POST /coach/imports', 'C', 'POST', '/coach/imports',
+    { filename: 'storage-test.pdf', mime_type: 'application/pdf', size_bytes: 1024, mode: 'coach_template' },
+    (b) => typeof b?.import_id === 'string' && typeof b?.signed_upload_url === 'string');
 
   process.stdout.write(`${JSON.stringify({ results })}\n`);
 }
