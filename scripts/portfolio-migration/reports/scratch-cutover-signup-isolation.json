@@ -1,0 +1,84 @@
+{
+  "target": "scratch",
+  "passed": true,
+  "cases": [
+    {
+      "id": "non-ziko-none-zero-ziko-rows",
+      "expect": 0,
+      "observed": 0,
+      "ok": true
+    },
+    {
+      "id": "non-ziko-rh-zero-ziko-rows",
+      "expect": 0,
+      "observed": 0,
+      "ok": true
+    },
+    {
+      "id": "non-ziko-gecko-zero-ziko-rows",
+      "expect": 0,
+      "observed": 0,
+      "ok": true
+    },
+    {
+      "id": "ziko-profile-created",
+      "expect": 1,
+      "observed": 1,
+      "ok": true
+    },
+    {
+      "id": "ziko-welcome-balance",
+      "expect": 5,
+      "observed": 5,
+      "ok": true
+    },
+    {
+      "id": "ziko-welcome-transaction",
+      "expect": 1,
+      "observed": 1,
+      "ok": true
+    },
+    {
+      "id": "cleanup-zero-leftovers",
+      "expect": 0,
+      "observed": 0,
+      "ok": true
+    }
+  ],
+  "informational": [
+    {
+      "user": "none",
+      "prefix": "rh_",
+      "rows": 0
+    },
+    {
+      "user": "none",
+      "prefix": "gecko_",
+      "rows": 0
+    },
+    {
+      "user": "rh",
+      "prefix": "rh_",
+      "rows": 0
+    },
+    {
+      "user": "rh",
+      "prefix": "gecko_",
+      "rows": 0
+    },
+    {
+      "user": "gecko",
+      "prefix": "rh_",
+      "rows": 0
+    },
+    {
+      "user": "gecko",
+      "prefix": "gecko_",
+      "rows": 0
+    }
+  ],
+  "cleanup": {
+    "leftoverUsers": 0,
+    "leftoverRows": 0
+  }
+}
