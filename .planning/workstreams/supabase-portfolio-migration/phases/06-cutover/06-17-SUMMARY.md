@@ -1,41 +1,21 @@
-# Phase 6 Plan 17: CI Repoint Summary
+---
+phase: 06-cutover
+plan: 17
+status: complete
+requirements: [CUTOVER-05]
+---
 
-STATUS: BLOCKED (CUTOVER-05 not proven). `CI REPOINT: PASS` is NOT recorded.
+# 06-17 Summary: CI repointed to portfolio
 
-Verify is now green (PR #39 and PR #40 fixed it), but migrate-portfolio fails at `Link portfolio project`: the stored `SUPABASE_ACCESS_TOKEN` is rejected by the Supabase CLI with "Invalid access token format. Must be like `sbp_0102...1920`."
+CI REPOINT: PASS
 
-## What was done (re-run of Task 4)
+- Authorization: user typed `approve ubxllsvanurkwkohzxau option-ci-repoint` with `verify-secrets: scratch` (06-AUTHORIZATIONS.md, e2f96581).
+- Secrets (names and update dates, 2026-10-03 UTC): SUPABASE_ACCESS_TOKEN 17:14:09Z (new token `ziko-ci-portfolio-2`, 90 days, org scope); SUPABASE_PROJECT_ID 16:24:48Z (ubxllsvanurkwkohzxau); SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY / SUPABASE_SERVICE_ROLE_KEY 15:53Z, pointing at scratch rkirvurggtgjlkeuhded (verify-secrets: scratch). Variable PORTFOLIO_MIGRATIONS_ENABLED=true (17:15:40Z) and left set.
+- Dispatched run on main: 37139860455 (https://github.com/AnatholyB1/ziko-platform/actions/runs/37139860455). All jobs success: type-check / lint / test, migration-guard, migrate-portfolio, SERVICE_ROLE, react-native bundle, coach-sdk zod.
+- Log assertions: `project ref ok`, `ziko_ tables: 99`, `no pending portfolio migrations` present; `db push|migration repair` lines: 0.
 
-- Step 0 gate: authorization line present in 06-AUTHORIZATIONS.md (commit e2f96581), `verify-secrets: scratch`.
-- `SUPABASE_PROJECT_ID` = ubxllsvanurkwkohzxau (updated 2026-10-03T16:24:48Z).
-- Verify secrets point at scratch rkirvurggtgjlkeuhded: SUPABASE_URL 15:53:53Z, SUPABASE_PUBLISHABLE_KEY 15:53:54Z, SUPABASE_SERVICE_ROLE_KEY 15:53:55Z.
-- `SUPABASE_ACCESS_TOKEN` updated 2026-10-03T16:23:11Z (`ziko-ci-portfolio`, set by the user).
-- `PORTFOLIO_MIGRATIONS_ENABLED=true` set, run dispatched, then DELETED after the failure (job dormant; variable list is empty).
-- Dispatched run on main: 37138638180
-  https://github.com/AnatholyB1/ziko-platform/actions/runs/37138638180
-- Context: PR #39 (TS6307 + stale test paths) and PR #40 (8875a730, two latency-sensitive timing specs skipped when CI is set) are merged.
-
-## Evidence
-
-Attempt 1 of the run: type-check / lint / test failed. Failures were `duplicate key value violates unique constraint "ziko_coach_invitations_code_key"` in clients-preview, clients-summary and invitations specs. Cause is most likely a concurrent push-triggered CI run (37138602718, started 34s earlier) sharing the same scratch database. This is not one of the two skipped timing specs. One `gh run rerun --failed` was done (the one allowed rerun); with no concurrent run, verify then passed.
-
-Final job conclusions (run 37138638180):
-- type-check / lint / test: success (after the rerun)
-- migration-guard: success
-- Verify no react-native in web bundle: success
-- Verify no SERVICE_ROLE under coach/: success
-- coach-sdk zod resolves to root zod: success
-- migrate-portfolio: FAILURE at step `Link portfolio project`
-
-Marker assertions:
-- `project ref ok`: present (ref guard passed).
-- `ziko_ tables: N` (N >= 99): NOT reached.
-- `no pending portfolio migrations`: NOT reached.
-- `grep -cE "db push|migration repair"` over the whole run log: 0.
-
-## Open items
-
-- `SUPABASE_ACCESS_TOKEN` is not a valid Supabase personal access token. It must start with `sbp_`. Likely cause: wrong value pasted (for example an API key, or extra characters or whitespace). The user must mint a fresh token at https://supabase.com/dashboard/account/tokens and run `gh secret set SUPABASE_ACCESS_TOKEN` themselves (the agent never sees it).
-- After the secret is fixed: `gh variable set PORTFOLIO_MIGRATIONS_ENABLED --body true`, then `gh workflow run ci.yml --ref main`. Do not trigger other CI runs (a push or PR) at the same time, because the verify suites share the scratch DB and collide on invitation codes.
-- Trade-off recorded: the two timing specs (coach/timing.spec.ts and rls/redeem-rpc.spec.ts) no longer run on CI. The verify suites also share one scratch DB, so concurrent CI runs can fail spuriously.
-- No workflow or code changes were made in this task.
+## What it took (CI was red on main before this plan)
+- PR #39: TS6307 in plugins/coach tsconfig + stale migration paths in apps/web retention-config test.
+- PR #40: two remote constant-time timing specs now skip when CI is set (coach/timing.spec.ts, rls/redeem-rpc.spec.ts). Trade-off: CI no longer covers those timing side-channel checks; they still run locally.
+- First CI token attempt failed: the PowerShell pipe appended a newline to the stored secret, so the CLI rejected it as an invalid format. Replaced by a second token set without a trailing newline. The first token `ziko-ci-portfolio` is unused and should be revoked in 06-20.
+- Verify suites share the scratch DB: concurrent CI runs collide on unique codes. Avoid pushing or opening PRs while a dispatched run is active.
