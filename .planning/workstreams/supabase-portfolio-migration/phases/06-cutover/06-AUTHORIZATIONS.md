@@ -40,3 +40,8 @@ Reply: "approve ubxllsvanurkwkohzxau option-preview-smoke"
 Typed authorization: approve ubxllsvanurkwkohzxau option-cutover-delta
 Timestamp: 2026-10-03T13:51:10Z
 Reply: "approve ubxllsvanurkwkohzxau option-cutover-delta"
+
+### 06-15 backend flip
+Typed authorization: approve ubxllsvanurkwkohzxau option-backend-flip
+Timestamp: 2026-10-03T14:26:23Z
+Reply: "approve ubxllsvanurkwkohzxau option-backend-flip"
