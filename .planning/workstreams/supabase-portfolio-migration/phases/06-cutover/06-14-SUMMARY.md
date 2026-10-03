@@ -1,7 +1,7 @@
 ---
 phase: 06-cutover
 plan: 14
-status: awaiting-human-review
+status: complete
 requirements: [CUTOVER-03]
 ---
 
@@ -17,4 +17,4 @@ CUTOVER DELTA: PASS
 - Reports committed in 415f23d7 (PII-free). Auth baseline with full UUIDs kept local and untracked.
 
 ## Human review (Task 2)
-Awaiting user reply `delta reviewed`.
+User reply (verbatim): "delta reviewed".
