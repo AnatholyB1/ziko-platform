@@ -45,3 +45,8 @@ Reply: "approve ubxllsvanurkwkohzxau option-cutover-delta"
 Typed authorization: approve ubxllsvanurkwkohzxau option-backend-flip
 Timestamp: 2026-10-03T14:26:23Z
 Reply: "approve ubxllsvanurkwkohzxau option-backend-flip"
+
+### 06-16 web flip
+Typed authorization: approve ubxllsvanurkwkohzxau option-web-flip
+Timestamp: 2026-10-03T14:58:31Z
+Reply: "approve ubxllsvanurkwkohzxau option-web-flip"
