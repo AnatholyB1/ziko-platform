@@ -40,3 +40,24 @@ Reply: "approve ubxllsvanurkwkohzxau option-preview-smoke"
 Typed authorization: approve ubxllsvanurkwkohzxau option-cutover-delta
 Timestamp: 2026-10-03T13:51:10Z
 Reply: "approve ubxllsvanurkwkohzxau option-cutover-delta"
+
+### 06-15 backend flip
+Typed authorization: approve ubxllsvanurkwkohzxau option-backend-flip
+Timestamp: 2026-10-03T14:26:23Z
+Reply: "approve ubxllsvanurkwkohzxau option-backend-flip"
+
+### 06-16 web flip
+Typed authorization: approve ubxllsvanurkwkohzxau option-web-flip
+Timestamp: 2026-10-03T14:58:31Z
+Reply: "approve ubxllsvanurkwkohzxau option-web-flip"
+
+### 06-17 CI repoint
+Typed authorization: approve ubxllsvanurkwkohzxau option-ci-repoint
+Timestamp: 2026-10-03T15:50:44Z
+Reply: "approve ubxllsvanurkwkohzxau option-ci-repoint" / "verify-secrets: scratch"
+verify-secrets: scratch
+
+### 06-18 mobile build
+Typed authorization: approve ubxllsvanurkwkohzxau option-mobile-build
+Timestamp: 2026-10-03T19:04:04Z
+Reply: "approve ubxllsvanurkwkohzxau option-mobile-build"

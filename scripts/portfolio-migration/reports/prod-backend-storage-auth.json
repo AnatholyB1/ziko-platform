@@ -1,0 +1,347 @@
+{
+  "generated_at": "2026-10-03T14:43:03.842Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "mode": "smoke",
+  "passed": true,
+  "counts": {
+    "passed": 26,
+    "failed": 0,
+    "missing": 0
+  },
+  "perSurface": {
+    "mobile-profile": {
+      "pass": 2,
+      "fail": 0
+    },
+    "web-coach": {
+      "pass": 6,
+      "fail": 0
+    },
+    "plugin-coach": {
+      "pass": 2,
+      "fail": 0
+    },
+    "plugin-nutrition": {
+      "pass": 2,
+      "fail": 0
+    },
+    "backend": {
+      "pass": 14,
+      "fail": 0
+    }
+  },
+  "routeCases": [
+    {
+      "id": "bk-clients-links-me",
+      "route": "GET /coach/clients/links/me"
+    },
+    {
+      "id": "bk-videos-upload-url",
+      "route": "POST /coach/videos/upload-url"
+    },
+    {
+      "id": "bk-videos-signed-url",
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-signed-url-foreign",
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-audio-url",
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-videos-audio-url-foreign",
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-exercises-media-url",
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-exercises-media-url-foreign-athlete",
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-exercises-media-url-foreign-coach",
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-imports-create",
+      "route": "POST /coach/imports"
+    }
+  ],
+  "cases": [
+    {
+      "id": "av-public-read",
+      "surface": "mobile-profile",
+      "bucket": "ziko-avatars",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "cl-public-read",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-logos",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "em-public-read",
+      "surface": "plugin-coach",
+      "bucket": "ziko-exercise-media",
+      "actor": "anon",
+      "op": "public-read",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "pp-baseline-public-url",
+      "surface": "mobile-profile",
+      "bucket": "ziko-profile-photos",
+      "actor": "anon",
+      "op": "baseline-public-url",
+      "expect": "baseline",
+      "observed": "baseline",
+      "ok": true
+    },
+    {
+      "id": "sp-sign-upload-own",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "sign-upload",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-backend-own",
+      "surface": "backend",
+      "bucket": "ziko-scan-photos",
+      "actor": "A",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "sp-backend-foreign",
+      "surface": "backend",
+      "bucket": "ziko-scan-photos",
+      "actor": "B",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "sp-foreign-read",
+      "surface": "plugin-nutrition",
+      "bucket": "ziko-scan-photos",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-own",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "D",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ck-web-upload-url-unknown-bucket",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "C",
+      "op": "route-upload-url",
+      "expect": "reject",
+      "observed": "reject",
+      "ok": true
+    },
+    {
+      "id": "ck-web-photo-foreign",
+      "surface": "web-coach",
+      "bucket": "ziko-coach-kyc",
+      "actor": "A",
+      "op": "route-photo",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ce-foreign-read",
+      "surface": "plugin-coach",
+      "bucket": "ziko-coach-exercises",
+      "actor": "D",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ai-foreign-read",
+      "surface": "web-coach",
+      "bucket": "ziko-ai-imports",
+      "actor": "B",
+      "op": "read",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "ai-backend-own",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "A",
+      "op": "route-upload-url",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true
+    },
+    {
+      "id": "ai-backend-foreign",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "B",
+      "op": "route-upload-url",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true
+    },
+    {
+      "id": "bk-clients-links-me",
+      "surface": "backend",
+      "bucket": "ziko-coach-kyc",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "GET /coach/clients/links/me"
+    },
+    {
+      "id": "bk-videos-upload-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "POST /coach/videos/upload-url"
+    },
+    {
+      "id": "bk-videos-signed-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "C",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-signed-url-foreign",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "D",
+      "op": "route-call",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true,
+      "route": "GET /coach/videos/:videoId/signed-url"
+    },
+    {
+      "id": "bk-videos-audio-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "C",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-videos-audio-url-foreign",
+      "surface": "backend",
+      "bucket": "ziko-coach-videos",
+      "actor": "D",
+      "op": "route-call",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true,
+      "route": "GET /coach/videos/annotations/:annotationId/audio-url"
+    },
+    {
+      "id": "bk-exercises-media-url",
+      "surface": "backend",
+      "bucket": "ziko-coach-exercises",
+      "actor": "A",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-exercises-media-url-foreign-athlete",
+      "surface": "backend",
+      "bucket": "ziko-coach-exercises",
+      "actor": "B",
+      "op": "route-call",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true,
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-exercises-media-url-foreign-coach",
+      "surface": "backend",
+      "bucket": "ziko-coach-exercises",
+      "actor": "D",
+      "op": "route-call",
+      "expect": "deny",
+      "observed": "deny",
+      "ok": true,
+      "route": "GET /coach/exercises/:id/media-url"
+    },
+    {
+      "id": "bk-imports-create",
+      "surface": "backend",
+      "bucket": "ziko-ai-imports",
+      "actor": "C",
+      "op": "route-call",
+      "expect": "allow",
+      "observed": "allow",
+      "ok": true,
+      "route": "POST /coach/imports"
+    }
+  ]
+}

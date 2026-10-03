@@ -2,9 +2,9 @@
 
 Manual verification for the carried Phase 5 UI items and the D-12 core flows.
 
-- Build / deployment under test:
+- Build / deployment under test: Web (Section B): ziko-web production dpl_3awm4RAZcYwAGzXiRXk1EgfTaNW4 (promoted 2026-10-03T15:08Z, served on ziko-app.com)
 - Tester:
-- Date:
+- Date: Web deployment promoted 2026-10-03 (Section B awaiting the user's run)
 - Device model and OS (no account emails):
 
 **Rule:** any FAIL = STOP and run the surface rollback in `scripts/portfolio-migration/RUNBOOK.md` (Phase 6, section 6.5).
@@ -53,3 +53,5 @@ Each item is proven by a report file filled in by 06-10, 06-12 or 06-15.
 | S-7 | codemod: 11-codemod-buckets.mjs and 12-codemod-tables.mjs `--check` repo-wide residual pass, merged together with the env flip | check output recorded by 06-08 and 06-15 |
 
 Proven on portfolio by 06-12 (`scripts/portfolio-migration/reports/preview-storage-auth.json`, harness smoke, backend 14/14 incl. deny cases): S-1, S-2, S-3, S-4, S-5, S-6 (bk-imports-create allow). Core flows against the protected preview URLs (`reports/preview-core-flows.json`, 13/13 PASS incl. coach CRM read and web ref proof; AI chat skipped, waived by the user because the Anthropic balance is empty) also pass.
+
+Proven in production by 06-15 (`scripts/portfolio-migration/reports/prod-backend-storage-auth.json`, 26/26 PASS, backend 14/14 incl. deny cases, run against the production API on portfolio): S-1, S-2, S-3, S-4, S-5, S-6. Core flows against the production API (`reports/prod-backend-core-flows.json`, 10/10 PASS incl. coach CRM read; AI chat skipped, waived by the user because the Anthropic balance is empty) and signup isolation (`reports/prod-backend-signup-isolation.json`) also pass. S-7: `11-codemod-buckets.mjs --check` and `12-codemod-tables.mjs --check` both clean on the merged tree.

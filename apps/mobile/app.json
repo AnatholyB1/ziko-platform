@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ziko",
     "slug": "ziko-mobile",
-    "version": "1.4.1",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/image/icon.png",
     "scheme": "ziko",
