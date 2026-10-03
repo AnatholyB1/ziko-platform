@@ -78,14 +78,14 @@ describe('fetchActivityAggregates', () => {
   });
 
   it('issues its five reads in parallel and returns numeric counts, never raw rows', async () => {
-    tableResults.workout_sessions = {
+    tableResults.ziko_workout_sessions = {
       data: [
         { started_at: '2026-08-01T10:00:00Z', total_volume_kg: 120.4 },
         { started_at: '2026-08-15T10:00:00Z', total_volume_kg: 80 },
       ],
       error: null,
     };
-    tableResults.habit_logs = {
+    tableResults.ziko_habit_logs = {
       data: [
         { date: '2026-08-01', value: 1 },
         { date: '2026-08-02', value: 1 },
@@ -93,17 +93,17 @@ describe('fetchActivityAggregates', () => {
       ],
       error: null,
     };
-    tableResults.nutrition_logs = { data: [{ date: '2026-08-03' }], error: null };
-    tableResults.cardio_sessions = { data: [{ date: '2026-08-04' }, { date: '2026-08-05' }], error: null };
-    tableResults.body_measurements = { data: [{ date: '2026-08-06' }], error: null };
+    tableResults.ziko_nutrition_logs = { data: [{ date: '2026-08-03' }], error: null };
+    tableResults.ziko_cardio_sessions = { data: [{ date: '2026-08-04' }, { date: '2026-08-05' }], error: null };
+    tableResults.ziko_body_measurements = { data: [{ date: '2026-08-06' }], error: null };
 
     const result = await fetchActivityAggregates('user-1', 'token-1');
 
-    expect(mockFrom).toHaveBeenCalledWith('workout_sessions');
-    expect(mockFrom).toHaveBeenCalledWith('habit_logs');
-    expect(mockFrom).toHaveBeenCalledWith('nutrition_logs');
-    expect(mockFrom).toHaveBeenCalledWith('cardio_sessions');
-    expect(mockFrom).toHaveBeenCalledWith('body_measurements');
+    expect(mockFrom).toHaveBeenCalledWith('ziko_workout_sessions');
+    expect(mockFrom).toHaveBeenCalledWith('ziko_habit_logs');
+    expect(mockFrom).toHaveBeenCalledWith('ziko_nutrition_logs');
+    expect(mockFrom).toHaveBeenCalledWith('ziko_cardio_sessions');
+    expect(mockFrom).toHaveBeenCalledWith('ziko_body_measurements');
 
     expect(result).toEqual({
       workout_sessions_90d: 2,
@@ -125,11 +125,11 @@ describe('fetchActivityAggregates', () => {
   it('returns days_since_last_activity: null and all-zero counts when the athlete has no activity in the window', async () => {
     resetTableScripts();
     // Explicit empty arrays for every table.
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.nutrition_logs = { data: [], error: null };
-    tableResults.cardio_sessions = { data: [], error: null };
-    tableResults.body_measurements = { data: [], error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_nutrition_logs = { data: [], error: null };
+    tableResults.ziko_cardio_sessions = { data: [], error: null };
+    tableResults.ziko_body_measurements = { data: [], error: null };
 
     const result = await fetchActivityAggregates('user-2');
 
@@ -150,7 +150,7 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('returns { success: false, skipped: "state_exists" } without any model call when athlete_state already has a row', async () => {
-    singleResults.athlete_state = { data: { user_id: 'user-1' }, error: null };
+    singleResults.ziko_athlete_state = { data: { user_id: 'user-1' }, error: null };
 
     const result = await computeRetroactiveProfile('user-1', 'token-1');
 
@@ -160,8 +160,8 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('returns { success: false, skipped: "not_onboarded" } without any model call when user_profiles.onboarding_done is false', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: { onboarding_done: false }, error: null };
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: { onboarding_done: false }, error: null };
 
     const result = await computeRetroactiveProfile('user-1', 'token-1');
 
@@ -171,8 +171,8 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('returns { success: false, skipped: "not_onboarded" } without any model call when the user_profiles row is absent', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: null, error: null };
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: null, error: null };
 
     const result = await computeRetroactiveProfile('user-1', 'token-1');
 
@@ -182,16 +182,16 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('a pre-v1.18 athlete with real activity gets a decision written with app_open_fallback attribution', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: { onboarding_done: true }, error: null };
-    tableResults.workout_sessions = {
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: { onboarding_done: true }, error: null };
+    tableResults.ziko_workout_sessions = {
       data: [{ started_at: '2026-08-01T10:00:00Z', total_volume_kg: 100 }],
       error: null,
     };
-    tableResults.habit_logs = { data: [{ date: '2026-08-01', value: 1 }], error: null };
-    tableResults.nutrition_logs = { data: [], error: null };
-    tableResults.cardio_sessions = { data: [], error: null };
-    tableResults.body_measurements = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [{ date: '2026-08-01', value: 1 }], error: null };
+    tableResults.ziko_nutrition_logs = { data: [], error: null };
+    tableResults.ziko_cardio_sessions = { data: [], error: null };
+    tableResults.ziko_body_measurements = { data: [], error: null };
 
     mockGenerateObject.mockResolvedValue({ object: SCRIPTED_OBJECT });
     mockRpc.mockResolvedValue({ data: { success: true, decision_id: 'decision-abc' }, error: null });
@@ -201,7 +201,7 @@ describe('computeRetroactiveProfile', () => {
     expect(mockGenerateObject).toHaveBeenCalledTimes(1);
     expect(mockRpc).toHaveBeenCalledTimes(1);
     const [rpcName, rpcArgs] = mockRpc.mock.calls[0];
-    expect(rpcName).toBe('record_athlete_decision');
+    expect(rpcName).toBe('ziko_record_athlete_decision');
     expect(rpcArgs.p_source).toBe('app_open_fallback');
     expect(rpcArgs.p_decision_type).toBe('onboarding_profile');
     expect(rpcArgs.p_week_of).toBeNull();
@@ -219,13 +219,13 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('an athlete with all-zero aggregates still writes a decision, with the zero counts as its evidence', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: { onboarding_done: true }, error: null };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.nutrition_logs = { data: [], error: null };
-    tableResults.cardio_sessions = { data: [], error: null };
-    tableResults.body_measurements = { data: [], error: null };
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: { onboarding_done: true }, error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_nutrition_logs = { data: [], error: null };
+    tableResults.ziko_cardio_sessions = { data: [], error: null };
+    tableResults.ziko_body_measurements = { data: [], error: null };
 
     mockGenerateObject.mockResolvedValue({
       object: { ...SCRIPTED_OBJECT, readiness: 'fragile' },
@@ -246,13 +246,13 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('surfaces the failure rather than reporting success when the RPC resolves an error-shaped payload', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: { onboarding_done: true }, error: null };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.nutrition_logs = { data: [], error: null };
-    tableResults.cardio_sessions = { data: [], error: null };
-    tableResults.body_measurements = { data: [], error: null };
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: { onboarding_done: true }, error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_nutrition_logs = { data: [], error: null };
+    tableResults.ziko_cardio_sessions = { data: [], error: null };
+    tableResults.ziko_body_measurements = { data: [], error: null };
 
     mockGenerateObject.mockResolvedValue({ object: SCRIPTED_OBJECT });
     mockRpc.mockResolvedValue({ data: { success: false, error: 'evidence_required' }, error: null });
@@ -263,13 +263,13 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('throws when the supabase client returns a non-null error on the RPC call', async () => {
-    singleResults.athlete_state = { data: null, error: null };
-    singleResults.user_profiles = { data: { onboarding_done: true }, error: null };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.nutrition_logs = { data: [], error: null };
-    tableResults.cardio_sessions = { data: [], error: null };
-    tableResults.body_measurements = { data: [], error: null };
+    singleResults.ziko_athlete_state = { data: null, error: null };
+    singleResults.ziko_user_profiles = { data: { onboarding_done: true }, error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_nutrition_logs = { data: [], error: null };
+    tableResults.ziko_cardio_sessions = { data: [], error: null };
+    tableResults.ziko_body_measurements = { data: [], error: null };
 
     mockGenerateObject.mockResolvedValue({ object: SCRIPTED_OBJECT });
     mockRpc.mockResolvedValue({ data: null, error: { message: 'connection refused' } });
@@ -280,7 +280,7 @@ describe('computeRetroactiveProfile', () => {
   });
 
   it('throws when the athlete_state guard read itself errors', async () => {
-    singleResults.athlete_state = { data: null, error: { message: 'permission denied' } };
+    singleResults.ziko_athlete_state = { data: null, error: { message: 'permission denied' } };
 
     await expect(computeRetroactiveProfile('user-6', 'token-6')).rejects.toThrow(
       /athlete_state guard read failed:/,

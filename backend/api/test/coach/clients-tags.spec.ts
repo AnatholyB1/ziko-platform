@@ -30,21 +30,21 @@ beforeAll(async () => {
   coachB = await createTestUser('tags-coachb');
   client = await createTestUser('tags-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Tags Coach A' });
-  await adminClient.from('user_profiles').upsert({ id: coachB.id, role: 'coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coachB.id, display_name: 'Tags Coach B' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Tags Coach A' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coachB.id, role: 'coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coachB.id, display_name: 'Tags Coach B' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   coachJwt = await getJwt(coach);
   coachBJwt = await getJwt(coachB);
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_tags').delete().eq('coach_id', coach.id);
-  await adminClient.from('coach_client_tags').delete().eq('coach_id', coachB.id);
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
-  await adminClient.from('coach_profiles').delete().eq('user_id', coachB.id);
+  await adminClient.from('ziko_coach_client_tags').delete().eq('coach_id', coach.id);
+  await adminClient.from('ziko_coach_client_tags').delete().eq('coach_id', coachB.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coachB.id);
   await cleanupTestUsers([coach.id, coachB.id, client.id]);
 });
 

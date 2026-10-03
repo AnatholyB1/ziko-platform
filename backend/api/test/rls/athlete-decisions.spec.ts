@@ -33,7 +33,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-evidence-null');
     createdUserIds.push(a.id);
 
-    const { data, error } = await admin.rpc('record_athlete_decision', {
+    const { data, error } = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -49,7 +49,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(data.error).toBe('evidence_required');
 
     const { data: rows, error: selectError } = await admin
-      .from('athlete_decisions')
+      .from('ziko_athlete_decisions')
       .select('id')
       .eq('user_id', a.id);
     expect(selectError).toBeNull();
@@ -60,7 +60,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-evidence-array');
     createdUserIds.push(a.id);
 
-    const { data, error } = await admin.rpc('record_athlete_decision', {
+    const { data, error } = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -75,7 +75,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(data.error).toBe('evidence_required');
 
     const { data: rows, error: selectError } = await admin
-      .from('athlete_decisions')
+      .from('ziko_athlete_decisions')
       .select('id')
       .eq('user_id', a.id);
     expect(selectError).toBeNull();
@@ -87,7 +87,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     createdUserIds.push(a.id);
 
     const evidence = { workouts_completed: 4, habits_logged: 12 };
-    const { data, error } = await admin.rpc('record_athlete_decision', {
+    const { data, error } = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -104,7 +104,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(data.decision_id.length).toBeGreaterThan(0);
 
     const { data: rows, error: selectError } = await admin
-      .from('athlete_decisions')
+      .from('ziko_athlete_decisions')
       .select('id, summary, rationale, evidence')
       .eq('user_id', a.id);
     expect(selectError).toBeNull();
@@ -118,7 +118,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-own-read');
     createdUserIds.push(a.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -132,7 +132,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(seed.error).toBeNull();
     expect(seed.data.success).toBe(true);
 
-    const { data, error } = await a.client.from('athlete_decisions').select('id').eq('user_id', a.id);
+    const { data, error } = await a.client.from('ziko_athlete_decisions').select('id').eq('user_id', a.id);
     expect(error).toBeNull();
     expect(data?.length).toBeGreaterThanOrEqual(1);
   });
@@ -142,7 +142,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const b = await createTestUser('athlete-decisions-cross-b');
     createdUserIds.push(a.id, b.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -155,7 +155,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     });
     expect(seed.error).toBeNull();
 
-    const { data, error } = await b.client.from('athlete_decisions').select('id').eq('user_id', a.id);
+    const { data, error } = await b.client.from('ziko_athlete_decisions').select('id').eq('user_id', a.id);
     expect(error).toBeNull();
     expect(data?.length ?? 0).toBe(0);
   });
@@ -164,7 +164,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-admin-insert');
     createdUserIds.push(a.id);
 
-    const result = await admin.from('athlete_decisions').insert({
+    const result = await admin.from('ziko_athlete_decisions').insert({
       user_id: a.id,
       decision_type: 'onboarding_profile',
       summary: 'direct insert attempt',
@@ -177,7 +177,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-admin-update');
     createdUserIds.push(a.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -192,7 +192,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const decisionId = seed.data.decision_id as string;
     expect(decisionId.length).toBeGreaterThan(0);
 
-    const result = await admin.from('athlete_decisions').update({ summary: 'tampered' }).eq('id', decisionId);
+    const result = await admin.from('ziko_athlete_decisions').update({ summary: 'tampered' }).eq('id', decisionId);
     expect(result.error).not.toBeNull();
   });
 
@@ -200,7 +200,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-admin-delete');
     createdUserIds.push(a.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -214,7 +214,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(seed.error).toBeNull();
     const decisionId = seed.data.decision_id as string;
 
-    const result = await admin.from('athlete_decisions').delete().eq('id', decisionId);
+    const result = await admin.from('ziko_athlete_decisions').delete().eq('id', decisionId);
     expect(result.error).not.toBeNull();
   });
 
@@ -222,7 +222,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     const a = await createTestUser('athlete-decisions-authed-writes');
     createdUserIds.push(a.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -236,7 +236,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     expect(seed.error).toBeNull();
     const decisionId = seed.data.decision_id as string;
 
-    const insertResult = await a.client.from('athlete_decisions').insert({
+    const insertResult = await a.client.from('ziko_athlete_decisions').insert({
       user_id: a.id,
       decision_type: 'onboarding_profile',
       summary: 'authenticated insert attempt',
@@ -244,10 +244,10 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
     });
     expect(insertResult.error).not.toBeNull();
 
-    const updateResult = await a.client.from('athlete_decisions').update({ summary: 'pwned' }).eq('id', decisionId);
+    const updateResult = await a.client.from('ziko_athlete_decisions').update({ summary: 'pwned' }).eq('id', decisionId);
     expect(updateResult.error).not.toBeNull();
 
-    const deleteResult = await a.client.from('athlete_decisions').delete().eq('id', decisionId);
+    const deleteResult = await a.client.from('ziko_athlete_decisions').delete().eq('id', decisionId);
     expect(deleteResult.error).not.toBeNull();
   });
 
@@ -269,7 +269,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
 
       const weekOf = '2026-09-14';
 
-      const first = await admin.rpc('record_athlete_decision', {
+      const first = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'weekly_focus',
         p_week_of: weekOf,
@@ -286,13 +286,13 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(first.data.decision_id.length).toBeGreaterThan(0);
 
       const readinessAfterFirst = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('readiness')
         .eq('user_id', a.id);
       expect(readinessAfterFirst.error).toBeNull();
       expect(readinessAfterFirst.data?.[0].readiness).toBe('building');
 
-      const second = await admin.rpc('record_athlete_decision', {
+      const second = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'weekly_focus',
         p_week_of: weekOf,
@@ -310,14 +310,14 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       // The second call's state patch (readiness: 'thriving') must NOT have
       // been applied — the first call's early-return-preceding UPDATE stands.
       const readinessAfterSecond = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('readiness')
         .eq('user_id', a.id);
       expect(readinessAfterSecond.error).toBeNull();
       expect(readinessAfterSecond.data?.[0].readiness).toBe('building');
 
       const rows = await admin
-        .from('athlete_decisions')
+        .from('ziko_athlete_decisions')
         .select('id, summary')
         .eq('user_id', a.id)
         .eq('decision_type', 'weekly_focus')
@@ -334,7 +334,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       const weekOne = '2026-09-14';
       const weekTwo = '2026-09-21';
 
-      const firstWeek = await admin.rpc('record_athlete_decision', {
+      const firstWeek = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'weekly_focus',
         p_week_of: weekOne,
@@ -348,7 +348,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(firstWeek.error).toBeNull();
       expect(firstWeek.data.success).toBe(true);
 
-      const secondWeek = await admin.rpc('record_athlete_decision', {
+      const secondWeek = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'weekly_focus',
         p_week_of: weekTwo,
@@ -363,7 +363,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(secondWeek.data.success).toBe(true);
 
       const rows = await admin
-        .from('athlete_decisions')
+        .from('ziko_athlete_decisions')
         .select('id, week_of')
         .eq('user_id', a.id)
         .eq('decision_type', 'weekly_focus');
@@ -375,7 +375,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       const a = await createTestUser('athlete-decisions-goal-created-repeat');
       createdUserIds.push(a.id);
 
-      const firstGoal = await admin.rpc('record_athlete_decision', {
+      const firstGoal = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'goal_created',
         p_week_of: null,
@@ -389,7 +389,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(firstGoal.error).toBeNull();
       expect(firstGoal.data.success).toBe(true);
 
-      const secondGoal = await admin.rpc('record_athlete_decision', {
+      const secondGoal = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'goal_created',
         p_week_of: null,
@@ -405,7 +405,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(secondGoal.data.decision_id).not.toBe(firstGoal.data.decision_id);
 
       const rows = await admin
-        .from('athlete_decisions')
+        .from('ziko_athlete_decisions')
         .select('id')
         .eq('user_id', a.id)
         .eq('decision_type', 'goal_created');
@@ -417,7 +417,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       const a = await createTestUser('athlete-decisions-next-review-due-at');
       createdUserIds.push(a.id);
 
-      const goalCreated = await admin.rpc('record_athlete_decision', {
+      const goalCreated = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'goal_created',
         p_week_of: null,
@@ -432,13 +432,13 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(goalCreated.data.success).toBe(true);
 
       const afterGoalCreated = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('next_review_due_at')
         .eq('user_id', a.id);
       expect(afterGoalCreated.error).toBeNull();
       expect(afterGoalCreated.data?.[0].next_review_due_at).toBeNull();
 
-      const programCreated = await admin.rpc('record_athlete_decision', {
+      const programCreated = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'program_created',
         p_week_of: null,
@@ -453,13 +453,13 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(programCreated.data.success).toBe(true);
 
       const afterProgramCreated = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('next_review_due_at')
         .eq('user_id', a.id);
       expect(afterProgramCreated.error).toBeNull();
       expect(afterProgramCreated.data?.[0].next_review_due_at).toBeNull();
 
-      const onboardingProfile = await admin.rpc('record_athlete_decision', {
+      const onboardingProfile = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'onboarding_profile',
         p_week_of: null,
@@ -474,14 +474,14 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(onboardingProfile.data.success).toBe(true);
 
       const afterOnboardingProfile = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('next_review_due_at')
         .eq('user_id', a.id);
       expect(afterOnboardingProfile.error).toBeNull();
       const dueAtAfterOnboarding = afterOnboardingProfile.data?.[0].next_review_due_at;
       expect(dueAtAfterOnboarding).not.toBeNull();
 
-      const weeklyFocus = await admin.rpc('record_athlete_decision', {
+      const weeklyFocus = await admin.rpc('ziko_record_athlete_decision', {
         p_user_id: a.id,
         p_decision_type: 'weekly_focus',
         p_week_of: '2026-09-28',
@@ -496,7 +496,7 @@ describe.skipIf(!RUN_DB)('athlete_decisions — evidence contract, append-only i
       expect(weeklyFocus.data.success).toBe(true);
 
       const afterWeeklyFocus = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('next_review_due_at')
         .eq('user_id', a.id);
       expect(afterWeeklyFocus.error).toBeNull();

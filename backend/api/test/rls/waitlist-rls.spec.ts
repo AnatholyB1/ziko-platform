@@ -24,14 +24,14 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
 
     // Preflight: fail loudly by name if the migration hasn't been applied, rather
     // than letting a missing table/function masquerade as a passing deny-all.
-    const { error: tableError } = await admin.from('waitlist_signups').select('id').limit(1);
+    const { error: tableError } = await admin.from('ziko_waitlist_signups').select('id').limit(1);
     if (tableError) {
       throw new Error(
         `waitlist_signups is not queryable (${tableError.message}) — ` +
         `supabase/migrations/20260812_waitlist_founder_offer.sql has not been applied to this project.`
       );
     }
-    const { error: fnError } = await admin.rpc('normalize_waitlist_email', { p_email: 'preflight@example.com' });
+    const { error: fnError } = await admin.rpc('ziko_normalize_waitlist_email', { p_email: 'preflight@example.com' });
     if (fnError) {
       throw new Error(
         `normalize_waitlist_email is not callable (${fnError.message}) — ` +
@@ -45,22 +45,22 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
 
   afterAll(async () => {
     if (createdEmails.length) {
-      await admin.from('waitlist_signups').delete().in('email', createdEmails);
+      await admin.from('ziko_waitlist_signups').delete().in('email', createdEmails);
     }
-    await admin.from('waitlist_signups').delete().like('email', `${PREFIX}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${PREFIX}%`);
     if (createdUserIds.length) await cleanupTestUsers(createdUserIds);
-    await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 700000 });
+    await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 700000 });
   });
 
   describe('deny-all RLS — anon (DATA-05, T-01-16, T-01-17)', () => {
     it('SELECT returns no error and an empty array (RLS filters silently)', async () => {
-      const { data, error } = await anon.from('waitlist_signups').select('*');
+      const { data, error } = await anon.from('ziko_waitlist_signups').select('*');
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
 
     it('INSERT errors', async () => {
-      const { error } = await anon.from('waitlist_signups').insert({
+      const { error } = await anon.from('ziko_waitlist_signups').insert({
         email: 'x@example.com', email_normalized: 'x@example.com', audience: 'athlete',
       });
       expect(error).not.toBeNull();
@@ -72,13 +72,13 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       // ever evaluated, so this is a silent no-op — unlike INSERT, which has no
       // existing rows to filter against and therefore throws. .select() surfaces the
       // filtered (empty) result set.
-      const { data, error } = await anon.from('waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
+      const { data, error } = await anon.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
 
     it('DELETE matches and affects zero rows (same silent RLS filter as UPDATE)', async () => {
-      const { data, error } = await anon.from('waitlist_signups').delete().eq('audience', 'athlete').select();
+      const { data, error } = await anon.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
@@ -86,26 +86,26 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
 
   describe('deny-all RLS — authenticated (DATA-05, T-01-16, T-01-17)', () => {
     it('SELECT returns no error and an empty array (deny-all is not logged-out-only)', async () => {
-      const { data, error } = await rlsUser.client.from('waitlist_signups').select('*');
+      const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').select('*');
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
 
     it('INSERT errors', async () => {
-      const { error } = await rlsUser.client.from('waitlist_signups').insert({
+      const { error } = await rlsUser.client.from('ziko_waitlist_signups').insert({
         email: 'y@example.com', email_normalized: 'y@example.com', audience: 'athlete',
       });
       expect(error).not.toBeNull();
     });
 
     it('UPDATE matches and affects zero rows (same silent RLS filter as anon)', async () => {
-      const { data, error } = await rlsUser.client.from('waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
+      const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
 
     it('DELETE matches and affects zero rows (same silent RLS filter as anon)', async () => {
-      const { data, error } = await rlsUser.client.from('waitlist_signups').delete().eq('audience', 'athlete').select();
+      const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
       expect(error).toBeNull();
       expect(data).toEqual([]);
     });
@@ -113,46 +113,46 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
 
   describe('RPC privilege — all five functions reject the anon key (DATA-06, T-01-18)', () => {
     it('claim_waitlist_signup errors for anon', async () => {
-      const { error } = await anon.rpc('claim_waitlist_signup', { p_email: 'z@example.com', p_audience: 'athlete' });
+      const { error } = await anon.rpc('ziko_claim_waitlist_signup', { p_email: 'z@example.com', p_audience: 'athlete' });
       expect(error).not.toBeNull();
     });
 
     it('normalize_waitlist_email errors for anon', async () => {
-      const { error } = await anon.rpc('normalize_waitlist_email', { p_email: 'z@example.com' });
+      const { error } = await anon.rpc('ziko_normalize_waitlist_email', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
     it('get_waitlist_founder_status errors for anon', async () => {
-      const { error } = await anon.rpc('get_waitlist_founder_status');
+      const { error } = await anon.rpc('ziko_get_waitlist_founder_status');
       expect(error).not.toBeNull();
     });
 
     it('anonymize_waitlist_signup errors for anon', async () => {
-      const { error } = await anon.rpc('anonymize_waitlist_signup', { p_email: 'z@example.com' });
+      const { error } = await anon.rpc('ziko_anonymize_waitlist_signup', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
     it('reset_waitlist_founder_sequence errors for anon', async () => {
-      const { error } = await anon.rpc('reset_waitlist_founder_sequence', { p_next_value: 1 });
+      const { error } = await anon.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 1 });
       expect(error).not.toBeNull();
     });
 
     it('the service-role client CAN execute claim_waitlist_signup and read the row back (denials above are privilege, not breakage)', async () => {
       const email = `${PREFIX}preflight-${randomUUID()}@example.com`;
       createdEmails.push(email);
-      const { data, error } = await admin.rpc('claim_waitlist_signup', { p_email: email, p_audience: 'athlete' });
+      const { data, error } = await admin.rpc('ziko_claim_waitlist_signup', { p_email: email, p_audience: 'athlete' });
       expect(error).toBeNull();
       const row = Array.isArray(data) ? data[0] : data;
       expect(row.is_new).toBe(true);
 
-      const { data: stored } = await admin.from('waitlist_signups').select('*').eq('email', email.toLowerCase()).single();
+      const { data: stored } = await admin.from('ziko_waitlist_signups').select('*').eq('email', email.toLowerCase()).single();
       expect(stored).not.toBeNull();
     });
   });
 
   describe('claim_waitlist_signup — normalized dedupe (DATA-04, D-10, T-01-19, T-01-20)', () => {
     it('Gmail case + sub-addressing + dots collapse to one row and do not burn a second founder rank', async () => {
-      await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 900500 });
+      await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 900500 });
       const suffix = randomUUID().split('-').join('');
       // The suffix MUST sit before the '+' — split_part(local, '+', 1) discards
       // everything from '+' onward, so anything placed after it (e.g. "+promo-<suffix>")
@@ -162,17 +162,17 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       const expectedNormalized = `${PREFIX}dedupeuser${suffix}@gmail.com`.toLowerCase();
       createdEmails.push(emailA, emailB);
 
-      const first = await admin.rpc('claim_waitlist_signup', { p_email: emailA, p_audience: 'athlete' });
+      const first = await admin.rpc('ziko_claim_waitlist_signup', { p_email: emailA, p_audience: 'athlete' });
       const firstRow = Array.isArray(first.data) ? first.data[0] : first.data;
       expect(firstRow.is_new).toBe(true);
 
-      const second = await admin.rpc('claim_waitlist_signup', { p_email: emailB, p_audience: 'athlete' });
+      const second = await admin.rpc('ziko_claim_waitlist_signup', { p_email: emailB, p_audience: 'athlete' });
       const secondRow = Array.isArray(second.data) ? second.data[0] : second.data;
       expect(secondRow.is_new).toBe(false);
       expect(secondRow.founder_rank).toBe(firstRow.founder_rank);
 
       const { data: rows } = await admin
-        .from('waitlist_signups')
+        .from('ziko_waitlist_signups')
         .select('id')
         .eq('email_normalized', expectedNormalized);
       expect(rows).toHaveLength(1);
@@ -181,7 +181,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       // receives firstRow.founder_rank + 1, not +2.
       const nextEmail = `${PREFIX}seq-check-${suffix}@example.com`;
       createdEmails.push(nextEmail);
-      const next = await admin.rpc('claim_waitlist_signup', { p_email: nextEmail, p_audience: 'athlete' });
+      const next = await admin.rpc('ziko_claim_waitlist_signup', { p_email: nextEmail, p_audience: 'athlete' });
       const nextRow = Array.isArray(next.data) ? next.data[0] : next.data;
       expect(nextRow.founder_rank).toBe(firstRow.founder_rank + 1);
     });
@@ -192,11 +192,11 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       const emailB = `${PREFIX}firstlast-${suffix}@outlook.com`;
       createdEmails.push(emailA, emailB);
 
-      const first = await admin.rpc('claim_waitlist_signup', { p_email: emailA, p_audience: 'coach' });
+      const first = await admin.rpc('ziko_claim_waitlist_signup', { p_email: emailA, p_audience: 'coach' });
       const firstRow = Array.isArray(first.data) ? first.data[0] : first.data;
       expect(firstRow.is_new).toBe(true);
 
-      const second = await admin.rpc('claim_waitlist_signup', { p_email: emailB, p_audience: 'coach' });
+      const second = await admin.rpc('ziko_claim_waitlist_signup', { p_email: emailB, p_audience: 'coach' });
       const secondRow = Array.isArray(second.data) ? second.data[0] : second.data;
       expect(secondRow.is_new).toBe(true);
       expect(secondRow.founder_rank).not.toBe(firstRow.founder_rank);
@@ -208,11 +208,11 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       const messy = `  ${PREFIX}CASE-${suffix}@EXAMPLE.COM  `;
       createdEmails.push(clean);
 
-      const first = await admin.rpc('claim_waitlist_signup', { p_email: messy, p_audience: 'athlete' });
+      const first = await admin.rpc('ziko_claim_waitlist_signup', { p_email: messy, p_audience: 'athlete' });
       const firstRow = Array.isArray(first.data) ? first.data[0] : first.data;
       expect(firstRow.is_new).toBe(true);
 
-      const second = await admin.rpc('claim_waitlist_signup', { p_email: clean, p_audience: 'athlete' });
+      const second = await admin.rpc('ziko_claim_waitlist_signup', { p_email: clean, p_audience: 'athlete' });
       const secondRow = Array.isArray(second.data) ? second.data[0] : second.data;
       expect(secondRow.is_new).toBe(false);
     });
@@ -221,7 +221,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
   describe('normalization invariant + field completeness (D-12, DATA-01)', () => {
     it('every non-anonymized row created by this spec has email_normalized === normalize_waitlist_email(email)', async () => {
       const { data: rows } = await admin
-        .from('waitlist_signups')
+        .from('ziko_waitlist_signups')
         .select('email, email_normalized')
         .is('anonymized_at', null)
         .like('email', `${PREFIX}%`)
@@ -229,14 +229,14 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
 
       expect(rows && rows.length).toBeGreaterThan(0);
       for (const row of rows ?? []) {
-        const { data: expected } = await admin.rpc('normalize_waitlist_email', { p_email: row.email });
+        const { data: expected } = await admin.rpc('ziko_normalize_waitlist_email', { p_email: row.email });
         expect(row.email_normalized).toBe(expected);
       }
     });
 
     it('every row created through the RPC has non-null email, audience, created_at, founder_rank', async () => {
       const { data: rows } = await admin
-        .from('waitlist_signups')
+        .from('ziko_waitlist_signups')
         .select('email, audience, created_at, founder_rank')
         .like('email', `${PREFIX}%`)
         .limit(50);

@@ -32,16 +32,16 @@ beforeAll(async () => {
   coach = await createTestUser('rc-coach');
   client = await createTestUser('rc-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'RC Coach' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'RC Coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   coachJwt = await getJwt(coach);
   clientJwt = await getJwt(client);
 
   // Create an invitation and redeem it to establish a link
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'RVCCHX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -53,12 +53,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
-  await adminClient.from('coach_client_links').delete().eq('coach_id', coach.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('coach_id', coach.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -70,7 +70,7 @@ describe('DELETE /coach/clients/links/:clientId — coach-side revoke', () => {
 
     // Verify in DB
     const { data } = await adminClient
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .select('revoked_at')
       .eq('coach_id', coach.id)
       .eq('client_id', client.id)
@@ -79,7 +79,7 @@ describe('DELETE /coach/clients/links/:clientId — coach-side revoke', () => {
   });
 
   it('coach cannot read client data after revocation (is_coach_of returns FALSE)', async () => {
-    const { data, error } = await adminClient.rpc('is_coach_of', {
+    const { data, error } = await adminClient.rpc('ziko_is_coach_of', {
       coach: coach.id,
       client: client.id,
     });

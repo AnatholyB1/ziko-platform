@@ -61,7 +61,7 @@ export async function fetchAllProductionExercises(
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const { data, error } = await client
-      .from('exercises')
+      .from('ziko_exercises')
       .select(SELECT_COLUMNS)
       .eq('is_custom', false)
       .order('id', { ascending: true })

@@ -28,16 +28,16 @@ async function getJwt(user: TestUser): Promise<string> {
 beforeAll(async () => {
   coach = await createTestUser('cr-coach');
   client = await createTestUser('cr-client');
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
   await adminClient
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .upsert({ user_id: coach.id, display_name: 'CR Coach' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   clientJwt = await getJwt(client);
 
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'REDEM2', expires_at: fourteenDays() })
     .select()
     .single();
@@ -47,11 +47,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 

@@ -52,11 +52,11 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
     admin = getAdmin();
     // Every waitlist spec cleans only its own prefix — never a shared wildcard —
     // so two specs can never delete each other's fixtures.
-    await admin.from('waitlist_signups').delete().like('email', `${PREFIX}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${PREFIX}%`);
   });
 
   afterAll(async () => {
-    await admin.from('waitlist_signups').delete().like('email', `${PREFIX}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${PREFIX}%`);
   });
 
   it('a never-seen email produces exactly one row whose stored founder_rank matches the returned rank', async () => {
@@ -75,7 +75,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
     expect(typeof result.founderRank).toBe('number');
 
     const { data, error } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('founder_rank, audience, created_at')
       .eq('email', email.toLowerCase())
       .single();
@@ -87,18 +87,18 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
   });
 
   it('normalize_waitlist_email collapses Gmail +suffix/dots and keeps Outlook dots significant', async () => {
-    const { data: gmailA } = await admin.rpc('normalize_waitlist_email', {
+    const { data: gmailA } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: 'Test.User+promo@GMAIL.com',
     });
-    const { data: gmailB } = await admin.rpc('normalize_waitlist_email', {
+    const { data: gmailB } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: 'testuser@gmail.com',
     });
     expect(gmailA).toBe(gmailB);
 
-    const { data: outlookA } = await admin.rpc('normalize_waitlist_email', {
+    const { data: outlookA } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: 'first.last@outlook.com',
     });
-    const { data: outlookB } = await admin.rpc('normalize_waitlist_email', {
+    const { data: outlookB } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: 'firstlast@outlook.com',
     });
     expect(outlookA).not.toBe(outlookB);
@@ -119,7 +119,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     // produce a failure that reads like a concurrency bug when it is really stale
     // data left by an interrupted prior run.
     const { data: stale } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('founder_rank')
       .not('founder_rank', 'is', null)
       .gte('founder_rank', 140)
@@ -131,18 +131,18 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
       );
     }
 
-    await admin.from('waitlist_signups').delete().like('email', `${racePrefix}%`);
-    await admin.from('waitlist_signups').delete().like('email', `${founderPrefix}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${racePrefix}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${founderPrefix}%`);
   });
 
   afterAll(async () => {
-    await admin.from('waitlist_signups').delete().like('email', `${racePrefix}%`);
-    await admin.from('waitlist_signups').delete().like('email', `${founderPrefix}%`);
-    await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 600000 });
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${racePrefix}%`);
+    await admin.from('ziko_waitlist_signups').delete().like('email', `${founderPrefix}%`);
+    await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 600000 });
   });
 
   it('twenty submissions racing the 200 boundary produce exactly five founders on ranks 196-200, and no rank is ever held twice', async () => {
-    await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 196 });
+    await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 196 });
 
     const forms = Array.from({ length: 20 }, (_, i) => {
       const fd = new FormData();
@@ -160,7 +160,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     expect(foundersReported).toBe(5);
 
     const { data: rows } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('founder_rank, is_founder')
       .like('email', `${racePrefix}%`);
     expect(rows).toHaveLength(20);
@@ -179,7 +179,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     // SQL-execution RPC exists in this codebase, so uniqueness is checked here
     // by comparing array length against a Set built from the same values.
     const { data: allRanks } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('founder_rank')
       .not('founder_rank', 'is', null);
     const rankValues = (allRanks ?? []).map((r) => r.founder_rank);
@@ -187,15 +187,15 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
   });
 
   it('re-submitting a known founder address returns the same neutral response as a brand-new non-founder signup', async () => {
-    await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 150 });
+    await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 150 });
     const founderEmail = `${founderPrefix}known@example.com`;
 
-    const seed = await admin.rpc('claim_waitlist_signup', { p_email: founderEmail, p_audience: 'athlete' });
+    const seed = await admin.rpc('ziko_claim_waitlist_signup', { p_email: founderEmail, p_audience: 'athlete' });
     const seedRow = Array.isArray(seed.data) ? seed.data[0] : seed.data;
     expect(seedRow.is_founder).toBe(true);
 
     const { data: beforeRow } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('is_founder')
       .eq('email', founderEmail.toLowerCase())
       .single();
@@ -214,7 +214,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     // A brand-new, genuinely non-founder signup must produce a field-identical
     // response — that identity is the whole requirement (no field distinguishes
     // "already registered founder" from "just joined, not a founder").
-    await admin.rpc('reset_waitlist_founder_sequence', { p_next_value: 600100 });
+    await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 600100 });
     const freshEmail = `${founderPrefix}fresh@example.com`;
     const freshFormData = new FormData();
     freshFormData.set('email', freshEmail);
@@ -227,7 +227,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     // The database still knows the truth — only the Server Action's response was
     // filtered, proving the filter is at the trust boundary and not a data loss.
     const { data: afterRow } = await admin
-      .from('waitlist_signups')
+      .from('ziko_waitlist_signups')
       .select('is_founder')
       .eq('email', founderEmail.toLowerCase())
       .single();

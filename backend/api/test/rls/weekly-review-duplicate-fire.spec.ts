@@ -101,7 +101,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
     const athlete = await createTestUser(prefix);
     createdUserIds.push(athlete.id);
 
-    const seed = await admin.rpc('record_athlete_decision', {
+    const seed = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: athlete.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -116,7 +116,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
     expect(seed.data.success).toBe(true);
 
     const { data: stateRow, error: stateError } = await admin
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('next_review_due_at')
       .eq('user_id', athlete.id)
       .single();
@@ -163,7 +163,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
       expect(mockGenerateObject).toHaveBeenCalledTimes(1);
 
       const rows = await admin
-        .from('athlete_decisions')
+        .from('ziko_athlete_decisions')
         .select('id, week_of, source')
         .eq('user_id', userId)
         .eq('decision_type', 'weekly_focus');
@@ -181,7 +181,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
       // tagged with the trigger source (never user_chat), carrying the
       // scripted non-zero usage rather than a defaulted zero.
       const costRows = await admin
-        .from('ai_cost_log')
+        .from('ziko_ai_cost_log')
         .select('source, input_tokens, output_tokens')
         .eq('user_id', userId);
       expect(costRows.error).toBeNull();
@@ -197,7 +197,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
       // schema-default values (the weekly engine never touches them —
       // Open Question 1's resolution).
       const stateRows = await admin
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('readiness, level, points, tier')
         .eq('user_id', userId);
       expect(stateRows.error).toBeNull();
@@ -245,7 +245,7 @@ describe.skipIf(!RUN_DB)('weekly-review duplicate fire — real concurrent dual-
       }
 
       const rows = await admin
-        .from('athlete_decisions')
+        .from('ziko_athlete_decisions')
         .select('id, source')
         .eq('user_id', userId)
         .eq('decision_type', 'weekly_focus');

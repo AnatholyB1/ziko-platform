@@ -29,21 +29,21 @@ beforeAll(async () => {
   coachB = await createTestUser('notes-coachb');
   client = await createTestUser('notes-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Notes Coach A' });
-  await adminClient.from('user_profiles').upsert({ id: coachB.id, role: 'coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coachB.id, display_name: 'Notes Coach B' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Notes Coach A' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coachB.id, role: 'coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coachB.id, display_name: 'Notes Coach B' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   coachJwt = await getJwt(coach);
   coachBJwt = await getJwt(coachB);
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_notes').delete().eq('coach_id', coach.id);
-  await adminClient.from('coach_client_notes').delete().eq('coach_id', coachB.id);
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
-  await adminClient.from('coach_profiles').delete().eq('user_id', coachB.id);
+  await adminClient.from('ziko_coach_client_notes').delete().eq('coach_id', coach.id);
+  await adminClient.from('ziko_coach_client_notes').delete().eq('coach_id', coachB.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coachB.id);
   await cleanupTestUsers([coach.id, coachB.id, client.id]);
 });
 
@@ -92,7 +92,7 @@ describe('GET/PUT /coach/clients/:id/notes — note CRUD', () => {
     // returns null (no matching row with client_id = coach.id which is nonsensical)
     // The practical test: coach_client_notes has USING (auth.uid() = coach_id)
     // A client JWT trying to select their own coach's note will see 0 rows
-    const { data } = await client.client.from('coach_client_notes')
+    const { data } = await client.client.from('ziko_coach_client_notes')
       .select('*')
       .eq('client_id', client.id);
     // RLS blocks: athlete sees 0 rows (because auth.uid() != coach_id for any row)

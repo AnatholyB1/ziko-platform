@@ -35,7 +35,7 @@ describe('coach identity — COACH-01: role promotion', () => {
 
     // Verify in DB via admin
     const { data } = await admin
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('role')
       .eq('id', user.id)
       .single();
@@ -47,7 +47,7 @@ describe('coach identity — COACH-01: role promotion', () => {
     createdIds.push(user.id);
 
     // Set role to 'both' via admin
-    await admin.from('user_profiles').update({ role: 'both' }).eq('id', user.id);
+    await admin.from('ziko_user_profiles').update({ role: 'both' }).eq('id', user.id);
 
     const jwt = await getJwt(user);
     const res = await app.request('/coach/identity/role', {
@@ -214,7 +214,7 @@ describe('coach identity — COACH-04: role=both', () => {
 
     // Verify initial role is 'client'
     const { data: before } = await admin
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('role')
       .eq('id', user.id)
       .single();
@@ -232,7 +232,7 @@ describe('coach identity — COACH-04: role=both', () => {
 
     // Verify DB
     const { data: after } = await admin
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('role')
       .eq('id', user.id)
       .single();

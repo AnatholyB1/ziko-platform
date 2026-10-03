@@ -32,15 +32,15 @@ function fourteenDays(): string {
 beforeAll(async () => {
   coach = await createTestUser('tm-coach');
   client = await createTestUser('tm-client');
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
   await adminClient
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .upsert({ user_id: coach.id, display_name: 'T' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   async function mk(over: Record<string, unknown>, code: string): Promise<string> {
     const { data, error } = await adminClient
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .insert({ coach_id: coach.id, code, expires_at: fourteenDays(), ...over })
       .select()
       .single();
@@ -60,11 +60,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -73,7 +73,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[idx];
 }
 
-async function measureRpc(rpcName: 'peek_invitation', code: string): Promise<number[]> {
+async function measureRpc(rpcName: 'ziko_peek_invitation', code: string): Promise<number[]> {
   const samples: number[] = [];
   for (let i = 0; i < N_SAMPLES + N_WARMUP; i++) {
     const t0 = performance.now();
@@ -89,7 +89,7 @@ describe('coach/clients constant-time guarantee (INVITE-04 / T-25-02)', () => {
     async () => {
       const results: Record<string, { p1: number; p99: number }> = {};
       for (const [label, code] of Object.entries(codes)) {
-        const sorted = await measureRpc('peek_invitation', code);
+        const sorted = await measureRpc('ziko_peek_invitation', code);
         results[label] = {
           p1: percentile(sorted, 1),
           p99: percentile(sorted, 99),

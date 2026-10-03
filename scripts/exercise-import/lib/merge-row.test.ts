@@ -214,8 +214,8 @@ describe('IMPORT-03 — matched rows UPDATE in place', () => {
     expect(result.exerciseId).toBe('orig-uuid-1234');
     expect(deps.newId).not.toHaveBeenCalled();
 
-    expect(updateEqCalls).toEqual([{ table: 'exercises', col: 'id', val: 'orig-uuid-1234' }]);
-    const payload = updatePayloads.find((p) => p.table === 'exercises')?.payload as Record<
+    expect(updateEqCalls).toEqual([{ table: 'ziko_exercises', col: 'id', val: 'orig-uuid-1234' }]);
+    const payload = updatePayloads.find((p) => p.table === 'ziko_exercises')?.payload as Record<
       string,
       unknown
     >;
@@ -249,7 +249,7 @@ describe('IMPORT-03 — unmatched_new rows INSERT', () => {
     expect(uploadIndexes.length).toBeGreaterThan(0);
     expect(Math.max(...uploadIndexes)).toBeLessThan(insertIndex);
 
-    const payload = insertPayloads.find((p) => p.table === 'exercises')?.payload as Record<
+    const payload = insertPayloads.find((p) => p.table === 'ziko_exercises')?.payload as Record<
       string,
       unknown
     >;
@@ -307,7 +307,7 @@ describe('MEDIA-04 — backup precedes UPDATE', () => {
     expect(updateIndex).toBeGreaterThanOrEqual(0);
     expect(backupIndex).toBeLessThan(updateIndex);
 
-    const backupPayload = insertPayloads.find((p) => p.table === 'exercises_merge_backup');
+    const backupPayload = insertPayloads.find((p) => p.table === 'ziko_exercises_merge_backup');
     expect(backupPayload?.payload).toEqual(selectData);
   });
 
@@ -416,7 +416,7 @@ describe('category guard', () => {
     expect(result.status).toBe('matched');
     expect(result.errorMessage).toBeNull();
     expect(result.categoryOmitted).toBe(true);
-    const payload = updatePayloads.find((p) => p.table === 'exercises')?.payload as Record<
+    const payload = updatePayloads.find((p) => p.table === 'ziko_exercises')?.payload as Record<
       string,
       unknown
     >;

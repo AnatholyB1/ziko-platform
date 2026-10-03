@@ -91,7 +91,7 @@ describe('assess_profile executor', () => {
 
     expect(mockRpc).toHaveBeenCalledTimes(1);
     const [rpcName, rpcArgs] = mockRpc.mock.calls[0];
-    expect(rpcName).toBe('record_athlete_decision');
+    expect(rpcName).toBe('ziko_record_athlete_decision');
     expect(rpcArgs.p_decision_type).toBe('onboarding_profile');
     expect(rpcArgs.p_source).toBe('onboarding_tool');
     expect(rpcArgs.p_week_of).toBeNull();

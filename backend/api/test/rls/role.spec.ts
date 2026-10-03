@@ -11,7 +11,7 @@ afterAll(async () => {
 describe('user_profiles.role', () => {
   it('column exists with default client (introspection)', async () => {
     const { error } = await adminClient
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('id, role')
       .limit(1);
     expect(error).toBeNull();
@@ -22,7 +22,7 @@ describe('user_profiles.role', () => {
     const u = await createTestUser('role-default');
     createdIds.push(u.id);
     const { data, error } = await adminClient
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('role')
       .eq('id', u.id)
       .single();
@@ -34,7 +34,7 @@ describe('user_profiles.role', () => {
     const u = await createTestUser('role-check');
     createdIds.push(u.id);
     const { error } = await adminClient
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .update({ role: 'invalid' })
       .eq('id', u.id);
     expect(error).not.toBeNull();
@@ -46,7 +46,7 @@ describe('user_profiles.role', () => {
     const u = await createTestUser('role-coach');
     createdIds.push(u.id);
     const { error } = await adminClient
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .update({ role: 'coach' })
       .eq('id', u.id);
     expect(error).toBeNull();
@@ -54,7 +54,7 @@ describe('user_profiles.role', () => {
 
   it('backfill: no existing user_profiles row has NULL role', async () => {
     const { count, error } = await adminClient
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('*', { count: 'exact', head: true })
       .is('role', null);
     expect(error).toBeNull();

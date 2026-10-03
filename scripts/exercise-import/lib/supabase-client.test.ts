@@ -127,8 +127,8 @@ describe('fetchAllProductionExercises', () => {
     await fetchAllProductionExercises(client);
 
     expect(fromCalls.length).toBe(3);
-    expect(fromCalls.every((t) => t === 'exercises')).toBe(true);
-    expect(fromCalls).not.toContain('coach_exercises');
+    expect(fromCalls.every((t) => t === 'ziko_exercises')).toBe(true);
+    expect(fromCalls).not.toContain('ziko_coach_exercises');
   });
 
   it('propagates a Supabase error on page 2 as a thrown error (no partial silent result)', async () => {

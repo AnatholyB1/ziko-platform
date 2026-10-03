@@ -71,14 +71,14 @@ let sql = `-- ============================================================
 -- ============================================================
 
 -- Delete old default exercises to avoid duplicates, keep user-created ones
-DELETE FROM public.exercises WHERE is_custom = FALSE AND user_id IS NULL;
+DELETE FROM public.ziko_exercises WHERE is_custom = FALSE AND user_id IS NULL;
 
 `;
 
 const BATCH = 50;
 for (let i = 0; i < unique.length; i += BATCH) {
   const batch = unique.slice(i, i + BATCH);
-  sql += `INSERT INTO public.exercises (name, category, muscle_groups, instructions, body_part, equipment, target_muscle, secondary_muscles, gif_url, is_custom) VALUES\n`;
+  sql += `INSERT INTO public.ziko_exercises (name, category, muscle_groups, instructions, body_part, equipment, target_muscle, secondary_muscles, gif_url, is_custom) VALUES\n`;
 
   const values = batch.map(ex => {
     const category = mapCategory(ex.bodyPart);

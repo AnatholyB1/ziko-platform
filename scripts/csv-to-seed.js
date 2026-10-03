@@ -152,7 +152,7 @@ let sql = `-- ============================================================
 -- ============================================================
 
 -- Delete old default exercises to avoid duplicates, keep user-created ones
-DELETE FROM public.exercises WHERE is_custom = FALSE AND user_id IS NULL;
+DELETE FROM public.ziko_exercises WHERE is_custom = FALSE AND user_id IS NULL;
 
 `;
 
@@ -160,7 +160,7 @@ DELETE FROM public.exercises WHERE is_custom = FALSE AND user_id IS NULL;
 const BATCH = 50;
 for (let i = 0; i < exercises.length; i += BATCH) {
   const batch = exercises.slice(i, i + BATCH);
-  sql += `INSERT INTO public.exercises (name, category, muscle_groups, instructions, body_part, equipment, target_muscle, secondary_muscles, gif_url, is_custom) VALUES\n`;
+  sql += `INSERT INTO public.ziko_exercises (name, category, muscle_groups, instructions, body_part, equipment, target_muscle, secondary_muscles, gif_url, is_custom) VALUES\n`;
 
   const values = batch.map(ex => {
     return `  ('${esc(ex.name)}', '${esc(ex.category)}', ${sqlArray(ex.muscleGroups)}, '${esc(ex.instructions)}', '${esc(ex.bodyPart)}', '${esc(ex.equipment)}', '${esc(ex.target)}', ${sqlArray(ex.secondaries)}, '${esc(ex.gifUrl)}', FALSE)`;

@@ -22,7 +22,7 @@ beforeAll(async () => {
   coach = await createTestUser('imp-coach');
   createdIds.push(athlete.id, other.id, coach.id);
   // Link coach to athlete (active link)
-  await admin.from('coach_client_links').insert({ coach_id: coach.id, client_id: athlete.id });
+  await admin.from('ziko_coach_client_links').insert({ coach_id: coach.id, client_id: athlete.id });
 });
 
 afterAll(async () => {
@@ -32,7 +32,7 @@ afterAll(async () => {
 describe('ai_imports RLS owner-only (D-10)', () => {
   it('owner can insert their own row', async () => {
     const { data, error } = await athlete.client
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT })
       .select('id')
       .single();
@@ -42,7 +42,7 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('CHECK rejects invalid mime_type', async () => {
     const { error } = await athlete.client
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT, mime_type: 'text/html' });
     expect(error).not.toBeNull();
     expect(error?.code).toBe('23514');
@@ -50,7 +50,7 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('CHECK rejects size_bytes > 25 MB', async () => {
     const { error } = await athlete.client
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT, size_bytes: 26_214_401 });
     expect(error).not.toBeNull();
     expect(error?.code).toBe('23514');
@@ -58,12 +58,12 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('CHECK rejects invalid status', async () => {
     const { data: row } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT })
       .select('id')
       .single();
     const { error } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .update({ status: 'banana' })
       .eq('id', row!.id);
     expect(error).not.toBeNull();
@@ -71,15 +71,15 @@ describe('ai_imports RLS owner-only (D-10)', () => {
   });
 
   it('owner sees only their own rows', async () => {
-    await admin.from('ai_imports').insert({ user_id: other.id, ...VALID_IMPORT });
-    const { data } = await athlete.client.from('ai_imports').select('user_id');
+    await admin.from('ziko_ai_imports').insert({ user_id: other.id, ...VALID_IMPORT });
+    const { data } = await athlete.client.from('ziko_ai_imports').select('user_id');
     expect(data?.every((r) => r.user_id === athlete.id)).toBe(true);
   });
 
   it('CRITICAL: linked coach CANNOT read athlete imports (D-10)', async () => {
-    await admin.from('ai_imports').insert({ user_id: athlete.id, ...VALID_IMPORT });
+    await admin.from('ziko_ai_imports').insert({ user_id: athlete.id, ...VALID_IMPORT });
     const { data, error } = await coach.client
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .select('id')
       .eq('user_id', athlete.id);
     expect(error).toBeNull();
@@ -88,12 +88,12 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('re_upload_source_id self-FK works for same-owner chains', async () => {
     const { data: a } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT })
       .select('id')
       .single();
     const { data: b, error } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT, re_upload_source_id: a!.id })
       .select('id, re_upload_source_id')
       .single();
@@ -103,20 +103,20 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('committed_program_id ON DELETE SET NULL', async () => {
     const { data: pgm } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({ user_id: athlete.id, name: 'imp-pgm' })
       .select('id')
       .single();
     const { data: imp } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .insert({ user_id: athlete.id, ...VALID_IMPORT, committed_program_id: pgm!.id, status: 'committed' })
       .select('id')
       .single();
 
-    await admin.from('workout_programs').delete().eq('id', pgm!.id);
+    await admin.from('ziko_workout_programs').delete().eq('id', pgm!.id);
 
     const { data: post } = await admin
-      .from('ai_imports')
+      .from('ziko_ai_imports')
       .select('committed_program_id')
       .eq('id', imp!.id)
       .single();
@@ -125,11 +125,11 @@ describe('ai_imports RLS owner-only (D-10)', () => {
 
   it('FK CASCADE on auth.users wipes ai_imports', async () => {
     const u = await createTestUser('imp-fk');
-    await admin.from('ai_imports').insert({ user_id: u.id, ...VALID_IMPORT });
+    await admin.from('ziko_ai_imports').insert({ user_id: u.id, ...VALID_IMPORT });
 
     await admin.auth.admin.deleteUser(u.id);
 
-    const { data } = await admin.from('ai_imports').select('id').eq('user_id', u.id);
+    const { data } = await admin.from('ziko_ai_imports').select('id').eq('user_id', u.id);
     expect(data?.length ?? 0).toBe(0);
     // u intentionally NOT in createdIds — already deleted.
   });

@@ -129,6 +129,6 @@ describe('GET /api/waitlist/count (T-05-06)', () => {
     await GET();
 
     expect(rpcMock).toHaveBeenCalledTimes(1);
-    expect(rpcMock).toHaveBeenCalledWith('get_waitlist_founder_status');
+    expect(rpcMock).toHaveBeenCalledWith('ziko_get_waitlist_founder_status');
   });
 });

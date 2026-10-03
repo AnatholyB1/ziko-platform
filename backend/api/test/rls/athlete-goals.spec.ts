@@ -40,7 +40,7 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
    * idempotency index entirely (mirrors athlete-state.spec.ts's seedState).
    */
   async function seedGoal(userId: string, goalPatch: Record<string, unknown> = {}) {
-    return admin.rpc('record_athlete_decision', {
+    return admin.rpc('ziko_record_athlete_decision', {
       p_user_id: userId,
       p_decision_type: 'goal_created',
       p_week_of: null,
@@ -72,7 +72,7 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     expect(seed.data.goal_id.length).toBeGreaterThan(0);
 
     const { data, error } = await admin
-      .from('athlete_goals')
+      .from('ziko_athlete_goals')
       .select('id, goal_text, target_metric, target_value, target_date, status')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -96,7 +96,7 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     expect(goalId.length).toBeGreaterThan(0);
 
     const { data, error } = await admin
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('current_focus_detail')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -117,12 +117,12 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     expect(seedB.error).toBeNull();
     expect(seedB.data.success).toBe(true);
 
-    const ownRead = await a.client.from('athlete_goals').select('id, goal_text').eq('user_id', a.id);
+    const ownRead = await a.client.from('ziko_athlete_goals').select('id, goal_text').eq('user_id', a.id);
     expect(ownRead.error).toBeNull();
     expect(ownRead.data?.length).toBe(1);
     expect(ownRead.data?.[0].goal_text).toBe('Athlete A goal');
 
-    const crossRead = await a.client.from('athlete_goals').select('id').eq('user_id', b.id);
+    const crossRead = await a.client.from('ziko_athlete_goals').select('id').eq('user_id', b.id);
     expect(crossRead.error).toBeNull();
     expect(crossRead.data?.length ?? 0).toBe(0);
   });
@@ -135,16 +135,16 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     expect(seed.error).toBeNull();
     const goalId = seed.data.goal_id as string;
 
-    const insertResult = await a.client.from('athlete_goals').insert({
+    const insertResult = await a.client.from('ziko_athlete_goals').insert({
       user_id: a.id,
       goal_text: 'authenticated insert attempt',
     });
     expect(insertResult.error).not.toBeNull();
 
-    const updateResult = await a.client.from('athlete_goals').update({ goal_text: 'pwned' }).eq('id', goalId);
+    const updateResult = await a.client.from('ziko_athlete_goals').update({ goal_text: 'pwned' }).eq('id', goalId);
     expect(updateResult.error).not.toBeNull();
 
-    const deleteResult = await a.client.from('athlete_goals').delete().eq('id', goalId);
+    const deleteResult = await a.client.from('ziko_athlete_goals').delete().eq('id', goalId);
     expect(deleteResult.error).not.toBeNull();
   });
 
@@ -158,16 +158,16 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
 
     const anon = getAnonClient();
 
-    const insertResult = await anon.from('athlete_goals').insert({
+    const insertResult = await anon.from('ziko_athlete_goals').insert({
       user_id: a.id,
       goal_text: 'anon insert attempt',
     });
     expect(insertResult.error).not.toBeNull();
 
-    const updateResult = await anon.from('athlete_goals').update({ goal_text: 'pwned' }).eq('id', goalId);
+    const updateResult = await anon.from('ziko_athlete_goals').update({ goal_text: 'pwned' }).eq('id', goalId);
     expect(updateResult.error).not.toBeNull();
 
-    const deleteResult = await anon.from('athlete_goals').delete().eq('id', goalId);
+    const deleteResult = await anon.from('ziko_athlete_goals').delete().eq('id', goalId);
     expect(deleteResult.error).not.toBeNull();
   });
 
@@ -175,7 +175,7 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     const a = await createTestUser('athlete-goals-service-role-write');
     createdUserIds.push(a.id);
 
-    const result = await admin.from('athlete_goals').insert({
+    const result = await admin.from('ziko_athlete_goals').insert({
       user_id: a.id,
       goal_text: 'service-role direct insert attempt',
     });
@@ -190,7 +190,7 @@ describe.skipIf(!RUN_DB)('athlete_goals — RLS reads, three-role write lockdown
     expect(result.error).not.toBeNull();
 
     const { data, error } = await admin
-      .from('athlete_goals')
+      .from('ziko_athlete_goals')
       .select('id')
       .eq('user_id', a.id)
       .eq('goal_text', 'bogus-status attempt');

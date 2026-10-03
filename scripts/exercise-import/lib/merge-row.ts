@@ -201,7 +201,7 @@ export async function processRow(input: MergeRowInput, deps: MergeRowDeps): Prom
       // 4. Snapshot the pre-UPDATE row into exercises_merge_backup BEFORE
       // the UPDATE (MEDIA-04). A failed backup aborts this row's UPDATE.
       const { data: currentRow, error: selectError } = await deps.client
-        .from('exercises')
+        .from('ziko_exercises')
         .select('*')
         .eq('id', exerciseId)
         .single();
@@ -209,7 +209,7 @@ export async function processRow(input: MergeRowInput, deps: MergeRowDeps): Prom
         throw selectError ?? new Error('row vanished before backup');
       }
 
-      const { error: backupError } = await deps.client.from('exercises_merge_backup').insert(currentRow);
+      const { error: backupError } = await deps.client.from('ziko_exercises_merge_backup').insert(currentRow);
       if (backupError) throw backupError;
 
       const categoryOmitted = mapDatasetCategory(record.category) === null;
@@ -217,7 +217,7 @@ export async function processRow(input: MergeRowInput, deps: MergeRowDeps): Prom
 
       // 5. Only now perform the UPDATE — never before a successful backup.
       await deps.withRetry(async () => {
-        const { error } = await deps.client.from('exercises').update(payload).eq('id', exerciseId);
+        const { error } = await deps.client.from('ziko_exercises').update(payload).eq('id', exerciseId);
         if (error) throw error;
       });
 
@@ -234,7 +234,7 @@ export async function processRow(input: MergeRowInput, deps: MergeRowDeps): Prom
     const payload = buildExercisePayload(record, exerciseId, { forInsert: true });
 
     await deps.withRetry(async () => {
-      const { error } = await deps.client.from('exercises').insert(payload);
+      const { error } = await deps.client.from('ziko_exercises').insert(payload);
       if (error) throw error;
     });
 

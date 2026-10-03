@@ -42,7 +42,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-fresh');
     createdUserIds.push(a.id);
 
-    const result = await admin.rpc('record_athlete_decision', {
+    const result = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -76,7 +76,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(result.data.success).toBe(true);
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('status, level, tier, readiness, current_focus_summary')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -92,7 +92,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-jsonb');
     createdUserIds.push(a.id);
 
-    const result = await admin.rpc('record_athlete_decision', {
+    const result = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -114,7 +114,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(result.data.success).toBe(true);
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('onboarding_profile')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -137,7 +137,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
       evidence_source: 'onboarding_conversation',
     };
 
-    const result = await admin.rpc('record_athlete_decision', {
+    const result = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -152,7 +152,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(result.data.success).toBe(true);
 
     const { data, error } = await admin
-      .from('athlete_decisions')
+      .from('ziko_athlete_decisions')
       .select('decision_type, source, week_of, evidence')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -169,7 +169,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-review-clock');
     createdUserIds.push(a.id);
 
-    const result = await admin.rpc('record_athlete_decision', {
+    const result = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -184,7 +184,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(result.data.success).toBe(true);
 
     const { data, error } = await admin
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('last_review_at, next_review_due_at')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -196,7 +196,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-not-dedup');
     createdUserIds.push(a.id);
 
-    const first = await admin.rpc('record_athlete_decision', {
+    const first = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -210,7 +210,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(first.error).toBeNull();
     expect(first.data.success).toBe(true);
 
-    const second = await admin.rpc('record_athlete_decision', {
+    const second = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -226,7 +226,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(second.data.decision_id).not.toBe(first.data.decision_id);
 
     const { data: stateRows, error: stateError } = await admin
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('user_id, readiness')
       .eq('user_id', a.id);
     expect(stateError).toBeNull();
@@ -236,7 +236,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(stateRows?.[0].readiness).toBe('ready');
 
     const { data: journalRows, error: journalError } = await admin
-      .from('athlete_decisions')
+      .from('ziko_athlete_decisions')
       .select('id')
       .eq('user_id', a.id)
       .eq('decision_type', 'onboarding_profile');
@@ -249,7 +249,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-app-open-fallback');
     createdUserIds.push(a.id);
 
-    const result = await admin.rpc('record_athlete_decision', {
+    const result = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -263,7 +263,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(result.error).toBeNull();
     expect(result.data.success).toBe(true);
 
-    const { data, error } = await admin.from('athlete_decisions').select('source').eq('user_id', a.id);
+    const { data, error } = await admin.from('ziko_athlete_decisions').select('source').eq('user_id', a.id);
     expect(error).toBeNull();
     expect(data?.[0].source).toBe('app_open_fallback');
   });
@@ -272,7 +272,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     const a = await createTestUser('onboarding-profile-write-block');
     createdUserIds.push(a.id);
 
-    await admin.rpc('record_athlete_decision', {
+    await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -284,10 +284,10 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
       p_state_patch: {},
     });
 
-    const insertResult = await a.client.from('athlete_state').insert({ user_id: a.id });
+    const insertResult = await a.client.from('ziko_athlete_state').insert({ user_id: a.id });
     expect(insertResult.error).not.toBeNull();
 
-    const updateResult = await a.client.from('athlete_state').update({ level: 99 }).eq('user_id', a.id);
+    const updateResult = await a.client.from('ziko_athlete_state').update({ level: 99 }).eq('user_id', a.id);
     expect(updateResult.error).not.toBeNull();
   });
 });

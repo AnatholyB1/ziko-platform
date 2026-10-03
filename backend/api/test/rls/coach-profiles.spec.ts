@@ -13,7 +13,7 @@ describe('coach_profiles RLS', () => {
     const a = await createTestUser('cp-a');
     createdIds.push(a.id);
     const { error } = await a.client
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .insert({ user_id: a.id, display_name: 'Coach A' });
     expect(error).toBeNull();
   });
@@ -23,7 +23,7 @@ describe('coach_profiles RLS', () => {
     const b = await createTestUser('cp-rls-b');
     createdIds.push(a.id, b.id);
     const { error } = await a.client
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .insert({ user_id: b.id, display_name: 'Hijack' });
     expect(error).not.toBeNull();
     // Postgres error code 42501 (insufficient_privilege) or PostgREST '23' family on RLS denial
@@ -37,11 +37,11 @@ describe('coach_profiles RLS', () => {
     const a = await createTestUser('cp-sel-a');
     const b = await createTestUser('cp-sel-b');
     createdIds.push(a.id, b.id);
-    await a.client.from('coach_profiles').insert({ user_id: a.id, display_name: 'A' });
-    await admin.from('coach_profiles').insert({ user_id: b.id, display_name: 'B' });
+    await a.client.from('ziko_coach_profiles').insert({ user_id: a.id, display_name: 'A' });
+    await admin.from('ziko_coach_profiles').insert({ user_id: b.id, display_name: 'B' });
 
     const { data, error } = await a.client
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('user_id')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -52,9 +52,9 @@ describe('coach_profiles RLS', () => {
   it('kyc_status CHECK rejects banana', async () => {
     const a = await createTestUser('cp-kyc');
     createdIds.push(a.id);
-    await a.client.from('coach_profiles').insert({ user_id: a.id, display_name: 'A' });
+    await a.client.from('ziko_coach_profiles').insert({ user_id: a.id, display_name: 'A' });
     const { error } = await admin
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .update({ kyc_status: 'banana' })
       .eq('user_id', a.id);
     expect(error).not.toBeNull();
@@ -64,16 +64,16 @@ describe('coach_profiles RLS', () => {
   it('updated_at trigger fires on UPDATE', async () => {
     const a = await createTestUser('cp-upd');
     createdIds.push(a.id);
-    await a.client.from('coach_profiles').insert({ user_id: a.id, display_name: 'A' });
+    await a.client.from('ziko_coach_profiles').insert({ user_id: a.id, display_name: 'A' });
     const { data: r1 } = await admin
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('updated_at')
       .eq('user_id', a.id)
       .single();
     await new Promise((r) => setTimeout(r, 50));
-    await a.client.from('coach_profiles').update({ display_name: 'A2' }).eq('user_id', a.id);
+    await a.client.from('ziko_coach_profiles').update({ display_name: 'A2' }).eq('user_id', a.id);
     const { data: r2 } = await admin
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('updated_at')
       .eq('user_id', a.id)
       .single();
@@ -82,10 +82,10 @@ describe('coach_profiles RLS', () => {
 
   it('FK CASCADE on auth.users delete removes coach_profiles row', async () => {
     const a = await createTestUser('cp-fk');
-    await a.client.from('coach_profiles').insert({ user_id: a.id, display_name: 'A' });
+    await a.client.from('ziko_coach_profiles').insert({ user_id: a.id, display_name: 'A' });
     await admin.auth.admin.deleteUser(a.id);
     const { data } = await admin
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('user_id')
       .eq('user_id', a.id);
     expect(data?.length ?? 0).toBe(0);
