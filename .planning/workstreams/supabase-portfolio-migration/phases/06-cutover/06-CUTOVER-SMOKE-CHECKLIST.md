@@ -52,4 +52,4 @@ Each item is proven by a report file filled in by 06-10, 06-12 or 06-15.
 | S-6 | POST /coach/imports (ziko-ai-imports) | report from 15-smoke-core-flows (06-10 / 06-12 / 06-15) |
 | S-7 | codemod: 11-codemod-buckets.mjs and 12-codemod-tables.mjs `--check` repo-wide residual pass, merged together with the env flip | check output recorded by 06-08 and 06-15 |
 
-Proven on portfolio by 06-12 (`scripts/portfolio-migration/reports/preview-storage-auth.json`, harness smoke, backend 14/14 incl. deny cases): S-1, S-2, S-3, S-4, S-5. S-6 (POST /coach/imports) is covered by 15-smoke-core-flows and is pending 06-12 step 5 (preview URLs need the bypass file).
+Proven on portfolio by 06-12 (`scripts/portfolio-migration/reports/preview-storage-auth.json`, harness smoke, backend 14/14 incl. deny cases): S-1, S-2, S-3, S-4, S-5, S-6 (bk-imports-create allow). Core flows against the protected preview URLs (`reports/preview-core-flows.json`, 13/13 PASS incl. coach CRM read and web ref proof; AI chat skipped, waived by the user because the Anthropic balance is empty) also pass.
