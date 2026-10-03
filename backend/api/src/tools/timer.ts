@@ -9,7 +9,7 @@ export async function timer_get_presets(
   const db = clientForUser(userToken);
 
   const { data, error } = await db
-    .from('timer_presets')
+    .from('ziko_timer_presets')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -50,7 +50,7 @@ export async function timer_create_preset(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('timer_presets')
+    .from('ziko_timer_presets')
     .insert({
       user_id: userId,
       name,

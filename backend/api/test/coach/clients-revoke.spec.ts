@@ -31,16 +31,16 @@ async function getJwt(user: TestUser): Promise<string> {
 beforeAll(async () => {
   coach = await createTestUser('cv-coach');
   client = await createTestUser('cv-client');
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach' });
   await adminClient
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .upsert({ user_id: coach.id, display_name: 'V' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client' });
 
   clientJwt = await getJwt(client);
 
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'RVOK22', expires_at: fourteenDays() })
     .select()
     .single();
@@ -53,11 +53,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -66,7 +66,7 @@ describe('coach/clients/db.revokeLink (INVITE-06)', () => {
     const r = await revokeLink(clientJwt, client.id, linkId);
     expect(r.revoked_at).not.toBeNull();
     const { data } = await adminClient
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .select('revoked_at')
       .eq('id', linkId)
       .single();
@@ -75,7 +75,7 @@ describe('coach/clients/db.revokeLink (INVITE-06)', () => {
 
   it('after revoke, is_coach_of returns FALSE on next RLS check', async () => {
     // is_coach_of(coach UUID, client UUID) — positional args per migration 035.
-    const { data, error } = await adminClient.rpc('is_coach_of', {
+    const { data, error } = await adminClient.rpc('ziko_is_coach_of', {
       coach: coach.id,
       client: client.id,
     });

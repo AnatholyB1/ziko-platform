@@ -60,7 +60,7 @@ function OBReady() {
     try {
       const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
       if (uid) {
-        await supabase.from('user_profiles').upsert({
+        await supabase.from('ziko_user_profiles').upsert({
           id: uid,
           goal: obState.goal,
           level: obState.level,

@@ -82,7 +82,7 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const customContainers = containers.filter((c) => !c.isDefault);
-    await supabase.from('user_plugins').upsert({
+    await supabase.from('ziko_user_plugins').upsert({
       user_id: user.id,
       plugin_id: 'hydration',
       settings: { goal_ml: goalMl, custom_containers: customContainers, favorite_container_id: favoriteContainerId },
@@ -110,14 +110,14 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
       if (!user) return;
       const today = new Date().toISOString().split('T')[0];
       const { data } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
         .order('created_at', { ascending: false });
       set({ logs: data ?? [] });
       const { data: profile } = await supabase
-        .from('user_plugins')
+        .from('ziko_user_plugins')
         .select('settings')
         .eq('user_id', user.id)
         .eq('plugin_id', 'hydration')

@@ -35,7 +35,7 @@ export async function createImport(
 ): Promise<ImportRow> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .insert({
       user_id: userId,
       file_url: '',
@@ -63,7 +63,7 @@ export async function getImport(
 ): Promise<ImportRow | null> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .select('*')
     .eq('id', importId)
     .maybeSingle();
@@ -80,7 +80,7 @@ export async function listImports(
 ): Promise<ImportRow[]> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(50);
@@ -114,7 +114,7 @@ export async function updateImportStatus(
 ): Promise<void> {
   const db = createUserClient(jwt);
   const { error } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .update({ status, ...(extra ?? {}) })
     .eq('id', importId);
   if (error) throw new Error(error.message);
@@ -131,7 +131,7 @@ export async function updateImportFileUrl(
 ): Promise<void> {
   const db = createUserClient(jwt);
   const { error } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .update({ file_url: fileUrl })
     .eq('id', importId);
   if (error) throw new Error(error.message);
@@ -196,7 +196,7 @@ export async function commitImport(
 
   // Step 1 — Insert workout_programs row
   const { data: programData, error: programError } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .insert({
       user_id: userId,
       name: derivedName,
@@ -214,7 +214,7 @@ export async function commitImport(
 
   // Step 2 — Mark the import as committed
   const { error: importError } = await db
-    .from('ai_imports')
+    .from('ziko_ai_imports')
     .update({
       committed_program_id: programId,
       status: 'committed' satisfies ImportStatus,

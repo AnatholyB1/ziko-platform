@@ -266,17 +266,36 @@ async function runLive(run) {
       record('web-login', 200, r.status, r.ms);
     },
     'web-inlined-ref': async () => {
+      // Public pages never inline the Supabase URL (login is a server action), so a bundle scan alone
+      // proves nothing. Proof: the web's ref-derived auth cookie name only authenticates the temp coach
+      // on a protected page when the deployed web is configured with the target ref; a cookie named for
+      // another ref must stay unauthenticated. Chunks of the authenticated page must not carry the other ref.
       const started = Date.now();
-      const page = await web('/fr/login');
-      const srcs = [...new Set([...page.text.matchAll(/\/_next\/static\/chunks\/[^"'\s\\)]+\.js/g)].map((m) => m[0]))].slice(0, 60);
-      let all = page.text;
-      for (const s of srcs) all += `\n${(await web(s)).text}`;
-      record(
-        'web-inlined-ref',
-        'ok',
-        webInlinedRef(all, run.projectRef, run.otherRef) ? 'ok' : 'mismatch',
-        Date.now() - started,
-      );
+      const probe = '/fr/coach/dashboard';
+      const { data } = await coach.client.auth.getSession();
+      const val = `base64-${Buffer.from(JSON.stringify(data.session)).toString('base64url')}`;
+      const cookieFor = (ref) => {
+        const name = `sb-${ref}-auth-token`;
+        const parts = val.match(/.{1,3000}/g);
+        return parts.length === 1 ? `${name}=${val}` : parts.map((c, i) => `${name}.${i}=${c}`).join('; ');
+      };
+      const get = async (cookie) => {
+        const res = await fetch(`${run.webUrl}${probe}`, {
+          headers: { ...baseHeaders, ...(cookie ? { cookie } : {}) },
+          redirect: 'manual',
+          signal: AbortSignal.timeout(30000),
+        });
+        return { status: res.status, text: res.status === 200 ? await res.text() : '' };
+      };
+      const authed = await get(cookieFor(run.projectRef));
+      const wrong = await get(cookieFor(run.otherRef));
+      let all = authed.text;
+      const srcs = [...new Set([...all.matchAll(/static\/chunks\/[^"'\s\)]+?\.js/g)].map((m) => `/_next/${m[0]}`))].slice(0, 60);
+      for (const s of srcs) all += `
+${(await web(s)).text}`;
+      const refs = detectProjectRefs(all);
+      const ok = authed.status === 200 && wrong.status !== 200 && !refs.has(run.otherRef);
+      record('web-inlined-ref', 'ok', ok ? 'ok' : 'mismatch', Date.now() - started);
     },
   };
 

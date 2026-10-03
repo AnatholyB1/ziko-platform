@@ -36,14 +36,14 @@ const MANDATORY_PLUGIN_IDS: string[] = ['coach'];
 async function autoInstallCoachPlugin(userId: string): Promise<void> {
   try {
     const { data: profileRow } = await supabase
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('role')
       .eq('id', userId)
       .single();
     const role = profileRow?.role ?? 'client';
     if (role === 'client' || role === 'both') {
       await supabase
-        .from('user_plugins')
+        .from('ziko_user_plugins')
         .upsert(
           { user_id: userId, plugin_id: 'coach', is_enabled: true },
           { onConflict: 'user_id,plugin_id' }
@@ -93,7 +93,7 @@ export function PluginLoader({ children }: PluginLoaderProps) {
       if (cancelled) return;
 
       const { data: userPlugins, error } = await supabase
-        .from('user_plugins')
+        .from('ziko_user_plugins')
         .select('plugin_id, is_enabled')
         .eq('user_id', user.id)
         .eq('is_enabled', true);

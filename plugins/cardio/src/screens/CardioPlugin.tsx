@@ -161,7 +161,7 @@ export default function CardioPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -182,7 +182,7 @@ export default function CardioPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .select('*')
         .eq('user_id', userId)
         .gte('created_at', sevenDaysAgo.toISOString());
@@ -199,7 +199,7 @@ export default function CardioPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('quality')
         .eq('user_id', userId)
         .order('date', { ascending: false })
@@ -217,7 +217,7 @@ export default function CardioPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .select('distance_km, duration_min, created_at')
         .eq('user_id', userId)
         .gte('created_at', sevenDaysAgo.toISOString());

@@ -48,3 +48,6 @@ scripts/auth-merge/exports/
 # Phase 4 data copy (supabase-portfolio-migration) — temp files, CA cert, remap scratch copies, never commit
 scripts/portfolio-migration/.tmp-*
 scripts/portfolio-migration/.ca/
+
+# Vercel Protection Bypass for Automation secret (06-12) - never commit
+scripts/portfolio-migration/.vercel-bypass

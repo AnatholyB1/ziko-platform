@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
-const ALLOWED_BUCKETS = ['profile-photos', 'scan-photos', 'exports', 'coach-kyc', 'coach-exercises'] as const;
+const ALLOWED_BUCKETS = [STORAGE_BUCKETS.profilePhotos, STORAGE_BUCKETS.scanPhotos, STORAGE_BUCKETS.exports, STORAGE_BUCKETS.coachKyc, STORAGE_BUCKETS.coachExercises] as const;
 type AllowedBucket = (typeof ALLOWED_BUCKETS)[number];
 
 export async function GET(request: NextRequest) {

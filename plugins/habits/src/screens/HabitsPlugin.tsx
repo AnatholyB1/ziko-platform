@@ -196,7 +196,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('habits')
+        .from('ziko_habits')
         .select('*')
         .eq('user_id', userId);
       if (error) throw error;
@@ -218,7 +218,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('habit_logs')
+        .from('ziko_habit_logs')
         .select('*')
         .eq('user_id', userId)
         .eq('date', today);
@@ -240,7 +240,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('habit_logs')
+        .from('ziko_habit_logs')
         .select('*')
         .eq('user_id', userId)
         .gte('date', since30);
@@ -257,7 +257,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       if (isCompleted) {
         // DELETE the log
         const { error } = await supabase
-          .from('habit_logs')
+          .from('ziko_habit_logs')
           .delete()
           .eq('habit_id', habit.id)
           .eq('user_id', userId)
@@ -265,7 +265,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         if (error) throw error;
       } else {
         // INSERT the log (unique constraint on habit_id, date)
-        const { error } = await supabase.from('habit_logs').insert({
+        const { error } = await supabase.from('ziko_habit_logs').insert({
           habit_id: habit.id,
           user_id: userId,
           date: today,
@@ -304,7 +304,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   const createHabitMutation = useMutation({
     mutationFn: async ({ name, color, emoji, reminder_time }: { name: string; color: string; emoji: string; reminder_time?: string | null }) => {
       if (!userId) throw new Error('Not authenticated');
-      const { data, error } = await supabase.from('habits').insert({
+      const { data, error } = await supabase.from('ziko_habits').insert({
         user_id: userId,
         name: name.trim(),
         type: 'boolean',

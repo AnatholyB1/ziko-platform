@@ -15,7 +15,7 @@ async function makeLink(
   opts: { expiresAt?: string | null; revokedAt?: string | null } = {}
 ) {
   const { data, error } = await admin
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .insert({
       coach_id: coachId,
       client_id: clientId,
@@ -31,12 +31,12 @@ async function makeLink(
 async function seedHabitLog(client: TestUser) {
   // First insert a habit (FK parent for habit_logs)
   const { data: hab, error: habErr } = await admin
-    .from('habits')
+    .from('ziko_habits')
     .insert({ user_id: client.id, name: 'Daily water' })
     .select('id')
     .single();
   if (habErr) throw new Error(`seedHabitLog/habits: ${habErr.message}`);
-  const { error: logErr } = await admin.from('habit_logs').insert({
+  const { error: logErr } = await admin.from('ziko_habit_logs').insert({
     habit_id: hab!.id,
     user_id: client.id,
     date: new Date().toISOString().slice(0, 10),
@@ -62,7 +62,7 @@ afterAll(async () => {
 describe('coach RLS — 4 mandated cases + additional scenarios', () => {
   it('linked client: coach reads habit_logs → rows returned (case 1, 22-03-01)', async () => {
     const { data, error } = await coach.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', linkedClient.id);
     expect(error).toBeNull();
@@ -71,7 +71,7 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
 
   it('unlinked client: coach reads habit_logs → 0 rows (case 2, 22-03-02)', async () => {
     const { data, error } = await coach.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', unlinkedClient.id);
     expect(error).toBeNull();
@@ -86,18 +86,18 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
     await seedHabitLog(tempClient);
 
     const before = await tempCoach.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', tempClient.id);
     expect(before.data?.length).toBeGreaterThan(0);
 
     await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .update({ revoked_at: new Date().toISOString() })
       .eq('id', linkId);
 
     const after = await tempCoach.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', tempClient.id);
     expect(after.data?.length ?? 0).toBe(0);
@@ -113,7 +113,7 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
     await seedHabitLog(tempClient);
 
     const { data } = await tempCoach.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', tempClient.id);
     expect(data?.length ?? 0).toBe(0);
@@ -122,32 +122,32 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
   it('coach cannot write: INSERT/UPDATE/DELETE blocked on linked client tables (22-03-05)', async () => {
     // INSERT — coach attempts to insert a habit owned by linkedClient
     const ins = await coach.client
-      .from('habits')
+      .from('ziko_habits')
       .insert({ user_id: linkedClient.id, name: 'Hijack' });
     expect(ins.error).not.toBeNull();
 
     // UPDATE — coach attempts to modify a linked client's habit
     const { data: linkedHabits } = await admin
-      .from('habits')
+      .from('ziko_habits')
       .select('id')
       .eq('user_id', linkedClient.id)
       .limit(1);
     const targetId = linkedHabits?.[0]?.id;
     expect(targetId).toBeDefined();
     if (targetId) {
-      await coach.client.from('habits').update({ name: 'Pwned' }).eq('id', targetId);
+      await coach.client.from('ziko_habits').update({ name: 'Pwned' }).eq('id', targetId);
       // RLS silently drops the row from the UPDATE set; verify the underlying row is unchanged.
       const { data: post } = await admin
-        .from('habits')
+        .from('ziko_habits')
         .select('name')
         .eq('id', targetId)
         .single();
       expect(post?.name).not.toBe('Pwned');
 
       // DELETE
-      await coach.client.from('habits').delete().eq('id', targetId);
+      await coach.client.from('ziko_habits').delete().eq('id', targetId);
       const { data: stillThere } = await admin
-        .from('habits')
+        .from('ziko_habits')
         .select('id')
         .eq('id', targetId)
         .maybeSingle();
@@ -162,26 +162,26 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
     const linkA = await makeLink(c.id, cl.id);
 
     const dup = await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .insert({ coach_id: c.id, client_id: cl.id });
     expect(dup.error).not.toBeNull();
     expect(dup.error?.code).toBe('23505'); // unique_violation
 
     await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .update({ revoked_at: new Date().toISOString() })
       .eq('id', linkA);
     const fresh = await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .insert({ coach_id: c.id, client_id: cl.id });
     expect(fresh.error).toBeNull();
   });
 
   it('null safety — is_coach_of(NULL, NULL) and is_coach_of(x, x) return FALSE (22-03-07)', async () => {
-    const { data: n1 } = await admin.rpc('is_coach_of', { coach: null, client: null });
+    const { data: n1 } = await admin.rpc('ziko_is_coach_of', { coach: null, client: null });
     expect(n1).toBe(false);
 
-    const { data: n2 } = await admin.rpc('is_coach_of', { coach: coach.id, client: coach.id });
+    const { data: n2 } = await admin.rpc('ziko_is_coach_of', { coach: coach.id, client: coach.id });
     expect(n2).toBe(false);
   });
 
@@ -193,20 +193,20 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
 
     // Need a real exercises row for FK (session_sets.exercise_id NOT NULL REFERENCES exercises.id).
     const { data: ex, error: exErr } = await admin
-      .from('exercises')
+      .from('ziko_exercises')
       .select('id')
       .limit(1)
       .single();
     if (exErr || !ex) throw new Error(`seed exercises not present: ${exErr?.message ?? 'no row'}`);
 
     const { data: ws, error: wsErr } = await admin
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .insert({ user_id: tempClient.id, started_at: new Date().toISOString() })
       .select('id')
       .single();
     if (wsErr) throw new Error(`workout_sessions insert: ${wsErr.message}`);
 
-    const { error: setErr } = await admin.from('session_sets').insert({
+    const { error: setErr } = await admin.from('ziko_session_sets').insert({
       session_id: ws!.id,
       exercise_id: ex.id,
       set_number: 1,
@@ -216,7 +216,7 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
     if (setErr) throw new Error(`session_sets insert: ${setErr.message}`);
 
     const { data, error } = await tempCoach.client
-      .from('session_sets')
+      .from('ziko_session_sets')
       .select('id')
       .eq('session_id', ws!.id);
     expect(error).toBeNull();
@@ -255,7 +255,7 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
 
   it('sanity — owner still reads their own data (existing FOR ALL policy intact)', async () => {
     const { data, error } = await linkedClient.client
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', linkedClient.id);
     expect(error).toBeNull();

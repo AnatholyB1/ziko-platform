@@ -38,7 +38,7 @@ export function OnboardingWizard() {
 
       // Check if already a coach — redirect to dashboard (idempotent re-visit)
       supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('role')
         .eq('id', session.user.id)
         .single()

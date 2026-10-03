@@ -116,19 +116,38 @@ test('evaluateMatrix: baseline cases pass on documented quirk only', () => {
   assert.equal(evaluateMatrix([{ id: 'q', status: 'allow' }], { cases }).ok, false);
 });
 
-test('evaluateMatrix: deferred cases are counted separately, never as pass', () => {
-  const cases = [
-    { id: 'a', surface: 'storage-only', bucket: 'avatars', actor: 'A', op: 'read', expect: 'allow', modes: ['full'] },
-    { id: 'd', surface: 'backend', bucket: 'coach-videos', actor: 'A', op: 'route-call', expect: 'deferred-table-codemod', modes: ['full'] },
+test('MATRIX: no deferred cases; the 6 carried backend routes run in full and smoke', () => {
+  assert.ok(MATRIX.every((c) => c.expect !== 'deferred-table-codemod'));
+  const ROUTE_IDS = [
+    'bk-clients-links-me',
+    'bk-videos-upload-url',
+    'bk-videos-signed-url',
+    'bk-videos-audio-url',
+    'bk-exercises-media-url',
+    'bk-imports-create',
   ];
-  const r = evaluateMatrix([{ id: 'a', status: 'allow' }, { id: 'd', status: 'deferred-table-codemod' }], { cases });
-  assert.equal(r.ok, true);
-  assert.equal(r.passed, 1);
-  assert.equal(r.deferred, 1);
-  // a deferred case that actually passed/failed is not silently counted as pass
-  const r2 = evaluateMatrix([{ id: 'a', status: 'allow' }, { id: 'd', status: 'allow' }], { cases });
-  assert.equal(r2.passed, 1);
-  assert.equal(r2.ok, false);
+  for (const mode of ['full', 'smoke']) {
+    const ids = new Set(casesFor(mode).map((c) => c.id));
+    for (const id of ROUTE_IDS) assert.ok(ids.has(id), `${id} missing in ${mode}`);
+  }
+  for (const c of MATRIX.filter((x) => x.op === 'route-call')) {
+    assert.ok(['allow', 'deny'].includes(c.expect), `${c.id} expect ${c.expect}`);
+  }
+  // negative cases exist for the video, audio and exercise media routes
+  for (const id of ['bk-videos-signed-url-foreign', 'bk-videos-audio-url-foreign', 'bk-exercises-media-url-foreign-athlete', 'bk-exercises-media-url-foreign-coach']) {
+    assert.equal(MATRIX.find((c) => c.id === id)?.expect, 'deny');
+  }
+});
+
+test('evaluateMatrix: an unexpected status on a route case fails the run', () => {
+  const cases = casesFor('smoke').filter((c) => c.id === 'bk-videos-signed-url');
+  assert.equal(evaluateMatrix([{ id: 'bk-videos-signed-url', status: 'error' }], { cases }).ok, false);
+  assert.equal(evaluateMatrix([{ id: 'bk-videos-signed-url', status: 'allow' }], { cases }).ok, true);
+});
+
+test('main: --with-codemod-patch is obsolete and exits 2', async () => {
+  const { main } = await import('./10-storage-auth-tests.mjs');
+  assert.equal(await main(['--project-ref', PROJECTS.scratch, '--mode', 'full', '--with-codemod-patch', 'x.patch']), 2);
 });
 
 test('testEmail format', () => {

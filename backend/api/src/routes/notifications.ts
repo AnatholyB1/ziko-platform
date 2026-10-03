@@ -47,7 +47,7 @@ notificationsRouter.post('/token', async (c) => {
   }
 
   // UPSERT: register or refresh token on conflict (user_id, device_id)
-  const { error } = await supabaseAdmin.from('notification_tokens').upsert(
+  const { error } = await supabaseAdmin.from('ziko_notification_tokens').upsert(
     {
       user_id: userId,
       device_id: deviceId,
@@ -80,7 +80,7 @@ notificationsRouter.delete('/token/:deviceId', async (c) => {
   const deviceId = c.req.param('deviceId');
 
   const { error } = await supabaseAdmin
-    .from('notification_tokens')
+    .from('ziko_notification_tokens')
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .eq('device_id', deviceId);

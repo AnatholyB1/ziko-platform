@@ -17,7 +17,7 @@ export async function updateRole(jwt: string, userId: string) {
   const db = createUserClient(jwt);
   // Read current role to determine target
   const { data: profile } = await db
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('role')
     .eq('id', userId)
     .single();
@@ -26,7 +26,7 @@ export async function updateRole(jwt: string, userId: string) {
   const newRole = currentRole === 'client' ? 'both' : 'coach';
 
   const { error } = await db
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .update({ role: newRole })
     .eq('id', userId);
 
@@ -52,7 +52,7 @@ export async function upsertProfile(
 
   // Check if profile already exists — use UPDATE for partial patches, upsert for creates
   const { data: existing } = await db
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('user_id')
     .eq('user_id', userId)
     .maybeSingle();
@@ -63,7 +63,7 @@ export async function upsertProfile(
   if (existing) {
     // Row exists — UPDATE only the provided fields (preserves NOT NULL columns)
     ({ data, error } = await db
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .update(updates)
       .eq('user_id', userId)
       .select()
@@ -72,7 +72,7 @@ export async function upsertProfile(
     // No row yet — full INSERT via upsert (display_name must be present in fields)
     const payload: Record<string, unknown> = { user_id: userId, ...updates };
     ({ data, error } = await db
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .upsert(payload, { onConflict: 'user_id' })
       .select()
       .single());
@@ -85,7 +85,7 @@ export async function upsertProfile(
 export async function getProfile(jwt: string, userId: string) {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('*')
     .eq('user_id', userId)
     .single();

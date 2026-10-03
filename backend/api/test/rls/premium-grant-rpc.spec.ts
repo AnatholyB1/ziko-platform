@@ -39,10 +39,10 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     // The new-user welcome-credit trigger (026_ai_credits.sql) may already have
     // seeded a row — assert the delta, not an absolute value, so this test
     // does not couple to that unrelated trigger's amount.
-    const { data: before } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: before } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     const balanceBefore = before?.balance ?? 0;
 
-    const { data, error } = await admin.rpc('grant_premium_credits', {
+    const { data, error } = await admin.rpc('ziko_grant_premium_credits', {
       p_user_id: user.id,
       p_amount: GRANT_AMOUNT,
     });
@@ -50,11 +50,11 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     expect(data.granted).toBe(true);
     expect(data.amount).toBe(GRANT_AMOUNT);
 
-    const { data: after } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: after } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     expect(after?.balance).toBe(balanceBefore + GRANT_AMOUNT);
 
     const { data: txRows } = await admin
-      .from('ai_credit_transactions')
+      .from('ziko_ai_credit_transactions')
       .select('source, idempotency_key, amount')
       .eq('user_id', user.id)
       .eq('type', 'premium_grant');
@@ -68,25 +68,25 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     const user = await createTestUser('premium-grant-dup');
     createdUserIds.push(user.id);
 
-    const first = await admin.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
+    const first = await admin.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
     expect(first.error).toBeNull();
     expect(first.data.granted).toBe(true);
 
-    const { data: afterFirst } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: afterFirst } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     const balanceAfterFirst = afterFirst?.balance;
 
-    const second = await admin.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
+    const second = await admin.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
     expect(second.error).toBeNull();
     expect(second.data.granted).toBeFalsy();
     expect(second.data.reason).toBe('duplicate');
 
-    const { data: afterSecond } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: afterSecond } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     // Strict equality: a function that reports failure while still incrementing
     // is exactly the defect this test guards against.
     expect(afterSecond?.balance).toBe(balanceAfterFirst);
 
     const { data: txRows } = await admin
-      .from('ai_credit_transactions')
+      .from('ziko_ai_credit_transactions')
       .select('id')
       .eq('user_id', user.id)
       .eq('type', 'premium_grant');
@@ -100,18 +100,18 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     // Remove the row the welcome-credit trigger seeded, so this user genuinely
     // has none — proves the RPC's INSERT ... ON CONFLICT DO NOTHING path,
     // not just its UPDATE path.
-    await admin.from('user_ai_credits').delete().eq('user_id', user.id);
-    const { data: gone } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).maybeSingle();
+    await admin.from('ziko_user_ai_credits').delete().eq('user_id', user.id);
+    const { data: gone } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).maybeSingle();
     expect(gone).toBeNull();
 
-    const { data, error } = await admin.rpc('grant_premium_credits', {
+    const { data, error } = await admin.rpc('ziko_grant_premium_credits', {
       p_user_id: user.id,
       p_amount: GRANT_AMOUNT,
     });
     expect(error).toBeNull();
     expect(data.granted).toBe(true);
 
-    const { data: row } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: row } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     expect(row?.balance).toBe(GRANT_AMOUNT);
   });
 
@@ -119,14 +119,14 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     const user = await createTestUser('premium-grant-zero');
     createdUserIds.push(user.id);
 
-    const { data: before } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: before } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
 
-    const { data, error } = await admin.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: 0 });
+    const { data, error } = await admin.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: 0 });
     expect(error).toBeNull();
     expect(data.granted).toBe(false);
     expect(data.reason).toBe('invalid_amount');
 
-    const { data: after } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: after } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     expect(after?.balance).toBe(before?.balance);
   });
 
@@ -134,14 +134,14 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     const user = await createTestUser('premium-grant-negative');
     createdUserIds.push(user.id);
 
-    const { data: before } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: before } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
 
-    const { data, error } = await admin.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: -5 });
+    const { data, error } = await admin.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: -5 });
     expect(error).toBeNull();
     expect(data.granted).toBe(false);
     expect(data.reason).toBe('invalid_amount');
 
-    const { data: after } = await admin.from('user_ai_credits').select('balance').eq('user_id', user.id).single();
+    const { data: after } = await admin.from('ziko_user_ai_credits').select('balance').eq('user_id', user.id).single();
     expect(after?.balance).toBe(before?.balance);
   });
 
@@ -150,13 +150,13 @@ describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar mont
     createdUserIds.push(user.id);
 
     const anon = getAnonClient();
-    const anonResult = await anon.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
+    const anonResult = await anon.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
     expect(anonResult.error).not.toBeNull();
 
-    const authedResult = await user.client.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
+    const authedResult = await user.client.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
     expect(authedResult.error).not.toBeNull();
 
-    const adminResult = await admin.rpc('grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
+    const adminResult = await admin.rpc('ziko_grant_premium_credits', { p_user_id: user.id, p_amount: GRANT_AMOUNT });
     expect(adminResult.error).toBeNull();
     expect(adminResult.data.granted).toBe(true);
   });

@@ -32,16 +32,16 @@ beforeAll(async () => {
   coach = await createTestUser('roster-coach');
   client = await createTestUser('roster-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Roster Client' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Roster Coach' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client', name: 'Test Client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Roster Client' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Roster Coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client', name: 'Test Client' });
 
   coachJwt = await getJwt(coach);
   clientJwt = await getJwt(client);
 
   // Create an invitation and redeem it to establish the coach-client link
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'ROSTRX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -53,11 +53,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -73,7 +73,7 @@ describe('GET /coach/clients — roster with signal flags', () => {
   it('does not return rows for unlinked coach', async () => {
     // A coach with no linked clients returns empty array
     const unlinkedCoach = await createTestUser('unlinked-coach');
-    await adminClient.from('user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
+    await adminClient.from('ziko_user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
     const unlinkedJwt = await getJwt(unlinkedCoach);
     const rows = await listCoachClients(unlinkedJwt, unlinkedCoach.id);
     expect(rows).toEqual([]);

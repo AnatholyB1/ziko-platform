@@ -44,7 +44,7 @@ export default function WorkoutSummaryScreen() {
   const saveNotes = async () => {
     if (!session.id || !notes) return;
     await supabase
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .update({ notes })
       .eq('id', session.id);
   };

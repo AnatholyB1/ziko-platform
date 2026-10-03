@@ -97,7 +97,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
 
       // 1. Fetch pantry items and compute low-stock directly (no insert)
       const { data: pantryData } = await supabase
-        .from('pantry_items')
+        .from('ziko_pantry_items')
         .select('*')
         .eq('user_id', user.id);
 
@@ -150,7 +150,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
     setQtyInput('');
     setLowStockPantry((prev) => prev.filter((i) => i.id !== item.id));
     try {
-      await supabase.from('pantry_items').update({ quantity: purchased }).eq('id', item.id);
+      await supabase.from('ziko_pantry_items').update({ quantity: purchased }).eq('id', item.id);
       updateItem(item.id, { quantity: purchased });
     } catch {
       setLowStockPantry((prev) => [item, ...prev]);
@@ -179,18 +179,18 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
       if (item.pantry_item_id) {
         // D-03: match exists — add purchased to existing quantity
         const { data: existing } = await supabase
-          .from('pantry_items')
+          .from('ziko_pantry_items')
           .select('quantity')
           .eq('id', item.pantry_item_id)
           .single();
         const newQty = (existing?.quantity ?? 0) + purchased;
-        await supabase.from('pantry_items').update({ quantity: newQty }).eq('id', item.pantry_item_id);
+        await supabase.from('ziko_pantry_items').update({ quantity: newQty }).eq('id', item.pantry_item_id);
         updateItem(item.pantry_item_id, { quantity: newQty });
       } else {
         // D-04: no match — insert new pantry item with purchased quantity
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from('pantry_items').insert({
+          await supabase.from('ziko_pantry_items').insert({
             user_id: user.id,
             name: item.name,
             quantity: purchased,

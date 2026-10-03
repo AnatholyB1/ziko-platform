@@ -22,7 +22,7 @@ function createServiceClient() {
 export async function getCoachAlerts(jwt: string, coachId: string): Promise<CoachAlert[]> {
   const db = _createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_alerts')
+    .from('ziko_coach_alerts')
     .select('id, coach_id, client_id, alert_type, severity, summary, is_read, created_at')
     .eq('coach_id', coachId)
     .eq('is_read', false)
@@ -35,7 +35,7 @@ export async function getCoachAlerts(jwt: string, coachId: string): Promise<Coac
 export async function markAlertRead(jwt: string, alertId: string, coachId: string): Promise<void> {
   const db = _createUserClient(jwt);
   const { error } = await db
-    .from('coach_alerts')
+    .from('ziko_coach_alerts')
     .update({ is_read: true })
     .eq('id', alertId)
     .eq('coach_id', coachId); // defense-in-depth on top of RLS
@@ -45,7 +45,7 @@ export async function markAlertRead(jwt: string, alertId: string, coachId: strin
 export async function markAllAlertsRead(jwt: string, coachId: string): Promise<void> {
   const db = _createUserClient(jwt);
   const { error } = await db
-    .from('coach_alerts')
+    .from('ziko_coach_alerts')
     .update({ is_read: true })
     .eq('coach_id', coachId)
     .eq('is_read', false);
@@ -63,7 +63,7 @@ export async function insertAlerts(
 ): Promise<void> {
   if (alerts.length === 0) return;
   const db = createServiceClient();
-  const { error } = await db.from('coach_alerts').insert(alerts);
+  const { error } = await db.from('ziko_coach_alerts').insert(alerts);
   if (error) throw new Error(error.message);
 }
 
@@ -87,7 +87,7 @@ export function logToolAudit(row: {
     conversation_id: row.conversationId,
   };
   // Fire-and-forget — never await; never crash the caller
-  Promise.resolve(db.from('ai_tool_audit').insert(payload)).catch((err: unknown) =>
+  Promise.resolve(db.from('ziko_ai_tool_audit').insert(payload)).catch((err: unknown) =>
     console.error('[ToolAudit] insert failed:', err),
   );
 }
@@ -97,7 +97,7 @@ export function logToolAudit(row: {
 export async function listCoachesForCron(): Promise<{ coachId: string }[]> {
   const db = createServiceClient();
   const { data, error } = await db
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('user_id');
   if (error) throw new Error(error.message);
   return (data ?? []).map((row: any) => ({ coachId: row.user_id as string }));

@@ -9,13 +9,13 @@ export default async function DashboardPage() {
 
   const [{ data: profile }, { data: { session } }, { data: alerts }] = await Promise.all([
     supabase
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('display_name, kyc_status')
       .eq('user_id', user.id)
       .single(),
     supabase.auth.getSession(),
     supabase
-      .from('coach_alerts')
+      .from('ziko_coach_alerts')
       .select('id, client_id, alert_type, severity, summary, is_read, created_at')
       .eq('coach_id', user.id)
       .eq('is_read', false)

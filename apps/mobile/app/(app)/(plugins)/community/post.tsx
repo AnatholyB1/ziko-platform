@@ -71,15 +71,15 @@ export default function PostDetailRoute() {
 
       // Load post with author info
       const { data: postRow } = await supabase
-        .from('community_posts')
-        .select('id, content, image_url, likes_count, comments_count, created_at, user_id, user_profiles!inner(name, avatar_url)')
+        .from('ziko_community_posts')
+        .select('id, content, image_url, likes_count, comments_count, created_at, user_id, user_profiles:ziko_user_profiles!inner(name, avatar_url)')
         .eq('id', postId)
         .single();
 
       // Load comments with author info
       const { data: commentRows } = await supabase
-        .from('post_comments')
-        .select('id, content, created_at, user_id, user_profiles!inner(name)')
+        .from('ziko_post_comments')
+        .select('id, content, created_at, user_id, user_profiles:ziko_user_profiles!inner(name)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(30);
@@ -88,7 +88,7 @@ export default function PostDetailRoute() {
       let likedByMe = false;
       if (user && postId) {
         const { data: like } = await supabase
-          .from('post_likes')
+          .from('ziko_post_likes')
           .select('post_id')
           .eq('post_id', postId)
           .eq('user_id', user.id)
@@ -135,11 +135,11 @@ export default function PostDetailRoute() {
     if (liked) {
       setLiked(false);
       setLikeCount((c) => Math.max(0, c - 1));
-      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', userId);
+      await supabase.from('ziko_post_likes').delete().eq('post_id', postId).eq('user_id', userId);
     } else {
       setLiked(true);
       setLikeCount((c) => c + 1);
-      await supabase.from('post_likes').insert({ post_id: postId, user_id: userId });
+      await supabase.from('ziko_post_likes').insert({ post_id: postId, user_id: userId });
     }
   };
 
@@ -150,7 +150,7 @@ export default function PostDetailRoute() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { showAlert('Erreur', 'Non connecte'); return; }
 
-      await supabase.from('post_comments').insert({
+      await supabase.from('ziko_post_comments').insert({
         post_id: postId,
         user_id: user.id,
         content: commentText.trim(),

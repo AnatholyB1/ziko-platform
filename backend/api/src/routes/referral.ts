@@ -20,7 +20,7 @@ router.get('/', async (c) => {
 
   // Fetch referral code, generate via RPC if null
   const { data: profile, error: profileError } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('referral_code')
     .eq('id', userId)
     .single();
@@ -34,12 +34,12 @@ router.get('/', async (c) => {
   if (!code) {
     // Generate via function call
     const { data: generated, error: genError } = await supabase
-      .rpc('generate_referral_code', { user_id: userId });
+      .rpc('ziko_generate_referral_code', { user_id: userId });
 
     if (!genError && generated) {
       code = generated as string;
       await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .update({ referral_code: code })
         .eq('id', userId);
     }
@@ -47,7 +47,7 @@ router.get('/', async (c) => {
 
   // Count invites grouped by status
   const { data: invites } = await supabase
-    .from('app_invites')
+    .from('ziko_app_invites')
     .select('status')
     .eq('inviter_id', userId);
 
@@ -80,7 +80,7 @@ router.post('/redeem', async (c) => {
 
   // Look up the code owner
   const { data: owner, error: ownerError } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id')
     .eq('referral_code', normalizedCode)
     .single();
@@ -98,7 +98,7 @@ router.post('/redeem', async (c) => {
 
   // Check if current user has already used a referral code
   const { data: currentUser } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('used_referral_code')
     .eq('id', userId)
     .single();
@@ -109,7 +109,7 @@ router.post('/redeem', async (c) => {
 
   // Insert invite record with reward_pending status
   const { error: insertError } = await supabase
-    .from('app_invites')
+    .from('ziko_app_invites')
     .insert({
       inviter_id: ownerId,
       invite_code: normalizedCode,
@@ -124,7 +124,7 @@ router.post('/redeem', async (c) => {
 
   // Mark current user as having used a referral code
   await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .update({ used_referral_code: true })
     .eq('id', userId);
 
@@ -144,7 +144,7 @@ router.post('/promo/validate', async (c) => {
   }
 
   const { data: promo } = await supabase
-    .from('promo_codes')
+    .from('ziko_promo_codes')
     .select('id, description, discount_pct, max_uses, uses_count, expires_at, is_active')
     .eq('code', code.trim().toUpperCase())
     .single();
@@ -188,7 +188,7 @@ router.post('/promo/apply', async (c) => {
 
   // Re-validate
   const { data: promo } = await supabase
-    .from('promo_codes')
+    .from('ziko_promo_codes')
     .select('id, discount_pct, max_uses, uses_count, expires_at, is_active')
     .eq('code', normalizedCode)
     .single();
@@ -213,7 +213,7 @@ router.post('/promo/apply', async (c) => {
 
   // Check if user already redeemed this promo
   const { data: existingRedemption } = await supabase
-    .from('user_promo_redemptions')
+    .from('ziko_user_promo_redemptions')
     .select('id')
     .eq('user_id', userId)
     .eq('promo_id', p.id)
@@ -225,7 +225,7 @@ router.post('/promo/apply', async (c) => {
 
   // Insert redemption record
   const { error: redemptionError } = await supabase
-    .from('user_promo_redemptions')
+    .from('ziko_user_promo_redemptions')
     .insert({ user_id: userId, promo_id: p.id });
 
   if (redemptionError) {
@@ -235,7 +235,7 @@ router.post('/promo/apply', async (c) => {
 
   // Increment uses_count
   await supabase
-    .from('promo_codes')
+    .from('ziko_promo_codes')
     .update({ uses_count: p.uses_count + 1 })
     .eq('id', p.id);
 

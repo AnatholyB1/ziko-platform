@@ -148,7 +148,7 @@ export async function claimWaitlistSpot(
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc('claim_waitlist_signup', {
+  const { data, error } = await admin.rpc('ziko_claim_waitlist_signup', {
     p_email: email,
     p_audience: audience,
     p_locale: locale,
@@ -174,14 +174,14 @@ export async function claimWaitlistSpot(
   // submitter's spelling (05-RESEARCH.md Pattern 2, Pitfall 2). A failure here is
   // logged, never surfaced to the visitor — the signup itself already succeeded.
   try {
-    const { data: normalizedEmail, error: normalizeError } = await admin.rpc('normalize_waitlist_email', {
+    const { data: normalizedEmail, error: normalizeError } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: email,
     });
     if (normalizeError || typeof normalizedEmail !== 'string') {
       console.error('[waitlist] consent write skipped — email normalization RPC failed', normalizeError);
     } else {
       const { error: consentError } = await admin
-        .from('waitlist_signups')
+        .from('ziko_waitlist_signups')
         .update({ consent_given_at: new Date().toISOString(), consent_version: CONSENT_VERSION })
         .eq('email_normalized', normalizedEmail)
         .is('anonymized_at', null);

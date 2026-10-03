@@ -35,10 +35,10 @@ beforeAll(async () => {
   clientA = await createTestUser('compare-clienta');
   clientB = await createTestUser('compare-clientb');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Compare Coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Compare Coach' });
-  await adminClient.from('user_profiles').upsert({ id: clientA.id, role: 'client', name: 'Client A' });
-  await adminClient.from('user_profiles').upsert({ id: clientB.id, role: 'client', name: 'Client B' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Compare Coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Compare Coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: clientA.id, role: 'client', name: 'Client A' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: clientB.id, role: 'client', name: 'Client B' });
 
   coachJwt = await getJwt(coach);
   clientAJwt = await getJwt(clientA);
@@ -46,7 +46,7 @@ beforeAll(async () => {
 
   // Link clientA
   const { data: invA, error: errA } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'CMPRAX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -57,7 +57,7 @@ beforeAll(async () => {
 
   // Link clientB
   const { data: invB, error: errB } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'CMPRBX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -67,20 +67,20 @@ beforeAll(async () => {
   if (!rB.ok) throw new Error('setup redeem B failed');
 
   // Insert body_measurements for clientA (for weight metric test)
-  await adminClient.from('body_measurements').insert([
+  await adminClient.from('ziko_body_measurements').insert([
     { user_id: clientA.id, weight_kg: 80.0, created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
     { user_id: clientA.id, weight_kg: 79.5, created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
   ]);
 });
 
 afterAll(async () => {
-  await adminClient.from('body_measurements').delete().eq('user_id', clientA.id);
-  await adminClient.from('coach_client_links').delete().eq('client_id', clientA.id);
-  await adminClient.from('coach_client_links').delete().eq('client_id', clientB.id);
+  await adminClient.from('ziko_body_measurements').delete().eq('user_id', clientA.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', clientA.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', clientB.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, clientA.id, clientB.id]);
 });
 
@@ -110,7 +110,7 @@ describe('GET /coach/clients/compare — multi-client comparison data', () => {
 
   it('does not include data for unlinked client IDs', async () => {
     const unlinkedClient = await createTestUser('compare-unlinked');
-    await adminClient.from('user_profiles').upsert({ id: unlinkedClient.id, role: 'client' });
+    await adminClient.from('ziko_user_profiles').upsert({ id: unlinkedClient.id, role: 'client' });
 
     const result = await listCompareData(coachJwt, coach.id, [unlinkedClient.id], 'weight', 30);
     // Unlinked client is silently excluded — result should be empty object

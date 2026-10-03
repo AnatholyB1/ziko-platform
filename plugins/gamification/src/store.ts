@@ -133,7 +133,7 @@ function computeLevelProgress(xp: number, levels: LevelDef[]) {
 
 // ── Ensure profile exists (server-side, bypasses the now-locked-down INSERT) ──
 async function ensureProfile(supabase: any, userId: string): Promise<GamificationProfile> {
-  const { data } = await supabase.rpc('ensure_gamification_profile', { p_user_id: userId });
+  const { data } = await supabase.rpc('ziko_ensure_gamification_profile', { p_user_id: userId });
   return data;
 }
 
@@ -148,11 +148,11 @@ export async function loadGamification(supabase: any) {
 
     const [profile, levelsRes, xpRes, coinsRes, shopRes, invRes] = await Promise.all([
       ensureProfile(supabase, user.id),
-      supabase.from('level_definitions').select('*').order('level'),
-      supabase.from('xp_transactions').select('*').order('created_at', { ascending: false }).limit(20),
-      supabase.from('coin_transactions').select('*').order('created_at', { ascending: false }).limit(20),
-      supabase.from('shop_items').select('*').eq('is_active', true).order('price'),
-      supabase.from('user_inventory').select('*'),
+      supabase.from('ziko_level_definitions').select('*').order('level'),
+      supabase.from('ziko_xp_transactions').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('ziko_coin_transactions').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('ziko_shop_items').select('*').eq('is_active', true).order('price'),
+      supabase.from('ziko_user_inventory').select('*'),
     ]);
 
     const levels: LevelDef[] = levelsRes.data ?? [];
@@ -191,7 +191,7 @@ async function updateStreak(supabase: any, userId: string, profile: Gamification
   const longestStreak = Math.max(profile.longest_streak, newStreak);
 
   const { data } = await supabase
-    .from('user_gamification')
+    .from('ziko_user_gamification')
     .update({
       current_streak: newStreak,
       longest_streak: longestStreak,
@@ -211,13 +211,13 @@ async function updateStreak(supabase: any, userId: string, profile: Gamification
       const coinAmount = COIN_REWARDS[coinKey] ?? 0;
 
       if (xpAmount > 0) {
-        await supabase.rpc('award_xp', {
+        await supabase.rpc('ziko_award_xp', {
           p_user_id: userId, p_amount: xpAmount, p_source: 'streak_bonus',
           p_source_id: null, p_description: `🔥 Streak ${milestone} jours !`,
         });
       }
       if (coinAmount > 0) {
-        await supabase.rpc('award_coins', {
+        await supabase.rpc('ziko_award_coins', {
           p_user_id: userId, p_amount: coinAmount, p_source: 'streak_bonus',
           p_source_id: null, p_description: `🔥 Bonus streak ${milestone} jours`,
         });
@@ -236,11 +236,11 @@ export async function awardWorkoutXP(supabase: any, sessionId: string) {
   const profile = await ensureProfile(supabase, user.id);
   await updateStreak(supabase, user.id, profile);
 
-  await supabase.rpc('award_xp', {
+  await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.workout, p_source: 'workout',
     p_source_id: sessionId, p_description: `💪 Séance terminée : +${XP_REWARDS.workout} XP`,
   });
-  await supabase.rpc('award_coins', {
+  await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.workout, p_source: 'workout',
     p_source_id: sessionId, p_description: `💰 Séance terminée : +${COIN_REWARDS.workout} pièces`,
   });
@@ -254,11 +254,11 @@ export async function awardHabitXP(supabase: any, habitName: string) {
   const profile = await ensureProfile(supabase, user.id);
   await updateStreak(supabase, user.id, profile);
 
-  await supabase.rpc('award_xp', {
+  await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.habit, p_source: 'habit',
     p_source_id: null, p_description: `✅ ${habitName} : +${XP_REWARDS.habit} XP`,
   });
-  await supabase.rpc('award_coins', {
+  await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.habit, p_source: 'habit',
     p_source_id: null, p_description: `💰 ${habitName} : +${COIN_REWARDS.habit} pièces`,
   });
@@ -269,7 +269,7 @@ export async function purchaseItem(supabase: any, itemId: string): Promise<{ suc
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Non connecté' };
 
-  const { data, error } = await supabase.rpc('purchase_shop_item', {
+  const { data, error } = await supabase.rpc('ziko_purchase_shop_item', {
     p_user_id: user.id,
     p_item_id: itemId,
   });
@@ -285,8 +285,8 @@ export async function equipItem(supabase: any, itemId: string, category: string)
 
   // Unequip all items in this category
   const { data: ownedInCategory } = await supabase
-    .from('user_inventory')
-    .select('id, item_id, shop_items(category)')
+    .from('ziko_user_inventory')
+    .select('id, item_id, shop_items:ziko_shop_items(category)')
     .eq('user_id', user.id)
     .eq('is_equipped', true);
 
@@ -294,7 +294,7 @@ export async function equipItem(supabase: any, itemId: string, category: string)
     for (const item of ownedInCategory) {
       if ((item.shop_items as any)?.category === category) {
         await supabase
-          .from('user_inventory')
+          .from('ziko_user_inventory')
           .update({ is_equipped: false })
           .eq('id', item.id);
       }
@@ -303,7 +303,7 @@ export async function equipItem(supabase: any, itemId: string, category: string)
 
   // Equip this one
   await supabase
-    .from('user_inventory')
+    .from('ziko_user_inventory')
     .update({ is_equipped: true })
     .eq('user_id', user.id)
     .eq('item_id', itemId);
@@ -311,14 +311,14 @@ export async function equipItem(supabase: any, itemId: string, category: string)
   // If it's a title, update equipped_title
   if (category === 'title') {
     const { data: shopItem } = await supabase
-      .from('shop_items')
+      .from('ziko_shop_items')
       .select('name')
       .eq('id', itemId)
       .single();
 
     if (shopItem) {
       await supabase
-        .from('user_gamification')
+        .from('ziko_user_gamification')
         .update({ equipped_title: shopItem.name, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }
@@ -327,14 +327,14 @@ export async function equipItem(supabase: any, itemId: string, category: string)
   // If it's a badge, update equipped_badge
   if (category === 'badge') {
     const { data: shopItem } = await supabase
-      .from('shop_items')
+      .from('ziko_shop_items')
       .select('icon')
       .eq('id', itemId)
       .single();
 
     if (shopItem) {
       await supabase
-        .from('user_gamification')
+        .from('ziko_user_gamification')
         .update({ equipped_badge: shopItem.icon, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }
@@ -343,14 +343,14 @@ export async function equipItem(supabase: any, itemId: string, category: string)
   // If it's a banner, update equipped_banner_name
   if (category === 'banner') {
     const { data: shopItem } = await supabase
-      .from('shop_items')
+      .from('ziko_shop_items')
       .select('name')
       .eq('id', itemId)
       .single();
 
     if (shopItem) {
       await supabase
-        .from('user_gamification')
+        .from('ziko_user_gamification')
         .update({ equipped_banner_name: shopItem.name, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }
@@ -359,14 +359,14 @@ export async function equipItem(supabase: any, itemId: string, category: string)
   // If it's a theme, update equipped_theme
   if (category === 'theme') {
     const { data: shopItem } = await supabase
-      .from('shop_items')
+      .from('ziko_shop_items')
       .select('name')
       .eq('id', itemId)
       .single();
 
     if (shopItem) {
       await supabase
-        .from('user_gamification')
+        .from('ziko_user_gamification')
         .update({ equipped_theme: shopItem.name, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }

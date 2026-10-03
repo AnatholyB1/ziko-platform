@@ -113,7 +113,7 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
     enabled: !!userId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_conversations')
+        .from('ziko_ai_conversations')
         .select('id, title, updated_at')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
@@ -123,7 +123,7 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
       if (!data || data.length === 0) return [];
       const convoIds = data.map((c: any) => c.id);
       const { data: msgs } = await supabase
-        .from('ai_messages')
+        .from('ziko_ai_messages')
         .select('conversation_id, content, role, created_at')
         .in('conversation_id', convoIds)
         .order('created_at', { ascending: false });
@@ -148,7 +148,7 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
     enabled: !!userId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('settings')
         .eq('id', userId)
         .single();
@@ -166,13 +166,13 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
   const settingsMutation = useMutation({
     mutationFn: async (patch: Record<string, string>) => {
       const { data: current } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('settings')
         .eq('id', userId)
         .single();
       const existing = (current?.settings as any) ?? {};
       const { error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .update({ settings: { ...existing, ...patch } })
         .eq('id', userId);
       if (error) throw error;
@@ -186,7 +186,7 @@ export default function CoachIAPlugin({ supabase }: { supabase: any }) {
   const newConvoMutation = useMutation<{ id: string; prefilledMessage?: string }, Error, string | undefined>({
     mutationFn: async (prefilledMessage?: string) => {
       const { data, error } = await supabase
-        .from('ai_conversations')
+        .from('ziko_ai_conversations')
         .insert({ user_id: userId, title: 'Nouvelle conversation' })
         .select('id')
         .single();

@@ -30,7 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
-import { useThemeStore, useTranslation, showAlert, coachStorage } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!user?.id || !link?.created_at) return null;
       const { count, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('started_at', link.created_at);
@@ -141,14 +141,14 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
       if (!user?.id) return null;
       const today = new Date().toISOString().slice(0, 10);
       const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
+        .from('ziko_habits')
         .select('id')
         .eq('user_id', user.id)
         .eq('is_active', true);
       if (habitsError || !habitsData || habitsData.length === 0) return null;
 
       const { data: logsData, error: logsError } = await supabase
-        .from('habit_logs')
+        .from('ziko_habit_logs')
         .select('id')
         .eq('user_id', user.id)
         .eq('date', today);
@@ -339,7 +339,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     displayName: string;
   }) => {
     const effectiveUri = logoUrl
-      ? supabase.storage.from('coach-logos').getPublicUrl(logoUrl).data.publicUrl
+      ? supabase.storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(logoUrl).data.publicUrl
       : photoUrl ?? null;
 
     return effectiveUri ? (

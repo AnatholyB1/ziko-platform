@@ -188,7 +188,7 @@ voiceRouter.post('/structure', async (c) => {
   const db = createUserClient(jwt);
 
   const { data: sessions } = await db
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('id, name, started_at, total_volume_kg')
     .eq('user_id', athlete_id)
     .order('started_at', { ascending: false })
@@ -199,30 +199,30 @@ voiceRouter.post('/structure', async (c) => {
   const [setsRes, measurementsRes, sleepRes, noteRes, vocalHistoryRes] = await Promise.all([
     sessionIds.length > 0
       ? db
-          .from('session_sets')
+          .from('ziko_session_sets')
           .select('session_id, set_number, reps, weight_kg, rpe')
           .in('session_id', sessionIds)
       : Promise.resolve({ data: [] }),
     db
-      .from('body_measurements')
+      .from('ziko_body_measurements')
       .select('weight_kg, body_fat_pct, created_at')
       .eq('user_id', athlete_id)
       .order('created_at', { ascending: false })
       .limit(5),
     db
-      .from('sleep_logs')
+      .from('ziko_sleep_logs')
       .select('date, duration_hours, quality')
       .eq('user_id', athlete_id)
       .order('date', { ascending: false })
       .limit(14),
     db
-      .from('coach_client_notes')
+      .from('ziko_coach_client_notes')
       .select('content')
       .eq('client_id', athlete_id)
       // coach_id constraint is enforced by RLS (auth.uid() = coach_id)
       .maybeSingle(),
     db
-      .from('coach_vocal_feedbacks')
+      .from('ziko_coach_vocal_feedbacks')
       .select('created_at, card')
       .eq('athlete_id', athlete_id)
       .order('created_at', { ascending: false })
@@ -274,7 +274,7 @@ voiceRouter.post('/save', async (c) => {
   const db = createUserClient(jwt);
 
   const { data, error } = await db
-    .from('coach_vocal_feedbacks')
+    .from('ziko_coach_vocal_feedbacks')
     .insert({ coach_id: coachId, athlete_id, transcript, card })
     .select('id')
     .single();

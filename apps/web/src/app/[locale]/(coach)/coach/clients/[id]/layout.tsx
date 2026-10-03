@@ -24,7 +24,7 @@ export default async function ClientDetailLayout({
   // Fetch client profile for header display.
   // is_coach_of RLS: if coach is NOT linked to this client, this returns null.
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id, name, avatar_url')
     .eq('id', id) // ← client's UUID from URL param
     .maybeSingle();
@@ -35,13 +35,13 @@ export default async function ClientDetailLayout({
   // Fetch coach's note and tags for this client (coach-private; RLS enforces coach_id = user.id)
   const [{ data: noteData }, { data: tagsData }] = await Promise.all([
     supabase
-      .from('coach_client_notes')
+      .from('ziko_coach_client_notes')
       .select('content')
       .eq('coach_id', user.id)
       .eq('client_id', id)
       .maybeSingle(),
     supabase
-      .from('coach_client_tags')
+      .from('ziko_coach_client_tags')
       .select('id, tag')
       .eq('coach_id', user.id)
       .eq('client_id', id)

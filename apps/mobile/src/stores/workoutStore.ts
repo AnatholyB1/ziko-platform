@@ -116,7 +116,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       const session = JSON.parse(raw) as WorkoutSession;
       // Validate the session still exists and is not ended
       const { data } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('*')
         .eq('id', session.id)
         .is('ended_at', null)
@@ -141,15 +141,15 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     let cycleConfig: WorkoutState['cycleConfig'] = null;
     if (programWorkoutId) {
       const { data: peData } = await supabase
-        .from('program_exercises')
-        .select('*, exercises(*)')
+        .from('ziko_program_exercises')
+        .select('*, exercises:ziko_exercises(*)')
         .eq('workout_id', programWorkoutId)
         .order('order_index');
       if (peData) workoutExercises = peData as any;
 
       // Resolve program_id for the session record
       const { data: pwData } = await supabase
-        .from('program_workouts')
+        .from('ziko_program_workouts')
         .select('program_id')
         .eq('id', programWorkoutId)
         .single();
@@ -158,7 +158,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       // Load cycle config from the program
       if (programId) {
         const { data: progData } = await supabase
-          .from('workout_programs')
+          .from('ziko_workout_programs')
           .select('cycle_weeks, progression_type, progression_value, current_cycle_week')
           .eq('id', programId)
           .single();
@@ -174,7 +174,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     }
 
     const { data, error } = await supabase
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .insert({
         user_id: user.id,
         program_workout_id: programWorkoutId ?? null,
@@ -201,7 +201,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     // Only set ended_at if not already set (saveSessionStats may have already updated it)
     if (!currentSession.ended_at) {
       await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .update({ ended_at: new Date().toISOString() })
         .eq('id', currentSession.id);
     }
@@ -232,7 +232,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     );
     if (!setData) return;
 
-    await supabase.from('session_sets').upsert(
+    await supabase.from('ziko_session_sets').upsert(
       {
         session_id: currentSession.id,
         exercise_id: exerciseId,
@@ -276,7 +276,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     since.setDate(since.getDate() - days);
 
     const { data } = await supabase
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('*')
       .eq('user_id', user.id)
       .gte('started_at', since.toISOString())
@@ -287,7 +287,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
   loadExercises: async () => {
     const { data } = await supabase
-      .from('exercises')
+      .from('ziko_exercises')
       .select('*')
       .order('name');
 
@@ -299,8 +299,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     if (!user) return;
 
     const { data } = await supabase
-      .from('workout_programs')
-      .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr, muscle_groups, category)))')
+      .from('ziko_workout_programs')
+      .select('*, program_workouts:ziko_program_workouts(*, program_exercises:ziko_program_exercises(*, exercises:ziko_exercises(name, name_fr, muscle_groups, category)))')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -311,7 +311,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       // Auto-activate if there are programs but none is active
       if (!active && programs.length > 0) {
         const first = programs[0];
-        await supabase.from('workout_programs').update({ is_active: true }).eq('id', first.id);
+        await supabase.from('ziko_workout_programs').update({ is_active: true }).eq('id', first.id);
         first.is_active = true;
         active = first;
       }
@@ -322,8 +322,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
   loadProgramDetail: async (programId) => {
     const { data } = await supabase
-      .from('workout_programs')
-      .select('*, program_workouts(*, program_exercises(*, exercises(name, name_fr, muscle_groups, body_part, equipment, target_muscle)))')
+      .from('ziko_workout_programs')
+      .select('*, program_workouts:ziko_program_workouts(*, program_exercises:ziko_program_exercises(*, exercises:ziko_exercises(name, name_fr, muscle_groups, body_part, equipment, target_muscle)))')
       .eq('id', programId)
       .single();
 
@@ -336,13 +336,13 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     // Deactivate all first
     await supabase
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .update({ is_active: false })
       .eq('user_id', user.id);
 
     // Activate selected
     await supabase
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .update({ is_active: true })
       .eq('id', programId);
 
@@ -352,7 +352,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
   addWorkoutDay: async (programId, name, dayOfWeek) => {
     const { data } = await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .insert({ program_id: programId, name, day_of_week: dayOfWeek, order_index: dayOfWeek })
       .select()
       .single();
@@ -361,14 +361,14 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   },
 
   deleteWorkoutDay: async (workoutId) => {
-    await supabase.from('program_workouts').delete().eq('id', workoutId);
+    await supabase.from('ziko_program_workouts').delete().eq('id', workoutId);
   },
 
   addExerciseToWorkout: async (workoutId, exercise) => {
     const { data } = await supabase
-      .from('program_exercises')
+      .from('ziko_program_exercises')
       .insert({ workout_id: workoutId, ...exercise })
-      .select('*, exercises(name, name_fr, muscle_groups)')
+      .select('*, exercises:ziko_exercises(name, name_fr, muscle_groups)')
       .single();
 
     return (data as ProgramExercise) ?? null;
@@ -376,21 +376,21 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
   updateProgramExercise: async (exerciseId, updates) => {
     await supabase
-      .from('program_exercises')
+      .from('ziko_program_exercises')
       .update(updates)
       .eq('id', exerciseId);
   },
 
   removeProgramExercise: async (exerciseId) => {
     await supabase
-      .from('program_exercises')
+      .from('ziko_program_exercises')
       .delete()
       .eq('id', exerciseId);
   },
 
   reorderProgramExercises: async (workoutId, exerciseIds) => {
     const updates = exerciseIds.map((id, idx) =>
-      supabase.from('program_exercises').update({ order_index: idx }).eq('id', id)
+      supabase.from('ziko_program_exercises').update({ order_index: idx }).eq('id', id)
     );
     await Promise.all(updates);
   },

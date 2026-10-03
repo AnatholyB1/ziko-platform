@@ -73,7 +73,7 @@ export default async function ComparePage({
 
   // Fetch client profiles for display names
   const { data: profiles } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id, name')
     .in('id', clientIds);
 

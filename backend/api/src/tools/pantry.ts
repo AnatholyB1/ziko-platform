@@ -10,7 +10,7 @@ export async function pantry_get_items(
   const db = clientForUser(userToken);
   const { storage_location } = params as { storage_location?: string };
 
-  let query = db.from('pantry_items').select('*').eq('user_id', userId).order('name');
+  let query = db.from('ziko_pantry_items').select('*').eq('user_id', userId).order('name');
   if (storage_location) query = query.eq('storage_location', storage_location);
 
   const { data, error } = await query;
@@ -36,7 +36,7 @@ export async function pantry_update_item(
   let targetId = item_id;
   if (!targetId && name) {
     const { data: matches } = await db
-      .from('pantry_items')
+      .from('ziko_pantry_items')
       .select('id')
       .eq('user_id', userId)
       .ilike('name', `%${name}%`)
@@ -54,7 +54,7 @@ export async function pantry_update_item(
         food_category: 'other',
         low_stock_threshold: 1,
       };
-      const { data, error } = await db.from('pantry_items').insert(newItem).select().single();
+      const { data, error } = await db.from('ziko_pantry_items').insert(newItem).select().single();
       if (error) throw new Error(error.message);
       return { action: 'created', item: data };
     }
@@ -69,7 +69,7 @@ export async function pantry_update_item(
   if (name && item_id) updates.name = name; // Only update name if explicitly targeting by ID
 
   const { data, error } = await db
-    .from('pantry_items')
+    .from('ziko_pantry_items')
     .update(updates)
     .eq('id', targetId)
     .eq('user_id', userId)
@@ -114,7 +114,7 @@ export async function pantry_log_recipe_cooked(
   // 2. Pantry decrement — best-effort per-ingredient (mirrors RecipeConfirm.tsx logic)
   const db = clientForUser(userToken);
   const { data: pantryItems } = await db
-    .from('pantry_items')
+    .from('ziko_pantry_items')
     .select('id, name, quantity, unit')
     .eq('user_id', userId);
 
@@ -144,7 +144,7 @@ export async function pantry_log_recipe_cooked(
       : match.unit.toLowerCase() === 'l' ? newQty / 1000
       : newQty;
     try {
-      await db.from('pantry_items').update({ quantity: finalQty }).eq('id', match.id);
+      await db.from('ziko_pantry_items').update({ quantity: finalQty }).eq('id', match.id);
     } catch {
       // Best-effort: continue on individual ingredient failure
     }

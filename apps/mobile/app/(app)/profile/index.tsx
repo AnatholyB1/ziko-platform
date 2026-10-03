@@ -5,7 +5,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -211,12 +211,12 @@ function PRProgressTab({
       formData.append('file', { uri, name: `${Date.now()}.jpg`, type: 'image/jpeg' } as any);
       const fileName = `${userId}/${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
+        .from(STORAGE_BUCKETS.profilePhotos)
         .upload(fileName, formData, { contentType: 'multipart/form-data', upsert: false });
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from(STORAGE_BUCKETS.profilePhotos).getPublicUrl(fileName);
       const photoUrl = urlData.publicUrl;
-      const { error: insertError } = await supabase.from('body_measurements').insert({
+      const { error: insertError } = await supabase.from('ziko_body_measurements').insert({
         user_id: userId,
         photo_url: photoUrl,
         date: new Date().toISOString().split('T')[0],
@@ -248,12 +248,12 @@ function PRProgressTab({
           style: 'destructive',
           onPress: async () => {
             // Extraire le path du storage depuis l'URL publique
-            // URL format: .../storage/v1/object/public/profile-photos/{userId}/{timestamp}.jpg
-            const urlParts = photoUrl.split('/profile-photos/');
+            // URL format: .../storage/v1/object/public/ziko-profile-photos/{userId}/{timestamp}.jpg
+            const urlParts = photoUrl.split('/ziko-profile-photos/');
             if (urlParts.length > 1) {
-              await supabase.storage.from('profile-photos').remove([urlParts[1]]);
+              await supabase.storage.from(STORAGE_BUCKETS.profilePhotos).remove([urlParts[1]]);
             }
-            await supabase.from('body_measurements').delete().eq('id', id);
+            await supabase.from('ziko_body_measurements').delete().eq('id', id);
             queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
           },
         },
@@ -545,37 +545,37 @@ export default function ProfileScreen() {
 
       const [profileRes, sessionsRes, followersRes, followingRes, habitLogsRes, prCountRes, prRowsRes] = await Promise.all([
         supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .select('name, goal, avatar_color, avatar_url, bio, handle')
           .eq('id', userId!)
           .single(),
         supabase
-          .from('workout_sessions')
+          .from('ziko_workout_sessions')
           .select('id, started_at')
           .eq('user_id', userId!),
         supabase
-          .from('friendships')
+          .from('ziko_friendships')
           .select('id', { count: 'exact', head: true })
           .eq('friend_id', userId!),
         supabase
-          .from('friendships')
+          .from('ziko_friendships')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId!),
         supabase
-          .from('habit_logs')
+          .from('ziko_habit_logs')
           .select('date')
           .eq('user_id', userId!)
           .eq('completed', true)
           .gte('date', sixtyDaysAgoStr)
           .order('date', { ascending: false }),
         supabase
-          .from('session_sets')
+          .from('ziko_session_sets')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId!)
           .eq('is_pr', true),
         supabase
-          .from('session_sets')
-          .select('exercise_id, weight_kg, performed_at, exercises(name)')
+          .from('ziko_session_sets')
+          .select('exercise_id, weight_kg, performed_at, exercises:ziko_exercises(name)')
           .eq('user_id', userId!)
           .order('weight_kg', { ascending: false }),
       ]);
@@ -651,7 +651,7 @@ export default function ProfileScreen() {
     queryKey: ['measurements', userId],
     queryFn: async () => {
       const { data: mdata } = await supabase
-        .from('body_measurements')
+        .from('ziko_body_measurements')
         .select('id, photo_url, created_at, weight_kg')
         .eq('user_id', userId!)
         .not('photo_url', 'is', null)
@@ -668,8 +668,8 @@ export default function ProfileScreen() {
     queryKey: ['badges', userId],
     queryFn: async () => {
       const [allBadgesRes, earnedRes] = await Promise.all([
-        supabase.from('badge_definitions').select('slug, name, icon, tier'),
-        supabase.from('user_badges').select('badge_slug, earned_at').eq('user_id', userId!),
+        supabase.from('ziko_badge_definitions').select('slug, name, icon, tier'),
+        supabase.from('ziko_user_badges').select('badge_slug, earned_at').eq('user_id', userId!),
       ]);
       if (allBadgesRes.error || !allBadgesRes.data) return [];
       const earnedSlugs = new Set<string>((earnedRes.data ?? []).map((e) => e.badge_slug));
@@ -699,7 +699,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (userId && sessionCount !== undefined) {
       supabase
-        .rpc('check_and_award_badges', { p_user_id: userId })
+        .rpc('ziko_check_and_award_badges', { p_user_id: userId })
         .then(() => queryClient.invalidateQueries({ queryKey: ['badges', userId] }));
     }
   }, [sessionCount, userId]);

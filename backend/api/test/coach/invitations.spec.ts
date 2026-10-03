@@ -21,22 +21,22 @@ const createdInvitationIds: string[] = [];
 beforeAll(async () => {
   coach = await createTestUser('inv-coach');
   await adminClient
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .upsert({ id: coach.id, role: 'coach', display_name: 'TestCoach' });
   await adminClient
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .upsert({ user_id: coach.id, display_name: 'TestCoach' });
 });
 
 afterAll(async () => {
   if (createdInvitationIds.length) {
     await adminClient
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .delete()
       .in('id', createdInvitationIds);
   }
-  await adminClient.from('coach_invitations').delete().eq('coach_id', coach.id);
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_invitations').delete().eq('coach_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id]);
 });
 
@@ -95,7 +95,7 @@ describe('coach/invitations/db.insertInvitation (INVITE-01)', () => {
 
     // Pre-insert the colliding code so first two attempts hit PG 23505.
     const pre = await adminClient
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .insert({
         coach_id: coach.id,
         code: 'DUPLI2',
@@ -141,7 +141,7 @@ describe('coach/invitations/db.listInvitations (INVITE-02)', () => {
 
   it('filter=active excludes expired and revoked rows', async () => {
     const expired = await adminClient
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .insert({
         coach_id: coach.id,
         code: 'EXP234',
@@ -176,7 +176,7 @@ describe('coach/invitations/db.revokeInvitation (INVITE-02)', () => {
     const r = await revokeInvitation(jwt, coach.id, row.id);
     expect(r.revoked_at).not.toBeNull();
     const { data } = await adminClient
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .select('revoked_at')
       .eq('id', row.id)
       .single();

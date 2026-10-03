@@ -38,16 +38,16 @@ beforeAll(async () => {
   coach = await createTestUser('tabs-coach');
   client = await createTestUser('tabs-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Tabs Coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Tabs Coach' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client', name: 'Tabs Client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Tabs Coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Tabs Coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client', name: 'Tabs Client' });
 
   coachJwt = await getJwt(coach);
   clientJwt = await getJwt(client);
 
   // Establish coach-client link
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'TABSRX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -59,11 +59,11 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -106,7 +106,7 @@ describe('GET /coach/clients/:id/[tab] — 7 tab routes', () => {
 
   it('all tabs return empty rows for unlinked coach (RLS isolation)', async () => {
     const unlinkedCoach = await createTestUser('tabs-unlinked');
-    await adminClient.from('user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
+    await adminClient.from('ziko_user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
     const unlinkedJwt = await getJwt(unlinkedCoach);
 
     const [sessions, measurements, habits, nutrition, sleep, cardio, journal] = await Promise.all([

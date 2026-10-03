@@ -56,7 +56,7 @@ async function buildRealEvidence(
   userId: string,
 ): Promise<Record<string, unknown>> {
   const { data: stateRow } = await db
-    .from('athlete_state')
+    .from('ziko_athlete_state')
     .select('current_focus_detail')
     .eq('user_id', userId)
     .maybeSingle();
@@ -86,7 +86,7 @@ async function fetchExistingFocusDetail(
   userId: string,
 ): Promise<Record<string, unknown>> {
   const { data: stateRow } = await db
-    .from('athlete_state')
+    .from('ziko_athlete_state')
     .select('current_focus_detail')
     .eq('user_id', userId)
     .maybeSingle();
@@ -113,7 +113,7 @@ export async function create_goal(
   const target_value = typeof params.target_value === 'number' ? params.target_value : null;
   const target_date = params.target_date as string | undefined;
 
-  const { data, error } = await db.rpc('record_athlete_decision', {
+  const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'goal_created',
     p_week_of: null,
@@ -174,7 +174,7 @@ export async function create_program(
   const session_type = (params.session_type as string | undefined) ?? null;
   const week_of = (params.week_of as string | undefined) ?? null;
 
-  const { data, error } = await db.rpc('record_athlete_decision', {
+  const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'program_created',
     p_week_of: null,

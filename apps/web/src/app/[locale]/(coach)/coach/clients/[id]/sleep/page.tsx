@@ -13,7 +13,7 @@ export default async function ClientSleepPage({
   // Fetch sleep logs — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('sleep_logs')
+    .from('ziko_sleep_logs')
     .select('id, date, bedtime, wake_time, duration_hours, quality')
     .eq('user_id', clientId)
     .order('date', { ascending: false })

@@ -66,7 +66,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
       let sentRequestIds = new Set<string>();
       if (user) {
         const { data: outgoing } = await supabase
-          .from('friendships')
+          .from('ziko_friendships')
           .select('addressee_id')
           .eq('requester_id', user.id)
           .eq('status', 'pending');

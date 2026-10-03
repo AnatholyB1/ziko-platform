@@ -44,7 +44,7 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
     const { sleepGoalHours } = get();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('user_plugins').upsert({
+    await supabase.from('ziko_user_plugins').upsert({
       user_id: user.id,
       plugin_id: 'sleep',
       settings: { sleep_goal_hours: sleepGoalHours },
@@ -82,13 +82,13 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
       if (!user) return;
       const [{ data }, { data: pluginData }] = await Promise.all([
         supabase
-          .from('sleep_logs')
+          .from('ziko_sleep_logs')
           .select('*')
           .eq('user_id', user.id)
           .order('date', { ascending: false })
           .limit(14),
         supabase
-          .from('user_plugins')
+          .from('ziko_user_plugins')
           .select('settings')
           .eq('user_id', user.id)
           .eq('plugin_id', 'sleep')

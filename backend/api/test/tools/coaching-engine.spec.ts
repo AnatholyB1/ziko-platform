@@ -151,7 +151,7 @@ function buildReviewContext(overrides: Record<string, unknown> = {}) {
     },
     activity: {
       focus_type: 'training_volume',
-      tables_read: ['workout_sessions'],
+      tables_read: ['ziko_workout_sessions'],
       metrics: { sessions_completed: 4, total_volume_kg: 800 },
       window_start: '2026-08-14T00:00:00Z',
       window_end: '2026-08-21T00:00:00Z',
@@ -204,7 +204,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('a training_volume focus queries workout_sessions only, never any other activity table', async () => {
-    tableResults.workout_sessions = {
+    tableResults.ziko_workout_sessions = {
       data: [{ started_at: '2026-08-15T10:00:00Z', total_volume_kg: 100 }],
       error: null,
     };
@@ -219,17 +219,17 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
     );
 
     const calledTables = mockFrom.mock.calls.map((c) => c[0]);
-    expect(calledTables).toEqual(['workout_sessions']);
-    expect(calledTables).not.toContain('nutrition_logs');
-    expect(calledTables).not.toContain('habit_logs');
-    expect(calledTables).not.toContain('hydration_logs');
-    expect(calledTables).not.toContain('sleep_logs');
-    expect(calledTables).not.toContain('cardio_sessions');
-    expect(result.tables_read).toEqual(['workout_sessions']);
+    expect(calledTables).toEqual(['ziko_workout_sessions']);
+    expect(calledTables).not.toContain('ziko_nutrition_logs');
+    expect(calledTables).not.toContain('ziko_habit_logs');
+    expect(calledTables).not.toContain('ziko_hydration_logs');
+    expect(calledTables).not.toContain('ziko_sleep_logs');
+    expect(calledTables).not.toContain('ziko_cardio_sessions');
+    expect(result.tables_read).toEqual(['ziko_workout_sessions']);
   });
 
   it('a nutrition focus queries nutrition_logs only and mockFrom is never called with workout_sessions', async () => {
-    tableResults.nutrition_logs = { data: [{ date: '2026-08-18' }], error: null };
+    tableResults.ziko_nutrition_logs = { data: [{ date: '2026-08-18' }], error: null };
 
     const fakeDb = { from: mockFrom };
     const result = await fetchFocusScopedActivity(
@@ -241,20 +241,20 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
     );
 
     const calledTables = mockFrom.mock.calls.map((c) => c[0]);
-    expect(calledTables).toEqual(['nutrition_logs']);
-    expect(calledTables).not.toContain('workout_sessions');
-    expect(result.tables_read).toEqual(['nutrition_logs']);
+    expect(calledTables).toEqual(['ziko_nutrition_logs']);
+    expect(calledTables).not.toContain('ziko_workout_sessions');
+    expect(result.tables_read).toEqual(['ziko_nutrition_logs']);
   });
 
   it('a habit_consistency focus queries habit_logs and journal_entries and unions overlapping dates', async () => {
-    tableResults.habit_logs = {
+    tableResults.ziko_habit_logs = {
       data: [
         { date: '2026-08-18', value: 1 },
         { date: '2026-08-19', value: 1 },
       ],
       error: null,
     };
-    tableResults.journal_entries = {
+    tableResults.ziko_journal_entries = {
       data: [
         { date: '2026-08-19', mood: 3, energy: 3, stress: 2 }, // overlaps habit_logs' 08-19
         { date: '2026-08-20', mood: 4, energy: 4, stress: 1 },
@@ -272,13 +272,13 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
     );
 
     const calledTables = mockFrom.mock.calls.map((c) => c[0]).sort();
-    expect(calledTables).toEqual(['habit_logs', 'journal_entries']);
+    expect(calledTables).toEqual(['ziko_habit_logs', 'ziko_journal_entries']);
     // Union of {08-18, 08-19, 08-20} = 3 distinct days, not the sum (4).
     expect(result.metrics.distinct_active_days).toBe(3);
   });
 
   it('exact-target hit is met (D-07): 3 workout_sessions rows against a target of 3', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: '2026-08-14T00:00:00Z',
@@ -293,8 +293,8 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = {
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = {
       data: [
         { started_at: '2026-08-15T10:00:00Z', total_volume_kg: 100 },
         { started_at: '2026-08-17T10:00:00Z', total_volume_kg: 100 },
@@ -310,7 +310,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('exceeding the target is still met (D-07): 4 rows against a target of 3', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: '2026-08-14T00:00:00Z',
@@ -325,8 +325,8 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = {
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = {
       data: [
         { started_at: '2026-08-15T10:00:00Z', total_volume_kg: 100 },
         { started_at: '2026-08-16T10:00:00Z', total_volume_kg: 100 },
@@ -343,7 +343,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('a near-miss is NOT met (D-07, no tolerance band): 2 rows against a target of 3', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: '2026-08-14T00:00:00Z',
@@ -358,8 +358,8 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = {
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = {
       data: [
         { started_at: '2026-08-15T10:00:00Z', total_volume_kg: 100 },
         { started_at: '2026-08-17T10:00:00Z', total_volume_kg: 100 },
@@ -374,7 +374,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('no assigned target yields met null and focus_type unassigned, never a miss', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: null,
@@ -385,9 +385,9 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
 
     const context = await fetchWeeklyReviewContext('user-1', 'token-1');
 
@@ -396,7 +396,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('missPattern flags a pattern of misses when 2 of the last 3 weekly_focus decisions were missed', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: null,
@@ -407,9 +407,9 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.athlete_decisions = {
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = {
       data: [
         { decision_type: 'weekly_focus', week_of: '2026-08-21', summary: 's3', outcome: { met: false }, created_at: '2026-08-21T00:00:00Z' },
         { decision_type: 'weekly_focus', week_of: '2026-08-14', summary: 's2', outcome: { met: false }, created_at: '2026-08-14T00:00:00Z' },
@@ -425,7 +425,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('missPattern is false when only 1 of the last 3 weekly_focus decisions was missed', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: null,
@@ -436,9 +436,9 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.athlete_decisions = {
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = {
       data: [
         { decision_type: 'weekly_focus', week_of: '2026-08-21', summary: 's3', outcome: { met: false }, created_at: '2026-08-21T00:00:00Z' },
         { decision_type: 'weekly_focus', week_of: '2026-08-14', summary: 's2', outcome: { met: true }, created_at: '2026-08-14T00:00:00Z' },
@@ -453,7 +453,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('missPattern survives interleaved program_created rows — the type filter is applied before slicing to three', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-08-21T00:00:00Z',
         last_review_at: null,
@@ -464,9 +464,9 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
-    tableResults.athlete_decisions = {
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = {
       data: [
         { decision_type: 'weekly_focus', week_of: '2026-08-21', summary: 's', outcome: { met: false }, created_at: '2026-08-21T00:00:00Z' },
         { decision_type: 'program_created', week_of: null, summary: 'p', outcome: {}, created_at: '2026-08-20T00:00:00Z' },
@@ -487,7 +487,7 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
   });
 
   it('weekOf is derived from the scripted next_review_due_at, never from the system clock', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2026-07-01T00:00:00Z',
         last_review_at: null,
@@ -498,9 +498,9 @@ describe('coaching-engine — activity aggregation (ENGINE-01)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = { data: [], error: null };
-    tableResults.habit_logs = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    tableResults.ziko_habit_logs = { data: [], error: null };
 
     const context = await fetchWeeklyReviewContext('user-1', 'token-1');
 
@@ -583,7 +583,7 @@ describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
     resetTableScripts();
 
     // No pre-existing goal — the fixture used by create_goal cases 5-8b.
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         current_focus_detail: {
           focus_type: 'training_volume',
@@ -593,7 +593,7 @@ describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
       },
       error: null,
     };
-    tableResults.workout_sessions = {
+    tableResults.ziko_workout_sessions = {
       data: [{ started_at: '2026-08-18T10:00:00Z', total_volume_kg: 100 }],
       error: null,
     };
@@ -620,7 +620,7 @@ describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
 
     expect(mockRpc).toHaveBeenCalledTimes(1);
     const [rpcName, args] = mockRpc.mock.calls[0];
-    expect(rpcName).toBe('record_athlete_decision');
+    expect(rpcName).toBe('ziko_record_athlete_decision');
     expect(args.p_decision_type).toBe('goal_created');
     expect(args.p_week_of).toBeNull();
     expect(args.p_new_goal).toMatchObject({
@@ -693,7 +693,7 @@ describe('coaching-engine — goal and program tools (ENGINE-06)', () => {
   });
 
   it('create_program merges its new targets over the existing current_focus_detail, preserving goal_id', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         current_focus_detail: {
           focus_type: 'training_volume',
@@ -1123,7 +1123,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       'token-1',
     );
 
-    const rows = insertedRows.ai_cost_log ?? [];
+    const rows = insertedRows.ziko_ai_cost_log ?? [];
     expect(rows.length).toBe(1);
     expect(rows[0]).toMatchObject({
       user_id: 'athlete-1',
@@ -1162,7 +1162,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
   });
 
   it('runWeeklyReview short-circuits before any model call when a weekly_focus decision already exists for context.weekOf', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2020-01-01T00:00:00Z',
         last_review_at: '2019-12-25T00:00:00Z',
@@ -1177,11 +1177,11 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = { data: [], error: null };
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
     // The pre-check's own maybeSingle() read finds an existing weekly_focus
     // row for this week — the cost-efficiency guard this task requires.
-    singleResults.athlete_decisions = { data: { id: 'existing-decision' }, error: null };
+    singleResults.ziko_athlete_decisions = { data: { id: 'existing-decision' }, error: null };
 
     const result = await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
 
@@ -1361,7 +1361,7 @@ describe('coaching-engine — rolling summary (FOUND-05)', () => {
   });
 
   it('mockGenerateObject call count across a full runWeeklyReview remains exactly 1 — the recompaction adds no model call', async () => {
-    singleResults.athlete_state = {
+    singleResults.ziko_athlete_state = {
       data: {
         next_review_due_at: '2020-01-01T00:00:00Z',
         last_review_at: '2019-12-25T00:00:00Z',
@@ -1376,12 +1376,12 @@ describe('coaching-engine — rolling summary (FOUND-05)', () => {
       },
       error: null,
     };
-    tableResults.athlete_decisions = { data: [], error: null };
-    tableResults.workout_sessions = {
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = {
       data: [{ started_at: '2026-08-18T10:00:00Z', total_volume_kg: 100 }],
       error: null,
     };
-    singleResults.athlete_decisions = { data: null, error: null };
+    singleResults.ziko_athlete_decisions = { data: null, error: null };
 
     await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
 

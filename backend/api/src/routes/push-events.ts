@@ -36,7 +36,7 @@ router.post('/supabase', async (c) => {
   const { type, table, record, old_record } = payload;
 
   // ── PUSH-03: workout_sessions UPDATE (ended_at NULL → timestamp) ──────────
-  if (table === 'workout_sessions' && type === 'UPDATE') {
+  if (table === 'ziko_workout_sessions' && type === 'UPDATE') {
     const endedAtOld = old_record?.ended_at;
     const endedAtNew = record.ended_at;
 
@@ -52,7 +52,7 @@ router.post('/supabase', async (c) => {
 
           // D-05: Active session guard — suppress if athlete started a new session
           const { data: activeSession } = await supabaseAdmin
-            .from('workout_sessions')
+            .from('ziko_workout_sessions')
             .select('id')
             .eq('user_id', athleteId)
             .is('ended_at', null)
@@ -81,7 +81,7 @@ router.post('/supabase', async (c) => {
   }
 
   // ── PUSH-04: user_gamification UPDATE (level increase) ───────────────────
-  if (table === 'user_gamification' && type === 'UPDATE') {
+  if (table === 'ziko_user_gamification' && type === 'UPDATE') {
     const oldLevel = Number(old_record?.level ?? 0);
     const newLevel = Number(record.level);
 

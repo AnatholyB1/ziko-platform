@@ -25,7 +25,7 @@ export async function getActiveCoachForAthlete(
   const now = new Date().toISOString();
 
   const { data: linkRow, error: linkErr } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('coach_id')
     .eq('client_id', athleteId)
     .is('revoked_at', null)
@@ -44,7 +44,7 @@ export async function getActiveCoachForAthlete(
 
   // Resolve coach name from user_profiles
   const { data: profile, error: profileErr } = await db
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('name')
     .eq('id', coachId)
     .maybeSingle();
@@ -73,7 +73,7 @@ export async function insertVideoRecord(params: {
   const db = createServiceClient();
   const { id, athleteId, coachId, storagePath, title, durationS } = params;
 
-  const { error } = await db.from('coach_client_videos').insert({
+  const { error } = await db.from('ziko_coach_client_videos').insert({
     id,
     athlete_id: athleteId,
     coach_id: coachId,
@@ -101,7 +101,7 @@ export async function getVideosForClient(
   const db = createServiceClient();
 
   const { data, error } = await db
-    .from('coach_client_videos')
+    .from('ziko_coach_client_videos')
     .select('id, athlete_id, coach_id, storage_path, title, duration_s, status, created_at')
     .eq('coach_id', coachId)
     .eq('athlete_id', clientId)
@@ -121,7 +121,7 @@ export async function getVideoById(videoId: string): Promise<VideoRow | null> {
   const db = createServiceClient();
 
   const { data, error } = await db
-    .from('coach_client_videos')
+    .from('ziko_coach_client_videos')
     .select('id, athlete_id, coach_id, storage_path, title, duration_s, status, created_at')
     .eq('id', videoId)
     .maybeSingle();
@@ -140,7 +140,7 @@ export async function getAnnotationsForVideo(videoId: string): Promise<Annotatio
   const db = createServiceClient();
 
   const { data, error } = await db
-    .from('coach_video_annotations')
+    .from('ziko_coach_video_annotations')
     .select('id, video_id, coach_id, timestamp_s, content, type, audio_path, created_at')
     .eq('video_id', videoId)
     .order('timestamp_s', { ascending: true });
@@ -166,7 +166,7 @@ export async function insertAnnotation(params: {
   const db = createServiceClient();
   const { id, videoId, coachId, timestampS, content } = params;
 
-  const { error } = await db.from('coach_video_annotations').insert({
+  const { error } = await db.from('ziko_coach_video_annotations').insert({
     id,
     video_id: videoId,
     coach_id: coachId,
@@ -192,7 +192,7 @@ export async function updateAnnotation(
   const db = createServiceClient();
 
   const { error } = await db
-    .from('coach_video_annotations')
+    .from('ziko_coach_video_annotations')
     .update({ content })
     .eq('id', annotId)
     .eq('coach_id', coachId);
@@ -210,7 +210,7 @@ export async function deleteAnnotation(annotId: string, coachId: string): Promis
   const db = createServiceClient();
 
   const { error } = await db
-    .from('coach_video_annotations')
+    .from('ziko_coach_video_annotations')
     .delete()
     .eq('id', annotId)
     .eq('coach_id', coachId);
@@ -230,7 +230,7 @@ export async function getAnnotationById(annotationId: string): Promise<Annotatio
   const db = createServiceClient();
 
   const { data, error } = await db
-    .from('coach_video_annotations')
+    .from('ziko_coach_video_annotations')
     .select('id, video_id, coach_id, timestamp_s, content, type, audio_path, created_at')
     .eq('id', annotationId)
     .maybeSingle();
@@ -258,7 +258,7 @@ export async function insertVoiceAnnotation(params: {
   const db = createServiceClient();
   const { id, videoId, coachId, timestampS, content, audioPath } = params;
 
-  const { error } = await db.from('coach_video_annotations').insert({
+  const { error } = await db.from('ziko_coach_video_annotations').insert({
     id,
     video_id: videoId,
     coach_id: coachId,
@@ -285,7 +285,7 @@ export async function updateVideoStatus(
   const db = createServiceClient();
 
   const { error } = await db
-    .from('coach_client_videos')
+    .from('ziko_coach_client_videos')
     .update({ status })
     .eq('id', videoId)
     .eq('coach_id', coachId);

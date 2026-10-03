@@ -60,7 +60,7 @@ router.post('/cron/weekly-review', async (c) => {
   // the following Sunday's cron. Catch-up latency, not data loss.
   const nowIso = new Date(Date()).toISOString();
   const { data } = await db
-    .from('athlete_state')
+    .from('ziko_athlete_state')
     .select('user_id')
     .not('next_review_due_at', 'is', null)
     .lte('next_review_due_at', nowIso)

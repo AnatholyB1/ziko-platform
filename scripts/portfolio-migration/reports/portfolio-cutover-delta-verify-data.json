@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-10-03T14:01:49.001Z",
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "source_ref": "slkobhavpwsubnsmuhya",
+  "passed": true,
+  "checks": {
+    "counts": {
+      "ok": true,
+      "detail": "row counts match on 99/99 tables",
+      "data": {
+        "tables": 99,
+        "mismatches": [],
+        "missing": []
+      }
+    },
+    "rls": {
+      "ok": true,
+      "detail": "RLS enabled on 99/99 tables",
+      "data": {
+        "enabled": 99,
+        "total": 99,
+        "absent": [],
+        "disabled": []
+      }
+    },
+    "triggers": {
+      "ok": true,
+      "detail": "18 triggers inspected, 0 not in enabled-origin state; 2 ziko_ triggers on auth.users, 0 not enabled; 18 ziko_ table triggers",
+      "data": {
+        "total": 18,
+        "notEnabled": [],
+        "zikoAuthTriggers": 2,
+        "zikoAuthNotEnabled": 0
+      }
+    },
+    "fk": {
+      "ok": true,
+      "detail": "144 FK constraints, 97 FK columns to auth.users; 144 validated",
+      "data": {
+        "fkCount": 144,
+        "authFkColumns": 97,
+        "unvalidated": [],
+        "validated": 144
+      }
+    },
+    "orphans": {
+      "ok": true,
+      "detail": "0 orphans across 144 FK constraints",
+      "data": {
+        "checked": 144,
+        "orphaned": []
+      }
+    },
+    "sequence": {
+      "ok": true,
+      "detail": "1 sequences compared, sequence-backed columns: 0",
+      "data": {
+        "sequences": 1,
+        "sequenceBackedColumns": 0,
+        "problems": []
+      }
+    },
+    "remap": {
+      "ok": true,
+      "detail": "source UUID absent on target; target UUID occurrences match source",
+      "data": {
+        "sourceOnTargetTables": [],
+        "occurrenceDiffTables": [],
+        "preLoadTables": null
+      }
+    },
+    "tenants": {
+      "ok": true,
+      "detail": "tenant tables intact (55 tables, 0 row-count deltas)",
+      "data": {
+        "problems": [],
+        "warnings": []
+      }
+    }
+  }
+}

@@ -125,7 +125,7 @@ dashboardsRouter.post(
 
       // Fetch active thresholds for this coach/client/sport
       const { data: thresholds, error: thresholdError } = await db
-        .from('coach_metric_thresholds')
+        .from('ziko_coach_metric_thresholds')
         .select('*')
         .eq('coach_id', coachId)
         .eq('client_id', clientId)
@@ -186,7 +186,7 @@ dashboardsRouter.get('/:clientId/thresholds', async (c) => {
 
     const db = createUserClient(jwt)
     let query = db
-      .from('coach_metric_thresholds')
+      .from('ziko_coach_metric_thresholds')
       .select('*')
       .eq('coach_id', coachId)
       .eq('client_id', clientId)
@@ -221,7 +221,7 @@ dashboardsRouter.post('/:clientId/thresholds', async (c) => {
 
     const db = createUserClient(jwt)
     const { data, error } = await db
-      .from('coach_metric_thresholds')
+      .from('ziko_coach_metric_thresholds')
       .insert({ ...body, coach_id: coachId, client_id: clientId })
       .select('*')
       .single()
@@ -243,7 +243,7 @@ dashboardsRouter.delete('/:clientId/thresholds/:thresholdId', async (c) => {
 
     const db = createUserClient(jwt)
     const { error } = await db
-      .from('coach_metric_thresholds')
+      .from('ziko_coach_metric_thresholds')
       .delete()
       .eq('id', thresholdId)
       .eq('coach_id', coachId)

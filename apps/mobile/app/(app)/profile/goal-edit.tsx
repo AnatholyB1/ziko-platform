@@ -55,7 +55,7 @@ export default function GoalEditScreen() {
       if (!user) { setLoading(false); return; }
 
       const { data } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('goal')
         .eq('id', user.id)
         .single();
@@ -79,7 +79,7 @@ export default function GoalEditScreen() {
       if (!user) throw new Error('Non connecte');
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .update({ goal: selectedGoal })
         .eq('id', user.id);
 

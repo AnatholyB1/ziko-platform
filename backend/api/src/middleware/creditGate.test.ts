@@ -62,16 +62,16 @@ interface MockTables {
 function setupSupabaseMocks({ appConfig, userProfile, txRows }: MockTables) {
   const chains: { appConfig?: ReturnType<typeof makeChain>; userProfile?: ReturnType<typeof makeChain> } = {};
   mockFrom.mockImplementation((table: string) => {
-    if (table === 'app_config') {
+    if (table === 'ziko_app_config') {
       chains.appConfig = makeChain(appConfig);
       return chains.appConfig;
     }
-    if (table === 'user_profiles') {
+    if (table === 'ziko_user_profiles') {
       if (!userProfile) throw new Error('Unexpected query against user_profiles (no tier read expected)');
       chains.userProfile = makeChain(userProfile);
       return chains.userProfile;
     }
-    if (table === 'ai_credit_transactions') return makeChain(txRows ?? { data: [], error: null });
+    if (table === 'ziko_ai_credit_transactions') return makeChain(txRows ?? { data: [], error: null });
     throw new Error(`Unexpected table queried: ${table}`);
   });
   return chains;
@@ -216,7 +216,7 @@ describe('creditCheck — flag on (enforcing path, CRED-02)', () => {
 
     await app.request('/test');
 
-    expect(mockFrom).not.toHaveBeenCalledWith('user_profiles');
+    expect(mockFrom).not.toHaveBeenCalledWith('ziko_user_profiles');
   });
 });
 

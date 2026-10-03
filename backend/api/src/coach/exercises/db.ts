@@ -5,6 +5,7 @@ import type {
   CreateExerciseBody,
   UpdateExerciseBody,
 } from './types.js';
+import { STORAGE_BUCKETS } from '../../config/buckets.js';
 
 export function createUserClient(jwt: string) {
   return createClient(
@@ -41,7 +42,7 @@ export async function getMediaUrls(
 
   // Step 1: Fetch the exercise row — coach_id derived server-side (IDOR prevention)
   const { data: exercise, error: exerciseErr } = await adminDb
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('coach_id, video_path, photo_path')
     .eq('id', exerciseId)
     .maybeSingle();
@@ -56,7 +57,7 @@ export async function getMediaUrls(
 
   // Step 2: Validate active coach-athlete relationship via coach_client_links
   const { data: link, error: linkErr } = await adminDb
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('id')
     .eq('coach_id', exercise.coach_id)
     .eq('client_id', athleteUserId)
@@ -78,7 +79,7 @@ export async function getMediaUrls(
 
   if (exercise.video_path) {
     const { data: videoSigned, error: videoErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl(exercise.video_path, 3600);
     if (videoErr) {
       console.warn('[coach/exercises] getMediaUrls video sign error:', videoErr.message);
@@ -89,7 +90,7 @@ export async function getMediaUrls(
 
   if (exercise.photo_path) {
     const { data: photoSigned, error: photoErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl(exercise.photo_path, 3600);
     if (photoErr) {
       console.warn('[coach/exercises] getMediaUrls photo sign error:', photoErr.message);
@@ -100,7 +101,7 @@ export async function getMediaUrls(
 
   if ((exercise as any).gif_path) {
     const { data: gifSigned, error: gifErr } = await adminDb.storage
-      .from('coach-exercises')
+      .from(STORAGE_BUCKETS.coachExercises)
       .createSignedUrl((exercise as any).gif_path, 3600);
     if (gifErr) {
       console.warn('[coach/exercises] getMediaUrls gif sign error:', gifErr.message);
@@ -119,7 +120,7 @@ export async function listExercises(
 ): Promise<{ exercises: CoachExercise[] }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('*')
     .eq('coach_id', coachId)
     .order('created_at', { ascending: false });
@@ -135,7 +136,7 @@ export async function createExercise(
 ): Promise<CoachExercise> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .insert({
       coach_id: coachId,
       name: body.name,
@@ -170,7 +171,7 @@ export async function updateExercise(
   if (body.gif_path !== undefined) updates.gif_path = body.gif_path;
 
   const { data, error } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .update(updates)
     .eq('id', id)
     .eq('coach_id', coachId)
@@ -190,7 +191,7 @@ export async function deleteExercise(
 
   // Step 1: Fetch the row to get storage paths (IDOR guard: coach_id filter)
   const { data: row, error: fetchErr } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('video_path, photo_path, gif_path')
     .eq('id', id)
     .eq('coach_id', coachId)
@@ -202,18 +203,18 @@ export async function deleteExercise(
 
   // Step 3: Delete storage files if paths exist (user JWT — RLS allows own-prefix DELETE)
   if (row.video_path) {
-    await db.storage.from('coach-exercises').remove([row.video_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.video_path]);
   }
   if (row.photo_path) {
-    await db.storage.from('coach-exercises').remove([row.photo_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([row.photo_path]);
   }
   if ((row as any).gif_path) {
-    await db.storage.from('coach-exercises').remove([(row as any).gif_path]);
+    await db.storage.from(STORAGE_BUCKETS.coachExercises).remove([(row as any).gif_path]);
   }
 
   // Step 4: Delete the DB row
   const { error: deleteErr } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .delete()
     .eq('id', id)
     .eq('coach_id', coachId);

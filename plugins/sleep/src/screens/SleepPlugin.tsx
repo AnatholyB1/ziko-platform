@@ -174,7 +174,7 @@ export default function SleepPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return null;
       const { data } = await supabase
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('*')
         .eq('user_id', userId)
         .order('date', { ascending: false })
@@ -193,7 +193,7 @@ export default function SleepPlugin({ supabase }: { supabase: any }) {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const { data } = await supabase
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('*')
         .eq('user_id', userId)
         .gte('date', sevenDaysAgo.toISOString().split('T')[0])

@@ -56,7 +56,7 @@ export default function ChallengeDetailRoute() {
 
       // Load challenge details
       const { data: ch } = await supabase
-        .from('challenges')
+        .from('ziko_challenges')
         .select('id, name, description, icon, duration_days, xp_reward, created_at')
         .eq('id', challengeId)
         .single();
@@ -65,7 +65,7 @@ export default function ChallengeDetailRoute() {
 
       // Load participants ordered by score DESC
       const { data: parts } = await supabase
-        .from('challenge_participants')
+        .from('ziko_challenge_participants')
         .select('id, challenge_id, user_id, score, joined_at')
         .eq('challenge_id', challengeId)
         .order('score', { ascending: false });
@@ -76,7 +76,7 @@ export default function ChallengeDetailRoute() {
       if (partList.length > 0) {
         const ids = partList.map((p) => p.user_id);
         const { data: profiles } = await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .select('id, name')
           .in('id', ids);
         const nameMap: Record<string, string> = {};
@@ -101,7 +101,7 @@ export default function ChallengeDetailRoute() {
     if (!challengeId || !userId || joining) return;
     setJoining(true);
     try {
-      const { error } = await supabase.from('challenge_participants').insert({
+      const { error } = await supabase.from('ziko_challenge_participants').insert({
         challenge_id: challengeId,
         user_id: userId,
         score: 0,
@@ -128,7 +128,7 @@ export default function ChallengeDetailRoute() {
           onPress: async () => {
             setLeaving(true);
             try {
-              await supabase.from('challenge_participants').delete().eq('id', myParticipation.id);
+              await supabase.from('ziko_challenge_participants').delete().eq('id', myParticipation.id);
               await loadData();
             } finally {
               setLeaving(false);

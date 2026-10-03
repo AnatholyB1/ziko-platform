@@ -13,7 +13,7 @@ export default async function ClientNutritionPage({
   // Fetch nutrition logs — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .select('id, meal_type, food_name, calories, protein_g, carbs_g, fat_g, date')
     .eq('user_id', clientId)
     .order('date', { ascending: false })

@@ -430,7 +430,7 @@ export default function WorkoutIndexScreen() {
     queryFn: async () => {
       if (!userId) return null;
       const { data, error } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })

@@ -36,7 +36,7 @@ export async function cardio_log_session(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .insert({
       user_id: userId,
       activity_type,
@@ -72,7 +72,7 @@ export async function cardio_get_history(
   since.setDate(since.getDate() - days);
 
   let query = db
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('*')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])
@@ -100,7 +100,7 @@ export async function cardio_get_stats(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('activity_type, duration_min, distance_km, calories_burned, avg_pace_sec_per_km')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0]);

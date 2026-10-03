@@ -204,7 +204,7 @@ export default function NotificationsScreen() {
     queryFn: async () => {
       if (!userId) return [];
       let q = supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .select('id, user_id, category, type, title, body, read_at, created_at, data')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -223,7 +223,7 @@ export default function NotificationsScreen() {
   const markReadMutation = useMutation({
     mutationFn: async (notifId: string) => {
       const { error } = await supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .update({ read_at: new Date().toISOString() })
         .eq('id', notifId);
       if (error) throw error;
@@ -252,7 +252,7 @@ export default function NotificationsScreen() {
     mutationFn: async () => {
       if (!userId) return;
       const { error } = await supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .update({ read_at: new Date().toISOString() })
         .eq('user_id', userId)
         .is('read_at', null);

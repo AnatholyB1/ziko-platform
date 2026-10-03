@@ -11,17 +11,17 @@ export default async function BrandingPage() {
 
   const [brandingData, tierData, profileData] = await Promise.all([
     supabase
-      .from('coach_branding')
+      .from('ziko_coach_branding')
       .select('primary_color, logo_url, tone')
       .eq('coach_id', user.id)
       .single(),
     supabase
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('tier')
       .eq('id', user.id)
       .single(),
     supabase
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('display_name')
       .eq('user_id', user.id)
       .single(),

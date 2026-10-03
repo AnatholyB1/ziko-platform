@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   ]);
 
   const { data: profile } = await supabase
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('*')
     .eq('user_id', user.id)
     .single();

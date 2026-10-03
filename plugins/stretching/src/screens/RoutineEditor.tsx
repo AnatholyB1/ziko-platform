@@ -94,7 +94,7 @@ export default function RoutineEditor({ supabase }: { supabase: any }) {
       if (!user) throw new Error('Non authentifié');
 
       if (existing) {
-        await supabase.from('stretching_routines').update({
+        await supabase.from('ziko_stretching_routines').update({
           name: routine.name, type: routine.type,
           muscle_groups: routine.muscle_groups,
           duration_minutes: routine.duration_minutes,
@@ -102,7 +102,7 @@ export default function RoutineEditor({ supabase }: { supabase: any }) {
         }).eq('id', routine.id).eq('user_id', user.id);
         updateCustomRoutine(routine);
       } else {
-        const { data, error } = await supabase.from('stretching_routines').insert({
+        const { data, error } = await supabase.from('ziko_stretching_routines').insert({
           id: routine.id, user_id: user.id,
           name: routine.name, type: routine.type,
           muscle_groups: routine.muscle_groups,

@@ -34,7 +34,7 @@ export default async function ClientsPage() {
 
   try {
     const { data: links } = await supabase
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .select('client_id')
       .eq('coach_id', coachId)
       .is('revoked_at', null);
@@ -52,14 +52,14 @@ export default async function ClientsPage() {
         { data: habits },
         { data: habitLogs },
       ] = await Promise.all([
-        supabase.from('user_profiles').select('id, name, avatar_url').eq('id', clientId).maybeSingle(),
-        supabase.from('workout_sessions').select('created_at').eq('user_id', clientId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('workout_sessions').select('id').eq('user_id', clientId).gte('created_at', fourteenDaysAgo).limit(1),
-        supabase.from('body_measurements').select('id').eq('user_id', clientId).gte('created_at', twentyEightDaysAgo).limit(1),
-        supabase.from('journal_entries').select('mood').eq('user_id', clientId).order('created_at', { ascending: false }).limit(6),
-        supabase.from('workout_sessions').select('id').eq('user_id', clientId).gte('created_at', weekStartIso),
-        supabase.from('habits').select('id').eq('user_id', clientId),
-        supabase.from('habit_logs').select('date, value').eq('user_id', clientId).gte('date', sevenDaysAgoDate),
+        supabase.from('ziko_user_profiles').select('id, name, avatar_url').eq('id', clientId).maybeSingle(),
+        supabase.from('ziko_workout_sessions').select('created_at').eq('user_id', clientId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('ziko_workout_sessions').select('id').eq('user_id', clientId).gte('created_at', fourteenDaysAgo).limit(1),
+        supabase.from('ziko_body_measurements').select('id').eq('user_id', clientId).gte('created_at', twentyEightDaysAgo).limit(1),
+        supabase.from('ziko_journal_entries').select('mood').eq('user_id', clientId).order('created_at', { ascending: false }).limit(6),
+        supabase.from('ziko_workout_sessions').select('id').eq('user_id', clientId).gte('created_at', weekStartIso),
+        supabase.from('ziko_habits').select('id').eq('user_id', clientId),
+        supabase.from('ziko_habit_logs').select('date, value').eq('user_id', clientId).gte('date', sevenDaysAgoDate),
       ]);
 
       let signalMood = false;

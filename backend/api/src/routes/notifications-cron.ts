@@ -46,7 +46,7 @@ notificationsCronRouter.get('/cron/check-receipts', async (c) => {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const { data: logRows, error: logError } = await supabaseAdmin
-      .from('notification_log')
+      .from('ziko_notification_log')
       .select('receipt_ids')
       .eq('status', 'sent')
       .not('receipt_ids', 'is', null)
@@ -69,7 +69,7 @@ notificationsCronRouter.get('/cron/check-receipts', async (c) => {
 
     // After processReceipts updates error_code, deactivate tokens for DeviceNotRegistered
     const { data: failedRows, error: failedError } = await supabaseAdmin
-      .from('notification_log')
+      .from('ziko_notification_log')
       .select('user_id')
       .eq('error_code', 'DeviceNotRegistered')
       .eq('status', 'failed')
@@ -88,7 +88,7 @@ notificationsCronRouter.get('/cron/check-receipts', async (c) => {
 
     for (const userId of affectedUserIds) {
       await supabaseAdmin
-        .from('notification_tokens')
+        .from('ziko_notification_tokens')
         .update({ is_active: false })
         .eq('user_id', userId);
     }
@@ -123,7 +123,7 @@ notificationsCronRouter.get('/cron/streak-at-risk', async (c) => {
 
     // Step A: Users who logged a habit yesterday
     const { data: loggedYesterday, error: errA } = await supabaseAdmin
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('user_id')
       .eq('date', yesterday);
 
@@ -142,7 +142,7 @@ notificationsCronRouter.get('/cron/streak-at-risk', async (c) => {
 
     // Step B: Users who already logged a habit today (exclude them)
     const { data: loggedToday, error: errB } = await supabaseAdmin
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('user_id')
       .eq('date', today);
 
@@ -157,7 +157,7 @@ notificationsCronRouter.get('/cron/streak-at-risk', async (c) => {
 
     // Step C: Users with >= 3 distinct habit log dates in the last 7 days
     const { data: recentLogs, error: errC } = await supabaseAdmin
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('user_id, date')
       .gte('date', sevenDaysAgo);
 
@@ -181,7 +181,7 @@ notificationsCronRouter.get('/cron/streak-at-risk', async (c) => {
 
     // Step D: Users with habits plugin enabled
     const { data: enabledPlugins, error: errD } = await supabaseAdmin
-      .from('user_plugins')
+      .from('ziko_user_plugins')
       .select('user_id')
       .eq('plugin_id', 'habits')
       .eq('is_enabled', true);
@@ -247,7 +247,7 @@ notificationsCronRouter.get('/cron/weekly-digest', async (c) => {
   try {
     // Find users who opted in to weekly digest AND have push enabled
     const { data: optedIn, error: prefError } = await supabaseAdmin
-      .from('notification_preferences')
+      .from('ziko_notification_preferences')
       .select('user_id')
       .eq('push_enabled', true)
       .filter('type_prefs->>weekly_xp_digest', 'eq', 'true');
@@ -273,20 +273,20 @@ notificationsCronRouter.get('/cron/weekly-digest', async (c) => {
       // Gather three data points in parallel
       const [sessionsResult, xpResult, streakResult] = await Promise.all([
         supabaseAdmin
-          .from('workout_sessions')
+          .from('ziko_workout_sessions')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
           .not('ended_at', 'is', null)
           .gte('started_at', weekAgo),
 
         supabaseAdmin
-          .from('xp_transactions')
+          .from('ziko_xp_transactions')
           .select('amount')
           .eq('user_id', userId)
           .gte('created_at', weekAgo),
 
         supabaseAdmin
-          .from('user_gamification')
+          .from('ziko_user_gamification')
           .select('current_streak')
           .eq('user_id', userId)
           .single(),

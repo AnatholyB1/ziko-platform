@@ -185,7 +185,7 @@ export default function AIChatScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       const { data } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('ai_credits_balance')
         .eq('id', user.id)
         .limit(1)

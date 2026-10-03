@@ -15,7 +15,7 @@ export default function AIProgramDetailRoute() {
     queryKey: ['ai_program', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('*')
         .eq('id', id!)
         .single();

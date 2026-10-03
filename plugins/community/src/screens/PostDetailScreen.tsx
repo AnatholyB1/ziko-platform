@@ -26,7 +26,7 @@ export default function PostDetailScreen({ supabase, postId, onBack }: Props) {
 
     setLoadingComments(true);
     const [{ data: postRow }, fetchedComments] = await Promise.all([
-      supabase.from('community_posts').select('content, likes_count').eq('id', postId).single(),
+      supabase.from('ziko_community_posts').select('content, likes_count').eq('id', postId).single(),
       loadComments(supabase, postId),
     ]);
 
@@ -34,7 +34,7 @@ export default function PostDetailScreen({ supabase, postId, onBack }: Props) {
     let likedByMe = false;
     if (user && postId) {
       const { data: like } = await supabase
-        .from('post_likes')
+        .from('ziko_post_likes')
         .select('post_id')
         .eq('post_id', postId)
         .eq('user_id', user.id)

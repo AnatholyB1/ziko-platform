@@ -13,7 +13,7 @@ describe('workout_programs extension columns', () => {
     const coach = await createTestUser('wp-coach');
     createdIds.push(coach.id);
     const { data, error } = await coach.client
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({
         user_id: coach.id,
         name: 'PPL Template',
@@ -31,7 +31,7 @@ describe('workout_programs extension columns', () => {
   it('weeks_data accepts arbitrary JSON shape (no DB CHECK — D-11)', async () => {
     const coach = await createTestUser('wp-zod');
     createdIds.push(coach.id);
-    const { error } = await coach.client.from('workout_programs').insert({
+    const { error } = await coach.client.from('ziko_workout_programs').insert({
       user_id: coach.id,
       name: 'Shape test',
       is_template: true,
@@ -47,13 +47,13 @@ describe('workout_programs extension columns', () => {
 
     // Template owned by coach
     const { data: tpl } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({ user_id: coach.id, name: 'Tpl', is_template: true, created_by_coach_id: coach.id })
       .select('id')
       .single();
     // Fork owned by client
     const { data: fork } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({
         user_id: client.id,
         name: 'Tpl (assigned)',
@@ -66,11 +66,11 @@ describe('workout_programs extension columns', () => {
       .single();
 
     // Delete the template
-    await admin.from('workout_programs').delete().eq('id', tpl!.id);
+    await admin.from('ziko_workout_programs').delete().eq('id', tpl!.id);
 
     // Fork survives with template_source_id = NULL
     const { data: post } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .select('id, template_source_id')
       .eq('id', fork!.id)
       .single();
@@ -85,7 +85,7 @@ describe('workout_programs extension columns', () => {
     createdIds.push(client.id);
 
     const { data: fork } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({
         user_id: client.id,
         name: 'Fork',
@@ -99,7 +99,7 @@ describe('workout_programs extension columns', () => {
     await admin.auth.admin.deleteUser(coach.id);
 
     const { data: post } = await admin
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .select('id, created_by_coach_id, assigned_to_user_id, user_id')
       .eq('id', fork!.id)
       .single();
@@ -115,12 +115,12 @@ describe('workout_programs extension columns', () => {
     const b = await createTestUser('wp-own-b');
     createdIds.push(a.id, b.id);
     const { data: pgm } = await a.client
-      .from('workout_programs')
+      .from('ziko_workout_programs')
       .insert({ user_id: a.id, name: 'A private' })
       .select('id')
       .single();
 
-    const { data, error } = await b.client.from('workout_programs').select('id').eq('id', pgm!.id);
+    const { data, error } = await b.client.from('ziko_workout_programs').select('id').eq('id', pgm!.id);
     expect(error).toBeNull();
     expect(data?.length ?? 0).toBe(0);
   });

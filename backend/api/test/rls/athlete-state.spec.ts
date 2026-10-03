@@ -37,7 +37,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
    * call outside the weekly_focus idempotency index entirely.
    */
   async function seedState(userId: string, statePatch: Record<string, unknown> = {}) {
-    return admin.rpc('record_athlete_decision', {
+    return admin.rpc('ziko_record_athlete_decision', {
       p_user_id: userId,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -59,7 +59,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(seed.data.success).toBe(true);
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('user_id, level, readiness')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -77,7 +77,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     await seedState(b.id, {});
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('user_id')
       .eq('user_id', b.id);
     expect(error).toBeNull();
@@ -89,7 +89,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     createdUserIds.push(a.id);
     await seedState(a.id, {});
 
-    const result = await a.client.from('athlete_state').update({ level: 99 }).eq('user_id', a.id);
+    const result = await a.client.from('ziko_athlete_state').update({ level: 99 }).eq('user_id', a.id);
     expect(result.error).not.toBeNull();
   });
 
@@ -98,7 +98,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     createdUserIds.push(a.id);
     await seedState(a.id, {});
 
-    const result = await admin.from('athlete_state').update({ level: 99 }).eq('user_id', a.id);
+    const result = await admin.from('ziko_athlete_state').update({ level: 99 }).eq('user_id', a.id);
     expect(result.error).not.toBeNull();
   });
 
@@ -107,7 +107,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     // the FK to auth.users is ever reached, so no test user needs cleanup.
     const freshUserId = randomUUID();
 
-    const result = await admin.from('athlete_state').insert({ user_id: freshUserId });
+    const result = await admin.from('ziko_athlete_state').insert({ user_id: freshUserId });
     expect(result.error).not.toBeNull();
   });
 
@@ -116,7 +116,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     createdUserIds.push(a.id);
 
     const anon = getAnonClient();
-    const anonResult = await anon.rpc('record_athlete_decision', {
+    const anonResult = await anon.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -129,7 +129,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     });
     expect(anonResult.error).not.toBeNull();
 
-    const authedResult = await a.client.rpc('record_athlete_decision', {
+    const authedResult = await a.client.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'onboarding_profile',
       p_week_of: null,
@@ -156,7 +156,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(rpcResult.data.success).toBe(true);
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('level, readiness, tier, points')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -170,7 +170,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     const a = await createTestUser('athlete-state-self-heal');
     createdUserIds.push(a.id);
 
-    const before = await admin.from('athlete_state').select('user_id').eq('user_id', a.id);
+    const before = await admin.from('ziko_athlete_state').select('user_id').eq('user_id', a.id);
     expect(before.error).toBeNull();
     expect(before.data?.length ?? 0).toBe(0);
 
@@ -178,7 +178,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(seed.error).toBeNull();
     expect(seed.data.success).toBe(true);
 
-    const { data, error } = await a.client.from('athlete_state').select('user_id').eq('user_id', a.id);
+    const { data, error } = await a.client.from('ziko_athlete_state').select('user_id').eq('user_id', a.id);
     expect(error).toBeNull();
     expect(data?.length).toBe(1);
   });
@@ -196,7 +196,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(second.data.success).toBe(true);
 
     const { data, error } = await a.client
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('level, tier, points')
       .eq('user_id', a.id);
     expect(error).toBeNull();
@@ -211,7 +211,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
 
     const weekOf = '2026-09-07';
 
-    const first = await admin.rpc('record_athlete_decision', {
+    const first = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'weekly_focus',
       p_week_of: weekOf,
@@ -225,7 +225,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(first.error).toBeNull();
     expect(first.data.success).toBe(true);
 
-    const second = await admin.rpc('record_athlete_decision', {
+    const second = await admin.rpc('ziko_record_athlete_decision', {
       p_user_id: a.id,
       p_decision_type: 'weekly_focus',
       p_week_of: weekOf,
@@ -241,7 +241,7 @@ describe.skipIf(!RUN_DB)('athlete_state — RLS reads, write lockdown, RPC role 
     expect(second.data.error).toBe('duplicate');
 
     const { data, error } = await admin
-      .from('athlete_state')
+      .from('ziko_athlete_state')
       .select('level, points, tier')
       .eq('user_id', a.id);
     expect(error).toBeNull();

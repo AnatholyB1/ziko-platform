@@ -20,7 +20,7 @@ const OFF_PRODUCTION_URL = (barcode: string) =>
 export async function getOrFetchProduct(barcode: string, supabase: any): Promise<FoodProduct | null> {
   // 1. Check Supabase cache first
   const { data: cached } = await supabase
-    .from('food_products')
+    .from('ziko_food_products')
     .select('*')
     .eq('barcode', barcode)
     .maybeSingle();
@@ -56,7 +56,7 @@ export async function getOrFetchProduct(barcode: string, supabase: any): Promise
 
   // 4. Insert into cache (best-effort, upsert on conflict to handle race conditions)
   const { data: inserted } = await supabase
-    .from('food_products')
+    .from('ziko_food_products')
     .upsert(product, { onConflict: 'barcode' })
     .select()
     .maybeSingle();

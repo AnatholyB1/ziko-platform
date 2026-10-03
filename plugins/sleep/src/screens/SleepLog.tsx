@@ -82,7 +82,7 @@ export default function SleepLog({ supabase }: { supabase: any }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
-      const { data, error } = await supabase.from('sleep_logs').insert({
+      const { data, error } = await supabase.from('ziko_sleep_logs').insert({
         user_id: user.id,
         date, bedtime, wake_time: wakeTime,
         duration_hours: parseFloat((duration / 60).toFixed(2)), quality,

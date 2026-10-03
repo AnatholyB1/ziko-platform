@@ -4,7 +4,7 @@
  *
  * Usage:
  *   node scripts/portfolio-migration/10-storage-auth-tests.mjs --project-ref <scratch|portfolio>
- *        --mode full|smoke [--confirm-ref <ref>] [--with-codemod-patch <path>]
+ *        --mode full|smoke [--confirm-ref <ref>]
  *        [--report-out <path>] [--bucket-map <path>]
  *
  * Throwaway athlete/coach/outsider users are created with the Admin API, signed in with
@@ -15,7 +15,7 @@
  * full  : whole matrix, scratch only (writes objects, links, revocations).
  * smoke : reads, denials and signed-URL issuance only (no storage object is written); the only
  *         project allowed with --confirm-ref besides scratch is portfolio.
- * Exit codes: 0 all non-deferred cases matched; 1 a case failed or the run was refused; 2 bad args.
+ * Exit codes: 0 all cases matched; 1 a case failed or the run was refused; 2 bad args.
  */
 
 import { randomBytes } from 'node:crypto';
@@ -54,7 +54,7 @@ Required:
 Conditional:
   --confirm-ref <ref>        Required for portfolio (must equal the portfolio ref; smoke only).
 Optional:
-  --with-codemod-patch <p>   git apply the bucket codemod patch before child runs, reverse after.
+  --with-codemod-patch <p>   OBSOLETE: codemods are in the tree; exits 2 if used.
   --report-out <path>        Write a PII-free JSON report.
   --bucket-map <path>        bucket-map.generated.json (default next to this script).
   --help, -h                 Show this help.
@@ -100,7 +100,7 @@ const BOTH = ['full', 'smoke'];
 
 /**
  * Case = { id, surface, bucket (SOURCE id), actor, op, expect, modes, ...params }.
- * expect: allow | deny | reject | baseline | deferred-table-codemod.
+ * expect: allow | deny | reject | baseline.
  * Ops that mutate (WRITE_OPS, signed-upload, service-upload, baseline-remove) are full-only.
  * Order matters: later cases depend on earlier uploads, link and revoke.
  */
@@ -180,13 +180,17 @@ export const MATRIX = Object.freeze([
   mk('cv-revoke', 'plugin-coach', 'coach-videos', 'service', 'revoke', 'allow', FULL),
   mk('cv-coach-read-revoked', 'plugin-coach', 'coach-videos', 'C', 'read', 'deny', FULL, { folder: 'A', file: 'second.mp4' }),
 
-  // backend coach routes: every one queries an unprefixed table (table codemod not in Phase 5)
-  mk('bk-clients-links-me', 'backend', 'coach-kyc', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'GET /coach/clients/links/me' }),
-  mk('bk-videos-upload-url', 'backend', 'coach-videos', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'POST /coach/videos/upload-url' }),
-  mk('bk-videos-signed-url', 'backend', 'coach-videos', 'C', 'route-call', 'deferred-table-codemod', FULL, { route: 'GET /coach/videos/:videoId/signed-url' }),
-  mk('bk-videos-audio-url', 'backend', 'coach-videos', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'GET /coach/videos/annotations/:annotationId/audio-url' }),
-  mk('bk-exercises-media-url', 'backend', 'coach-exercises', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'GET /coach/exercises/:id/media-url' }),
-  mk('bk-imports-create', 'backend', 'ai-imports', 'A', 'route-call', 'deferred-table-codemod', FULL, { route: 'POST /coach/imports' }),
+  // backend coach routes (06-09): real calls against fixture rows inserted by seedRouteFixtures
+  mk('bk-clients-links-me', 'backend', 'coach-kyc', 'A', 'route-call', 'allow', BOTH, { route: 'GET /coach/clients/links/me' }),
+  mk('bk-videos-upload-url', 'backend', 'coach-videos', 'A', 'route-call', 'allow', BOTH, { route: 'POST /coach/videos/upload-url' }),
+  mk('bk-videos-signed-url', 'backend', 'coach-videos', 'C', 'route-call', 'allow', BOTH, { route: 'GET /coach/videos/:videoId/signed-url' }),
+  mk('bk-videos-signed-url-foreign', 'backend', 'coach-videos', 'D', 'route-call', 'deny', BOTH, { route: 'GET /coach/videos/:videoId/signed-url' }),
+  mk('bk-videos-audio-url', 'backend', 'coach-videos', 'C', 'route-call', 'allow', BOTH, { route: 'GET /coach/videos/annotations/:annotationId/audio-url' }),
+  mk('bk-videos-audio-url-foreign', 'backend', 'coach-videos', 'D', 'route-call', 'deny', BOTH, { route: 'GET /coach/videos/annotations/:annotationId/audio-url' }),
+  mk('bk-exercises-media-url', 'backend', 'coach-exercises', 'A', 'route-call', 'allow', BOTH, { route: 'GET /coach/exercises/:id/media-url' }),
+  mk('bk-exercises-media-url-foreign-athlete', 'backend', 'coach-exercises', 'B', 'route-call', 'deny', BOTH, { route: 'GET /coach/exercises/:id/media-url' }),
+  mk('bk-exercises-media-url-foreign-coach', 'backend', 'coach-exercises', 'D', 'route-call', 'deny', BOTH, { route: 'GET /coach/exercises/:id/media-url' }),
+  mk('bk-imports-create', 'backend', 'ai-imports', 'C', 'route-call', 'allow', BOTH, { route: 'POST /coach/imports' }),
 ]);
 
 export function casesFor(mode) {
@@ -200,15 +204,13 @@ export function casesFor(mode) {
 // ---------------------------------------------------------------------------
 
 /**
- * results: [{ id, status }] with status in allow|deny|reject|baseline|deferred-table-codemod|error.
- * A case passes when status === expect. Deferred cases (expect deferred-table-codemod and observed
- * the same) are counted separately and never as pass.
+ * results: [{ id, status }] with status in allow|deny|reject|baseline|error.
+ * A case passes when status === expect. There are no deferred cases anymore (06-09).
  */
 export function evaluateMatrix(results, { cases = casesFor('full') } = {}) {
   const byId = new Map((results ?? []).map((r) => [r.id, r]));
   let passed = 0;
   let failed = 0;
-  let deferred = 0;
   let missing = 0;
   const failures = [];
   const perCase = [];
@@ -217,24 +219,17 @@ export function evaluateMatrix(results, { cases = casesFor('full') } = {}) {
     if (!r) {
       missing += 1;
       failures.push({ id: c.id, reason: 'missing' });
-      perCase.push({ id: c.id, observed: null, ok: false, deferred: false });
-      continue;
-    }
-    const isDeferred = c.expect === 'deferred-table-codemod';
-    const match = r.status === c.expect;
-    if (isDeferred && match) {
-      deferred += 1;
-      perCase.push({ id: c.id, observed: r.status, ok: true, deferred: true });
-    } else if (match) {
+      perCase.push({ id: c.id, observed: null, ok: false });
+    } else if (r.status === c.expect) {
       passed += 1;
-      perCase.push({ id: c.id, observed: r.status, ok: true, deferred: false });
+      perCase.push({ id: c.id, observed: r.status, ok: true });
     } else {
       failed += 1;
       failures.push({ id: c.id, reason: `expected ${c.expect}, observed ${r.status}` });
-      perCase.push({ id: c.id, observed: r.status, ok: false, deferred: false });
+      perCase.push({ id: c.id, observed: r.status, ok: false });
     }
   }
-  return { ok: failed === 0 && missing === 0, passed, failed, deferred, missing, failures, perCase };
+  return { ok: failed === 0 && missing === 0, passed, failed, missing, failures, perCase };
 }
 
 export function testEmail(runId, role) {
@@ -249,10 +244,9 @@ export function buildAuthReport({ targetRef, mode, cases, evaluation }) {
   const byId = new Map(evaluation.perCase.map((p) => [p.id, p]));
   const caseRows = [];
   for (const c of cases) {
-    const p = byId.get(c.id) ?? { observed: null, ok: false, deferred: false };
-    const s = (perSurface[c.surface] ??= { pass: 0, fail: 0, deferred: 0 });
-    if (p.deferred) s.deferred += 1;
-    else if (p.ok) s.pass += 1;
+    const p = byId.get(c.id) ?? { observed: null, ok: false };
+    const s = (perSurface[c.surface] ??= { pass: 0, fail: 0 });
+    if (p.ok) s.pass += 1;
     else s.fail += 1;
     caseRows.push({
       id: c.id,
@@ -263,7 +257,7 @@ export function buildAuthReport({ targetRef, mode, cases, evaluation }) {
       expect: c.expect,
       observed: p.observed,
       ok: p.ok,
-      ...(p.deferred && c.route ? { route: c.route } : {}),
+      ...(c.route ? { route: c.route } : {}),
     });
   }
   const report = {
@@ -274,11 +268,10 @@ export function buildAuthReport({ targetRef, mode, cases, evaluation }) {
     counts: {
       passed: evaluation.passed,
       failed: evaluation.failed,
-      deferred: evaluation.deferred,
       missing: evaluation.missing,
     },
     perSurface,
-    deferredRoutes: caseRows.filter((r) => r.route).map((r) => ({ id: r.id, route: r.route })),
+    routeCases: caseRows.filter((r) => r.route).map((r) => ({ id: r.id, route: r.route })),
     cases: caseRows,
   };
   assertReportSafe(report);
@@ -326,7 +319,7 @@ export function classifyError(err) {
 
 /** Map an HTTP status of a route handler to a matrix status. */
 export function statusFromHttp(code) {
-  if (code === 200) return 'allow';
+  if (code === 200 || code === 201) return 'allow';
   if (code === 401 || code === 403) return 'deny';
   if (code === 400) return 'reject';
   return 'error';
@@ -361,19 +354,6 @@ function runChild(cmd, args, { cwd = REPO_ROOT, env = process.env, timeoutMs = 3
       resolve({ code: 1, stdout, stderr: String(err.message) });
     });
   });
-}
-
-// ---- codemod patch (needed because backend/web still name the old buckets until Phase 6) ----
-
-async function patchFileList(patch) {
-  const r = await runChild('git', ['apply', '--numstat', patch]);
-  if (r.code !== 0) throw new Error('git apply --numstat failed for the codemod patch');
-  return r.stdout.split('\n').filter(Boolean).map((l) => l.split('\t')[2]);
-}
-
-async function assertTreeClean(files, what) {
-  const r = await runChild('git', ['status', '--porcelain', '--', ...files]);
-  if (r.code !== 0 || r.stdout.trim() !== '') throw new Error(`${what}: working tree is not clean for the patch file list`);
 }
 
 // ---- setup / cleanup (service client lives only in these functions) ----
@@ -430,6 +410,18 @@ async function cleanup(state, admin, targetRef) {
     } catch (err) {
       problems.push(`object cleanup failed: ${safeMessage(err)}`);
     }
+    for (const [table, col] of [
+      ['ziko_coach_video_annotations', 'coach_id'],
+      ['ziko_coach_client_videos', 'athlete_id'],
+      ['ziko_coach_exercises', 'coach_id'],
+      ['ziko_ai_imports', 'user_id'],
+    ]) {
+      try {
+        await runSql(targetRef, `DELETE FROM public.${table} WHERE ${col} IN (${inList}) RETURNING 1 AS n`);
+      } catch (err) {
+        problems.push(`${table} cleanup failed: ${safeMessage(err)}`);
+      }
+    }
     try {
       await runSql(
         targetRef,
@@ -456,11 +448,58 @@ async function cleanup(state, admin, targetRef) {
         `SELECT count(*)::int AS n FROM storage.objects WHERE split_part(name, '/', 1) IN (${inList})`,
       );
       if (Number(objs[0]?.n) !== 0) problems.push(`${objs[0]?.n} test objects remain`);
+      for (const [table, col] of [
+        ['ziko_coach_client_links', 'coach_id'],
+        ['ziko_coach_client_videos', 'athlete_id'],
+        ['ziko_coach_video_annotations', 'coach_id'],
+        ['ziko_coach_exercises', 'coach_id'],
+        ['ziko_ai_imports', 'user_id'],
+      ]) {
+        const left = await runSql(targetRef, `SELECT count(*)::int AS n FROM public.${table} WHERE ${col} IN (${inList})`);
+        if (Number(left[0]?.n) !== 0) problems.push(`${left[0]?.n} ${table} fixture rows remain`);
+      }
     }
   } catch (err) {
     problems.push(`cleanup assertion failed: ${safeMessage(err)}`);
   }
   return problems;
+}
+
+const sqlStr = (v) => `'${String(v).replace(/'/g, "''")}'`;
+
+/**
+ * Fixture rows for the 06-09 backend route cases (test user ids only; removed by cleanup).
+ * Runs after the storage cases, so in full mode the link lifecycle (cv-link, cv-revoke) is finished
+ * and a fresh active C->A link is inserted. Signing needs an existing object: full mode uses the
+ * objects the matrix uploaded/seeded; smoke mode (no object is written) uses an existing object of
+ * the bucket. Returns ids for the backend child (never credentials).
+ */
+async function seedRouteFixtures(state, targetRef, mode) {
+  const A = state.users.A.id;
+  const C = state.users.C.id;
+  const videoPath = mode === 'full' ? `${A}/own.mp4` : state.existing['coach-videos'] ?? `${A}/no-existing-object.mp4`;
+  const audioPath = mode === 'full' ? `${A}/second.mp4` : videoPath;
+  const photoPath = mode === 'full' ? `${C}/seed.png` : state.existing['coach-exercises'] ?? `${C}/no-existing-object.png`;
+  await runSql(
+    targetRef,
+    `INSERT INTO public.ziko_coach_client_links (coach_id, client_id) VALUES ('${C}', '${A}') RETURNING 1 AS n`,
+  );
+  const video = await runSql(
+    targetRef,
+    `INSERT INTO public.ziko_coach_client_videos (athlete_id, coach_id, storage_path, title) VALUES ('${A}', '${C}', ${sqlStr(videoPath)}, 'storage test') RETURNING id`,
+  );
+  const videoId = video[0]?.id;
+  if (!videoId) throw new Error('route fixture: video insert returned no id');
+  const ann = await runSql(
+    targetRef,
+    `INSERT INTO public.ziko_coach_video_annotations (video_id, coach_id, timestamp_s, type, content, audio_path) VALUES ('${videoId}', '${C}', 1, 'voice', 'storage test', ${sqlStr(audioPath)}) RETURNING id`,
+  );
+  const ex = await runSql(
+    targetRef,
+    `INSERT INTO public.ziko_coach_exercises (coach_id, name, category, photo_path) VALUES ('${C}', 'storage test', 'Autre', ${sqlStr(photoPath)}) RETURNING id`,
+  );
+  if (!ann[0]?.id || !ex[0]?.id) throw new Error('route fixture: annotation/exercise insert returned no id');
+  return { videoId, annotationId: ann[0].id, exerciseId: ex[0].id };
 }
 
 // ---- storage-level case execution (user clients only) ----
@@ -564,17 +603,8 @@ async function runLive(run, opts) {
     existing: {},
   };
   const results = [];
-  let patchFiles = null;
-  let patchApplied = false;
   let problems = [];
   try {
-    if (opts.patch) {
-      patchFiles = await patchFileList(opts.patch);
-      await assertTreeClean(patchFiles, 'before codemod patch');
-      const r = await runChild('git', ['apply', opts.patch]);
-      if (r.code !== 0) throw new Error('git apply of the codemod patch failed');
-      patchApplied = true;
-    }
     if (mode === 'smoke') {
       for (const b of Object.keys(state.buckets)) {
         const rows = await runSql(targetRef, `SELECT name FROM storage.objects WHERE bucket_id = '${state.buckets[b]}' ORDER BY name LIMIT 1`);
@@ -582,6 +612,21 @@ async function runLive(run, opts) {
       }
     }
     await createUsers(state, { admin, createClient, url, publishable: keys.publishable });
+    if (mode === 'smoke') {
+      // An empty route bucket (e.g. no coach videos migrated) cannot be signed against: seed one tiny object
+      // under a test user's folder; cleanup() removes every object in a test user's folder.
+      const routeSeeds = [
+        ['coach-videos', 'A', 'smoke-route-fixture.mp4', 'video/mp4'],
+        ['coach-exercises', 'C', 'smoke-route-fixture.png', 'image/png'],
+      ];
+      for (const [b, owner, file, mime] of routeSeeds) {
+        if (state.existing[b] || !state.buckets[b]) continue;
+        const name = `${state.users[owner].id}/${file}`;
+        const { error } = await admin.storage.from(state.buckets[b]).upload(name, bytesFor(mime), { contentType: mime, upsert: true });
+        if (error) throw new Error(`smoke route fixture upload failed for ${state.buckets[b]}: ${safeMessage(error)}`);
+        state.existing[b] = name;
+      }
+    }
     if (mode === 'full') await seedObjects(state, admin);
 
     for (const c of cases) {
@@ -595,6 +640,7 @@ async function runLive(run, opts) {
       if (status !== null) results.push({ id: c.id, status });
     }
 
+    const route = await seedRouteFixtures(state, targetRef, mode);
     await writeFixture(FIXTURE_PATH, {
       url,
       publishable: keys.publishable,
@@ -603,6 +649,7 @@ async function runLive(run, opts) {
       users: state.users,
       buckets: state.buckets,
       existing: state.existing,
+      route,
     });
     const childEnv = {
       ...process.env,
@@ -642,21 +689,6 @@ async function runLive(run, opts) {
     } catch (err) {
       problems = [`cleanup threw: ${safeMessage(err)}`];
     }
-    if (patchApplied) {
-      const r = await runChild('git', ['apply', '-R', opts.patch]);
-      let clean = false;
-      try {
-        await assertTreeClean(patchFiles, 'after codemod patch reverse');
-        clean = r.code === 0;
-      } catch {
-        clean = false;
-      }
-      if (!clean) {
-        console.error('FATAL: codemod patch could not be reversed cleanly; fix the working tree manually');
-        process.exitCode = 1;
-        problems.push('codemod patch left applied');
-      }
-    }
   }
 
   const evaluation = evaluateMatrix(results, { cases });
@@ -682,6 +714,10 @@ export async function main(argv) {
     console.log(HELP);
     return 0;
   }
+  if (args.withCodemodPatch !== undefined && args.withCodemodPatch !== null) {
+    console.error('obsolete: codemods are in the tree');
+    return 2;
+  }
   let run;
   try {
     run = resolveAuthRun(args);
@@ -693,15 +729,14 @@ export async function main(argv) {
     throw err;
   }
   const report = await runLive(run, {
-    patch: args.withCodemodPatch ? path.resolve(args.withCodemodPatch) : null,
     bucketMap: args.bucketMap ? path.resolve(args.bucketMap) : DEFAULT_MAP,
   });
   if (args.reportOut) await writeFile(args.reportOut, `${JSON.stringify(report, null, 2)}\n`);
   console.log(
     `storage auth ${report.mode} on ${report.target_ref}: ${report.passed ? 'PASS' : 'FAIL'} ` +
-      `(pass ${report.counts.passed}, fail ${report.counts.failed}, deferred ${report.counts.deferred}, missing ${report.counts.missing})`,
+      `(pass ${report.counts.passed}, fail ${report.counts.failed}, missing ${report.counts.missing})`,
   );
-  for (const [s, v] of Object.entries(report.perSurface)) console.log(`  ${s}: pass ${v.pass}, fail ${v.fail}, deferred ${v.deferred}`);
+  for (const [s, v] of Object.entries(report.perSurface)) console.log(`  ${s}: pass ${v.pass}, fail ${v.fail}`);
   for (const c of report.cases.filter((x) => !x.ok)) console.log(`  FAIL ${c.id}: expected ${c.expect}, observed ${c.observed}`);
   return report.passed ? 0 : 1;
 }

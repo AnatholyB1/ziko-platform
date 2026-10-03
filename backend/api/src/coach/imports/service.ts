@@ -24,6 +24,7 @@ import { parseExcel } from './parse/excel.js';
 import { parseWord } from './parse/word.js';
 import { parseWithVision, parseWithText, NoObjectGeneratedError } from './parse/claude.js';
 import type { CreateImportBody, CommitImportBody } from './types.js';
+import { STORAGE_BUCKETS } from '../../config/buckets.js';
 
 // Vercel max duration for the parse route (D-15, IMPORT-05)
 export const maxDuration = 60;
@@ -122,7 +123,7 @@ importsRouter.post('/', async (c) => {
 
     // Generate signed upload URL (private bucket, D-21)
     const { data, error: storageError } = await adminSupabase.storage
-      .from('ai-imports')
+      .from(STORAGE_BUCKETS.aiImports)
       .createSignedUploadUrl(storagePath);
 
     if (storageError || !data) {
@@ -260,7 +261,7 @@ importsRouter.post('/:id/parse', async (c) => {
         // Step 1: Download file from Supabase Storage
         const storagePath = importRow.file_url; // set by POST / handler
         const { data: blobData, error: downloadError } = await adminSupabase.storage
-          .from('ai-imports')
+          .from(STORAGE_BUCKETS.aiImports)
           .download(storagePath);
 
         if (downloadError || !blobData) {

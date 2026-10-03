@@ -60,7 +60,7 @@ export default function CardioLog({ supabase }: { supabase: any }) {
       };
 
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .insert(entry)
         .select('*')
         .single();

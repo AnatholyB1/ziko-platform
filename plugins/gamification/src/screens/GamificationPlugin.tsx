@@ -151,7 +151,7 @@ export default function GamificationPlugin({ supabase }: { supabase: any }) {
     enabled: !!userId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_gamification')
+        .from('ziko_user_gamification')
         .select('xp, level, coins, current_streak, longest_streak, equipped_title, equipped_badge')
         .eq('user_id', userId)
         .single();
@@ -167,11 +167,11 @@ export default function GamificationPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       const [shopRes, inventoryRes] = await Promise.all([
         supabase
-          .from('shop_items')
+          .from('ziko_shop_items')
           .select('id, name, category, icon')
           .eq('category', 'badge'),
         supabase
-          .from('user_inventory')
+          .from('ziko_user_inventory')
           .select('item_id')
           .eq('user_id', userId),
       ]);

@@ -71,7 +71,7 @@ export default function StretchingSession({ supabase }: { supabase: any }) {
     if (isLast) {
       // Save log
       try {
-        const { data: logData } = await supabase.from('stretching_logs').insert({
+        const { data: logData } = await supabase.from('ziko_stretching_logs').insert({
           routine_id: activeRoutine.id,
           routine_name: activeRoutine.name,
           duration_seconds: activeRoutine.exercises.reduce((s, e) => s + e.duration_seconds, 0),

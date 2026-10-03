@@ -90,7 +90,7 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
     queryKey: ['ai_program_active', userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
@@ -104,7 +104,7 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
     queryKey: ['ai_programs', userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -117,7 +117,7 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
     queryKey: ['user_profile', userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('goal, weight_kg')
         .eq('user_id', userId)
         .maybeSingle();
@@ -133,14 +133,14 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
     mutationFn: async (programId: string) => {
       // Step 1: clear all active for this user
       const { error: e1 } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .update({ is_active: false })
         .eq('user_id', userId);
       if (e1) throw new Error(e1.message);
 
       // Step 2: activate selected program
       const { error: e2 } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .update({ is_active: true })
         .eq('id', programId);
       if (e2) throw new Error(e2.message);

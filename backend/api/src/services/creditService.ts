@@ -57,11 +57,11 @@ function getFirstOfMonthUTC(): string {
 export async function getBalance(userId: string): Promise<{ balance: number }> {
   // Upsert creates the row on first call; ignoreDuplicates preserves the existing balance
   await supabase
-    .from('user_ai_credits')
+    .from('ziko_user_ai_credits')
     .upsert({ user_id: userId, balance: 0 }, { onConflict: 'user_id', ignoreDuplicates: true });
 
   const { data, error } = await supabase
-    .from('user_ai_credits')
+    .from('ziko_user_ai_credits')
     .select('balance')
     .eq('user_id', userId)
     .single();
@@ -92,7 +92,7 @@ export async function earnCredits(
 ): Promise<{ credited: boolean }> {
   // Use SECURITY DEFINER RPC — direct INSERT fails with publishable key due to RLS
   // (auth.uid() is null on server-side clients without a user JWT)
-  const { data, error } = await supabase.rpc('earn_ai_credits', {
+  const { data, error } = await supabase.rpc('ziko_earn_ai_credits', {
     p_user_id: userId,
     p_source: source,
     p_idempotency_key: idempotencyKey,
@@ -126,7 +126,7 @@ export async function deductCredits(
 ): Promise<{ success: boolean; balance: number; required?: number }> {
   const p_cost = (costOverride !== undefined && costOverride > 0) ? costOverride : CREDIT_COSTS[action];
 
-  const { data, error } = await supabase.rpc('deduct_ai_credits', {
+  const { data, error } = await supabase.rpc('ziko_deduct_ai_credits', {
     p_user_id: userId,
     p_cost,
     p_action_type: action,
@@ -161,7 +161,7 @@ export async function grantMonthlyPremiumCredits(
   userId: string,
   amount: number = PREMIUM_MONTHLY_GRANT,
 ): Promise<{ granted: boolean }> {
-  const { data, error } = await supabase.rpc('grant_premium_credits', {
+  const { data, error } = await supabase.rpc('ziko_grant_premium_credits', {
     p_user_id: userId,
     p_amount: amount,
   });
@@ -198,7 +198,7 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
 
   // Count today's earn transactions (to compute earned bonus)
   const { count: earnCount } = await supabase
-    .from('ai_credit_transactions')
+    .from('ziko_ai_credit_transactions')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('type', 'earn')
@@ -213,7 +213,7 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
     // Monthly quota
     const firstOfMonth = getFirstOfMonthUTC();
     const { count: monthlyUsed } = await supabase
-      .from('ai_credit_transactions')
+      .from('ziko_ai_credit_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('source', 'program')
@@ -226,7 +226,7 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
     // Daily quota for chat and scan
     const quotaConfig = DAILY_QUOTAS[action as keyof typeof DAILY_QUOTAS];
     const { count: usedToday } = await supabase
-      .from('ai_credit_transactions')
+      .from('ziko_ai_credit_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('source', action)
@@ -254,7 +254,7 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
  */
 export async function trackQuotaUsage(userId: string, source: string, idempotencyKey: string): Promise<void> {
   try {
-    await supabase.from('ai_credit_transactions').insert({
+    await supabase.from('ziko_ai_credit_transactions').insert({
       user_id: userId,
       type: 'quota',
       amount: 0,
@@ -280,7 +280,7 @@ export async function getBalanceSummary(userId: string): Promise<BalanceSummary>
   const [balanceResult, earnResult] = await Promise.all([
     getBalance(userId),
     supabase
-      .from('ai_credit_transactions')
+      .from('ziko_ai_credit_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('type', 'earn')

@@ -156,7 +156,7 @@ export async function applyWeeklyDecision(
   // line ~129), so this rides the existing atomic write.
   const rollingSummary = composeRollingSummary(context.state.rolling_summary, context, decision);
 
-  const { data, error } = await db.rpc('record_athlete_decision', {
+  const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'weekly_focus',
     // p_week_of is context.weekOf, always — captured by context.ts from
@@ -235,7 +235,7 @@ export async function applyWeeklyDecision(
   // opex and must never touch the athlete's credit balance. The `source`
   // column is what makes that distinction queryable.
   Promise.resolve(
-    db.from('ai_cost_log').insert({
+    db.from('ziko_ai_cost_log').insert({
       user_id: userId,
       model: modelId,
       input_tokens: usage.inputTokens,
@@ -287,7 +287,7 @@ export async function runWeeklyReview(
   // and the cron land in the same window.
   const db = clientForUser(userToken);
   const { data: existing } = await db
-    .from('athlete_decisions')
+    .from('ziko_athlete_decisions')
     .select('id')
     .eq('user_id', userId)
     .eq('decision_type', 'weekly_focus')

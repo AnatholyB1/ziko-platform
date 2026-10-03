@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get('path');
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { data, error } = await supabase.storage
-    .from('coach-kyc')
+    .from(STORAGE_BUCKETS.coachKyc)
     .createSignedUrl(path, 300); // 5-minute window
 
   if (error || !data?.signedUrl) {

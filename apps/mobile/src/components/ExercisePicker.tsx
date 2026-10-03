@@ -12,7 +12,7 @@ import { MotiView } from 'moti';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import WSHeader from '../components/WSHeader';
@@ -48,7 +48,7 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
     queryKey: ['exercises', 'v2', 'picker'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exercises')
+        .from('ziko_exercises')
         .select('id, name, muscle_groups, equipment, target_muscle, image')
         .order('name')
         .limit(200);
@@ -242,7 +242,7 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
             {filteredExercises.map((ex, index) => {
               const isSelected = selectedIds.includes(ex.id);
               const publicThumbUrl = ex.image
-                ? supabase.storage.from('exercise-media').getPublicUrl(ex.image).data.publicUrl
+                ? supabase.storage.from(STORAGE_BUCKETS.exerciseMedia).getPublicUrl(ex.image).data.publicUrl
                 : null;
               return (
                 <MotiView

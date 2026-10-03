@@ -34,7 +34,7 @@ describe('grantMonthlyPremiumCredits (CRED-03, T-04-05)', () => {
     // is what actually proves D-02's single-source-of-truth property holds
     // at the call site; a copy-pasted literal here would let the two drift
     // apart silently.
-    expect(mockRpc).toHaveBeenCalledWith('grant_premium_credits', {
+    expect(mockRpc).toHaveBeenCalledWith('ziko_grant_premium_credits', {
       p_user_id: 'user-1',
       p_amount: PREMIUM_MONTHLY_GRANT,
     });
@@ -45,7 +45,7 @@ describe('grantMonthlyPremiumCredits (CRED-03, T-04-05)', () => {
 
     await grantMonthlyPremiumCredits('user-1', 50);
 
-    expect(mockRpc).toHaveBeenCalledWith('grant_premium_credits', {
+    expect(mockRpc).toHaveBeenCalledWith('ziko_grant_premium_credits', {
       p_user_id: 'user-1',
       p_amount: 50,
     });
@@ -77,8 +77,8 @@ describe('grantMonthlyPremiumCredits (CRED-03, T-04-05)', () => {
     await grantMonthlyPremiumCredits('user-1');
 
     expect(mockRpc).toHaveBeenCalledTimes(1);
-    expect(mockRpc).toHaveBeenCalledWith('grant_premium_credits', expect.any(Object));
-    expect(mockRpc).not.toHaveBeenCalledWith('earn_ai_credits', expect.anything());
-    expect(mockRpc).not.toHaveBeenCalledWith('deduct_ai_credits', expect.anything());
+    expect(mockRpc).toHaveBeenCalledWith('ziko_grant_premium_credits', expect.any(Object));
+    expect(mockRpc).not.toHaveBeenCalledWith('ziko_earn_ai_credits', expect.anything());
+    expect(mockRpc).not.toHaveBeenCalledWith('ziko_deduct_ai_credits', expect.anything());
   });
 });

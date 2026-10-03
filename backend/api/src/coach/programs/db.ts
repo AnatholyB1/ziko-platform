@@ -25,7 +25,7 @@ export async function listPrograms(
 ): Promise<{ programs: any[] }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .select('id, name, description, goal, weeks_count, folder_id, is_template, created_by_coach_id, created_at, updated_at')
     .or(`and(created_by_coach_id.eq.${coachId},is_template.eq.true),and(is_template.eq.true,created_by_coach_id.is.null)`)
     .order('created_at', { ascending: false });
@@ -41,7 +41,7 @@ export async function createProgram(
 ): Promise<any> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .insert({
       user_id: coachId,
       name: body.name,
@@ -69,7 +69,7 @@ export async function getProgram(
 ): Promise<any | null> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .select('*')
     .eq('id', id)
     .maybeSingle();
@@ -81,7 +81,7 @@ export async function getProgram(
 
   // Build weeks_data from legacy program_workouts + program_exercises tables
   const { data: workouts, error: woErr } = await db
-    .from('program_workouts')
+    .from('ziko_program_workouts')
     .select('id, name, day_of_week, order_index')
     .eq('program_id', id)
     .order('order_index', { ascending: true });
@@ -90,8 +90,8 @@ export async function getProgram(
 
   const workoutIds = workouts.map((w: any) => w.id);
   const { data: exercises, error: exErr } = await db
-    .from('program_exercises')
-    .select('workout_id, exercise_id, sets, reps, rest_seconds, notes, order_index, exercises(name)')
+    .from('ziko_program_exercises')
+    .select('workout_id, exercise_id, sets, reps, rest_seconds, notes, order_index, exercises:ziko_exercises(name)')
     .in('workout_id', workoutIds)
     .order('order_index', { ascending: true });
   if (exErr) throw new Error(exErr.message);
@@ -141,7 +141,7 @@ export async function updateProgram(
 
   // Allow update if coach created it OR if it's a client's own program (is_coach_of via RLS 059)
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .update(updates)
     .eq('id', id)
     .or(`created_by_coach_id.eq.${coachId},created_by_coach_id.is.null`)
@@ -159,7 +159,7 @@ export async function deleteProgram(
 ): Promise<{ deleted: boolean }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .delete()
     .eq('id', id)
     .eq('created_by_coach_id', coachId)
@@ -182,7 +182,7 @@ export async function assignProgram(
 
   // Fetch template — WHERE created_by_coach_id=coachId guards IDOR (T-27-04-01)
   const { data: template, error: fetchErr } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .select('name, description, goal, weeks_count, weeks_data')
     .eq('id', templateId)
     .eq('created_by_coach_id', coachId)
@@ -195,7 +195,7 @@ export async function assignProgram(
   await Promise.all(
     clientIds.map((clientId) =>
       db
-        .from('workout_programs')
+        .from('ziko_workout_programs')
         .insert({
           user_id: coachId,
           created_by_coach_id: coachId,
@@ -224,7 +224,7 @@ export async function duplicateProgram(
   const db = createUserClient(jwt);
 
   const { data: original, error: fetchErr } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .select('*')
     .eq('id', id)
     .maybeSingle();
@@ -232,7 +232,7 @@ export async function duplicateProgram(
   if (!original) throw new Error('Program not found');
 
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .insert({
       user_id: coachId,
       name: `${original.name} (copie)`,
@@ -257,7 +257,7 @@ export async function listFolders(
 ): Promise<{ folders: any[] }> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_program_folders')
+    .from('ziko_coach_program_folders')
     .select('*')
     .eq('coach_id', coachId)
     .order('name', { ascending: true });
@@ -273,7 +273,7 @@ export async function createFolder(
 ): Promise<any> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_program_folders')
+    .from('ziko_coach_program_folders')
     .insert({ coach_id: coachId, name: body.name })
     .select()
     .single();
@@ -294,7 +294,7 @@ export async function searchExercises(
 
   // Query 1: global exercises library
   const { data: globalData, error: globalError } = await db
-    .from('exercises')
+    .from('ziko_exercises')
     .select('id, name, category, muscle_groups')
     .ilike('name', `%${query}%`)
     .limit(10);
@@ -302,7 +302,7 @@ export async function searchExercises(
 
   // Query 2: coach's custom exercises
   const { data: customData, error: customError } = await db
-    .from('coach_exercises')
+    .from('ziko_coach_exercises')
     .select('id, name, category')
     .eq('coach_id', coachId)
     .ilike('name', `%${query}%`)
@@ -352,7 +352,7 @@ export async function createExercise(
 ): Promise<any> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('exercises')
+    .from('ziko_exercises')
     .insert({
       name: body.name,
       category: body.category ?? null,

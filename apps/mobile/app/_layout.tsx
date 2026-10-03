@@ -81,7 +81,7 @@ function RootLayout() {
   useEffect(() => {
     if (!session?.user?.id) return;
     supabase
-      .from('user_gamification')
+      .from('ziko_user_gamification')
       .select('equipped_theme, equipped_banner_name')
       .eq('user_id', session.user.id)
       .single()

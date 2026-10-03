@@ -52,7 +52,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('pantry_items')
+        .from('ziko_pantry_items')
         .select('id, name, storage_location, category')
         .eq('user_id', userId);
       if (error) return [];

@@ -39,7 +39,18 @@ export const SCAN_ROOTS = [
 ];
 
 // Files where EVERY exact table-name literal is rewritten (dynamic table maps / unions).
-export const REWRITE_LITERAL_FILES = ['apps/mobile/app/(auth)/onboarding/ziko-chat.tsx'];
+export const REWRITE_LITERAL_FILES = [
+  'apps/mobile/app/(auth)/onboarding/ziko-chat.tsx',
+  // Phase 6 (06-08): every table literal in these files is a real table reference.
+  'backend/api/src/coaching-engine/context.ts', // FOCUS_SOURCE_MAP table lists fed to .from()
+  'backend/api/src/routes/push-events.ts', // webhook payload `table` comparisons (trigger payload carries ziko_ names on portfolio)
+  'backend/api/src/routes/webhooks.ts', // webhook payload `table` comparisons
+  'backend/api/src/middleware/creditGate.test.ts', // mockFrom(table) dispatch mirrors creditGate.ts .from() calls
+  'backend/api/test/tools/coaching-engine.spec.ts', // asserts the tables context.ts reads
+  'backend/api/test/tools/retroactive-recompute.spec.ts', // asserts the tables the recompute reads
+  'scripts/exercise-import/lib/merge-row.test.ts', // stub-client table dispatch mirrors merge-row.ts
+  'scripts/exercise-import/lib/supabase-client.test.ts', // stub-client table dispatch mirrors supabase-client.ts
+];
 
 // Explicit allowlist of lookalikes that are NOT table usages.
 // file: repo-relative path, or `**/<name>` to match by basename suffix.
@@ -47,6 +58,39 @@ export const REWRITE_LITERAL_FILES = ['apps/mobile/app/(auth)/onboarding/ziko-ch
 export const FALSE_POSITIVES = [
   // ziko-chat resolves the table from MICRO_ACTION_MAP whose literals are rewritten in-file.
   { file: 'apps/mobile/app/(auth)/onboarding/ziko-chat.tsx', pattern: '.from(mapping.table)' },
+
+  // ---- Phase 6 (06-08): plugin ids / UI strings that merely share a table name.
+  // Error-message substring check, not a query.
+  { file: 'apps/mobile/app/(app)/profile/index.tsx', pattern: "msg.includes('body_measurements')" },
+  // ORDER BY an embedded resource: the select (rewritten) keeps the `workout_sessions` alias, so the order path still resolves.
+  { file: 'apps/mobile/app/(app)/profile/lift-detail.tsx', pattern: "order('workout_sessions(started_at)'" },
+  // Plugin id.
+  { file: 'apps/mobile/app/(app)/store/index.tsx', pattern: 'FEATURED_IDS' },
+  { file: 'apps/web/src/components/coach/ClientTabStrip.tsx', pattern: "key: 'habits'" },
+  { file: 'apps/web/src/components/marketing/PluginShowcase.tsx', pattern: "'nutrition', 'supplements'," },
+  { file: 'apps/web/src/components/marketing/PluginShowcase.tsx', pattern: "'habits', 'persona'" },
+  { file: 'apps/web/src/components/marketing/PluginShowcaseClient.tsx', pattern: "'nutrition', 'supplements'," },
+  { file: 'apps/web/src/components/marketing/PluginShowcaseClient.tsx', pattern: "'habits', 'persona'" },
+  { file: 'backend/api/src/routes/notifications-cron.ts', pattern: ".eq('plugin_id', 'habits')" },
+  { file: 'plugins/community/src/screens/CommunityPlugin.tsx', pattern: "case 'habits'" },
+  { file: 'plugins/community/src/screens/CreateChallengeScreen.tsx', pattern: "value: 'habits'" },
+  { file: 'plugins/community/src/store.ts', pattern: "scoring: 'volume'" },
+  { file: 'plugins/habits/src/manifest.ts', pattern: "id: 'habits'" },
+  { file: 'plugins/habits/src/manifest.ts', pattern: "userDataKeys: ['habits']" },
+  { file: 'plugins/stats/src/manifest.ts', pattern: "userDataKeys: ['stats'" },
+  { file: 'plugins/supplements/src/manifest.ts', pattern: "id: 'supplements'" },
+  { file: 'plugins/supplements/src/manifest.ts', pattern: "userDataKeys: ['supplements']" },
+  // Test titles / system view.
+  { file: 'backend/api/test/rls/athlete-state.spec.ts', pattern: 'UPDATE athlete_state directly' },
+  { file: 'backend/api/test/rls/onboarding-profile.spec.ts', pattern: 'UPDATE athlete_state directly' },
+  { file: 'backend/api/test/rls/coach-rls.spec.ts', pattern: ".from('pg_policies')" }, // Postgres system view
+  // rpcName is typed as the literal 'ziko_peek_invitation' (hand-edited in this file).
+  { file: 'backend/api/test/coach/timing.spec.ts', pattern: 'rpc(rpcName' },
+  // shopping_list / shopping_list_items exist on neither ziko nor portfolio (02-RESEARCH Pitfall 5, re-verified read-only in 06-08):
+  // pre-existing dead references, behavior identical before and after cutover. Flagged for a product decision.
+  { file: 'plugins/pantry/src/screens/PantryPlugin.tsx', pattern: ".from('shopping_list')" },
+  { file: 'plugins/pantry/src/screens/RecipeDetail.tsx', pattern: ".from('shopping_list_items')" },
+  { file: 'plugins/pantry/src/screens/ShoppingList.tsx', pattern: ".from('shopping_list_items')" },
 ];
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.next', '.git']);
@@ -58,6 +102,8 @@ export const RESIDUAL_EXCLUDE_PREFIXES = [
   'scripts/portfolio-migration/',
   'scripts/auth-merge/',
   'scripts/purge-test-accounts/',
+  'apps/web/test/legal/retention-config.test.ts', // asserts the TEXT of a legacy (immutable) migration file; already ENOENT on main
+  'apps/web/test/purge/', // unit tests of scripts/purge-test-accounts (ziko-side, itself excluded)
   'scripts/waitlist-erasure/', // Phase 7 follow-up: operates on ziko by ref (SUPABASE_URL env)
   'scripts/food-data/', // Phase 7 follow-up: operates on ziko by ref (SUPABASE_URL env)
 ];
@@ -417,17 +463,25 @@ export function hintQuerySql() {
     '  (SELECT array_agg(a.attname ORDER BY k.ord)',
     '     FROM unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord)',
     '     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum) AS "columns",',
-    '  rcl.relname AS ref_table',
+    '  rcl.relname AS ref_table, rn.nspname AS ref_schema',
     'FROM pg_constraint c',
     'JOIN pg_class cl ON cl.oid = c.conrelid',
     'JOIN pg_namespace n ON n.oid = cl.relnamespace',
     'JOIN pg_class rcl ON rcl.oid = c.confrelid',
+    'JOIN pg_namespace rn ON rn.oid = rcl.relnamespace',
     "WHERE c.contype = 'f' AND n.nspname = 'public'",
     'ORDER BY 1, 2',
   ].join('\n');
 }
 
-const colKey = (cols) => (Array.isArray(cols) ? cols : []).join(',');
+// The Supabase CLI returns array_agg as Postgres array text ("{a,b}"), not a JSON array.
+const colKey = (cols) =>
+  (Array.isArray(cols)
+    ? cols
+    : typeof cols === 'string'
+      ? cols.replace(/^\{|\}$/g, '').split(',').filter(Boolean)
+      : []
+  ).join(',');
 
 /**
  * Match each ziko FK constraint X on T(cols)->R to the portfolio constraint on
@@ -436,9 +490,10 @@ const colKey = (cols) => (Array.isArray(cols) ? cols : []).join(',');
 export function buildHintMap(sourceRows, targetRows) {
   const out = {};
   for (const s of sourceRows) {
+    // FKs into other schemas (e.g. auth.users) keep their referenced table name; only public refs are prefixed.
+    const expectedRef = s.ref_schema && s.ref_schema !== 'public' ? s.ref_table : `ziko_${s.ref_table}`;
     const cands = targetRows.filter(
-      (r) =>
-        r.table === `ziko_${s.table}` && r.ref_table === `ziko_${s.ref_table}` && colKey(r.columns) === colKey(s.columns),
+      (r) => r.table === `ziko_${s.table}` && r.ref_table === expectedRef && colKey(r.columns) === colKey(s.columns),
     );
     if (cands.length === 0) {
       throw new Error(`no portfolio constraint matches ${s.table}.${s.constraint} (${colKey(s.columns)} -> ${s.ref_table})`);
@@ -495,7 +550,10 @@ function expandRoots(rootAbs) {
 export function collectScanFiles(rootAbs) {
   const out = [];
   for (const r of expandRoots(rootAbs)) walk(path.join(rootAbs, r), rootAbs, out);
-  return out.filter((f) => CODE_EXT.has(path.extname(f))).sort();
+  return out
+    .filter((f) => CODE_EXT.has(path.extname(f)))
+    .filter((f) => !RESIDUAL_EXCLUDE_PREFIXES.some((p) => f.startsWith(p)))
+    .sort();
 }
 
 function readText(rootAbs, rel) {

@@ -59,7 +59,7 @@ creditsCronRouter.get('/cron/premium-grant', async (c) => {
   }
 
   const { data: premiumUsers, error } = await supabaseAdmin
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id')
     .eq('tier', 'premium');
 

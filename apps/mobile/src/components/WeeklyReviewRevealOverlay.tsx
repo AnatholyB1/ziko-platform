@@ -36,7 +36,7 @@ export function WeeklyReviewRevealOverlay() {
     queryKey: ['weekly-review-reveal', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('athlete_state')
+        .from('ziko_athlete_state')
         .select('last_review_at, current_focus_summary')
         .eq('user_id', userId)
         .single();

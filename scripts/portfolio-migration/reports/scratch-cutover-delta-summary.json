@@ -1,0 +1,122 @@
+{
+  "mode": "apply",
+  "projectRef": "rkirvurggtgjlkeuhded",
+  "ok": true,
+  "failedStep": null,
+  "exit": 0,
+  "reason": null,
+  "delta": {
+    "newUsers": 0,
+    "passwordChanged": 0,
+    "otherChanged": 0
+  },
+  "steps": [
+    {
+      "step": "collision",
+      "exitCode": 0,
+      "durationMs": 4110,
+      "counts": {
+        "source_users": 39,
+        "target_users": 39,
+        "already_imported": 38,
+        "collisions": 1
+      }
+    },
+    {
+      "step": "delta-report",
+      "exitCode": 0,
+      "durationMs": 20149,
+      "counts": {
+        "password_changed": 0,
+        "other_changed": 0
+      }
+    },
+    {
+      "step": "import",
+      "exitCode": 0,
+      "durationMs": 25178,
+      "counts": {
+        "users_present": 38,
+        "identities_present": 38,
+        "passwords_updated": 0,
+        "instance_id_filled": 0,
+        "token_columns_filled": 0,
+        "collisions": 1
+      }
+    },
+    {
+      "step": "waitlist",
+      "exitCode": 0,
+      "durationMs": 8520,
+      "counts": {
+        "last_value": 87
+      }
+    },
+    {
+      "step": "auth-verify",
+      "exitCode": 0,
+      "durationMs": 84475,
+      "counts": {
+        "ziko": 39,
+        "imported": 38,
+        "merged": 1,
+        "compared": 38,
+        "mismatched": 0,
+        "collisions": 1,
+        "triggers": 2,
+        "probe": 0,
+        "residual": 0,
+        "users": 1,
+        "warnings": 0,
+        "unflagged": 0,
+        "flagged": 1
+      }
+    },
+    {
+      "step": "load-probe",
+      "exitCode": 0,
+      "durationMs": 12139,
+      "counts": {
+        "cli": 3169,
+        "conn": 3169
+      }
+    },
+    {
+      "step": "load-apply",
+      "exitCode": 0,
+      "durationMs": 10352,
+      "counts": {
+        "rows": 37,
+        "remapped_rows": 26,
+        "url_rewrites": 0
+      }
+    },
+    {
+      "step": "copy-apply",
+      "exitCode": 0,
+      "durationMs": 112640,
+      "counts": {
+        "copied": 1,
+        "failed": 0,
+        "objects": 2699,
+        "bytes": 214205001
+      }
+    },
+    {
+      "step": "verify-data",
+      "exitCode": 0,
+      "durationMs": 53524,
+      "counts": {}
+    },
+    {
+      "step": "verify-storage",
+      "exitCode": 0,
+      "durationMs": 138586,
+      "counts": {
+        "n": 3,
+        "bytes": 150974615,
+        "compared": 0
+      }
+    }
+  ]
+}

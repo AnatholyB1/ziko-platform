@@ -29,14 +29,14 @@ export async function ai_programs_generate(
 
   // Fetch user profile for context
   const { data: profile } = await db
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('name, weight_kg, height_cm, goal')
     .eq('id', userId)
     .single();
 
   // Fetch available exercises
   const { data: exercises } = await db
-    .from('exercises')
+    .from('ziko_exercises')
     .select('name, category, muscle_groups')
     .limit(100);
 
@@ -93,7 +93,7 @@ Return ONLY valid JSON:
   const programName = programData.name ?? `${goal} ${split_type} ${days_per_week}d`;
 
   const { data, error } = await db
-    .from('ai_generated_programs')
+    .from('ziko_ai_generated_programs')
     .insert({
       user_id: userId,
       name: programName,
@@ -121,7 +121,7 @@ export async function ai_programs_list(
   const db = clientForUser(userToken);
 
   const { data, error } = await db
-    .from('ai_generated_programs')
+    .from('ziko_ai_generated_programs')
     .select('id, name, goal, split_type, days_per_week, is_active, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -148,7 +148,7 @@ export async function ai_programs_adjust(
 
   // Fetch current program
   const { data: program, error: fetchErr } = await db
-    .from('ai_generated_programs')
+    .from('ziko_ai_generated_programs')
     .select('*')
     .eq('id', program_id)
     .eq('user_id', userId)
@@ -178,7 +178,7 @@ For "less_volume": remove sets.`;
   }
 
   const { error } = await db
-    .from('ai_generated_programs')
+    .from('ziko_ai_generated_programs')
     .update({ program_data: adjusted })
     .eq('id', program_id)
     .eq('user_id', userId);

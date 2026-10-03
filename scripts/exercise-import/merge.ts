@@ -8,7 +8,7 @@
  * runs). It reads the human-approved `.planning/workstreams/image-exo/
  * reports/match-report.json`, writes to `public.exercises`,
  * `public.exercises_merge_backup`, `public.exercise_import_log`, and the
- * `exercise-media` Storage bucket, and never issues a DELETE anywhere.
+ * `ziko-exercise-media` Storage bucket, and never issues a DELETE anywhere.
  *
  * It requires an interactive TTY confirmation and has NO bypass flag by
  * design — see the `isTTY` guard at the very top of `main()` below. There
@@ -134,7 +134,7 @@ async function readAllImportLogRows(client: ReturnType<typeof createWriteClient>
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const { data, error } = await client
-      .from('exercise_import_log')
+      .from('ziko_exercise_import_log')
       .select('source_id, exercise_id, status, error_message, processed_at')
       .range(from, from + LOG_PAGE_SIZE - 1);
 
@@ -326,7 +326,7 @@ async function main(): Promise<void> {
       // (Phase 1 D-06's documented meaning of 'skipped') without calling
       // processRow, so the log stays a complete audit trail of every
       // run's pass over every row.
-      const { error: logError } = await client.from('exercise_import_log').insert({
+      const { error: logError } = await client.from('ziko_exercise_import_log').insert({
         source_id: item.sourceId,
         exercise_id: item.exerciseId,
         status: 'skipped',
@@ -354,7 +354,7 @@ async function main(): Promise<void> {
 
     const result = await processRow(input, deps);
 
-    const { error: logError } = await client.from('exercise_import_log').insert({
+    const { error: logError } = await client.from('ziko_exercise_import_log').insert({
       source_id: result.sourceId,
       exercise_id: result.exerciseId,
       status: result.status,

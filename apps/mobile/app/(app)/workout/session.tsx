@@ -269,7 +269,7 @@ export default function WorkoutSessionScreen() {
       if (!user) return;
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .insert({ user_id: user.id, amount_ml: favContainer.ml, date: today })
         .select('*')
         .single();
@@ -343,7 +343,7 @@ export default function WorkoutSessionScreen() {
             if (!user) return;
             // Get the last completed session (excluding current)
             const { data: lastSession } = await supabase
-              .from('workout_sessions')
+              .from('ziko_workout_sessions')
               .select('id')
               .eq('user_id', user.id)
               .eq('completed', true)
@@ -352,7 +352,7 @@ export default function WorkoutSessionScreen() {
               .single();
             if (!lastSession) return;
             const { data: sets } = await supabase
-              .from('session_sets')
+              .from('ziko_session_sets')
               .select('exercise_id, set_number, weight_kg, reps')
               .eq('session_id', lastSession.id)
               .in('exercise_id', exerciseIds)
@@ -506,7 +506,7 @@ export default function WorkoutSessionScreen() {
       const pe = workoutExercises[exIdx];
       if (pe && currentSession) {
         const mode = getExMode(pe);
-        supabase.from('session_exercises').insert({
+        supabase.from('ziko_session_exercises').insert({
           session_id: currentSession.id,
           exercise_id: pe.exercise_id,
           program_exercise_id: pe.id,
@@ -595,7 +595,7 @@ export default function WorkoutSessionScreen() {
     const mode = getExMode(currentEx);
     const prescribedDuration = mode === 'timeRange' ? currentEx.duration_max : currentEx.duration_seconds;
 
-    await supabase.from('session_sets').insert({
+    await supabase.from('ziko_session_sets').insert({
       session_id: currentSession.id,
       exercise_id: currentEx.exercise_id,
       set_number: currentSetIdx + 1,
@@ -653,7 +653,7 @@ export default function WorkoutSessionScreen() {
         const rpeValues = completedSets.map((s) => s.rpe).filter((r): r is number => r !== null);
         const avgRpe = rpeValues.length > 0 ? rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length : null;
 
-        await supabase.from('session_exercises').update({
+        await supabase.from('ziko_session_exercises').update({
           completed_at: completedAt,
           sets_completed: completedSets.length,
           total_reps: totalReps,
@@ -758,14 +758,14 @@ export default function WorkoutSessionScreen() {
     let programId: string | null = null;
     if (currentSession.program_workout_id) {
       const { data: pw } = await supabase
-        .from('program_workouts')
+        .from('ziko_program_workouts')
         .select('program_id')
         .eq('id', currentSession.program_workout_id)
         .single();
       if (pw) programId = pw.program_id;
     }
 
-    await supabase.from('workout_sessions').update({
+    await supabase.from('ziko_workout_sessions').update({
       ended_at: new Date().toISOString(),
       total_volume_kg: totalVolume,
       total_sets: totalSetsCount,
@@ -880,7 +880,7 @@ export default function WorkoutSessionScreen() {
     const ex = freeExercises[exIdx];
     const s = ex.sets[setIdx];
     const now = new Date().toISOString();
-    await supabase.from('session_sets').insert({
+    await supabase.from('ziko_session_sets').insert({
       session_id: currentSession.id,
       exercise_id: ex.id,
       set_number: setIdx + 1,

@@ -123,22 +123,22 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
 // arbitrary route).
 const MICRO_ACTION_MAP: Record<
   string,
-  { route: string; ctaKey: string; table: 'hydration_logs' | 'journal_entries' | 'body_measurements' }
+  { route: string; ctaKey: string; table: 'ziko_hydration_logs' | 'ziko_journal_entries' | 'ziko_body_measurements' }
 > = {
   hydration_log: {
     route: '/(plugins)/hydration/dashboard',
     ctaKey: 'coach.onboarding.mission.hydration',
-    table: 'hydration_logs',
+    table: 'ziko_hydration_logs',
   },
   journal_mood: {
     route: '/(plugins)/journal/entry',
     ctaKey: 'coach.onboarding.mission.journal',
-    table: 'journal_entries',
+    table: 'ziko_journal_entries',
   },
   measurements_weight: {
     route: '/(plugins)/measurements/log',
     ctaKey: 'coach.onboarding.mission.measurements',
-    table: 'body_measurements',
+    table: 'ziko_body_measurements',
   },
 };
 
@@ -552,7 +552,7 @@ export default function ZikoChatScreen() {
         }
 
         const { data: convRows } = await supabase
-          .from('ai_conversations')
+          .from('ziko_ai_conversations')
           .select('id')
           .eq('user_id', uid)
           .eq('plugin_context->>type', 'ziko_onboarding')
@@ -567,7 +567,7 @@ export default function ZikoChatScreen() {
           conversationIdRef.current = existingConvId;
 
           const { data: msgRows } = await supabase
-            .from('ai_messages')
+            .from('ziko_ai_messages')
             .select('id, role, content')
             .eq('conversation_id', existingConvId)
             .order('created_at', { ascending: true });

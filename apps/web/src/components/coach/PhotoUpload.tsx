@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { createClientSupabase } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/buckets';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -40,14 +41,14 @@ export function PhotoUpload({
       const ext = file.name.split('.').pop() ?? 'jpg';
       const path = `${userId}/photo.${ext}`;
       const urlRes = await fetch(
-        `/api/storage/upload-url?bucket=coach-kyc&path=${path}`,
+        `/api/storage/upload-url?bucket=ziko-coach-kyc&path=${path}`,
         { headers: { Authorization: `Bearer ${jwt}` } },
       );
       if (!urlRes.ok) throw new Error('Upload URL request failed');
       const { path: uploadPath, token } = await urlRes.json() as { upload_url: string; path: string; token: string };
       const supabase = createClientSupabase();
       const { error: uploadError } = await supabase.storage
-        .from('coach-kyc')
+        .from(STORAGE_BUCKETS.coachKyc)
         .uploadToSignedUrl(uploadPath, token, file);
       if (uploadError) throw uploadError;
       // Store PATH (not signed URL) — see RESEARCH Pitfall 7

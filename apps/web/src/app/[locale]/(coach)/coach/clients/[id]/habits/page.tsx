@@ -13,7 +13,7 @@ export default async function ClientHabitsPage({
   // Fetch habits — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: habits } = await supabase
-    .from('habits')
+    .from('ziko_habits')
     .select('id, name, type, emoji, color')
     .eq('user_id', clientId)
     .order('name', { ascending: true })
@@ -25,7 +25,7 @@ export default async function ClientHabitsPage({
   const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
 
   const { data: logs } = await supabase
-    .from('habit_logs')
+    .from('ziko_habit_logs')
     .select('habit_id, date, value')
     .eq('user_id', clientId)
     .gte('date', dateStr)

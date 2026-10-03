@@ -12,7 +12,7 @@ import { MotiView } from 'moti';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { AttributedMedia, EmptyState } from '@ziko/ui';
@@ -39,7 +39,7 @@ export default function ExerciseDetailScreen() {
     queryKey: ['exercises', 'v2', exerciseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exercises')
+        .from('ziko_exercises')
         .select('*')
         .eq('id', exerciseId)
         .single();
@@ -50,7 +50,7 @@ export default function ExerciseDetailScreen() {
   });
 
   const publicGifUrl = exercise?.gif
-    ? supabase.storage.from('exercise-media').getPublicUrl(exercise.gif).data.publicUrl
+    ? supabase.storage.from(STORAGE_BUCKETS.exerciseMedia).getPublicUrl(exercise.gif).data.publicUrl
     : null;
 
   // Fetch user session for userId
@@ -68,8 +68,8 @@ export default function ExerciseDetailScreen() {
     queryKey: ['exercise-history', exerciseId, userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('session_sets')
-        .select('*, workout_sessions!inner(started_at, user_id)')
+        .from('ziko_session_sets')
+        .select('*, workout_sessions:ziko_workout_sessions!inner(started_at, user_id)')
         .eq('exercise_id', exerciseId)
         .eq('workout_sessions.user_id', userId)
         .eq('completed', true)

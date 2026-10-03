@@ -19,12 +19,12 @@ export async function fetchCoachContext(coachId: string, jwt: string): Promise<C
   // Step 1: get linked client IDs via JWT — RLS guarantees coach_id match
   const [profileRes, linksRes] = await Promise.all([
     db
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .select('display_name')
       .eq('user_id', coachId)
       .single(),
     db
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .select('client_id')
       .eq('coach_id', coachId)
       .is('revoked_at', null),
@@ -38,7 +38,7 @@ export async function fetchCoachContext(coachId: string, jwt: string): Promise<C
     // Step 2: fetch names via service client — JWT RLS blocks cross-user profile reads
     const svc = createServiceClient();
     const { data: profiles } = await svc
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('id, name')
       .in('id', clientIds);
 

@@ -126,7 +126,7 @@ async function analyzeClientExecutor(
 
   // Defense-in-depth: verify coach_client_links before any data read
   const { data: link } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('id')
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -150,26 +150,26 @@ async function analyzeClientExecutor(
   // Fetch data in parallel — all scoped to this client
   const [sessionsRes, sleepRes, moodRes, weightRes] = await Promise.all([
     db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', clientId)
       .gte('created_at', since),
     db
-      .from('sleep_logs')
+      .from('ziko_sleep_logs')
       .select('duration_hours')
       .eq('user_id', clientId)
       .gte('date', since.split('T')[0])
       .order('date', { ascending: false })
       .limit(30),
     db
-      .from('journal_entries')
+      .from('ziko_journal_entries')
       .select('mood')
       .eq('user_id', clientId)
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(30),
     db
-      .from('body_measurements')
+      .from('ziko_body_measurements')
       .select('weight_kg')
       .eq('user_id', clientId)
       .order('created_at', { ascending: false })
@@ -240,7 +240,7 @@ async function generateCoachingProgramExecutor(
 
   // Defense-in-depth: verify coach_client_links before any data write
   const { data: link } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('id')
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
@@ -306,7 +306,7 @@ Include ${daysPerWeek} sessions per week for all ${durationWeeks} weeks. Use pro
   const programName = `Programme IA — ${goal.replace(/_/g, ' ')}`;
 
   const { data, error } = await db
-    .from('workout_programs')
+    .from('ziko_workout_programs')
     .insert({
       name: programName,
       goal,
@@ -359,7 +359,7 @@ async function monitorClientAlertsExecutor(
 
   // Fetch all active linked clients for this coach
   const { data: links, error: linksErr } = await db
-    .from('coach_client_links')
+    .from('ziko_coach_client_links')
     .select('client_id')
     .eq('coach_id', coachId)
     .is('revoked_at', null);
@@ -394,7 +394,7 @@ async function monitorClientAlertsExecutor(
   for (const clientId of clientIds) {
     // 1. Missed sessions: no workout_sessions in last 7 days
     const { data: recentSessions } = await db
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('id')
       .eq('user_id', clientId)
       .gte('created_at', sevenDaysAgo)
@@ -413,12 +413,12 @@ async function monitorClientAlertsExecutor(
     // 2. Sleep drop: avg last 3 nights vs 4-10 days ago
     const [recentSleepRes, baselineSleepRes] = await Promise.all([
       db
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('duration_hours')
         .eq('user_id', clientId)
         .gte('date', threeDaysAgo),
       db
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('duration_hours')
         .eq('user_id', clientId)
         .gte('date', tenDaysAgo)
@@ -446,12 +446,12 @@ async function monitorClientAlertsExecutor(
     // 3. Mood decline: avg last 7 days vs prior 7 days
     const [recentMoodRes, baselineMoodRes] = await Promise.all([
       db
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('mood')
         .eq('user_id', clientId)
         .gte('created_at', sevenDaysAgo),
       db
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('mood')
         .eq('user_id', clientId)
         .gte('created_at', fourteenDaysAgo)

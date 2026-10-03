@@ -191,7 +191,7 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('wearable_daily_summary')
+        .from('ziko_wearable_daily_summary')
         .select('*')
         .eq('user_id', userId)
         .eq('date', today)
@@ -211,7 +211,7 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('health_sync_log')
+        .from('ziko_health_sync_log')
         .select('*')
         .eq('user_id', userId)
         .order('last_sync_at', { ascending: false });

@@ -273,13 +273,13 @@ export async function loadCommunity(supabase: any) {
 
     const [friendshipsRes, conversationsRes, challengesRes, groupRes, invitesRes, statsRes, encourageRes] =
       await Promise.all([
-        supabase.from('friendships').select('*').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
-        supabase.from('conversation_members').select('conversation_id').eq('user_id', userId),
-        supabase.from('challenges').select('*, challenge_participants(*), challenge_teams(*)').order('created_at', { ascending: false }).limit(20),
-        supabase.from('group_workouts').select('*, group_workout_participants(*)').order('created_at', { ascending: false }).limit(10),
-        supabase.from('app_invites').select('*').eq('inviter_id', userId),
-        supabase.from('community_user_stats').select('*').eq('user_id', userId).single(),
-        supabase.from('habit_encouragements').select('*').eq('receiver_id', userId).order('created_at', { ascending: false }).limit(20),
+        supabase.from('ziko_friendships').select('*').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
+        supabase.from('ziko_conversation_members').select('conversation_id').eq('user_id', userId),
+        supabase.from('ziko_challenges').select('*, challenge_participants:ziko_challenge_participants(*), challenge_teams:ziko_challenge_teams(*)').order('created_at', { ascending: false }).limit(20),
+        supabase.from('ziko_group_workouts').select('*, group_workout_participants:ziko_group_workout_participants(*)').order('created_at', { ascending: false }).limit(10),
+        supabase.from('ziko_app_invites').select('*').eq('inviter_id', userId),
+        supabase.from('ziko_community_user_stats').select('*').eq('user_id', userId).single(),
+        supabase.from('ziko_habit_encouragements').select('*').eq('receiver_id', userId).order('created_at', { ascending: false }).limit(20),
       ]);
 
     // Parse friends
@@ -294,7 +294,7 @@ export async function loadCommunity(supabase: any) {
     let friends: FriendProfile[] = [];
     if (friendIds.length > 0) {
       const { data: profiles } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('id, name, avatar_url, goal')
         .in('id', friendIds);
       friends = profiles ?? [];
@@ -305,8 +305,8 @@ export async function loadCommunity(supabase: any) {
     let conversations: Conversation[] = [];
     if (convIds.length > 0) {
       const { data: convs } = await supabase
-        .from('community_conversations')
-        .select('*, conversation_members(user_id, last_read_at)')
+        .from('ziko_community_conversations')
+        .select('*, conversation_members:ziko_conversation_members(user_id, last_read_at)')
         .in('id', convIds)
         .order('updated_at', { ascending: false });
       conversations = convs ?? [];
@@ -339,22 +339,22 @@ export async function loadCommunity(supabase: any) {
 export async function sendFriendRequest(supabase: any, addresseeId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-  await supabase.from('friendships').insert({
+  await supabase.from('ziko_friendships').insert({
     requester_id: user.id,
     addressee_id: addresseeId,
   });
 }
 
 export async function acceptFriendRequest(supabase: any, friendshipId: string) {
-  await supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+  await supabase.from('ziko_friendships').update({ status: 'accepted' }).eq('id', friendshipId);
 }
 
 export async function declineFriendRequest(supabase: any, friendshipId: string) {
-  await supabase.from('friendships').delete().eq('id', friendshipId);
+  await supabase.from('ziko_friendships').delete().eq('id', friendshipId);
 }
 
 export async function removeFriend(supabase: any, friendshipId: string) {
-  await supabase.from('friendships').delete().eq('id', friendshipId);
+  await supabase.from('ziko_friendships').delete().eq('id', friendshipId);
 }
 
 // ── Chat ────────────────────────────────────────────────
@@ -365,7 +365,7 @@ export async function getOrCreateDMConversation(supabase: any, friendId: string)
 
   // Check if a DM already exists between these two users
   const { data: myConvs } = await supabase
-    .from('conversation_members')
+    .from('ziko_conversation_members')
     .select('conversation_id')
     .eq('user_id', user.id);
 
@@ -373,7 +373,7 @@ export async function getOrCreateDMConversation(supabase: any, friendId: string)
 
   if (myConvIds.length > 0) {
     const { data: shared } = await supabase
-      .from('conversation_members')
+      .from('ziko_conversation_members')
       .select('conversation_id')
       .eq('user_id', friendId)
       .in('conversation_id', myConvIds);
@@ -381,7 +381,7 @@ export async function getOrCreateDMConversation(supabase: any, friendId: string)
     if (shared && shared.length > 0) {
       // Check if it's a direct conversation
       const { data: conv } = await supabase
-        .from('community_conversations')
+        .from('ziko_community_conversations')
         .select('*')
         .eq('id', shared[0].conversation_id)
         .eq('type', 'direct')
@@ -392,12 +392,12 @@ export async function getOrCreateDMConversation(supabase: any, friendId: string)
 
   // Create new DM
   const { data: newConv } = await supabase
-    .from('community_conversations')
+    .from('ziko_community_conversations')
     .insert({ type: 'direct', created_by: user.id })
     .select()
     .single();
 
-  await supabase.from('conversation_members').insert([
+  await supabase.from('ziko_conversation_members').insert([
     { conversation_id: newConv.id, user_id: user.id },
     { conversation_id: newConv.id, user_id: friendId },
   ]);
@@ -407,7 +407,7 @@ export async function getOrCreateDMConversation(supabase: any, friendId: string)
 
 export async function loadMessages(supabase: any, conversationId: string, limit = 50) {
   const { data } = await supabase
-    .from('community_messages')
+    .from('ziko_community_messages')
     .select('*')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true })
@@ -430,7 +430,7 @@ export async function sendMessage(
   if (!user) return;
 
   const { data: msg } = await supabase
-    .from('community_messages')
+    .from('ziko_community_messages')
     .insert({
       conversation_id: conversationId,
       sender_id: user.id,
@@ -443,7 +443,7 @@ export async function sendMessage(
 
   // Update conversation timestamp
   await supabase
-    .from('community_conversations')
+    .from('ziko_community_conversations')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', conversationId);
 
@@ -470,7 +470,7 @@ export async function sendScreenReaction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('screen_reactions').insert({
+  await supabase.from('ziko_screen_reactions').insert({
     sender_id: user.id,
     receiver_id: receiverId,
     type,
@@ -485,7 +485,7 @@ export async function loadScreenReactions(supabase: any) {
   if (!user) return;
 
   const { data } = await supabase
-    .from('screen_reactions')
+    .from('ziko_screen_reactions')
     .select('*')
     .eq('receiver_id', user.id)
     .eq('seen', false)
@@ -495,7 +495,7 @@ export async function loadScreenReactions(supabase: any) {
 }
 
 export async function markReactionSeen(supabase: any, reactionId: string) {
-  await supabase.from('screen_reactions').update({ seen: true }).eq('id', reactionId);
+  await supabase.from('ziko_screen_reactions').update({ seen: true }).eq('id', reactionId);
 }
 
 // ── Shared Programs ─────────────────────────────────────
@@ -509,7 +509,7 @@ export async function shareProgram(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('shared_programs').insert({
+  await supabase.from('ziko_shared_programs').insert({
     sender_id: user.id,
     receiver_id: receiverId,
     program_id: programId,
@@ -529,7 +529,7 @@ export async function createGroupWorkout(
   if (!user) return null;
 
   const { data: gw } = await supabase
-    .from('group_workouts')
+    .from('ziko_group_workouts')
     .insert({
       creator_id: user.id,
       title: data.title,
@@ -543,7 +543,7 @@ export async function createGroupWorkout(
 
   if (gw) {
     // Creator auto-joins
-    await supabase.from('group_workout_participants').insert({
+    await supabase.from('ziko_group_workout_participants').insert({
       group_workout_id: gw.id,
       user_id: user.id,
       status: 'joined',
@@ -557,7 +557,7 @@ export async function joinGroupWorkout(supabase: any, groupWorkoutId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('group_workout_participants').insert({
+  await supabase.from('ziko_group_workout_participants').insert({
     group_workout_id: groupWorkoutId,
     user_id: user.id,
     status: 'joined',
@@ -585,7 +585,7 @@ export async function createChallenge(
   if (!user) return null;
 
   const { data: challenge } = await supabase
-    .from('challenges')
+    .from('ziko_challenges')
     .insert({
       creator_id: user.id,
       title: data.title,
@@ -605,7 +605,7 @@ export async function createChallenge(
   // Create teams if team challenge
   if (data.type === 'team' && data.teams) {
     for (const team of data.teams) {
-      await supabase.from('challenge_teams').insert({
+      await supabase.from('ziko_challenge_teams').insert({
         challenge_id: challenge.id,
         name: team.name,
         emoji: team.emoji ?? '⚔️',
@@ -614,7 +614,7 @@ export async function createChallenge(
   }
 
   // Creator auto-joins
-  await supabase.from('challenge_participants').insert({
+  await supabase.from('ziko_challenge_participants').insert({
     challenge_id: challenge.id,
     user_id: user.id,
     status: 'joined',
@@ -627,7 +627,7 @@ export async function createChallenge(
       user_id: uid,
       status: 'invited',
     }));
-    await supabase.from('challenge_participants').insert(invites);
+    await supabase.from('ziko_challenge_participants').insert(invites);
   }
 
   return challenge;
@@ -637,7 +637,7 @@ export async function joinChallenge(supabase: any, challengeId: string, teamId?:
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('challenge_participants').upsert({
+  await supabase.from('ziko_challenge_participants').upsert({
     challenge_id: challengeId,
     user_id: user.id,
     team_id: teamId ?? null,
@@ -650,7 +650,7 @@ export async function updateChallengeScore(supabase: any, challengeId: string, s
   if (!user) return;
 
   await supabase
-    .from('challenge_participants')
+    .from('ziko_challenge_participants')
     .update({ score })
     .eq('challenge_id', challengeId)
     .eq('user_id', user.id);
@@ -662,7 +662,7 @@ export async function sendXpGift(supabase: any, receiverId: string, amount: numb
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const { data, error } = await supabase.rpc('send_xp_gift', {
+  const { data, error } = await supabase.rpc('ziko_send_xp_gift', {
     p_sender_id: user.id,
     p_receiver_id: receiverId,
     p_amount: amount,
@@ -677,7 +677,7 @@ export async function sendCoinGift(supabase: any, receiverId: string, amount: nu
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  const { data, error } = await supabase.rpc('send_coin_gift', {
+  const { data, error } = await supabase.rpc('ziko_send_coin_gift', {
     p_sender_id: user.id,
     p_receiver_id: receiverId,
     p_amount: amount,
@@ -700,7 +700,7 @@ export async function sendEncouragement(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('habit_encouragements').insert({
+  await supabase.from('ziko_habit_encouragements').insert({
     sender_id: user.id,
     receiver_id: receiverId,
     habit_id: habitId ?? null,
@@ -719,7 +719,7 @@ export async function createInvite(supabase: any): Promise<string> {
   if (!user) throw new Error('Not authenticated');
 
   const code = generateInviteCode();
-  await supabase.from('app_invites').insert({
+  await supabase.from('ziko_app_invites').insert({
     inviter_id: user.id,
     invite_code: code,
   });
@@ -731,7 +731,7 @@ export async function createInvite(supabase: any): Promise<string> {
 // ── Stats helper ────────────────────────────────────────
 
 async function incrementStat(supabase: any, userId: string, field: string, amount = 1) {
-  await supabase.rpc('increment_community_stat', {
+  await supabase.rpc('ziko_increment_community_stat', {
     p_user_id: userId,
     p_field: field,
     p_amount: amount,
@@ -756,7 +756,7 @@ export async function searchUsers(supabase: any, query: string): Promise<FriendP
   if (!user) return [];
 
   // Primary: accent-insensitive RPC (migration 064_unaccent_user_search)
-  const { data: rpcData, error: rpcError } = await supabase.rpc('search_users_fuzzy', {
+  const { data: rpcData, error: rpcError } = await supabase.rpc('ziko_search_users_fuzzy', {
     search_query: query.trim(),
     calling_user_id: user.id,
     result_limit: 20,
@@ -768,7 +768,7 @@ export async function searchUsers(supabase: any, query: string): Promise<FriendP
 
   // Fallback: ilike (case-insensitive) + client-side accent normalisation
   const { data } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id, name, avatar_url, goal')
     .neq('id', user.id)
     .ilike('name', `%${query}%`)
@@ -789,7 +789,7 @@ export async function loadFeed(supabase: any, limit = 30) {
   if (!user) return;
 
   const { data: rows } = await supabase
-    .from('community_posts')
+    .from('ziko_community_posts')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -801,7 +801,7 @@ export async function loadFeed(supabase: any, limit = 30) {
 
   const userIds = [...new Set<string>(rows.map((r: any) => r.user_id))];
   const { data: profiles } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id, name, avatar_url')
     .in('id', userIds);
   const profileMap = new Map<string, { name: string | null; avatar_url: string | null }>(
@@ -810,7 +810,7 @@ export async function loadFeed(supabase: any, limit = 30) {
 
   const postIds = rows.map((r: any) => r.id);
   const { data: myLikes } = await supabase
-    .from('post_likes')
+    .from('ziko_post_likes')
     .select('post_id')
     .eq('user_id', user.id)
     .in('post_id', postIds);
@@ -833,7 +833,7 @@ export async function loadFeed(supabase: any, limit = 30) {
 export async function createPost(supabase: any, content: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-  await supabase.from('community_posts').insert({ user_id: user.id, content });
+  await supabase.from('ziko_community_posts').insert({ user_id: user.id, content });
   await loadFeed(supabase);
 }
 
@@ -841,7 +841,7 @@ export async function likePost(supabase: any, postId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id });
+  await supabase.from('ziko_post_likes').insert({ post_id: postId, user_id: user.id });
 
   const store = useCommunityStore.getState();
   store.setData({
@@ -855,7 +855,7 @@ export async function unlikePost(supabase: any, postId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id);
+  await supabase.from('ziko_post_likes').delete().eq('post_id', postId).eq('user_id', user.id);
 
   const store = useCommunityStore.getState();
   store.setData({
@@ -867,7 +867,7 @@ export async function unlikePost(supabase: any, postId: string) {
 
 export async function loadComments(supabase: any, postId: string): Promise<PostComment[]> {
   const { data: rows } = await supabase
-    .from('post_comments')
+    .from('ziko_post_comments')
     .select('*')
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
@@ -876,7 +876,7 @@ export async function loadComments(supabase: any, postId: string): Promise<PostC
 
   const userIds = [...new Set<string>(rows.map((r: any) => r.user_id))];
   const { data: profiles } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('id, name')
     .in('id', userIds);
   const profileMap = new Map<string, { name: string | null }>(
@@ -896,5 +896,5 @@ export async function loadComments(supabase: any, postId: string): Promise<PostC
 export async function addComment(supabase: any, postId: string, content: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-  await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, content });
+  await supabase.from('ziko_post_comments').insert({ post_id: postId, user_id: user.id, content });
 }

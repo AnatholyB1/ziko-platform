@@ -166,14 +166,14 @@ Plans:
 - [x] 06-04-PLAN.md — Wave 0: 16-ci-migration-guard, frozen legacy manifest, migrate-supabase replaced by dormant ref-locked migrate-portfolio (CUTOVER-05)
 - [x] 06-05-PLAN.md — Wave 0: 17-env-switch (local/Vercel/EAS, audited matrix, flip = rollback with --target) (CUTOVER-01, CUTOVER-02)
 - [x] 06-06-PLAN.md — RLS fixture app flag (D-18), smoke checklist (17 carried items + core flows), authorization log, RUNBOOK Phase 6 (CUTOVER-03, CUTOVER-04)
-- [ ] 06-07-PLAN.md — [BLOCKING] Disable auto-chain; merge working line into main with migrate job dormant (typed phrase) (CUTOVER-05, CUTOVER-03)
-- [ ] 06-08-PLAN.md — gsd/phase-6-cutover: apply bucket + table codemods, fkey hint map, zero residuals, green checks (CUTOVER-01)
-- [ ] 06-09-PLAN.md — Signup flag at every call-site (D-14); 6 deferred coach routes become real harness cases (CUTOVER-03, CUTOVER-04)
-- [ ] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
-- [ ] 06-11-PLAN.md — Local env files -> portfolio; local backend/web/mobile run proofs, read-only (CUTOVER-01)
-- [ ] 06-12-PLAN.md — [BLOCKING] Vercel previews with branch-scoped env -> portfolio; scripted smoke + tenant diff (typed phrase) (CUTOVER-02, CUTOVER-03, CUTOVER-04)
-- [ ] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
-- [ ] 06-14-PLAN.md — [BLOCKING] Final delta on portfolio + --check all; human review (CUTOVER-03, CUTOVER-04)
+- [x] 06-07-PLAN.md — [BLOCKING] Disable auto-chain; merge working line into main with migrate job dormant (typed phrase) (CUTOVER-05, CUTOVER-03)
+- [x] 06-08-PLAN.md — gsd/phase-6-cutover: apply bucket + table codemods, fkey hint map, zero residuals, green checks (CUTOVER-01)
+- [x] 06-09-PLAN.md — Signup flag at every call-site (D-14); 6 deferred coach routes become real harness cases (CUTOVER-03, CUTOVER-04)
+- [x] 06-10-PLAN.md — Checkpoint PAT; scratch rehearsal: delta, RLS suite, full harness, isolation, local core flows (CUTOVER-03, CUTOVER-04)
+- [x] 06-11-PLAN.md — Local env files -> portfolio; local backend/web/mobile run proofs, read-only (CUTOVER-01)
+- [x] 06-12-PLAN.md — [BLOCKING] Vercel previews with branch-scoped env -> portfolio; scripted smoke + tenant diff (typed phrase) (CUTOVER-02, CUTOVER-03, CUTOVER-04)
+- [x] 06-13-PLAN.md — Read-only delta pre-flight, pre-cutover baselines, typed-phrase checkpoint (CUTOVER-03, CUTOVER-04)
+- [x] 06-14-PLAN.md — [BLOCKING] Final delta on portfolio + --check all; human review (CUTOVER-03, CUTOVER-04)
 - [ ] 06-15-PLAN.md — [BLOCKING] Backend flip: API prod env, merge cutover PR, pin web, prod API smoke, rollback path (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [ ] 06-16-PLAN.md — [BLOCKING] Web flip: prod env, rebuild + promote, scripted + manual web smoke (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [ ] 06-17-PLAN.md — [BLOCKING] CI repoint: secrets + PORTFOLIO_MIGRATIONS_ENABLED, proving CI run (CUTOVER-05)
@@ -205,5 +205,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 6/20 | In Progress|  |
+| 6. Cutover | 14/20 | In Progress|  |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |

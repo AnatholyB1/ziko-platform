@@ -56,7 +56,7 @@ export async function insertInvitation(
   for (let attempt = 0; attempt < MAX_GENERATE_RETRIES; attempt++) {
     const code = generateCode();
     const { data, error } = await db
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .insert({
         coach_id: coachId,
         code,
@@ -85,7 +85,7 @@ export async function listInvitations(
 ): Promise<Array<CoachInvitationRow & { status: ComputedInvitationStatus }>> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .select('id, coach_id, code, expires_at, revoked_at, use_count, max_uses, created_at')
     .eq('coach_id', coachId)
     .order('created_at', { ascending: false });
@@ -116,7 +116,7 @@ export async function revokeInvitation(
   // Idempotent: only update rows not yet revoked. Re-revoking returns 0 rows
   // affected — we treat that as success (still revoked).
   const { data, error } = await db
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .update({ revoked_at: new Date().toISOString() })
     .eq('id', id)
     .eq('coach_id', coachId) // belt + suspenders (RLS already enforces)

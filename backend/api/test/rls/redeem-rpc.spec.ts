@@ -21,7 +21,7 @@ async function createInvite(
   }> = {}
 ): Promise<string> {
   const code = randomCode();
-  const { error } = await admin.from('coach_invitations').insert({
+  const { error } = await admin.from('ziko_coach_invitations').insert({
     coach_id: coachId,
     code,
     expires_at:
@@ -50,7 +50,7 @@ afterAll(async () => {
 describe('redeem_invitation_code — error coverage', () => {
   it('happy path: client redeems valid code → link created, use_count incremented', async () => {
     const code = await createInvite(coach.id);
-    const { data, error } = await client.client.rpc('redeem_invitation_code', {
+    const { data, error } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: code,
     });
     expect(error).toBeNull();
@@ -58,7 +58,7 @@ describe('redeem_invitation_code — error coverage', () => {
     expect(data.link_id).toMatch(/^[0-9a-f-]{36}$/);
 
     const { data: inv } = await admin
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .select('use_count, used_by')
       .eq('code', code)
       .single();
@@ -67,13 +67,13 @@ describe('redeem_invitation_code — error coverage', () => {
 
     // Clean the link so subsequent tests can re-link the same pair.
     await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .update({ revoked_at: new Date().toISOString() })
       .match({ coach_id: coach.id, client_id: client.id });
   });
 
   it('INVALID_CODE for non-existent code', async () => {
-    const { data } = await client.client.rpc('redeem_invitation_code', {
+    const { data } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: 'ZZZZZZ',
     });
     expect(data).toMatchObject({ ok: false, error_code: 'INVALID_CODE' });
@@ -83,7 +83,7 @@ describe('redeem_invitation_code — error coverage', () => {
     const code = await createInvite(coach.id, {
       expiresAt: new Date(Date.now() - 3600_000).toISOString(),
     });
-    const { data } = await client.client.rpc('redeem_invitation_code', {
+    const { data } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: code,
     });
     expect(data).toMatchObject({ ok: false, error_code: 'EXPIRED' });
@@ -93,7 +93,7 @@ describe('redeem_invitation_code — error coverage', () => {
     const code = await createInvite(coach.id, {
       revokedAt: new Date().toISOString(),
     });
-    const { data } = await client.client.rpc('redeem_invitation_code', {
+    const { data } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: code,
     });
     expect(data).toMatchObject({ ok: false, error_code: 'REVOKED' });
@@ -101,7 +101,7 @@ describe('redeem_invitation_code — error coverage', () => {
 
   it('ALREADY_USED when use_count >= max_uses', async () => {
     const code = await createInvite(coach.id, { useCount: 1, maxUses: 1 });
-    const { data } = await client.client.rpc('redeem_invitation_code', {
+    const { data } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: code,
     });
     expect(data).toMatchObject({ ok: false, error_code: 'ALREADY_USED' });
@@ -109,7 +109,7 @@ describe('redeem_invitation_code — error coverage', () => {
 
   it('SELF_INVITATION when coach redeems own code (22-03-09)', async () => {
     const code = await createInvite(coach.id);
-    const { data } = await coach.client.rpc('redeem_invitation_code', {
+    const { data } = await coach.client.rpc('ziko_redeem_invitation_code', {
       code_input: code,
     });
     expect(data).toMatchObject({ ok: false, error_code: 'SELF_INVITATION' });
@@ -118,16 +118,16 @@ describe('redeem_invitation_code — error coverage', () => {
   it('LINK_EXISTS when active link with this coach already present', async () => {
     // Establish an active link
     const firstCode = await createInvite(coach.id);
-    await client.client.rpc('redeem_invitation_code', { code_input: firstCode });
+    await client.client.rpc('ziko_redeem_invitation_code', { code_input: firstCode });
     // Issue a second invite for the same client+coach
     const secondCode = await createInvite(coach.id);
-    const { data } = await client.client.rpc('redeem_invitation_code', {
+    const { data } = await client.client.rpc('ziko_redeem_invitation_code', {
       code_input: secondCode,
     });
     expect(data).toMatchObject({ ok: false, error_code: 'LINK_EXISTS' });
     // Cleanup
     await admin
-      .from('coach_client_links')
+      .from('ziko_coach_client_links')
       .update({ revoked_at: new Date().toISOString() })
       .match({ coach_id: coach.id, client_id: client.id });
   });
@@ -148,7 +148,7 @@ describe('redeem_invitation_code — error coverage', () => {
 
       async function measure(input: string): Promise<number> {
         const t0 = performance.now();
-        await client.client.rpc('redeem_invitation_code', { code_input: input });
+        await client.client.rpc('ziko_redeem_invitation_code', { code_input: input });
         return performance.now() - t0;
       }
 

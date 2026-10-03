@@ -26,7 +26,7 @@ describe.skipIf(!RUN_DB)('app_config.premium_credit_cap_enabled — stored as a 
   // the cap enabled ahead of Phase 6.
   it('reads exactly one row whose value is strictly the JS boolean false', async () => {
     const { data, error } = await admin
-      .from('app_config')
+      .from('ziko_app_config')
       .select('value')
       .eq('key', 'premium_credit_cap_enabled');
 
@@ -51,7 +51,7 @@ describe.skipIf(!RUN_DB)('user_profiles.is_lifetime_premium — exists, defaults
   });
 
   it('the column exists on user_profiles and is queryable without error', async () => {
-    const { error } = await admin.from('user_profiles').select('is_lifetime_premium').limit(1);
+    const { error } = await admin.from('ziko_user_profiles').select('is_lifetime_premium').limit(1);
     expect(error).toBeNull();
   });
 
@@ -60,7 +60,7 @@ describe.skipIf(!RUN_DB)('user_profiles.is_lifetime_premium — exists, defaults
     createdUserIds.push(testUser.id);
 
     const { data: row, error } = await admin
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('is_lifetime_premium')
       .eq('id', testUser.id)
       .single();
@@ -78,14 +78,14 @@ describe.skipIf(!RUN_DB)('app_config deny-all posture holds for the new cap row 
   });
 
   it('anon reading the cap key directly gets zero rows and no error', async () => {
-    const { data, error } = await anon.from('app_config').select('*').eq('key', 'premium_credit_cap_enabled');
+    const { data, error } = await anon.from('ziko_app_config').select('*').eq('key', 'premium_credit_cap_enabled');
     expect(error).toBeNull();
     expect(data).toEqual([]);
   });
 
   it('anon updating the cap key directly gets an error', async () => {
     const { error } = await anon
-      .from('app_config')
+      .from('ziko_app_config')
       .update({ value: true })
       .eq('key', 'premium_credit_cap_enabled');
     expect(error).not.toBeNull();

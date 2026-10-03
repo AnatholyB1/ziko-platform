@@ -230,7 +230,7 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
       const title = `${actLabel} · ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}`;
 
       const { data, error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .insert({
           user_id: user.id,
           title,

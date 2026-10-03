@@ -1,0 +1,29 @@
+apps/mobile/app/(app)/profile/avatar.tsx
+apps/mobile/app/(app)/profile/edit.tsx
+apps/mobile/app/(app)/profile/index.tsx
+apps/mobile/app/(app)/workout/exercise/[exerciseId].tsx
+apps/mobile/src/components/ExercisePicker.tsx
+apps/web/src/app/api/photo/route.ts
+apps/web/src/app/api/storage/upload-url/route.ts
+apps/web/src/components/coach/BrandingPreviewCard.tsx
+apps/web/src/components/coach/ExerciseMediaUpload.tsx
+apps/web/src/components/coach/ExerciseRow.tsx
+apps/web/src/components/coach/FileUploadRow.tsx
+apps/web/src/components/coach/LogoUpload.tsx
+apps/web/src/components/coach/PhotoUpload.tsx
+backend/api/src/coach/clients/db.ts
+backend/api/src/coach/exercises/db.ts
+backend/api/src/coach/imports/service.ts
+backend/api/src/coach/videos/service.ts
+backend/api/src/routes/ai.ts
+backend/api/src/routes/storage.ts
+backend/api/test/coach/imports.spec.ts
+plugins/coach/src/screens/CoachScreen.tsx
+plugins/nutrition/src/screens/LogMealScreen.tsx
+scripts/exercise-import/lib/merge-row.test.ts
+scripts/exercise-import/lib/merge-row.ts
+scripts/exercise-import/merge.ts
+A backend/api/src/config/buckets.ts
+A apps/web/src/lib/buckets.ts
+A packages/plugin-sdk/src/buckets.ts
+packages/plugin-sdk/src/index.ts

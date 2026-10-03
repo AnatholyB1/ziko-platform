@@ -13,7 +13,7 @@ export async function upsertBranding(
 ): Promise<BrandingRow> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_branding')
+    .from('ziko_coach_branding')
     .upsert(
       { coach_id: coachId, ...payload },
       { onConflict: 'coach_id' },
@@ -31,7 +31,7 @@ export async function getBranding(
 ): Promise<BrandingRow | null> {
   const db = createUserClient(jwt);
   const { data, error } = await db
-    .from('coach_branding')
+    .from('ziko_coach_branding')
     .select('primary_color, logo_url, tone')
     .eq('coach_id', coachId)
     .maybeSingle();

@@ -20,7 +20,7 @@ export async function journal_log_mood(
 
   const db = clientForUser(userToken);
   const { data, error } = await db
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .insert({
       user_id: userId,
       mood,
@@ -49,7 +49,7 @@ export async function journal_get_history(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .select('*')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])
@@ -71,7 +71,7 @@ export async function journal_get_trends(
   since.setDate(since.getDate() - days);
 
   const { data, error } = await db
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .select('mood, energy, stress, context, date')
     .eq('user_id', userId)
     .gte('date', since.toISOString().split('T')[0])

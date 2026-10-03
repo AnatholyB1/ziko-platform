@@ -408,7 +408,7 @@ export async function fetchAllStats(supabase: any, period: Period) {
 // 1. Volume over time (daily total_volume_kg)
 async function fetchVolumeTrend(supabase: any, cutoff: string | null): Promise<VolumePoint[]> {
   let q = supabase
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('started_at, total_volume_kg')
     .not('ended_at', 'is', null)
     .order('started_at');
@@ -433,7 +433,7 @@ async function fetchVolumeTrend(supabase: any, cutoff: string | null): Promise<V
 // 2. Session frequency per week
 async function fetchSessionFrequency(supabase: any, cutoff: string | null): Promise<SessionPoint[]> {
   let q = supabase
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('started_at')
     .not('ended_at', 'is', null)
     .order('started_at');
@@ -460,8 +460,8 @@ async function fetchSessionFrequency(supabase: any, cutoff: string | null): Prom
 // 3. Muscle group distribution (from session_sets + exercises)
 async function fetchMuscleDistribution(supabase: any, cutoff: string | null): Promise<MuscleGroupData[]> {
   let q = supabase
-    .from('session_sets')
-    .select('exercise_id, exercises(muscle_groups), session:workout_sessions!inner(started_at)')
+    .from('ziko_session_sets')
+    .select('exercise_id, exercises:ziko_exercises(muscle_groups), session:ziko_workout_sessions!inner(started_at)')
     .eq('completed', true);
 
   if (cutoff) q = q.gte('session.started_at', cutoff);
@@ -485,8 +485,8 @@ async function fetchMuscleDistribution(supabase: any, cutoff: string | null): Pr
 // 4. Top exercises by frequency
 async function fetchTopExercises(supabase: any, cutoff: string | null): Promise<ExerciseFrequency[]> {
   let q = supabase
-    .from('session_exercises')
-    .select('exercise_id, exercises(name), session:workout_sessions!inner(started_at)')
+    .from('ziko_session_exercises')
+    .select('exercise_id, exercises:ziko_exercises(name), session:ziko_workout_sessions!inner(started_at)')
     .gt('sets_completed', 0);
 
   if (cutoff) q = q.gte('session.started_at', cutoff);
@@ -510,7 +510,7 @@ async function fetchTopExercises(supabase: any, cutoff: string | null): Promise<
 // 5. Recent sessions
 async function fetchRecentSessions(supabase: any, cutoff: string | null): Promise<SessionSummary[]> {
   let q = supabase
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('id, name, started_at, ended_at, total_volume_kg, total_sets, total_reps, total_exercises, total_rest_seconds, total_duration_active_seconds, day_of_week')
     .not('ended_at', 'is', null)
     .order('started_at', { ascending: false })
@@ -525,7 +525,7 @@ async function fetchRecentSessions(supabase: any, cutoff: string | null): Promis
 // 6. Overview stats (aggregates)
 async function fetchOverviewStats(supabase: any, cutoff: string | null) {
   let q = supabase
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('total_volume_kg, started_at, ended_at, total_duration_active_seconds')
     .not('ended_at', 'is', null);
 
@@ -557,8 +557,8 @@ async function fetchOverviewStats(supabase: any, cutoff: string | null) {
   // Avg RPE from session_sets
   let avgRpe: number | null = null;
   let rpeQ = supabase
-    .from('session_sets')
-    .select('rpe, session:workout_sessions!inner(started_at)')
+    .from('ziko_session_sets')
+    .select('rpe, session:ziko_workout_sessions!inner(started_at)')
     .not('rpe', 'is', null);
 
   if (cutoff) rpeQ = rpeQ.gte('session.started_at', cutoff);
@@ -574,8 +574,8 @@ async function fetchOverviewStats(supabase: any, cutoff: string | null) {
 // 7. Personal records (max weight per exercise)
 async function fetchPersonalRecords(supabase: any): Promise<PersonalRecord[]> {
   const { data } = await supabase
-    .from('session_sets')
-    .select('exercise_id, weight_kg, reps, completed_at, exercises(name)')
+    .from('ziko_session_sets')
+    .select('exercise_id, weight_kg, reps, completed_at, exercises:ziko_exercises(name)')
     .eq('completed', true)
     .not('weight_kg', 'is', null)
     .order('weight_kg', { ascending: false });
@@ -610,8 +610,8 @@ export async function fetchExerciseProgression(
   const cutoff = getCutoff(period);
 
   let q = supabase
-    .from('session_sets')
-    .select('weight_kg, reps, rpe, completed_at, session:workout_sessions!inner(started_at)')
+    .from('ziko_session_sets')
+    .select('weight_kg, reps, rpe, completed_at, session:ziko_workout_sessions!inner(started_at)')
     .eq('exercise_id', exerciseId)
     .eq('completed', true)
     .order('completed_at');
@@ -650,17 +650,17 @@ export async function fetchExerciseProgression(
 export async function fetchSessionDetail(supabase: any, sessionId: string) {
   const [sessionRes, exercisesRes, setsRes] = await Promise.all([
     supabase
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('*')
       .eq('id', sessionId)
       .single(),
     supabase
-      .from('session_exercises')
-      .select('*, exercises(name, muscle_groups, category)')
+      .from('ziko_session_exercises')
+      .select('*, exercises:ziko_exercises(name, muscle_groups, category)')
       .eq('session_id', sessionId)
       .order('order_index'),
     supabase
-      .from('session_sets')
+      .from('ziko_session_sets')
       .select('*')
       .eq('session_id', sessionId)
       .order('exercise_order')
@@ -682,17 +682,17 @@ export async function fetchHabitsCompletionTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<HabitCompletionPoint[]> {
   // Get all active habits to know total per day
-  const { data: habits } = await supabase.from('habits').select('id').eq('is_active', true);
+  const { data: habits } = await supabase.from('ziko_habits').select('id').eq('is_active', true);
   const totalHabits = habits?.length ?? 0;
   if (totalHabits === 0) return [];
 
-  let q = supabase.from('habit_logs').select('date, habit_id, value').order('date');
+  let q = supabase.from('ziko_habit_logs').select('date, habit_id, value').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data: logs } = await q;
   if (!logs || logs.length === 0) return [];
 
   // Get habit targets to know completion
-  const { data: habitsWithTarget } = await supabase.from('habits').select('id, target').eq('is_active', true);
+  const { data: habitsWithTarget } = await supabase.from('ziko_habits').select('id, target').eq('is_active', true);
   const targetMap: Record<string, number> = {};
   for (const h of (habitsWithTarget ?? [])) targetMap[h.id] = h.target;
 
@@ -717,10 +717,10 @@ export async function fetchHabitPerformances(
   supabase: any, cutoff: string | null,
 ): Promise<HabitPerformance[]> {
   const { data: habits } = await supabase
-    .from('habits').select('*').eq('is_active', true).order('sort_order');
+    .from('ziko_habits').select('*').eq('is_active', true).order('sort_order');
   if (!habits) return [];
 
-  let q = supabase.from('habit_logs').select('habit_id, date, value').order('date');
+  let q = supabase.from('ziko_habit_logs').select('habit_id, date, value').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data: logs } = await q;
 
@@ -778,10 +778,10 @@ export async function fetchHabitPerformances(
 export async function fetchHabitsOverview(
   supabase: any, cutoff: string | null,
 ): Promise<HabitsOverview> {
-  const { data: habits } = await supabase.from('habits').select('id, target').eq('is_active', true);
+  const { data: habits } = await supabase.from('ziko_habits').select('id, target').eq('is_active', true);
   const totalHabits = habits?.length ?? 0;
 
-  let q = supabase.from('habit_logs').select('habit_id, date, value');
+  let q = supabase.from('ziko_habit_logs').select('habit_id, date, value');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data: logs } = await q;
 
@@ -825,7 +825,7 @@ export async function fetchNutritionTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<NutritionDayPoint[]> {
   let q = supabase
-    .from('nutrition_logs')
+    .from('ziko_nutrition_logs')
     .select('date, calories, protein_g, carbs_g, fat_g')
     .order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
@@ -848,7 +848,7 @@ export async function fetchNutritionTimeline(
 export async function fetchMealTypeDistribution(
   supabase: any, cutoff: string | null,
 ): Promise<MealTypeDistribution[]> {
-  let q = supabase.from('nutrition_logs').select('meal_type, calories');
+  let q = supabase.from('ziko_nutrition_logs').select('meal_type, calories');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -882,7 +882,7 @@ export async function fetchMealTypeDistribution(
 export async function fetchNutritionOverview(
   supabase: any, cutoff: string | null,
 ): Promise<NutritionOverview> {
-  let q = supabase.from('nutrition_logs').select('date, food_name, calories, protein_g, carbs_g, fat_g');
+  let q = supabase.from('ziko_nutrition_logs').select('date, food_name, calories, protein_g, carbs_g, fat_g');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
 
@@ -924,7 +924,7 @@ export async function fetchXPTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<XPTimelinePoint[]> {
   let q = supabase
-    .from('xp_transactions')
+    .from('ziko_xp_transactions')
     .select('amount, created_at')
     .order('created_at');
   if (cutoff) q = q.gte('created_at', cutoff);
@@ -949,7 +949,7 @@ export async function fetchXPTimeline(
 export async function fetchXPBySource(
   supabase: any, cutoff: string | null,
 ): Promise<XPBySource[]> {
-  let q = supabase.from('xp_transactions').select('source, amount');
+  let q = supabase.from('ziko_xp_transactions').select('source, amount');
   if (cutoff) q = q.gte('created_at', cutoff);
   const { data } = await q;
   if (!data) return [];
@@ -984,7 +984,7 @@ export async function fetchXPBySource(
 export async function fetchCoinFlow(
   supabase: any, cutoff: string | null,
 ): Promise<CoinFlow[]> {
-  let q = supabase.from('coin_transactions').select('amount, created_at').order('created_at');
+  let q = supabase.from('ziko_coin_transactions').select('amount, created_at').order('created_at');
   if (cutoff) q = q.gte('created_at', cutoff);
   const { data } = await q;
   if (!data) return [];
@@ -1010,13 +1010,13 @@ export async function fetchGamificationOverview(
   supabase: any, cutoff: string | null,
 ): Promise<GamificationOverview> {
   const [profileRes, xpRes, coinRes, inventoryRes, levelRes] = await Promise.all([
-    supabase.from('user_gamification').select('*').maybeSingle(),
-    (() => { let q = supabase.from('xp_transactions').select('amount, source, created_at');
+    supabase.from('ziko_user_gamification').select('*').maybeSingle(),
+    (() => { let q = supabase.from('ziko_xp_transactions').select('amount, source, created_at');
       if (cutoff) q = q.gte('created_at', cutoff); return q; })(),
-    (() => { let q = supabase.from('coin_transactions').select('amount, created_at');
+    (() => { let q = supabase.from('ziko_coin_transactions').select('amount, created_at');
       if (cutoff) q = q.gte('created_at', cutoff); return q; })(),
-    supabase.from('user_inventory').select('id'),
-    supabase.from('level_definitions').select('title').eq('level', 1).maybeSingle(),
+    supabase.from('ziko_user_inventory').select('id'),
+    supabase.from('ziko_level_definitions').select('title').eq('level', 1).maybeSingle(),
   ]);
 
   const profile = profileRes.data;
@@ -1055,12 +1055,12 @@ export async function fetchGamificationOverview(
 export async function fetchConversationActivity(
   supabase: any, cutoff: string | null,
 ): Promise<ConversationActivity[]> {
-  let cq = supabase.from('ai_conversations').select('id, created_at').order('created_at');
+  let cq = supabase.from('ziko_ai_conversations').select('id, created_at').order('created_at');
   if (cutoff) cq = cq.gte('created_at', cutoff);
   const { data: convos } = await cq;
   if (!convos || convos.length === 0) return [];
 
-  let mq = supabase.from('ai_messages').select('conversation_id, created_at').order('created_at');
+  let mq = supabase.from('ziko_ai_messages').select('conversation_id, created_at').order('created_at');
   if (cutoff) mq = mq.gte('created_at', cutoff);
   const { data: msgs } = await mq;
 
@@ -1084,11 +1084,11 @@ export async function fetchConversationActivity(
 export async function fetchAIOverview(
   supabase: any, cutoff: string | null,
 ): Promise<AIOverview> {
-  let cq = supabase.from('ai_conversations').select('id, title, created_at');
+  let cq = supabase.from('ziko_ai_conversations').select('id, title, created_at');
   if (cutoff) cq = cq.gte('created_at', cutoff);
   const { data: convos } = await cq;
 
-  let mq = supabase.from('ai_messages').select('conversation_id, role, created_at');
+  let mq = supabase.from('ziko_ai_messages').select('conversation_id, role, created_at');
   if (cutoff) mq = mq.gte('created_at', cutoff);
   const { data: msgs } = await mq;
 
@@ -1153,8 +1153,8 @@ export async function fetchCommunityOverview(
   supabase: any, cutoff: string | null,
 ): Promise<CommunityOverview> {
   const [statsRes, friendsRes] = await Promise.all([
-    supabase.from('community_user_stats').select('*').maybeSingle(),
-    supabase.from('friendships').select('id').eq('status', 'accepted'),
+    supabase.from('ziko_community_user_stats').select('*').maybeSingle(),
+    supabase.from('ziko_friendships').select('id').eq('status', 'accepted'),
   ]);
 
   const s = statsRes.data;
@@ -1197,7 +1197,7 @@ export async function fetchCommunityActivity(
   supabase: any, cutoff: string | null,
 ): Promise<CommunityActivityPoint[]> {
   let q = supabase
-    .from('community_messages')
+    .from('ziko_community_messages')
     .select('created_at')
     .order('created_at');
   if (cutoff) q = q.gte('created_at', cutoff);
@@ -1212,7 +1212,7 @@ export async function fetchCommunityActivity(
   }
 
   // Also grab reactions
-  let rq = supabase.from('screen_reactions').select('created_at').order('created_at');
+  let rq = supabase.from('ziko_screen_reactions').select('created_at').order('created_at');
   if (cutoff) rq = rq.gte('created_at', cutoff);
   const { data: reactions } = await rq;
   for (const r of (reactions ?? [])) {
@@ -1233,7 +1233,7 @@ export async function fetchCommunityActivity(
 export async function fetchSleepTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<SleepDayPoint[]> {
-  let q = supabase.from('sleep_logs').select('date, duration_hours, quality, bedtime, wake_time').order('date');
+  let q = supabase.from('ziko_sleep_logs').select('date, duration_hours, quality, bedtime, wake_time').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -1249,7 +1249,7 @@ export async function fetchSleepTimeline(
 export async function fetchSleepOverview(
   supabase: any, cutoff: string | null,
 ): Promise<SleepOverview> {
-  let q = supabase.from('sleep_logs').select('date, duration_hours, quality');
+  let q = supabase.from('ziko_sleep_logs').select('date, duration_hours, quality');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data || data.length === 0) {
@@ -1276,7 +1276,7 @@ export async function fetchSleepOverview(
 export async function fetchStretchingTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<StretchingDayPoint[]> {
-  let q = supabase.from('stretching_logs').select('date, duration_sec').order('date');
+  let q = supabase.from('ziko_stretching_logs').select('date, duration_sec').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -1294,7 +1294,7 @@ export async function fetchStretchingTimeline(
 export async function fetchStretchingOverview(
   supabase: any, cutoff: string | null,
 ): Promise<StretchingOverview> {
-  let q = supabase.from('stretching_logs').select('date, routine_name, duration_sec');
+  let q = supabase.from('ziko_stretching_logs').select('date, routine_name, duration_sec');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data || data.length === 0) {
@@ -1323,7 +1323,7 @@ export async function fetchStretchingOverview(
 export async function fetchMeasurementsTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<MeasurementPoint[]> {
-  let q = supabase.from('body_measurements')
+  let q = supabase.from('ziko_body_measurements')
     .select('date, weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, thigh_cm, hip_cm')
     .order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
@@ -1344,7 +1344,7 @@ export async function fetchMeasurementsTimeline(
 export async function fetchMeasurementsOverview(
   supabase: any, cutoff: string | null,
 ): Promise<MeasurementsOverview> {
-  let q = supabase.from('body_measurements')
+  let q = supabase.from('ziko_body_measurements')
     .select('date, weight_kg, body_fat_pct')
     .order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
@@ -1375,7 +1375,7 @@ export async function fetchMeasurementsOverview(
 export async function fetchJournalTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<JournalDayPoint[]> {
-  let q = supabase.from('journal_entries').select('date, mood, energy, stress').order('date');
+  let q = supabase.from('ziko_journal_entries').select('date, mood, energy, stress').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -1399,7 +1399,7 @@ export async function fetchJournalTimeline(
 export async function fetchJournalOverview(
   supabase: any, cutoff: string | null,
 ): Promise<JournalOverview> {
-  let q = supabase.from('journal_entries').select('date, mood, energy, stress, context');
+  let q = supabase.from('ziko_journal_entries').select('date, mood, energy, stress, context');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data || data.length === 0) {
@@ -1449,7 +1449,7 @@ export async function fetchJournalOverview(
 export async function fetchHydrationTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<HydrationDayPoint[]> {
-  let q = supabase.from('hydration_logs').select('date, amount_ml').order('date');
+  let q = supabase.from('ziko_hydration_logs').select('date, amount_ml').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -1463,7 +1463,7 @@ export async function fetchHydrationTimeline(
 export async function fetchHydrationOverview(
   supabase: any, cutoff: string | null,
 ): Promise<HydrationOverview> {
-  let q = supabase.from('hydration_logs').select('date, amount_ml');
+  let q = supabase.from('ziko_hydration_logs').select('date, amount_ml');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data || data.length === 0) {
@@ -1495,7 +1495,7 @@ export async function fetchHydrationOverview(
 export async function fetchCardioTimeline(
   supabase: any, cutoff: string | null,
 ): Promise<CardioDayPoint[]> {
-  let q = supabase.from('cardio_sessions').select('date, duration_min, distance_km, calories_burned').order('date');
+  let q = supabase.from('ziko_cardio_sessions').select('date, duration_min, distance_km, calories_burned').order('date');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data) return [];
@@ -1514,7 +1514,7 @@ export async function fetchCardioTimeline(
 export async function fetchCardioOverview(
   supabase: any, cutoff: string | null,
 ): Promise<CardioOverview> {
-  let q = supabase.from('cardio_sessions').select('date, activity_type, duration_min, distance_km, calories_burned, avg_heart_rate, avg_pace_sec_per_km');
+  let q = supabase.from('ziko_cardio_sessions').select('date, activity_type, duration_min, distance_km, calories_burned, avg_heart_rate, avg_pace_sec_per_km');
   if (cutoff) q = q.gte('date', cutoff.split('T')[0]);
   const { data } = await q;
   if (!data || data.length === 0) {

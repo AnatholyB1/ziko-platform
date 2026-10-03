@@ -13,7 +13,7 @@ export default async function ClientMeasurementsPage({
   // Fetch measurements data — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('body_measurements')
+    .from('ziko_body_measurements')
     .select('id, weight_kg, body_fat_pct, waist_cm, chest_cm, arm_cm, hip_cm, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })

@@ -65,7 +65,7 @@ export default function HabitLogScreen({ supabase }: { supabase: any }) {
         sort_order: habits.length,
       };
 
-      const { data, error } = await supabase.from('habits').insert(newHabit).select('*').single();
+      const { data, error } = await supabase.from('ziko_habits').insert(newHabit).select('*').single();
       if (error) throw error;
 
       // Schedule notification if reminder set

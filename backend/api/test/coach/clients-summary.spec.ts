@@ -32,16 +32,16 @@ beforeAll(async () => {
   coach = await createTestUser('summary-coach');
   client = await createTestUser('summary-client');
 
-  await adminClient.from('user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Summary Coach' });
-  await adminClient.from('coach_profiles').upsert({ user_id: coach.id, display_name: 'Summary Coach' });
-  await adminClient.from('user_profiles').upsert({ id: client.id, role: 'client', name: 'Summary Client' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: coach.id, role: 'coach', name: 'Summary Coach' });
+  await adminClient.from('ziko_coach_profiles').upsert({ user_id: coach.id, display_name: 'Summary Coach' });
+  await adminClient.from('ziko_user_profiles').upsert({ id: client.id, role: 'client', name: 'Summary Client' });
 
   coachJwt = await getJwt(coach);
   clientJwt = await getJwt(client);
 
   // Create invitation and redeem to establish link
   const { data, error } = await adminClient
-    .from('coach_invitations')
+    .from('ziko_coach_invitations')
     .insert({ coach_id: coach.id, code: 'SUMRYX', expires_at: fourteenDays() })
     .select()
     .single();
@@ -53,12 +53,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await adminClient.from('workout_sessions').delete().eq('user_id', client.id);
-  await adminClient.from('coach_client_links').delete().eq('client_id', client.id);
+  await adminClient.from('ziko_workout_sessions').delete().eq('user_id', client.id);
+  await adminClient.from('ziko_coach_client_links').delete().eq('client_id', client.id);
   if (cleanupInvIds.length) {
-    await adminClient.from('coach_invitations').delete().in('id', cleanupInvIds);
+    await adminClient.from('ziko_coach_invitations').delete().in('id', cleanupInvIds);
   }
-  await adminClient.from('coach_profiles').delete().eq('user_id', coach.id);
+  await adminClient.from('ziko_coach_profiles').delete().eq('user_id', coach.id);
   await cleanupTestUsers([coach.id, client.id]);
 });
 
@@ -82,7 +82,7 @@ describe('GET /coach/clients/:id/summary — executive summary aggregates', () =
     weekStart.setDate(now.getDate() - now.getDay());
     const sessionDate = new Date(weekStart.getTime() + 60 * 60 * 1000).toISOString(); // 1h after week start
 
-    await adminClient.from('workout_sessions').insert({
+    await adminClient.from('ziko_workout_sessions').insert({
       user_id: client.id,
       name: 'Test Session',
       created_at: sessionDate,
@@ -117,7 +117,7 @@ describe('GET /coach/clients/:id/summary — executive summary aggregates', () =
 
   it('unlinked coach gets zero-value summary (RLS returns empty, not error)', async () => {
     const unlinkedCoach = await createTestUser('summary-unlinked');
-    await adminClient.from('user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
+    await adminClient.from('ziko_user_profiles').upsert({ id: unlinkedCoach.id, role: 'coach' });
     const unlinkedJwt = await getJwt(unlinkedCoach);
     // RLS prevents reading client data — getClientSummary returns zero/null fields, not throws
     const summary = await getClientSummary(unlinkedJwt, unlinkedCoach.id, client.id);
