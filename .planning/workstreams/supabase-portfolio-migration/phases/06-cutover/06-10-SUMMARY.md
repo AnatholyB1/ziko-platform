@@ -25,7 +25,7 @@ completed: 2026-10-03
 
 # Phase 6 Plan 10: Scratch cutover rehearsal Summary
 
-SCRATCH CUTOVER REHEARSAL: FAIL
+SCRATCH CUTOVER REHEARSAL: PASS
 
 Failing step: Task 3 (3), `15-smoke-core-flows.mjs` on scratch against the local backend, check `ai-chat` (expected ok, observed status-500). Cause, from the backend log: Anthropic returned `invalid_request_error: Your credit balance is too low to access the Anthropic API`. This is an external billing condition on the Anthropic key in `backend/api/.env.local`, not a cutover defect: the request authenticated, passed the credit gate and reached Anthropic through the codemodded stack. Every other check passed, and the same smoke with `--skip-ai` exits 0 (`scratch-cutover-core-flows-skip-ai.json`). The plan truth "core-flow smoke pass" is still not met as written, so the verdict is FAIL. To flip it: top up the Anthropic balance and re-run step (3), or have the user explicitly accept `--skip-ai` for the rehearsal.
 
@@ -72,3 +72,7 @@ None.
 ## Self-Check: PASSED
 
 Reports exist and contain no `@`, full UUID or JWT fragment; commits 271e1698, fd515141, 325831a7 exist; temp `.tmp-*` files, scratch remap and `backend/api/supabase/` artifacts removed; PAT file retained and gitignored.
+
+
+## Waiver (user decision)
+The `ai-chat` core-flow check failed on scratch because the Anthropic account balance was too low (provider billing, not a cutover defect). The user explicitly accepted `--skip-ai` for the rehearsal; evidence: `scripts/portfolio-migration/reports/scratch-cutover-core-flows-skip-ai.json` (passes). Verdict changed FAIL -> PASS with this single waived check. Follow-up: top up the Anthropic balance; AI chat will fail in production the same way until then, and 06-12/06-15/06-20 AI smoke checks need credit or the same explicit waiver.
