@@ -1,0 +1,126 @@
+{
+  "target_ref": "ubxllsvanurkwkohzxau",
+  "mode": "apply",
+  "generated_at": "2026-10-03T14:00:37.915Z",
+  "buckets": [
+    {
+      "source": "ai-imports",
+      "target": "ziko-ai-imports",
+      "objects": 9,
+      "bytes": 27234830,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 9,
+      "rekeyed": 9,
+      "failed": 0
+    },
+    {
+      "source": "avatars",
+      "target": "ziko-avatars",
+      "objects": 2,
+      "bytes": 163805,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 2,
+      "rekeyed": 2,
+      "failed": 0
+    },
+    {
+      "source": "coach-exercises",
+      "target": "ziko-coach-exercises",
+      "objects": 5,
+      "bytes": 2948150,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 5,
+      "rekeyed": 5,
+      "failed": 0
+    },
+    {
+      "source": "coach-kyc",
+      "target": "ziko-coach-kyc",
+      "objects": 6,
+      "bytes": 13936337,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 6,
+      "rekeyed": 4,
+      "failed": 0
+    },
+    {
+      "source": "coach-logos",
+      "target": "ziko-coach-logos",
+      "objects": 1,
+      "bytes": 760224,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 1,
+      "rekeyed": 1,
+      "failed": 0
+    },
+    {
+      "source": "coach-videos",
+      "target": "ziko-coach-videos",
+      "objects": 0,
+      "bytes": 0,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 0,
+      "rekeyed": 0,
+      "failed": 0
+    },
+    {
+      "source": "exercise-media",
+      "target": "ziko-exercise-media",
+      "objects": 2660,
+      "bytes": 150974615,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 2660,
+      "rekeyed": 0,
+      "failed": 0
+    },
+    {
+      "source": "exports",
+      "target": "ziko-exports",
+      "objects": 0,
+      "bytes": 0,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 0,
+      "rekeyed": 0,
+      "failed": 0
+    },
+    {
+      "source": "profile-photos",
+      "target": "ziko-profile-photos",
+      "objects": 3,
+      "bytes": 1633983,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 3,
+      "rekeyed": 2,
+      "failed": 0
+    },
+    {
+      "source": "scan-photos",
+      "target": "ziko-scan-photos",
+      "objects": 13,
+      "bytes": 16553057,
+      "copied": 0,
+      "changed": 0,
+      "skipped": 13,
+      "rekeyed": 13,
+      "failed": 0
+    }
+  ],
+  "total_objects": 2699,
+  "total_bytes": 214205001,
+  "total_copied": 0,
+  "total_failed": 0,
+  "dest_only": 0,
+  "cache_control_raw": 31,
+  "notes": [
+    "created_at is reset on copied objects; the scan-photos 90-day cleanup clock restarts"
+  ]
+}
