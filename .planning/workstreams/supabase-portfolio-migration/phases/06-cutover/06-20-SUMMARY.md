@@ -45,7 +45,7 @@ Not run. Files still on disk: `scripts/auth-merge/.access-token`, `scripts/portf
 
 ## Docs-only PR
 
-Branch gsd/phase-6-cutover pushed and a docs-only PR to main opened; NOT merged (hard limit: no pushes to main from this run). PR URL: recorded below.
+Branch gsd/phase-6-cutover pushed and a docs-only PR to main opened; NOT merged (hard limit: no pushes to main from this run). PR URL: https://github.com/AnatholyB1/ziko-platform/pull/44 (open, diff limited to .planning/ and scripts/portfolio-migration/, awaiting merge decision).
 
 ## Deviations from Plan
 
