@@ -46,11 +46,11 @@
 
 ### Cutover (CUTOVER)
 
-- [ ] **CUTOVER-01**: Fichiers env locaux mis à jour (`apps/mobile/.env`, `apps/web/.env.local`, `backend/api/.env.local`)
-- [ ] **CUTOVER-02**: Variables Vercel mises à jour sur les projets web et backend API
+- [x] **CUTOVER-01**: Fichiers env locaux mis à jour (`apps/mobile/.env`, `apps/web/.env.local`, `backend/api/.env.local`)
+- [x] **CUTOVER-02**: Variables Vercel mises à jour sur les projets web et backend API
 - [ ] **CUTOVER-03**: Bascule ordonnée backend → web → mobile, jamais simultanée, chaque surface smoke-testée avant la suivante
-- [ ] **CUTOVER-04**: Régression vérifiée nulle sur `rh_*` et `gecko_*` après fusion
-- [ ] **CUTOVER-05**: CI (`migrate-supabase` job) et secrets GitHub repointés vers `portfolio`
+- [x] **CUTOVER-04**: Régression vérifiée nulle sur `rh_*` et `gecko_*` après fusion
+- [x] **CUTOVER-05**: CI (`migrate-supabase` job) et secrets GitHub repointés vers `portfolio`
 
 ### Monitoring & Décommission (DECOM)
 
@@ -71,7 +71,7 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | Refonte fonctionnelle du schéma au-delà du renommage/préfixage | Hors périmètre — cette milestone est un rename-and-relocate, pas une réarchitecture |
 | Migration vers un fournisseur autre que Supabase | Hors périmètre — cible fixée sur le projet Supabase `portfolio` existant |
 | Zero-downtime dual-write / réplication logique Postgres | Réplication logique ne supporte pas le remapping de noms de table en cours de flux ; non justifié à l'échelle de 39 utilisateurs (write-freeze court + delta-sync suffit) |
-| EAS Update OTA pour forcer la bascule mobile | Décision utilisateur : attendre le renouvellement naturel des binaires via mise à jour store plutôt que forcer une bascule OTA |
+| EAS Update OTA pour forcer la bascule mobile | Décision utilisateur : attendre le renouvellement naturel des binaires via mise à jour store plutôt que forcer une bascule OTA. Amendement Phase 6 : l'OTA était de toute façon infaisable (expo-updates désactivé nativement) ; le build natif (1.5.0) EST la bascule mobile |
 
 ## Traceability
 
@@ -101,11 +101,11 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | STORAGE-02 | Phase 5 - Storage Migration | Complete |
 | STORAGE-03 | Phase 5 - Storage Migration | Complete |
 | STORAGE-04 | Phase 5 - Storage Migration | Complete |
-| CUTOVER-01 | Phase 6 - Cutover | Pending |
-| CUTOVER-02 | Phase 6 - Cutover | Pending |
-| CUTOVER-03 | Phase 6 - Cutover | Pending |
-| CUTOVER-04 | Phase 6 - Cutover | Pending |
-| CUTOVER-05 | Phase 6 - Cutover | Pending |
+| CUTOVER-01 | Phase 6 - Cutover | Complete (06-11) |
+| CUTOVER-02 | Phase 6 - Cutover | Complete (production API + web flipped; Preview/Development scopes of shared web records may still hold ziko values) |
+| CUTOVER-03 | Phase 6 - Cutover | Partial (backend and web flipped and smoked in order; mobile NOT achieved: iOS unreleased, Android 1.5.0 submitted to Play with state unconfirmed, device checklist waived) |
+| CUTOVER-04 | Phase 6 - Cutover | Complete (final data/storage/auth tenant checks vs pre-cutover baselines, 0 rh_/gecko_ regression; sv_* drift is live Sevalys traffic) |
+| CUTOVER-05 | Phase 6 - Cutover | Complete (06-17; CI verify secrets point at scratch) |
 | DECOM-01 | Phase 7 - Monitoring & Decommission | Pending |
 | DECOM-02 | Phase 7 - Monitoring & Decommission | Pending |
 | DECOM-03 | Phase 7 - Monitoring & Decommission | Pending |
@@ -119,4 +119,4 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-09-21 after roadmap creation — 7 phases, 34/34 requirements mapped*
+*Last updated: 2026-10-03 after 06-20 Tasks 1-2 — CUTOVER-03 left open (mobile flip not achieved)*

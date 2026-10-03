@@ -138,26 +138,28 @@ Plans:
   3. Backend, then web, then mobile are each independently smoke-tested and confirmed working against portfolio before the next surface flips — never simultaneously
   4. rh_* and gecko_* functionality shows zero regression after the merge
   5. CI's `migrate-supabase` job and GitHub secrets are repointed to portfolio, and a subsequent CI run succeeds
-**Carried from Phase 5 (explicit smoke-test items):**
-- [ ] backend (ziko-coach-kyc): GET /coach/clients/links/me: full-route smoke against portfolio after the table-name codemod
-- [ ] backend (ziko-coach-videos): POST /coach/videos/upload-url: full-route smoke against portfolio after the table-name codemod
-- [ ] backend (ziko-coach-videos): GET /coach/videos/:videoId/signed-url: full-route smoke against portfolio after the table-name codemod
-- [ ] backend (ziko-coach-videos): GET /coach/videos/annotations/:annotationId/audio-url: full-route smoke against portfolio after the table-name codemod
-- [ ] backend (ziko-coach-exercises): GET /coach/exercises/:id/media-url: full-route smoke against portfolio after the table-name codemod
-- [ ] backend (ziko-ai-imports): POST /coach/imports: full-route smoke against portfolio after the table-name codemod
-- [ ] mobile profile (ziko-avatars): avatar upload and display (D-10 UI-level flow)
-- [ ] mobile profile (ziko-profile-photos): profile photo upload, display and remove (D-02 quirk expected: private bucket, public SELECT policy, no DELETE policy)
-- [ ] mobile workout (ziko-exercise-media): exercise media display in the exercise screen and picker
-- [ ] plugin-nutrition (ziko-scan-photos): scan photo upload via /storage/upload-url and display
-- [ ] plugin-coach (ziko-coach-logos): coach logo display
-- [ ] web coach (ziko-coach-kyc): KYC document upload and api/photo display
-- [ ] web coach (ziko-coach-exercises): coach exercise media upload
-- [ ] web coach (ziko-coach-logos): coach logo upload and branding preview
-- [ ] web coach (ziko-ai-imports): coach AI import upload
-- [ ] mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view
-- [ ] codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before
+**Carried from Phase 5 (explicit smoke-test items; 17/17 closed, but the 6 mobile UI items are WAIVED with API-level evidence only):**
+- [x] backend (ziko-coach-kyc): GET /coach/clients/links/me: full-route smoke against portfolio after the table-name codemod (proof: scripts/portfolio-migration/reports/prod-backend-storage-auth.json case bk-clients-links-me (26/26 PASS, production API on portfolio, 06-15))
+- [x] backend (ziko-coach-videos): POST /coach/videos/upload-url: full-route smoke against portfolio after the table-name codemod (proof: prod-backend-storage-auth.json case bk-videos-upload-url (06-15))
+- [x] backend (ziko-coach-videos): GET /coach/videos/:videoId/signed-url: full-route smoke against portfolio after the table-name codemod (proof: prod-backend-storage-auth.json cases bk-videos-signed-url (+foreign deny) (06-15))
+- [x] backend (ziko-coach-videos): GET /coach/videos/annotations/:annotationId/audio-url: full-route smoke against portfolio after the table-name codemod (proof: prod-backend-storage-auth.json cases bk-videos-audio-url (+foreign deny) (06-15))
+- [x] backend (ziko-coach-exercises): GET /coach/exercises/:id/media-url: full-route smoke against portfolio after the table-name codemod (proof: prod-backend-storage-auth.json cases bk-exercises-media-url (+2 deny) (06-15))
+- [x] backend (ziko-ai-imports): POST /coach/imports: full-route smoke against portfolio after the table-name codemod (proof: prod-backend-storage-auth.json case bk-imports-create (06-15))
+- [x] mobile profile (ziko-avatars): avatar upload and display (D-10 UI-level flow) (WAIVED, not device-tested (checklist row M-01, 06-18 waiver). API-level only: case av-public-read in prod-backend-storage-auth.json)
+- [x] mobile profile (ziko-profile-photos): profile photo upload, display and remove (D-02 quirk expected: private bucket, public SELECT policy, no DELETE policy) (WAIVED, not device-tested (M-02, 06-18 waiver). API-level only: cases pp-baseline-public-url, sp-* in prod-backend-storage-auth.json)
+- [x] mobile workout (ziko-exercise-media): exercise media display in the exercise screen and picker (WAIVED, not device-tested (M-03, 06-18 waiver). API-level only: case em-public-read)
+- [x] plugin-nutrition (ziko-scan-photos): scan photo upload via /storage/upload-url and display (WAIVED, not device-tested (M-04, 06-18 waiver). API-level only: cases sp-sign-upload-own, sp-backend-own/foreign)
+- [x] plugin-coach (ziko-coach-logos): coach logo display (WAIVED, not device-tested (M-05, 06-18 waiver). API-level only: case cl-public-read)
+- [x] web coach (ziko-coach-kyc): KYC document upload and api/photo display (proof: scripts/portfolio-migration/reports/prod-web-storage-auth.json cases ck-web-upload-url-own/foreign, ck-web-photo-foreign (26/26, 06-16); browser W-01 not exercised, scripted coverage accepted by the user)
+- [x] web coach (ziko-coach-exercises): coach exercise media upload (proof: checklist W-02 (06-16 Task 4: upload accepted, storage write to portfolio OK; one orphan test PNG left in ziko-coach-exercises))
+- [x] web coach (ziko-coach-logos): coach logo upload and branding preview (proof: checklist W-03 (06-16 Task 4: migrated logo renders in the branding preview; replace not exercised) + case cl-public-read in prod-web-storage-auth.json)
+- [x] web coach (ziko-ai-imports): coach AI import upload (proof: bk-imports-create + ai-foreign-read in prod-web-storage-auth.json (06-16); browser W-04 not exercised, scripted coverage accepted by the user)
+- [x] mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view (WAIVED, not run end to end (M-06 and W-05 never done, 06-18 waiver). API-level only: bk-videos-upload-url, bk-videos-signed-url)
+- [x] codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before (proof: phases/06-cutover/06-CUTOVER-SMOKE-CHECKLIST.md S-7, 06-08 and 06-15 summaries (--check clean, merged with the flip via PR #38))
 
-**Plans**: 20 plans
+**Status (honest): NOT COMPLETE.** Backend flipped 2026-10-03 14:29Z, web flipped 15:08Z, CI repointed; final tenant checks on data, storage and auth show no rh_/gecko_ regression (scripts/portfolio-migration/reports/portfolio-cutover-final.json). Open: (a) mobile flip not achieved: iOS unreleased, Android submitted to Play but Play Console state unconfirmed, app never device-tested against portfolio (checklist waived); (b) API crons return 401 (pre-existing since at least 2026-09-29, not caused by the flip); (c) AI chat never verified on portfolio (Anthropic balance empty, waived throughout); (d) Preview/Development Vercel env scopes of shared web records may still hold ziko values and SUPABASE_PUBLISHABLE_KEY on ziko-web untouched; (e) CI verify secrets point at scratch, two remote timing specs skip on CI (PR #40); (f) credential retirement (06-20 Task 3) pending. Verdict lines: SCRATCH CUTOVER REHEARSAL PASS, PREVIEW SMOKE PASS, CUTOVER DELTA PASS, BACKEND FLIP SMOKE PASS, WEB FLIP SMOKE PASS (W-01/W-04 by scripted coverage), CI REPOINT PASS, MOBILE INTERNAL CHECKLIST WAIVED, MOBILE FLIP NOT ACHIEVED. Phase checkbox stays unchecked.
+
+**Plans**: 20 plans (18 complete incl. 06-18 with waiver; 06-19 partial; 06-20 Tasks 1-2 done)
 
 Plans:
 - [x] 06-01-PLAN.md — Wave 0 TDD: 12-codemod-tables.mjs, map-driven table/RPC/embed(alias)/realtime codemod with fail-closed scan and repo-wide --check (CUTOVER-01)
@@ -177,9 +179,9 @@ Plans:
 - [x] 06-15-PLAN.md — [BLOCKING] Backend flip: API prod env, merge cutover PR, pin web, prod API smoke, rollback path (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [x] 06-16-PLAN.md — [BLOCKING] Web flip: prod env, rebuild + promote, scripted + manual web smoke (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [x] 06-17-PLAN.md — [BLOCKING] CI repoint: secrets + PORTFOLIO_MIGRATIONS_ENABLED, proving CI run (CUTOVER-05)
-- [x] 06-18-PLAN.md — [BLOCKING] Mobile flip: EAS env, version 1.5.0, internal build, device checklist + signup-landing proof (CUTOVER-03, CUTOVER-04)
-- [ ] 06-19-PLAN.md — [BLOCKING] v1.5.0 store release via release.yml; submission states (CUTOVER-03)
-- [ ] 06-20-PLAN.md — Final tenant regression, leftovers, crons; docs + Phase 7 hand-off; credential retirement on every path (CUTOVER-01..05)
+- [x] 06-18-PLAN.md — [BLOCKING] Mobile flip: EAS env, version 1.5.0, internal build, device checklist + signup-landing proof (CUTOVER-03, CUTOVER-04) — COMPLETE WITH WAIVER: the device checklist (M-01..M-12, W-05) was waived by the user, `MOBILE INTERNAL CHECKLIST: WAIVED`, never device-tested against portfolio
+- [ ] 06-19-PLAN.md — [BLOCKING] v1.5.0 store release via release.yml; submission states (CUTOVER-03) — PARTIAL, `MOBILE FLIP: NOT ACHIEVED`: v1.5.0 failed at Setup EAS, v1.5.1 built Android but iOS failed (provisioning profile lacks Sign in with Apple); Android 1.5.0 (versionCode 16) was submitted manually to the Play production track (user decision), iOS unreleased, Play Console state unconfirmed
+- [ ] 06-20-PLAN.md — Final tenant regression, leftovers, crons; docs + Phase 7 hand-off; credential retirement on every path (CUTOVER-01..05) — Tasks 1-2 done, Task 3 (credential retirement) pending
 
 ### Phase 7: Monitoring & Decommission
 **Goal**: ziko is retired and deleted only after a monitored rollback window, full per-table/per-bucket verification, and a second, separate human confirmation — never bundled with cutover sign-off
@@ -205,5 +207,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 18/20 | In Progress|  |
+| 6. Cutover | 18/20 | In Progress (06-19 partial, 06-20 awaiting credential retirement; mobile not flipped) |  |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |
