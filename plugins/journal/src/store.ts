@@ -64,7 +64,7 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })

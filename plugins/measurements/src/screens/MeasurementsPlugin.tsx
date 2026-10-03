@@ -123,7 +123,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       } = await supabase.auth.getUser();
       if (!user) return null;
       const { data } = await supabase
-        .from('body_measurements')
+        .from('ziko_body_measurements')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
@@ -150,7 +150,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       const since = new Date();
       since.setDate(since.getDate() - 42);
       const { data } = await supabase
-        .from('body_measurements')
+        .from('ziko_body_measurements')
         .select('*')
         .eq('user_id', user.id)
         .gte('date', since.toISOString().slice(0, 10))
@@ -221,7 +221,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       if (arm.trim()) payload.arm_cm = parseFloat(arm.trim());
       if (thigh.trim()) payload.thigh_cm = parseFloat(thigh.trim());
       if (hip.trim()) payload.hip_cm = parseFloat(hip.trim());
-      const { error } = await supabase.from('body_measurements').insert(payload);
+      const { error } = await supabase.from('ziko_body_measurements').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {

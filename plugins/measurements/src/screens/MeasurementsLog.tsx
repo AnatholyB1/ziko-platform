@@ -69,7 +69,7 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
-      const { data, error } = await supabase.from('body_measurements').insert({
+      const { data, error } = await supabase.from('ziko_body_measurements').insert({
         user_id: user.id,
         date,
         weight_kg: toNum(weight), body_fat_pct: toNum(bodyFat),

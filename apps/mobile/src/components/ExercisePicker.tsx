@@ -48,7 +48,7 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
     queryKey: ['exercises', 'v2', 'picker'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exercises')
+        .from('ziko_exercises')
         .select('id, name, muscle_groups, equipment, target_muscle, image')
         .order('name')
         .limit(200);

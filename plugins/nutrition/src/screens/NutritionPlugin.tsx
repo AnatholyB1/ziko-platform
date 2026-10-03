@@ -128,7 +128,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
       queryKey: ['nutrition_today', userId, today],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('nutrition_logs')
+          .from('ziko_nutrition_logs')
           .select('*')
           .eq('user_id', userId)
           .eq('date', today)
@@ -145,7 +145,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
       queryKey: ['nutrition_goals', userId],
       queryFn: async () => {
         const { data, error } = await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .select('weight_kg, goal')
           .eq('id', userId)
           .single();
@@ -179,7 +179,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const fromDate = sevenDaysAgo.toISOString().split('T')[0];
         const { data, error } = await supabase
-          .from('nutrition_logs')
+          .from('ziko_nutrition_logs')
           .select('*')
           .eq('user_id', userId)
           .gte('date', fromDate)
@@ -193,7 +193,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
   // ── Quick-add mutation ─────────────────────────────────────────────────────
   const quickAddMutation = useMutation({
     mutationFn: async (entry: Omit<NutritionLog, 'id' | 'created_at'>) => {
-      const { error } = await supabase.from('nutrition_logs').insert(entry);
+      const { error } = await supabase.from('ziko_nutrition_logs').insert(entry);
       if (error) throw error;
     },
     onSuccess: () => {

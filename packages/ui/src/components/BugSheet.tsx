@@ -73,7 +73,7 @@ export function BugSheet({ supabase, apiUrl, userId }: BugSheetProps) {
       status: 'open',
     };
 
-    const { error } = await supabase.from('bug_reports').insert(report);
+    const { error } = await supabase.from('ziko_bug_reports').insert(report);
 
     if (error) {
       setIsSending(false);

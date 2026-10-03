@@ -154,7 +154,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .select('*')
         .eq('user_id', userId)
         .eq('date', today)
@@ -172,7 +172,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       if (!userId) return [];
       const sevenDaysAgo = getLast7Days()[0];
       const { data, error } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .select('*')
         .eq('user_id', userId)
         .gte('date', sevenDaysAgo)
@@ -189,7 +189,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     queryFn: async () => {
       if (!userId) return DEFAULT_GOAL;
       const { data } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('settings')
         .eq('id', userId)
         .single();
@@ -208,7 +208,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
         throw new Error('Quantité invalide (1–5000 ml)');
       }
       const { error } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .insert({ user_id: userId, amount_ml, date: today });
       if (error) throw error;
     },
@@ -226,13 +226,13 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       if (!userId) throw new Error('Non authentifié');
       // Upsert settings in user_profiles
       const { data: existing } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('settings')
         .eq('id', userId)
         .single();
       const newSettings = { ...(existing?.settings ?? {}), hydration_goal_ml: newGoal };
       const { error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .update({ settings: newSettings })
         .eq('id', userId);
       if (error) throw error;

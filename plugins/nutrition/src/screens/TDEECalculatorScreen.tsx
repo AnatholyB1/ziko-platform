@@ -128,7 +128,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .select('age, weight_kg, height_cm, goal')
           .eq('id', user.id)
           .single();

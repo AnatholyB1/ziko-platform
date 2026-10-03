@@ -113,7 +113,7 @@ export default function BugReportModal() {
     };
 
     // Save to Supabase
-    const { error } = await supabase.from('bug_reports').insert(report);
+    const { error } = await supabase.from('ziko_bug_reports').insert(report);
 
     if (error) {
       setIsSending(false);

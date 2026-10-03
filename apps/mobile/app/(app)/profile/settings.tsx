@@ -78,7 +78,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
       try {
         const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
         await supabase
-          .from('notification_preferences')
+          .from('ziko_notification_preferences')
           .upsert(
             {
               user_id: userId,
@@ -95,7 +95,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
             { onConflict: 'user_id', ignoreDuplicates: true }
           );
         const { data } = await supabase
-          .from('notification_preferences')
+          .from('ziko_notification_preferences')
           .select('push_enabled, coach_enabled, workout_enabled, gamification_enabled, health_enabled, system_enabled, quiet_hours_start, quiet_hours_end')
           .eq('user_id', userId)
           .single();
@@ -125,7 +125,7 @@ function NotifSubScreen({ onBack, userId }: { onBack: () => void; userId: string
     const tzOffset = Math.round(-new Date().getTimezoneOffset() / 60);
     saveRef.current = setTimeout(async () => {
       await supabase
-        .from('notification_preferences')
+        .from('ziko_notification_preferences')
         .upsert(
           {
             user_id: userId,
@@ -371,7 +371,7 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
 
   useEffect(() => {
     if (!userId) return;
-    supabase.from('user_profiles').select('units, language, region').eq('id', userId).single()
+    supabase.from('ziko_user_profiles').select('units, language, region').eq('id', userId).single()
       .then(({ data }) => {
         if (data) {
           setPrefs({
@@ -385,17 +385,17 @@ function AppearanceSubScreen({ onBack, userId }: { onBack: () => void; userId: s
 
   const handleLanguageSelect = async (id: 'fr' | 'en') => {
     setPrefs({ language: id });
-    await supabase.from('user_profiles').update({ language: id }).eq('id', userId);
+    await supabase.from('ziko_user_profiles').update({ language: id }).eq('id', userId);
   };
 
   const handleRegionSelect = async (id: string) => {
     setPrefs({ region: id });
-    await supabase.from('user_profiles').update({ region: id }).eq('id', userId);
+    await supabase.from('ziko_user_profiles').update({ region: id }).eq('id', userId);
   };
 
   const handleUnitSelect = async (id: 'metric' | 'imperial') => {
     setPrefs({ units: id });
-    await supabase.from('user_profiles').update({ units: id }).eq('id', userId);
+    await supabase.from('ziko_user_profiles').update({ units: id }).eq('id', userId);
   };
 
   const langLabel = LANGUAGES.find((l) => l.id === language)?.label ?? 'Français';
@@ -502,7 +502,7 @@ function IntegrationsSubScreen({ onBack }: { onBack: () => void }) {
     queryKey: ['integrations', userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('health_sync_log')
+        .from('ziko_health_sync_log')
         .select('platform, synced_at')
         .eq('user_id', userId!)
         .order('synced_at', { ascending: false });
@@ -622,7 +622,7 @@ export default function SettingsScreen() {
   const { data: connectedCount = 0 } = useQuery({
     queryKey: ['integrations-count', userId],
     queryFn: async () => {
-      const { data } = await supabase.from('health_sync_log')
+      const { data } = await supabase.from('ziko_health_sync_log')
         .select('platform').eq('user_id', userId!);
       const seen = new Set((data ?? []).map((r: any) => r.platform));
       return seen.size;

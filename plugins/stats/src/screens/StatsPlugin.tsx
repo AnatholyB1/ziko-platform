@@ -250,7 +250,7 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
       const since = new Date();
       since.setDate(since.getDate() - 30);
       const { data, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, started_at, ended_at, total_volume_kg')
         .eq('user_id', userId)
         .gte('started_at', since.toISOString());
@@ -272,7 +272,7 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
         const end = new Date(now);
         end.setDate(now.getDate() - w * 7);
         const { data } = await supabase
-          .from('workout_sessions')
+          .from('ziko_workout_sessions')
           .select('total_volume_kg')
           .eq('user_id', userId)
           .gte('started_at', start.toISOString())
@@ -296,7 +296,7 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
       since.setDate(since.getDate() - 30);
       // Récupérer les sessions du mois
       const { data: sessions } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id')
         .eq('user_id', userId)
         .gte('started_at', since.toISOString());
@@ -305,8 +305,8 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
 
       // Récupérer les sets avec infos exercice
       const { data: sets } = await supabase
-        .from('session_sets')
-        .select('weight_kg, reps, exercises(category, muscle_groups)')
+        .from('ziko_session_sets')
+        .select('weight_kg, reps, exercises:ziko_exercises(category, muscle_groups)')
         .in('session_id', sessionIds);
       if (!sets) return [];
 
@@ -330,7 +330,7 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       // Récupérer toutes les sessions de l'utilisateur
       const { data: sessions } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, started_at')
         .eq('user_id', userId);
       if (!sessions || sessions.length === 0) return [];
@@ -339,8 +339,8 @@ export default function StatsPlugin({ supabase }: { supabase: any }) {
       for (const s of sessions) sessionDateMap[s.id] = s.started_at;
 
       const { data: sets } = await supabase
-        .from('session_sets')
-        .select('session_id, exercise_id, reps, weight_kg, exercises(name)')
+        .from('ziko_session_sets')
+        .select('session_id, exercise_id, reps, weight_kg, exercises:ziko_exercises(name)')
         .in('session_id', sessionIds);
       if (!sets) return [];
 

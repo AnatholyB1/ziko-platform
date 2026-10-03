@@ -92,7 +92,7 @@ export default function PantryItemForm({
     if (mode === 'edit' && itemId) {
       setLoadingItem(true);
       supabase
-        .from('pantry_items')
+        .from('ziko_pantry_items')
         .select('*')
         .eq('id', itemId)
         .single()
@@ -160,7 +160,7 @@ export default function PantryItemForm({
 
       if (mode === 'add') {
         const { data, error } = await supabase
-          .from('pantry_items')
+          .from('ziko_pantry_items')
           .insert({ ...payload, user_id: user.id })
           .select('*')
           .single();
@@ -169,7 +169,7 @@ export default function PantryItemForm({
         addItem(data);
       } else {
         const { data, error } = await supabase
-          .from('pantry_items')
+          .from('ziko_pantry_items')
           .update(payload)
           .eq('id', itemId)
           .select('*')
@@ -196,7 +196,7 @@ export default function PantryItemForm({
         text: t('pantry.delete_confirm'),
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('pantry_items').delete().eq('id', itemId);
+          await supabase.from('ziko_pantry_items').delete().eq('id', itemId);
           removeItem(itemId!);
           router.back();
         },

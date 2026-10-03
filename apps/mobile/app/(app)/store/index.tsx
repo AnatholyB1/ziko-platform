@@ -90,8 +90,8 @@ export default function PluginStoreScreen() {
   const load = useCallback(async () => {
     setLoadError(false);
     const [regRes, reviewsRes] = await Promise.all([
-      supabase.from('plugins_registry').select('*').eq('is_active', true),
-      supabase.from('plugin_reviews').select('plugin_id, rating'),
+      supabase.from('ziko_plugins_registry').select('*').eq('is_active', true),
+      supabase.from('ziko_plugin_reviews').select('plugin_id, rating'),
     ]);
 
     if (regRes.error) { setLoadError(true); return; }
@@ -107,7 +107,7 @@ export default function PluginStoreScreen() {
     setReviews(Object.entries(map).map(([pid, v]) => ({ plugin_id: pid, avg: v.sum / v.count, count: v.count })));
 
     if (user) {
-      const { data: up } = await supabase.from('user_plugins').select('plugin_id').eq('user_id', user.id);
+      const { data: up } = await supabase.from('ziko_user_plugins').select('plugin_id').eq('user_id', user.id);
       setUserPlugins((up ?? []).map((u: any) => u.plugin_id));
     }
   }, [user]);
@@ -130,7 +130,7 @@ export default function PluginStoreScreen() {
         {
           text: t('store.install'), onPress: async () => {
             const { error } = await supabase
-              .from('user_plugins')
+              .from('ziko_user_plugins')
               .upsert({ user_id: user.id, plugin_id: pluginId, is_enabled: true });
             if (!error) {
               setUserPlugins((prev) => [...prev, pluginId]);
@@ -149,7 +149,7 @@ export default function PluginStoreScreen() {
       {
         text: t('store.uninstall'), style: 'destructive', onPress: async () => {
           await supabase
-            .from('user_plugins')
+            .from('ziko_user_plugins')
             .delete()
             .eq('user_id', user.id)
             .eq('plugin_id', pluginId);

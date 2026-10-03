@@ -101,7 +101,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     if (!query.trim()) { setResults([]); return; }
     const tb = setTimeout(async () => {
       setLoading(true);
-      let req = supabase.from('food_database').select('*').limit(30);
+      let req = supabase.from('ziko_food_database').select('*').limit(30);
       req = req.ilike('name', `%${query}%`);
       const { data } = await req;
       setResults((data ?? []) as FoodItem[]);
@@ -121,7 +121,7 @@ export default function LogMealScreen({ supabase }: { supabase: any }) {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { showAlert(t('general.error'), t('nutrition.notAuth')); setSaving(false); return; }
-    const { data, error } = await supabase.from('nutrition_logs').insert({
+    const { data, error } = await supabase.from('ziko_nutrition_logs').insert({
       ...entry,
       user_id: user.id,
       date: selectedDate,

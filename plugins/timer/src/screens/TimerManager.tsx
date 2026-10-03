@@ -23,7 +23,7 @@ export default function TimerManager({ supabase }: { supabase: any }) {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('timer_presets')
+        .from('ziko_timer_presets')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -58,7 +58,7 @@ export default function TimerManager({ supabase }: { supabase: any }) {
           onPress: async () => {
             try {
               const { error } = await supabase
-                .from('timer_presets')
+                .from('ziko_timer_presets')
                 .delete()
                 .eq('id', preset.id);
               if (error) throw error;

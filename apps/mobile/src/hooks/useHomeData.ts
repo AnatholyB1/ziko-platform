@@ -32,7 +32,7 @@ export function useProfile() {
     queryKey: ['profile', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('name, goal, workout_frequency, fitness_level')
         .eq('id', userId!)
         .single();
@@ -54,7 +54,7 @@ export function useSessionStreak() {
     queryFn: async () => {
       const since = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
       const { data } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('started_at')
         .eq('user_id', userId!)
         .gte('started_at', since)
@@ -91,7 +91,7 @@ export function useStreak() {
     queryFn: async () => {
       const since = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
       const { data } = await supabase
-        .from('habit_logs')
+        .from('ziko_habit_logs')
         .select('date')
         .eq('user_id', userId!)
         .eq('completed', true)
@@ -125,7 +125,7 @@ export function useSleepToday() {
     queryFn: async () => {
       const today = localDateKey();
       const { data, error } = await supabase
-        .from('sleep_logs')
+        .from('ziko_sleep_logs')
         .select('duration_hours, quality, bedtime, wake_time')
         .eq('user_id', userId!)
         .eq('date', today)
@@ -148,7 +148,7 @@ export function useHydrationToday() {
     queryFn: async () => {
       const today = localDateKey();
       const { data, error } = await supabase
-        .from('hydration_logs')
+        .from('ziko_hydration_logs')
         .select('amount_ml')
         .eq('user_id', userId!)
         .eq('date', today);
@@ -174,7 +174,7 @@ export function useNutritionToday() {
     queryFn: async () => {
       const today = localDateKey();
       const { data, error } = await supabase
-        .from('nutrition_logs')
+        .from('ziko_nutrition_logs')
         .select('calories, protein_g, carbs_g, fat_g')
         .eq('user_id', userId!)
         .eq('date', today);
@@ -201,7 +201,7 @@ export function useWeeklySessions() {
     queryFn: async () => {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
       const { data, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, started_at, name, total_volume_kg')
         .eq('user_id', userId!)
         .gte('started_at', weekAgo)
@@ -225,7 +225,7 @@ export function useActiveAIProgram() {
     queryKey: ['program', 'active', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('*')
         .eq('user_id', userId!)
         .eq('is_active', true)
@@ -246,7 +246,7 @@ export function useRecentSessions() {
     queryKey: ['workouts', 'recent', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, name, started_at, total_volume_kg, duration_seconds')
         .eq('user_id', userId!)
         .order('started_at', { ascending: false })

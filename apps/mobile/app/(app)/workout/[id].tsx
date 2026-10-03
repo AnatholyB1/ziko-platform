@@ -226,12 +226,12 @@ export default function ProgramDetailScreen() {
 
   const loadProgram = useCallback(async () => {
     if (!id) return;
-    const { data: prog } = await supabase.from('workout_programs').select('*').eq('id', id).single();
+    const { data: prog } = await supabase.from('ziko_workout_programs').select('*').eq('id', id).single();
     setProgram(prog as ProgramDetail);
 
     const { data: wkts } = await supabase
-      .from('program_workouts')
-      .select('*, program_exercises(*, coach_exercise_id, exercises(name, name_fr, muscle_groups))')
+      .from('ziko_program_workouts')
+      .select('*, program_exercises:ziko_program_exercises(*, coach_exercise_id, exercises:ziko_exercises(name, name_fr, muscle_groups))')
       .eq('program_id', id)
       .order('day_of_week');
     const workoutList = (wkts ?? []) as WorkoutDay[];
@@ -240,7 +240,7 @@ export default function ProgramDetailScreen() {
     // Auto-sync days_per_week with actual workout count
     const actualDays = workoutList.length;
     if (prog && prog.days_per_week !== actualDays) {
-      await supabase.from('workout_programs').update({ days_per_week: actualDays }).eq('id', id);
+      await supabase.from('ziko_workout_programs').update({ days_per_week: actualDays }).eq('id', id);
       setProgram((prev) => prev ? { ...prev, days_per_week: actualDays } : prev);
     }
   }, [id]);
@@ -258,7 +258,7 @@ export default function ProgramDetailScreen() {
         if (!session?.user?.id) return;
         const userId = session.user.id;
         const { data, error } = await supabase
-          .from('notification_preferences')
+          .from('ziko_notification_preferences')
           .select('workout_reminder_days, workout_reminder_time')
           .eq('user_id', userId)
           .single();
@@ -291,7 +291,7 @@ export default function ProgramDetailScreen() {
   const handleAddDay = async () => {
     if (!id || !dayName.trim()) return;
     const { data } = await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .insert({ program_id: id, name: dayName.trim(), day_of_week: selectedDay, order_index: selectedDay })
       .select()
       .single();
@@ -307,7 +307,7 @@ export default function ProgramDetailScreen() {
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('general.delete'), style: 'destructive', onPress: async () => {
-          await supabase.from('program_workouts').delete().eq('id', workoutId);
+          await supabase.from('ziko_program_workouts').delete().eq('id', workoutId);
           await loadProgram();
         },
       },
@@ -333,7 +333,7 @@ export default function ProgramDetailScreen() {
   const handleDuplicateDay = async (workout: WorkoutDay) => {
     if (!id) return;
     const { data: newW } = await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .insert({ program_id: id, name: `${workout.name} (copy)`, day_of_week: null, order_index: (workouts.length + 1) })
       .select()
       .single();
@@ -345,7 +345,7 @@ export default function ProgramDetailScreen() {
         duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
         rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
       }));
-      await supabase.from('program_exercises').insert(rows);
+      await supabase.from('ziko_program_exercises').insert(rows);
     }
     await loadProgram();
   };
@@ -354,7 +354,7 @@ export default function ProgramDetailScreen() {
   const handlePasteDay = async () => {
     if (!id || !copiedDay) return;
     const { data: newW } = await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .insert({ program_id: id, name: copiedDay.name, day_of_week: null, order_index: (workouts.length + 1) })
       .select()
       .single();
@@ -366,7 +366,7 @@ export default function ProgramDetailScreen() {
         duration_seconds: pe.duration_seconds, duration_min: pe.duration_min, duration_max: pe.duration_max,
         rest_seconds: pe.rest_seconds, weight_kg: pe.weight_kg, notes: pe.notes, order_index: pe.order_index,
       }));
-      await supabase.from('program_exercises').insert(rows);
+      await supabase.from('ziko_program_exercises').insert(rows);
     }
     await loadProgram();
   };
@@ -380,7 +380,7 @@ export default function ProgramDetailScreen() {
   const confirmMoveDay = async (newDay: number | null) => {
     if (!movingWorkout) return;
     await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .update({ day_of_week: newDay, order_index: newDay ?? movingWorkout.order_index })
       .eq('id', movingWorkout.id);
     setShowMoveDay(false);
@@ -396,13 +396,13 @@ export default function ProgramDetailScreen() {
     if (targetWorkout) {
       // Swap: move target to source's day
       await supabase
-        .from('program_workouts')
+        .from('ziko_program_workouts')
         .update({ day_of_week: movingWorkout.day_of_week, order_index: movingWorkout.day_of_week ?? targetWorkout.order_index })
         .eq('id', targetWorkout.id);
     }
     // Move source to new day
     await supabase
-      .from('program_workouts')
+      .from('ziko_program_workouts')
       .update({ day_of_week: newDay, order_index: newDay })
       .eq('id', movingWorkout.id);
     setShowMoveDay(false);
@@ -482,7 +482,7 @@ export default function ProgramDetailScreen() {
       return row;
     });
 
-    await supabase.from('program_exercises').insert(rows);
+    await supabase.from('ziko_program_exercises').insert(rows);
     setShowConfig(false);
     setConfigExercise(null);
     await loadProgram();
@@ -494,7 +494,7 @@ export default function ProgramDetailScreen() {
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('workout.remove'), style: 'destructive', onPress: async () => {
-          await supabase.from('program_exercises').delete().eq('id', peId);
+          await supabase.from('ziko_program_exercises').delete().eq('id', peId);
           await loadProgram();
         },
       },
@@ -540,7 +540,7 @@ export default function ProgramDetailScreen() {
       current_cycle_week: cycleWeeks ? 1 : null,
       cycle_start_date: cycleWeeks ? new Date().toISOString().split('T')[0] : null,
     };
-    await supabase.from('workout_programs').update(update).eq('id', id);
+    await supabase.from('ziko_workout_programs').update(update).eq('id', id);
     setProgram((prev) => prev ? { ...prev, ...update } as ProgramDetail : prev);
     setShowCycleConfig(false);
   };
@@ -548,13 +548,13 @@ export default function ProgramDetailScreen() {
   const handleAdvanceWeek = async (direction: 1 | -1) => {
     if (!id || !program?.cycle_weeks) return;
     const newWeek = Math.max(1, Math.min(program.cycle_weeks, currentWeek + direction));
-    await supabase.from('workout_programs').update({ current_cycle_week: newWeek }).eq('id', id);
+    await supabase.from('ziko_workout_programs').update({ current_cycle_week: newWeek }).eq('id', id);
     setProgram((prev) => prev ? { ...prev, current_cycle_week: newWeek } : prev);
   };
 
   const handleResetCycle = async () => {
     if (!id) return;
-    await supabase.from('workout_programs').update({ current_cycle_week: 1, cycle_start_date: new Date().toISOString().split('T')[0] }).eq('id', id);
+    await supabase.from('ziko_workout_programs').update({ current_cycle_week: 1, cycle_start_date: new Date().toISOString().split('T')[0] }).eq('id', id);
     setProgram((prev) => prev ? { ...prev, current_cycle_week: 1, cycle_start_date: new Date().toISOString().split('T')[0] } : prev);
   };
 
@@ -598,7 +598,7 @@ export default function ProgramDetailScreen() {
 
       // UPSERT to notification_preferences
       await supabase
-        .from('notification_preferences')
+        .from('ziko_notification_preferences')
         .upsert({ user_id: userId, workout_reminder_days: days, workout_reminder_time: time }, { onConflict: 'user_id' });
 
       // Cancel all existing workout reminders
@@ -664,7 +664,7 @@ export default function ProgramDetailScreen() {
               onBlur={async () => {
                 const trimmed = editName.trim();
                 if (trimmed && trimmed !== program?.name && id) {
-                  await supabase.from('workout_programs').update({ name: trimmed }).eq('id', id);
+                  await supabase.from('ziko_workout_programs').update({ name: trimmed }).eq('id', id);
                   setProgram((prev) => prev ? { ...prev, name: trimmed } : prev);
                 }
                 setEditingName(false);
@@ -672,7 +672,7 @@ export default function ProgramDetailScreen() {
               onSubmitEditing={async () => {
                 const trimmed = editName.trim();
                 if (trimmed && trimmed !== program?.name && id) {
-                  await supabase.from('workout_programs').update({ name: trimmed }).eq('id', id);
+                  await supabase.from('ziko_workout_programs').update({ name: trimmed }).eq('id', id);
                   setProgram((prev) => prev ? { ...prev, name: trimmed } : prev);
                 }
                 setEditingName(false);

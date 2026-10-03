@@ -27,14 +27,14 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
   const loadDetail = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from('supplements')
-      .select('*, supplement_brands(*), supplement_categories(*)')
+      .from('ziko_supplements')
+      .select('*, supplement_brands:ziko_supplement_brands(*), supplement_categories:ziko_supplement_categories(*)')
       .eq('id', id)
       .single();
     if (data) setSupplement(data);
 
     const { data: priceData } = await supabase
-      .from('supplement_prices')
+      .from('ziko_supplement_prices')
       .select('*')
       .eq('supplement_id', id)
       .order('price', { ascending: true });
@@ -48,10 +48,10 @@ export default function SupplementDetailScreen({ supabase }: { supabase: any }) 
     if (!user) return;
     const isFav = favorites.includes(supplement.id);
     if (isFav) {
-      await supabase.from('user_supplement_favorites').delete()
+      await supabase.from('ziko_user_supplement_favorites').delete()
         .eq('user_id', user.id).eq('supplement_id', supplement.id);
     } else {
-      await supabase.from('user_supplement_favorites').insert({
+      await supabase.from('ziko_user_supplement_favorites').insert({
         user_id: user.id, supplement_id: supplement.id,
       });
     }

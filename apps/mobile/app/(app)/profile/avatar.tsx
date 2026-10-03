@@ -142,7 +142,7 @@ export default function AvatarUploadScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .update({ avatar_url: publicUrl })
           .eq('id', user.id);
         await refreshProfile();
@@ -179,7 +179,7 @@ export default function AvatarUploadScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .update({ avatar_url: publicUrl })
           .eq('id', user.id);
         await refreshProfile();
@@ -218,7 +218,7 @@ export default function AvatarUploadScreen() {
                 .remove([`${user.id}/avatar.jpg`]);
 
               await supabase
-                .from('user_profiles')
+                .from('ziko_user_profiles')
                 .update({ avatar_url: null })
                 .eq('id', user.id);
 
@@ -245,7 +245,7 @@ export default function AvatarUploadScreen() {
       if (displayName.trim()) updates.name = displayName.trim();
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .update(updates)
         .eq('id', user.id);
       if (error) throw error;

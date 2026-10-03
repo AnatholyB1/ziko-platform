@@ -112,7 +112,7 @@ export default function TimerEditor({ supabase }: { supabase: any }) {
 
       if (existing) {
         const { error } = await supabase
-          .from('timer_presets')
+          .from('ziko_timer_presets')
           .update(preset)
           .eq('id', existing.id);
         if (error) throw error;
@@ -126,7 +126,7 @@ export default function TimerEditor({ supabase }: { supabase: any }) {
         });
       } else {
         const { data, error } = await supabase
-          .from('timer_presets')
+          .from('ziko_timer_presets')
           .insert({ ...preset, user_id: user.id })
           .select('*')
           .single();

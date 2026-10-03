@@ -39,7 +39,7 @@ export default function ExerciseDetailScreen() {
     queryKey: ['exercises', 'v2', exerciseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exercises')
+        .from('ziko_exercises')
         .select('*')
         .eq('id', exerciseId)
         .single();
@@ -68,8 +68,8 @@ export default function ExerciseDetailScreen() {
     queryKey: ['exercise-history', exerciseId, userId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('session_sets')
-        .select('*, workout_sessions!inner(started_at, user_id)')
+        .from('ziko_session_sets')
+        .select('*, workout_sessions:ziko_workout_sessions!inner(started_at, user_id)')
         .eq('exercise_id', exerciseId)
         .eq('workout_sessions.user_id', userId)
         .eq('completed', true)

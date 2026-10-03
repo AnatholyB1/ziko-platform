@@ -62,8 +62,8 @@ export default function ChallengeDetailScreen({ supabase }: { supabase: any }) {
       if (user) setUserId(user.id);
 
       const { data } = await supabase
-        .from('challenges')
-        .select('*, challenge_participants(*), challenge_teams(*)')
+        .from('ziko_challenges')
+        .select('*, challenge_participants:ziko_challenge_participants(*), challenge_teams:ziko_challenge_teams(*)')
         .eq('id', id)
         .single();
 
@@ -72,7 +72,7 @@ export default function ChallengeDetailScreen({ supabase }: { supabase: any }) {
         const userIds = (data.challenge_participants ?? []).map((p: any) => p.user_id);
         if (userIds.length > 0) {
           const { data: profs } = await supabase
-            .from('user_profiles')
+            .from('ziko_user_profiles')
             .select('id, name, avatar_url, goal')
             .in('id', userIds);
           const map: Record<string, FriendProfile> = {};

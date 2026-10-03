@@ -19,7 +19,7 @@ export default function PublicProfileScreen() {
     setFollowing(false);
 
     supabase
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('name, goal, total_workouts')
       .eq('id', id)
       .single()

@@ -124,7 +124,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!user?.id || !link?.created_at) return null;
       const { count, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('started_at', link.created_at);
@@ -141,14 +141,14 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
       if (!user?.id) return null;
       const today = new Date().toISOString().slice(0, 10);
       const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
+        .from('ziko_habits')
         .select('id')
         .eq('user_id', user.id)
         .eq('is_active', true);
       if (habitsError || !habitsData || habitsData.length === 0) return null;
 
       const { data: logsData, error: logsError } = await supabase
-        .from('habit_logs')
+        .from('ziko_habit_logs')
         .select('id')
         .eq('user_id', user.id)
         .eq('date', today);

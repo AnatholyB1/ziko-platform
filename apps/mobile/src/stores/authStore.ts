@@ -82,10 +82,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!user) return;
 
     const [{ data: profileData }, { data: stateData }] = await Promise.all([
-      supabase.from('user_profiles').select('*').eq('id', user.id).single(),
+      supabase.from('ziko_user_profiles').select('*').eq('id', user.id).single(),
       // maybeSingle(): a brand-new athlete has no athlete_state row yet, and
       // single() would surface that as an error.
-      supabase.from('athlete_state').select('status').eq('user_id', user.id).maybeSingle(),
+      supabase.from('ziko_athlete_state').select('status').eq('user_id', user.id).maybeSingle(),
     ]);
 
     if (profileData) {

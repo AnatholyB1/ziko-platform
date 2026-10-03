@@ -31,22 +31,22 @@ const EMPTY_STATS: UserStats = {
 async function fetchUserStats(supabase: any, userId: string): Promise<UserStats> {
   const [sessionsRes, gamifRes, communityRes, habitsRes] = await Promise.all([
     supabase
-      .from('workout_sessions')
+      .from('ziko_workout_sessions')
       .select('id, total_volume_kg, duration_seconds')
       .eq('user_id', userId)
       .eq('status', 'completed'),
     supabase
-      .from('user_gamification')
+      .from('ziko_user_gamification')
       .select('xp, current_streak')
       .eq('user_id', userId)
       .single(),
     supabase
-      .from('community_user_stats')
+      .from('ziko_community_user_stats')
       .select('challenges_won')
       .eq('user_id', userId)
       .single(),
     supabase
-      .from('habit_logs')
+      .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', userId)
       .eq('completed', true),

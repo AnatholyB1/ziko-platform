@@ -135,7 +135,7 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('friendships')
+        .from('ziko_friendships')
         .select('requester_id, addressee_id')
         .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
         .eq('status', 'accepted');
@@ -160,8 +160,8 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
     queryFn: async () => {
       if (!userId || friendIds.length === 0) return [];
       const { data, error } = await supabase
-        .from('workout_sessions')
-        .select('id, name, user_id, started_at, total_duration_seconds, user_profiles!inner(name)')
+        .from('ziko_workout_sessions')
+        .select('id, name, user_id, started_at, total_duration_seconds, user_profiles:ziko_user_profiles!inner(name)')
         .in('user_id', friendIds)
         .order('started_at', { ascending: false })
         .limit(20);
@@ -179,8 +179,8 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
     queryKey: ['challenges_active', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('challenges')
-        .select('*, challenge_participants!left(user_id, score, status)')
+        .from('ziko_challenges')
+        .select('*, challenge_participants:ziko_challenge_participants!left(user_id, score, status)')
         .eq('status', 'active')
         .gt('end_date', new Date().toISOString())
         .limit(20);
@@ -194,7 +194,7 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
   const joinMutation = useMutation({
     mutationFn: async (challengeId: string) => {
       const { error } = await supabase
-        .from('challenge_participants')
+        .from('ziko_challenge_participants')
         .insert({ challenge_id: challengeId, user_id: userId, status: 'joined' });
       if (error) throw error;
     },

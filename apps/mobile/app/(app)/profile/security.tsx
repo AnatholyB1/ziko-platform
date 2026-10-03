@@ -65,7 +65,7 @@ export default function SecurityScreen() {
   useEffect(() => {
     if (!userId) return;
     supabase
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('settings, is_public')
       .eq('id', userId)
       .single()
@@ -118,7 +118,7 @@ export default function SecurityScreen() {
       // is_public: write directly to the dedicated column (migration 051)
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
-        await supabase.from('user_profiles').upsert({ id: userId, is_public: value });
+        await supabase.from('ziko_user_profiles').upsert({ id: userId, is_public: value });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
       }, 500);
     } else {
@@ -126,12 +126,12 @@ export default function SecurityScreen() {
       clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
         const { data: fresh } = await supabase
-          .from('user_profiles')
+          .from('ziko_user_profiles')
           .select('settings')
           .eq('id', userId)
           .single();
         const current = (fresh as any)?.settings ?? {};
-        await supabase.from('user_profiles').update({
+        await supabase.from('ziko_user_profiles').update({
           settings: { ...current, privacy: { ...current.privacy, [key]: value } },
         }).eq('id', userId);
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });

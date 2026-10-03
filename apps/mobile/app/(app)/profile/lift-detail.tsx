@@ -72,8 +72,8 @@ async function loadLiftHistory(
   rangeDays: number
 ): Promise<{ history: SessionBest[]; stats: LiftStats }> {
   let query = supabase
-    .from('session_sets')
-    .select('weight_kg, reps, session_id, workout_sessions!inner(started_at)')
+    .from('ziko_session_sets')
+    .select('weight_kg, reps, session_id, workout_sessions:ziko_workout_sessions!inner(started_at)')
     .eq('exercise_id', exerciseId)
     .not('weight_kg', 'is', null)
     .order('workout_sessions(started_at)', { ascending: true });

@@ -25,7 +25,7 @@ export default function RoutineManager({ supabase }: { supabase: any }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
-        .from('stretching_routines')
+        .from('ziko_stretching_routines')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -57,7 +57,7 @@ export default function RoutineManager({ supabase }: { supabase: any }) {
           text: 'Supprimer', style: 'destructive',
           onPress: async () => {
             try {
-              await supabase.from('stretching_routines').delete().eq('id', routine.id);
+              await supabase.from('ziko_stretching_routines').delete().eq('id', routine.id);
               deleteCustomRoutine(routine.id);
             } catch {}
           },

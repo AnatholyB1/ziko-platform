@@ -33,7 +33,7 @@ export default function RecipeDetail({ supabase }: Props) {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) { setNutritionInstalled(false); return; }
       supabase
-        .from('user_plugins')
+        .from('ziko_user_plugins')
         .select('is_enabled')
         .eq('user_id', user.id)
         .eq('plugin_id', 'nutrition')

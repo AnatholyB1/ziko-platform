@@ -54,7 +54,7 @@ export const useMeasurementsStore = create<MeasurementsState>()((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase
-        .from('body_measurements')
+        .from('ziko_body_measurements')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })

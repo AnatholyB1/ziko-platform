@@ -48,7 +48,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
     if (!user) return;
 
     const { data } = await supabase
-      .from('ai_conversations')
+      .from('ziko_ai_conversations')
       .select('*')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
@@ -62,7 +62,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
     if (!user) throw new Error('Not authenticated');
 
     const { data, error } = await supabase
-      .from('ai_conversations')
+      .from('ziko_ai_conversations')
       .insert({ user_id: user.id, plugin_context: get().activePluginContext })
       .select()
       .single();
@@ -84,7 +84,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
 
   loadMessages: async (conversationId) => {
     const { data } = await supabase
-      .from('ai_messages')
+      .from('ziko_ai_messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
@@ -167,7 +167,7 @@ export const useAIStore = create<AIStore>()((set, get) => ({
 
     // Update conversation timestamp
     await supabase
-      .from('ai_conversations')
+      .from('ziko_ai_conversations')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', conversationId);
   },

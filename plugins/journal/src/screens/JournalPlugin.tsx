@@ -133,7 +133,7 @@ export default function JournalPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -151,7 +151,7 @@ export default function JournalPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .select('mood, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -166,7 +166,7 @@ export default function JournalPlugin({ supabase }: { supabase: any }) {
 
   const mutation = useMutation({
     mutationFn: async (payload: { mood: number; context: string; notes: string; user_id: string }) => {
-      const { error } = await supabase.from('journal_entries').insert({
+      const { error } = await supabase.from('ziko_journal_entries').insert({
         user_id: payload.user_id,
         mood: payload.mood,
         context: payload.context.toLowerCase().replace('-', '_'),

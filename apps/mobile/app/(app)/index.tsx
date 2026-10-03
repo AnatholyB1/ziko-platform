@@ -281,7 +281,7 @@ export default function DashboardScreen() {
     queryKey: ['user_plugins', userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_plugins')
+        .from('ziko_user_plugins')
         .select('plugin_id')
         .eq('user_id', userId!)
         .eq('is_enabled', true);

@@ -116,7 +116,7 @@ export default function StretchingPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data } = await supabase
-        .from('stretching_routines')
+        .from('ziko_stretching_routines')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -133,7 +133,7 @@ export default function StretchingPlugin({ supabase }: { supabase: any }) {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const { data } = await supabase
-        .from('stretching_logs')
+        .from('ziko_stretching_logs')
         .select('*')
         .eq('user_id', userId)
         .gte('date', sevenDaysAgo.toISOString().split('T')[0])
@@ -149,7 +149,7 @@ export default function StretchingPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return 0;
       const { count } = await supabase
-        .from('stretching_logs')
+        .from('ziko_stretching_logs')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('date', getMonthStart());

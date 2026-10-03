@@ -71,7 +71,7 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
       } = await supabase.auth.getUser();
       if (!user) return [];
       const { data } = await supabase
-        .from('timer_presets')
+        .from('ziko_timer_presets')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -105,7 +105,7 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
-      const { error } = await supabase.from('workout_sessions').insert({
+      const { error } = await supabase.from('ziko_workout_sessions').insert({
         user_id: user.id,
         name: selectedPreset?.name ?? 'Séance Timer',
         started_at: sessionStart?.toISOString() ?? new Date().toISOString(),

@@ -152,7 +152,7 @@ export default function AppLayout() {
   useEffect(() => {
     if (!userId) return;
     supabase
-      .from('user_profiles')
+      .from('ziko_user_profiles')
       .select('units, language, region')
       .eq('id', userId)
       .single()
@@ -234,7 +234,7 @@ export default function AppLayout() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notification_log',
+          table: 'ziko_notification_log',
           filter: `user_id=eq.${userId}`,
         },
         () => {

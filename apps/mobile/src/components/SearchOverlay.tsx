@@ -44,7 +44,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     queryKey: ['search_exercises', debouncedQuery],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exercises')
+        .from('ziko_exercises')
         .select('id, name, category')
         .ilike('name', `%${debouncedQuery}%`)
         .limit(10);
@@ -59,7 +59,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     queryKey: ['search_programs', userId, debouncedQuery],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .select('id, goal, created_at')
         .eq('user_id', userId)
         .ilike('goal', `%${debouncedQuery}%`)
@@ -76,7 +76,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     queryFn: async () => {
       if (!userId) return [];
       // Try RPC first (migration 064 — accent-insensitive)
-      const { data: rpcData, error: rpcError } = await supabase.rpc('search_users_fuzzy', {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('ziko_search_users_fuzzy', {
         search_query: debouncedQuery.trim(),
         calling_user_id: userId,
         result_limit: 5,
@@ -84,7 +84,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
       if (!rpcError && rpcData) return rpcData as { id: string; name: string; avatar_url: string | null }[];
       // Fallback: ilike
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('id, name, avatar_url')
         .neq('id', userId)
         .ilike('name', `%${debouncedQuery}%`)
@@ -352,7 +352,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                             <TouchableOpacity
                               onPress={async () => {
                                 try {
-                                  const { error } = await supabase.from('friendships').insert({
+                                  const { error } = await supabase.from('ziko_friendships').insert({
                                     requester_id: userId,
                                     addressee_id: u.id,
                                     status: 'pending',

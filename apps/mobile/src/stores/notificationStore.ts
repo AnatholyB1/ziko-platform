@@ -27,7 +27,7 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
   },
   syncUnreadCount: async (userId) => {
     const { count, error } = await supabase
-      .from('notification_log')
+      .from('ziko_notification_log')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .is('read_at', null);

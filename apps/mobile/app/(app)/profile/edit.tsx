@@ -152,7 +152,7 @@ export default function EditProfileScreen() {
 
       // Upsert avatar_url dans user_profiles
       const { error: upsertError } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .upsert({ id: userId, avatar_url: publicUrl });
 
       if (upsertError) {
@@ -213,7 +213,7 @@ export default function EditProfileScreen() {
     if (!userId) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('user_profiles').upsert({
+      const { error } = await supabase.from('ziko_user_profiles').upsert({
         id: userId,
         name: name.trim(),
         goal: goal || null,

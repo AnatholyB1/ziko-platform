@@ -88,7 +88,7 @@ export default function ProgramBuilderScreen() {
       if (!user) throw new Error('Non connecte');
 
       const { error } = await supabase
-        .from('ai_generated_programs')
+        .from('ziko_ai_generated_programs')
         .insert({
           user_id: user.id,
           goal,

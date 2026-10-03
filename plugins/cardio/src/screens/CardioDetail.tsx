@@ -214,7 +214,7 @@ export default function CardioDetail({ supabase }: { supabase: any }) {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('cardio_sessions')
+        .from('ziko_cardio_sessions')
         .update({ notes: notes.trim() })
         .eq('id', session.id);
       if (error) throw error;
@@ -238,7 +238,7 @@ export default function CardioDetail({ supabase }: { supabase: any }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await supabase.from('cardio_sessions').delete().eq('id', session.id);
+              await supabase.from('ziko_cardio_sessions').delete().eq('id', session.id);
               setSessions(sessions.filter((s) => s.id !== session.id));
               router.back();
             } catch (err: any) {

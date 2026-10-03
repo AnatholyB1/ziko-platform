@@ -119,7 +119,7 @@ export function useNotifications(userId: string | undefined) {
     staleTime: 30_000,
     queryFn: async () => {
       const { data: rows, error } = await supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .select('*')
         .eq('user_id', userId!)
         .order('created_at', { ascending: false })
@@ -140,7 +140,7 @@ export function useNotifications(userId: string | undefined) {
     mutationFn: async (notificationId: string) => {
       const now = new Date().toISOString();
       const { error } = await supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .update({ read_at: now })
         .eq('id', notificationId);
       if (error) throw error;
@@ -156,7 +156,7 @@ export function useNotifications(userId: string | undefined) {
       if (!userId) return;
       const now = new Date().toISOString();
       const { error } = await supabase
-        .from('notification_log')
+        .from('ziko_notification_log')
         .update({ read_at: now })
         .eq('user_id', userId)
         .is('read_at', null);

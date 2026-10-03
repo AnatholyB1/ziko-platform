@@ -87,8 +87,8 @@ export default function PluginDetailScreen() {
     if (!id) return;
 
     const [regRes, reviewsRes] = await Promise.all([
-      supabase.from('plugins_registry').select('manifest').eq('plugin_id', id).single(),
-      supabase.from('plugin_reviews').select('*').eq('plugin_id', id).order('created_at', { ascending: false }),
+      supabase.from('ziko_plugins_registry').select('manifest').eq('plugin_id', id).single(),
+      supabase.from('ziko_plugin_reviews').select('*').eq('plugin_id', id).order('created_at', { ascending: false }),
     ]);
 
     if (regRes.data) setManifest(regRes.data.manifest as PluginManifest);
@@ -98,7 +98,7 @@ export default function PluginDetailScreen() {
     const userIds = [...new Set(allReviews.map((r) => r.user_id))];
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('id, name')
         .in('id', userIds);
       const nameMap: Record<string, string> = {};
@@ -111,7 +111,7 @@ export default function PluginDetailScreen() {
     if (user) {
       setMyReview(allReviews.find((r) => r.user_id === user.id) ?? null);
       const { data: up } = await supabase
-        .from('user_plugins').select('plugin_id')
+        .from('ziko_user_plugins').select('plugin_id')
         .eq('user_id', user.id).eq('plugin_id', id).maybeSingle();
       setIsInstalled(!!up);
     }
@@ -134,7 +134,7 @@ export default function PluginDetailScreen() {
         { text: t('general.cancel'), style: 'cancel' },
         {
           text: t('store.install'), onPress: async () => {
-            const { error } = await supabase.from('user_plugins').upsert({ user_id: user.id, plugin_id: id, is_enabled: true });
+            const { error } = await supabase.from('ziko_user_plugins').upsert({ user_id: user.id, plugin_id: id, is_enabled: true });
             if (!error) { setIsInstalled(true); registerPlugin(manifest); }
           },
         },
@@ -148,7 +148,7 @@ export default function PluginDetailScreen() {
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('store.uninstall'), style: 'destructive', onPress: async () => {
-          await supabase.from('user_plugins').delete().eq('user_id', user.id).eq('plugin_id', id);
+          await supabase.from('ziko_user_plugins').delete().eq('user_id', user.id).eq('plugin_id', id);
           setIsInstalled(false);
         },
       },
@@ -173,9 +173,9 @@ export default function PluginDetailScreen() {
       body: reviewBody.trim() || null,
     };
     if (myReview) {
-      await supabase.from('plugin_reviews').update(payload).eq('id', myReview.id);
+      await supabase.from('ziko_plugin_reviews').update(payload).eq('id', myReview.id);
     } else {
-      await supabase.from('plugin_reviews').insert(payload);
+      await supabase.from('ziko_plugin_reviews').insert(payload);
     }
     setSubmitting(false);
     setShowReviewForm(false);
@@ -190,7 +190,7 @@ export default function PluginDetailScreen() {
       { text: t('general.cancel'), style: 'cancel' },
       {
         text: t('general.delete'), style: 'destructive', onPress: async () => {
-          await supabase.from('plugin_reviews').delete().eq('id', myReview.id);
+          await supabase.from('ziko_plugin_reviews').delete().eq('id', myReview.id);
           setMyReview(null);
           await load();
         },

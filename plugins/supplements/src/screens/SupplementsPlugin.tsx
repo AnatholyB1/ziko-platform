@@ -91,7 +91,7 @@ export default function SupplementsPlugin({ supabase }: { supabase: any }) {
     queryKey: ['supplements_checklist'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('supplements')
+        .from('ziko_supplements')
         .select('id, name')
         .order('name');
       if (error) throw error;
@@ -140,8 +140,8 @@ export default function SupplementsPlugin({ supabase }: { supabase: any }) {
     queryKey: ['supplements_search', debouncedSearch],
     queryFn: async () => {
       let query = supabase
-        .from('supplements')
-        .select('*, supplement_prices(*)')
+        .from('ziko_supplements')
+        .select('*, supplement_prices:ziko_supplement_prices(*)')
         .order('name');
       if (debouncedSearch.trim()) {
         query = query.ilike('name', `%${debouncedSearch.trim()}%`);

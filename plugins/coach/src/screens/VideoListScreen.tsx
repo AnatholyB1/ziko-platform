@@ -91,7 +91,7 @@ export default function VideoListScreen({ supabase }: VideoListScreenProps) {
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
-        .from('coach_client_videos')
+        .from('ziko_coach_client_videos')
         .select('id, title, created_at, status')
         .eq('athlete_id', user.id)
         .order('created_at', { ascending: false });

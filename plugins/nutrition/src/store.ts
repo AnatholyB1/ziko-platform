@@ -85,7 +85,7 @@ export const useNutritionStore = create<NutritionState>()((set, get) => ({
     const { tdeeProfile, calorieGoal, proteinGoal, carbsGoal, fatGoal } = get();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('user_plugins').upsert({
+    await supabase.from('ziko_user_plugins').upsert({
       user_id: user.id,
       plugin_id: 'nutrition',
       settings: { tdee_profile: tdeeProfile, calorie_goal: calorieGoal, protein_goal: proteinGoal, carbs_goal: carbsGoal, fat_goal: fatGoal },
@@ -96,7 +96,7 @@ export const useNutritionStore = create<NutritionState>()((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase
-      .from('user_plugins')
+      .from('ziko_user_plugins')
       .select('settings')
       .eq('user_id', user.id)
       .eq('plugin_id', 'nutrition')

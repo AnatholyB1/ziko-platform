@@ -22,7 +22,7 @@ export default function HistoryDetailScreen() {
     queryKey: ['session', sessionId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('*')
         .eq('id', sessionId)
         .single();
@@ -35,8 +35,8 @@ export default function HistoryDetailScreen() {
     queryKey: ['session-sets', sessionId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('session_sets')
-        .select('*, exercises(name, target_muscle)')
+        .from('ziko_session_sets')
+        .select('*, exercises:ziko_exercises(name, target_muscle)')
         .eq('session_id', sessionId)
         .eq('completed', true)
         .order('order_index');

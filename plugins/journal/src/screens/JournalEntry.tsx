@@ -48,7 +48,7 @@ export default function JournalEntry({ supabase }: { supabase: any }) {
       };
 
       const { data, error } = await supabase
-        .from('journal_entries')
+        .from('ziko_journal_entries')
         .insert(entry)
         .select('*')
         .single();

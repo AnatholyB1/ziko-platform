@@ -38,7 +38,7 @@ export default function CalendarScreen() {
     queryKey: ['calendar', userId, year, month],
     queryFn: async () => {
       const { data: sessions, error } = await supabase
-        .from('workout_sessions')
+        .from('ziko_workout_sessions')
         .select('id, created_at')
         .eq('user_id', userId)
         .gte('created_at', startOfMonth)
