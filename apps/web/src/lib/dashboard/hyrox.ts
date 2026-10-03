@@ -57,7 +57,7 @@ export async function fetchHyroxData(
   cutoff.setDate(cutoff.getDate() - days);
 
   const { data, error } = await supabase
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('started_at, duration_min, distance_km, title, activity_type')
     .eq('user_id', clientId)
     .in('activity_type', ['hyrox', 'functional'])

@@ -44,7 +44,7 @@ export function VocalFeedbackHistory({ clientId, refreshKey }: VocalFeedbackHist
     async function fetchHistory() {
       const supabase = createClientSupabase();
       const { data, error } = await supabase
-        .from('coach_vocal_feedbacks')
+        .from('ziko_coach_vocal_feedbacks')
         .select('id, created_at, card')
         .eq('athlete_id', clientId)
         .order('created_at', { ascending: false });

@@ -33,12 +33,12 @@ export default async function ProgramsPage() {
   try {
     const [programsResult, foldersResult] = await Promise.all([
       supabase
-        .from('workout_programs')
+        .from('ziko_workout_programs')
         .select('id, name, description, goal, weeks_count, folder_id, is_template, created_by_coach_id, created_at, updated_at')
         .or(`and(created_by_coach_id.eq.${coachId},is_template.eq.true),and(is_template.eq.true,created_by_coach_id.is.null)`)
         .order('created_at', { ascending: false }),
       supabase
-        .from('coach_program_folders')
+        .from('ziko_coach_program_folders')
         .select('id, name')
         .eq('coach_id', coachId)
         .order('name', { ascending: true }),

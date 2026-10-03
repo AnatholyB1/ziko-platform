@@ -26,7 +26,7 @@ export async function GET() {
   // service_role only (see the migration's trailing comment on this function) — the
   // anon-key helper is not a weaker choice here, it is a permission error.
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc('get_waitlist_founder_status');
+  const { data, error } = await admin.rpc('ziko_get_waitlist_founder_status');
 
   if (error || !data || data.length === 0) {
     return safeDefault();

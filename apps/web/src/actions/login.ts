@@ -41,7 +41,7 @@ export async function loginAction(
 
   // Determine redirect target based on role (D-02)
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('role')
     .eq('id', data.user.id)
     .single();

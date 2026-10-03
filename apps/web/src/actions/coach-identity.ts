@@ -21,21 +21,21 @@ async function upsertCoachProfile(
   updates: Record<string, unknown>,
 ): Promise<{ error: { message: string } | null }> {
   const { data: existing } = await supabase
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .select('user_id')
     .eq('user_id', userId)
     .maybeSingle();
 
   if (existing) {
     const { error } = await supabase
-      .from('coach_profiles')
+      .from('ziko_coach_profiles')
       .update(updates)
       .eq('user_id', userId);
     return { error };
   }
 
   const { error } = await supabase
-    .from('coach_profiles')
+    .from('ziko_coach_profiles')
     .upsert({ user_id: userId, ...updates }, { onConflict: 'user_id' });
   return { error };
 }
@@ -53,7 +53,7 @@ export async function promoteRole(
   if (!user) return { status: 'error', message: 'Non authentifié.' };
 
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -62,7 +62,7 @@ export async function promoteRole(
   const newRole = currentRole === 'client' ? 'both' : 'coach';
 
   const { error } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .update({ role: newRole })
     .eq('id', user.id);
 

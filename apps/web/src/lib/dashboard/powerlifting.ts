@@ -182,7 +182,7 @@ export async function fetchPowerliftingData(
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
   const { data, error } = await supabase
-    .from('session_sets')
+    .from('ziko_session_sets')
     .select(`
       weight_kg,
       reps,

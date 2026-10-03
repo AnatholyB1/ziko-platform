@@ -13,7 +13,7 @@ export default async function ClientJournalPage({
   // Fetch journal entries — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('journal_entries')
+    .from('ziko_journal_entries')
     .select('id, mood, energy, stress, context, notes, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })

@@ -13,7 +13,7 @@ export default async function ClientCardioPage({
   // Fetch cardio sessions — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('id, activity_type, duration_min, distance_km, calories, pace, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })

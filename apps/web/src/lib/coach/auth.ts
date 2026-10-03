@@ -31,7 +31,7 @@ export const getCachedCoachUser = cache(async () => {
 
   // D-03: non-coach user gets redirected to onboarding
   const { data: profile } = await supabase
-    .from('user_profiles')
+    .from('ziko_user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -56,7 +56,7 @@ export const getCachedAlertCount = cache(async () => {
   const supabase = await createServerSupabase();
   try {
     const { count } = await supabase
-      .from('coach_alerts')
+      .from('ziko_coach_alerts')
       .select('id', { count: 'exact', head: true })
       .eq('coach_id', user.id)
       .eq('is_read', false);

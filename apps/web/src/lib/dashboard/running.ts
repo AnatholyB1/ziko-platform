@@ -68,7 +68,7 @@ export async function fetchRunningData(
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
   const { data, error } = await supabase
-    .from('cardio_sessions')
+    .from('ziko_cardio_sessions')
     .select('started_at, duration_min, distance_km, activity_type, pace, heart_rate')
     .eq('user_id', clientId)
     .in('activity_type', ['running', 'cycling', 'cardio'])

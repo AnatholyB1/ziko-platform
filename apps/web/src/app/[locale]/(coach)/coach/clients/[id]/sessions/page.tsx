@@ -42,7 +42,7 @@ export default async function ClientSessionsPage({
   // Fetch sessions data — is_coach_of() RLS auto-applied via coach's JWT cookie.
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
-    .from('workout_sessions')
+    .from('ziko_workout_sessions')
     .select('id, name, created_at, duration_minutes')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })

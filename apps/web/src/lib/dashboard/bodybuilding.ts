@@ -93,7 +93,7 @@ export async function fetchBodybuildingData(
 
   const [setsResult, bodyweightResult] = await Promise.all([
     supabase
-      .from('session_sets')
+      .from('ziko_session_sets')
       .select(`
         weight_kg,
         reps,
@@ -111,7 +111,7 @@ export async function fetchBodybuildingData(
       .not('weight_kg', 'is', null)
       .not('reps', 'is', null),
     supabase
-      .from('body_measurements')
+      .from('ziko_body_measurements')
       .select('measured_at, weight_kg')
       .eq('user_id', clientId)
       .gte('measured_at', cutoffDate.toISOString())

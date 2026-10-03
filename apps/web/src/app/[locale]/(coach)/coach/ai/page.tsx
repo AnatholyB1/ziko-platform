@@ -8,7 +8,7 @@ export default async function AIPage() {
 
   // Fetch last coach conversation
   const { data: lastConvo } = await supabase
-    .from('ai_conversations')
+    .from('ziko_ai_conversations')
     .select('id')
     .eq('user_id', user.id)
     .contains('plugin_context', { context: 'coach' })

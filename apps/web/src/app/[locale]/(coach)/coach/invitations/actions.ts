@@ -70,7 +70,7 @@ export async function fetchInvitationsAction(status: 'active' | 'all' = 'all') {
   try {
     const [supabase, { user }] = await Promise.all([createServerSupabase(), getCachedCoachUser()]);
     const { data, error } = await supabase
-      .from('coach_invitations')
+      .from('ziko_coach_invitations')
       .select('id, coach_id, code, expires_at, revoked_at, use_count, max_uses, created_at')
       .eq('coach_id', user.id)
       .order('created_at', { ascending: false });
