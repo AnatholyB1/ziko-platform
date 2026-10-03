@@ -612,6 +612,21 @@ async function runLive(run, opts) {
       }
     }
     await createUsers(state, { admin, createClient, url, publishable: keys.publishable });
+    if (mode === 'smoke') {
+      // An empty route bucket (e.g. no coach videos migrated) cannot be signed against: seed one tiny object
+      // under a test user's folder; cleanup() removes every object in a test user's folder.
+      const routeSeeds = [
+        ['coach-videos', 'A', 'smoke-route-fixture.mp4', 'video/mp4'],
+        ['coach-exercises', 'C', 'smoke-route-fixture.png', 'image/png'],
+      ];
+      for (const [b, owner, file, mime] of routeSeeds) {
+        if (state.existing[b] || !state.buckets[b]) continue;
+        const name = `${state.users[owner].id}/${file}`;
+        const { error } = await admin.storage.from(state.buckets[b]).upload(name, bytesFor(mime), { contentType: mime, upsert: true });
+        if (error) throw new Error(`smoke route fixture upload failed for ${state.buckets[b]}: ${safeMessage(error)}`);
+        state.existing[b] = name;
+      }
+    }
     if (mode === 'full') await seedObjects(state, admin);
 
     for (const c of cases) {
