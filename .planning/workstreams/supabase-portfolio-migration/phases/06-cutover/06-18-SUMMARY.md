@@ -1,6 +1,6 @@
 # Phase 6 Plan 18: Mobile build against portfolio - Summary
 
-Status: awaiting-device-checklist. Tasks 1-3 done (portfolio-pointed Android 1.5.0 preview APK built). Task 4 (device checklist M-01..M-12 + W-05 and signup-landing proof) not started. No `MOBILE INTERNAL CHECKLIST` verdict is written.
+Status: complete-with-waiver (device checklist waived by user). Tasks 1-3 done (portfolio-pointed Android 1.5.0 preview APK built). Task 4 (device checklist M-01..M-12 + W-05 and signup-landing proof) not started. No `MOBILE INTERNAL CHECKLIST` verdict is written.
 
 ## Done
 
@@ -29,3 +29,12 @@ No v*/beta* tag pushed, no `eas submit`, no internal/production build, EAS env v
 ## Task 4
 
 T0 (recorded before handing over to the user): 2026-10-03T20:25:27Z. After the user's reply: read-only count of auth.users created after T0 with raw_user_meta_data->>'app' = 'ziko' on portfolio (ubxllsvanurkwkohzxau, must be >= 1 if M-07 done, with joined ziko_user_profiles row) and auth.users created after T0 on old ziko (slkobhavpwsubnsmuhya, must be 0). Checklist: 06-CUTOVER-SMOKE-CHECKLIST.md Section A (M-01..M-12) plus W-05.
+
+
+## Task 4 outcome: device checklist WAIVED by user
+MOBILE INTERNAL CHECKLIST: WAIVED (user decision; API-level evidence only, not a PASS)
+
+- User first replied "pass all". Read-only DB counts since T0 (2026-10-03T20:25:27Z, checked 20:47Z) showed 0 new accounts, 0 new `app='ziko'` users and 0 sign-ins on portfolio, and 0 new accounts and 0 sign-ins on old ziko, so the app had not been exercised against either backend. The user then confirmed: "i dont have time to install apk check with api is sufficient".
+- Evidence that stands instead (no device run): production API core flows 10/10 and storage/route harness 26/26 on portfolio (06-15); web core flows 13/13 and web live spec (06-16); signup isolation (flagged ziko signup creates profile+credits, non-ziko creates none) on production; preview smoke (06-12); the APK build log shows the portfolio Supabase URL inlined (build d05e6e41, 1.5.0).
+- Not verified by anyone: the Android app launching against portfolio, M-01..M-12, W-05. M-11 (AI chat) would fail anyway (Anthropic balance empty).
+- Consequence for 06-19: its gate greps `^MOBILE INTERNAL CHECKLIST: PASS`, which is deliberately NOT written. The store release needs a separate explicit user decision.
