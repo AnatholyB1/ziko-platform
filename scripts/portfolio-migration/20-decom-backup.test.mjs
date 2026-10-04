@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -220,4 +220,179 @@ test('local gpg round-trip reports a tampered inner file', { skip: haveTools ? f
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ---------------------------------------------------------------- CLI (plan 07-21)
+
+import { run } from './20-decom-backup.mjs';
+import { DECOM_REFS } from './18-decom-guard.mjs';
+import { existsSync } from 'node:fs';
+import { join as pjoin } from 'node:path';
+
+function harness(over = {}) {
+  const calls = { runner: [], fetch: [], loginRole: [], connect: [], loadToken: 0, deleteRoles: [], encrypt: 0, writes: [] };
+  const out = [];
+  const err = [];
+  const deps = {
+    loadToken: async () => { calls.loadToken++; return 'sbp_testtoken_value'; },
+    fetchImpl: async (...a) => { calls.fetch.push(a); return { ok: true, status: 200, json: async () => ({}) }; },
+    connect: async (...a) => { calls.connect.push(a); throw new Error('connect not faked'); },
+    loginRole: async (ref) => {
+      calls.loginRole.push(ref);
+      return { role: 'cli_login_postgres', password: 'login-pw-secret-xyz', host: 'aws-0.pooler.supabase.com', port: 5432 };
+    },
+    deleteRoles: async (ref) => { calls.deleteRoles.push(ref); return true; },
+    runner: (cmd, args) => {
+      calls.runner.push([cmd, args]);
+      return { status: 0, stdout: `${cmd} (fake) 16.0\n`, stderr: '' };
+    },
+    log: (m) => out.push(String(m)),
+    errlog: (m) => err.push(String(m)),
+    exists: () => false,
+    caDefault: pjoin(tmpdir(), 'no-such-ca.crt'),
+    ...over,
+  };
+  return { deps, calls, out, err };
+}
+
+const inRepo = (...p) => pjoin(REPO_ROOT, ...p);
+const noSideEffects = (calls) => {
+  assert.equal(calls.runner.length, 0, 'runner called');
+  assert.equal(calls.fetch.length, 0, 'fetch called');
+  assert.equal(calls.loginRole.length, 0, 'loginRole called');
+  assert.equal(calls.connect.length, 0, 'connect called');
+  assert.equal(calls.loadToken, 0, 'token loaded');
+};
+
+test('--help prints usage and exits 0', async () => {
+  const h = harness();
+  assert.equal(await run(['--help'], h.deps), 0);
+  assert.match(h.out.join('\n'), /Usage:/);
+});
+
+test('--init-passphrase writes 32 random bytes via writeSecret and never prints them', async () => {
+  const written = [];
+  const fixed = Buffer.alloc(32, 7);
+  const h = harness({
+    randomBytes: () => fixed,
+    writeSecret: (p, t) => written.push([p, t]),
+  });
+  const file = pjoin(tmpdir(), 'ziko-pp-test.txt');
+  assert.equal(await run(['--init-passphrase', '--passphrase-file', file], h.deps), 0);
+  assert.equal(written.length, 1);
+  const secret = fixed.toString('base64url');
+  assert.equal(written[0][1].trim(), secret);
+  assert.deepEqual(h.out, ['passphrase file created']);
+  assert.ok(!h.out.concat(h.err).join('\n').includes(secret));
+  noSideEffects(h.calls);
+});
+
+test('--init-passphrase real file mode 0600 (posix) and refuses an existing file', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ziko-pp-'));
+  try {
+    const file = join(dir, 'pp.txt');
+    const out = [];
+    assert.equal(await run(['--init-passphrase', '--passphrase-file', file], { log: (m) => out.push(m), errlog: () => {} }), 0);
+    const body = readFileSync(file, 'utf8').trim();
+    assert.ok(body.length >= 43);
+    assert.ok(!out.join('\n').includes(body));
+    if (process.platform !== 'win32') assert.equal(statSync(file).mode & 0o777, 0o600);
+    const err = [];
+    assert.equal(await run(['--init-passphrase', '--passphrase-file', file], { log: () => {}, errlog: (m) => err.push(m) }), 1);
+    assert.match(err.join(''), /already exists/);
+    assert.equal(readFileSync(file, 'utf8').trim(), body);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('refusals return exit 1 with zero runner, fetch, token, login and connect calls', async () => {
+  const outside = pjoin(tmpdir(), 'ziko-backup-refuse');
+  const cases = [
+    ['init-passphrase in repo', ['--init-passphrase', '--passphrase-file', inRepo('pp.txt')]],
+    ['schema-probe out-dir in repo', ['--schema-probe', '--target', 'scratch', '--out-dir', inRepo('out')]],
+    ['schema-probe portfolio target', ['--schema-probe', '--target', 'portfolio', '--out-dir', outside]],
+    ['schema-probe arbitrary ref', ['--schema-probe', '--target', 'abcdefghijklmnopqrst', '--out-dir', outside]],
+  ];
+  for (const [name, argv] of cases) {
+    const h = harness();
+    assert.equal(await run(argv, h.deps), 1, name);
+    noSideEffects(h.calls);
+  }
+});
+
+test('bad mode combinations exit 2', async () => {
+  const h = harness();
+  assert.equal(await run([], h.deps), 2);
+  assert.equal(await run(['--probe-tools', '--schema-probe'], h.deps), 2);
+  assert.equal(await run(['--bogus'], h.deps), 2);
+  noSideEffects(h.calls);
+});
+
+test('--probe-tools writes versions and exits 1 listing missing tools', async () => {
+  const written = [];
+  const h = harness({
+    runner: (cmd) => {
+      h.calls.runner.push([cmd]);
+      if (cmd === 'pg_restore') return { status: null, error: new Error('ENOENT') };
+      return { status: 0, stdout: `${cmd} 1.2.3\nsecond line\n` };
+    },
+    writeText: (p, t) => written.push([p, t]),
+  });
+  const code = await run(['--probe-tools', '--json-out', inRepo('report.json')], h.deps);
+  assert.equal(code, 1);
+  const rep = JSON.parse(written[0][1]);
+  assert.equal(rep.pg_dump, 'pg_dump 1.2.3');
+  assert.equal(rep.pg_restore, 'missing');
+  assert.equal(typeof rep.gpg, 'string');
+  assert.equal(typeof rep.tar, 'string');
+  assert.match(h.err.join(' '), /missing tools: pg_restore/);
+});
+
+test('--probe-tools exits 0 when every tool reports a version', async () => {
+  const h = harness();
+  assert.equal(await run(['--probe-tools'], h.deps), 0);
+});
+
+test('--schema-probe runs only schema-only dumps and pg_restore --list, then deletes login roles', async () => {
+  const written = [];
+  const h = harness({
+    mkdir: () => {},
+    writeText: (p, t) => written.push([p, t]),
+    runner: (cmd, args) => {
+      h.calls.runner.push([cmd, args]);
+      if (cmd === 'pg_restore' && args[0] === '--list') return { status: 0, stdout: '; header\n1; 1 2 TABLE public a x\n2; 1 3 TABLE public b x\n' };
+      return { status: 0, stdout: 'v 1\n', stderr: '' };
+    },
+  });
+  const outDir = pjoin(tmpdir(), 'ziko-schema-probe');
+  const code = await run(['--schema-probe', '--target', 'scratch', '--out-dir', outDir, '--json-out', 'r.json'], h.deps);
+  assert.equal(code, 0);
+  const dumps = h.calls.runner.filter(([c, a]) => c === 'pg_dump' && !a.includes('--version'));
+  assert.equal(dumps.length, 2);
+  for (const [, a] of dumps) {
+    assert.ok(a.includes('--schema-only'));
+    assert.ok(!a.includes('--data-only'));
+    assert.ok(!a.join(' ').includes('login-pw-secret-xyz'));
+  }
+  assert.deepEqual(h.calls.loginRole, [DECOM_REFS.scratch, DECOM_REFS.scratch]);
+  assert.deepEqual(h.calls.deleteRoles, [DECOM_REFS.scratch]);
+  assert.equal(h.calls.connect.length, 0, 'schema-probe never opens a SQL connection');
+  assert.equal(JSON.parse(written[0][1]).pg_restore_list_entries, 2);
+});
+
+test('--schema-probe pg_dump failure exits 1, redacts the password and still deletes login roles', async () => {
+  const h = harness({
+    mkdir: () => {},
+    runner: (cmd, args) => {
+      h.calls.runner.push([cmd, args]);
+      if (cmd === 'pg_dump' && !args.includes('--version')) return { status: 1, stderr: 'FATAL: password login-pw-secret-xyz rejected' };
+      return { status: 0, stdout: 'v 1\n' };
+    },
+  });
+  const code = await run(['--schema-probe', '--target', 'ziko', '--out-dir', pjoin(tmpdir(), 'ziko-sp-fail')], h.deps);
+  assert.equal(code, 1);
+  assert.deepEqual(h.calls.deleteRoles, [DECOM_REFS.ziko]);
+  assert.ok(!h.err.join('\n').includes('login-pw-secret-xyz'));
+  assert.match(h.err.join('\n'), /pg_dump schema-only failed/);
 });
