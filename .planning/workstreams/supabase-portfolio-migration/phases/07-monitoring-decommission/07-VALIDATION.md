@@ -1,4 +1,19 @@
-file check | 07-DELETION-LOG.md names ziko ref + evidence report paths, PII grep gate undefined| grep REQUIREMENTS: DECOM-01 WAIVED and unticked, DECOM-02..05 ticked undefined| `Revoked: ziko-cutover-phase6` line in 07-AUTHORIZATIONS.md undefined| credential, bypass, passphrase and temp files absent undefined| report `confirmed_gone_at` + method api/dashboard + API /health 200 undefined| decom-delete.json exists, names ziko ref only (never portfolio), grep gate undefined| `18-decom-guard --status --require ziko` + exactly one D-15 block undefined| freeze recheck passed + `18-decom-guard --status --require ziko --except confirmation_yes` undefined| gate `scratch_deleted` PASS + report `confirmed_gone_at` + grep gate undefined| gate `ci_token_revoked` PASS undefined| ci.yml free of scratch secrets + decom-ci-offscratch.json conclusion success undefined| gate `restore_proven` PASS + proof report passed with deviations + grep gate undefined| wipe report `passed` + grep gate undefined| gate `backup_second_copy` PASS + `### 07-11 second copy` block undefined| gates `freeze_proven` + `backup_encrypted` PASS, no plaintext work dir, PII grep gate undefined| `node --test pm/24-decom-delete.test.mjs pm/18-decom-guard.test.mjs` + `--help` undefined| `node --test pm/23-decom-env-audit.test.mjs pm/17-env-switch.test.mjs` undefined| grep RUNBOOK `## Phase 7` section + secret grep gate undefined| grep REQUIREMENTS: DECOM-01 carries WAIVED by user, never ticked/Complete undefined| `node --test pm/18-decom-guard.test.mjs` + `18-decom-guard --status` + `git check-ignore` on backup paths undefined| Property | Value |
+---
+phase: 7
+slug: monitoring-decommission
+status: draft
+nyquist_compliant: true
+wave_0_complete: true
+created: 2026-10-04
+---
+
+# Phase 7 — Validation Strategy
+
+> Per-phase validation contract. Full requirement-to-test map: `07-RESEARCH.md` section "Validation Architecture".
+
+## Test Infrastructure
+
+| Property | Value |
 |----------|-------|
 | **Framework** | `node:test` (repo pattern for `scripts/portfolio-migration/*.test.mjs`) |
 | **Config file** | none (run by path) |
