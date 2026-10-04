@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-10-04T19:57:07.523Z",
+  "target": "scratch",
+  "ref": "rkirvurggtgjlkeuhded",
+  "pre_freeze_write_privileges": 859,
+  "post_freeze_status": "no write privilege held",
+  "post_unfreeze": {
+    "grants": "replayed byte-equal",
+    "write_privileges": 859,
+    "signup": "restored"
+  },
+  "rows": [
+    {
+      "writer": "service_role REST PATCH public table",
+      "expected": "blocked (401/403, 42501)",
+      "observed": "403 42501"
+    },
+    {
+      "writer": "anon REST PATCH public table",
+      "expected": "blocked (401/403, 42501)",
+      "observed": "401 42501"
+    },
+    {
+      "writer": "service_role REST GET public table",
+      "expected": "allowed (200)",
+      "observed": "200"
+    },
+    {
+      "writer": "public signup",
+      "expected": "blocked (signups disabled)",
+      "observed": "422 422"
+    },
+    {
+      "writer": "GoTrue admin createUser (service_role)",
+      "expected": "bypass expected (auth schema not covered by REVOKE)",
+      "observed": "allowed"
+    },
+    {
+      "writer": "SECURITY DEFINER RPC (ziko_ensure_gamification_profile as service_role)",
+      "expected": "bypass expected",
+      "observed": "http 200 (call accepted, no 42501)",
+      "note": "definer functions are not covered by REVOKE; row-level effect not measured (count query targeted a non-existent table)"
+    },
+    {
+      "writer": "temp user cleanup",
+      "expected": "0 leftover",
+      "observed": "0 leftover users"
+    },
+    {
+      "writer": "Storage upload 1 byte (service_role)",
+      "expected": "bypass expected (storage schema not covered by REVOKE)",
+      "observed": "allowed"
+    },
+    {
+      "writer": "Storage probe object removal",
+      "expected": "removed",
+      "observed": "200"
+    }
+  ],
+  "coverage_gaps": [
+    "SECURITY DEFINER RPC",
+    "GoTrue admin createUser",
+    "Storage upload"
+  ],
+  "conclusion": "REVOKE blocks anon/service_role REST writes and public signup; auth admin, definer RPC and storage writes bypass it, so the T0==T1 proof in 07-11 is the real gate."
+}

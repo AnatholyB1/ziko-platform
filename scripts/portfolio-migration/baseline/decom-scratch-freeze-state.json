@@ -1,0 +1,5787 @@
+{
+  "target": "scratch",
+  "generated_at": "2026-10-04T19:52:29.941Z",
+  "prior_disable_signup": false,
+  "grants": [
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_cost_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_cost_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_cost_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_cost_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_imports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_imports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_imports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_imports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_config",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_config",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_config",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_config",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_invites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_invites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_invites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_app_invites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_athlete_decisions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_athlete_goals",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_athlete_state",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_badge_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_badge_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_badge_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_badge_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_body_measurements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_body_measurements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_body_measurements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_body_measurements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_bug_reports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_bug_reports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_bug_reports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_bug_reports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_cardio_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_cardio_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_cardio_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_cardio_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_teams",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_teams",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_teams",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenge_teams",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_challenges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_alerts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_alerts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_alerts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_alerts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_branding",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_branding",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_branding",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_branding",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_links",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_links",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_links",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_links",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_notes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_notes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_notes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_notes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_tags",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_tags",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_tags",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_tags",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_videos",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_videos",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_videos",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_client_videos",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_forms",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_forms",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_forms",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_forms",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_invitations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_invitations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_invitations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_invitations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_memory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_memory",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_memory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_memory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_program_folders",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_program_folders",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_program_folders",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_program_folders",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_coin_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_posts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_posts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_posts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_posts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_user_stats",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_user_stats",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_user_stats",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_community_user_stats",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_conversation_members",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_conversation_members",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_conversation_members",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_conversation_members",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_dashboard_configs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_dashboard_configs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_dashboard_configs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_dashboard_configs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercise_import_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercise_import_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercise_import_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercise_import_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_database",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_database",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_database",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_database",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_products",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_products",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_products",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_food_products",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_instances",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_instances",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_instances",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_instances",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_responses",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_responses",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_responses",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_form_responses",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_friendships",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_friendships",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_friendships",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_friendships",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workout_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workout_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workout_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workout_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_group_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_encouragements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_encouragements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_encouragements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_encouragements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habit_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_habits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_health_sync_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_health_sync_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_health_sync_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_health_sync_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_hydration_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_hydration_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_hydration_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_hydration_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_journal_entries",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_journal_entries",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_journal_entries",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_journal_entries",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_level_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_level_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_level_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_level_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_preferences",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_preferences",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_preferences",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_preferences",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_tokens",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_tokens",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_tokens",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_notification_tokens",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_nutrition_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_nutrition_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_nutrition_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_nutrition_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_pantry_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_pantry_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_pantry_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_pantry_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_persona_settings",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_persona_settings",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_persona_settings",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_persona_settings",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugin_reviews",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugin_reviews",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugin_reviews",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugin_reviews",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugins_registry",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugins_registry",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugins_registry",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_plugins_registry",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_comments",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_comments",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_comments",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_comments",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_likes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_likes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_likes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_post_likes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_program_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_promo_codes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_promo_codes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_promo_codes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_promo_codes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_screen_reactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_screen_reactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_screen_reactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_screen_reactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_sets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_sets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_sets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_session_sets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shared_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shared_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shared_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shared_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shop_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shop_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shop_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_shop_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_sleep_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_sleep_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_sleep_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_sleep_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_routines",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_routines",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_routines",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_stretching_routines",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_brands",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_brands",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_brands",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_brands",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_categories",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_categories",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_categories",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_categories",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_prices",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_prices",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_prices",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplement_prices",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_supplements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_timer_presets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_timer_presets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_timer_presets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_timer_presets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_ai_credits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_ai_credits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_ai_credits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_ai_credits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_badges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_badges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_badges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_badges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_gamification",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_gamification",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_gamification",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_gamification",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_inventory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_inventory",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_inventory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_inventory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_plugins",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_plugins",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_plugins",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_plugins",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_waitlist_signups",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_waitlist_signups",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_waitlist_signups",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_waitlist_signups",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_workout_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "anon",
+      "table": "ziko_xp_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_cost_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_cost_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_cost_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_cost_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_imports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_imports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_imports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_imports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_config",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_config",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_config",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_config",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_invites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_invites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_invites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_app_invites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_athlete_decisions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_athlete_goals",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_athlete_state",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_badge_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_badge_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_badge_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_badge_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_body_measurements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_body_measurements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_body_measurements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_body_measurements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_bug_reports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_bug_reports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_bug_reports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_bug_reports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_cardio_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_cardio_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_cardio_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_cardio_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_teams",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_teams",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_teams",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenge_teams",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_challenges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_alerts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_alerts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_alerts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_alerts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_branding",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_branding",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_branding",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_branding",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_links",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_links",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_links",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_links",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_notes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_notes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_notes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_notes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_tags",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_tags",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_tags",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_tags",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_videos",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_videos",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_videos",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_client_videos",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_forms",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_forms",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_forms",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_forms",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_invitations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_invitations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_invitations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_invitations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_memory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_memory",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_memory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_memory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_program_folders",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_program_folders",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_program_folders",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_program_folders",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_coin_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_posts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_posts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_posts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_posts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_user_stats",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_user_stats",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_user_stats",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_community_user_stats",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_conversation_members",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_conversation_members",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_conversation_members",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_conversation_members",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_dashboard_configs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_dashboard_configs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_dashboard_configs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_dashboard_configs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercise_import_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercise_import_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercise_import_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercise_import_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_database",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_database",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_database",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_database",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_products",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_products",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_products",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_food_products",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_instances",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_instances",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_instances",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_instances",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_responses",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_responses",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_responses",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_form_responses",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_friendships",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_friendships",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_friendships",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_friendships",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workout_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workout_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workout_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workout_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_group_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_encouragements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_encouragements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_encouragements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_encouragements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habit_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_habits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_health_sync_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_health_sync_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_health_sync_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_health_sync_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_hydration_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_hydration_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_hydration_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_hydration_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_journal_entries",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_journal_entries",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_journal_entries",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_journal_entries",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_level_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_level_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_level_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_level_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_preferences",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_preferences",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_preferences",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_preferences",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_tokens",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_tokens",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_tokens",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_notification_tokens",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_nutrition_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_nutrition_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_nutrition_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_nutrition_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_pantry_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_pantry_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_pantry_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_pantry_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_persona_settings",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_persona_settings",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_persona_settings",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_persona_settings",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugin_reviews",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugin_reviews",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugin_reviews",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugin_reviews",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugins_registry",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugins_registry",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugins_registry",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_plugins_registry",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_comments",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_comments",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_comments",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_comments",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_likes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_likes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_likes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_post_likes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_program_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_promo_codes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_promo_codes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_promo_codes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_promo_codes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_screen_reactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_screen_reactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_screen_reactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_screen_reactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_sets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_sets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_sets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_session_sets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shared_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shared_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shared_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shared_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shop_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shop_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shop_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_shop_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_sleep_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_sleep_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_sleep_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_sleep_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_routines",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_routines",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_routines",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_stretching_routines",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_brands",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_brands",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_brands",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_brands",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_categories",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_categories",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_categories",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_categories",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_prices",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_prices",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_prices",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplement_prices",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_supplements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_timer_presets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_timer_presets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_timer_presets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_timer_presets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_ai_credits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_ai_credits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_ai_credits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_ai_credits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_badges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_badges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_badges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_badges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_gamification",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_gamification",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_inventory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_inventory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_inventory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_plugins",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_plugins",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_plugins",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_plugins",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_waitlist_signups",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_waitlist_signups",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_waitlist_signups",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_waitlist_signups",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_workout_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table": "ziko_xp_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_cost_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_cost_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_cost_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_cost_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_credit_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_generated_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_imports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_imports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_imports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_imports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_ai_tool_audit",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_config",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_config",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_config",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_config",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_invites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_invites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_invites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_app_invites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_athlete_decisions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_athlete_goals",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_athlete_state",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_badge_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_badge_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_badge_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_badge_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_body_measurements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_body_measurements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_body_measurements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_body_measurements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_bug_reports",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_bug_reports",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_bug_reports",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_bug_reports",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_cardio_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_cardio_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_cardio_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_cardio_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_teams",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_teams",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_teams",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenge_teams",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_challenges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_alerts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_alerts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_alerts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_alerts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_branding",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_branding",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_branding",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_branding",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_links",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_links",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_links",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_links",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_notes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_notes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_notes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_notes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_tags",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_tags",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_tags",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_tags",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_videos",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_videos",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_videos",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_client_videos",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_forms",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_forms",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_forms",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_forms",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_invitations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_invitations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_invitations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_invitations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_memory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_memory",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_memory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_memory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_metric_thresholds",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_program_folders",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_program_folders",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_program_folders",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_program_folders",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_video_annotations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coach_vocal_feedbacks",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_coin_transactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_conversations",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_conversations",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_conversations",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_conversations",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_messages",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_messages",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_messages",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_messages",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_posts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_posts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_posts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_posts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_user_stats",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_user_stats",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_user_stats",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_community_user_stats",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_conversation_members",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_conversation_members",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_conversation_members",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_conversation_members",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_dashboard_configs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_dashboard_configs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_dashboard_configs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_dashboard_configs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercise_import_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercise_import_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercise_import_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercise_import_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_exercises_merge_backup",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_database",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_database",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_database",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_database",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_products",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_products",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_products",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_food_products",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_instances",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_instances",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_instances",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_instances",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_responses",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_responses",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_responses",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_form_responses",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_friendships",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_friendships",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_friendships",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_friendships",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workout_participants",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workout_participants",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workout_participants",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workout_participants",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_group_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_encouragements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_encouragements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_encouragements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_encouragements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habit_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_habits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_health_sync_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_health_sync_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_health_sync_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_health_sync_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_hydration_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_hydration_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_hydration_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_hydration_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_journal_entries",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_journal_entries",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_journal_entries",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_journal_entries",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_level_definitions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_level_definitions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_level_definitions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_level_definitions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_log",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_log",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_log",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_log",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_preferences",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_preferences",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_preferences",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_preferences",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_tokens",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_tokens",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_tokens",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_notification_tokens",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_nutrition_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_nutrition_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_nutrition_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_nutrition_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_pantry_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_pantry_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_pantry_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_pantry_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_persona_settings",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_persona_settings",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_persona_settings",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_persona_settings",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugin_reviews",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugin_reviews",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugin_reviews",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugin_reviews",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugins_registry",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugins_registry",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugins_registry",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_plugins_registry",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_comments",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_comments",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_comments",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_comments",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_likes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_likes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_likes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_post_likes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_workouts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_workouts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_workouts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_program_workouts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_promo_codes",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_promo_codes",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_promo_codes",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_promo_codes",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_screen_reactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_screen_reactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_screen_reactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_screen_reactions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_exercises",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_exercises",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_exercises",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_exercises",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_sets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_sets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_sets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_session_sets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shared_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shared_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shared_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shared_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shop_items",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shop_items",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shop_items",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_shop_items",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_sleep_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_sleep_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_sleep_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_sleep_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_logs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_logs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_logs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_logs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_routines",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_routines",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_routines",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_stretching_routines",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_brands",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_brands",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_brands",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_brands",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_categories",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_categories",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_categories",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_categories",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_prices",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_prices",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_prices",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplement_prices",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplements",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplements",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplements",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_supplements",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_timer_presets",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_timer_presets",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_timer_presets",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_timer_presets",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_ai_credits",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_ai_credits",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_ai_credits",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_ai_credits",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_badges",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_badges",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_badges",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_badges",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_gamification",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_gamification",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_gamification",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_gamification",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_inventory",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_inventory",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_inventory",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_inventory",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_plugins",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_plugins",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_plugins",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_plugins",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_profiles",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_profiles",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_profiles",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_profiles",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_promo_redemptions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_user_supplement_favorites",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_waitlist_signups",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_waitlist_signups",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_waitlist_signups",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_waitlist_signups",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_wearable_daily_summary",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_programs",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_programs",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_programs",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_programs",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_sessions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_sessions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_sessions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_workout_sessions",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_gifts",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_gifts",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_gifts",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_gifts",
+      "privilege": "UPDATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_transactions",
+      "privilege": "DELETE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_transactions",
+      "privilege": "INSERT"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_transactions",
+      "privilege": "TRUNCATE"
+    },
+    {
+      "grantee": "service_role",
+      "table": "ziko_xp_transactions",
+      "privilege": "UPDATE"
+    }
+  ]
+}
