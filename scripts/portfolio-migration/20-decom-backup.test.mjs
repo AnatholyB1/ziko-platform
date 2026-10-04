@@ -249,6 +249,7 @@ function harness(over = {}) {
     log: (m) => out.push(String(m)),
     errlog: (m) => err.push(String(m)),
     exists: () => false,
+    retryDelayMs: 0,
     caDefault: pjoin(tmpdir(), 'no-such-ca.crt'),
     ...over,
   };
@@ -395,6 +396,42 @@ test('--schema-probe pg_dump failure exits 1, redacts the password and still del
   assert.deepEqual(h.calls.deleteRoles, [DECOM_REFS.ziko]);
   assert.ok(!h.err.join('\n').includes('login-pw-secret-xyz'));
   assert.match(h.err.join('\n'), /pg_dump schema-only failed/);
+});
+
+test('--schema-probe retries pg_dump with a fresh login role after a stale-role pooler error', async () => {
+  let dumpCalls = 0;
+  const h = harness({
+    mkdir: () => {},
+    writeText: () => {},
+    retryDelayMs: 0,
+    runner: (cmd, args) => {
+      h.calls.runner.push([cmd, args]);
+      if (cmd === 'pg_restore' && args[0] === '--list') return { status: 0, stdout: '1; 1 2 TABLE public a x\n' };
+      if (cmd === 'pg_dump' && !args.includes('--version')) {
+        dumpCalls++;
+        if (dumpCalls === 1) return { status: 1, stderr: 'ERROR:  invalid role OID: 52618' };
+      }
+      return { status: 0, stdout: 'v 1\n', stderr: '' };
+    },
+  });
+  const code = await run(['--schema-probe', '--target', 'scratch', '--out-dir', pjoin(tmpdir(), 'ziko-sp-retry'), '--json-out', 'r.json'], h.deps);
+  assert.equal(code, 0);
+  assert.equal(h.calls.loginRole.length, 3, 'fresh login role for the retry');
+});
+
+test('pg_dump retries are bounded and the final failure is still fatal', async () => {
+  const h = harness({
+    mkdir: () => {},
+    retryDelayMs: 0,
+    runner: (cmd, args) => {
+      h.calls.runner.push([cmd, args]);
+      if (cmd === 'pg_dump' && !args.includes('--version')) return { status: 1, stderr: 'ERROR:  invalid role OID: 1' };
+      return { status: 0, stdout: 'v 1\n' };
+    },
+  });
+  const code = await run(['--schema-probe', '--target', 'scratch', '--out-dir', pjoin(tmpdir(), 'ziko-sp-bound')], h.deps);
+  assert.equal(code, 1);
+  assert.equal(h.calls.loginRole.length, 4);
 });
 
 // ---------------------------------------------------------------- --run and --verify-archive (plan 07-21)

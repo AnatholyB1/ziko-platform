@@ -506,7 +506,28 @@ function resolveCa(deps, caFileArg) {
 }
 
 /** One pg_dump with a fresh read-only login role (login-role TTL, RESEARCH Pitfall 7). Failure is fatal. */
-async function dumpWith(ctx, ref, mode, file, { custom = false } = {}) {
+async function dumpWith(ctx, ref, mode, file, opts = {}) {
+  // The pooler can briefly hold stale state for a just-recreated login role (auth failure or
+  // "invalid role OID"), same as connectClient. Retry with a fresh role; the last failure is fatal.
+  const { deps } = ctx;
+  const attempts = deps.dumpAttempts ?? 4;
+  const delayMs = deps.retryDelayMs ?? 4000;
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await dumpOnce(ctx, ref, mode, file, opts);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts) {
+        deps.log(`pg_dump ${mode} attempt ${i}/${attempts} failed, retrying with a fresh login role`);
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+async function dumpOnce(ctx, ref, mode, file, { custom = false } = {}) {
   const { deps } = ctx;
   ctx.touched.add(ref);
   const lr = await deps.loginRole(ref, { token: ctx.token, fetchImpl: deps.fetchImpl });
