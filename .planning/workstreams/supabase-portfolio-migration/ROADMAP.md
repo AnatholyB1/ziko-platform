@@ -202,7 +202,7 @@ Plans:
 - [x] 07-04-PLAN.md — Wave 0: lib-decom-storage + 20-decom-backup primitives (pg_dump argv/env, manifest, checksums, gpg AES256 encrypt/decrypt) (DECOM-02)
 - [ ] 07-05-PLAN.md — Wave 0 TDD: 22-decom-verify evaluators (PK subset, post-flip extras, row content digest, object subset, tenant delta) (DECOM-03)
 - [x] 07-06-PLAN.md — Wave 0 TDD: 23-decom-env-audit (Vercel all scopes, EAS, CI by fingerprint/ref, gated remediation) (DECOM-05)
-- [ ] 07-07-PLAN.md — Wave 0 TDD: 24-decom-delete fail-closed delete/confirm-gone/log for ziko|scratch (DECOM-04, DECOM-05)
+- [x] 07-07-PLAN.md — Wave 0 TDD: 24-decom-delete fail-closed delete/confirm-gone/log for ziko|scratch (DECOM-04, DECOM-05)
 - [ ] 07-08-PLAN.md — Wave 0 TDD: 21-decom-restore-proof (scratch wipe, restore, same-name verify) (DECOM-02)
 - [ ] 07-09-PLAN.md — Checkpoint: install pg client tools; live probes (pg_dump, project identity/Vercel-managed, freeze rehearsal on scratch) (DECOM-02, DECOM-05)
 - [ ] 07-10-PLAN.md — Freeze ziko (REVOKE + signup off) and T0 snapshot (DECOM-02)
@@ -232,4 +232,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
-| 7. Monitoring & Decommission | 5/22 | In Progress|  |
+| 7. Monitoring & Decommission | 6/22 | In Progress|  |
