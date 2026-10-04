@@ -8,9 +8,17 @@
 // 05-load-data --apply). Details never carry PK values, digests, emails or object names:
 // counts, table names and masked keys only (T-07-18).
 
-import { EXPECTED_TABLE_COUNT, IDENT_RE, UUID_RE } from './lib-data.mjs';
-import { TARGET_BUCKET_RE, maskObjectKey, rekeyObjectName, targetBucketId } from './lib-storage.mjs';
-import { assertCommittedSafe } from './18-decom-guard.mjs';
+import { spawnSync } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PROJECTS, assertProjectRefFormat, getProjectApiKeys, isMain, parseCliArgs, redactPii, runSql } from '../auth-merge/lib.mjs';
+import { EXPECTED_TABLE_COUNT, IDENT_RE, UUID_RE, buildTablePlan, loadRenameMap, parseRemapFile } from './lib-data.mjs';
+import { TARGET_BUCKET_RE, maskObjectKey, rekeyObjectName, sha256Hex, targetBucketId } from './lib-storage.mjs';
+import { BUCKET_LIST_SQL, buildObjectListSql, downloadBuffer, mapPool } from './lib-decom-storage.mjs';
+import { assertCommittedSafe, recordGate } from './18-decom-guard.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 const ok = (detail, extra = {}) => ({ ok: true, detail, ...extra });
 const fail = (detail, extra = {}) => ({ ok: false, detail, ...extra });
@@ -425,4 +433,484 @@ export function buildDecomReport({
   };
   assertCommittedSafe(report);
   return report;
+}
+
+// ---------------------------------------------------------------------------
+// CLI (plan 07-22): read-only live collection + existing verifiers as child steps
+// ---------------------------------------------------------------------------
+
+const REPO_ROOT = resolve(HERE, '..', '..');
+const HANDOFF_PATH = resolve(REPO_ROOT, '.planning', 'HANDOFF.json');
+const DEFAULT_REMAP_FILE = resolve(HERE, '..', 'auth-merge', 'uuid-remap.json');
+const DEFAULT_BASELINES = Object.freeze({
+  data: resolve(HERE, 'baseline', 'portfolio-tenants-precutover.json'),
+  storage: resolve(HERE, 'baseline', 'portfolio-storage-tenants-precutover.json'),
+  auth: resolve(HERE, '..', 'auth-merge', 'baseline', 'portfolio-baseline-precutover.json'),
+});
+const CHILD_SCRIPTS = Object.freeze({
+  verifyData: join(HERE, '06-verify-data.mjs'),
+  verifyStorage: join(HERE, '09-verify-storage.mjs'),
+  authVerify: resolve(HERE, '..', 'auth-merge', '06-verify.mjs'),
+});
+
+const CHECKS = ['pk-subset', 'content', 'storage-subset', 'integrity', 'auth', 'tenants'];
+const TS_COLUMNS = ['created_at', 'updated_at'];
+const JWT_G = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g;
+const FULL_UUID_G = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const CONCURRENCY = 4;
+
+function safeText(text) {
+  return redactPii(String(text ?? '')).replace(JWT_G, '[jwt]').replace(FULL_UUID_G, (u) => `${u.slice(0, 8)}-…`).slice(0, 400);
+}
+
+/**
+ * Child steps for the existing verifiers. Never contains a `counts` check, 13-cutover-delta or
+ * 05-load-data (T-07-17).
+ */
+export function buildChildSteps(o = {}) {
+  const refs = ['--project-ref', o.projectRef, '--source-ref', o.sourceRef];
+  const step = (name, script, argv) => ({ name, script, argv });
+  const b = { ...DEFAULT_BASELINES, ...(o.baselines ?? {}) };
+  const remap = o.remapFile ?? DEFAULT_REMAP_FILE;
+  return {
+    integrity: ['rls', 'triggers', 'fk', 'orphans'].map((c) => step(`integrity-${c}`, CHILD_SCRIPTS.verifyData, [...refs, '--check', c])),
+    auth: ['users', 'identities'].map((c) => step(`auth-${c}`, CHILD_SCRIPTS.authVerify, [...refs, '--check', c])),
+    tenants: [
+      step('tenants-data', CHILD_SCRIPTS.verifyData, [...refs, '--check', 'tenants', '--baseline', b.data]),
+      step('tenants-storage', CHILD_SCRIPTS.verifyStorage, [...refs, '--check', 'tenants', '--remap-file', remap, '--baseline', b.storage]),
+      step('tenants-auth', CHILD_SCRIPTS.authVerify, [...refs, '--check', 'tenants', '--baseline', b.auth]),
+    ],
+  };
+}
+
+/** Problems/warnings from a child verifier's stdout (the `[FAIL] name: a; b` and `[WARN] x` lines). */
+export function parseTenantOutput(stdout, status) {
+  const problems = [];
+  const warnings = [];
+  for (const raw of String(stdout ?? '').split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    const w = /^\s*\[WARN\]\s*(.*)$/.exec(line);
+    if (w) {
+      warnings.push(safeText(w[1]));
+      continue;
+    }
+    const f = /^\[FAIL\]\s+[\w-]+:\s*(.*)$/.exec(line);
+    if (f) for (const p of f[1].split('; ')) if (p.trim()) problems.push(safeText(p.trim()));
+  }
+  if (status === 0) return { problems: [], warnings };
+  if (problems.length === 0) problems.push('child verifier failed without an attributable problem');
+  return { problems, warnings };
+}
+
+const FORBIDDEN_SQL_RE = /\b(INSERT|UPDATE|DELETE|TRUNCATE|ALTER|DROP|CREATE|GRANT|REVOKE|COPY|VACUUM)\b/i;
+
+/** Last line of defence: only a single read statement may pass (T-07-20b). */
+export function assertReadOnlySql(sql) {
+  const s = String(sql ?? '');
+  if (!/^\s*(SELECT|WITH)\b/i.test(s) || FORBIDDEN_SQL_RE.test(s)) throw new Error('refusing non-read-only SQL');
+}
+
+export function buildColumnsSql(table) {
+  ident(table, 'table');
+  return `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '${table}' AND is_generated = 'NEVER' ORDER BY ordinal_position`;
+}
+
+export function buildCountSql(table) {
+  return `SELECT count(*)::bigint AS n FROM public.${ident(table, 'table')}`;
+}
+
+export function buildTimestampSql(table, pkCols, tsCols) {
+  const cols = tsCols.map((c) => `, ${ident(c, 'timestamp column')}`).join('');
+  return `SELECT ${pkExpr(pkCols)} AS pk_key${cols} FROM public.${ident(table, 'table')}`;
+}
+
+export function buildPostFlipCountSql(table, tsCols, flipAt) {
+  if (typeof flipAt !== 'string' || !FLIP_AT_RE.test(flipAt)) throw new Error('flipAt must be an ISO UTC timestamp');
+  const ts = tsCols.map((c) => ident(c, 'timestamp column')).join(', ');
+  return `SELECT count(*)::bigint AS n FROM public.${ident(table, 'table')} WHERE coalesce(greatest(${ts}) > '${flipAt}'::timestamptz, false)`;
+}
+
+export function buildTargetObjectListSql(buckets) {
+  if (!Array.isArray(buckets) || buckets.length === 0) throw new Error('needs at least one bucket id');
+  for (const b of buckets) if (typeof b !== 'string' || !TARGET_BUCKET_RE.test(b)) throw new Error('invalid bucket id');
+  const list = buckets.map((b) => `'${b}'`).join(', ');
+  return `SELECT bucket_id, name, created_at, updated_at FROM storage.objects WHERE bucket_id IN (${list}) ORDER BY bucket_id, name`;
+}
+
+const SPEC = {
+  'project-ref': 'string',
+  'source-ref': 'string',
+  check: 'string',
+  'remap-file': 'string',
+  allowlist: 'string',
+  'json-out': 'string',
+  'record-gate': 'boolean',
+};
+
+const HELP = `22-decom-verify.mjs - Phase 7 DECOM-03 read-only verifier (frozen ziko vs portfolio)
+
+Required:
+  --project-ref <ref>   Must be the portfolio project (anything else is refused).
+  --source-ref <ref>    Must be the ziko project (anything else is refused).
+  --check <name>        pk-subset|content|storage-subset|integrity|auth|tenants|all
+Optional:
+  --remap-file <path>   uuid-remap.json (default scripts/auth-merge/uuid-remap.json)
+  --allowlist <path>    JSON array of masked object keys (known orphans), default none
+  --json-out <path>     Write the PII-free report (repo-relative path when used with --record-gate)
+  --record-gate         With --check all and a passing run, record the verify_pass gate
+  --help, -h            Show this help
+
+SELECT-only. Never runs --check counts, 13-cutover-delta or 05-load-data.
+Exit codes: 0 passed; 1 failed or refused; 2 bad arguments.
+`;
+
+function defaultDeps() {
+  return {
+    runSql: (ref, sql) => runSql(ref, sql),
+    runner: (step) => {
+      const r = spawnSync(process.execPath, [step.script, ...step.argv], {
+        env: process.env,
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+      });
+      return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? (r.error ? String(r.error.message) : '') };
+    },
+    loadPlan: async () => buildTablePlan(await loadRenameMap()),
+    makeStorageClient: async (ref) => {
+      const { createClient } = await import('@supabase/supabase-js');
+      const keys = await getProjectApiKeys(ref);
+      return createClient(`https://${ref}.supabase.co`, keys.secret, { auth: { persistSession: false, autoRefreshToken: false } });
+    },
+    readText: (p) => readFile(p, 'utf8'),
+    writeText: (p, t) => writeFile(p, t, 'utf8'),
+    recordGate: (key, opts) => recordGate(key, opts),
+    now: () => new Date().toISOString(),
+    log: (m) => console.log(m),
+    errlog: (m) => console.error(m),
+    retryOpts: undefined,
+    expectedTables: EXPECTED_TABLE_COUNT,
+  };
+}
+
+async function loadPkMap(sql, ref) {
+  const map = new Map();
+  for (const r of await sql(ref, PK_COLUMNS_SQL)) {
+    if (!map.has(r.tbl)) map.set(r.tbl, []);
+    map.get(r.tbl)[Number(r.ord) - 1] = r.col;
+  }
+  return map;
+}
+
+const lowerMap = (rows) => new Map(rows.map((r) => [String(r.pk_key).toLowerCase(), { digest: r.digest, modified_after_flip: r.modified_after_flip === true }]));
+
+async function collectTable(ctx, { source, target }, { doPk, doContent }) {
+  const { sql, flipAt, remap, zikoPk, portPk } = ctx;
+  const entry = { table: target };
+  const sPk = zikoPk.get(source) ?? [];
+  const tPk = portPk.get(target) ?? [];
+  const noPk = sPk.length === 0 || tPk.length === 0;
+  const sCols = (await sql(PROJECTS.ziko, buildColumnsSql(source))).map((r) => r.column_name);
+  const tCols = (await sql(PROJECTS.portfolio, buildColumnsSql(target))).map((r) => r.column_name);
+  const cd = diffColumns(sCols, tCols);
+  const tsCols = TS_COLUMNS.filter((c) => cd.shared.includes(c));
+  const hasCreatedAt = tsCols.includes('created_at');
+  const hasUpdatedAt = tsCols.includes('updated_at');
+  entry.columnDiff = { sourceOnly: cd.sourceOnly, targetOnly: cd.targetOnly };
+
+  if (doPk) {
+    if (noPk) {
+      const s = Number((await sql(PROJECTS.ziko, buildCountSql(source)))[0]?.n);
+      const t = Number((await sql(PROJECTS.portfolio, buildCountSql(target)))[0]?.n);
+      entry.pk = evaluatePkSubset({ table: target, sourcePks: null, targetPks: null, counts: { source: s, target: t } });
+      if (entry.pk.extra > 0) {
+        const postFlip = tsCols.length
+          ? Number((await sql(PROJECTS.portfolio, buildPostFlipCountSql(target, tsCols, flipAt)))[0]?.n)
+          : 0;
+        entry.extras = classifyExtras({ extraCount: entry.pk.extra, postFlipCount: postFlip, flipAt, hasCreatedAt, hasUpdatedAt });
+      }
+    } else {
+      const sKeys = (await sql(PROJECTS.ziko, buildPkListSql(source, sPk))).map((r) => r.pk_key);
+      const tKeys = (await sql(PROJECTS.portfolio, buildPkListSql(target, tPk))).map((r) => r.pk_key);
+      entry.pk = evaluatePkSubset({ table: target, sourcePks: sKeys, targetPks: tKeys, remap });
+      if (entry.pk.extra > 0) {
+        const extraSet = new Set(entry.pk.extraKeys);
+        let extraRows;
+        if (tsCols.length) {
+          const rows = await sql(PROJECTS.portfolio, buildTimestampSql(target, tPk, tsCols));
+          extraRows = rows.filter((r) => extraSet.has(String(r.pk_key).toLowerCase()));
+        } else {
+          extraRows = entry.pk.extraKeys.map(() => ({}));
+        }
+        entry.extras = classifyExtras({ extraRows, flipAt, hasCreatedAt, hasUpdatedAt });
+      }
+    }
+  }
+
+  if (doContent) {
+    if (noPk || cd.shared.length === 0) {
+      entry.content = ok(`${target}: content-not-compared: no primary key`, {
+        table: target, compared: 0, skippedPostFlip: 0, mismatched: 0, columnDiff: entry.columnDiff, limit: 'content-not-compared: no primary key',
+      });
+    } else {
+      const sRows = await sql(PROJECTS.ziko, buildRowDigestSql({ table: source, pkCols: sPk, sharedCols: cd.shared, flipAt, timestampCols: tsCols, remap }));
+      const tRows = await sql(PROJECTS.portfolio, buildRowDigestSql({ table: target, pkCols: tPk, sharedCols: cd.shared, flipAt, timestampCols: tsCols }));
+      const sMap = lowerMap(sRows);
+      const tMap = lowerMap(tRows);
+      entry.content = evaluateContentDigest({
+        table: target, source: sMap, target: tMap, hasCreatedAt, hasUpdatedAt,
+        countsEqual: sMap.size === tMap.size, sourceOnlyCols: cd.sourceOnly, targetOnlyCols: cd.targetOnly,
+      });
+    }
+  }
+  return entry;
+}
+
+async function collectTables(ctx, plan, which) {
+  const entries = [];
+  for (const t of plan) {
+    try {
+      entries.push(await collectTable(ctx, t, which));
+    } catch (err) {
+      const f = fail(`${t.target}: error: ${safeText(err?.message)}`, { table: t.target, missing: 0, extra: 0, compared: 0, mismatched: 0 });
+      entries.push({ table: t.target, pk: which.doPk ? f : undefined, content: which.doContent ? f : undefined });
+    }
+  }
+  return entries;
+}
+
+async function sha256Of(client, bucket, name, retryOpts) {
+  try {
+    return sha256Hex(await downloadBuffer(client, bucket, name, retryOpts));
+  } catch {
+    return null;
+  }
+}
+
+async function collectStorage(ctx) {
+  const { sql, deps, remap, flipAt, allowlist } = ctx;
+  const zBuckets = (await sql(PROJECTS.ziko, BUCKET_LIST_SQL)).map((r) => r.id);
+  const srcObjs = zBuckets.length ? await sql(PROJECTS.ziko, buildObjectListSql(zBuckets)) : [];
+  const pBuckets = (await sql(PROJECTS.portfolio, BUCKET_LIST_SQL)).map((r) => r.id).filter((id) => TARGET_BUCKET_RE.test(id));
+  const tgtObjs = pBuckets.length ? await sql(PROJECTS.portfolio, buildTargetObjectListSql(pBuckets)) : [];
+  const zClient = await deps.makeStorageClient(PROJECTS.ziko);
+  const pClient = await deps.makeStorageClient(PROJECTS.portfolio);
+
+  const source = await mapPool(srcObjs, CONCURRENCY, async (o) => ({
+    bucket_id: o.bucket_id, name: o.name, sha256: await sha256Of(zClient, o.bucket_id, o.name, deps.retryOpts),
+  }));
+  const expected = new Set();
+  for (const s of srcObjs) {
+    try {
+      expected.add(objKey(targetBucketId(s.bucket_id), rekeyObjectName(s.name, remap).key));
+    } catch {
+      // counted as rekey error by the evaluator
+    }
+  }
+  const target = await mapPool(tgtObjs, CONCURRENCY, async (o) => ({
+    bucket_id: o.bucket_id,
+    name: o.name,
+    created_at: o.created_at,
+    updated_at: o.updated_at,
+    sha256: expected.has(objKey(o.bucket_id, o.name)) ? await sha256Of(pClient, o.bucket_id, o.name, deps.retryOpts) : null,
+  }));
+  return evaluateObjectSubset({ source, target, remap, allowlist, flipAt });
+}
+
+/** Runs every step (no stop on failure); returns [{step, status, stdout}]. */
+async function runChildren(steps, runner) {
+  const out = [];
+  for (const step of steps) {
+    const r = await runner(step);
+    out.push({ step, status: typeof r?.status === 'number' ? r.status : 1, stdout: String(r?.stdout ?? '') });
+  }
+  return out;
+}
+
+const childResult = (c) => (c.status === 0 ? ok(`${c.step.name} passed`) : fail(`${c.step.name} failed (exit ${c.status})`));
+
+export async function run(argv, depsIn = {}) {
+  const deps = { ...defaultDeps(), ...depsIn };
+  const { log, errlog } = deps;
+  let badArgs = false;
+  const args = parseCliArgs(argv, SPEC, { exit: () => { badArgs = true; }, log: errlog });
+  if (badArgs) return 2;
+  if (args.help) {
+    log(HELP);
+    return 0;
+  }
+  if (!args.projectRef || !args.sourceRef) {
+    errlog('ERROR: --project-ref and --source-ref are required (no defaults)');
+    return 2;
+  }
+  if (args.check !== 'all' && !CHECKS.includes(args.check)) {
+    errlog(`ERROR: --check must be one of ${[...CHECKS, 'all'].join('|')}`);
+    return 2;
+  }
+  try {
+    assertProjectRefFormat(args.projectRef);
+    assertProjectRefFormat(args.sourceRef);
+  } catch (e) {
+    errlog(`ERROR: ${safeText(e.message)}`);
+    return 2;
+  }
+  if (args.projectRef !== PROJECTS.portfolio) {
+    errlog('ERROR: the verification target must be the portfolio project');
+    return 1;
+  }
+  if (args.sourceRef !== PROJECTS.ziko) {
+    errlog('ERROR: the verification source must be the ziko project');
+    return 1;
+  }
+  if (args.recordGate && (args.check !== 'all' || !args.jsonOut)) {
+    errlog('ERROR: --record-gate requires --check all and --json-out');
+    return 2;
+  }
+
+  let flipAt;
+  let remap;
+  let allowlist = [];
+  try {
+    flipAt = JSON.parse(await deps.readText(HANDOFF_PATH))?.phase7_handoff_from_phase6?.backend_flip_at;
+    if (typeof flipAt !== 'string' || !FLIP_AT_RE.test(flipAt)) throw new Error('backend_flip_at missing or not an ISO UTC timestamp');
+    remap = parseRemapFile(JSON.parse(await deps.readText(args.remapFile ?? DEFAULT_REMAP_FILE)), { projectRef: PROJECTS.portfolio, sourceRef: PROJECTS.ziko });
+    if (args.allowlist) {
+      const raw = JSON.parse(await deps.readText(args.allowlist));
+      allowlist = Array.isArray(raw) ? raw : raw?.keys ?? [];
+    }
+  } catch (e) {
+    errlog(`ERROR: ${safeText(e.message)}`);
+    return 1;
+  }
+
+  const sql = async (ref, text) => {
+    assertReadOnlySql(text);
+    return deps.runSql(ref, text);
+  };
+  const want = new Set(args.check === 'all' ? CHECKS : [args.check]);
+  const results = {};
+  const record = (name, r) => {
+    results[name] = r;
+    log(`[${r.ok ? 'PASS' : 'FAIL'}] ${name}: ${safeText(r.detail)}`);
+  };
+
+  let tables = [];
+  let storage = null;
+  let integrity = {};
+  let auth = {};
+  let tenants = null;
+
+  try {
+    if (want.has('pk-subset') || want.has('content')) {
+      const doPk = want.has('pk-subset');
+      const doContent = want.has('content');
+      let plan;
+      let zikoPk;
+      let portPk;
+      try {
+        plan = await deps.loadPlan();
+        zikoPk = await loadPkMap(sql, PROJECTS.ziko);
+        portPk = await loadPkMap(sql, PROJECTS.portfolio);
+      } catch (e) {
+        record(doPk ? 'pk-subset' : 'content', fail(`error: ${safeText(e.message)}`));
+        plan = null;
+      }
+      if (plan) {
+        tables = await collectTables({ sql, flipAt, remap, zikoPk, portPk }, plan, { doPk, doContent });
+        if (doPk) {
+          const bad = tables.filter((e) => !e.pk?.ok || (e.pk.extra > 0 && !e.extras?.ok)).map((e) => e.table);
+          const missing = tables.reduce((n, e) => n + (e.pk?.missing ?? 0), 0);
+          const explained = tables.filter((e) => e.pk?.extra > 0 && e.extras?.ok).length;
+          record('pk-subset', (bad.length ? fail : ok)(`tables=${tables.length} failed=${bad.length} missing_rows=${missing} tables_with_explained_extras=${explained}${bad.length ? ` [${bad.slice(0, 10).join(',')}]` : ''}`));
+        }
+        if (doContent) {
+          const bad = tables.filter((e) => !e.content?.ok).map((e) => e.table);
+          const compared = tables.reduce((n, e) => n + (e.content?.compared ?? 0), 0);
+          const mism = tables.filter((e) => (e.content?.mismatched ?? 0) > 0).length;
+          const limited = tables.filter((e) => e.content?.limit).length;
+          record('content', (bad.length ? fail : ok)(`tables=${tables.length} failed=${bad.length} compared_rows=${compared} tables_with_mismatch=${mism} not_compared=${limited}${bad.length ? ` [${bad.slice(0, 10).join(',')}]` : ''}`));
+        }
+      }
+    }
+
+    if (want.has('storage-subset')) {
+      try {
+        storage = await collectStorage({ sql, deps, remap, flipAt, allowlist });
+        record('storage-subset', storage);
+      } catch (e) {
+        storage = null;
+        record('storage-subset', fail(`error: ${safeText(e.message)}`));
+      }
+    }
+
+    if (want.has('integrity') || want.has('auth') || want.has('tenants')) {
+      const steps = buildChildSteps({ projectRef: args.projectRef, sourceRef: args.sourceRef, remapFile: args.remapFile ?? DEFAULT_REMAP_FILE });
+      if (want.has('integrity')) {
+        const res = await runChildren(steps.integrity, deps.runner);
+        for (const c of res) integrity[c.step.name.replace('integrity-', '')] = childResult(c);
+        const bad = res.filter((c) => c.status !== 0).map((c) => c.step.name);
+        record('integrity', (bad.length ? fail : ok)(bad.length ? `failed: ${bad.join(',')}` : 'rls, triggers, fk, orphans passed'));
+      }
+      if (want.has('auth')) {
+        const res = await runChildren(steps.auth, deps.runner);
+        for (const c of res) auth[c.step.name.replace('auth-', '')] = childResult(c);
+        const bad = res.filter((c) => c.status !== 0).map((c) => c.step.name);
+        record('auth', (bad.length ? fail : ok)(bad.length ? `failed: ${bad.join(',')}` : 'users, identities passed'));
+      }
+      if (want.has('tenants')) {
+        const res = await runChildren(steps.tenants, deps.runner);
+        const parsed = Object.fromEntries(res.map((c) => [c.step.name.replace('tenants-', ''), parseTenantOutput(c.stdout, c.status)]));
+        tenants = evaluateTenantDelta(parsed);
+        record('tenants', tenants);
+      }
+    }
+  } catch (e) {
+    errlog(`ERROR: ${safeText(e.message)}`);
+    return 1;
+  }
+
+  let report = null;
+  let reportFailure = false;
+  try {
+    report = buildDecomReport({
+      generatedAt: deps.now(), target: 'portfolio', source: 'ziko', flipAt,
+      tables, storage, integrity, auth, tenants, expectedTables: deps.expectedTables,
+    });
+  } catch (e) {
+    errlog(`ERROR: report refused: ${safeText(e.message)}`);
+    reportFailure = true;
+  }
+
+  let allOk = !reportFailure && Object.values(results).every((r) => r.ok === true);
+  if (want.size === CHECKS.length && report && !report.passed) allOk = false;
+
+  if (report && args.jsonOut) {
+    try {
+      await deps.writeText(args.jsonOut, `${JSON.stringify(report, null, 2)}\n`);
+    } catch (e) {
+      errlog(`ERROR: could not write report: ${safeText(e.message)}`);
+      allOk = false;
+    }
+  }
+  log(allOk ? 'VERIFICATION PASSED' : 'VERIFICATION FAILED');
+
+  if (allOk && args.recordGate) {
+    try {
+      deps.recordGate('verify_pass', { evidence: args.jsonOut });
+      log('gate verify_pass recorded');
+    } catch (e) {
+      errlog(`ERROR: ${safeText(e.message)}`);
+      return 1;
+    }
+  }
+  return allOk ? 0 : 1;
+}
+
+if (isMain(import.meta.url)) {
+  run(process.argv.slice(2)).then(
+    (code) => process.exit(code),
+    (e) => {
+      console.error(`ERROR: ${safeText(e?.message ?? e)}`);
+      process.exit(1);
+    },
+  );
 }

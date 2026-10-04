@@ -410,3 +410,202 @@ test('report: serialized output has no digest, pk value, uuid or email', () => {
   assert.doesNotMatch(text, /@/);
   assert.equal(r.passed, false);
 });
+
+// ---------------- CLI (07-22) ----------------
+
+import { PROJECTS } from '../auth-merge/lib.mjs';
+import {
+  run,
+  buildChildSteps,
+  parseTenantOutput,
+  assertReadOnlySql,
+} from './22-decom-verify.mjs';
+
+const ZIKO = PROJECTS.ziko;
+const PORT = PROJECTS.portfolio;
+const SCRATCH = PROJECTS.scratch;
+const KNOWN_COLLISION = 'ea0f0b65-6681-4780-8ee0-dbf20b95d4d9';
+const OLD = '2026-09-01T00:00:00Z';
+const NEW = '2026-10-04T00:00:00Z';
+const PLAN = [{ source: 'a', target: 'ziko_a' }, { source: 'b', target: 'ziko_b' }];
+const MUTATING_RE = /\b(INSERT|UPDATE|DELETE|TRUNCATE|ALTER|DROP)\b/i;
+
+function bytes(...n) {
+  return new Uint8Array(n).buffer;
+}
+
+function makeEnv({ zikoPkA = ['1', '2'], failSteps = [], objectBytes = [1, 2, 3] } = {}) {
+  const sqlCalls = [];
+  const runnerCalls = [];
+  const written = {};
+  const gates = [];
+  const out = [];
+  const runSqlFake = async (ref, sql) => {
+    sqlCalls.push({ ref, sql });
+    const ziko = ref === ZIKO;
+    if (sql.includes('i.indisprimary')) {
+      return ['a', 'b'].map((t) => ({ tbl: ziko ? t : `ziko_${t}`, col: 'id', ord: 1 }));
+    }
+    if (sql.includes('information_schema.columns')) {
+      const isA = /table_name = '(ziko_)?a'/.test(sql);
+      return (isA ? ['id', 'name', 'created_at', 'updated_at'] : ['id', 'name']).map((c) => ({ column_name: c }));
+    }
+    if (sql.includes('AS digest')) {
+      const isA = /public\."(ziko_)?a"/.test(sql);
+      if (!isA) {
+        return [{ pk_key: 'x', digest: 'e', modified_after_flip: false }];
+      }
+      const rows = zikoPkA.map((k) => ({ pk_key: k, digest: `d${k}`, modified_after_flip: false }));
+      return ziko ? rows : [...rows, { pk_key: '3', digest: 'dz', modified_after_flip: true }];
+    }
+    if (sql.includes('AS pk_key,')) {
+      return [{ pk_key: '1', created_at: OLD, updated_at: OLD }, { pk_key: '2', created_at: OLD, updated_at: OLD }, { pk_key: '3', created_at: NEW, updated_at: NEW }];
+    }
+    if (sql.includes('AS pk_key FROM public."a"') || sql.includes('AS pk_key FROM public."ziko_a"')) {
+      return (ziko ? zikoPkA : ['1', '2', '3']).map((k) => ({ pk_key: k }));
+    }
+    if (sql.includes('AS pk_key FROM')) return [{ pk_key: 'x' }];
+    if (sql.includes('FROM storage.buckets')) return [{ id: ziko ? 'avatars' : 'ziko-avatars' }];
+    if (sql.includes('FROM storage.objects')) {
+      return [{ bucket_id: ziko ? 'avatars' : 'ziko-avatars', name: 'u1/x.png', created_at: OLD, updated_at: OLD }];
+    }
+    throw new Error(`unexpected sql: ${sql.slice(0, 60)}`);
+  };
+  const client = { storage: { from: () => ({ download: async () => ({ data: { arrayBuffer: async () => bytes(...objectBytes) }, error: null }) }) } };
+  const deps = {
+    runSql: runSqlFake,
+    runner: (step) => {
+      runnerCalls.push(step);
+      return { status: failSteps.includes(step.name) ? 1 : 0, stdout: '', stderr: '' };
+    },
+    loadPlan: async () => PLAN,
+    makeStorageClient: async () => client,
+    readText: async (p) => {
+      if (String(p).includes('HANDOFF')) return JSON.stringify({ phase7_handoff_from_phase6: { backend_flip_at: FLIP } });
+      return JSON.stringify({ source_ref: ZIKO, target_ref: PORT, remaps: [{ source_user_id: KNOWN_COLLISION, target_user_id: U_TGT }] });
+    },
+    writeText: async (p, t) => { written[p] = t; },
+    recordGate: (key, opts) => gates.push({ key, opts }),
+    now: () => '2026-10-04T12:00:00Z',
+    log: (m) => out.push(m),
+    errlog: (m) => out.push(m),
+    retryOpts: { sleep: async () => {}, delays: [0] },
+    expectedTables: 2,
+  };
+  return { deps, sqlCalls, runnerCalls, written, gates, out };
+}
+
+const ARGS = (extra = []) => ['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'all', ...extra];
+
+test('cli: wrong target or source is refused with zero side effects', async () => {
+  const cases = [
+    ['--project-ref', ZIKO, '--source-ref', ZIKO, '--check', 'all'],
+    ['--project-ref', SCRATCH, '--source-ref', ZIKO, '--check', 'all'],
+    ['--project-ref', PORT, '--source-ref', PORT, '--check', 'all'],
+  ];
+  for (const argv of cases) {
+    const env = makeEnv();
+    assert.equal(await run(argv, env.deps), 1);
+    assert.equal(env.sqlCalls.length, 0);
+    assert.equal(env.runnerCalls.length, 0);
+  }
+});
+
+test('cli: bad arguments exit 2 with zero side effects', async () => {
+  for (const argv of [['--nope'], ['--project-ref', PORT], ['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'counts'], ['--project-ref', 'bad', '--source-ref', ZIKO, '--check', 'all']]) {
+    const env = makeEnv();
+    assert.equal(await run(argv, env.deps), 2);
+    assert.equal(env.sqlCalls.length, 0);
+    assert.equal(env.runnerCalls.length, 0);
+  }
+});
+
+test('cli: missing flip time exits 1 before any query', async () => {
+  const env = makeEnv();
+  env.deps.readText = async (p) => (String(p).includes('HANDOFF') ? JSON.stringify({ phase7_handoff_from_phase6: {} }) : '{}');
+  assert.equal(await run(ARGS(), env.deps), 1);
+  assert.equal(env.sqlCalls.length, 0);
+  assert.equal(env.runnerCalls.length, 0);
+});
+
+test('buildChildSteps: groups, baselines, and never counts / 13-cutover-delta / 05-load-data', () => {
+  const s = buildChildSteps({ projectRef: PORT, sourceRef: ZIKO });
+  assert.deepEqual(s.integrity.map((x) => x.name), ['integrity-rls', 'integrity-triggers', 'integrity-fk', 'integrity-orphans']);
+  assert.deepEqual(s.auth.map((x) => x.name), ['auth-users', 'auth-identities']);
+  assert.equal(s.tenants.length, 3);
+  for (const step of [...s.integrity, ...s.auth, ...s.tenants]) {
+    const text = [step.script, ...step.argv].join(' ');
+    assert.ok(!step.argv.includes('counts'), step.name);
+    assert.ok(!text.includes('13-cutover-delta') && !text.includes('05-load-data'), step.name);
+  }
+  for (const step of s.tenants) assert.ok(step.argv.includes('--baseline'));
+});
+
+test('cli: fixture run passes, is read-only, report is safe and the gate is recorded', async () => {
+  const env = makeEnv();
+  const code = await run(ARGS(['--json-out', 'reports/decom-verify.json', '--record-gate']), env.deps);
+  assert.equal(code, 0, env.out.join('\n'));
+  assert.ok(env.sqlCalls.length > 0);
+  for (const { sql } of env.sqlCalls) {
+    assert.match(sql, /^\s*(SELECT|WITH)\b/i);
+    assert.doesNotMatch(sql, MUTATING_RE);
+  }
+  const text = env.written['reports/decom-verify.json'];
+  assertCommittedSafe(text);
+  const report = JSON.parse(text);
+  assert.equal(report.passed, true);
+  assert.equal(report.tables.total, 2);
+  assert.equal(report.tables.explained_extra, 1);
+  assert.equal(report.storage.objects, 1);
+  assert.equal(env.runnerCalls.length, 9);
+  assert.deepEqual(env.gates, [{ key: 'verify_pass', opts: { evidence: 'reports/decom-verify.json' } }]);
+  assert.ok(env.out.includes('VERIFICATION PASSED'));
+});
+
+test('cli: a failing child step does not stop the run, report is written, exit 1, no gate', async () => {
+  const env = makeEnv({ failSteps: ['integrity-fk'] });
+  const code = await run(ARGS(['--json-out', 'r.json', '--record-gate']), env.deps);
+  assert.equal(code, 1);
+  assert.equal(env.runnerCalls.length, 9);
+  assert.equal(JSON.parse(env.written['r.json']).integrity.fk, 'FAIL');
+  assert.equal(env.gates.length, 0);
+  assert.ok(env.out.includes('VERIFICATION FAILED'));
+});
+
+test('cli: a ziko-only PK fails pk-subset but storage and children still run', async () => {
+  const env = makeEnv({ zikoPkA: ['1', '2', '9'] });
+  const code = await run(ARGS(['--json-out', 'r.json']), env.deps);
+  assert.equal(code, 1);
+  assert.ok(env.out.some((l) => l.startsWith('[FAIL] pk-subset')));
+  assert.ok(env.out.some((l) => l.startsWith('[PASS] storage-subset')));
+  assert.equal(env.runnerCalls.length, 9);
+  assert.ok(env.out.every((l) => !/\b9\b/.test(l)), 'no PK value in output');
+});
+
+test('cli: object bytes that differ between sides fail storage-subset', async () => {
+  const env = makeEnv();
+  let n = 0;
+  env.deps.makeStorageClient = async () => {
+    const side = n++;
+    return { storage: { from: () => ({ download: async () => ({ data: { arrayBuffer: async () => bytes(side + 1) }, error: null }) }) } };
+  };
+  assert.equal(await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'storage-subset'], env.deps), 1);
+  assert.ok(env.out.some((l) => /^\[FAIL\] storage-subset: .*sha_mismatch=1/.test(l)));
+});
+
+test('assertReadOnlySql refuses anything but a read statement', () => {
+  assert.doesNotThrow(() => assertReadOnlySql('SELECT 1'));
+  assert.doesNotThrow(() => assertReadOnlySql('WITH x AS (SELECT 1) SELECT * FROM x'));
+  for (const s of ['UPDATE t SET a = 1', 'SELECT 1; DELETE FROM t', 'TRUNCATE t', 'DROP TABLE t', 'ALTER TABLE t ADD c int', 'INSERT INTO t VALUES (1)']) {
+    assert.throws(() => assertReadOnlySql(s), /read-only/);
+  }
+});
+
+test('tenants via child output: sv_ problems informational, rh_ warnings fail', () => {
+  const clean = { problems: [], warnings: [] };
+  const sv = parseTenantOutput('[FAIL] tenants: sv_orders: emptied\n  [WARN] sv_users: 1 -> 2\n', 1);
+  assert.equal(evaluateTenantDelta({ data: sv, storage: clean, auth: clean }).ok, true);
+  const rh = parseTenantOutput('[PASS] tenants: ok\n  [WARN] rh_orders: 5 -> 6\n', 0);
+  assert.equal(evaluateTenantDelta({ data: rh, storage: clean, auth: clean }).ok, false);
+  assert.equal(parseTenantOutput('', 1).problems.length, 1);
+});
