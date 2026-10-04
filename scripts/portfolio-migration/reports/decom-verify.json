@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-10-04T22:41:18.283Z",
+  "target": "portfolio",
+  "source": "ziko",
+  "flip_at": "2026-10-03T14:29:36Z",
+  "passed": false,
+  "tables": {
+    "total": 99,
+    "pass": 95,
+    "explained_extra": 6,
+    "failed": [
+      "ziko_body_measurements",
+      "ziko_user_inventory",
+      "ziko_user_plugins",
+      "ziko_user_profiles"
+    ]
+  },
+  "content": {
+    "compared_rows": 20717,
+    "skipped_post_flip": 0,
+    "mismatched": [
+      "ziko_body_measurements",
+      "ziko_user_profiles"
+    ],
+    "not_compared": [
+      "ziko_user_inventory",
+      "ziko_user_plugins"
+    ]
+  },
+  "storage": {
+    "buckets": 8,
+    "objects": 2699,
+    "missing": 0,
+    "unexplained": 0
+  },
+  "integrity": {
+    "rls": "PASS",
+    "triggers": "PASS",
+    "fk": "PASS",
+    "orphans": "PASS"
+  },
+  "auth": {
+    "users": "PASS",
+    "identities": "FAIL"
+  },
+  "tenants": {
+    "data": "PASS",
+    "storage": "PASS",
+    "auth": "PASS",
+    "informational": 13
+  },
+  "deviations": [
+    {
+      "table": "ziko_user_inventory",
+      "limit": "content-not-compared: no timestamp column and counts differ"
+    },
+    {
+      "table": "ziko_user_plugins",
+      "limit": "content-not-compared: no timestamp column and counts differ"
+    }
+  ]
+}
