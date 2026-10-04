@@ -13,7 +13,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 - [x] **Phase 3: Auth Merge** - Ziko's 39 users exist in portfolio's shared auth pool with IDs preserved and no cross-tenant side effects (completed 2026-10-01)
 - [x] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity (completed 2026-10-02)
 - [x] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions (completed 2026-10-02)
-- [ ] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
+- [x] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
 - [ ] **Phase 7: Monitoring & Decommission** - ziko is retired and deleted only after a monitored rollback window, full verification, and a second explicit human confirmation
 
 ## Phase Details
@@ -157,7 +157,7 @@ Plans:
 - [x] mobile athlete + web coach (ziko-coach-videos): athlete video upload and coach view (WAIVED, not run end to end (M-06 and W-05 never done, 06-18 waiver). API-level only: bk-videos-upload-url, bk-videos-signed-url)
 - [x] codemod (all ziko- buckets): re-run 11-codemod-buckets.mjs --apply on a fresh main (or rebase gsd/phase-5-bucket-codemod), run --check with its repo-wide residual pass, merge together with the Vercel env flip, never before (proof: phases/06-cutover/06-CUTOVER-SMOKE-CHECKLIST.md S-7, 06-08 and 06-15 summaries (--check clean, merged with the flip via PR #38))
 
-**Status (honest): NOT COMPLETE.** Backend flipped 2026-10-03 14:29Z, web flipped 15:08Z, CI repointed; final tenant checks on data, storage and auth show no rh_/gecko_ regression (scripts/portfolio-migration/reports/portfolio-cutover-final.json). Open: (a) mobile flip not achieved: iOS unreleased, Android submitted to Play but Play Console state unconfirmed, app never device-tested against portfolio (checklist waived); (b) API crons return 401 (pre-existing since at least 2026-09-29, not caused by the flip); (c) AI chat never verified on portfolio (Anthropic balance empty, waived throughout); (d) Preview/Development Vercel env scopes of shared web records may still hold ziko values and SUPABASE_PUBLISHABLE_KEY on ziko-web untouched; (e) CI verify secrets point at scratch, two remote timing specs skip on CI (PR #40); (f) credential retirement (06-20 Task 3) pending. Verdict lines: SCRATCH CUTOVER REHEARSAL PASS, PREVIEW SMOKE PASS, CUTOVER DELTA PASS, BACKEND FLIP SMOKE PASS, WEB FLIP SMOKE PASS (W-01/W-04 by scripted coverage), CI REPOINT PASS, MOBILE INTERNAL CHECKLIST WAIVED, MOBILE FLIP NOT ACHIEVED. Phase checkbox stays unchecked.
+**Status: CLOSED 2026-10-04 by user decision, with waivers (no mobile users yet).** Originally recorded as not complete; open items below are waived or carried to Phase 7. API crons fixed in 3b14e19a (cron routers mounted before authMiddleware, GET accepted). Backend flipped 2026-10-03 14:29Z, web flipped 15:08Z, CI repointed; final tenant checks on data, storage and auth show no rh_/gecko_ regression (scripts/portfolio-migration/reports/portfolio-cutover-final.json). Open: (a) mobile flip not achieved: iOS unreleased, Android submitted to Play but Play Console state unconfirmed, app never device-tested against portfolio (checklist waived); (b) API crons return 401 (pre-existing since at least 2026-09-29, not caused by the flip); (c) AI chat never verified on portfolio (Anthropic balance empty, waived throughout); (d) Preview/Development Vercel env scopes of shared web records may still hold ziko values and SUPABASE_PUBLISHABLE_KEY on ziko-web untouched; (e) CI verify secrets point at scratch, two remote timing specs skip on CI (PR #40); (f) credential retirement (06-20 Task 3) pending. Verdict lines: SCRATCH CUTOVER REHEARSAL PASS, PREVIEW SMOKE PASS, CUTOVER DELTA PASS, BACKEND FLIP SMOKE PASS, WEB FLIP SMOKE PASS (W-01/W-04 by scripted coverage), CI REPOINT PASS, MOBILE INTERNAL CHECKLIST WAIVED, MOBILE FLIP NOT ACHIEVED. Phase closed with the mobile flip and device checklist waived.
 
 **Plans**: 20 plans (18 complete incl. 06-18 with waiver; 06-19 partial; 06-20 Tasks 1-2 done)
 
@@ -180,8 +180,8 @@ Plans:
 - [x] 06-16-PLAN.md — [BLOCKING] Web flip: prod env, rebuild + promote, scripted + manual web smoke (CUTOVER-02, CUTOVER-03, CUTOVER-04)
 - [x] 06-17-PLAN.md — [BLOCKING] CI repoint: secrets + PORTFOLIO_MIGRATIONS_ENABLED, proving CI run (CUTOVER-05)
 - [x] 06-18-PLAN.md — [BLOCKING] Mobile flip: EAS env, version 1.5.0, internal build, device checklist + signup-landing proof (CUTOVER-03, CUTOVER-04) — COMPLETE WITH WAIVER: the device checklist (M-01..M-12, W-05) was waived by the user, `MOBILE INTERNAL CHECKLIST: WAIVED`, never device-tested against portfolio
-- [ ] 06-19-PLAN.md — [BLOCKING] v1.5.0 store release via release.yml; submission states (CUTOVER-03) — PARTIAL, `MOBILE FLIP: NOT ACHIEVED`: v1.5.0 failed at Setup EAS, v1.5.1 built Android but iOS failed (provisioning profile lacks Sign in with Apple); Android 1.5.0 (versionCode 16) was submitted manually to the Play production track (user decision), iOS unreleased, Play Console state unconfirmed
-- [ ] 06-20-PLAN.md — Final tenant regression, leftovers, crons; docs + Phase 7 hand-off; credential retirement on every path (CUTOVER-01..05) — Tasks 1-2 done, Task 3 (credential retirement) pending
+- [x] 06-19-PLAN.md — [BLOCKING] v1.5.0 store release via release.yml; submission states (CUTOVER-03) — PARTIAL, `MOBILE FLIP: NOT ACHIEVED`: v1.5.0 failed at Setup EAS, v1.5.1 built Android but iOS failed (provisioning profile lacks Sign in with Apple); Android 1.5.0 (versionCode 16) was submitted manually to the Play production track (user decision), iOS unreleased, Play Console state unconfirmed
+- [x] 06-20-PLAN.md — Final tenant regression, leftovers, crons; docs + Phase 7 hand-off; credential retirement on every path (CUTOVER-01..05) — Tasks 1-2 done, Task 3 (credential retirement) pending
 
 ### Phase 7: Monitoring & Decommission
 **Goal**: ziko is retired and deleted only after a monitored rollback window, full per-table/per-bucket verification, and a second, separate human confirmation — never bundled with cutover sign-off
@@ -207,5 +207,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 3. Auth Merge | 13/13 | Complete    | 2026-10-01 |
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
-| 6. Cutover | 18/20 | In Progress (06-19 partial, 06-20 awaiting credential retirement; mobile not flipped) |  |
+| 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
 | 7. Monitoring & Decommission | 0/TBD | Not started | - |

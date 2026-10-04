@@ -44,7 +44,7 @@ const router = new Hono();
 // decisions and, downstream in Phase 45, rewards (T-44-21). The CRON_SECRET
 // bearer check below is copied verbatim in shape from the live
 // coach/ai/service.ts monitor-cron guard.
-router.post('/cron/weekly-review', async (c) => {
+router.on(['GET', 'POST'], '/cron/weekly-review', async (c) => {
   const authHeader = c.req.header('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
