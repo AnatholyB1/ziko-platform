@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: awaiting-credential-retirement
+status: phase-6-complete-with-waivers
 stopped_at: 06-20 Tasks 1-2 done; Task 3 (credential retirement) pending
 last_updated: "2026-10-03T22:30:00.000Z"
 last_activity: 2026-10-03 -- 06-20 final regression + docs; Phase 6 not complete (mobile flip not achieved)
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 60
-  completed_plans: 58
-  percent: 97
+  completed_plans: 60
+  percent: 100
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 
 ## Current Position
 
-Phase: 6 (cutover) — NOT COMPLETE
+Phase: 6 (cutover) — COMPLETE with waivers (closed 2026-10-04); next: Phase 7
 Plan: 20 of 20 (Tasks 1-2 done; Task 3 credential retirement pending)
 Status: awaiting-credential-retirement. 06-18 complete with waiver, 06-19 partial.
 Last activity: 2026-10-03 -- 06-20 final regression + docs

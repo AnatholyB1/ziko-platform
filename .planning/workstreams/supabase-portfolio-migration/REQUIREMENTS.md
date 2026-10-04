@@ -48,7 +48,7 @@
 
 - [x] **CUTOVER-01**: Fichiers env locaux mis à jour (`apps/mobile/.env`, `apps/web/.env.local`, `backend/api/.env.local`)
 - [x] **CUTOVER-02**: Variables Vercel mises à jour sur les projets web et backend API
-- [ ] **CUTOVER-03**: Bascule ordonnée backend → web → mobile, jamais simultanée, chaque surface smoke-testée avant la suivante
+- [x] **CUTOVER-03**: Bascule ordonnée backend → web → mobile, jamais simultanée, chaque surface smoke-testée avant la suivante
 - [x] **CUTOVER-04**: Régression vérifiée nulle sur `rh_*` et `gecko_*` après fusion
 - [x] **CUTOVER-05**: CI (`migrate-supabase` job) et secrets GitHub repointés vers `portfolio`
 
@@ -103,7 +103,7 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | STORAGE-04 | Phase 5 - Storage Migration | Complete |
 | CUTOVER-01 | Phase 6 - Cutover | Complete (06-11) |
 | CUTOVER-02 | Phase 6 - Cutover | Complete (production API + web flipped; Preview/Development scopes of shared web records may still hold ziko values) |
-| CUTOVER-03 | Phase 6 - Cutover | Partial (backend and web flipped and smoked in order; mobile NOT achieved: iOS unreleased, Android 1.5.0 submitted to Play with state unconfirmed, device checklist waived) |
+| CUTOVER-03 | Phase 6 - Cutover | Complete with waiver, user closed 2026-10-04 (no mobile users yet; backend and web flipped and smoked in order; mobile NOT achieved: iOS unreleased, Android 1.5.0 submitted to Play with state unconfirmed, device checklist waived) |
 | CUTOVER-04 | Phase 6 - Cutover | Complete (final data/storage/auth tenant checks vs pre-cutover baselines, 0 rh_/gecko_ regression; sv_* drift is live Sevalys traffic) |
 | CUTOVER-05 | Phase 6 - Cutover | Complete (06-17; CI verify secrets point at scratch) |
 | DECOM-01 | Phase 7 - Monitoring & Decommission | Pending |
