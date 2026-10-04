@@ -370,3 +370,57 @@ recording rules are documented there. Only the user's verbatim reply is recorded
 - Store release (06-19): v1.5.0 failed at Setup EAS (Node 20 vs eas-cli 24.10), fixed by PR #43 (Node 22); v1.5.1 built Android (953d5957) but iOS (8ed39a53) failed on the Sign in with Apple provisioning profile; Android 1.5.0 (versionCode 16) submitted manually to the Play production track (submission finished). iOS unreleased.
 - Deviations: web ran new code against ziko env for about 6 minutes after the PR #38 merge before the pin; AI chat checks waived throughout (Anthropic balance empty); W-01 and W-04 accepted as covered by scripted tests; mobile device checklist waived; API crons return 401 (pre-existing, not caused by the flip).
 - Final regression (06-20): data, storage and auth tenant checks vs the pre-cutover baselines pass with 0 rh_/gecko_ change; sv_* drift (and one new sv-documents bucket) is live Sevalys traffic. Evidence: reports/portfolio-cutover-final.json.
+
+## Phase 7 - Monitoring & Decommission
+
+Refs: ziko `slkobhavpwsubnsmuhya` = the ONLY project to delete. Portfolio `ubxllsvanurkwkohzxau`
+= the live production project, NEVER delete it. Scratch `rkirvurggtgjlkeuhded` = restore-proof
+target, deleted after CI is off it.
+Warning: the leftover file `.tmp-storage-copy-ubxllsvanurkwkohzxau.json` is named after the copy
+TARGET (portfolio), not ziko. Its name says nothing about what is safe to delete.
+Scripts: `18-decom-guard.mjs`, `19-decom-freeze.mjs`, `20-decom-backup.mjs`,
+`21-decom-restore-proof.mjs`, `22-decom-verify.mjs`, `23-decom-env-audit.mjs`,
+`24-decom-delete.mjs`, `lib-decom-storage.mjs`.
+Authorization log: `.planning/workstreams/supabase-portfolio-migration/phases/07-monitoring-decommission/07-AUTHORIZATIONS.md`.
+DECOM-01 (rollback window) is WAIVED by user 2026-10-04 (D-01), not done; a write-freeze replaces it.
+
+### 7.1 Prerequisites
+
+- PAT in the gitignored `scripts/auth-merge/.access-token` (or `SUPABASE_ACCESS_TOKEN`).
+- PostgreSQL client tools (`pg_dump`, `pg_restore`, `psql`) installed via scoop.
+- `gpg` available in Git Bash.
+- Supabase root CA at `scripts/portfolio-migration/.ca/`, passed as `--ca-file`.
+- Backup directory outside the repo: `C:/ziko-backups/`.
+- Passphrase file outside the repo: `$USERPROFILE/.ziko-decom/backup-passphrase`.
+
+### 7.2 Order
+
+1. Freeze ziko (`19-decom-freeze`).
+2. Backup, then freeze proof (`20-decom-backup`).
+3. Second copy of the backup.
+4. Restore proof on a wiped scratch project (`21-decom-restore-proof`).
+5. Delta verify ziko against portfolio (`22-decom-verify`).
+6. Env scope cleanup (`23-decom-env-audit`).
+7. CI off scratch, revoke the stale CI token.
+8. Scratch deletion.
+9. D-15 confirmation, as its own checkpoint (plain typed yes, never bundled).
+10. Delete ziko (`24-decom-delete`).
+11. Credential retirement.
+12. Deletion log.
+
+### 7.3 Never run
+
+- `13-cutover-delta --mode apply`.
+- `05-load-data --apply`: it TRUNCATEs the 99 `ziko_*` tables and would wipe post-flip portfolio data.
+- `06-verify-data --check counts`: strict equality fails after the flip.
+- Any `supabase ... --linked` without `--project-ref`: the CLI is linked to ziko.
+
+### 7.4 Rollback before deletion
+
+- `19-decom-freeze.mjs --target ziko --unfreeze --confirm-ref slkobhavpwsubnsmuhya` replays the
+  grant snapshot and restores signup.
+- Revert env per Phase 6 D-10 (see 6.5).
+
+### 7.5 As executed
+
+Filled by plan 07-20.
