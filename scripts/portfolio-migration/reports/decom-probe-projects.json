@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-10-04T19:50:32.863Z",
+  "ziko": {
+    "ref": "slkobhavpwsubnsmuhya",
+    "name": "ziko",
+    "status": "ACTIVE_HEALTHY",
+    "region": "eu-west-1",
+    "vercel_managed": true,
+    "stray_projects": [],
+    "auth_config_patch": "ok",
+    "auth_config_probe": {
+      "get_status": 200,
+      "patch_status": 200,
+      "unchanged": true
+    }
+  },
+  "scratch": {
+    "ref": "rkirvurggtgjlkeuhded",
+    "name": "ziko-migration-scratch",
+    "status": "ACTIVE_HEALTHY",
+    "region": "eu-west-3",
+    "vercel_managed": true,
+    "stray_projects": []
+  }
+}

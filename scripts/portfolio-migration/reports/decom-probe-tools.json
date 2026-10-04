@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-10-04T19:49:07.558Z",
+  "pg_dump": "pg_dump (PostgreSQL) 18.6",
+  "pg_restore": "pg_restore (PostgreSQL) 18.6",
+  "gpg": "gpg (GnuPG) 2.4.9",
+  "tar": "bsdtar 3.8.8 - libarchive 3.8.8 zlib/1.2.13.1-motley liblzma/5.8.3 bz2lib/1.0.8 libzstd/1.5.7 cng/2.0 libb2/bundled",
+  "install": "scoop postgresql 18.6 (option-scoop-18); bin dir not on PATH, no scoop shims",
+  "schema_probe": {
+    "scratch": {
+      "toc_entries": 1524,
+      "tls": "verified"
+    },
+    "ziko": {
+      "toc_entries": 1579,
+      "tls": "verified",
+      "auth_users_create_table": 1,
+      "public_create_table": 99
+    }
+  }
+}
