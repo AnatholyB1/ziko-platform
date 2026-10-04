@@ -1,0 +1,13 @@
+{
+  "kind": "decom-restore-wipe",
+  "passed": true,
+  "scratch_ref": "rkirvurggtgjlkeuhded",
+  "counts": {
+    "publicTables": 0,
+    "authUsers": 0,
+    "authIdentities": 0,
+    "buckets": 0,
+    "objects": 0
+  },
+  "checked_at": "2026-10-04T20:36:40.616Z"
+}

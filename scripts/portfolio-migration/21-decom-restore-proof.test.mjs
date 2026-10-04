@@ -254,7 +254,7 @@ const REPO = 'C:\\repo-under-test';
 const GOOD_OBJ = Buffer.from('hello-object');
 const OBJ_SHA = sha256Hex(GOOD_OBJ);
 
-function makeWorld({ scratchName = 'ziko-migration-scratch', emptyCounts, pgRestore, verifyOverrides = {}, decryptOk = true } = {}) {
+function makeWorld({ scratchName = 'ziko-migration-scratch', emptyCounts, pgRestore, verifyOverrides = {}, decryptOk = true, deleteNotEmptyTimes = 0 } = {}) {
   const w = {
     fetches: [],
     sql: { scratch: [], ziko: [] },
@@ -298,7 +298,12 @@ function makeWorld({ scratchName = 'ziko-migration-scratch', emptyCounts, pgRest
     storage: {
       listBuckets: async () => { w.storage.push(`${label}:listBuckets`); return { data: [{ id: 'avatars' }], error: null }; },
       emptyBucket: async (id) => { w.storage.push(`${label}:emptyBucket:${id}`); return { error: null }; },
-      deleteBucket: async (id) => { w.storage.push(`${label}:deleteBucket:${id}`); if (!emptyCounts) state = zeros; return { error: null }; },
+      deleteBucket: async (id) => {
+        w.storage.push(`${label}:deleteBucket:${id}`);
+        if (deleteNotEmptyTimes > 0) { deleteNotEmptyTimes--; return { error: { message: 'The bucket you tried to delete is not empty' } }; }
+        if (!emptyCounts) state = zeros;
+        return { error: null };
+      },
       createBucket: async (id, o) => { w.storage.push(`${label}:createBucket:${id}:${o.public}`); return { error: null }; },
       from: (bucket) => ({
         upload: async (key) => { w.uploads.push(`${bucket}/${key}`); return { error: null }; },
@@ -399,6 +404,20 @@ test('--wipe runs the fixed SQL, empties and deletes every bucket, asserts empty
   assert.equal(w.sql.ziko.length, 0);
   assert.ok(w.deleted.includes(SCRATCH));
   assert.ok(!w.connects.some((c) => c.ref !== SCRATCH), 'only scratch connected');
+});
+
+test('--wipe re-empties and retries deleteBucket when the bucket is reported not empty', async () => {
+  const { w, deps } = makeWorld({ deleteNotEmptyTimes: 1 });
+  assert.equal(await run(['--wipe', '--confirm-ref', SCRATCH], deps), 0);
+  assert.deepEqual(w.storage, ['scratch:listBuckets', 'scratch:emptyBucket:avatars', 'scratch:deleteBucket:avatars', 'scratch:emptyBucket:avatars', 'scratch:deleteBucket:avatars']);
+});
+
+test('--wipe --json-out writes a passed all-zero report', async () => {
+  const { w, deps } = makeWorld();
+  assert.equal(await run(['--wipe', '--confirm-ref', SCRATCH, '--json-out', 'C:\ziko-platform\wipe.json'], deps), 0);
+  const rep = JSON.parse(Object.values(w.written)[0]);
+  assert.equal(rep.passed, true);
+  assert.deepEqual(Object.values(rep.counts), [0, 0, 0, 0, 0]);
 });
 
 test('--wipe fails (exit 1) when scratch is still not empty afterwards', async () => {

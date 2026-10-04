@@ -415,7 +415,7 @@ const SPEC = {
 };
 
 const HELP = `Usage: node scripts/portfolio-migration/21-decom-restore-proof.mjs <mode> --confirm-ref <scratch ref>
-  --wipe                                              empty the scratch project (public, auth, storage)
+  --wipe [--json-out <report>]                        empty the scratch project (public, auth, storage)
   --restore --archive <p> --passphrase-file <p>       restore the archive into an EMPTY scratch project
   --verify  --archive <p> --passphrase-file <p> --json-out <report> [--record-gate]
   --all     (same args as --verify)                   wipe -> restore -> verify, stop at first failure
@@ -539,7 +539,15 @@ async function wipeScratch(ctx) {
   for (const b of buckets ?? []) {
     const e1 = (await sc.storage.emptyBucket(b.id)).error;
     if (e1) throw new Error(`emptyBucket failed: ${e1.message}`);
-    const e2 = (await sc.storage.deleteBucket(b.id)).error;
+    // emptyBucket is batched/asynchronous server side: when the bucket is still reported
+    // non-empty, empty it again and retry the delete (bounded) before failing.
+    let e2 = (await sc.storage.deleteBucket(b.id)).error;
+    for (let i = 0; e2 && /not empty/i.test(e2.message) && i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const e3 = (await sc.storage.emptyBucket(b.id)).error;
+      if (e3) throw new Error(`emptyBucket failed: ${e3.message}`);
+      e2 = (await sc.storage.deleteBucket(b.id)).error;
+    }
     if (e2) throw new Error(`deleteBucket failed: ${e2.message}`);
   }
   const ev = evaluateEmpty(await gatherEmpty(client));
@@ -822,9 +830,16 @@ export async function run(argv, depsIn = {}) {
     else ctx.caFile = undefined;
 
     if (mode === 'wipe' || mode === 'all') {
-      await wipeScratch(ctx);
+      const wiped = await wipeScratch(ctx);
       log('wipe: scratch is empty');
-      if (mode === 'wipe') return 0;
+      if (mode === 'wipe') {
+        if (args.jsonOut) {
+          const wipeReport = { kind: 'decom-restore-wipe', passed: wiped.ok, scratch_ref: DECOM_REFS.scratch, counts: wiped.data, checked_at: new Date().toISOString() };
+          await deps.writeFile(resolve(args.jsonOut), `${JSON.stringify(wipeReport, null, 2)}
+`);
+        }
+        return 0;
+      }
     }
 
     if (mode === 'restore') {
