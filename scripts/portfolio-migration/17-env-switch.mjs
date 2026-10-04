@@ -209,7 +209,7 @@ function walk(dir, acc = []) {
   return acc;
 }
 
-function collectSources(surface) {
+export function collectSources(surface) {
   const sources = [];
   const add = (dir, s) => {
     for (const f of walk(join(ROOT, dir))) sources.push({ surface: s, path: relative(ROOT, f), text: readFileSync(f, 'utf8') });

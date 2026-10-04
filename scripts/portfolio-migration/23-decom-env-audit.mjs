@@ -15,15 +15,12 @@
  * Exit codes: 0 ok | 1 refused/failed/not passed | 2 bad args.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { PROJECTS, getProjectApiKeys, parseCliArgs, isMain, redactPii } from '../auth-merge/lib.mjs';
-import { fingerprint, ENV_MATRIX, EAS_CLI_VERSION, auditEnvNames } from './17-env-switch.mjs';
+import { fingerprint, ENV_MATRIX, EAS_CLI_VERSION, auditEnvNames, collectSources } from './17-env-switch.mjs';
 import { checkAuthBlock, assertCommittedSafe, assertOutsideRepo, recordGate, AUTH_LOG_PATH, REPO_ROOT } from './18-decom-guard.mjs';
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 export const REMEDIATION_HEADING = '07-14 env remediation';
 export const REMEDIATION_LINE = 'Approved: env-remediation';
@@ -226,4 +223,316 @@ export function buildAuditReport({ projects = [], rows = [], ci = {}, eas = {}, 
   return report;
 }
 
-export { auditEnvNames, EAS_CLI_VERSION, redactPii, getProjectApiKeys, PROJECTS, parseCliArgs, isMain, recordGate, assertOutsideRepo, AUTH_LOG_PATH, REPO_ROOT, HERE, spawnSync, mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync, mkdirSync, tmpdir, resolve, join };
+// ---------------------------------------------------------------- CLI
+
+const SPEC = {
+  all: 'boolean',
+  'include-ci': 'boolean',
+  'vercel-scope': 'string',
+  'json-out': 'string',
+  'plan-remediation': 'boolean',
+  'apply-remediation': 'boolean',
+  from: 'string',
+  'confirm-ref': 'string',
+  'record-gate': 'boolean',
+  'authorization-file': 'string',
+};
+
+const HELP = `Usage: node scripts/portfolio-migration/23-decom-env-audit.mjs <mode>
+  --all --vercel-project <api-name> --vercel-project <web-name> [--vercel-scope <team>] [--include-ci]
+       [--json-out <report>] [--record-gate]
+        audit every env var (production, preview incl. branch entries, development), EAS and, with
+        --include-ci, GitHub secrets + ci.yml. Values are never printed. Exit 0 iff the report passed.
+        (--vercel-project may be prefixed api= or web=; otherwise the first is api, the second web)
+  --plan-remediation --from <report>
+  --apply-remediation --from <report> --confirm-ref <portfolio ref> [--authorization-file <path>]
+        needs the "### ${REMEDIATION_HEADING}" approval block (${REMEDIATION_LINE}) in 07-AUTHORIZATIONS.md`;
+
+const mask = (text) => redactPii(String(text ?? '')).replace(/eyJ[\w.-]+/g, '[jwt]').slice(0, 300);
+
+function defaultRunner(cmd, args, { input, cwd } = {}) {
+  const r = spawnSync(cmd, args, { input, cwd, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 32 * 1024 * 1024 });
+  return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+}
+
+function defaultCodeNames() {
+  const out = {};
+  for (const surface of ['api', 'web']) out[surface] = new Set(auditEnvNames(collectSources(surface)).found);
+  return out;
+}
+
+function defaultDeps() {
+  return {
+    runner: defaultRunner,
+    readText: (p) => readFileSync(p, 'utf8'),
+    writeText: (p, t) => {
+      mkdirSync(dirname(p), { recursive: true });
+      writeFileSync(p, t, 'utf8');
+    },
+    removePath: (p) => rmSync(p, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }),
+    mkTmp: () => mkdtempSync(join(tmpdir(), 'ziko-decom-env-')),
+    getKeys: getProjectApiKeys,
+    classify: classifyValue,
+    collectCodeNames: defaultCodeNames,
+    recordGate,
+    repoRoot: REPO_ROOT,
+    now: () => new Date().toISOString(),
+    log: (m) => console.log(m),
+    errlog: (m) => console.error(m),
+  };
+}
+
+/** Pull `--vercel-project` (repeatable) out of argv; parseCliArgs keeps only the last occurrence. */
+function extractProjects(argv) {
+  const rest = [];
+  const projects = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--vercel-project') projects.push(argv[++i] ?? '');
+    else rest.push(argv[i]);
+  }
+  const named = projects.map((p, i) => {
+    const m = /^(api|web)=(.+)$/.exec(p);
+    return m ? { surface: m[1], name: m[2] } : { surface: i === 0 ? 'api' : i === 1 ? 'web' : null, name: p };
+  });
+  return { rest, named };
+}
+
+const scopeArgs = (args) => (args.vercelScope ? ['--scope', args.vercelScope] : []);
+
+function linkProject(deps, args, name, tmp) {
+  return deps.runner('vercel', ['link', '--yes', '--project', name, '--cwd', tmp, ...scopeArgs(args)]).status === 0;
+}
+
+async function auditVercelProject({ deps, args, ctx, surface, name, rows, pulled }) {
+  const tmp = deps.mkTmp();
+  assertOutsideRepo(tmp, deps.repoRoot);
+  try {
+    if (!linkProject(deps, args, name, tmp)) throw new Error(`vercel link failed for ${surface}`);
+    for (const env of ENVIRONMENTS) {
+      const ls = deps.runner('vercel', ['env', 'ls', env, '--format', 'json', '--cwd', tmp]);
+      if (ls.status !== 0) throw new Error(`vercel env ls ${env} failed for ${surface}`);
+      const listed = parseVercelEnvLs(ls.stdout);
+      const branches = env === 'preview' ? [...new Set(listed.map((r) => r.gitBranch).filter(Boolean))] : [];
+      for (const branch of [null, ...branches]) {
+        const file = join(tmp, `.env.pull.${env}.${branch ? `b${branches.indexOf(branch) + 1}` : 'all'}`);
+        pulled.push(file);
+        const pull = deps.runner('vercel', ['env', 'pull', file, `--environment=${env}`, ...(branch ? [`--git-branch=${branch}`] : []), '--yes', '--cwd', tmp]);
+        let values = {};
+        if (pull.status === 0) values = parseDotenv(deps.readText(file));
+        const names = listed.filter((r) => (r.gitBranch ?? null) === branch).map((r) => r.name);
+        for (const n of names) {
+          const v = values[n];
+          const status = v === undefined || v === '' ? 'unknown' : deps.classify(v, ctx);
+          rows.push({ surface, project: name, environment: env, branch, name: n, status, ...(status === 'unknown' ? { reason: pull.status === 0 ? 'sensitive-or-unpullable' : 'pull-failed' } : {}) });
+        }
+        for (const [n, v] of Object.entries(values)) {
+          if (names.includes(n) || v === '') continue;
+          const status = deps.classify(v, ctx);
+          if (status !== 'clean') rows.push({ surface, project: name, environment: env, branch, name: n, status });
+        }
+      }
+    }
+  } finally {
+    for (const f of pulled) {
+      try {
+        deps.removePath(f);
+      } catch {
+        // tmp dir removal below covers it
+      }
+    }
+    try {
+      deps.removePath(tmp);
+    } catch {
+      // best effort (Windows EPERM)
+    }
+  }
+}
+
+function auditEas({ deps, ctx, rows }) {
+  const eas = { available: true, reason: null };
+  for (const env of ENVIRONMENTS) {
+    const r = deps.runner('npx', ['--yes', `eas-cli@${EAS_CLI_VERSION}`, 'env:list', '--environment', env, '--include-sensitive', '--non-interactive'], { cwd: join(deps.repoRoot, 'apps', 'mobile') });
+    if (r.status !== 0) {
+      eas.available = false;
+      eas.reason = 'eas-unavailable';
+      for (const name of Object.keys(ENV_MATRIX.mobile)) rows.push({ surface: 'mobile', project: 'eas', environment: env, branch: null, name, status: 'unknown', reason: 'eas-unavailable' });
+      continue;
+    }
+    const values = parseEasEnvList(r.stdout);
+    for (const name of Object.keys(ENV_MATRIX.mobile)) {
+      if (!Object.hasOwn(values, name)) continue;
+      const v = values[name];
+      rows.push({ surface: 'mobile', project: 'eas', environment: env, branch: null, name, status: v === '' ? 'unknown' : deps.classify(v, ctx), ...(v === '' ? { reason: 'hidden-value' } : {}) });
+    }
+    for (const [name, v] of Object.entries(values)) {
+      if (Object.hasOwn(ENV_MATRIX.mobile, name) || v === '') continue;
+      const status = deps.classify(v, ctx);
+      if (status !== 'clean') rows.push({ surface: 'mobile', project: 'eas', environment: env, branch: null, name, status });
+    }
+  }
+  return eas;
+}
+
+function auditCi({ deps }) {
+  const ci = { status: 'off_scratch', test_step_uses_supabase_secrets: false, secret_names: [], github_secrets: null };
+  let yml = '';
+  try {
+    yml = deps.readText(join(deps.repoRoot, '.github', 'workflows', 'ci.yml'));
+  } catch {
+    ci.workflow = 'unreadable';
+  }
+  const scan = scanCiWorkflow(yml);
+  ci.test_step_uses_supabase_secrets = scan.test_step_uses_supabase_secrets;
+  ci.secret_names = scan.secret_names;
+  if (scan.test_step_uses_supabase_secrets) ci.status = 'on_scratch';
+  const gh = deps.runner('gh', ['secret', 'list', '--json', 'name,updatedAt']);
+  if (gh.status === 0) {
+    try {
+      ci.github_secrets = JSON.parse(gh.stdout).map((s) => ({ name: s.name, updated_at: s.updatedAt }));
+    } catch {
+      ci.github_secrets = null;
+    }
+  }
+  return ci;
+}
+
+async function runAudit(args, named, deps) {
+  const { log, errlog } = deps;
+  if (named.length === 0 || named.some((p) => !p.name || !p.surface)) {
+    errlog('ERROR: --all needs --vercel-project <api-name> --vercel-project <web-name>');
+    return 2;
+  }
+  const zikoKeys = await deps.getKeys(PROJECTS.ziko);
+  const ctx = {
+    zikoRef: PROJECTS.ziko,
+    scratchRef: PROJECTS.scratch,
+    zikoFingerprints: [zikoKeys.publishable, zikoKeys.secret].filter(Boolean).map(fingerprint),
+    scratchFingerprints: [],
+  };
+  const notes = [];
+  try {
+    const scratchKeys = await deps.getKeys(PROJECTS.scratch);
+    ctx.scratchFingerprints = [scratchKeys.publishable, scratchKeys.secret].filter(Boolean).map(fingerprint);
+  } catch {
+    notes.push('scratch keys unavailable (project deleted or inaccessible): scratch fingerprints skipped');
+  }
+  for (const n of notes) log(`NOTE: ${n}`);
+
+  const rows = [];
+  const pulled = [];
+  let eas = { available: false, reason: 'not-run' };
+  let ci = { status: 'not_checked' };
+  try {
+    for (const p of named) await auditVercelProject({ deps, args, ctx, surface: p.surface, name: p.name, rows, pulled });
+    eas = auditEas({ deps, ctx, rows });
+    if (args.includeCi) ci = auditCi({ deps });
+  } catch (e) {
+    errlog(`ERROR: ${mask(e?.message ?? e)}`);
+    return 1;
+  }
+  const report = buildAuditReport({ projects: named.map((p) => p.name), rows, ci, eas: { ...eas, notes }, includeCi: !!args.includeCi, now: deps.now });
+  for (const r of report.rows) log(`${r.surface} | ${r.project} | ${r.environment} | ${r.branch ?? '-'} | ${r.name} | ${r.status}`);
+  if (args.includeCi) log(`ci | ${ci.status}${ci.test_step_uses_supabase_secrets ? ` | ci.yml injects ${ci.secret_names.join(',')}` : ''}`);
+  log(report.passed ? 'AUDIT PASSED' : 'AUDIT NOT PASSED');
+  if (args.jsonOut) deps.writeText(resolve(args.jsonOut), `${JSON.stringify(report, null, 2)}\n`);
+  if (report.passed && args.recordGate) {
+    if (!args.jsonOut) {
+      errlog('ERROR: --record-gate needs --json-out (the evidence file)');
+      return 2;
+    }
+    const abs = resolve(args.jsonOut);
+    const rel = abs.replaceAll('\\', '/').toLowerCase().startsWith(`${deps.repoRoot.replaceAll('\\', '/').toLowerCase()}/`) ? abs.slice(deps.repoRoot.length + 1).replaceAll('\\', '/') : null;
+    if (!rel) {
+      errlog('ERROR: --json-out must be inside the repository to be recorded as gate evidence');
+      return 1;
+    }
+    deps.recordGate('env_scopes_clean', { evidence: rel });
+    log('gate recorded: env_scopes_clean');
+  }
+  return report.passed ? 0 : 1;
+}
+
+function loadReport(args, deps) {
+  if (!args.from) throw new Error('--from <report> is required');
+  const doc = JSON.parse(deps.readText(resolve(args.from)));
+  if (!Array.isArray(doc?.rows)) throw new Error('report has no rows');
+  return doc;
+}
+
+export async function run(argv, depsIn = {}) {
+  const deps = { ...defaultDeps(), ...Object.fromEntries(Object.entries(depsIn).filter(([, v]) => v !== undefined)) };
+  const { log, errlog } = deps;
+  const { rest, named } = extractProjects(argv);
+  let badArgs = false;
+  const args = parseCliArgs(rest, SPEC, { exit: () => { badArgs = true; }, log: errlog });
+  if (badArgs) return 2;
+  if (args.help) {
+    log(HELP);
+    return 0;
+  }
+  const modes = [args.all, args.planRemediation, args.applyRemediation].filter(Boolean).length;
+  if (modes !== 1) {
+    errlog('ERROR: exactly one of --all, --plan-remediation, --apply-remediation is required');
+    return 2;
+  }
+
+  try {
+    if (args.all) return await runAudit(args, named, deps);
+
+    if (args.planRemediation) {
+      const plan = buildRemediationPlan(loadReport(args, deps).rows, { codeNames: deps.collectCodeNames() });
+      for (const it of plan.items) log(`${it.action} | ${it.surface} | ${it.project} | ${it.environment} | ${it.branch ?? '-'} | ${it.name}`);
+      log(`plan: ${plan.items.length} item(s); production left untouched for: ${plan.clean_production_surfaces.join(',') || '-'}`);
+      return 0;
+    }
+
+    // --apply-remediation: every refusal happens before any subprocess runs
+    if (args.confirmRef !== PROJECTS.portfolio) {
+      errlog('ERROR: --confirm-ref must equal the portfolio ref (remediation writes portfolio values)');
+      return 1;
+    }
+    const authText = deps.readText(args.authorizationFile ? resolve(args.authorizationFile) : AUTH_LOG_PATH);
+    const plan = buildRemediationPlan(loadReport(args, deps).rows, { codeNames: deps.collectCodeNames() });
+    const cmds = buildRemediationCommands(plan, { authorizationText: authText });
+    const keys = await deps.getKeys(PROJECTS.portfolio);
+    const sources = { url: `https://${PROJECTS.portfolio}.supabase.co`, publishable: keys.publishable, secret: keys.secret };
+    const byProject = new Map();
+    for (const c of cmds) byProject.set(c.project, [...(byProject.get(c.project) ?? []), c]);
+    for (const [project, list] of byProject) {
+      const tmp = deps.mkTmp();
+      assertOutsideRepo(tmp, deps.repoRoot);
+      try {
+        if (!linkProject(deps, args, project, tmp)) throw new Error('vercel link failed');
+        for (const c of list) {
+          const r = deps.runner('vercel', [...c.args, '--cwd', tmp], c.stdin ? { input: sources[c.valueFrom] } : {});
+          if (r.status !== 0) {
+            const absent = c.tolerateAbsent && /not found|does not exist|no environment variable/i.test(r.stdout + r.stderr);
+            if (!absent) throw new Error(`vercel ${c.op} ${c.name} failed`);
+          }
+          log(`${c.op} | ${project} | ${c.name} | ok`);
+        }
+      } finally {
+        try {
+          deps.removePath(tmp);
+        } catch {
+          // best effort
+        }
+      }
+    }
+    log(`REMEDIATION APPLIED: ${cmds.length} command(s)`);
+    return 0;
+  } catch (e) {
+    errlog(`ERROR: ${mask(e?.message ?? e)}`);
+    return 1;
+  }
+}
+
+if (isMain(import.meta.url)) {
+  run(process.argv.slice(2)).then(
+    (code) => process.exit(code),
+    (e) => {
+      console.error(`ERROR: ${mask(e?.message ?? e)}`);
+      process.exit(1);
+    },
+  );
+}
