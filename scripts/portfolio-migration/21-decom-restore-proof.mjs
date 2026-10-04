@@ -327,6 +327,7 @@ export const AUTH_METHOD = 'data-restore + fingerprint (GoTrue DDL not replayed)
 export const DEVIATIONS = Object.freeze([
   'D-07 wording deviation: 06-verify-data and 09-verify-storage are bound to the ziko_ table prefix and the uuid remap (parseRemapFile rejects identity remaps), so they cannot run on an unprefixed raw restore. Same-name evaluators replace them: per-table count and row md5 vs frozen ziko, RLS/policy/trigger/function inventory vs the manifest, FK validation with orphan counts, and per-object sha256 across archive, scratch and ziko.',
   'Auth proof is by data restore plus non-volatile column fingerprints; the GoTrue schema DDL is not replayed over the live auth schema of the scratch project.',
+  'pg_restore runs with --no-privileges: the pooler login role may not ALTER DEFAULT PRIVILEGES, so GRANT/ACL entries are not replayed. Data, RLS enablement, policies, triggers, functions and constraints are still restored and compared.',
 ]);
 
 const safeText = (s) => redactPii(String(s ?? '')).replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, (u) => `${u.slice(0, 8)}-...`).slice(0, 600);
@@ -630,8 +631,27 @@ async function loadAuthData(ctx, dir, manifest) {
   }
 }
 
+/** The wipe drops schema public with CASCADE, which also drops extensions installed there (e.g. unaccent).
+ *  pg_restore --schema=public never recreates extensions, so recreate the missing ones from the archive manifest. */
+async function recreateMissingExtensions(ctx, dir) {
+  const manifest = await readJson(ctx, dir, 'manifest.json');
+  const names = (manifest.extensions ?? []).map((e) => String(e.extname ?? e.name ?? '')).filter(Boolean);
+  if (names.length === 0) return [];
+  const client = await scratchSql(ctx);
+  const have = new Set((await rowsOf(client, 'SELECT extname FROM pg_extension')).map((r) => String(r.extname)));
+  const created = [];
+  for (const n of names) {
+    if (have.has(n)) continue;
+    await client.query(`CREATE EXTENSION IF NOT EXISTS ${q(ident(n, 'extension'))} WITH SCHEMA public`);
+    created.push(n);
+  }
+  return created;
+}
+
 async function restorePublic(ctx, dir) {
   const { deps } = ctx;
+  const createdExt = await recreateMissingExtensions(ctx, dir);
+  if (createdExt.length > 0) deps.log(`restore: recreated extensions in public: ${createdExt.join(', ')}`);
   const lr = await deps.loginRole(DECOM_REFS.scratch, { token: ctx.token, fetchImpl: deps.fetchImpl });
   ctx.touched.add(DECOM_REFS.scratch);
   ctx.secrets.push(lr.password);
@@ -642,7 +662,7 @@ async function restorePublic(ctx, dir) {
     password: lr.password,
     sslRootCert: ctx.caFile,
   });
-  const args = ['--no-owner', `--role=${parentRoleOf(lr.role)}`, '--schema=public', '-d', 'postgres', join(dir, DUMP_FILE)];
+  const args = ['--no-owner', `--role=${parentRoleOf(lr.role)}`, '--schema=public', '--no-privileges', '-d', 'postgres', join(dir, DUMP_FILE)];
   const r = await deps.runner('pg_restore', args, { env });
   if (r?.error) throw new Error(`pg_restore could not run: ${r.error.message}`);
   const cls = classifyRestoreErrors(r?.stderr);

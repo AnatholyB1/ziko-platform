@@ -314,6 +314,7 @@ function makeWorld({ scratchName = 'ziko-migration-scratch', emptyCounts, pgRest
   const files = {
     '/tmp-pass': 'p'.repeat(32),
     'manifest.json': JSON.stringify({
+      extensions: [{ extname: 'unaccent', extversion: '1.1' }],
       rls_tables: ['habits'],
       policies: [{ tablename: 'habits', policyname: 'own' }],
       triggers: [{ relname: 'habits', tgname: 'trg' }],
@@ -451,7 +452,7 @@ test('--restore: auth COPY in one replica transaction, pg_restore argv, buckets 
   assert.match(w.copies[0].file, /copy\/auth\.users\.copy$/);
   assert.equal(w.runs.length, 1);
   assert.equal(w.runs[0].cmd, 'pg_restore');
-  assert.deepEqual(w.runs[0].args.slice(0, 5), ['--no-owner', '--role=postgres', '--schema=public', '-d', 'postgres']);
+  assert.deepEqual(w.runs[0].args.slice(0, 6), ['--no-owner', '--role=postgres', '--schema=public', '--no-privileges', '-d', 'postgres']);
   assert.ok(!w.runs[0].args.join(' ').includes('pw-secret'), 'password never in argv');
   assert.equal(w.runs[0].env.PGPASSWORD, 'pw-secret-value-123');
   assert.deepEqual(w.storage, ['scratch:createBucket:avatars:true']);
@@ -459,6 +460,12 @@ test('--restore: auth COPY in one replica transaction, pg_restore argv, buckets 
   assert.equal(w.removed.length, 1);
   assert.equal(w.removed[0], w.outDir, 'temp dir removed');
   assert.ok(w.deleted.includes(SCRATCH));
+});
+
+test('--restore recreates archive extensions missing from scratch before pg_restore', async () => {
+  const { w, deps } = makeWorld();
+  assert.equal(await run(RESTORE_ARGV, deps), 0);
+  assert.ok(w.sql.scratch.some((x) => x === 'CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA public'));
 });
 
 test('--restore removes the temp dir and fails when pg_restore reports a fatal error', async () => {

@@ -24,10 +24,10 @@
     "required_line": "Second copy: verified"
   },
   "restore_proven": {
-    "passed": false,
-    "at": null,
-    "evidence": null,
-    "sha256": null,
+    "passed": true,
+    "at": "2026-10-04T21:21:02.374Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-restore-proof.json",
+    "sha256": "e0941c8caf99ebb28eee07f6d6dc9ffc73629f59eed3c1462222d3d4d0dd912c",
     "auth_block": null,
     "required_line": null
   },

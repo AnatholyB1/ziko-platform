@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-10-04T21:21:01.626Z",
+  "target": "scratch",
+  "passed": true,
+  "auth_method": "data-restore + fingerprint (GoTrue DDL not replayed)",
+  "deviations": [
+    "D-07 wording deviation: 06-verify-data and 09-verify-storage are bound to the ziko_ table prefix and the uuid remap (parseRemapFile rejects identity remaps), so they cannot run on an unprefixed raw restore. Same-name evaluators replace them: per-table count and row md5 vs frozen ziko, RLS/policy/trigger/function inventory vs the manifest, FK validation with orphan counts, and per-object sha256 across archive, scratch and ziko.",
+    "Auth proof is by data restore plus non-volatile column fingerprints; the GoTrue schema DDL is not replayed over the live auth schema of the scratch project.",
+    "pg_restore runs with --no-privileges: the pooler login role may not ALTER DEFAULT PRIVILEGES, so GRANT/ACL entries are not replayed. Data, RLS enablement, policies, triggers, functions and constraints are still restored and compared."
+  ],
+  "counts": {
+    "tables": 99,
+    "auth_users": 39,
+    "objects": 2699
+  },
+  "checks": {
+    "tables": {
+      "ok": true,
+      "detail": "99 tables equal (count and row md5)",
+      "data": {
+        "tables": 99,
+        "missingOnTarget": [],
+        "missingOnSource": [],
+        "countDiff": [],
+        "digestDiff": []
+      }
+    },
+    "auth": {
+      "ok": true,
+      "detail": "2 tables equal (count and row md5)",
+      "data": {
+        "tables": 2,
+        "missingOnTarget": [],
+        "missingOnSource": [],
+        "countDiff": [],
+        "digestDiff": []
+      }
+    },
+    "inventory_manifest": {
+      "ok": true,
+      "detail": "inventory equal (36 functions, 93 policy tables, 17 trigger tables)",
+      "data": {
+        "rlsCompared": true,
+        "rlsDiff": [],
+        "policyDiff": [],
+        "triggerDiff": [],
+        "functionDiff": []
+      }
+    },
+    "inventory_ziko": {
+      "ok": true,
+      "detail": "inventory equal (36 functions, 93 policy tables, 17 trigger tables)",
+      "data": {
+        "rlsCompared": true,
+        "rlsDiff": [],
+        "policyDiff": [],
+        "triggerDiff": [],
+        "functionDiff": []
+      }
+    },
+    "fks": {
+      "ok": true,
+      "detail": "144 FK constraints, all validated, count equals ziko",
+      "data": {
+        "fkCount": 144,
+        "zikoFkCount": 144,
+        "unvalidated": []
+      }
+    },
+    "orphans": {
+      "ok": true,
+      "detail": "0 orphans across 144 FK constraints",
+      "data": {
+        "checked": 144,
+        "orphaned": []
+      }
+    },
+    "objects": {
+      "ok": true,
+      "detail": "2699 objects: sha256 equal across archive, scratch and ziko",
+      "data": {
+        "checked": 2699,
+        "missingOnScratch": [],
+        "missingOnZiko": [],
+        "mismatch": [],
+        "extraOnScratch": [],
+        "extraOnZiko": []
+      }
+    }
+  }
+}
