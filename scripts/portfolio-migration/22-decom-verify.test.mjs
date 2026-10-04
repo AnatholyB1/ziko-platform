@@ -12,7 +12,12 @@ import {
   evaluateContentDigest,
   diffColumns,
   buildDecomReport,
+  rewriteZikoStorageUrl,
+  buildUrlRewrite,
+  buildMultisetDigestSql,
+  evaluateDigestMultiset,
 } from './22-decom-verify.mjs';
+import { PROJECTS as REFS } from '../auth-merge/lib.mjs';
 import { assertCommittedSafe } from './18-decom-guard.mjs';
 
 const FLIP = '2026-10-03T14:29:36Z';
@@ -610,4 +615,92 @@ test('tenants via child output: sv_ problems informational, rh_ warnings fail', 
   const rh = parseTenantOutput('[PASS] tenants: ok\n  [WARN] rh_orders: 5 -> 6\n', 0);
   assert.equal(evaluateTenantDelta({ data: rh, storage: clean, auth: clean }).ok, false);
   assert.equal(parseTenantOutput('', 1).problems.length, 1);
+});
+
+// ---------------- storage URL normalization (strict) ----------------
+
+const URL_RW = buildUrlRewrite({ buckets: [{ id: 'avatars', target_id: 'ziko-avatars' }, { id: 'profile-photos', target_id: 'ziko-profile-photos' }] });
+const zu = (b, rest = 'u1/a.jpg?t=1') => `https://${REFS.ziko}.supabase.co/storage/v1/object/public/${b}/${rest}`;
+const pu = (b, rest = 'u1/a.jpg?t=1') => `https://${REFS.portfolio}.supabase.co/storage/v1/object/public/${b}/${rest}`;
+
+test('url rewrite: exact ziko prefix on a _url column is rewritten to portfolio + mapped bucket', () => {
+  assert.equal(rewriteZikoStorageUrl('photo_url', zu('profile-photos'), URL_RW), pu('ziko-profile-photos'));
+  assert.equal(rewriteZikoStorageUrl('avatar_url', zu('avatars'), URL_RW), pu('ziko-avatars'));
+  for (const mode of ['sign', 'authenticated']) {
+    const v = `https://${REFS.ziko}.supabase.co/storage/v1/object/${mode}/avatars/x.png`;
+    assert.equal(rewriteZikoStorageUrl('avatar_url', v, URL_RW), `https://${REFS.portfolio}.supabase.co/storage/v1/object/${mode}/ziko-avatars/x.png`);
+  }
+});
+
+test('url rewrite: changed path still differs after normalization', () => {
+  const n = rewriteZikoStorageUrl('photo_url', zu('profile-photos', 'u1/OTHER.jpg?t=1'), URL_RW);
+  assert.notEqual(n, pu('ziko-profile-photos'));
+});
+
+test('url rewrite: unmapped bucket is left untouched (so it fails)', () => {
+  const v = zu('mystery');
+  assert.equal(rewriteZikoStorageUrl('photo_url', v, URL_RW), v);
+  assert.notEqual(rewriteZikoStorageUrl('photo_url', v, URL_RW), pu('ziko-mystery'));
+});
+
+test('url rewrite: non-_url column with the same pattern is not rewritten', () => {
+  const v = zu('avatars');
+  assert.equal(rewriteZikoStorageUrl('avatar_link', v, URL_RW), v);
+  assert.equal(rewriteZikoStorageUrl('url_x', v, URL_RW), v);
+  assert.equal(rewriteZikoStorageUrl('note', v, URL_RW), v);
+});
+
+test('url rewrite: other host or non-string/ prefix-embedded value is not rewritten', () => {
+  const other = 'https://evil.example.com/storage/v1/object/public/avatars/u1/a.jpg';
+  assert.equal(rewriteZikoStorageUrl('avatar_url', other, URL_RW), other);
+  const emb = `x ${zu('avatars')}`;
+  assert.equal(rewriteZikoStorageUrl('avatar_url', emb, URL_RW), emb);
+  assert.equal(rewriteZikoStorageUrl('avatar_url', null, URL_RW), null);
+  assert.equal(rewriteZikoStorageUrl('avatar_url', 5, URL_RW), 5);
+});
+
+test('url rewrite: SQL builder mirrors the rule, ziko side only, refs come from PROJECTS', () => {
+  const sql = buildRowDigestSql({ ...DIGEST_ARGS, urlRewrite: URL_RW });
+  assert.ok(sql.includes("right(e.key, 4) = '_url'"));
+  assert.match(sql, /regexp_replace\(/);
+  assert.ok(sql.includes(REFS.ziko) && sql.includes(REFS.portfolio));
+  assert.ok(sql.includes('ziko-avatars') && sql.includes('ziko-profile-photos'));
+  assert.doesNotMatch(buildRowDigestSql(DIGEST_ARGS), /regexp_replace/);
+  assert.match(sql, /^SELECT /);
+  assert.doesNotMatch(sql, /(insert|delete\s+from|truncate|drop|alter)/i);
+});
+
+test('url rewrite: bad bucket map entries are rejected', () => {
+  assert.throws(() => buildUrlRewrite({ buckets: [{ id: "a'b", target_id: 'ziko-x' }] }));
+  assert.throws(() => buildUrlRewrite({ buckets: [{ id: 'a', target_id: "ziko-x'; --" }] }));
+  assert.throws(() => buildUrlRewrite({ buckets: [{ id: 'a', target_id: 'other-a' }] }));
+});
+
+// ---------------- no-PK multiset ----------------
+
+test('multiset sql: select-only, grouped digest, same normalization hooks', () => {
+  const sql = buildMultisetDigestSql({ table: 'ziko_foo', sharedCols: ['a', 'b'], remap: REMAP, urlRewrite: URL_RW });
+  assert.match(sql, /^SELECT /);
+  assert.match(sql, /AS digest/);
+  assert.match(sql, /count\(\*\)::bigint AS n/);
+  assert.match(sql, /GROUP BY 1/);
+  assert.match(sql, /regexp_replace\(/);
+  assert.throws(() => buildMultisetDigestSql({ table: 'x"y', sharedCols: ['a'] }));
+  assert.throws(() => buildMultisetDigestSql({ table: 'foo', sharedCols: [] }));
+});
+
+test('multiset: portfolio superset passes and reports the extra count', () => {
+  const r = evaluateDigestMultiset({ table: 't', source: new Map([['a', 2], ['b', 1]]), target: new Map([['a', 2], ['b', 1], ['c', 1]]) });
+  assert.equal(r.ok, true);
+  assert.equal(r.missing, 0);
+  assert.equal(r.extra, 1);
+  assert.equal(r.shared, 3);
+});
+
+test('multiset: a ziko digest absent or under-represented in portfolio fails', () => {
+  assert.equal(evaluateDigestMultiset({ table: 't', source: new Map([['a', 1]]), target: new Map() }).ok, false);
+  const r = evaluateDigestMultiset({ table: 't', source: new Map([['a', 3]]), target: new Map([['a', 2], ['z', 5]]) });
+  assert.equal(r.ok, false);
+  assert.equal(r.missing, 1);
+  assert.doesNotMatch(r.detail, /a.*z/);
 });
