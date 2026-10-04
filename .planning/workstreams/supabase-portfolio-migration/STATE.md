@@ -4,14 +4,14 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-10-04T10:05:40.415Z"
+last_updated: "2026-10-04T19:59:30.732Z"
 last_activity: 2026-10-04
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 82
-  completed_plans: 70
-  percent: 85
+  completed_plans: 71
+  percent: 86
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 7 (Monitoring & Decommission) — planned, executing
-Plan: 11 of 22
+Plan: 12 of 22
 Status: Ready to execute
 Last activity: 2026-10-04
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 87%
 
 ## Accumulated Context
 
@@ -51,6 +51,7 @@ Progress: [█████████░] 85%
 - [Phase 6]: Rollback window starts at the backend flip, 2026-10-03T14:29:36Z; ziko project untouched (read-only intent, no writes since the final delta)
 - [Phase 7]: D-01: DECOM-01 rollback window WAIVED by user 2026-10-04 (recorded as waived, not complete)
 - [Phase 6]: User waived the mobile device checklist (never device-tested against portfolio) and AI chat checks (Anthropic balance empty); user chose Android-only store submission after the iOS build failed
+- [Phase 07]: [07-09] PostgreSQL client tools 18.6 via scoop; bin dir prepended to PATH, no code change
 
 ### Pending Todos
 
@@ -74,6 +75,6 @@ Progress: [█████████░] 85%
 
 ## Session Continuity
 
-Last session: 2026-10-04T10:05:26.927Z
+Last session: 2026-10-04T19:59:18.434Z
 Stopped at: Phase 7 context gathered
 Resume file: None
