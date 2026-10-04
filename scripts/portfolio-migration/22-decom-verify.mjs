@@ -14,7 +14,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PROJECTS, assertProjectRefFormat, getProjectApiKeys, isMain, parseCliArgs, redactPii, runSql } from '../auth-merge/lib.mjs';
 import { EXPECTED_TABLE_COUNT, IDENT_RE, UUID_RE, buildTablePlan, loadRenameMap, parseRemapFile } from './lib-data.mjs';
-import { TARGET_BUCKET_RE, maskObjectKey, rekeyObjectName, sha256Hex, targetBucketId } from './lib-storage.mjs';
+import { SOURCE_BUCKET_RE, TARGET_BUCKET_RE, maskObjectKey, rekeyObjectName, sha256Hex, targetBucketId } from './lib-storage.mjs';
 import { BUCKET_LIST_SQL, buildObjectListSql, downloadBuffer, mapPool } from './lib-decom-storage.mjs';
 import { assertCommittedSafe, recordGate } from './18-decom-guard.mjs';
 
@@ -89,23 +89,71 @@ function assertRemapLiteral(remap) {
   return { src, tgt };
 }
 
+// ---- strict storage URL normalization (ziko -> portfolio Phase 5 rewrite) ----
+
+const URL_MODE_RE = '(public|sign|authenticated)';
+
 /**
- * Row digest query: (pk_key, digest, modified_after_flip) per row. Same shape on both sides;
- * pass remap on the ziko side only so the collision uuid is rewritten before md5.
+ * Rewrite spec from bucket-map.generated.json. Refs come from PROJECTS (no literals).
+ * Only `{id, target_id}` pairs with a `ziko-` prefixed target are accepted.
  */
-export function buildRowDigestSql({ table, pkCols, sharedCols, flipAt, timestampCols = [], remap = null } = {}) {
-  const t = ident(table, 'table');
-  if (!Array.isArray(sharedCols) || sharedCols.length === 0) throw new Error('no shared columns');
+export function buildUrlRewrite(bucketMap, refs = PROJECTS) {
+  const buckets = new Map();
+  for (const b of bucketMap?.buckets ?? []) {
+    if (typeof b?.id !== 'string' || !SOURCE_BUCKET_RE.test(b.id)) throw new Error('invalid bucket map id');
+    if (typeof b?.target_id !== 'string' || !TARGET_BUCKET_RE.test(b.target_id) || b.target_id !== `ziko-${b.id}`) throw new Error('invalid bucket map target');
+    buckets.set(b.id, b.target_id);
+  }
+  assertProjectRefFormat(refs.ziko);
+  assertProjectRefFormat(refs.portfolio);
+  return { zikoRef: refs.ziko, portfolioRef: refs.portfolio, buckets };
+}
+
+/**
+ * Reference implementation of the SQL rule (used by tests): only columns ending in `_url`, only
+ * string values that START with the exact ziko storage prefix of a mapped bucket.
+ */
+export function rewriteZikoStorageUrl(column, value, rw) {
+  if (typeof column !== 'string' || !column.endsWith('_url') || typeof value !== 'string' || !rw) return value;
+  for (const [id, target] of rw.buckets) {
+    const re = new RegExp(`^https://${rw.zikoRef}[.]supabase[.]co/storage/v1/object/${URL_MODE_RE}/${id}/`);
+    const m = re.exec(value);
+    if (m) return `https://${rw.portfolioRef}.supabase.co/storage/v1/object/${m[1]}/${target}/${value.slice(m[0].length)}`;
+  }
+  return value;
+}
+
+function urlValueExpr(rw) {
+  if (!rw) return 'e.value';
+  let inner = "(e.value #>> '{}')";
+  for (const [id, target] of rw.buckets) {
+    inner = `regexp_replace(${inner}, '^https://${rw.zikoRef}[.]supabase[.]co/storage/v1/object/${URL_MODE_RE}/${id}/', 'https://${rw.portfolioRef}.supabase.co/storage/v1/object/\\1/${target}/')`;
+  }
+  return `CASE WHEN right(e.key, 4) = '_url' AND jsonb_typeof(e.value) = 'string' THEN to_jsonb(${inner}) ELSE e.value END`;
+}
+
+function rowJsonExpr(sharedCols, urlRewrite) {
   const keys = sharedCols.map((c) => {
     ident(c, 'column');
     return `'${c}'`;
   });
+  return `(SELECT jsonb_object_agg(e.key, ${urlValueExpr(urlRewrite)}) FROM jsonb_each(to_jsonb(t)) AS e WHERE e.key = ANY (ARRAY[${keys.join(', ')}]::text[]))::text`;
+}
+
+/**
+ * Row digest query: (pk_key, digest, modified_after_flip) per row. Same shape on both sides;
+ * pass remap and urlRewrite on the ziko side only so the collision uuid and the storage URL
+ * prefix are rewritten before md5.
+ */
+export function buildRowDigestSql({ table, pkCols, sharedCols, flipAt, timestampCols = [], remap = null, urlRewrite = null } = {}) {
+  const t = ident(table, 'table');
+  if (!Array.isArray(sharedCols) || sharedCols.length === 0) throw new Error('no shared columns');
   for (const c of pkCols ?? []) ident(c, 'pk column');
   const ts = (timestampCols ?? []).map((c) => `t.${ident(c, 'timestamp column')}`);
   if (typeof flipAt !== 'string' || !FLIP_AT_RE.test(flipAt)) throw new Error('flipAt must be an ISO UTC timestamp');
   const lit = assertRemapLiteral(remap);
   const wrap = (expr) => (lit ? `replace(${expr}, '${lit.src}', '${lit.tgt}')` : expr);
-  const rowJson = `(SELECT jsonb_object_agg(e.key, e.value) FROM jsonb_each(to_jsonb(t)) AS e WHERE e.key = ANY (ARRAY[${keys.join(', ')}]::text[]))::text`;
+  const rowJson = rowJsonExpr(sharedCols, urlRewrite);
   const modified = ts.length === 0
     ? 'false'
     : `coalesce(greatest(${ts.join(', ')}) > '${flipAt}'::timestamptz, false)`;
@@ -114,6 +162,40 @@ export function buildRowDigestSql({ table, pkCols, sharedCols, flipAt, timestamp
   ${modified} AS modified_after_flip
 FROM public.${t} AS t
 ORDER BY 1`;
+}
+
+/** No-PK tables: (digest, n) multiset of normalized row digests. */
+export function buildMultisetDigestSql({ table, sharedCols, remap = null, urlRewrite = null } = {}) {
+  const t = ident(table, 'table');
+  if (!Array.isArray(sharedCols) || sharedCols.length === 0) throw new Error('no shared columns');
+  const lit = assertRemapLiteral(remap);
+  const wrap = (expr) => (lit ? `replace(${expr}, '${lit.src}', '${lit.tgt}')` : expr);
+  return `SELECT md5(${wrap(rowJsonExpr(sharedCols, urlRewrite))}) AS digest, count(*)::bigint AS n
+FROM public.${t} AS t
+GROUP BY 1
+ORDER BY 1`;
+}
+
+/** source/target: Map digest -> n. Every ziko digest must occur in portfolio at least as often. */
+export function evaluateDigestMultiset({ table, source, target } = {}) {
+  const src = asMap(source);
+  const tgt = asMap(target);
+  let missing = 0;
+  let shared = 0;
+  let srcTotal = 0;
+  let tgtTotal = 0;
+  for (const n of tgt.values()) tgtTotal += Number(n);
+  for (const [d, n] of src) {
+    const sn = Number(n);
+    const tn = Number(tgt.get(d) ?? 0);
+    srcTotal += sn;
+    shared += Math.min(sn, tn);
+    if (tn < sn) missing += sn - tn;
+  }
+  const extra = tgtTotal - shared;
+  const base = { table, missing, extra, shared, extraKeys: [], noPk: true, multiset: true };
+  if (missing > 0) return fail(`${table}: no primary key, row-digest multiset missing=${missing} of ${srcTotal}`, base);
+  return ok(`${table}: no primary key, row-digest multiset all ${srcTotal} ziko rows present extra=${extra}`, base);
 }
 
 /** Column set comparison (names only). */
@@ -576,6 +658,7 @@ function defaultDeps() {
       return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? (r.error ? String(r.error.message) : '') };
     },
     loadPlan: async () => buildTablePlan(await loadRenameMap()),
+    loadBucketMap: async () => JSON.parse(await readFile(resolve(HERE, 'bucket-map.generated.json'), 'utf8')),
     makeStorageClient: async (ref) => {
       const { createClient } = await import('@supabase/supabase-js');
       const keys = await getProjectApiKeys(ref);
@@ -604,7 +687,7 @@ async function loadPkMap(sql, ref) {
 const lowerMap = (rows) => new Map(rows.map((r) => [String(r.pk_key).toLowerCase(), { digest: r.digest, modified_after_flip: r.modified_after_flip === true }]));
 
 async function collectTable(ctx, { source, target }, { doPk, doContent }) {
-  const { sql, flipAt, remap, zikoPk, portPk } = ctx;
+  const { sql, flipAt, remap, zikoPk, portPk, urlRewrite } = ctx;
   const entry = { table: target };
   const sPk = zikoPk.get(source) ?? [];
   const tPk = portPk.get(target) ?? [];
@@ -617,11 +700,20 @@ async function collectTable(ctx, { source, target }, { doPk, doContent }) {
   const hasUpdatedAt = tsCols.includes('updated_at');
   entry.columnDiff = { sourceOnly: cd.sourceOnly, targetOnly: cd.targetOnly };
 
+  let multiset = null;
+  const multisetOf = async () => {
+    if (multiset) return multiset;
+    const sRows = await sql(PROJECTS.ziko, buildMultisetDigestSql({ table: source, sharedCols: cd.shared, remap, urlRewrite }));
+    const tRows = await sql(PROJECTS.portfolio, buildMultisetDigestSql({ table: target, sharedCols: cd.shared }));
+    const toMap = (rows) => new Map(rows.map((r) => [String(r.digest), Number(r.n)]));
+    multiset = { result: evaluateDigestMultiset({ table: target, source: toMap(sRows), target: toMap(tRows) }) };
+    return multiset;
+  };
+
   if (doPk) {
     if (noPk) {
-      const s = Number((await sql(PROJECTS.ziko, buildCountSql(source)))[0]?.n);
-      const t = Number((await sql(PROJECTS.portfolio, buildCountSql(target)))[0]?.n);
-      entry.pk = evaluatePkSubset({ table: target, sourcePks: null, targetPks: null, counts: { source: s, target: t } });
+      const ms = await multisetOf();
+      entry.pk = ms.result;
       if (entry.pk.extra > 0) {
         const postFlip = tsCols.length
           ? Number((await sql(PROJECTS.portfolio, buildPostFlipCountSql(target, tsCols, flipAt)))[0]?.n)
@@ -647,12 +739,17 @@ async function collectTable(ctx, { source, target }, { doPk, doContent }) {
   }
 
   if (doContent) {
-    if (noPk || cd.shared.length === 0) {
+    if (noPk && cd.shared.length > 0) {
+      const r = (await multisetOf()).result;
+      entry.content = (r.ok ? ok : fail)(`${target}: row-digest multiset ${r.ok ? 'ok' : 'mismatch'} compared=${r.shared}`, {
+        table: target, compared: r.shared, skippedPostFlip: 0, mismatched: r.missing, columnDiff: entry.columnDiff,
+      });
+    } else if (noPk || cd.shared.length === 0) {
       entry.content = ok(`${target}: content-not-compared: no primary key`, {
         table: target, compared: 0, skippedPostFlip: 0, mismatched: 0, columnDiff: entry.columnDiff, limit: 'content-not-compared: no primary key',
       });
     } else {
-      const sRows = await sql(PROJECTS.ziko, buildRowDigestSql({ table: source, pkCols: sPk, sharedCols: cd.shared, flipAt, timestampCols: tsCols, remap }));
+      const sRows = await sql(PROJECTS.ziko, buildRowDigestSql({ table: source, pkCols: sPk, sharedCols: cd.shared, flipAt, timestampCols: tsCols, remap, urlRewrite }));
       const tRows = await sql(PROJECTS.portfolio, buildRowDigestSql({ table: target, pkCols: tPk, sharedCols: cd.shared, flipAt, timestampCols: tsCols }));
       const sMap = lowerMap(sRows);
       const tMap = lowerMap(tRows);
@@ -804,10 +901,12 @@ export async function run(argv, depsIn = {}) {
       const doPk = want.has('pk-subset');
       const doContent = want.has('content');
       let plan;
+      let urlRewrite;
       let zikoPk;
       let portPk;
       try {
         plan = await deps.loadPlan();
+        urlRewrite = buildUrlRewrite(await deps.loadBucketMap());
         zikoPk = await loadPkMap(sql, PROJECTS.ziko);
         portPk = await loadPkMap(sql, PROJECTS.portfolio);
       } catch (e) {
@@ -815,7 +914,7 @@ export async function run(argv, depsIn = {}) {
         plan = null;
       }
       if (plan) {
-        tables = await collectTables({ sql, flipAt, remap, zikoPk, portPk }, plan, { doPk, doContent });
+        tables = await collectTables({ sql, flipAt, remap, zikoPk, portPk, urlRewrite }, plan, { doPk, doContent });
         if (doPk) {
           const bad = tables.filter((e) => !e.pk?.ok || (e.pk.extra > 0 && !e.extras?.ok)).map((e) => e.table);
           const missing = tables.reduce((n, e) => n + (e.pk?.missing ?? 0), 0);
