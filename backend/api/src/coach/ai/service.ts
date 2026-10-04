@@ -206,7 +206,7 @@ const router = new Hono();
 
 // monitor-cron MUST be defined BEFORE router.use('*', authMiddleware)
 // because Vercel cron does not send a user JWT.
-router.post('/monitor-cron', async (c) => {
+router.on(['GET', 'POST'], '/monitor-cron', async (c) => {
   const authHeader = c.req.header('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {

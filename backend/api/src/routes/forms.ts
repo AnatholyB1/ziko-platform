@@ -331,8 +331,10 @@ const cronRouter = new Hono();
 
 cronRouter.get('/cron/trigger-fixed-date', async (c) => {
   try {
-    const secret = c.req.header('x-cron-secret');
-    if (!secret || secret !== process.env.CRON_SECRET) {
+    // Vercel cron sends `Authorization: Bearer $CRON_SECRET`; x-cron-secret kept for manual calls.
+    const secret =
+      c.req.header('x-cron-secret') ?? c.req.header('authorization')?.replace(/^Bearer /, '');
+    if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 

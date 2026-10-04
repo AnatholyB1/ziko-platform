@@ -61,6 +61,8 @@ app.use(
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // Routes
+// Cron routers are mounted BEFORE their authenticated siblings: those apply authMiddleware to '*'
+// and would 401 Vercel cron calls (which carry only the CRON_SECRET bearer, no user JWT).
 app.route('/ai', aiRouter);
 app.route('/ai', onboardingRouter);
 app.route('/plugins', pluginsRouter);
@@ -69,14 +71,14 @@ app.route('/push-events', pushEventsRouter);
 app.route('/bugs', bugsRouter);
 app.route('/supplements', supplementsRouter);
 app.route('/pantry', pantryRecipesRouter);
-app.route('/credits', creditsRouter);
 app.route('/credits', creditsCronRouter);
+app.route('/credits', creditsRouter);
 app.route('/referral', referralRoutes);
 app.route('/promo', referralRoutes);
-app.route('/notifications', notificationsRouter);
 app.route('/notifications', notificationsCronRouter);
-app.route('/storage', storageRouter);
+app.route('/notifications', notificationsRouter);
 app.route('/storage', storageCleanupRouter);
+app.route('/storage', storageRouter);
 app.route('/coach/identity', identityRouter);
 app.route('/coach/invitations', invitationsRouter);
 app.route('/coach/clients', clientsRouter);
@@ -89,8 +91,8 @@ app.route('/coach/exercises', exercisesRouter);
 app.route('/coach/dashboards', dashboardsRouter);
 app.route('/coach/videos', videosRouter);
 app.route('/coaching-engine', coachingEngineRouter);
-app.route('/forms', formsRouter);
 app.route('/forms', formsCronRouter);
+app.route('/forms', formsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

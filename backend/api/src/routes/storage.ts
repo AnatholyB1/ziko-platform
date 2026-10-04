@@ -128,8 +128,8 @@ async function cleanupBucket(
   return { deleted: expiredPaths.length, errors };
 }
 
-/** POST /storage/cron/cleanup — purge stale objects (scan-photos >90d, exports >7d) */
-storageCleanupRouter.post('/cron/cleanup', async (c) => {
+/** GET|POST /storage/cron/cleanup — purge stale objects (scan-photos >90d, exports >7d) */
+storageCleanupRouter.on(['GET', 'POST'], '/cron/cleanup', async (c) => {
   // Verify cron secret — same pattern as supplement scraper (D-06)
   const authHeader = c.req.header('authorization');
   const cronSecret = process.env.CRON_SECRET;
