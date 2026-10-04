@@ -225,8 +225,10 @@ test('buildRestoreReport carries the D-07 deviation and auth method and is commi
   assert.match(text, /09-verify-storage/);
   assert.match(text, /ziko_/);
   assert.equal(buildRestoreReport({ checks: { a: { ok: false, detail: 'x', data: null } } }).passed, false);
+  const red = buildRestoreReport({ checks: { a: { ok: true, detail: 'user@example.com', data: null } } });
+  assert.doesNotMatch(JSON.stringify(red), /user@example\.com/, 'details are redacted');
   assert.throws(
-    () => buildRestoreReport({ checks: { a: { ok: true, detail: 'user@example.com', data: null } } }),
+    () => buildRestoreReport({ checks: { a: { ok: true, detail: 'x', data: { who: 'user@example.com' } } } }),
     /email/,
   );
 });
