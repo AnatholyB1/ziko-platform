@@ -537,6 +537,8 @@ const CHILD_SCRIPTS = Object.freeze({
 
 const CHECKS = ['pk-subset', 'content', 'storage-subset', 'integrity', 'auth', 'tenants'];
 const TS_COLUMNS = ['created_at', 'updated_at'];
+// Row-creation timestamps used only to prove no-PK extras are post-flip (ziko_user_inventory, ziko_user_plugins).
+const NOPK_CREATED_COLUMNS = ['purchased_at', 'installed_at'];
 const JWT_G = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g;
 const FULL_UUID_G = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
 const CONCURRENCY = 4;
@@ -715,10 +717,14 @@ async function collectTable(ctx, { source, target }, { doPk, doContent }) {
       const ms = await multisetOf();
       entry.pk = ms.result;
       if (entry.pk.extra > 0) {
-        const postFlip = tsCols.length
-          ? Number((await sql(PROJECTS.portfolio, buildPostFlipCountSql(target, tsCols, flipAt)))[0]?.n)
+        const extraTs = [...tsCols, ...NOPK_CREATED_COLUMNS.filter((c) => cd.shared.includes(c))];
+        const postFlip = extraTs.length
+          ? Number((await sql(PROJECTS.portfolio, buildPostFlipCountSql(target, extraTs, flipAt)))[0]?.n)
           : 0;
-        entry.extras = classifyExtras({ extraCount: entry.pk.extra, postFlipCount: postFlip, flipAt, hasCreatedAt, hasUpdatedAt });
+        entry.extras = classifyExtras({
+          extraCount: entry.pk.extra, postFlipCount: postFlip, flipAt,
+          hasCreatedAt: hasCreatedAt || extraTs.length > tsCols.length, hasUpdatedAt,
+        });
       }
     } else {
       const sKeys = (await sql(PROJECTS.ziko, buildPkListSql(source, sPk))).map((r) => r.pk_key);

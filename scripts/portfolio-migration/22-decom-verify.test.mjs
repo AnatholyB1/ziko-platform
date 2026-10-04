@@ -4,6 +4,7 @@ import { maskObjectKey } from './lib-storage.mjs';
 import {
   evaluatePkSubset,
   classifyExtras,
+  buildPostFlipCountSql,
   evaluateObjectSubset,
   evaluateTenantDelta,
   buildPkListSql,
@@ -703,4 +704,10 @@ test('multiset: a ziko digest absent or under-represented in portfolio fails', (
   assert.equal(r.ok, false);
   assert.equal(r.missing, 1);
   assert.doesNotMatch(r.detail, /a.*z/);
+});
+
+test('no-PK extras: post-flip count over purchased_at/installed_at explains extras', () => {
+  assert.match(buildPostFlipCountSql('ziko_user_inventory', ['purchased_at'], FLIP), /greatest\("purchased_at"\)/);
+  assert.equal(classifyExtras({ extraCount: 1, postFlipCount: 1, flipAt: FLIP, hasCreatedAt: true }).ok, true);
+  assert.equal(classifyExtras({ extraCount: 1, postFlipCount: 0, flipAt: FLIP, hasCreatedAt: true }).ok, false);
 });
