@@ -193,14 +193,14 @@ Plans:
   3. The full per-table/per-bucket checklist (no sampling) has been completed and passes for every `ziko_*` table and bucket
   4. **The user has given an explicit, separate confirmation — distinct from and after cutover sign-off — specifically authorizing deletion of the `ziko` project**
   5. The `ziko` project is deleted only after criteria 1-4 above are all satisfied, and the deletion is logged as the final, deliberate action of the milestone
-**Plans**: 20 plans
+**Plans**: 22 plans
 
 Plans:
 - [ ] 07-01-PLAN.md — Wave 0 TDD: 18-decom-guard (ref guards, 10-key gate file, D-15 plain-yes checker), 07-AUTHORIZATIONS.md, backup .gitignore (DECOM-04, DECOM-05)
 - [ ] 07-02-PLAN.md — DECOM-01 recorded as WAIVED by hand (REQUIREMENTS/ROADMAP/STATE), RUNBOOK Phase 7 section (DECOM-01)
 - [ ] 07-03-PLAN.md — Wave 0 TDD: 19-decom-freeze (grant snapshot, REVOKE/replay, signup toggle, T0==T1 proof) (DECOM-02)
-- [ ] 07-04-PLAN.md — Wave 0: lib-decom-storage + 20-decom-backup (pg_dump, COPY layer, storage export, manifest, gpg AES256, verify-archive) (DECOM-02)
-- [ ] 07-05-PLAN.md — Wave 0 TDD: 22-decom-verify delta-aware PK/object subset + existing integrity/auth/tenant verifiers (DECOM-03)
+- [ ] 07-04-PLAN.md — Wave 0: lib-decom-storage + 20-decom-backup primitives (pg_dump argv/env, manifest, checksums, gpg AES256 encrypt/decrypt) (DECOM-02)
+- [ ] 07-05-PLAN.md — Wave 0 TDD: 22-decom-verify evaluators (PK subset, post-flip extras, row content digest, object subset, tenant delta) (DECOM-03)
 - [ ] 07-06-PLAN.md — Wave 0 TDD: 23-decom-env-audit (Vercel all scopes, EAS, CI by fingerprint/ref, gated remediation) (DECOM-05)
 - [ ] 07-07-PLAN.md — Wave 0 TDD: 24-decom-delete fail-closed delete/confirm-gone/log for ziko|scratch (DECOM-04, DECOM-05)
 - [ ] 07-08-PLAN.md — Wave 0 TDD: 21-decom-restore-proof (scratch wipe, restore, same-name verify) (DECOM-02)
@@ -216,6 +216,8 @@ Plans:
 - [ ] 07-18-PLAN.md — [BLOCKING] Fail-closed ziko delete via Management API, dashboard fallback, confirm gone (DECOM-05)
 - [ ] 07-19-PLAN.md — [BLOCKING] Credential retirement after deletion (D-14), user revokes PAT (DECOM-05)
 - [ ] 07-20-PLAN.md — Docs close-out, then deletion log as the final milestone action (DECOM-01..05)
+- [ ] 07-21-PLAN.md — Wave 0: 20-decom-backup CLI (--init-passphrase, --probe-tools, --schema-probe, --run with pg_dump + COPY layer + storage export, --verify-archive); runs in wave 3 (DECOM-02)
+- [ ] 07-22-PLAN.md — Wave 0: 22-decom-verify CLI (guards, read-only live collection, existing integrity/auth/tenant verifiers as child steps); runs in wave 4 (DECOM-03)
 
 ## Progress
 

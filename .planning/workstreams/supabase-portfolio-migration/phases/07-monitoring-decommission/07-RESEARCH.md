@@ -408,19 +408,26 @@ On portfolio, `--check all` requires `--baseline`. `counts` inside `all` will FA
 | A11 | Phase 1 parity: scratch and ziko share major Postgres 17 | Q3 | Restore errors |
 | A12 | Scratch has post-migration state needing a full wipe (DB+auth+storage) | Q4 | Vacuous proof if skipped |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the ziko Vercel-managed org permit Management API deletion?**
    - Known: org slug `vercel_icfg_*`. Unknown: API behavior.
    - Recommendation: read-only probe in Wave 0 (`GET /v1/projects/<ziko>`, org info); plan a human fallback task (delete from Vercel Storage tab) and an "uninstalled" cleanup check.
+   - RESOLVED: 07-09 (read-only preflight records `vercel_managed`, name, status) and 07-18 (fail-closed API delete, dashboard fallback, confirm-gone).
 2. **Where should CI verify secrets point after scratch is deleted?**
    - Pointing at portfolio runs RLS/verify test fixtures (create users/rows) on the shared production project, which Phase 6 avoided on purpose.
    - Recommendation: ask the user at planning: (a) a new throwaway "ziko-ci" project, (b) portfolio with test-prefixed cleanup, or (c) disable those CI steps until a later milestone. Default recommendation (c) with a documented TODO if the user wants speed, since D-12b only requires "off scratch".
+   - RESOLVED: 07-15 (default (c): the scratch-backed CI verify specs are disabled with a documented re-enable TODO; nothing is pointed at portfolio).
 3. **How to prove D-07 literally with `06-verify-data` when restored tables are unprefixed?** Recommendation above: same-name restore-verify (new) plus reuse of SQL constants; surface the wording deviation to the user.
+   - RESOLVED: 07-08 (same-name restore evaluators, deviation recorded in the proof report `deviations`), surfaced to the user in the 07-17 evidence summary.
 4. **Are there ziko-only rows or objects written after the final delta?** Unknown until the delta verify runs; plan the targeted-repair branch.
+   - RESOLVED: 07-13 (delta verify; any gap STOPs the phase and routes to a gap-closure plan with an add-only, separately authorized repair).
 5. **Stray project `agrkkwqhgdiunovcpeju`** from the earlier scratch attempt may still exist; confirm with `GET /v1/projects` and decide cleanup (user).
+   - RESOLVED: 07-09 (stray project list in decom-probe-projects.json), 07-15 (user notes whether to delete it), 07-16 (deletion handled under its own approval).
 6. **ziko auth config export:** no email templates/redirect URLs from ziko are archived anywhere except the merged config; include `GET config/auth` (secret-free fields) in the manifest.
+   - RESOLVED: 07-04 manifest (buildManifest reduces secret-like keys to names); collected by `--run` in 07-21.
 7. **Edge Functions, Realtime publications, cron (pg_cron) jobs, Vault secrets, webhooks on ziko:** not in D-05 scope; inventory shows none known, but the manifest should list `supabase_functions`, `pg_cron`, `vault` presence so nothing is silently lost.
+   - RESOLVED: 07-04 manifest (presence fields in buildManifest); collected by `--run` in 07-21.
 
 ## Environment Availability
 
@@ -428,7 +435,7 @@ On portfolio, `--check all` requires `--baseline`. `counts` inside `all` will FA
 |---|---|---|---|---|
 | Node | all scripts | yes | v20+ (nvm4w) | none needed |
 | `pg`, `pg-copy-streams` | COPY export/restore | yes | in node_modules | none needed |
-| pg_dump / pg_restore / psql | D-05 backup, D-07 restore | **no** | - | `scoop install postgresql` (18.4), else Node COPY layer only |
+| pg_dump / pg_restore / psql | D-05 backup, D-07 restore | **no** | - | `scoop install postgresql` (18.4) or manual install; if none succeeds, STOP and escalate to the user (D-05: pg_dump is the data of record; the COPY layer is only an independent second layer) |
 | Docker | `supabase db dump` | **no** | - | not needed |
 | 7-Zip | encryption | yes | 26.01 | gpg |
 | gpg / openssl | encryption/hash | yes | Git Bash | - |
