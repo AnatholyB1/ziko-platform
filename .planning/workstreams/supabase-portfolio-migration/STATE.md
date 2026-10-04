@@ -4,14 +4,14 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-10-04T08:32:32.800Z"
-last_activity: 2026-10-04 -- Phase 7 planning complete
+last_updated: "2026-10-04T08:40:04.881Z"
+last_activity: 2026-10-04
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 82
-  completed_plans: 60
-  percent: 73
+  completed_plans: 61
+  percent: 74
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 6 — cutover
+**Current focus:** Phase 7 — Monitoring & Decommission
 
 ## Current Position
 
-Phase: 6 (cutover) — COMPLETE with waivers (closed 2026-10-04); next: Phase 7
-Plan: 20 of 20 (Tasks 1-2 done; Task 3 credential retirement pending)
+Phase: 7 (Monitoring & Decommission) — EXECUTING
+Plan: 2 of 22
 Status: Ready to execute
-Last activity: 2026-10-04 -- Phase 7 planning complete
+Last activity: 2026-10-04
 
-Progress: [█████████░] 97%
+Progress: [███████░░░] 74%
 
 ## Accumulated Context
 
@@ -73,6 +73,6 @@ Progress: [█████████░] 97%
 
 ## Session Continuity
 
-Last session: 2026-10-04T07:09:51.889Z
+Last session: 2026-10-04T08:39:42.110Z
 Stopped at: Phase 7 context gathered
-Resume file: .planning/workstreams/supabase-portfolio-migration/phases/07-monitoring-decommission/07-CONTEXT.md
+Resume file: None
