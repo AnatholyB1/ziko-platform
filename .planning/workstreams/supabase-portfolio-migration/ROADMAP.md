@@ -188,7 +188,7 @@ Plans:
 **Depends on**: Phase 6
 **Requirements**: DECOM-01, DECOM-02, DECOM-03, DECOM-04, DECOM-05
 **Success Criteria** (what must be TRUE):
-  1. ziko is kept live in read-only mode for the defined rollback window, tied to mobile binary renewal rather than a fixed calendar date
+  1. ziko is kept live in read-only mode for the defined rollback window, tied to mobile binary renewal rather than a fixed calendar date (WAIVED by user 2026-10-04, D-01: no rollback window; write-freeze before backup instead)
   2. A cold backup (`pg_dump` + storage export) of ziko has been taken and confirmed restorable
   3. The full per-table/per-bucket checklist (no sampling) has been completed and passes for every `ziko_*` table and bucket
   4. **The user has given an explicit, separate confirmation — distinct from and after cutover sign-off — specifically authorizing deletion of the `ziko` project**

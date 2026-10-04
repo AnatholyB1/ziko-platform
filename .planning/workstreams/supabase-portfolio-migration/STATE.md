@@ -25,9 +25,9 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 
 ## Current Position
 
-Phase: 7 (Monitoring & Decommission) — EXECUTING
+Phase: 7 (Monitoring & Decommission) — planned, executing
 Plan: 2 of 22
-Status: Ready to execute
+Status: Executing 07-02 (DECOM-01 waiver recorded)
 Last activity: 2026-10-04
 
 Progress: [███████░░░] 74%
@@ -49,6 +49,7 @@ Progress: [███████░░░] 74%
 - [Phase 6]: CI migrate job replaced by dormant ref-locked migrate-portfolio, enabled via PORTFOLIO_MIGRATIONS_ENABLED=true; CI verify secrets deliberately point at scratch; two remote timing specs skip on CI (PR #40)
 - [Phase 6]: Branch policy: cutover merged to main through PRs #38-#43 with the env flipped first; web pinned back via `vercel rollback` after the merge deploy, then flipped with a fresh no-cache build and promote
 - [Phase 6]: Rollback window starts at the backend flip, 2026-10-03T14:29:36Z; ziko project untouched (read-only intent, no writes since the final delta)
+- [Phase 7]: D-01: DECOM-01 rollback window WAIVED by user 2026-10-04 (recorded as waived, not complete)
 - [Phase 6]: User waived the mobile device checklist (never device-tested against portfolio) and AI chat checks (Anthropic balance empty); user chose Android-only store submission after the iOS build failed
 
 ### Pending Todos
