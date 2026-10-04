@@ -199,7 +199,7 @@ Plans:
 - [x] 07-01-PLAN.md — Wave 0 TDD: 18-decom-guard (ref guards, 10-key gate file, D-15 plain-yes checker), 07-AUTHORIZATIONS.md, backup .gitignore (DECOM-04, DECOM-05)
 - [x] 07-02-PLAN.md — DECOM-01 recorded as WAIVED by hand (REQUIREMENTS/ROADMAP/STATE), RUNBOOK Phase 7 section (DECOM-01)
 - [x] 07-03-PLAN.md — Wave 0 TDD: 19-decom-freeze (grant snapshot, REVOKE/replay, signup toggle, T0==T1 proof) (DECOM-02)
-- [ ] 07-04-PLAN.md — Wave 0: lib-decom-storage + 20-decom-backup primitives (pg_dump argv/env, manifest, checksums, gpg AES256 encrypt/decrypt) (DECOM-02)
+- [x] 07-04-PLAN.md — Wave 0: lib-decom-storage + 20-decom-backup primitives (pg_dump argv/env, manifest, checksums, gpg AES256 encrypt/decrypt) (DECOM-02)
 - [ ] 07-05-PLAN.md — Wave 0 TDD: 22-decom-verify evaluators (PK subset, post-flip extras, row content digest, object subset, tenant delta) (DECOM-03)
 - [ ] 07-06-PLAN.md — Wave 0 TDD: 23-decom-env-audit (Vercel all scopes, EAS, CI by fingerprint/ref, gated remediation) (DECOM-05)
 - [ ] 07-07-PLAN.md — Wave 0 TDD: 24-decom-delete fail-closed delete/confirm-gone/log for ziko|scratch (DECOM-04, DECOM-05)
@@ -232,4 +232,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
-| 7. Monitoring & Decommission | 3/22 | In Progress|  |
+| 7. Monitoring & Decommission | 4/22 | In Progress|  |
