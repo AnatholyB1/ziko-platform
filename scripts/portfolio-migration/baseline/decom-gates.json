@@ -16,12 +16,12 @@
     "required_line": null
   },
   "backup_second_copy": {
-    "passed": false,
-    "at": null,
+    "passed": true,
+    "at": "2026-10-04T20:27:44.012Z",
     "evidence": null,
     "sha256": null,
-    "auth_block": null,
-    "required_line": null
+    "auth_block": "07-11 second copy",
+    "required_line": "Second copy: verified"
   },
   "restore_proven": {
     "passed": false,

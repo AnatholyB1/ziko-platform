@@ -38,3 +38,8 @@ Source: 07-CONTEXT.md D-01 (user decision during discuss-phase; rationale: no re
 Decision: option-scoop-18 (scoop install postgresql, PostgreSQL client tools for pg_dump/pg_restore)
 Timestamp: 2026-10-04T10:17:32Z
 Reply: "option-scoop-18 (Recommended)"
+
+### 07-11 second copy
+Second copy: verified
+Timestamp: 2026-10-04T20:27:24Z
+Reply: "second copy ok 1732e313ee71, passphrase stored"
