@@ -207,7 +207,7 @@ Plans:
 - [x] 07-09-PLAN.md — Checkpoint: install pg client tools; live probes (pg_dump, project identity/Vercel-managed, freeze rehearsal on scratch) (DECOM-02, DECOM-05)
 - [x] 07-10-PLAN.md — Freeze ziko (REVOKE + signup off) and T0 snapshot (DECOM-02)
 - [x] 07-11-PLAN.md — Cold backup encrypted + verified, freeze proof, second copy checkpoint (DECOM-02)
-- [ ] 07-12-PLAN.md — Restore proof on wiped scratch (DECOM-02)
+- [x] 07-12-PLAN.md — Restore proof on wiped scratch (DECOM-02)
 - [ ] 07-13-PLAN.md — Full frozen-ziko vs portfolio verification, verify_pass gate or STOP (DECOM-03)
 - [ ] 07-14-PLAN.md — [BLOCKING] Env scope audit + approved remediation (D-12a) (DECOM-05)
 - [ ] 07-15-PLAN.md — [BLOCKING] CI off scratch, green CI, stale token ziko-ci-portfolio revoked (D-12b) (DECOM-05)
@@ -232,4 +232,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
-| 7. Monitoring & Decommission | 13/22 | In Progress|  |
+| 7. Monitoring & Decommission | 14/22 | In Progress|  |
