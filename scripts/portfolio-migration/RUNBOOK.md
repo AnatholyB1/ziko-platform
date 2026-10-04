@@ -424,3 +424,5 @@ DECOM-01 (rollback window) is WAIVED by user 2026-10-04 (D-01), not done; a writ
 ### 7.5 As executed
 
 Filled by plan 07-20.
+
+- 07-10: ziko write-freeze applied at 2026-10-04T20:01:04.099Z (UTC). Rollback until deletion: `node scripts/portfolio-migration/19-decom-freeze.mjs --target ziko --unfreeze --confirm-ref slkobhavpwsubnsmuhya`. T0 snapshot: reports/decom-freeze-t0.json.
