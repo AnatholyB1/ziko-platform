@@ -224,7 +224,9 @@ test('row digest sql: no timestamp columns yields false, multiple use greatest',
 test('row digest sql: remap replaces the source uuid on the ziko side only', () => {
   const sql = buildRowDigestSql({ ...DIGEST_ARGS, remap: REMAP });
   assert.ok(sql.includes(`'${U_SRC}'`) && sql.includes(`'${U_TGT}'`));
-  assert.match(sql, /replace\(lower\(/);
+  assert.match(sql, /replace\(/);
+  // lower() on the ziko side only would make every row with uppercase text differ from portfolio
+  assert.doesNotMatch(sql, /lower\(/);
 });
 
 test('row digest sql: rejects bad identifiers, bad remap and bad flipAt', () => {

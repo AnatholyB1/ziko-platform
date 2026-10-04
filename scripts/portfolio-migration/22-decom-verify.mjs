@@ -104,7 +104,7 @@ export function buildRowDigestSql({ table, pkCols, sharedCols, flipAt, timestamp
   const ts = (timestampCols ?? []).map((c) => `t.${ident(c, 'timestamp column')}`);
   if (typeof flipAt !== 'string' || !FLIP_AT_RE.test(flipAt)) throw new Error('flipAt must be an ISO UTC timestamp');
   const lit = assertRemapLiteral(remap);
-  const wrap = (expr) => (lit ? `replace(lower(${expr}), '${lit.src}', '${lit.tgt}')` : expr);
+  const wrap = (expr) => (lit ? `replace(${expr}, '${lit.src}', '${lit.tgt}')` : expr);
   const rowJson = `(SELECT jsonb_object_agg(e.key, e.value) FROM jsonb_each(to_jsonb(t)) AS e WHERE e.key = ANY (ARRAY[${keys.join(', ')}]::text[]))::text`;
   const modified = ts.length === 0
     ? 'false'
