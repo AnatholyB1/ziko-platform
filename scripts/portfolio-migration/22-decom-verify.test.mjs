@@ -8,7 +8,12 @@ import {
   evaluateTenantDelta,
   buildPkListSql,
   PK_COLUMNS_SQL,
+  buildRowDigestSql,
+  evaluateContentDigest,
+  diffColumns,
+  buildDecomReport,
 } from './22-decom-verify.mjs';
+import { assertCommittedSafe } from './18-decom-guard.mjs';
 
 const FLIP = '2026-10-03T14:29:36Z';
 const U_SRC = '00000000-0000-0000-0000-00000000000a';
@@ -192,4 +197,216 @@ test('buildPkListSql: select-only, casts, order, ident checks', () => {
 test('PK_COLUMNS_SQL is a read-only catalog query', () => {
   assert.match(PK_COLUMNS_SQL, /indisprimary/);
   assert.doesNotMatch(PK_COLUMNS_SQL, /\b(insert|update|delete|truncate|drop|alter)\b/i);
+});
+
+// ---------------- buildRowDigestSql ----------------
+
+const DIGEST_ARGS = { table: 'ziko_foo', pkCols: ['id'], sharedCols: ['id', 'name', 'updated_at'], flipAt: FLIP, timestampCols: ['updated_at'] };
+
+test('row digest sql: shape, select-only, md5 over shared columns', () => {
+  const sql = buildRowDigestSql(DIGEST_ARGS);
+  assert.match(sql, /^SELECT /);
+  assert.match(sql, /AS pk_key/);
+  assert.match(sql, /md5\(/);
+  assert.match(sql, /AS digest/);
+  assert.match(sql, /AS modified_after_flip/);
+  assert.match(sql, /ARRAY\['id', 'name', 'updated_at'\]/);
+  assert.match(sql, new RegExp(`'${FLIP}'::timestamptz`));
+  assert.doesNotMatch(sql, /\b(insert|update\s+public|delete\s+from|truncate|drop|alter)\b/i);
+  assert.doesNotMatch(sql, /replace\(/);
+});
+
+test('row digest sql: no timestamp columns yields false, multiple use greatest', () => {
+  assert.match(buildRowDigestSql({ ...DIGEST_ARGS, timestampCols: [] }), /false AS modified_after_flip/);
+  assert.match(buildRowDigestSql({ ...DIGEST_ARGS, timestampCols: ['created_at', 'updated_at'] }), /greatest\(t\."created_at", t\."updated_at"\)/);
+});
+
+test('row digest sql: remap replaces the source uuid on the ziko side only', () => {
+  const sql = buildRowDigestSql({ ...DIGEST_ARGS, remap: REMAP });
+  assert.ok(sql.includes(`'${U_SRC}'`) && sql.includes(`'${U_TGT}'`));
+  assert.match(sql, /replace\(lower\(/);
+});
+
+test('row digest sql: rejects bad identifiers, bad remap and bad flipAt', () => {
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, table: 'x"; drop' }));
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, sharedCols: ["a'b"] }));
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, pkCols: ['i d'] }));
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, timestampCols: ['x y'] }));
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, remap: { sourceUuid: "x'; --", targetUuid: U_TGT } }));
+  assert.throws(() => buildRowDigestSql({ ...DIGEST_ARGS, flipAt: "now'; --" }));
+});
+
+// ---------------- evaluateContentDigest ----------------
+
+const row = (digest, mod = false) => ({ digest, modified_after_flip: mod });
+
+test('content: timestamped table, altered pre-flip row fails', () => {
+  const r = evaluateContentDigest({
+    table: 't', hasCreatedAt: true, hasUpdatedAt: true, countsEqual: false,
+    source: new Map([['1', row('a')], ['2', row('b')]]),
+    target: new Map([['1', row('a')], ['2', row('CHANGED')]]),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.detail, /content_mismatch=1/);
+  assert.doesNotMatch(r.detail, /no-updated_at/);
+});
+
+test('content: altered post-flip row is skipped and passes', () => {
+  const r = evaluateContentDigest({
+    table: 't', hasTimestamps: true, hasCreatedAt: true, hasUpdatedAt: true,
+    source: { 1: row('a'), 2: row('b') },
+    target: { 1: row('a'), 2: row('CHANGED', true) },
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.skippedPostFlip, 1);
+  assert.equal(r.compared, 1);
+});
+
+test('content: created_at without updated_at still fails and says no-updated_at', () => {
+  const r = evaluateContentDigest({
+    table: 't', hasCreatedAt: true, hasUpdatedAt: false,
+    source: new Map([['1', row('a')]]), target: new Map([['1', row('x')]]),
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.detail, /no-updated_at/);
+});
+
+test('content: no timestamps and equal counts compares every row', () => {
+  const src = new Map([['1', row('a')], ['2', row('b')]]);
+  assert.equal(evaluateContentDigest({ table: 't', countsEqual: true, source: src, target: new Map(src) }).ok, true);
+  const bad = evaluateContentDigest({ table: 't', countsEqual: true, source: src, target: new Map([['1', row('a')], ['2', row('z')]]) });
+  assert.equal(bad.ok, false);
+});
+
+test('content: no timestamps and unequal counts is not compared and carries a limit', () => {
+  const r = evaluateContentDigest({
+    table: 't', countsEqual: false,
+    source: new Map([['1', row('a')]]), target: new Map([['1', row('different')], ['2', row('b')]]),
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.notCompared, true);
+  assert.equal(r.limit, 'content-not-compared: no timestamp column and counts differ');
+});
+
+test('content: detail never carries pk values or digests', () => {
+  const r = evaluateContentDigest({
+    table: 't', hasUpdatedAt: true,
+    source: new Map([['SECRETPK', row('0123456789abcdef0123456789abcdef')]]),
+    target: new Map([['SECRETPK', row('fedcba9876543210fedcba9876543210')]]),
+  });
+  assert.equal(r.ok, false);
+  assert.doesNotMatch(r.detail, /SECRETPK|[0-9a-f]{32}/);
+});
+
+test('content: remapped ziko row matches when the SQL layer already remapped the pk', () => {
+  // The remap happens inside buildRowDigestSql, so the pk_key maps are directly comparable.
+  const pk = evaluatePkSubset({ table: 't', sourcePks: [U_SRC], targetPks: [U_TGT], remap: REMAP });
+  assert.equal(pk.ok, true);
+  const r = evaluateContentDigest({
+    table: 't', hasUpdatedAt: true,
+    source: new Map([[U_TGT, row('a')]]), target: new Map([[U_TGT, row('a')]]),
+  });
+  assert.equal(r.ok, true);
+});
+
+test('diffColumns lists one-sided columns by name', () => {
+  const d = diffColumns(['a', 'b', 'c'], ['b', 'c', 'd']);
+  assert.deepEqual(d.shared, ['b', 'c']);
+  assert.deepEqual(d.sourceOnly, ['a']);
+  assert.deepEqual(d.targetOnly, ['d']);
+});
+
+// ---------------- buildDecomReport ----------------
+
+const PASSING = { ok: true };
+function tableEntry(name, over = {}) {
+  return {
+    table: name,
+    pk: { ok: true, table: name, extra: 0 },
+    extras: { ok: true },
+    content: { ok: true, compared: 10, skippedPostFlip: 0, mismatched: 0 },
+    ...over,
+  };
+}
+function reportInput(over = {}) {
+  return {
+    generatedAt: '2026-10-04T12:00:00Z', target: 'portfolio', source: 'ziko', flipAt: FLIP,
+    expectedTables: 3,
+    tables: [tableEntry('ziko_a'), tableEntry('ziko_b'), tableEntry('ziko_c')],
+    storage: { ok: true, buckets: 2, objects: 7, missing: 0, unexplained: 0 },
+    integrity: { rls: PASSING, triggers: PASSING, fk: PASSING, orphans: PASSING },
+    auth: { users: PASSING, identities: PASSING },
+    tenants: evaluateTenantDelta({ data: { problems: [], warnings: [] }, storage: { failures: [], warnings: [] }, auth: { problems: [], warnings: [] } }),
+    ...over,
+  };
+}
+
+test('report: shape and passing verdict', () => {
+  const r = buildDecomReport(reportInput());
+  assert.equal(r.passed, true);
+  assert.deepEqual(Object.keys(r).sort(), ['auth', 'content', 'deviations', 'flip_at', 'generated_at', 'integrity', 'passed', 'source', 'storage', 'target', 'tables', 'tenants'].sort());
+  assert.deepEqual(r.tables, { total: 3, pass: 3, explained_extra: 0, failed: [] });
+  assert.equal(r.content.compared_rows, 30);
+  assert.deepEqual(r.integrity, { rls: 'PASS', triggers: 'PASS', fk: 'PASS', orphans: 'PASS' });
+  assert.deepEqual(r.deviations, []);
+  assertCommittedSafe(r);
+});
+
+test('report: explained extras counted, failed tables listed, overall fails', () => {
+  const r = buildDecomReport(reportInput({
+    tables: [
+      tableEntry('ziko_a', { pk: { ok: true, table: 'ziko_a', extra: 2 }, extras: { ok: true } }),
+      tableEntry('ziko_b', { pk: { ok: false, table: 'ziko_b', extra: 0 } }),
+      tableEntry('ziko_c', { pk: { ok: true, table: 'ziko_c', extra: 1 }, extras: { ok: false } }),
+    ],
+  }));
+  assert.equal(r.passed, false);
+  assert.equal(r.tables.explained_extra, 1);
+  assert.deepEqual(r.tables.failed, ['ziko_b', 'ziko_c']);
+});
+
+test('report: content mismatches and limits surface; limits become deviations', () => {
+  const r = buildDecomReport(reportInput({
+    tables: [
+      tableEntry('ziko_a', { content: { ok: false, compared: 5, skippedPostFlip: 1, mismatched: 2 } }),
+      tableEntry('ziko_b', { content: { ok: true, compared: 0, skippedPostFlip: 0, mismatched: 0, limit: 'content-not-compared: no timestamp column and counts differ', notCompared: true } }),
+      tableEntry('ziko_c', { content: { ok: true, compared: 3, skippedPostFlip: 0, mismatched: 0, columnDiff: { sourceOnly: ['legacy'], targetOnly: [] } } }),
+    ],
+  }));
+  assert.deepEqual(r.content.mismatched, ['ziko_a']);
+  assert.deepEqual(r.content.not_compared, ['ziko_b']);
+  assert.equal(r.content.skipped_post_flip, 1);
+  assert.equal(r.deviations.length, 2);
+  assert.deepEqual(r.deviations[0], { table: 'ziko_b', limit: 'content-not-compared: no timestamp column and counts differ' });
+  assert.match(r.deviations[1].limit, /legacy/);
+  assert.equal(r.passed, false);
+});
+
+test('report: fail closed on wrong table count, missing sections, or tenant failure', () => {
+  assert.equal(buildDecomReport(reportInput({ expectedTables: 99 })).passed, false);
+  assert.equal(buildDecomReport(reportInput({ storage: null })).passed, false);
+  const noInteg = buildDecomReport(reportInput({ integrity: { rls: PASSING } }));
+  assert.equal(noInteg.passed, false);
+  assert.equal(noInteg.integrity.fk, 'NOT-RUN');
+  const badTenant = evaluateTenantDelta({ data: { problems: ['rh_x: emptied'], warnings: [] }, storage: { failures: [], warnings: [] }, auth: { problems: [], warnings: [] } });
+  assert.equal(buildDecomReport(reportInput({ tenants: badTenant })).passed, false);
+  assert.equal(buildDecomReport(reportInput({ tenants: null })).tenants.data, 'NOT-RUN');
+});
+
+test('report: serialized output has no digest, pk value, uuid or email', () => {
+  const digest = '0123456789abcdef0123456789abcdef';
+  const content = evaluateContentDigest({
+    table: 'ziko_a', hasUpdatedAt: true,
+    source: new Map([[U_SRC, row(digest)]]), target: new Map([[U_SRC, row('fedcba9876543210fedcba9876543210')]]),
+  });
+  const pk = evaluatePkSubset({ table: 'ziko_a', sourcePks: [U_SRC, U_OTHER], targetPks: [U_SRC] });
+  const r = buildDecomReport(reportInput({
+    expectedTables: 1,
+    tables: [{ table: 'ziko_a', pk, extras: classifyExtras({ extraRows: [], flipAt: FLIP }), content }],
+  }));
+  const text = JSON.stringify(r);
+  assert.doesNotMatch(text, /[0-9a-f]{32}/);
+  assert.ok(!text.includes(U_SRC) && !text.includes(U_OTHER));
+  assert.doesNotMatch(text, /@/);
+  assert.equal(r.passed, false);
 });
