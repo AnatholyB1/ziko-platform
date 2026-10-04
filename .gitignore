@@ -51,3 +51,10 @@ scripts/portfolio-migration/.ca/
 
 # Vercel Protection Bypass for Automation secret (06-12) - never commit
 scripts/portfolio-migration/.vercel-bypass
+
+# Phase 7 decommission (supabase-portfolio-migration) - backup archives and plaintext contain PII of 39 users, never commit
+ziko-backups/
+*.dump
+*.tar.gpg
+scripts/portfolio-migration/.decom-*
+.ziko-decom/

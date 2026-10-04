@@ -1,0 +1,82 @@
+{
+  "freeze_proven": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "backup_encrypted": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "backup_second_copy": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "restore_proven": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "verify_pass": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "env_scopes_clean": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "ci_off_scratch": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "ci_token_revoked": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "scratch_deleted": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  },
+  "confirmation_yes": {
+    "passed": false,
+    "at": null,
+    "evidence": null,
+    "sha256": null,
+    "auth_block": null,
+    "required_line": null
+  }
+}
