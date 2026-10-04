@@ -33,3 +33,8 @@ DECOM-01 (rollback window) is recorded as a waiver, see the first block below.
 Waiver: DECOM-01 rollback window WAIVED by user
 Timestamp: 2026-10-04
 Source: 07-CONTEXT.md D-01 (user decision during discuss-phase; rationale: no real mobile users, 39 ziko profiles, 0 new accounts since the flip)
+
+### 07-09 PostgreSQL client tools install
+Decision: option-scoop-18 (scoop install postgresql, PostgreSQL client tools for pg_dump/pg_restore)
+Timestamp: 2026-10-04T10:17:32Z
+Reply: "option-scoop-18 (Recommended)"
