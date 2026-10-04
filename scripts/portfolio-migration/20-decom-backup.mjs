@@ -47,7 +47,7 @@ import {
   connectClient, createLoginRole, deleteLoginRoles, getSessionPooler, parentRoleOf, redactSecrets,
 } from './lib-conn.mjs';
 import { buildCopyToSql, quoteIdent } from './lib-data.mjs';
-import { SOURCE_BUCKET_RE } from './lib-storage.mjs';
+import { SOURCE_BUCKET_RE, maskObjectKey } from './lib-storage.mjs';
 import { BUCKET_LIST_SQL, buildObjectListSql, downloadBuffer, mapPool } from './lib-decom-storage.mjs';
 import { ENV_MATRIX } from './17-env-switch.mjs';
 import { DECOM_REFS, REPO_ROOT, assertCommittedSafe, assertOutsideRepo } from './18-decom-guard.mjs';
@@ -611,7 +611,362 @@ async function modeSchemaProbe(args, deps) {
   }
 }
 
-// MODES-INSERT-POINT
+// ---------------------------------------------------------------- --run
+
+const SQL = Object.freeze({
+  version: 'SHOW server_version',
+  extensions: 'SELECT extname, extversion FROM pg_extension ORDER BY extname',
+  functions:
+    "SELECT p.proname, p.prosecdef, p.proacl::text AS proacl FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace ORDER BY p.proname, p.oid",
+  triggers: `SELECT c.relname, t.tgname FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace ORDER BY c.relname, t.tgname`,
+  policies:
+    "SELECT schemaname, tablename, policyname, cmd, roles::text AS roles, qual, with_check FROM pg_policies WHERE schemaname = 'public' ORDER BY tablename, policyname",
+  rls: "SELECT c.relname FROM pg_class c WHERE c.relnamespace = 'public'::regnamespace AND c.relkind IN ('r', 'p') AND c.relrowsecurity ORDER BY c.relname",
+  roles: "SELECT rolname FROM pg_roles WHERE rolname !~ '^pg_' ORDER BY rolname",
+  grants:
+    "SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE table_schema = 'public' ORDER BY grantee, table_name, privilege_type",
+  defaultAcl: `SELECT pg_get_userbyid(d.defaclrole) AS owner, n.nspname AS schema, d.defaclobjtype::text AS objtype, d.defaclacl::text AS acl
+FROM pg_default_acl d LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace ORDER BY 1, 2, 3`,
+  publications: 'SELECT pubname FROM pg_publication ORDER BY pubname',
+  functionsSchema: "SELECT count(*)::int AS n FROM pg_namespace WHERE nspname = 'supabase_functions'",
+  tables:
+    "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name",
+  columns:
+    "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 AND is_generated = 'NEVER' ORDER BY ordinal_position",
+});
+
+const AUTH_COPY_TABLES = Object.freeze(['users', 'identities']);
+
+export function buildCopyOutSql(schema, table, cols) {
+  if (!Array.isArray(cols) || cols.length === 0) throw new Error(`no columns resolved for ${schema}.${table}`);
+  if (schema === 'public') return buildCopyToSql(table, cols);
+  if (schema !== 'auth') throw new Error('unsupported schema for the COPY layer');
+  return `COPY auth.${quoteIdent(table)} (${cols.map((c) => quoteIdent(c)).join(', ')}) TO STDOUT`;
+}
+
+/** Archive path of a storage object. Strict: any odd name is fatal (loud) rather than skipped. */
+export function storageFile(dir, bucket, name) {
+  if (!SOURCE_BUCKET_RE.test(String(bucket))) throw new Error('invalid bucket id');
+  const n = String(name);
+  const parts = n.split('/');
+  if (parts.some((p) => p === '' || p === '.' || p === '..') || n.includes('\\') || isAbsolute(n) || /^[A-Za-z]:/.test(n)) {
+    throw new Error('unsafe object name');
+  }
+  const base = resolve(dir, 'storage');
+  const full = resolve(base, bucket, ...parts);
+  if (!full.startsWith(base + sep)) throw new Error('object path escapes the backup directory');
+  return full;
+}
+
+const rowsOf = async (client, sql, params) => (await (params ? client.query(sql, params) : client.query(sql))).rows ?? [];
+const jsonText = (obj) => `${JSON.stringify(obj, null, 2)}\n`;
+
+async function fetchAuthConfig(ctx, ref) {
+  const { deps } = ctx;
+  const res = await deps.fetchImpl(`${API_BASE}/v1/projects/${ref}/config/auth`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${ctx.token}`, 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) throw new Error(`auth config export returned HTTP ${res.status}`);
+  return res.json();
+}
+
+/** Catalog snapshot for manifest.json. Metadata only: no row data. */
+async function collectCatalog(client) {
+  const version = (await rowsOf(client, SQL.version))[0]?.server_version ?? null;
+  const extensions = await rowsOf(client, SQL.extensions);
+  const functions = await rowsOf(client, SQL.functions);
+  const triggers = await rowsOf(client, SQL.triggers);
+  const policies = await rowsOf(client, SQL.policies);
+  const rlsTables = (await rowsOf(client, SQL.rls)).map((r) => r.relname);
+  const roles = (await rowsOf(client, SQL.roles)).map((r) => r.rolname);
+  const tableGrants = await rowsOf(client, SQL.grants);
+  const defaultAcl = await rowsOf(client, SQL.defaultAcl);
+  const publications = (await rowsOf(client, SQL.publications)).map((r) => r.pubname);
+  const fnSchema = Number((await rowsOf(client, SQL.functionsSchema))[0]?.n ?? 0) > 0;
+  const extNames = new Set(extensions.map((e) => e.extname));
+  const presence = {
+    pg_cron: extNames.has('pg_cron'),
+    vault: extNames.has('supabase_vault') || extNames.has('vault'),
+    supabase_functions: fnSchema,
+    realtime_publications: publications,
+  };
+  return { version, extensions, functions, triggers, policies, rlsTables, roles, tableGrants, defaultAcl, presence };
+}
+
+async function copyLayer(ctx, client, outDir) {
+  const { deps } = ctx;
+  const targets = [];
+  for (const r of await rowsOf(client, SQL.tables)) targets.push(['public', r.table_name]);
+  for (const t of AUTH_COPY_TABLES) targets.push(['auth', t]);
+  const copyColumns = {};
+  const counts = {};
+  const hashes = new Map();
+  for (const [schema, table] of targets) {
+    const cols = (await rowsOf(client, SQL.columns, [schema, table])).map((c) => c.column_name);
+    const sql = buildCopyOutSql(schema, table, cols);
+    const key = `${schema}.${table}`;
+    copyColumns[key] = cols;
+    counts[key] = Number((await rowsOf(client, `SELECT count(*)::bigint AS n FROM ${schema}.${quoteIdent(table)}`))[0]?.n ?? 0);
+    const rel = `copy/${key}.copy`;
+    const r = await deps.copyOut(client, sql, join(outDir, 'copy', `${key}.copy`));
+    hashes.set(rel, r.sha256);
+  }
+  return { copyColumns, counts, hashes };
+}
+
+async function exportStorage(ctx, client, ref, outDir) {
+  const { deps } = ctx;
+  const buckets = await rowsOf(client, BUCKET_LIST_SQL);
+  const ids = buckets.map((b) => b.id);
+  const objects = ids.length ? await rowsOf(client, buildObjectListSql(ids)) : [];
+  let exported = [];
+  if (objects.length) {
+    const keys = await deps.getKeys(ref);
+    ctx.secrets.push(keys.secret);
+    const sc = deps.storageFactory(`https://${ref}.supabase.co`, keys.secret);
+    exported = await mapPool(objects, STORAGE_CONCURRENCY, async (o) => {
+      try {
+        const buf = await downloadBuffer(sc, o.bucket_id, o.name);
+        if (o.size !== null && o.size !== undefined && Number(o.size) !== buf.length) throw new Error('size differs from storage metadata');
+        deps.writeBinary(storageFile(outDir, o.bucket_id, o.name), buf);
+        return {
+          bucket: o.bucket_id,
+          name: o.name,
+          sha256: sha256Hex(buf),
+          mimetype: o.mimetype ?? null,
+          cache_control: o.cache_control ?? null,
+          bytes: buf.length,
+        };
+      } catch (e) {
+        throw new Error(`storage export failed for ${maskObjectKey(o.bucket_id, o.name)}: ${e?.message ?? e}`);
+      }
+    });
+  }
+  const bucketRows = buckets.map((b) => ({
+    id: b.id,
+    public: b.public === true,
+    file_size_limit: b.file_size_limit ?? null,
+    allowed_mime_types: b.allowed_mime_types ?? null,
+  }));
+  const perBucket = bucketRows.map((b) => {
+    const mine = exported.filter((o) => o.bucket === b.id);
+    return { id: b.id, objects: mine.length, bytes: mine.reduce((s, o) => s + o.bytes, 0) };
+  });
+  const storageManifest = {
+    buckets: bucketRows,
+    objects: exported.map(({ bytes, ...rest }) => rest),
+  };
+  return { bucketRows, perBucket, storageManifest };
+}
+
+function badPaths(res) {
+  return [...(res?.tampered ?? []), ...(res?.missing ?? []), ...(res?.unlisted ?? [])].slice(0, 10);
+}
+
+async function modeRun(args, deps) {
+  if (args.target && args.target !== 'ziko') {
+    deps.errlog('ERROR: --run only targets ziko');
+    return 1;
+  }
+  if (!args.outDir || !args.passphraseFile || !args.jsonOut) {
+    deps.errlog('ERROR: --out-dir, --passphrase-file and --json-out are required');
+    return 2;
+  }
+  refuseRepoPath(args.outDir, 'out-dir', deps);
+  refuseRepoPath(args.passphraseFile, 'passphrase file', deps);
+  const outDir = resolve(args.outDir);
+  if (deps.dirNonEmpty(outDir)) {
+    deps.errlog('ERROR: out-dir is not empty; refusing to reuse it');
+    return 1;
+  }
+  const archivePath = join(dirname(outDir), `ziko-final-${deps.now().toISOString().slice(0, 10)}.tar.gpg`);
+  refuseRepoPath(archivePath, 'archive path', deps);
+  if (deps.exists(archivePath)) {
+    deps.errlog('ERROR: archive already exists; refusing to overwrite');
+    return 1;
+  }
+  const secrets = [];
+  const passphrase = readPassphrase(deps, args.passphraseFile, secrets);
+  if (passphrase.length < 16) {
+    deps.errlog('ERROR: passphrase missing or too short');
+    return 1;
+  }
+  const tools = probeTools(deps);
+  const missing = missingTools(tools);
+  if (missing.length) {
+    deps.errlog(`ERROR: missing tools: ${missing.join(', ')}`);
+    return 1;
+  }
+
+  const ref = DECOM_REFS.ziko;
+  const ctx = { deps, secrets, touched: new Set() };
+  let client = null;
+  let ok = false;
+  let archiveVerified = false;
+  try {
+    ctx.token = await deps.loadToken();
+    secrets.push(ctx.token);
+    const ca = resolveCa(deps, args.caFile);
+    ctx.caFile = ca.caFile;
+    deps.mkdir(join(outDir, 'db'));
+    deps.mkdir(join(outDir, 'copy'));
+
+    // 1. pg_dump is the data of record: any failure aborts the whole run (no COPY-only completion path).
+    await dumpWith(ctx, ref, 'full', join(outDir, 'db', 'full.dump'));
+    await dumpWith(ctx, ref, 'storage-meta', join(outDir, 'db', 'storage-meta.dump'));
+    await dumpWith(ctx, ref, 'schema-only', join(outDir, 'db', 'schema.sql'));
+
+    // 2. catalog, COPY layer and storage listing share one read-only snapshot.
+    ctx.touched.add(ref);
+    client = (await deps.connect(ref, { readOnly: true, token: ctx.token, caPem: ca.caPem })).client;
+    await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+    const catalog = await collectCatalog(client);
+    const layer = await copyLayer(ctx, client, outDir);
+    const storage = await exportStorage(ctx, client, ref, outDir);
+    await client.query('COMMIT');
+    const authConfig = await fetchAuthConfig(ctx, ref);
+
+    const manifest = buildManifest({
+      serverVersion: catalog.version,
+      extensions: catalog.extensions,
+      functions: catalog.functions,
+      triggers: catalog.triggers,
+      policies: catalog.policies,
+      roles: catalog.roles,
+      tableGrants: catalog.tableGrants,
+      defaultAcl: catalog.defaultAcl,
+      authConfig,
+      buckets: storage.bucketRows,
+      tables: Object.entries(layer.counts).map(([name, rows]) => ({ name, rows })),
+      presence: catalog.presence,
+      rlsTables: catalog.rlsTables,
+      copyColumns: layer.copyColumns,
+    });
+    const manifestText = jsonText(manifest);
+    const storageText = jsonText(storage.storageManifest);
+    deps.writeText(join(outDir, 'manifest.json'), manifestText);
+    deps.writeText(join(outDir, 'storage-manifest.json'), storageText);
+
+    // 3. checksums over every file; the streamed COPY hashes must still match what is on disk.
+    const entries = hashDirectory(outDir);
+    const onDisk = new Map(entries.map((e) => [e.path, e.sha256]));
+    for (const [rel, sha] of layer.hashes) {
+      if (onDisk.get(rel) !== sha) throw new Error(`COPY layer file changed after streaming: ${rel}`);
+    }
+    for (const required of ['db/full.dump', 'db/storage-meta.dump', 'db/schema.sql']) {
+      if (!onDisk.has(required)) throw new Error(`pg_dump output missing: ${required}`);
+    }
+    deps.writeText(join(outDir, CHECKSUMS_FILE), renderChecksums(entries));
+    const plaintextBytes = deps.dirSize(outDir);
+
+    // 4. encrypt, then prove it decrypts and re-hashes before any plaintext is removed.
+    const enc = await deps.encrypt({ dir: outDir, archivePath, passphrase });
+    const vdir = join(deps.tmpdir, `ziko-backup-verify-${deps.randomBytes(6).toString('hex')}`);
+    refuseRepoPath(vdir, 'verify dir', deps);
+    try {
+      const res = await deps.decrypt({ archivePath, outDir: vdir, passphrase });
+      if (!res?.ok) throw new Error(`archive verification failed: ${badPaths(res).join(', ') || res?.error || 'unknown'}`);
+      if (res.fileCount !== entries.length) throw new Error('archive file count differs from the backup');
+    } finally {
+      deps.rmTree(vdir);
+    }
+    const archive = await deps.hashFile(archivePath);
+    archiveVerified = true;
+
+    const report = buildBackupReport({
+      archiveName: basename(archivePath),
+      archiveSha256: archive.sha256,
+      archiveBytes: archive.bytes,
+      plaintextBytes,
+      tableCounts: layer.counts,
+      buckets: storage.perBucket,
+      storageManifestSha256: sha256Hex(Buffer.from(storageText)),
+      manifestSha256: sha256Hex(Buffer.from(manifestText)),
+      toolVersions: {
+        ...tools,
+        gpg: enc?.gpgVersion ?? tools.gpg,
+        tar: enc?.tarVersion ?? tools.tar,
+        tls: ca.caFile ? 'verified' : 'encrypted-not-verified',
+      },
+    });
+
+    // 5. plaintext never outlives the run.
+    deps.rmTree(outDir);
+    if (deps.exists(outDir)) throw new Error('plaintext backup directory could not be removed');
+    deps.writeText(resolve(args.jsonOut), jsonText(report));
+    deps.log(`backup ok: ${basename(archivePath)} (${Object.keys(layer.counts).length} tables, ${storage.perBucket.length} buckets, ${storage.storageManifest.objects.length} objects)`);
+    ok = true;
+    return 0;
+  } catch (e) {
+    deps.errlog(`ERROR: ${redactSecrets(redactPii(e?.message ?? e), secrets)}`);
+    return 1;
+  } finally {
+    if (client) await Promise.resolve(client.end?.()).catch(() => {});
+    for (const r of ctx.touched) await deps.deleteRoles(r, { token: ctx.token, fetchImpl: deps.fetchImpl });
+    if (!ok) {
+      try {
+        deps.rmTree(outDir);
+      } catch {
+        /* best effort */
+      }
+      if (!archiveVerified) {
+        try {
+          deps.rmFile(archivePath);
+        } catch {
+          /* best effort */
+        }
+      }
+    }
+    secrets.length = 0;
+  }
+}
+
+// ---------------------------------------------------------------- --verify-archive
+
+async function modeVerifyArchive(args, deps) {
+  if (!args.passphraseFile || !args.report) {
+    deps.errlog('ERROR: --passphrase-file and --report are required');
+    return 2;
+  }
+  refuseRepoPath(args.verifyArchive, 'archive', deps);
+  refuseRepoPath(args.passphraseFile, 'passphrase file', deps);
+  const archive = resolve(args.verifyArchive);
+  if (!deps.exists(archive)) {
+    deps.errlog('ERROR: archive does not exist');
+    return 1;
+  }
+  const secrets = [];
+  const vdir = join(deps.tmpdir, `ziko-backup-verify-${deps.randomBytes(6).toString('hex')}`);
+  refuseRepoPath(vdir, 'verify dir', deps);
+  try {
+    const expected = JSON.parse(deps.readText(resolve(args.report)))?.archive?.sha256;
+    if (typeof expected !== 'string' || !/^[0-9a-f]{64}$/.test(expected)) {
+      deps.errlog('ERROR: report has no archive sha256');
+      return 1;
+    }
+    const passphrase = readPassphrase(deps, args.passphraseFile, secrets);
+    const { sha256 } = await deps.hashFile(archive);
+    if (sha256 !== expected) {
+      deps.errlog('ERROR: archive sha256 does not match the report');
+      return 1;
+    }
+    const res = await deps.decrypt({ archivePath: archive, outDir: vdir, passphrase });
+    if (!res?.ok) {
+      deps.errlog(`ERROR: inner checksum verification failed: ${badPaths(res).join(', ') || res?.error || 'unknown'}`);
+      return 1;
+    }
+    deps.log(`archive verified: sha256 matches the report, ${res.fileCount} inner files re-hashed`);
+    return 0;
+  } catch (e) {
+    deps.errlog(`ERROR: ${redactSecrets(redactPii(e?.message ?? e), secrets)}`);
+    return 1;
+  } finally {
+    deps.rmTree(vdir);
+    secrets.length = 0;
+  }
+}
 
 export async function run(argv, depsIn = {}) {
   const deps = cliDeps(depsIn);
@@ -641,10 +996,10 @@ export async function run(argv, depsIn = {}) {
         return await modeProbeTools(args, deps);
       case 'schema-probe':
         return await modeSchemaProbe(args, deps);
-      // DISPATCH-INSERT-POINT
+      case 'run':
+        return await modeRun(args, deps);
       default:
-        deps.errlog('ERROR: mode not available yet');
-        return 2;
+        return await modeVerifyArchive(args, deps);
     }
   } catch (e) {
     deps.errlog(`ERROR: ${redactPii(e?.message ?? e)}`);

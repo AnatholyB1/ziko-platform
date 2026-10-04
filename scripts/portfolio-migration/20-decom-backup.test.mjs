@@ -396,3 +396,371 @@ test('--schema-probe pg_dump failure exits 1, redacts the password and still del
   assert.ok(!h.err.join('\n').includes('login-pw-secret-xyz'));
   assert.match(h.err.join('\n'), /pg_dump schema-only failed/);
 });
+
+// ---------------------------------------------------------------- --run and --verify-archive (plan 07-21)
+
+import { createHash as mkHash } from 'node:crypto';
+import { existsSync as realExists } from 'node:fs';
+import { buildCopyOutSql, storageFile } from './20-decom-backup.mjs';
+
+const OBJ_BYTES = Buffer.from('abc');
+const PW = 'passphrase-value-that-is-long-enough-123';
+const FIXED_NOW = () => new Date('2026-10-04T10:00:00Z');
+
+function walk(dir, rel = '') {
+  const out = [];
+  for (const e of readdirSync(join(dir, rel), { withFileTypes: true })) {
+    const r = rel ? `${rel}/${e.name}` : e.name;
+    if (e.isDirectory()) out.push(...walk(dir, r));
+    else out.push(r);
+  }
+  return out;
+}
+
+function fakeClient(log) {
+  return {
+    async query(sql, params) {
+      log.push(sql);
+      if (/^(BEGIN|COMMIT)/.test(sql)) return { rows: [] };
+      if (sql === 'SHOW server_version') return { rows: [{ server_version: '15.8' }] };
+      if (/FROM pg_extension/.test(sql)) return { rows: [{ extname: 'pg_cron', extversion: '1.6' }, { extname: 'plpgsql', extversion: '1.0' }] };
+      if (/FROM pg_proc/.test(sql)) return { rows: [{ proname: 'fn_a', prosecdef: true, proacl: null }] };
+      if (/FROM pg_trigger/.test(sql)) return { rows: [{ relname: 'habits', tgname: 'trg_a' }] };
+      if (/FROM pg_policies/.test(sql)) return { rows: [{ schemaname: 'public', tablename: 'habits', policyname: 'habits_own' }] };
+      if (/relrowsecurity/.test(sql)) return { rows: [{ relname: 'habits' }] };
+      if (/FROM pg_roles/.test(sql)) return { rows: [{ rolname: 'postgres' }] };
+      if (/role_table_grants/.test(sql)) return { rows: [{ grantee: 'anon', table_name: 'habits', privilege_type: 'SELECT' }] };
+      if (/FROM pg_default_acl/.test(sql)) return { rows: [] };
+      if (/FROM pg_publication/.test(sql)) return { rows: [{ pubname: 'supabase_realtime' }] };
+      if (/FROM pg_namespace/.test(sql)) return { rows: [{ n: 0 }] };
+      if (/information_schema\.tables/.test(sql)) return { rows: [{ table_name: 'habits' }] };
+      if (/information_schema\.columns/.test(sql)) return { rows: [{ column_name: 'id' }, { column_name: 'name' }] };
+      if (/count\(\*\)::bigint/.test(sql)) return { rows: [{ n: 4 }] };
+      if (/FROM storage\.buckets/.test(sql)) return { rows: [{ id: 'avatars', public: true, file_size_limit: null, allowed_mime_types: null }] };
+      if (/FROM storage\.objects/.test(sql)) {
+        return { rows: [{ bucket_id: 'avatars', name: 'u1/a.png', size: 3, mimetype: 'image/png', cache_control: 'max-age=3600', etag: 'x' }] };
+      }
+      throw new Error(`unfaked query: ${sql.slice(0, 60)} ${params ?? ''}`);
+    },
+    end() {},
+  };
+}
+
+function runHarness({ pgDumpFail = null, base } = {}) {
+  const dirBase = base ?? mkdtempSync(join(tmpdir(), 'ziko-run-test-'));
+  const passFile = join(dirBase, 'pp.txt');
+  writeFileSync(passFile, `${PW}\n`);
+  const outDir = join(dirBase, 'out');
+  const sqlLog = [];
+  const seen = { archiveFiles: null, encryptArgs: null, copySql: [], dumpArgs: [] };
+  const h = harness({
+    exists: realExists,
+    now: FIXED_NOW,
+    tmpdir: dirBase,
+    runner: (cmd, args, opts) => {
+      h.calls.runner.push([cmd, args]);
+      if (cmd === 'pg_dump' && !args.includes('--version')) {
+        seen.dumpArgs.push({ args, env: opts?.env });
+        const file = args.find((a) => a.startsWith('--file=')).slice('--file='.length);
+        if (pgDumpFail && pgDumpFail(args)) return { status: 1, stderr: `FATAL: bad password login-pw-secret-xyz and ${PW}` };
+        writeFileSync(file, `dump:${args.join(' ')}`);
+      }
+      return { status: 0, stdout: `${cmd} (fake) 16.0\n`, stderr: '' };
+    },
+    connect: async (...a) => {
+      h.calls.connect.push(a);
+      return { client: fakeClient(sqlLog) };
+    },
+    copyOut: async (client, sql, file) => {
+      seen.copySql.push(sql);
+      const body = Buffer.from(`copy-data-for:${sql}`);
+      writeFileSync(file, body);
+      return { sha256: mkHash('sha256').update(body).digest('hex'), bytes: body.length };
+    },
+    fetchImpl: async (url, init) => {
+      h.calls.fetch.push([url, init]);
+      return { ok: true, status: 200, json: async () => ({ site_url: 'https://example.test', smtp_pass: 'smtp-secret-value', external_google_secret: 'g-secret-value' }) };
+    },
+    getKeys: async () => ({ publishable: 'pub', secret: 'service-secret-key-value' }),
+    storageFactory: () => ({
+      storage: { from: () => ({ download: async () => ({ data: { arrayBuffer: async () => OBJ_BYTES }, error: null }) }) },
+    }),
+    encrypt: async ({ dir, archivePath, passphrase }) => {
+      h.calls.encrypt++;
+      seen.encryptArgs = { dir, archivePath, passphrase };
+      seen.archiveFiles = walk(dir);
+      writeFileSync(archivePath, 'ENCRYPTED-BYTES');
+      return { gpgVersion: 'gpg (GnuPG) 2.4.5', tarVersion: 'bsdtar 3.7' };
+    },
+    decrypt: async () => ({ ok: true, fileCount: seen.archiveFiles.length - 1, tampered: [], missing: [], unlisted: [] }),
+  });
+  return { h, dirBase, passFile, outDir, sqlLog, seen };
+}
+
+test('buildCopyOutSql and storageFile are strict', () => {
+  assert.equal(buildCopyOutSql('public', 'habits', ['id', 'name']), 'COPY public."habits" ("id", "name") TO STDOUT');
+  assert.equal(buildCopyOutSql('auth', 'users', ['id']), 'COPY auth."users" ("id") TO STDOUT');
+  assert.throws(() => buildCopyOutSql('storage', 'objects', ['id']), /unsupported/);
+  assert.throws(() => buildCopyOutSql('public', 'habits', []), /no columns/);
+  assert.throws(() => buildCopyOutSql('public', 'Habits;drop', ['id']), /identifier/);
+  const dir = join(tmpdir(), 'x-backup');
+  assert.ok(storageFile(dir, 'avatars', 'u1/a.png').endsWith(join('storage', 'avatars', 'u1', 'a.png')));
+  for (const bad of ['../x', 'a//b', '/abs', 'C:/x', 'a\\b', './a']) assert.throws(() => storageFile(dir, 'avatars', bad), /unsafe/);
+  assert.throws(() => storageFile(dir, 'Bad Bucket', 'a'), /bucket/);
+});
+
+test('--run success: full pipeline, archive layout, PII-free report, plaintext removed, roles deleted', async () => {
+  const t = runHarness();
+  try {
+    const reportPath = join(t.dirBase, 'report.json');
+    const code = await run(['--run', '--out-dir', t.outDir, '--passphrase-file', t.passFile, '--json-out', reportPath], t.h.deps);
+    assert.equal(code, 0, t.h.err.join('\n'));
+
+    // archive layout matches the 07-08 restore-proof contract
+    const files = new Set(t.seen.archiveFiles);
+    for (const f of [
+      'db/full.dump', 'db/storage-meta.dump', 'db/schema.sql',
+      'copy/auth.users.copy', 'copy/auth.identities.copy', 'copy/public.habits.copy',
+      'storage/avatars/u1/a.png', 'storage-manifest.json', 'manifest.json', 'checksums.sha256',
+    ]) assert.ok(files.has(f), `missing ${f}`);
+
+    // pg_dump: 3 dumps, argv without secrets, credentials via env only
+    assert.equal(t.seen.dumpArgs.length, 3);
+    assert.ok(t.seen.dumpArgs[0].args.includes('--schema=auth'));
+    assert.ok(t.seen.dumpArgs[1].args.includes('--data-only'));
+    assert.ok(t.seen.dumpArgs[2].args.includes('--schema-only'));
+    for (const d of t.seen.dumpArgs) {
+      assert.ok(!d.args.join(' ').includes('login-pw-secret-xyz'));
+      assert.equal(d.env.PGPASSWORD, 'login-pw-secret-xyz');
+      assert.equal(d.env.PGUSER, `cli_login_postgres.${DECOM_REFS.ziko}`);
+    }
+    assert.deepEqual(t.h.calls.loginRole, [DECOM_REFS.ziko, DECOM_REFS.ziko, DECOM_REFS.ziko]);
+    assert.deepEqual(t.h.calls.deleteRoles, [DECOM_REFS.ziko]);
+    assert.deepEqual(t.h.calls.connect.map((c) => [c[0], c[1].readOnly]), [[DECOM_REFS.ziko, true]]);
+
+    // sql: read-only snapshot, auth tables copied, no writes
+    assert.match(t.sqlLog[0], /^BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY/);
+    assert.ok(t.seen.copySql.some((s) => s.startsWith('COPY auth."users"')));
+    assert.ok(t.seen.copySql.some((s) => s.startsWith('COPY auth."identities"')));
+    assert.ok(!t.sqlLog.some((s) => /\b(INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER)\b/i.test(s)));
+
+    // encrypt received the passphrase, archive sits next to (outside) out-dir, plaintext gone
+    assert.equal(t.seen.encryptArgs.passphrase, PW);
+    assert.equal(t.seen.encryptArgs.archivePath, join(t.dirBase, 'ziko-final-2026-10-04.tar.gpg'));
+    assert.ok(!realExists(t.outDir), 'plaintext dir must be removed');
+    assert.ok(realExists(t.seen.encryptArgs.archivePath));
+
+    // report: aggregates only
+    const text = readFileSync(reportPath, 'utf8');
+    const rep = JSON.parse(text);
+    assert.equal(rep.archive.file, 'ziko-final-2026-10-04.tar.gpg');
+    assert.equal(rep.archive.sha256, mkHash('sha256').update('ENCRYPTED-BYTES').digest('hex'));
+    assert.equal(rep.tables['public.habits'], 4);
+    assert.equal(rep.tables['auth.users'], 4);
+    assert.deepEqual(rep.buckets, [{ id: 'avatars', objects: 1, bytes: 3 }]);
+    assert.ok(!text.includes('a.png') && !text.includes('u1/'), 'no object names in the committed report');
+    for (const secret of [PW, 'login-pw-secret-xyz', 'service-secret-key-value', 'sbp_testtoken_value', 'smtp-secret-value']) {
+      assert.ok(!text.includes(secret));
+      assert.ok(!t.h.out.concat(t.h.err).join('\n').includes(secret));
+    }
+    assert.equal(rep.tool_versions.tls, 'encrypted-not-verified');
+  } finally {
+    rmSync(t.dirBase, { recursive: true, force: true });
+  }
+});
+
+test('--run manifest carries rls_tables, copy_columns, presence flags and no secret values', async () => {
+  const t = runHarness();
+  let manifest;
+  let storageManifest;
+  const origEncrypt = t.h.deps.encrypt;
+  t.h.deps.encrypt = async (a) => {
+    manifest = JSON.parse(readFileSync(join(a.dir, 'manifest.json'), 'utf8'));
+    storageManifest = JSON.parse(readFileSync(join(a.dir, 'storage-manifest.json'), 'utf8'));
+    return origEncrypt(a);
+  };
+  try {
+    const code = await run(['--run', '--out-dir', t.outDir, '--passphrase-file', t.passFile, '--json-out', join(t.dirBase, 'r.json')], t.h.deps);
+    assert.equal(code, 0, t.h.err.join('\n'));
+    assert.deepEqual(manifest.rls_tables, ['habits']);
+    assert.deepEqual(manifest.copy_columns['auth.users'], ['id', 'name']);
+    assert.deepEqual(manifest.copy_columns['public.habits'], ['id', 'name']);
+    assert.equal(manifest.server_version, '15.8');
+    assert.equal(manifest.presence.pg_cron, true);
+    assert.equal(manifest.presence.vault, false);
+    assert.deepEqual(manifest.presence.realtime_publications, ['supabase_realtime']);
+    assert.deepEqual(manifest.auth_config.smtp_pass, { name: 'smtp_pass', present: true });
+    assert.ok(!JSON.stringify(manifest).includes('smtp-secret-value'));
+    assert.equal(manifest.auth_config.site_url, 'https://example.test');
+    assert.equal(manifest.policies[0].policyname, 'habits_own');
+    assert.deepEqual(storageManifest.objects, [
+      { bucket: 'avatars', name: 'u1/a.png', sha256: mkHash('sha256').update(OBJ_BYTES).digest('hex'), mimetype: 'image/png', cache_control: 'max-age=3600' },
+    ]);
+    assert.equal(storageManifest.buckets[0].id, 'avatars');
+  } finally {
+    rmSync(t.dirBase, { recursive: true, force: true });
+  }
+});
+
+test('--run refusals: non-ziko target, non-empty out-dir, repo paths, existing archive (zero side effects)', async () => {
+  const base = mkdtempSync(join(tmpdir(), 'ziko-run-refuse-'));
+  try {
+    const pp = join(base, 'pp.txt');
+    writeFileSync(pp, `${PW}\n`);
+    const empty = join(base, 'empty-out');
+    const full = join(base, 'full-out');
+    mkdirSync(full);
+    writeFileSync(join(full, 'keep.txt'), 'x');
+    const common = ['--passphrase-file', pp, '--json-out', join(base, 'r.json')];
+    const cases = [
+      ['non-ziko target', ['--run', '--target', 'scratch', '--out-dir', empty, ...common]],
+      ['portfolio target', ['--run', '--target', 'portfolio', '--out-dir', empty, ...common]],
+      ['non-empty out-dir', ['--run', '--out-dir', full, ...common]],
+      ['out-dir in repo', ['--run', '--out-dir', inRepo('backup-out'), ...common]],
+      ['passphrase in repo', ['--run', '--out-dir', empty, '--passphrase-file', inRepo('pp.txt'), '--json-out', join(base, 'r.json')]],
+    ];
+    for (const [name, argv] of cases) {
+      const h = harness({ exists: realExists, now: FIXED_NOW });
+      assert.equal(await run(argv, h.deps), 1, name);
+      noSideEffects(h.calls);
+      assert.equal(h.calls.deleteRoles.length, 0, name);
+    }
+    assert.ok(realExists(join(full, 'keep.txt')), 'a refused non-empty out-dir must be left untouched');
+
+    writeFileSync(join(base, 'ziko-final-2026-10-04.tar.gpg'), 'old');
+    const h = harness({ exists: realExists, now: FIXED_NOW });
+    assert.equal(await run(['--run', '--out-dir', empty, ...common], h.deps), 1);
+    noSideEffects(h.calls);
+    assert.equal(readFileSync(join(base, 'ziko-final-2026-10-04.tar.gpg'), 'utf8'), 'old');
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('--run: pg_dump failure is fatal, exit 1, roles deleted, no plaintext, no encryption, no COPY-only completion', async () => {
+  for (const failOn of [(a) => a.includes('--schema=auth'), (a) => a.includes('--data-only'), (a) => a.includes('--schema-only')]) {
+    const t = runHarness({ pgDumpFail: failOn });
+    try {
+      const reportPath = join(t.dirBase, 'report.json');
+      const code = await run(['--run', '--out-dir', t.outDir, '--passphrase-file', t.passFile, '--json-out', reportPath], t.h.deps);
+      assert.equal(code, 1);
+      assert.deepEqual(t.h.calls.deleteRoles, [DECOM_REFS.ziko]);
+      assert.ok(!realExists(t.outDir), 'no plaintext dir may remain');
+      assert.ok(!realExists(join(t.dirBase, 'ziko-final-2026-10-04.tar.gpg')));
+      assert.ok(!realExists(reportPath), 'no report for a failed run');
+      assert.equal(t.h.calls.encrypt, 0);
+      assert.equal(t.seen.copySql.length, 0, 'COPY layer must not run after a pg_dump failure');
+      const msg = t.h.err.join('\n');
+      assert.match(msg, /pg_dump .* failed/);
+      assert.ok(!msg.includes('login-pw-secret-xyz') && !msg.includes(PW), 'secrets redacted');
+    } finally {
+      rmSync(t.dirBase, { recursive: true, force: true });
+    }
+  }
+});
+
+test('--run: failed archive verification removes plaintext and the unverified archive', async () => {
+  const t = runHarness();
+  t.h.deps.decrypt = async () => ({ ok: false, tampered: ['db/full.dump'], missing: [], unlisted: [] });
+  try {
+    const code = await run(['--run', '--out-dir', t.outDir, '--passphrase-file', t.passFile, '--json-out', join(t.dirBase, 'r.json')], t.h.deps);
+    assert.equal(code, 1);
+    assert.match(t.h.err.join('\n'), /db\/full\.dump/);
+    assert.ok(!realExists(t.outDir));
+    assert.ok(!realExists(join(t.dirBase, 'ziko-final-2026-10-04.tar.gpg')));
+    assert.deepEqual(t.h.calls.deleteRoles, [DECOM_REFS.ziko]);
+  } finally {
+    rmSync(t.dirBase, { recursive: true, force: true });
+  }
+});
+
+test('--run: a storage object failure is fatal, names are masked, plaintext removed', async () => {
+  const t = runHarness();
+  t.h.deps.storageFactory = () => ({
+    storage: { from: () => ({ download: async () => ({ data: null, error: Object.assign(new Error('boom'), { status: 400 }) }) }) },
+  });
+  try {
+    const code = await run(['--run', '--out-dir', t.outDir, '--passphrase-file', t.passFile, '--json-out', join(t.dirBase, 'r.json')], t.h.deps);
+    assert.equal(code, 1);
+    assert.match(t.h.err.join('\n'), /storage export failed/);
+    assert.ok(!t.h.err.join('\n').includes('u1/a.png'));
+    assert.ok(!realExists(t.outDir));
+    assert.equal(t.h.calls.encrypt, 0);
+  } finally {
+    rmSync(t.dirBase, { recursive: true, force: true });
+  }
+});
+
+function verifyFixture(over = {}) {
+  const base = mkdtempSync(join(tmpdir(), 'ziko-verify-test-'));
+  const archive = join(base, 'ziko-final-2026-10-04.tar.gpg');
+  writeFileSync(archive, 'ENCRYPTED-BYTES');
+  const pp = join(base, 'pp.txt');
+  writeFileSync(pp, `${PW}\n`);
+  const report = join(base, 'report.json');
+  const sha = mkHash('sha256').update('ENCRYPTED-BYTES').digest('hex');
+  writeFileSync(report, JSON.stringify({ archive: { sha256: over.sha ?? sha } }));
+  const decryptCalls = [];
+  const h = harness({
+    exists: realExists,
+    tmpdir: base,
+    decrypt: async (a) => {
+      decryptCalls.push(a);
+      return over.decryptResult ?? { ok: true, fileCount: 7, tampered: [], missing: [], unlisted: [] };
+    },
+  });
+  return { base, archive, pp, report, h, decryptCalls };
+}
+
+test('--verify-archive exits 0 when the archive sha256 and every inner file match', async () => {
+  const f = verifyFixture();
+  try {
+    const code = await run(['--verify-archive', f.archive, '--passphrase-file', f.pp, '--report', f.report], f.h.deps);
+    assert.equal(code, 0, f.h.err.join('\n'));
+    assert.equal(f.decryptCalls.length, 1);
+    assert.ok(!f.decryptCalls[0].outDir.startsWith(REPO_ROOT));
+    assert.ok(!realExists(f.decryptCalls[0].outDir), 'temp dir removed');
+    noSideEffects(f.h.calls);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
+});
+
+test('--verify-archive exits 1 naming the tampered inner path', async () => {
+  const f = verifyFixture({ decryptResult: { ok: false, tampered: ['storage/avatars/x.png'], missing: [], unlisted: [] } });
+  try {
+    const code = await run(['--verify-archive', f.archive, '--passphrase-file', f.pp, '--report', f.report], f.h.deps);
+    assert.equal(code, 1);
+    assert.match(f.h.err.join('\n'), /storage\/avatars\/x\.png/);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
+});
+
+test('--verify-archive exits 1 on an archive sha256 that differs from the report, before decrypting', async () => {
+  const f = verifyFixture({ sha: 'a'.repeat(64) });
+  try {
+    const code = await run(['--verify-archive', f.archive, '--passphrase-file', f.pp, '--report', f.report], f.h.deps);
+    assert.equal(code, 1);
+    assert.match(f.h.err.join('\n'), /sha256 does not match/);
+    assert.equal(f.decryptCalls.length, 0);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
+});
+
+test('--verify-archive refuses repo paths with zero side effects', async () => {
+  const f = verifyFixture();
+  try {
+    for (const argv of [
+      ['--verify-archive', inRepo('a.tar.gpg'), '--passphrase-file', f.pp, '--report', f.report],
+      ['--verify-archive', f.archive, '--passphrase-file', inRepo('pp.txt'), '--report', f.report],
+    ]) {
+      assert.equal(await run(argv, f.h.deps), 1);
+    }
+    assert.equal(f.decryptCalls.length, 0);
+    noSideEffects(f.h.calls);
+  } finally {
+    rmSync(f.base, { recursive: true, force: true });
+  }
+});
