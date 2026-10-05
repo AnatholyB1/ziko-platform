@@ -505,7 +505,21 @@ export async function run(argv, depsIn = {}) {
         if (!linkProject(deps, args, project, tmp)) throw new Error('vercel link failed');
         for (const c of list) {
           const r = deps.runner('vercel', [...c.args, '--cwd', tmp], c.stdin ? { input: sources[c.valueFrom] } : {});
-          if (r.status !== 0) {
+          if (r.status !== 0 && c.op === 'rm' && /multiple[_ ]envs?|Multiple Environment Variables/i.test(r.stdout + r.stderr)) {
+            // CLI cannot address the all-branches record when a branch-specific one has the same name:
+            // delete the branchless records for this target through the REST API (ids only, no values).
+            const environment = c.args[3];
+            const ls = deps.runner('vercel', ['api', `/v10/projects/${project}/env`, '--raw', ...scopeArgs(args)]);
+            const out = `${ls.stdout ?? ''}`;
+            const envs = ls.status === 0 ? JSON.parse(out.slice(out.indexOf('{'))).envs ?? [] : null;
+            if (!envs) throw new Error(`vercel env lookup ${c.name} failed`);
+            const hit = envs.filter((e) => e.key === c.name && !e.gitBranch && (e.target ?? []).includes(environment) && !(e.target ?? []).includes('production'));
+            for (const e of hit) {
+              const d = deps.runner('vercel', ['api', `/v9/projects/${project}/env/${e.id}`, '-X', 'DELETE', '--dangerously-skip-permissions', ...scopeArgs(args)]);
+              if (d.status !== 0) throw new Error(`vercel rm ${c.name} failed`);
+            }
+            if (hit.length === 0) throw new Error(`vercel rm ${c.name} failed`);
+          } else if (r.status !== 0) {
             const absent = c.tolerateAbsent && /not found|does not exist|no environment variable/i.test(r.stdout + r.stderr);
             if (!absent) throw new Error(`vercel ${c.op} ${c.name} failed`);
           }

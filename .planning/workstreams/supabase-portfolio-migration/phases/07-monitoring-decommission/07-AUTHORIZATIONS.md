@@ -43,3 +43,9 @@ Reply: "option-scoop-18 (Recommended)"
 Second copy: verified
 Timestamp: 2026-10-04T20:27:24Z
 Reply: "second copy ok 1732e313ee71, passphrase stored"
+
+### 07-14 env remediation
+Approved: env-remediation
+Integration: none
+Timestamp: 2026-10-05T10:01:53Z
+Reply: "approve env-remediation (Recommended)" + "no-integration (Recommended)"

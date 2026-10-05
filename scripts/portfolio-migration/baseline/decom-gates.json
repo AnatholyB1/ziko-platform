@@ -40,10 +40,10 @@
     "required_line": null
   },
   "env_scopes_clean": {
-    "passed": false,
-    "at": null,
-    "evidence": null,
-    "sha256": null,
+    "passed": true,
+    "at": "2026-10-05T10:07:28.538Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-env-audit.json",
+    "sha256": "a603cc68519feb2343c280530aca40dd77072ee3ec7315a681b579138ef90161",
     "auth_block": null,
     "required_line": null
   },
