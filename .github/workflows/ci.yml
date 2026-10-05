@@ -28,11 +28,8 @@ jobs:
       - name: Lint
         run: npx turbo run lint
       - name: Test
+        # Remote verify specs disabled (Phase 7 D-12b): scratch deleted; re-enable against a dedicated CI project at milestone close-out
         run: npx turbo run test
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
   # ─── Guard: frozen legacy migrations + ziko_-only portfolio SQL (D-16) ──
   migration-guard:

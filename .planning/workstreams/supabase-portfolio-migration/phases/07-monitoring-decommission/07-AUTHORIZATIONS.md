@@ -49,3 +49,8 @@ Approved: env-remediation
 Integration: none
 Timestamp: 2026-10-05T10:01:53Z
 Reply: "approve env-remediation (Recommended)" + "no-integration (Recommended)"
+
+### 07-15 ci verify target
+ci-verify-target: disabled
+Timestamp: 2026-10-05T10:31:23Z
+Source: 07-CONTEXT.md research-driven adjustment 7 (default disable)
