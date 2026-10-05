@@ -48,6 +48,7 @@ Report PII grep (uuids, JWTs, emails): 0 hits.
 3. **[Rule 1 - Bug] no-PK tables** compared by a row-digest multiset (every ziko digest must appear in portfolio at least as often); extras explained only if post-flip.
 4. **No-PK extras** dated via purchased_at / installed_at (c2a7f8ca).
 5. **[Rule 1 - Bug] Root cause of the last two pk-subset failures** (3e182fc1): ziko_user_inventory and ziko_user_plugins do have primary keys, so they took the PK branch, which only looked at created_at/updated_at (absent) and reported "no timestamp column" for the single post-flip extra row. The PK branch now dates extras via purchased_at/installed_at when created_at is missing. A failing test was written first; strictness is preserved (a pre-flip extra still fails, missing ziko rows still fail). Also added a `--tables` debug filter (refused with `--record-gate`) and PII-free extras detail in failing pk-subset lines.
+   **Post-flip extras:** portfolio holds exactly two rows absent from ziko, one in ziko_user_inventory and one in ziko_user_plugins, timestamped 2026-10-03 22:02Z, after backend_flip_at 14:29:36Z. They are legitimate post-flip writes, explained and not failures.
 6. **[Process] Memory kills / transient failures:** earlier runs were killed by low free memory and one auth-identities child failed once on a transient supabase CLI telemetry EPERM; runs were repeated single-process with a 1 GB heap.
 
 ## Commits
