@@ -4,13 +4,13 @@ milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
 stopped_at: Completed 07-12-PLAN.md
-last_updated: "2026-10-05T10:09:17.957Z"
+last_updated: "2026-10-05T12:27:27.606Z"
 last_activity: 2026-10-05
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 82
-  completed_plans: 76
+  completed_plans: 77
   percent: 86
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 7 (Monitoring & Decommission) — planned, executing
-Plan: 18 of 22
+Plan: 19 of 22
 Status: Ready to execute
 Last activity: 2026-10-05
 
-Progress: [█████████░] 93%
+Progress: [█████████░] 94%
 
 ## Accumulated Context
 
@@ -53,6 +53,8 @@ Progress: [█████████░] 93%
 - [Phase 6]: User waived the mobile device checklist (never device-tested against portfolio) and AI chat checks (Anthropic balance empty); user chose Android-only store submission after the iOS build failed
 - [Phase 07]: [07-09] PostgreSQL client tools 18.6 via scoop; bin dir prepended to PATH, no code change
 - [Phase 07]: 07-12: restore proof passed; wipe CASCADE drops public extensions so restore recreates them; pg_restore uses --no-privileges
+- [Phase 07]: 07-15: user waived ci_token_revoked (token ziko-ci-portfolio NOT revoked); waiver allowed for that single gate only
+- [Phase 07]: 07-15 carry to milestone close-out: revoke stale token ziko-ci-portfolio manually
 
 ### Pending Todos
 
@@ -76,6 +78,6 @@ Progress: [█████████░] 93%
 
 ## Session Continuity
 
-Last session: 2026-10-05T10:09:17.945Z
+Last session: 2026-10-05T12:27:16.994Z
 Stopped at: Completed 07-12-PLAN.md
 Resume file: None
