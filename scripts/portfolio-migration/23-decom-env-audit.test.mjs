@@ -358,3 +358,15 @@ test('R9 bad args and mode count', async () => {
   assert.equal(await run([], h.deps), 2);
   assert.equal(await run(['--all'], h.deps), 2);
 });
+
+test('R8 eas env:list is invoked with the positional environment and only flags eas-cli 24.10.0 accepts', async () => {
+  const h = makeDeps();
+  await run(AUDIT_ARGV, h.deps);
+  const eas = h.calls.filter((c) => c.cmd === 'npx' && c.args.includes('env:list'));
+  assert.deepEqual(eas.map((c) => c.args[c.args.indexOf('env:list') + 1]), ['production', 'preview', 'development']);
+  for (const c of eas) {
+    assert.ok(c.args.includes('--include-sensitive'));
+    assert.ok(!c.args.includes('--non-interactive'), 'env:list has no --non-interactive flag');
+    assert.ok(!c.args.includes('--environment'));
+  }
+});

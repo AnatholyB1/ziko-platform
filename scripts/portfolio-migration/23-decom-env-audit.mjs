@@ -351,7 +351,7 @@ async function auditVercelProject({ deps, args, ctx, surface, name, rows, pulled
 function auditEas({ deps, ctx, rows }) {
   const eas = { available: true, reason: null };
   for (const env of ENVIRONMENTS) {
-    const r = deps.runner('npx', ['--yes', `eas-cli@${EAS_CLI_VERSION}`, 'env:list', '--environment', env, '--include-sensitive', '--non-interactive'], { cwd: join(deps.repoRoot, 'apps', 'mobile') });
+    const r = deps.runner('npx', ['--yes', `eas-cli@${EAS_CLI_VERSION}`, 'env:list', env, '--include-sensitive'], { cwd: join(deps.repoRoot, 'apps', 'mobile') });
     if (r.status !== 0) {
       eas.available = false;
       eas.reason = 'eas-unavailable';
