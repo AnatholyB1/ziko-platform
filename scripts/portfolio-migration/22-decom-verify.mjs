@@ -629,6 +629,7 @@ const SPEC = {
   allowlist: 'string',
   'json-out': 'string',
   'record-gate': 'boolean',
+  tables: 'string',
 };
 
 const HELP = `22-decom-verify.mjs - Phase 7 DECOM-03 read-only verifier (frozen ziko vs portfolio)
@@ -641,6 +642,7 @@ Optional:
   --remap-file <path>   uuid-remap.json (default scripts/auth-merge/uuid-remap.json)
   --allowlist <path>    JSON array of masked object keys (known orphans), default none
   --json-out <path>     Write the PII-free report (repo-relative path when used with --record-gate)
+  --tables <a,b>        Debug: restrict pk-subset/content to these portfolio table names (never with --record-gate)
   --record-gate         With --check all and a passing run, record the verify_pass gate
   --help, -h            Show this help
 
@@ -733,13 +735,18 @@ async function collectTable(ctx, { source, target }, { doPk, doContent }) {
       if (entry.pk.extra > 0) {
         const extraSet = new Set(entry.pk.extraKeys);
         let extraRows;
-        if (tsCols.length) {
-          const rows = await sql(PROJECTS.portfolio, buildTimestampSql(target, tPk, tsCols));
-          extraRows = rows.filter((r) => extraSet.has(String(r.pk_key).toLowerCase()));
+        // Tables without created_at (user_inventory, user_plugins) are dated by their creation column.
+        const createdAlt = tsCols.includes('created_at') ? [] : NOPK_CREATED_COLUMNS.filter((c) => cd.shared.includes(c));
+        const rowTsCols = [...tsCols, ...createdAlt];
+        if (rowTsCols.length) {
+          const rows = await sql(PROJECTS.portfolio, buildTimestampSql(target, tPk, rowTsCols));
+          extraRows = rows
+            .filter((r) => extraSet.has(String(r.pk_key).toLowerCase()))
+            .map((r) => (createdAlt.length ? { ...r, created_at: r[createdAlt[0]] } : r));
         } else {
           extraRows = entry.pk.extraKeys.map(() => ({}));
         }
-        entry.extras = classifyExtras({ extraRows, flipAt, hasCreatedAt, hasUpdatedAt });
+        entry.extras = classifyExtras({ extraRows, flipAt, hasCreatedAt: hasCreatedAt || createdAlt.length > 0, hasUpdatedAt });
       }
     }
   }
@@ -868,6 +875,11 @@ export async function run(argv, depsIn = {}) {
     errlog('ERROR: --record-gate requires --check all and --json-out');
     return 2;
   }
+  if (args.tables && args.recordGate) {
+    errlog('ERROR: --tables cannot be combined with --record-gate');
+    return 2;
+  }
+  const tableFilter = args.tables ? args.tables.split(',').map((s) => s.trim()).filter(Boolean) : null;
 
   let flipAt;
   let remap;
@@ -912,6 +924,12 @@ export async function run(argv, depsIn = {}) {
       let portPk;
       try {
         plan = await deps.loadPlan();
+        if (tableFilter) {
+          const known = new Set(plan.map((p) => p.target));
+          const unknown = tableFilter.filter((n) => !known.has(n));
+          if (unknown.length) throw new Error(`--tables names not in plan: ${unknown.join(',')}`);
+          plan = plan.filter((p) => tableFilter.includes(p.target));
+        }
         urlRewrite = buildUrlRewrite(await deps.loadBucketMap());
         zikoPk = await loadPkMap(sql, PROJECTS.ziko);
         portPk = await loadPkMap(sql, PROJECTS.portfolio);
@@ -922,7 +940,7 @@ export async function run(argv, depsIn = {}) {
       if (plan) {
         tables = await collectTables({ sql, flipAt, remap, zikoPk, portPk, urlRewrite }, plan, { doPk, doContent });
         if (doPk) {
-          const bad = tables.filter((e) => !e.pk?.ok || (e.pk.extra > 0 && !e.extras?.ok)).map((e) => e.table);
+          const bad = tables.filter((e) => !e.pk?.ok || (e.pk.extra > 0 && !e.extras?.ok)).map((e) => (e.pk?.extra > 0 && e.pk.ok ? `${e.table}:${e.extras?.detail ?? 'no-extras-verdict'}` : e.table));
           const missing = tables.reduce((n, e) => n + (e.pk?.missing ?? 0), 0);
           const explained = tables.filter((e) => e.pk?.extra > 0 && e.extras?.ok).length;
           record('pk-subset', (bad.length ? fail : ok)(`tables=${tables.length} failed=${bad.length} missing_rows=${missing} tables_with_explained_extras=${explained}${bad.length ? ` [${bad.slice(0, 10).join(',')}]` : ''}`));

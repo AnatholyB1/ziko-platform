@@ -590,6 +590,60 @@ test('cli: a ziko-only PK fails pk-subset but storage and children still run', a
   assert.ok(env.out.every((l) => !/\b9\b/.test(l)), 'no PK value in output');
 });
 
+test('cli: --tables scopes pk-subset to the named targets, refuses unknown names and --record-gate', async () => {
+  const env = makeEnv();
+  const code = await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'pk-subset', '--tables', 'ziko_a'], env.deps);
+  assert.equal(code, 0, env.out.join('\n'));
+  assert.ok(env.out.some((l) => l.startsWith('[PASS] pk-subset: tables=1 ')), env.out.join('\n'));
+  assert.ok(env.sqlCalls.every(({ sql }) => !sql.includes('"b"') && !sql.includes('"ziko_b"')));
+
+  const bad = makeEnv();
+  assert.equal(await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'pk-subset', '--tables', 'nope'], bad.deps), 1);
+  assert.equal(bad.sqlCalls.length, 0);
+
+  const gate = makeEnv();
+  assert.equal(await run(ARGS(['--tables', 'ziko_a', '--json-out', 'r.json', '--record-gate']), gate.deps), 2);
+  assert.equal(gate.gates.length, 0);
+});
+
+function pkCreatedEnv(extraPurchasedAt) {
+  const env = makeEnv();
+  const base = env.deps.runSql;
+  env.deps.loadPlan = async () => [{ source: 'c', target: 'ziko_c' }];
+  env.deps.runSql = async (ref, sql) => {
+    const ziko = ref === ZIKO;
+    if (sql.includes('i.indisprimary')) return [{ tbl: ziko ? 'c' : 'ziko_c', col: 'id', ord: 1 }];
+    if (sql.includes('information_schema.columns')) return ['id', 'purchased_at'].map((c) => ({ column_name: c }));
+    if (sql.includes('purchased_at') && sql.includes('AS pk_key')) {
+      return [{ pk_key: '1', purchased_at: OLD }, { pk_key: '2', purchased_at: extraPurchasedAt }];
+    }
+    if (sql.includes('AS pk_key FROM public."ziko_c"')) return [{ pk_key: '1' }, { pk_key: '2' }];
+    if (sql.includes('AS pk_key FROM public."c"')) return [{ pk_key: '1' }];
+    return base(ref, sql);
+  };
+  return env;
+}
+
+test('pk table without created_at/updated_at: extra row explained by purchased_at/installed_at after flip', async () => {
+  const env = pkCreatedEnv(NEW);
+  const code = await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'pk-subset'], env.deps);
+  assert.equal(code, 0, env.out.join('\n'));
+  assert.ok(env.out.some((l) => /^\[PASS\] pk-subset: .*tables_with_explained_extras=1/.test(l)));
+});
+
+test('pk table without created_at/updated_at: extra row timestamped before flip stays unexplained', async () => {
+  const env = pkCreatedEnv(OLD);
+  const code = await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'pk-subset'], env.deps);
+  assert.equal(code, 1);
+  assert.ok(env.out.some((l) => l.startsWith('[FAIL] pk-subset')));
+});
+
+test('cli: failed pk-subset entries carry PII-free extras detail', async () => {
+  const env = makeEnv({ zikoPkA: ['1', '2', '9'] });
+  await run(['--project-ref', PORT, '--source-ref', ZIKO, '--check', 'pk-subset'], env.deps);
+  assert.ok(env.out.some((l) => /^\[FAIL\] pk-subset: .*\[ziko_a\]/.test(l)));
+});
+
 test('cli: object bytes that differ between sides fail storage-subset', async () => {
   const env = makeEnv();
   let n = 0;
