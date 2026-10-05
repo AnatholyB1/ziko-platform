@@ -32,10 +32,10 @@
     "required_line": null
   },
   "verify_pass": {
-    "passed": false,
-    "at": null,
-    "evidence": null,
-    "sha256": null,
+    "passed": true,
+    "at": "2026-10-05T01:04:35.768Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-verify.json",
+    "sha256": "2657d34ac9d8148e79183b8465bd0ecea386b2a7bb2fd39065ea4356df8c7bc9",
     "auth_block": null,
     "required_line": null
   },
