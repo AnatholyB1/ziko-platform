@@ -17,14 +17,14 @@ import { WAITLIST_RETENTION_YEARS } from '../../src/content/legal/founder-offer'
 
 const MIGRATION_PATH = resolve(
   __dirname,
-  '../../../../supabase/migrations/20260815_waitlist_retention_config.sql'
+  '../../../../supabase/migrations/20260818191135_waitlist_retention_config.sql'
 );
 
 // The pre-existing migration this file's fixture proves was never edited in
 // place (T-03-13). Recorded once, at the time this test was written.
 const PRIOR_MIGRATION_PATH = resolve(
   __dirname,
-  '../../../../supabase/migrations/20260812_waitlist_founder_offer.sql'
+  '../../../../supabase/migrations/20260813182644_waitlist_founder_offer.sql'
 );
 const PRIOR_MIGRATION_BYTE_LENGTH = 13749;
 const PRIOR_MIGRATION_SHA256 = '3f5d63de2dbef0b9d1bce7115331aef27d956c01e7995a394b4f050d399580a0';
