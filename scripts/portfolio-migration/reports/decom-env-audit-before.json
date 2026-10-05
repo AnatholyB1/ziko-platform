@@ -1,0 +1,751 @@
+{
+  "generated_at": "2026-10-05T01:13:24.640Z",
+  "projects": [
+    "ziko-api",
+    "ziko-web"
+  ],
+  "rows": [
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_SERVICE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "WEBHOOK_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "CRON_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "EXPO_ACCESS_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "GITHUB_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "production",
+      "branch": null,
+      "name": "GITHUB_REPO",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "WEBHOOK_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "CRON_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "EXPO_ACCESS_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_SERVICE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "DEBUG_LIMITS",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "GITHUB_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "GITHUB_REPO",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_SERVICE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "WEBHOOK_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "CRON_SECRET",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "EXPO_ACCESS_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "RESEND_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "SUPABASE_SERVICE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "GITHUB_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "GITHUB_REPO",
+      "status": "clean"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "api",
+      "project": "ziko-api",
+      "environment": "development",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "NEXT_PUBLIC_API_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SITE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "production",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "NEXT_PUBLIC_API_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "DEBUG_LIMITS",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SITE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "NEXT_PUBLIC_SUPABASE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "preview",
+      "branch": "gsd/phase-6-cutover",
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "UPSTASH_REDIS_REST_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "OPENAI_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "ANTHROPIC_API_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "NEXT_PUBLIC_API_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "NEXT_PUBLIC_SITE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "REDIS_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "SUPABASE_URL",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "web",
+      "project": "ziko-web",
+      "environment": "development",
+      "branch": null,
+      "name": "SUPABASE_PUBLISHABLE_KEY",
+      "status": "points_at_ziko"
+    },
+    {
+      "surface": "mobile",
+      "project": "eas",
+      "environment": "production",
+      "branch": null,
+      "name": "EXPO_PUBLIC_SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "mobile",
+      "project": "eas",
+      "environment": "production",
+      "branch": null,
+      "name": "EXPO_PUBLIC_SUPABASE_KEY",
+      "status": "clean"
+    },
+    {
+      "surface": "mobile",
+      "project": "eas",
+      "environment": "preview",
+      "branch": null,
+      "name": "EXPO_PUBLIC_SUPABASE_URL",
+      "status": "clean"
+    },
+    {
+      "surface": "mobile",
+      "project": "eas",
+      "environment": "preview",
+      "branch": null,
+      "name": "EXPO_PUBLIC_SUPABASE_KEY",
+      "status": "clean"
+    }
+  ],
+  "counts": {
+    "clean": 74,
+    "points_at_ziko": 17
+  },
+  "ci": {
+    "status": "not_checked"
+  },
+  "eas": {
+    "available": true,
+    "reason": null,
+    "notes": []
+  },
+  "include_ci": false,
+  "passed": false
+}
