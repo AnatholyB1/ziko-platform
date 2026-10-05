@@ -48,6 +48,11 @@ export const REQUIRED_GATES = Object.freeze({
   scratch: Object.freeze(['restore_proven', 'ci_off_scratch']),
 });
 
+/** The one and only gate that may be recorded as waived (07-15: user declined to revoke the stale CI token). */
+export const WAIVABLE_GATE = 'ci_token_revoked';
+export const WAIVER_HEADING = '07-15 ci token waiver';
+export const WAIVER_LINE = 'Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)';
+
 export const GATES_PATH = resolve(REPO_ROOT, 'scripts', 'portfolio-migration', 'baseline', 'decom-gates.json');
 export const AUTH_LOG_PATH = resolve(
   REPO_ROOT,
@@ -220,12 +225,21 @@ function writeGates(doc, deps) {
 }
 
 /** Marks a gate passed, only with existing safe evidence (sha256 recorded) or a verbatim authorization block. */
-export function recordGate(key, { evidence, authBlock, requiredLine } = {}, depsIn = {}) {
+export function recordGate(key, { evidence, authBlock, requiredLine, waiver } = {}, depsIn = {}) {
   const deps = fileDeps(depsIn);
   if (!GATE_KEYS.includes(key)) throw new Error(`unknown gate key: ${String(key).slice(0, 40)}`);
   const entry = { passed: true, at: deps.now(), evidence: null, sha256: null, auth_block: null, required_line: null };
 
-  if (key === 'confirmation_yes') {
+  if (waiver) {
+    if (key !== WAIVABLE_GATE) throw new Error(`only ${WAIVABLE_GATE} can be waived`);
+    if (evidence || authBlock || requiredLine) throw new Error('a waiver takes no evidence or block arguments');
+    if (!checkAuthBlock(deps.readText(AUTH_LOG_PATH), WAIVER_HEADING, WAIVER_LINE)) {
+      throw new Error('waiver block not found or incomplete in the authorization log');
+    }
+    entry.passed = 'waived';
+    entry.auth_block = WAIVER_HEADING;
+    entry.required_line = WAIVER_LINE;
+  } else if (key === 'confirmation_yes') {
     if (!authBlock) throw new Error('confirmation_yes requires --auth-block (the D-15 block)');
     if (!checkConfirmation(deps.readText(AUTH_LOG_PATH), authBlock)) {
       throw new Error('D-15 confirmation block is missing or not a plain yes');
@@ -280,12 +294,16 @@ export function verifyGates(gates, { required = GATE_KEYS, readBytes, readText, 
   };
   for (const key of required) {
     const g = gates?.[key];
-    if (!g || g.passed !== true) {
+    const waived = g?.passed === 'waived' && key === WAIVABLE_GATE;
+    if (!g || (g.passed !== true && !waived)) {
       missing.push(key);
       continue;
     }
     let ok = false;
-    if (key === 'confirmation_yes') {
+    if (waived) {
+      // satisfied only by the exact waiver block, never by evidence or any other heading/line
+      ok = g.auth_block === WAIVER_HEADING && g.required_line === WAIVER_LINE && checkAuthBlock(authLog(), WAIVER_HEADING, WAIVER_LINE);
+    } else if (key === 'confirmation_yes') {
       ok = !!g.auth_block && checkConfirmation(authLog(), g.auth_block);
     } else {
       if (g.evidence && g.sha256) {
@@ -308,6 +326,7 @@ const SPEC = {
   init: 'boolean',
   status: 'boolean',
   'record-gate': 'string',
+  'record-waiver': 'string',
   evidence: 'string',
   'auth-block': 'string',
   'required-line': 'string',
@@ -318,6 +337,7 @@ const SPEC = {
 const HELP = `Usage: node scripts/portfolio-migration/18-decom-guard.mjs <mode>
   --init
   --status [--require ziko|scratch [--except <gate key>]]
+  --record-waiver ci_token_revoked   (needs the '### 07-15 ci token waiver' block; shown as WAIVED)
   --record-gate <key> (--evidence <repo-relative path> | --auth-block "<heading>" --required-line "<line>")
 Gate keys: ${GATE_KEYS.join(', ')}`;
 
@@ -332,9 +352,9 @@ export async function run(argv, depsIn = {}) {
     log(HELP);
     return 0;
   }
-  const modes = [args.init, args.status, !!args.recordGate].filter(Boolean).length;
+  const modes = [args.init, args.status, !!args.recordGate, !!args.recordWaiver].filter(Boolean).length;
   if (modes !== 1) {
-    errlog('ERROR: exactly one of --init, --status, --record-gate is required');
+    errlog('ERROR: exactly one of --init, --status, --record-gate, --record-waiver is required');
     return 2;
   }
 
@@ -353,7 +373,8 @@ export async function run(argv, depsIn = {}) {
       const gates = readGates(deps);
       for (const k of GATE_KEYS) {
         const g = gates[k];
-        log(`${k}: ${g.passed ? 'PASS' : '----'}  ${g.evidence ?? g.auth_block ?? ''}`.trimEnd());
+        const mark = g.passed === true ? 'PASS' : g.passed === 'waived' ? 'WAIVED' : '----';
+        log(`${k}: ${mark}  ${g.evidence ?? g.auth_block ?? ''}`.trimEnd());
       }
       if (!args.require) return 0;
       if (!Object.hasOwn(REQUIRED_GATES, args.require)) {
@@ -370,6 +391,11 @@ export async function run(argv, depsIn = {}) {
       return 0;
     }
 
+    if (args.recordWaiver) {
+      recordGate(args.recordWaiver, { waiver: true }, deps);
+      log(`gate waived: ${args.recordWaiver}`);
+      return 0;
+    }
     recordGate(args.recordGate, { evidence: args.evidence, authBlock: args.authBlock, requiredLine: args.requiredLine }, deps);
     log(`gate recorded: ${args.recordGate}`);
     return 0;

@@ -54,3 +54,10 @@ Reply: "approve env-remediation (Recommended)" + "no-integration (Recommended)"
 ci-verify-target: disabled
 Timestamp: 2026-10-05T10:31:23Z
 Source: 07-CONTEXT.md research-driven adjustment 7 (default disable)
+
+### 07-15 ci token waiver
+Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)
+Timestamp: 2026-10-05T12:25:16Z
+Reply: "I will not revoke it"
+Reply: "Waive it, keep the token (Recommended)"
+Note: token ziko-ci-portfolio showed "Never used" at decision time; ziko-ci-portfolio-2 stays (backs the migrate-portfolio CI secret). No revocation took place.

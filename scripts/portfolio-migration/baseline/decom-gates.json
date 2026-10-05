@@ -56,12 +56,12 @@
     "required_line": null
   },
   "ci_token_revoked": {
-    "passed": false,
-    "at": null,
+    "passed": "waived",
+    "at": "2026-10-05T12:25:16.968Z",
     "evidence": null,
     "sha256": null,
-    "auth_block": null,
-    "required_line": null
+    "auth_block": "07-15 ci token waiver",
+    "required_line": "Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)"
   },
   "scratch_deleted": {
     "passed": false,

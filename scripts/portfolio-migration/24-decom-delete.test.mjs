@@ -499,3 +499,48 @@ test('help exits 0', async () => {
   assert.equal(await run(['--help'], h.deps), 0);
   assert.equal(h.calls.length, 0);
 });
+
+// ---------------------------------------------------------------- ci_token_revoked waiver (07-15)
+const WAIVER_BLOCK = [
+  '### 07-15 ci token waiver',
+  'Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)',
+  'Timestamp: 2026-10-05T11:00:00Z',
+  'Reply: "I will not revoke it"',
+  '',
+].join('\n');
+function waivedGates(falseKeys = []) {
+  const g = goodGates(falseKeys);
+  g.ci_token_revoked = {
+    passed: 'waived',
+    at: 'x',
+    evidence: null,
+    sha256: null,
+    auth_block: '07-15 ci token waiver',
+    required_line: 'Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)',
+  };
+  return g;
+}
+
+test('waiver: delete proceeds with ci_token_revoked waived and the block present', async () => {
+  const h = makeDeps({ gates: waivedGates(), authText: `${ZIKO_AUTH}\n${SCRATCH_AUTH}\n${WAIVER_BLOCK}` });
+  assert.equal(await run(DEL(), h.deps), 0);
+  assert.equal(deleteCalls(h.calls).length, 1);
+});
+
+test('waiver: delete refuses when the waiver block is absent', async () => {
+  await refuses(DEL(), { gates: waivedGates() });
+});
+
+test('waiver: delete still refuses when any other gate is false even if ci_token_revoked is waived', async () => {
+  for (const key of GATE_KEYS.filter((k) => k !== 'ci_token_revoked')) {
+    await refuses(DEL(), { gates: waivedGates([key]), authText: `${ZIKO_AUTH}\n${SCRATCH_AUTH}\n${WAIVER_BLOCK}` });
+  }
+});
+
+test('waiver: a waived value on any other gate is refused by delete', async () => {
+  for (const key of GATE_KEYS.filter((k) => k !== 'ci_token_revoked')) {
+    const g = goodGates();
+    g[key] = { ...g[key], passed: 'waived', auth_block: '07-15 ci token waiver', required_line: waivedGates().ci_token_revoked.required_line };
+    await refuses(DEL(), { gates: g, authText: `${ZIKO_AUTH}\n${SCRATCH_AUTH}\n${WAIVER_BLOCK}` });
+  }
+});

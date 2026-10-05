@@ -426,3 +426,4 @@ DECOM-01 (rollback window) is WAIVED by user 2026-10-04 (D-01), not done; a writ
 Filled by plan 07-20.
 
 - 07-10: ziko write-freeze applied at 2026-10-04T20:01:04.099Z (UTC). Rollback until deletion: `node scripts/portfolio-migration/19-decom-freeze.mjs --target ziko --unfreeze --confirm-ref slkobhavpwsubnsmuhya`. T0 snapshot: reports/decom-freeze-t0.json.
+- 07-15: CI test step moved off scratch (3 scratch-valued secrets deleted, CI run 37298715805 green, gate ci_off_scratch PASS). The stale Supabase access token `ziko-ci-portfolio` was NOT revoked: the user declined and waived the gate (gate ci_token_revoked recorded as WAIVED via `18-decom-guard.mjs --record-waiver ci_token_revoked`, block `07-15 ci token waiver`). `ziko-ci-portfolio-2` stays (backs the migrate-portfolio CI secret). Milestone close-out carry: `ziko-ci-portfolio` is still live (dashboard showed "Never used") and should be revoked manually.

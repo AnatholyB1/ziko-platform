@@ -386,3 +386,76 @@ test('CLI bad args exit 2, help exits 0', async () => {
   assert.equal(await run([], deps), 2);
   assert.equal(await run(['--help'], deps), 0);
 });
+
+// ------------------------------------------------------------ ci_token_revoked waiver (07-15)
+const WAIVER_HEAD = '07-15 ci token waiver';
+const WAIVER_LINE = 'Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)';
+const waiverLog = (line = WAIVER_LINE, head = WAIVER_HEAD, extra = ['Reply: "I will not revoke it"']) =>
+  ['# Log', '', `### ${head}`, line, TS, ...extra, ''].join('\n');
+
+test('waiver: recorded as waived (not true) when the block exists, and verifies', () => {
+  const deps = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: waiverLog() });
+  const g = recordGate('ci_token_revoked', { waiver: true }, deps);
+  assert.equal(g.ci_token_revoked.passed, 'waived');
+  assert.notEqual(g.ci_token_revoked.passed, true);
+  assert.equal(g.ci_token_revoked.auth_block, WAIVER_HEAD);
+  assert.equal(g.ci_token_revoked.required_line, WAIVER_LINE);
+  const gates = readGates(deps);
+  assert.equal(verifyGates(gates, { required: ['ci_token_revoked'], ...deps }).ok, true);
+  // block removed afterwards: no longer satisfied
+  deps.store.set(resolve(AUTH_LOG_PATH), '# Log\n');
+  const r = verifyGates(gates, { required: ['ci_token_revoked'], ...deps });
+  assert.equal(r.ok, false);
+  assert.deepEqual(r.mismatched, ['ci_token_revoked']);
+});
+
+test('waiver: refused without the block (missing, wrong line, wrong heading, no reply)', () => {
+  const cases = [
+    '# Log\n',
+    waiverLog('Waiver: ci_token_revoked'),
+    waiverLog(WAIVER_LINE, 'other heading'),
+    waiverLog(WAIVER_LINE, WAIVER_HEAD, []),
+  ];
+  for (const log of cases) {
+    const deps = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: log });
+    assert.throws(() => recordGate('ci_token_revoked', { waiver: true }, deps));
+    assert.equal(Object.keys(deps.written).length, 0);
+  }
+});
+
+test('waiver: refused for every other gate, also when hand-written into the gate file', () => {
+  for (const key of GATE_KEYS.filter((k) => k !== 'ci_token_revoked')) {
+    const deps = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: waiverLog() });
+    assert.throws(() => recordGate(key, { waiver: true }, deps), /only ci_token_revoked/);
+    const g = emptyGates();
+    g[key] = { passed: 'waived', at: 'x', evidence: null, sha256: null, auth_block: WAIVER_HEAD, required_line: WAIVER_LINE };
+    const v = verifyGates(g, { required: [key], ...deps });
+    assert.equal(v.ok, false, key);
+  }
+});
+
+test('waiver: other gate values (strings, truthy) never count as passed', () => {
+  const deps = makeDeps({ [AUTH_LOG_PATH]: waiverLog() });
+  for (const passed of ['true', 'waived', 1, 'yes']) {
+    const g = emptyGates();
+    g.verify_pass = { passed, at: 'x', evidence: null, sha256: null, auth_block: WAIVER_HEAD, required_line: WAIVER_LINE };
+    g.ci_token_revoked = { passed, at: 'x', evidence: null, sha256: null, auth_block: WAIVER_HEAD, required_line: WAIVER_LINE };
+    assert.equal(verifyGates(g, { required: ['verify_pass'], ...deps }).ok, false);
+    if (passed !== 'waived') assert.equal(verifyGates(g, { required: ['ci_token_revoked'], ...deps }).ok, false);
+  }
+});
+
+test('waiver: CLI --record-waiver and --status prints WAIVED, distinct from PASS', async () => {
+  const deps = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: waiverLog() });
+  assert.equal(await run(['--record-waiver', 'ci_token_revoked'], deps), 0);
+  assert.equal(JSON.parse(deps.written[resolve(GATES_PATH)]).ci_token_revoked.passed, 'waived');
+  assert.equal(await run(['--status'], deps), 0);
+  const line = deps.logs.find((l) => l.startsWith('ci_token_revoked:'));
+  assert.match(line, /^ci_token_revoked: WAIVED/);
+  assert.doesNotMatch(line, /PASS/);
+  const bad = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: waiverLog() });
+  assert.equal(await run(['--record-waiver', 'verify_pass'], bad), 1);
+  assert.equal(Object.keys(bad.written).length, 0);
+  const noBlock = makeDeps({ [GATES_PATH]: JSON.stringify(emptyGates()), [AUTH_LOG_PATH]: '# Log\n' });
+  assert.equal(await run(['--record-waiver', 'ci_token_revoked'], noBlock), 1);
+});
