@@ -370,3 +370,57 @@ test('R8 eas env:list is invoked with the positional environment and only flags 
     assert.ok(!c.args.includes('--environment'));
   }
 });
+
+// ---- multiple_envs fallback: delete the branchless record by id through the REST API
+
+async function applyWithAmbiguousRm({ apiEnvs }) {
+  const base = makeDeps({ zikoIn: ['preview'] });
+  await run(AUDIT_ARGV, base.deps);
+  const h = makeDeps({ zikoIn: ['preview'] });
+  h.written.report = base.written.report;
+  const inner = h.deps.runner;
+  h.deps.runner = (cmd, args, opts = {}) => {
+    if (cmd === 'vercel' && args[0] === 'env' && args[1] === 'rm' && !args.includes('feat/x')) {
+      h.calls.push({ cmd, args, input: opts.input });
+      return { status: 1, stdout: '', stderr: 'Error: multiple_envs: Multiple Environment Variables match' };
+    }
+    if (cmd === 'vercel' && args[0] === 'api' && args[1].endsWith('/env')) {
+      h.calls.push({ cmd, args });
+      return { status: 0, stdout: `note\n${JSON.stringify({ envs: apiEnvs })}`, stderr: '' };
+    }
+    if (cmd === 'vercel' && args[0] === 'api' && args.includes('DELETE')) {
+      h.calls.push({ cmd, args });
+      return { status: 0, stdout: '', stderr: '' };
+    }
+    return inner(cmd, args, opts);
+  };
+  const code = await run(['--apply-remediation', '--from', 'report.json', '--confirm-ref', PROJECTS.portfolio], h.deps);
+  return { h, code };
+}
+
+test('R10 vercel env rm multiple_envs: deletes only branchless non-production records by id', async () => {
+  const { h, code } = await applyWithAmbiguousRm({
+    apiEnvs: [
+      { id: 'id-all-branches', key: 'SUPABASE_URL', target: ['preview'] },
+      { id: 'id-all-branches-pub', key: 'NEXT_PUBLIC_SUPABASE_URL', target: ['preview'] },
+      { id: 'id-branch', key: 'SUPABASE_URL', target: ['preview'], gitBranch: 'gsd/x' },
+      { id: 'id-prod', key: 'SUPABASE_URL', target: ['production', 'preview'] },
+      { id: 'id-other', key: 'OTHER', target: ['preview'] },
+    ],
+  });
+  assert.equal(code, 0, h.logs.join(' | '));
+  const dels = h.calls.filter((c) => c.cmd === 'vercel' && c.args[0] === 'api' && c.args.includes('DELETE'));
+  assert.ok(dels.length >= 1);
+  for (const d of dels) {
+    assert.ok(/\/env\/id-all-branches(-pub)?$/.test(d.args[1]), `unexpected delete target ${d.args[1]}`);
+    assert.ok(d.args.includes('--dangerously-skip-permissions'));
+  }
+});
+
+test('R10 vercel env rm multiple_envs: fails closed when no branchless record matches', async () => {
+  const { h, code } = await applyWithAmbiguousRm({
+    apiEnvs: [{ id: 'id-branch', key: 'SUPABASE_URL', target: ['preview'], gitBranch: 'gsd/x' }],
+  });
+  assert.equal(code, 1);
+  assert.ok(!h.calls.some((c) => c.cmd === 'vercel' && c.args[0] === 'api' && c.args.includes('DELETE')));
+});
