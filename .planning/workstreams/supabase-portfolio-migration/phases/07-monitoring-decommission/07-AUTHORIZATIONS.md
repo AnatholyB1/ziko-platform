@@ -61,3 +61,8 @@ Timestamp: 2026-10-05T12:25:16Z
 Reply: "I will not revoke it"
 Reply: "Waive it, keep the token (Recommended)"
 Note: token ziko-ci-portfolio showed "Never used" at decision time; ziko-ci-portfolio-2 stays (backs the migrate-portfolio CI secret). No revocation took place.
+
+### 07-16 scratch deletion
+Approved: delete scratch rkirvurggtgjlkeuhded
+Timestamp: 2026-10-05T21:46:45Z
+Reply: "Approve scratch deletion (Recommended)"
