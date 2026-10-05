@@ -64,10 +64,10 @@
     "required_line": "Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)"
   },
   "scratch_deleted": {
-    "passed": false,
-    "at": null,
-    "evidence": null,
-    "sha256": null,
+    "passed": true,
+    "at": "2026-10-05T21:48:01.397Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-scratch-deleted.json",
+    "sha256": "6b64c5ee3920289bb5161686d14a134bb34fea23992cd149e0ecfaac48889cbb",
     "auth_block": null,
     "required_line": null
   },
