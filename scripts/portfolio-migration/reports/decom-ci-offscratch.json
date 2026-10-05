@@ -1,0 +1,28 @@
+{
+  "run_id": 37298715805,
+  "conclusion": "success",
+  "branch": "gsd/phase-7-monitoring-decommission",
+  "pr": 46,
+  "secrets_before": [
+    "EXPO_TOKEN",
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_PROJECT_ID",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "SUPABASE_URL",
+    "VERCEL_ORG_ID",
+    "VERCEL_PROJECT_ID",
+    "VERCEL_TOKEN",
+    "VERCEL_WEB_PROJECT_ID"
+  ],
+  "secrets_after": [
+    "EXPO_TOKEN",
+    "SUPABASE_ACCESS_TOKEN",
+    "SUPABASE_PROJECT_ID",
+    "VERCEL_ORG_ID",
+    "VERCEL_PROJECT_ID",
+    "VERCEL_TOKEN",
+    "VERCEL_WEB_PROJECT_ID"
+  ],
+  "ci_test_step_supabase_secrets": false
+}

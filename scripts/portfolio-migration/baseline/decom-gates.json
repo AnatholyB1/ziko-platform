@@ -48,10 +48,10 @@
     "required_line": null
   },
   "ci_off_scratch": {
-    "passed": false,
-    "at": null,
-    "evidence": null,
-    "sha256": null,
+    "passed": true,
+    "at": "2026-10-05T10:49:36.925Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-ci-offscratch.json",
+    "sha256": "05d0a2b71e22f1f6a7ec6a361c626abfdaae687ed785845aa571730ee303077a",
     "auth_block": null,
     "required_line": null
   },
