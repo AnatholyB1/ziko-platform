@@ -7,5 +7,12 @@
     "status": "ACTIVE_HEALTHY",
     "region": "eu-west-1"
   },
-  "response_ref": "slkobhavpwsubnsmuhya"
+  "response_ref": "slkobhavpwsubnsmuhya",
+  "confirmed_gone_at": "2026-10-06T13:59:33.891Z",
+  "method": "api",
+  "portfolio_status": "ACTIVE_HEALTHY",
+  "health": {
+    "api": 200,
+    "web": 200
+  }
 }
