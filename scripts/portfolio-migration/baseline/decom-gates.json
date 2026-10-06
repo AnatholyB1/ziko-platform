@@ -1,0 +1,82 @@
+{
+  "freeze_proven": {
+    "passed": true,
+    "at": "2026-10-04T20:19:10.880Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-freeze-proof.json",
+    "sha256": "3ec52574b8a3692ad756bf4e75feb8b911a50c7662a5cc428a6cebe3244d1756",
+    "auth_block": null,
+    "required_line": null
+  },
+  "backup_encrypted": {
+    "passed": true,
+    "at": "2026-10-04T20:19:11.016Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-backup-manifest.json",
+    "sha256": "fa9ffe92f3e9d86f86a8d151789b38389ed0701b72185c4337d41488c83982cd",
+    "auth_block": null,
+    "required_line": null
+  },
+  "backup_second_copy": {
+    "passed": true,
+    "at": "2026-10-04T20:27:44.012Z",
+    "evidence": null,
+    "sha256": null,
+    "auth_block": "07-11 second copy",
+    "required_line": "Second copy: verified"
+  },
+  "restore_proven": {
+    "passed": true,
+    "at": "2026-10-04T21:21:02.374Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-restore-proof.json",
+    "sha256": "e0941c8caf99ebb28eee07f6d6dc9ffc73629f59eed3c1462222d3d4d0dd912c",
+    "auth_block": null,
+    "required_line": null
+  },
+  "verify_pass": {
+    "passed": true,
+    "at": "2026-10-05T01:04:35.768Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-verify.json",
+    "sha256": "2657d34ac9d8148e79183b8465bd0ecea386b2a7bb2fd39065ea4356df8c7bc9",
+    "auth_block": null,
+    "required_line": null
+  },
+  "env_scopes_clean": {
+    "passed": true,
+    "at": "2026-10-05T10:07:28.538Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-env-audit.json",
+    "sha256": "a603cc68519feb2343c280530aca40dd77072ee3ec7315a681b579138ef90161",
+    "auth_block": null,
+    "required_line": null
+  },
+  "ci_off_scratch": {
+    "passed": true,
+    "at": "2026-10-05T10:49:36.925Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-ci-offscratch.json",
+    "sha256": "05d0a2b71e22f1f6a7ec6a361c626abfdaae687ed785845aa571730ee303077a",
+    "auth_block": null,
+    "required_line": null
+  },
+  "ci_token_revoked": {
+    "passed": "waived",
+    "at": "2026-10-05T12:25:16.968Z",
+    "evidence": null,
+    "sha256": null,
+    "auth_block": "07-15 ci token waiver",
+    "required_line": "Waiver: ci_token_revoked (token ziko-ci-portfolio NOT revoked; user decision)"
+  },
+  "scratch_deleted": {
+    "passed": true,
+    "at": "2026-10-05T21:48:01.397Z",
+    "evidence": "scripts/portfolio-migration/reports/decom-scratch-deleted.json",
+    "sha256": "6b64c5ee3920289bb5161686d14a134bb34fea23992cd149e0ecfaac48889cbb",
+    "auth_block": null,
+    "required_line": null
+  },
+  "confirmation_yes": {
+    "passed": true,
+    "at": "2026-10-06T13:57:08.795Z",
+    "evidence": null,
+    "sha256": null,
+    "auth_block": "07-17 D-15 confirmation",
+    "required_line": "Confirmation: yes (delete ziko slkobhavpwsubnsmuhya)"
+  }
+}

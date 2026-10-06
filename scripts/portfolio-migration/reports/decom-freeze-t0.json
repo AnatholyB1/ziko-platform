@@ -1,0 +1,561 @@
+{
+  "target": "ziko",
+  "generated_at": "2026-10-04T20:02:37.680Z",
+  "keys": {
+    "auth.identities": {
+      "count": "39",
+      "size_sum": null,
+      "digest": "ab17467f162e4a237e9c50db7007da32"
+    },
+    "auth.users": {
+      "count": "39",
+      "size_sum": null,
+      "digest": "cc326b92ed47646e5e21302ed0a076ba"
+    },
+    "public.ai_conversations": {
+      "count": "81",
+      "size_sum": null,
+      "digest": "c9aaf03f4f1b66c1cf54a20c860c4a57"
+    },
+    "public.ai_cost_log": {
+      "count": "35",
+      "size_sum": null,
+      "digest": "bf4391b00b8ee751d5b77d9f0f9b613a"
+    },
+    "public.ai_credit_transactions": {
+      "count": "123",
+      "size_sum": null,
+      "digest": "16479f2d5cb588327cecd7826734395c"
+    },
+    "public.ai_generated_programs": {
+      "count": "17",
+      "size_sum": null,
+      "digest": "84417504164a58d542b8115c21c64bc7"
+    },
+    "public.ai_imports": {
+      "count": "10",
+      "size_sum": null,
+      "digest": "97a3dda78a751ea7fd036ef5fb5d0504"
+    },
+    "public.ai_messages": {
+      "count": "190",
+      "size_sum": null,
+      "digest": "a45f3b5001368240dfb0dddb79a94bc2"
+    },
+    "public.ai_tool_audit": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "1f881fa4b6cf54165e91121567bb16eb"
+    },
+    "public.app_config": {
+      "count": "3",
+      "size_sum": null,
+      "digest": "ccb642464fb15a0e7b7fc1bb91aac353"
+    },
+    "public.app_invites": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "4953a2c57c224a6bef443810a452ae82"
+    },
+    "public.athlete_decisions": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.athlete_goals": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.athlete_state": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.badge_definitions": {
+      "count": "11",
+      "size_sum": null,
+      "digest": "1d26bc64eb4a4eb7963c19dcf4ab58da"
+    },
+    "public.body_measurements": {
+      "count": "3",
+      "size_sum": null,
+      "digest": "5dd426ebd28e6c5347f80e22f669ee44"
+    },
+    "public.bug_reports": {
+      "count": "19",
+      "size_sum": null,
+      "digest": "4066bee8688d6ca454386001135125dc"
+    },
+    "public.cardio_sessions": {
+      "count": "5",
+      "size_sum": null,
+      "digest": "819c2f6868e9557414a879943fbf7afe"
+    },
+    "public.challenge_participants": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.challenge_teams": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.challenges": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_alerts": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_branding": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "bc8b68f24aede1a5d5f9f9841d8a0c1a"
+    },
+    "public.coach_client_links": {
+      "count": "7",
+      "size_sum": null,
+      "digest": "5b1c87fb3f335c6d80a79df5ff608977"
+    },
+    "public.coach_client_notes": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_client_tags": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_client_videos": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_exercises": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "0a2ad3767b2db92bf16dd99e8176a407"
+    },
+    "public.coach_forms": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_invitations": {
+      "count": "5",
+      "size_sum": null,
+      "digest": "928608468447d1dedb026788b71c607e"
+    },
+    "public.coach_memory": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_metric_thresholds": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_profiles": {
+      "count": "2",
+      "size_sum": null,
+      "digest": "a08f6f7a8b79adc28a5831f9160bd409"
+    },
+    "public.coach_program_folders": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_video_annotations": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coach_vocal_feedbacks": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coin_gifts": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.coin_transactions": {
+      "count": "53",
+      "size_sum": null,
+      "digest": "77852c599bfa8ef5e442a2f57ff13b92"
+    },
+    "public.community_conversations": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.community_messages": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.community_posts": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.community_user_stats": {
+      "count": "2",
+      "size_sum": null,
+      "digest": "aa8c4213fd4a4d0191209b826b084e59"
+    },
+    "public.conversation_members": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.dashboard_configs": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.exercise_import_log": {
+      "count": "3498",
+      "size_sum": null,
+      "digest": "af932353ae0723cd1fc1d4f52216f5f2"
+    },
+    "public.exercises": {
+      "count": "1318",
+      "size_sum": null,
+      "digest": "ddeb1c23840b089b9c0a1051686800fa"
+    },
+    "public.exercises_merge_backup": {
+      "count": "1318",
+      "size_sum": null,
+      "digest": "448a3fa093dde67c2ff84d850eeab4dd"
+    },
+    "public.food_database": {
+      "count": "7932",
+      "size_sum": null,
+      "digest": "67661a77432bc2d787ec05721b7078b7"
+    },
+    "public.food_products": {
+      "count": "13",
+      "size_sum": null,
+      "digest": "e92a7925db50e1f910c03c9e73c07770"
+    },
+    "public.form_instances": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.form_responses": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.friendships": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "417ebfa906657068402fd29ab5a0f1eb"
+    },
+    "public.group_workout_participants": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.group_workouts": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.habit_encouragements": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.habit_logs": {
+      "count": "29",
+      "size_sum": null,
+      "digest": "d5af65732ac13a9dbca29b7540c6ccfe"
+    },
+    "public.habits": {
+      "count": "19",
+      "size_sum": null,
+      "digest": "83c419c7a31e84de7e8a2db0ab535a2a"
+    },
+    "public.health_sync_log": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.hydration_logs": {
+      "count": "42",
+      "size_sum": null,
+      "digest": "87868c1f5dab0189de4d2a64b8ffde70"
+    },
+    "public.journal_entries": {
+      "count": "6",
+      "size_sum": null,
+      "digest": "1266e6f3c35af6ffa34d4a823e75dbb2"
+    },
+    "public.level_definitions": {
+      "count": "12",
+      "size_sum": null,
+      "digest": "16cf7adf869c54999afcb69b8abf32fa"
+    },
+    "public.notification_log": {
+      "count": "5",
+      "size_sum": null,
+      "digest": "8d3cc0e9ca0d3784c2a614ba0599ea70"
+    },
+    "public.notification_preferences": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "6d7164f24064d0a29667e210bab1d79d"
+    },
+    "public.notification_tokens": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.nutrition_logs": {
+      "count": "94",
+      "size_sum": null,
+      "digest": "a5b0e6a2e3faaaf2e381c31b77d02ff3"
+    },
+    "public.pantry_items": {
+      "count": "21",
+      "size_sum": null,
+      "digest": "c5ebaf250db942afdb1ec79f548d0568"
+    },
+    "public.persona_settings": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.plugin_reviews": {
+      "count": "1",
+      "size_sum": null,
+      "digest": "14eb2f504ec309fa82af19144eff6927"
+    },
+    "public.plugins_registry": {
+      "count": "19",
+      "size_sum": null,
+      "digest": "3b09f7d9e16ab3c39305b1743701f905"
+    },
+    "public.post_comments": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.post_likes": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.program_exercises": {
+      "count": "368",
+      "size_sum": null,
+      "digest": "c14d44d97ed6e53bccee7ffe49e73fb0"
+    },
+    "public.program_workouts": {
+      "count": "77",
+      "size_sum": null,
+      "digest": "4e76be8cf5a4d5e1b9a618c8dfb376d4"
+    },
+    "public.promo_codes": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.screen_reactions": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.session_exercises": {
+      "count": "101",
+      "size_sum": null,
+      "digest": "438002171f2d45e0092f3eeacf882545"
+    },
+    "public.session_sets": {
+      "count": "191",
+      "size_sum": null,
+      "digest": "613bf127d7b2e83144ae2de50241b3dd"
+    },
+    "public.shared_programs": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.shop_items": {
+      "count": "34",
+      "size_sum": null,
+      "digest": "19f9de2a5b9014dee842bb3e3f4fba4e"
+    },
+    "public.sleep_logs": {
+      "count": "10",
+      "size_sum": null,
+      "digest": "594954c393be78a8f4a2495c20ceff0d"
+    },
+    "public.stretching_logs": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.stretching_routines": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.supplement_brands": {
+      "count": "11",
+      "size_sum": null,
+      "digest": "dab193fb7e78f675a7ac68fbe18724a7"
+    },
+    "public.supplement_categories": {
+      "count": "12",
+      "size_sum": null,
+      "digest": "2536245c1f8dd8e43b0c4ee1f97f93fe"
+    },
+    "public.supplement_prices": {
+      "count": "3169",
+      "size_sum": null,
+      "digest": "2bb25b57747e39c54db171e1cf8d60fc"
+    },
+    "public.supplements": {
+      "count": "1499",
+      "size_sum": null,
+      "digest": "0a3830131e1c183372832465413dc28a"
+    },
+    "public.timer_presets": {
+      "count": "2",
+      "size_sum": null,
+      "digest": "99a5c644acc3ed294ccebf0f427326d0"
+    },
+    "public.user_ai_credits": {
+      "count": "39",
+      "size_sum": null,
+      "digest": "2b3dbb8257e2b83da25fd7cf03b1f766"
+    },
+    "public.user_badges": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.user_gamification": {
+      "count": "12",
+      "size_sum": null,
+      "digest": "4a8d6e467d32ca7d94d591c6c4c306f6"
+    },
+    "public.user_inventory": {
+      "count": "55",
+      "size_sum": null,
+      "digest": "0bd4cb28de45a9462a74a44f09f54072"
+    },
+    "public.user_plugins": {
+      "count": "125",
+      "size_sum": null,
+      "digest": "f28e248dc3308e0bb21df05e1efebadc"
+    },
+    "public.user_profiles": {
+      "count": "39",
+      "size_sum": null,
+      "digest": "e9050331c4a7ebd35f1cccfad9006129"
+    },
+    "public.user_promo_redemptions": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.user_supplement_favorites": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.waitlist_signups": {
+      "count": "86",
+      "size_sum": null,
+      "digest": "010615a5c9600af27624d9e9d43d2c08"
+    },
+    "public.wearable_daily_summary": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.workout_programs": {
+      "count": "28",
+      "size_sum": null,
+      "digest": "d8b0453dcf7fb13c41ec3954555dc3bc"
+    },
+    "public.workout_sessions": {
+      "count": "103",
+      "size_sum": null,
+      "digest": "7f7187e95d0503f56dd98f1fbbc8f980"
+    },
+    "public.xp_gifts": {
+      "count": "0",
+      "size_sum": null,
+      "digest": ""
+    },
+    "public.xp_transactions": {
+      "count": "37",
+      "size_sum": null,
+      "digest": "49ccd79ecc5da2217aab23afc2879e9c"
+    },
+    "storage:ai-imports": {
+      "count": "9",
+      "size_sum": "27234830",
+      "digest": "90f6f4f49fe8e1f711d6aabf8ad60bee"
+    },
+    "storage:avatars": {
+      "count": "2",
+      "size_sum": "163805",
+      "digest": "d433aa3dfb4c9f20b3d01a687676cbda"
+    },
+    "storage:coach-exercises": {
+      "count": "5",
+      "size_sum": "2948150",
+      "digest": "7e7d55f1dac91c537358b2a088fffc4a"
+    },
+    "storage:coach-kyc": {
+      "count": "6",
+      "size_sum": "13936337",
+      "digest": "a73a457ad48fecb2687495b1bcdfefa2"
+    },
+    "storage:coach-logos": {
+      "count": "1",
+      "size_sum": "760224",
+      "digest": "c9245a3941b4753d85e93e3d5ca2a71e"
+    },
+    "storage:coach-videos": {
+      "count": "0",
+      "size_sum": "0",
+      "digest": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "storage:exercise-media": {
+      "count": "2660",
+      "size_sum": "150974615",
+      "digest": "a88bb26fbf58fd6f597f9329d4046427"
+    },
+    "storage:exports": {
+      "count": "0",
+      "size_sum": "0",
+      "digest": "d41d8cd98f00b204e9800998ecf8427e"
+    },
+    "storage:profile-photos": {
+      "count": "3",
+      "size_sum": "1633983",
+      "digest": "5d790ceda328fae425feb675c291655b"
+    },
+    "storage:scan-photos": {
+      "count": "13",
+      "size_sum": "16553057",
+      "digest": "99fa42029420309532e6b2312d73a545"
+    }
+  }
+}

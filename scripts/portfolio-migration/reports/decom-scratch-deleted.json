@@ -1,0 +1,13 @@
+{
+  "project": "scratch",
+  "ref": "rkirvurggtgjlkeuhded",
+  "deleted_at": "2026-10-05T21:47:30.474Z",
+  "pre_delete": {
+    "name": "ziko-migration-scratch",
+    "status": "ACTIVE_HEALTHY",
+    "region": "eu-west-3"
+  },
+  "response_ref": "rkirvurggtgjlkeuhded",
+  "confirmed_gone_at": "2026-10-05T21:47:43.739Z",
+  "method": "api"
+}

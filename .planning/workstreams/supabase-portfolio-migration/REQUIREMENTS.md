@@ -54,11 +54,11 @@
 
 ### Monitoring & Décommission (DECOM)
 
-- [ ] **DECOM-01**: `ziko` gardé vivant en lecture seule pendant une fenêtre de rollback définie (alignée sur le renouvellement naturel des binaires mobile côté stores, pas d'OTA forcée)
-- [ ] **DECOM-02**: Backup froid (pg_dump + export storage) de `ziko` pris et confirmé restaurable avant suppression
-- [ ] **DECOM-03**: Checklist complète par table/bucket (pas d'échantillonnage) validée
-- [ ] **DECOM-04**: Confirmation explicite et séparée de l'utilisateur avant suppression irréversible du projet `ziko`
-- [ ] **DECOM-05**: Projet `ziko` supprimé uniquement après validation de tous les items ci-dessus
+- [ ] **DECOM-01**: `ziko` gardé vivant en lecture seule pendant une fenêtre de rollback définie (alignée sur le renouvellement naturel des binaires mobile côté stores, pas d'OTA forcée) — WAIVED by user 2026-10-04 (D-01: no real mobile users yet, 39 ziko profiles, 0 new accounts since the flip; a brief write-freeze replaces the window)
+- [x] **DECOM-02**: Backup froid (pg_dump + export storage) de `ziko` pris et confirmé restaurable avant suppression — evidence: reports/decom-backup-manifest.json, reports/decom-restore-proof.json (restore proven on wiped scratch 2026-10-04)
+- [x] **DECOM-03**: Checklist complète par table/bucket (pas d'échantillonnage) validée — evidence: reports/decom-verify.json (passed=true, 2026-10-05; 2 tables without timestamp column were not content-compared)
+- [x] **DECOM-04**: Confirmation explicite et séparée de l'utilisateur avant suppression irréversible du projet `ziko` — evidence: 07-AUTHORIZATIONS.md block 07-17 (plain "yes", 2026-10-06T13:56:46Z)
+- [x] **DECOM-05**: Projet `ziko` supprimé uniquement après validation de tous les items ci-dessus — evidence: reports/decom-delete.json, 07-DELETION-LOG.md (DECOM-01 waived by user; ci_token_revoked waived; credential retirement outstanding)
 
 ## v2 Requirements
 
@@ -106,11 +106,11 @@ Aucune — cette milestone est un projet fermé (migration one-shot), pas une ba
 | CUTOVER-03 | Phase 6 - Cutover | Complete with waiver, user closed 2026-10-04 (no mobile users yet; backend and web flipped and smoked in order; mobile NOT achieved: iOS unreleased, Android 1.5.0 submitted to Play with state unconfirmed, device checklist waived) |
 | CUTOVER-04 | Phase 6 - Cutover | Complete (final data/storage/auth tenant checks vs pre-cutover baselines, 0 rh_/gecko_ regression; sv_* drift is live Sevalys traffic) |
 | CUTOVER-05 | Phase 6 - Cutover | Complete (06-17; CI verify secrets point at scratch) |
-| DECOM-01 | Phase 7 - Monitoring & Decommission | Pending |
-| DECOM-02 | Phase 7 - Monitoring & Decommission | Pending |
-| DECOM-03 | Phase 7 - Monitoring & Decommission | Pending |
-| DECOM-04 | Phase 7 - Monitoring & Decommission | Pending |
-| DECOM-05 | Phase 7 - Monitoring & Decommission | Pending |
+| DECOM-01 | Phase 7 - Monitoring & Decommission | WAIVED by user 2026-10-04 (no real mobile users, 39 profiles, 0 new accounts since flip) |
+| DECOM-02 | Phase 7 - Monitoring & Decommission | Complete 2026-10-06 (reports/decom-backup-manifest.json, reports/decom-restore-proof.json) |
+| DECOM-03 | Phase 7 - Monitoring & Decommission | Complete 2026-10-06 (reports/decom-verify.json) |
+| DECOM-04 | Phase 7 - Monitoring & Decommission | Complete 2026-10-06 (07-AUTHORIZATIONS.md 07-17) |
+| DECOM-05 | Phase 7 - Monitoring & Decommission | Complete 2026-10-06 (reports/decom-delete.json, 07-DELETION-LOG.md) |
 
 **Coverage:**
 - v1 requirements: 34 total
