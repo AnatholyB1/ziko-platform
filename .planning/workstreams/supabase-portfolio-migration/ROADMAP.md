@@ -213,7 +213,7 @@ Plans:
 - [x] 07-15-PLAN.md — [BLOCKING] CI off scratch, green CI, stale token ziko-ci-portfolio revoked (D-12b) (DECOM-05)
 - [x] 07-16-PLAN.md — [BLOCKING] Scratch project deletion with its own approval (DECOM-05)
 - [x] 07-17-PLAN.md — [BLOCKING] D-15 explicit separate confirmation: plain yes to delete ziko, own plan (DECOM-04)
-- [ ] 07-18-PLAN.md — [BLOCKING] Fail-closed ziko delete via Management API, dashboard fallback, confirm gone (DECOM-05)
+- [x] 07-18-PLAN.md — [BLOCKING] Fail-closed ziko delete via Management API, dashboard fallback, confirm gone (DECOM-05)
 - [ ] 07-19-PLAN.md — [BLOCKING] Credential retirement after deletion (D-14), user revokes PAT (DECOM-05)
 - [ ] 07-20-PLAN.md — Docs close-out, then deletion log as the final milestone action (DECOM-01..05)
 - [x] 07-21-PLAN.md — Wave 0: 20-decom-backup CLI (--init-passphrase, --probe-tools, --schema-probe, --run with pg_dump + COPY layer + storage export, --verify-archive); runs in wave 3 (DECOM-02)
@@ -232,4 +232,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
-| 7. Monitoring & Decommission | 19/22 | In Progress|  |
+| 7. Monitoring & Decommission | 20/22 | In Progress|  |
