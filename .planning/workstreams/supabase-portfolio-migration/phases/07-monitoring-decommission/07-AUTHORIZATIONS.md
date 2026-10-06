@@ -71,3 +71,10 @@ Reply: "Approve scratch deletion (Recommended)"
 Confirmation: yes (delete ziko slkobhavpwsubnsmuhya)
 Timestamp: 2026-10-06T13:56:46Z
 Reply: "yes"
+
+### 07-19 credential retirement
+Timestamp: 2026-10-06T14:09:52Z
+Reply: "not now"
+Outstanding: ziko-cutover-phase6 (PAT, NOT revoked)
+Outstanding: ziko-decom-phase7 (PAT, NOT revoked; its value was pasted into the chat during Phase 7)
+Outstanding: Vercel Protection Bypass for Automation secret on web and API (NOT rotated)

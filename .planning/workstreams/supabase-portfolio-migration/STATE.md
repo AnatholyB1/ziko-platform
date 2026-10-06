@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
 status: executing
-stopped_at: Completed 07-18-PLAN.md
-last_updated: "2026-10-06T14:02:02.367Z"
+stopped_at: Completed 07-19-PLAN.md (credential retirement partial)
+last_updated: "2026-10-06T14:10:27.167Z"
 last_activity: 2026-10-06
 progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 82
-  completed_plans: 80
-  percent: 98
+  completed_plans: 81
+  percent: 99
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration
 ## Current Position
 
 Phase: 7 (Monitoring & Decommission) — planned, executing
-Plan: 19 of 22 (20 of 22 complete; 07-19 and 07-20 remain)
+Plan: 20 of 22 (21 of 22 complete; 07-20 remains)
 Status: Ready to execute
 Last activity: 2026-10-06
 
-Progress: [██████████] 98%
+Progress: [██████████] 99%
 
 ## Accumulated Context
 
@@ -66,7 +66,7 @@ Progress: [██████████] 98%
 - API crons all return 401 (pre-existing since at least 2026-09-29): check CRON_SECRET on the API project
 - Vercel Preview/Development scopes of the shared web env records may still hold ziko values; SUPABASE_PUBLISHABLE_KEY on ziko-web untouched
 - Orphan test PNG in ziko-coach-exercises; revoke stale CI token `ziko-ci-portfolio` (CI uses `ziko-ci-portfolio-2`, keep it)
-- Credential retirement (06-20 Task 3): revoke PAT `ziko-cutover-phase6`, delete .access-token and bypass file, rotate the Vercel bypass secret
+- OUTSTANDING credentials (user chose "not now" at 07-19; NOT revoked, local PAT file deleted but tokens still valid in the account): revoke PATs `ziko-cutover-phase6` and `ziko-decom-phase7` (value pasted in chat) at https://supabase.com/dashboard/account/tokens; rotate the Vercel Protection Bypass for Automation secret on web and API (Settings > Deployment Protection). Keep `ziko-ci-portfolio-2`. Phase 6 credential retirement (06-20 Task 3) stays OPEN. Also: delete the kept passphrase file after confirming decrypt; portfolio login-role sweep not run
 
 ### Blockers/Concerns
 
@@ -78,6 +78,6 @@ Progress: [██████████] 98%
 
 ## Session Continuity
 
-Last session: 2026-10-06T14:02:02.357Z
-Stopped at: Completed 07-18-PLAN.md
+Last session: 2026-10-06T14:10:27.156Z
+Stopped at: Completed 07-19-PLAN.md (credential retirement partial)
 Resume file: None
