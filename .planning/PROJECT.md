@@ -2,7 +2,7 @@
 
 ## What This Is
 
-The Ziko fitness platform — a fully-extensible React Native / Expo mobile app with 18 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The `.planning` folder also tracks the Next.js marketing website (`ziko-app.com`) that launched as milestone v1.0. v1.5 introduces an authenticated Coach Platform / CRM section on the web — the first step toward a future ERP for fitness coaches.
+The Ziko fitness platform — a fully-extensible React Native / Expo mobile app with 18 plugins, AI coaching, GPS cardio tracking, and a Supabase backend. The `.planning` folder also tracks the Next.js marketing website (`ziko-app.com`) that launched as milestone v1.0. v1.5 introduces an authenticated Coach Platform / CRM section on the web — the first step toward a future ERP for fitness coaches. Since v1.19 (2026-10-06) the Supabase backend lives in the shared `portfolio` project (`ubxllsvanurkwkohzxau`) under `ziko_`-prefixed tables and `ziko-` buckets; the dedicated `ziko` project was deleted.
 
 ## Core Value
 
@@ -92,7 +92,6 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 **Parallel workstream:** v1.14 Formulaires Conditionnels (`formulaire-condi`) — le coach crée des formulaires déclenchés par des conditions ; écran bloquant global mobile tant que non rempli ; réponses injectées dans Claude.
 **Parallel workstream:** v1.15 Custom Widget Dashboards (`custom-widget`) — coach customise un dashboard par athlète via chat Claude (set fermé 7 widgets, flat JSON, tool calling → preview live → save). Critère : personnalisation en 30s.
 **Parallel workstream:** v1.17 Connexion Google & Apple (`connexion`) — remplace les boutons Google/Apple non-fonctionnels de l'écran welcome mobile par de vrais flows OAuth natifs (Supabase Auth), avec linking automatique des comptes par email vérifié.
-**Parallel workstream:** v1.19 Migration Supabase ziko → portfolio (`supabase-portfolio-migration`) — migre le schéma (93 tables préfixées `ziko_`), les données et l'auth du projet Supabase `ziko` vers le projet partagé `portfolio`, met à jour tous les env (mobile/web/backend + Vercel), vérifie RLS/données/accès, puis supprime l'ancien projet `ziko`.
 
 ---
 
@@ -119,7 +118,23 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 ---
 
 <details>
-<summary>v1.19 Migration Supabase ziko → portfolio [supabase-portfolio-migration] — work complete 2026-10-06 (ziko deleted; rollback window waived; credential retirement and close-out carry items outstanding)</summary>
+<summary>✅ v1.19 Migration Supabase ziko → portfolio [supabase-portfolio-migration] — SHIPPED 2026-10-06 (ziko deleted; DECOM-01 rollback window waived; mobile flip waived; credential retirement outstanding)</summary>
+
+**What shipped:**
+- Live inventory of `ziko` and `portfolio` (schema, auth triggers, buckets, extensions), collision report, version/extension diff, quota check
+- Schema renamed and prefixed: 99 live ziko tables and 33 functions recreated as `ziko_*` via a new migration series, dry-run on a scratch project, RLS on every table, stale-reference grep clean
+- Auth merged: 39 users in portfolio's shared pool (38 with UUID preserved, 1 email collision merged under the portfolio UUID with a recorded remap); auth triggers gated to `app=ziko` signups; redirect allow-list merged additively
+- Data copied and verified: COPY with triggers disabled, sequences reconciled, row-count parity, FK validation with 0 orphans, re-runnable verification suite in `scripts/portfolio-migration/`
+- Storage migrated: 10 `ziko-` buckets, 2,699 objects SHA-256 verified, 25 `ziko_` storage policies, signed-URL flows tested with real sessions
+- Cutover backend (2026-10-03 14:29Z) → web (15:08Z), each smoke-tested; CI repointed; 0 `rh_`/`gecko_` regression
+- Decommission: write-freeze, encrypted cold backup, restore proof on a wiped scratch project, full verification (99/99 tables, 2,699 objects), separate plain "yes", `ziko` deleted 2026-10-06T13:59:22Z and confirmed gone
+
+**Known gaps:** DECOM-01 waived (no rollback window; write-freeze instead). CUTOVER-03 ticked with waiver: mobile flip not achieved (iOS unreleased, Android 1.5.0 submitted to Play with state unconfirmed, device checklist waived).
+
+**Phases:** 1–7 (7 phases, 82 plans)
+**Archive:** `.planning/workstreams/supabase-portfolio-migration/milestones/v1.19-ROADMAP.md` · `.planning/workstreams/supabase-portfolio-migration/milestones/v1.19-REQUIREMENTS.md` · `.planning/workstreams/supabase-portfolio-migration/MILESTONES.md`
+
+**Original scope (as defined 2026-09-21):**
 
 **Goal:** Migrer le projet Supabase `ziko` (`slkobhavpwsubnsmuhya`, source de vérité actuelle pour mobile/web/backend, 93 tables, données de production réelles) vers le projet Supabase partagé `portfolio` (`ubxllsvanurkwkohzxau`, héberge déjà d'autres apps sous préfixes `rh_*`/`gecko_*`), puis décommissionner l'ancien projet.
 
@@ -273,6 +288,27 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 - [x] AI insight chips per chart card; narrative summary card (AI-02, AI-03) — v1.8
 - [x] Numeric threshold alerts + ChartCard badge (prop chain completed in Phase 41.1) (AI-04) — v1.8
 
+### Validated (v1.19 — Migration Supabase ziko → portfolio)
+
+- ✓ Live inventory of both projects, collision report, version/extension parity, capacity check (INV-01–05) — v1.19
+- ✓ New `ziko_`-prefixed migration series; SECURITY DEFINER functions and RLS recreated; zero unprefixed references; scratch dry run first (SCHEMA-01–05) — v1.19
+- ✓ 39 auth users merged with IDs preserved (1 collision remapped), identities copied, triggers scoped to Ziko signups, auth config merged additively (AUTHMIG-01–05) — v1.19; for AUTHMIG-05 the notice template, send script and in-app surfaces were built, but the email send was dropped in Phase 6 (D-03: no active users)
+- ✓ All `ziko_*` data loaded via COPY, sequences reconciled, row-count parity, FK validation, re-runnable verification suite (DATA-01–05) — v1.19
+- ✓ `ziko-` buckets recreated, objects copied with checksums, storage RLS rebuilt, signed-URL flows tested with real sessions (STORAGE-01–04) — v1.19
+- ✓ Local and Vercel env updated, CI repointed, 0 `rh_`/`gecko_` regression (CUTOVER-01, -02, -04, -05) — v1.19
+- ✓ Ordered cutover (CUTOVER-03) — v1.19, with waiver: backend → web done; mobile flip NOT achieved (iOS unreleased, Android 1.5.0 Play state unconfirmed, device checklist waived)
+- ✓ Cold backup restorable, full per-table/per-bucket verification, separate explicit confirmation, ziko deleted (DECOM-02–05) — v1.19
+- ✗ DECOM-01 rollback window — WAIVED by user 2026-10-04 (not complete; write-freeze replaced it)
+
+### Active — v1.19 carry-over (Next Milestone Goals, not done)
+
+- [ ] Revoke Supabase PATs `ziko-auth-merge-temp`, `ziko-auth-merge-temp-2`, `ziko-cutover-phase6`, `ziko-decom-phase7` (value pasted into a chat), and `ziko-ci-portfolio` (revocation waived by user); rotate the Vercel Protection Bypass secret (web + API); run the portfolio login-role sweep; close Phase 6 credential retirement (06-20 Task 3)
+- [ ] Confirm decrypt of the second backup copy, then delete the local passphrase file; backup retention review by 2027-04-06 (GDPR)
+- [ ] Mobile flip: iOS release (Sign in with Apple in the provisioning profile), confirm Play Console state of Android 1.5.0 (versionCode 16), device test against portfolio
+- [ ] Fix API crons returning 401 (CRON_SECRET); top up Anthropic balance and verify AI chat on portfolio
+- [ ] Re-enable CI remote verify specs against a dedicated CI project
+- [ ] Remove leftover Vercel resources `redis-crimson-brush` (still listing ziko-web/ziko-api), `redis-ziko`, Neon `potsgres-ziko`
+
 ### Validated (v1.5 — Coach Platform & CRM)
 
 - [x] `is_coach_of()` SECURITY DEFINER STABLE function + 11 cross-user SELECT policies — coach reads, never writes — v1.5
@@ -312,12 +348,13 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 
 ## Context
 
-- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.5 (Coach Platform & CRM — 2026-05-22), v1.6 (Mon coach plugin mobile — 2026-05-21), v1.7 (Mobile UX v2 — 2026-05-28), v1.8 (Sport Dashboards — 2026-05-30)
+- **Shipped milestones**: v1.0 (landing page), v1.1 (Smart Pantry Plugin), v1.2 (Barcode Enrichment), v1.3 (Security + Cloud Infrastructure), v1.4 (AI Credits), v1.5 (Coach Platform & CRM — 2026-05-22), v1.6 (Mon coach plugin mobile — 2026-05-21), v1.7 (Mobile UX v2 — 2026-05-28), v1.8 (Sport Dashboards — 2026-05-30), v1.16 (Exercise Library Import — 2026-08-18), v1.19 (Migration Supabase ziko → portfolio — 2026-10-06)
 - **Mobile app state**: 18 plugins, 26 Supabase migrations, React Native / Expo SDK 54, NativeWind v4, Zustand v5, TanStack Query v5
 - **Backend state**: Hono v4 at `https://ziko-api-lilac.vercel.app`, Upstash Redis rate limiting, secureHeaders, Zod validation, AI orchestrator with pantry + nutrition tools, Supabase Storage (3 buckets + signed URLs), lifecycle cron cleanup, centralized model config (`backend/api/src/config/models.ts`)
 - **Design system**: Light sport theme — primary `#FF5C1A` (orange), background `#F7F6F3`, text `#1C1A17`, border `#E2E0DA`. No dark mode.
 - **Legal jurisdiction**: French law — RGPD, mentions legales mandatory, CGU required.
-- **Infrastructure**: API + web on Vercel, Supabase (DB + Auth + Storage), Upstash Redis
+- **Infrastructure**: API + web on Vercel, Supabase (DB + Auth + Storage), Upstash Redis. Since v1.19 the Supabase backend is the shared `portfolio` project (`ubxllsvanurkwkohzxau`, co-tenants `rh_*`, `gecko_*`, `sv_*`): tables `ziko_*`, buckets `ziko-*`, shared auth pool; ziko signups must pass `app: 'ziko'` metadata. The old `ziko` project was deleted 2026-10-06; an encrypted cold backup is retained (review by 2027-04-06). Migration tooling and verification suites live in `scripts/portfolio-migration/` and `scripts/auth-merge/`
+- **Known issues after v1.19**: API crons return 401; iOS not released and Android 1.5.0 Play state unconfirmed (mobile never device-tested on portfolio); AI chat unverified on portfolio (Anthropic balance empty); CI remote verify specs disabled; several migration credentials not yet revoked (see v1.19 carry-over)
 
 ## Constraints
 
@@ -352,6 +389,14 @@ This isolation prepares the future ERP (`coach-billing/`, `coach-scheduling/`) w
 | 3-tier precision-first matcher, publishable-key-only reads, zero DB writes for dry-run scripts | Live run against `hasaneyldrm/exercises-dataset` + production matched 1,318/1,318 exercises (Tier 1 exact name); a real double-claim bug (same production row appearing both `matched` and as a live `ambiguous` candidate) was found and fixed post-review — `consumed` set now reserved at candidate-push time across all 3 tiers, closing the risk before Phase 3 trusts this report for `UPDATE`/`INSERT` decisions | v1.16 Phase 2 ✓ |
 | TTY-gated interactive-only approval (`process.stdin.isTTY` as literal first line of `main()`, no `--yes`/`--force` bypass) | Enforces "no code path from fetch/match output straight into merge" structurally, not just procedurally — a non-interactive/automated invocation hard-exits before any write | v1.16 Phase 3 ✓ |
 | Real production merge run: 1,318/1,318 matched exercises UPDATEd (media + attributes + instructions, full-row backup snapshotted first); 6/6 unmatched-new INSERTs deterministically refused (dataset category values don't map to production's CHECK constraint — no data corrupted, tracked as follow-up) | Code review also surfaced 2 accepted-as-tracked gaps: `merge-row.ts` doesn't yet write `muscle_group`, and `merge.ts` doesn't read ambiguous-row `human_decision` (unexercised this run — 0 ambiguous rows) | v1.16 Phase 3 ✓ |
+| `ziko_` table prefix + `ziko-` bucket prefix inside the shared `portfolio` project, merged auth pool | User decision 2026-09-21: consolidate Supabase projects; prefixes avoid collisions with `rh_*`/`gecko_*` | v1.19 ✓ (0 tenant regression) |
+| Auth merge hard-gated before data copy; 1 email collision merged under the portfolio UUID with a recorded remap | FKs to `auth.users(id)` need the rows first; collision user must keep one identity across tenants | v1.19 Phase 3-4 ✓ |
+| Auth triggers gated on `app=ziko` signup metadata | Shared `auth.users` triggers must not create Ziko rows for other tenants' signups | v1.19 Phase 3 ✓ — ⚠️ every ziko signup path must keep passing the flag |
+| Scratch rehearsal + read-only pre-flight + typed-phrase checkpoint before every portfolio write | Production data and other tenants in the same project; irreversible steps | v1.19 ✓ |
+| Native build 1.5.0 is the mobile flip (OTA infeasible, expo-updates disabled natively) | No OTA path; store binary carries the new env | v1.19 Phase 6 — ⚠️ Revisit: iOS unreleased, Play state unconfirmed |
+| Rollback window (DECOM-01) waived; write-freeze with T0==T1 proof before backup | No real mobile users (39 profiles, 0 new accounts since flip) | v1.19 Phase 7 — waived by user |
+| Deletion of `ziko` only after backup + restore proof + full verification + separate plain "yes" (D-15) | Irreversible action must never be bundled with cutover sign-off | v1.19 Phase 7 ✓ (deleted 2026-10-06) |
+| CI migrate job replaced by dormant, ref-locked `migrate-portfolio` | Prevents CI from pushing migrations to the wrong (shared) project | v1.19 Phase 6 ✓ — remote verify specs disabled, ⚠️ Revisit |
 
 ## Evolution
 
@@ -371,7 +416,9 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-30 — v1.18 AI Coach Core (`milestone-mobile`) STARTED: onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA, review/récompenses par palier, déblocage progressif par niveau. Scope cadré en discussion; SEED-001 planté pour la couche RPG/social (factions/ligues) reportée à un milestone suivant.*
+*Last updated: 2026-10-06 after v1.19 milestone (Migration Supabase ziko → portfolio, `supabase-portfolio-migration`) — SHIPPED: backend and web on `portfolio`, `ziko` project deleted; DECOM-01 and the mobile flip waived; credential revocations and other carry-over items listed under "Active — v1.19 carry-over".*
+
+*Previous update: 2026-08-30 — v1.18 AI Coach Core (`milestone-mobile`) STARTED: onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA, review/récompenses par palier, déblocage progressif par niveau. Scope cadré en discussion; SEED-001 planté pour la couche RPG/social (factions/ligues) reportée à un milestone suivant.*
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
