@@ -66,3 +66,8 @@ Note: token ziko-ci-portfolio showed "Never used" at decision time; ziko-ci-port
 Approved: delete scratch rkirvurggtgjlkeuhded
 Timestamp: 2026-10-05T21:46:45Z
 Reply: "Approve scratch deletion (Recommended)"
+
+### 07-17 D-15 confirmation
+Confirmation: yes (delete ziko slkobhavpwsubnsmuhya)
+Timestamp: 2026-10-06T13:56:46Z
+Reply: "yes"

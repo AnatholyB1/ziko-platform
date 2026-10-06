@@ -72,11 +72,11 @@
     "required_line": null
   },
   "confirmation_yes": {
-    "passed": false,
-    "at": null,
+    "passed": true,
+    "at": "2026-10-06T13:57:08.795Z",
     "evidence": null,
     "sha256": null,
-    "auth_block": null,
-    "required_line": null
+    "auth_block": "07-17 D-15 confirmation",
+    "required_line": "Confirmation: yes (delete ziko slkobhavpwsubnsmuhya)"
   }
 }
