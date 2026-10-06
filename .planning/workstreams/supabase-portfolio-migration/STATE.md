@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: complete
-stopped_at: Completed 07-20-PLAN.md (docs close-out; deletion log is the final commit)
-last_updated: "2026-10-06T14:10:27.167Z"
-last_activity: 2026-10-06
+status: Awaiting next milestone
+stopped_at: Milestone v1.19 completed and archived
+last_updated: "2026-10-06T14:52:05.295Z"
+last_activity: 2026-10-06 — Milestone v1.19 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -18,19 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
+See: .planning/PROJECT.md (updated 2026-10-06). v1.19 archive: .planning/workstreams/supabase-portfolio-migration/milestones/v1.19-ROADMAP.md, v1.19-REQUIREMENTS.md, MILESTONES.md
 
-**Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Milestone close-out (Phase 7 complete)
+**Core value:** A fitness user has a single app that coaches them, tracks everything, tells them what to cook based on what's in their kitchen — and controls AI costs through gamified engagement. Coaches manage their clients, assign programs, and use AI to analyze and adapt those programs from the web CRM. (v1.19 consolidated its Supabase backend into the shared `portfolio` project.)
+**Current focus:** Planning next milestone (v1.19 shipped 2026-10-06; carry-over items below)
 
 ## Current Position
 
-Phase: 7 (Monitoring & Decommission) — complete (rollback window waived; credential retirement outstanding)
-Plan: 22 of 22 (22 of 22 complete)
-Status: Milestone v1.19 work complete; ziko deleted 2026-10-06T13:59:22Z; close-out carry items below
-Last activity: 2026-10-06
-
-Progress: [██████████] 100%
+Phase: Milestone v1.19 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-06 — Milestone v1.19 completed and archived
 
 ## Accumulated Context
 
@@ -68,21 +66,51 @@ Progress: [██████████] 100%
 - Play Console: confirm the production release state of Android 1.5.0 (versionCode 16, submission finished)
 - Anthropic balance empty: AI chat never verified on portfolio
 - API crons all return 401 (pre-existing since at least 2026-09-29): check CRON_SECRET on the API project
-- Vercel Preview/Development scopes of the shared web env records may still hold ziko values; SUPABASE_PUBLISHABLE_KEY on ziko-web untouched
+- RESOLVED in 07-14: Vercel Preview/Development scopes remediated and ziko-web SUPABASE_PUBLISHABLE_KEY removed (re-audit 87 rows clean)
 - Orphan test PNG in ziko-coach-exercises; revoke stale CI token `ziko-ci-portfolio` (CI uses `ziko-ci-portfolio-2`, keep it)
-- Milestone close-out carry (Phase 7): backup retention review by 2027-04-06 (GDPR); CI remote verify specs disabled (re-enable against a dedicated CI project); leftover Vercel resources `redis-crimson-brush`, `redis-ziko`, Neon `potsgres-ziko`; confirm nothing needed from the orphan PNG in ziko-coach-exercises (bucket deleted with ziko); PR #46 (phase 7) and PR #44 (docs) open
+- Milestone close-out carry (Phase 7): backup retention review by 2027-04-06 (GDPR); CI remote verify specs disabled (re-enable against a dedicated CI project); leftover Vercel resources `redis-crimson-brush`, `redis-ziko`, Neon `potsgres-ziko`; confirm nothing needed from the orphan PNG in ziko-coach-exercises (bucket deleted with ziko); PR #46 (phase 7) merged to main; PR #44 (docs) state not re-checked at close
 - OUTSTANDING credentials (user chose "not now" at 07-19; NOT revoked, local PAT file deleted but tokens still valid in the account): revoke PATs `ziko-cutover-phase6` and `ziko-decom-phase7` (value pasted in chat) at https://supabase.com/dashboard/account/tokens; rotate the Vercel Protection Bypass for Automation secret on web and API (Settings > Deployment Protection). Keep `ziko-ci-portfolio-2`. Phase 6 credential retirement (06-20 Task 3) stays OPEN. Also: delete the kept passphrase file after confirming decrypt; portfolio login-role sweep not run
 
 ### Blockers/Concerns
 
-- `portfolio`'s actual live schema/triggers/functions/buckets are unverified from this repo — Phase 1 must resolve this via direct Supabase inspection before Phase 2 can be finalized
-- True table/function count discrepancy (PROJECT.md says 73 migrations/93 tables; live grep found ~90 files/~100 `CREATE TABLE` statements) must be reconciled against `ziko`'s live `information_schema`, not migration file counts
-- RESOLVED by Phase 7: ziko deleted, no further pause question. Mobile-tail strategy: OTA is infeasible, native build is the flip (resolved in Phase 6); the remaining question is the drain window of old binaries before Phase 7 decommission, and iOS is not released yet
-- Whether `portfolio`'s plan tier supports "pause" as an intermediate step before hard deletion is unverified — check before finalizing the Phase 7 runbook
-- 03-11: portfolio collision row 2b6a60fa has NULL token columns -> GoTrue admin HTTP 500; needs user-approved guarded fill before trigger stage
+- None blocking. Resolved blockers cleared at milestone close (portfolio live inventory done in Phase 1; table count reconciled to 99 live tables; OTA question settled in Phase 6; pause-before-delete question moot after deletion; collision-row NULL token columns fixed in 03-11). Open items for the user are under Deferred Items and Pending Todos.
+- iOS is still unreleased, so the mobile app on the stores has not been confirmed to run against portfolio.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-10-06 (user chose "Acknowledge and close"):
+
+| Category | Item | Status |
+|----------|------|--------|
+| verification_gap | Phase 03: 03-VERIFICATION.md | human_needed |
+| verification_gap | Phase 07: 07-VERIFICATION.md | human_needed |
+
+Carry-over items for the user (NOT done at close):
+
+| Category | Item | Status |
+|----------|------|--------|
+| credential | Supabase PATs `ziko-auth-merge-temp`, `ziko-auth-merge-temp-2` (Phase 3) | not revoked (expire 2026-10-08) |
+| credential | Supabase PAT `ziko-cutover-phase6` | not revoked |
+| credential | Supabase PAT `ziko-decom-phase7` (value was pasted into a chat) | not revoked |
+| credential | Supabase PAT `ziko-ci-portfolio` | not revoked (waived by user; keep `ziko-ci-portfolio-2`) |
+| credential | Vercel Protection Bypass for Automation secret (web and API) | not rotated |
+| credential | Local backup passphrase file | kept until the user confirms decrypt of the second copy |
+| credential | portfolio login-role sweep | not run |
+| credential | Phase 6 credential retirement (06-20 Task 3) | open |
+| ops | API crons return 401 (CRON_SECRET on the API project) | open |
+| mobile | iOS release (Sign in with Apple on the App ID, regenerate provisioning profile) | open |
+| mobile | Play Console state of Android 1.5.0 (versionCode 16) | unconfirmed |
+| ai | Anthropic balance empty; AI chat never verified on portfolio | open |
+| ci | CI remote verify specs disabled (re-enable against a dedicated CI project) | open |
+| infra | Leftover Vercel resources `redis-crimson-brush` (still listing ziko-web/ziko-api), `redis-ziko`, Neon `potsgres-ziko` | open |
+| data | Backup retention review (GDPR) | due by 2027-04-06 |
 
 ## Session Continuity
 
 Last session: 2026-10-06
-Stopped at: Completed 07-20-PLAN.md (docs close-out; deletion log is the final commit)
+Stopped at: Milestone v1.19 completed and archived (complete-milestone, 2026-10-06)
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
