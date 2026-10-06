@@ -14,7 +14,7 @@ Ziko's entire Supabase footprint — ~93 tables, ~20 SECURITY DEFINER functions,
 - [x] **Phase 4: Data Copy & Integrity Verification** - All ziko production data exists in portfolio with verified row-count parity and FK integrity (completed 2026-10-02)
 - [x] **Phase 5: Storage Migration** - All ziko storage buckets and objects exist in portfolio, fully functional under real authenticated sessions (completed 2026-10-02)
 - [x] **Phase 6: Cutover** - Backend, web, and mobile all run against portfolio in production with zero regression on rh_*/gecko_*
-- [ ] **Phase 7: Monitoring & Decommission** - ziko is retired and deleted only after a monitored rollback window, full verification, and a second explicit human confirmation
+- [x] **Phase 7: Monitoring & Decommission** - ziko is retired and deleted only after a monitored rollback window, full verification, and a second explicit human confirmation
 
 ## Phase Details
 
@@ -189,10 +189,14 @@ Plans:
 **Requirements**: DECOM-01, DECOM-02, DECOM-03, DECOM-04, DECOM-05
 **Success Criteria** (what must be TRUE):
   1. ziko is kept live in read-only mode for the defined rollback window, tied to mobile binary renewal rather than a fixed calendar date (WAIVED by user 2026-10-04, D-01: no rollback window; write-freeze before backup instead)
-  2. A cold backup (`pg_dump` + storage export) of ziko has been taken and confirmed restorable
-  3. The full per-table/per-bucket checklist (no sampling) has been completed and passes for every `ziko_*` table and bucket
-  4. **The user has given an explicit, separate confirmation — distinct from and after cutover sign-off — specifically authorizing deletion of the `ziko` project**
-  5. The `ziko` project is deleted only after criteria 1-4 above are all satisfied, and the deletion is logged as the final, deliberate action of the milestone
+  2. A cold backup (`pg_dump` + storage export) of ziko has been taken and confirmed restorable (evidence: reports/decom-backup-manifest.json, reports/decom-restore-proof.json)
+  3. The full per-table/per-bucket checklist (no sampling) has been completed and passes for every `ziko_*` table and bucket (evidence: reports/decom-verify.json)
+  4. **The user has given an explicit, separate confirmation — distinct from and after cutover sign-off — specifically authorizing deletion of the `ziko` project** (evidence: 07-AUTHORIZATIONS.md 07-17)
+  5. The `ziko` project is deleted only after criteria 1-4 above are all satisfied, and the deletion is logged as the final, deliberate action of the milestone (criterion 1 waived; evidence: 07-DELETION-LOG.md)
+**Status: CLOSED 2026-10-06 - ziko deleted (Complete: rollback window waived; credential retirement outstanding). DECOM-01 waived by user; ci_token_revoked gate waived by user.**
+
+**Milestone close-out carry list (non-blocking, D-13 and findings):** API crons 401 (CRON_SECRET); iOS release (Sign in with Apple in provisioning profile); Play Console state of Android 1.5.0 (versionCode 16); Anthropic balance / AI chat never verified on portfolio; orphan test PNG in ziko-coach-exercises (bucket gone with ziko, confirm nothing needed); backup retention review at 6 months (GDPR, by 2027-04-06); CI remote verify specs disabled (re-enable against a dedicated CI project); leftover Vercel resources `redis-crimson-brush` (uninstalled Redis still listing ziko-web/ziko-api), `redis-ziko`, Neon `potsgres-ziko`; OUTSTANDING credentials: PATs `ziko-cutover-phase6` and `ziko-decom-phase7`, Vercel Protection Bypass secret (web and API), stale token `ziko-ci-portfolio` (waived), backup passphrase file kept until the user confirms decrypt, portfolio login-role sweep not run; Phase 6 credential retirement (06-20 Task 3) remains OPEN; PR #46 (phase 7 branch) and PR #44 (docs) still open.**
+
 **Plans**: 22 plans
 
 Plans:
@@ -215,7 +219,7 @@ Plans:
 - [x] 07-17-PLAN.md — [BLOCKING] D-15 explicit separate confirmation: plain yes to delete ziko, own plan (DECOM-04)
 - [x] 07-18-PLAN.md — [BLOCKING] Fail-closed ziko delete via Management API, dashboard fallback, confirm gone (DECOM-05)
 - [x] 07-19-PLAN.md — [BLOCKING] Credential retirement after deletion (D-14), user revokes PAT (DECOM-05)
-- [ ] 07-20-PLAN.md — Docs close-out, then deletion log as the final milestone action (DECOM-01..05)
+- [x] 07-20-PLAN.md — Docs close-out, then deletion log as the final milestone action (DECOM-01..05)
 - [x] 07-21-PLAN.md — Wave 0: 20-decom-backup CLI (--init-passphrase, --probe-tools, --schema-probe, --run with pg_dump + COPY layer + storage export, --verify-archive); runs in wave 3 (DECOM-02)
 - [x] 07-22-PLAN.md — Wave 0: 22-decom-verify CLI (guards, read-only live collection, existing integrity/auth/tenant verifiers as child steps); runs in wave 4 (DECOM-03)
 
@@ -232,4 +236,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 (Phase 5 
 | 4. Data Copy & Integrity Verification | 7/7 | Complete    | 2026-10-02 |
 | 5. Storage Migration | 11/11 | Complete    | 2026-10-02 |
 | 6. Cutover | 20/20 | Complete (mobile flip and device checklist waived; PAT revocation by user pending) | 2026-10-04 |
-| 7. Monitoring & Decommission | 21/22 | In Progress|  |
+| 7. Monitoring & Decommission | 22/22 | Complete (rollback window waived; credential retirement outstanding) | 2026-10-06 |

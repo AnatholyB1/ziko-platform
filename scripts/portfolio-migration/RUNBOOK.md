@@ -423,7 +423,30 @@ DECOM-01 (rollback window) is WAIVED by user 2026-10-04 (D-01), not done; a writ
 
 ### 7.5 As executed
 
-Filled by plan 07-20.
+Executed 2026-10-04 to 2026-10-06 (UTC). Timeline:
+
+- Freeze: ziko write-freeze 2026-10-04T20:01:04Z (07-10).
+- Backup: encrypted archive manifest 2026-10-04T20:17:20Z, freeze proof 20:19:10Z, second copy confirmed 20:27:24Z (07-11).
+- Restore proof on wiped scratch: gate passed 2026-10-04T21:21:02Z (07-12).
+- Full verify ziko vs portfolio: passed 2026-10-05T01:04:35Z (07-13); 2 tables without a timestamp column were not content-compared.
+- Env audit and approved remediation: 2026-10-05T10:01:53Z approval, audit clean 10:07:28Z (07-14). CI off scratch 10:49:36Z (07-15); ci_token_revoked WAIVED 12:25:16Z.
+- Scratch deletion: approved 2026-10-05T21:46:45Z, done 21:48:01Z (07-16).
+- D-15 confirmation "yes": 2026-10-06T13:56:46Z (07-17).
+- ziko deletion: one Management API DELETE accepted 2026-10-06T13:59:22Z, confirmed gone 13:59:33Z; portfolio ACTIVE_HEALTHY, production health 200 (07-18).
+- Credential retirement (07-19, 2026-10-06T14:09:52Z): local credential files deleted; the user answered "not now" to revoking PATs and rotating the Vercel bypass secret, so those are OUTSTANDING.
+
+Deviations:
+
+- DECOM-01 (rollback window) WAIVED by user (D-01); a write-freeze replaced it. It is not recorded as complete.
+- D-07 wording: restore proof ran on the wiped scratch project; wipe CASCADE drops public extensions so restore recreates them, and pg_restore used --no-privileges.
+- ci_token_revoked WAIVED by user; token `ziko-ci-portfolio` still live. CI remote verify specs disabled (no CI verify target).
+- No D-13 allowlist was needed beyond the deferred items; those carry to milestone close-out (API crons 401, iOS release, Play Console state, Anthropic balance / AI chat, orphan test PNG in ziko-coach-exercises, 6-month backup retention review).
+- No dashboard deletion fallback was used: the API delete was accepted. The dashboard leftover check was verified by Claude via the read-only Vercel CLI, not by the user.
+- Not done: login-role sweep on portfolio; backup passphrase file kept until the user confirms decrypt; leftover Vercel resources `redis-crimson-brush`, `redis-ziko` and Neon `potsgres-ziko`.
+
+Historical note: migration scripts that hard-code the ziko ref and the `supabase/.temp` CLI link (to a now deleted project) are historical and must not be re-run against anything.
+
+Deletion log: `.planning/workstreams/supabase-portfolio-migration/phases/07-monitoring-decommission/07-DELETION-LOG.md` (final commit of the milestone).
 
 - 07-10: ziko write-freeze applied at 2026-10-04T20:01:04.099Z (UTC). Rollback until deletion: `node scripts/portfolio-migration/19-decom-freeze.mjs --target ziko --unfreeze --confirm-ref slkobhavpwsubnsmuhya`. T0 snapshot: reports/decom-freeze-t0.json.
 - 07-15: CI test step moved off scratch (3 scratch-valued secrets deleted, CI run 37298715805 green, gate ci_off_scratch PASS). The stale Supabase access token `ziko-ci-portfolio` was NOT revoked: the user declined and waived the gate (gate ci_token_revoked recorded as WAIVED via `18-decom-guard.mjs --record-waiver ci_token_revoked`, block `07-15 ci token waiver`). `ziko-ci-portfolio-2` stays (backs the migrate-portfolio CI secret). Milestone close-out carry: `ziko-ci-portfolio` is still live (dashboard showed "Never used") and should be revoked manually.

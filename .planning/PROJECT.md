@@ -119,7 +119,7 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 ---
 
 <details>
-<summary>v1.19 Migration Supabase ziko → portfolio [supabase-portfolio-migration] — ongoing</summary>
+<summary>v1.19 Migration Supabase ziko → portfolio [supabase-portfolio-migration] — work complete 2026-10-06 (ziko deleted; rollback window waived; credential retirement and close-out carry items outstanding)</summary>
 
 **Goal:** Migrer le projet Supabase `ziko` (`slkobhavpwsubnsmuhya`, source de vérité actuelle pour mobile/web/backend, 93 tables, données de production réelles) vers le projet Supabase partagé `portfolio` (`ubxllsvanurkwkohzxau`, héberge déjà d'autres apps sous préfixes `rh_*`/`gecko_*`), puis décommissionner l'ancien projet.
 

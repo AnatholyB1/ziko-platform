@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.19
 milestone_name: Migration Supabase ziko vers portfolio
-status: executing
-stopped_at: Completed 07-19-PLAN.md (credential retirement partial)
+status: complete
+stopped_at: Completed 07-20-PLAN.md (docs close-out; deletion log is the final commit)
 last_updated: "2026-10-06T14:10:27.167Z"
 last_activity: 2026-10-06
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 82
-  completed_plans: 81
-  percent: 99
+  completed_plans: 82
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md and .planning/workstreams/supabase-portfolio-migration/REQUIREMENTS.md
 
 **Core value:** Ziko's Supabase footprint (schema, data, auth, storage) is fully and safely consolidated into the shared `portfolio` project — zero data loss, zero regression on portfolio's existing tenants (rh_*, gecko_*), and the old `ziko` project deleted only after explicit, separate confirmation.
-**Current focus:** Phase 7 — Monitoring & Decommission
+**Current focus:** Milestone close-out (Phase 7 complete)
 
 ## Current Position
 
-Phase: 7 (Monitoring & Decommission) — planned, executing
-Plan: 20 of 22 (21 of 22 complete; 07-20 remains)
-Status: Ready to execute
+Phase: 7 (Monitoring & Decommission) — complete (rollback window waived; credential retirement outstanding)
+Plan: 22 of 22 (22 of 22 complete)
+Status: Milestone v1.19 work complete; ziko deleted 2026-10-06T13:59:22Z; close-out carry items below
 Last activity: 2026-10-06
 
-Progress: [██████████] 99%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -55,6 +55,10 @@ Progress: [██████████] 99%
 - [Phase 07]: 07-12: restore proof passed; wipe CASCADE drops public extensions so restore recreates them; pg_restore uses --no-privileges
 - [Phase 07]: 07-15: user waived ci_token_revoked (token ziko-ci-portfolio NOT revoked); waiver allowed for that single gate only
 - [Phase 07]: 07-15 carry to milestone close-out: revoke stale token ziko-ci-portfolio manually
+- [Phase 07]: freeze approach: ziko write-freeze (REVOKE + signup off, T0==T1 proof) replaced the waived rollback window
+- [Phase 07]: CI remote verify specs disabled (ci-verify-target: disabled); scratch project deleted 2026-10-05
+- [Phase 07]: ziko (slkobhavpwsubnsmuhya) deleted via Management API 2026-10-06T13:59:22Z, confirmed gone 13:59:33Z; D-15 confirmation "yes" at 13:56:46Z
+- [Phase 07]: Backup retained indefinitely (D-08); 6-month GDPR retention review due by 2027-04-06
 
 ### Pending Todos
 
@@ -66,18 +70,19 @@ Progress: [██████████] 99%
 - API crons all return 401 (pre-existing since at least 2026-09-29): check CRON_SECRET on the API project
 - Vercel Preview/Development scopes of the shared web env records may still hold ziko values; SUPABASE_PUBLISHABLE_KEY on ziko-web untouched
 - Orphan test PNG in ziko-coach-exercises; revoke stale CI token `ziko-ci-portfolio` (CI uses `ziko-ci-portfolio-2`, keep it)
+- Milestone close-out carry (Phase 7): backup retention review by 2027-04-06 (GDPR); CI remote verify specs disabled (re-enable against a dedicated CI project); leftover Vercel resources `redis-crimson-brush`, `redis-ziko`, Neon `potsgres-ziko`; confirm nothing needed from the orphan PNG in ziko-coach-exercises (bucket deleted with ziko); PR #46 (phase 7) and PR #44 (docs) open
 - OUTSTANDING credentials (user chose "not now" at 07-19; NOT revoked, local PAT file deleted but tokens still valid in the account): revoke PATs `ziko-cutover-phase6` and `ziko-decom-phase7` (value pasted in chat) at https://supabase.com/dashboard/account/tokens; rotate the Vercel Protection Bypass for Automation secret on web and API (Settings > Deployment Protection). Keep `ziko-ci-portfolio-2`. Phase 6 credential retirement (06-20 Task 3) stays OPEN. Also: delete the kept passphrase file after confirming decrypt; portfolio login-role sweep not run
 
 ### Blockers/Concerns
 
 - `portfolio`'s actual live schema/triggers/functions/buckets are unverified from this repo — Phase 1 must resolve this via direct Supabase inspection before Phase 2 can be finalized
 - True table/function count discrepancy (PROJECT.md says 73 migrations/93 tables; live grep found ~90 files/~100 `CREATE TABLE` statements) must be reconciled against `ziko`'s live `information_schema`, not migration file counts
-- Mobile-tail strategy: OTA is infeasible, native build is the flip (resolved in Phase 6); the remaining question is the drain window of old binaries before Phase 7 decommission, and iOS is not released yet
+- RESOLVED by Phase 7: ziko deleted, no further pause question. Mobile-tail strategy: OTA is infeasible, native build is the flip (resolved in Phase 6); the remaining question is the drain window of old binaries before Phase 7 decommission, and iOS is not released yet
 - Whether `portfolio`'s plan tier supports "pause" as an intermediate step before hard deletion is unverified — check before finalizing the Phase 7 runbook
 - 03-11: portfolio collision row 2b6a60fa has NULL token columns -> GoTrue admin HTTP 500; needs user-approved guarded fill before trigger stage
 
 ## Session Continuity
 
-Last session: 2026-10-06T14:10:27.156Z
-Stopped at: Completed 07-19-PLAN.md (credential retirement partial)
+Last session: 2026-10-06
+Stopped at: Completed 07-20-PLAN.md (docs close-out; deletion log is the final commit)
 Resume file: None

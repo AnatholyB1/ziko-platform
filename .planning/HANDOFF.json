@@ -71,5 +71,24 @@
       "Sevalys (sv_*) tenant drift on portfolio is live traffic, not ours",
       "Old mobile binaries pointing at ziko keep writing to ziko until users update: define the Phase 7 drain window before decommission"
     ]
+  },
+  "phase7_result": {
+    "ziko_deleted_at": "2026-10-06T13:59:22Z",
+    "method": "api",
+    "backup_archive_sha256_prefix": "1732e313ee71",
+    "backup_retention_review_at": "2027-04-06",
+    "decom_01": "waived by user (D-01)",
+    "credential_retirement": "outstanding: PATs ziko-cutover-phase6 and ziko-decom-phase7, Vercel bypass secret",
+    "deferred": [
+      "API crons 401",
+      "iOS release (Sign in with Apple in provisioning profile)",
+      "Play Console state of Android 1.5.0 (versionCode 16)",
+      "Anthropic balance / AI chat never verified on portfolio",
+      "orphan test PNG in ziko-coach-exercises",
+      "backup retention review at 6 months (GDPR)",
+      "CI remote verify specs disabled",
+      "leftover Vercel resources redis-crimson-brush, redis-ziko, Neon potsgres-ziko",
+      "Phase 6 credential retirement (06-20 Task 3) open"
+    ]
   }
 }
