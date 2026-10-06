@@ -195,6 +195,54 @@
 
 ---
 
+## Milestone: v1.19 — Migration Supabase ziko → portfolio (workstream `supabase-portfolio-migration`)
+
+**Shipped:** 2026-10-06
+**Phases:** 7 | **Plans:** 82
+
+### What Was Built
+- Live inventory of `ziko` and `portfolio` (schema, auth triggers, buckets, extensions), collision report and quota check before any code
+- 99 ziko tables and 33 functions recreated in `portfolio` as `ziko_*` through a new migration series, dry-run on a scratch project, stale-reference grep clean
+- Auth merge of 39 users (38 UUIDs preserved, 1 email collision merged under the portfolio UUID with a recorded remap), triggers gated on `app=ziko`, additive redirect allow-list merge
+- Data copy via COPY with parity, FK and orphan checks; storage copy of 10 buckets / 2,699 objects with SHA-256 checks and rebuilt storage policies
+- Cutover backend → web with smoke tests and tenant diffs (0 `rh_`/`gecko_` regression); CI repointed. Mobile flip NOT achieved (waived)
+- Decommission: write-freeze, encrypted cold backup, restore proof, full verification, separate "yes", `ziko` deleted 2026-10-06. DECOM-01 rollback window waived
+
+### What Worked
+- **Inventory-first, live-state over files** — the live catalog found 99 tables (not 93) and a third unprefixed tenant in portfolio; nothing downstream relied on migration-file counts
+- **Rehearse on scratch, then pre-flight, then typed phrase** — every portfolio write had a scratch rehearsal and a read-only pre-flight first; problems (NULL `instance_id`, NULL GoTrue token columns, login-role grants) surfaced on scratch or in pre-flight, not mid-write
+- **Fail-closed tooling with ref guards** — scripts refuse unknown or wrong project refs and require `--confirm-ref`; tested with node:test (608 tests at Phase 7 verification)
+- **Re-runnable verification suites** (`06-verify`, `06-verify-data`, `09-verify-storage`, `22-decom-verify`) reused across phases, cutover and decommission
+- **Separate confirmation for the irreversible step** — the ziko deletion had its own plan and its own plain "yes", distinct from cutover sign-off
+
+### What Was Inefficient
+- **Wrong ziko project ref almost written into a CONTEXT file** — caught before it propagated; refs should be read from one constant, never retyped
+- **Verifier bugs found late** — several gate/verifier defects (secret-grep false positive, false policy mismatch, codemod false positives) surfaced only during live rehearsals and cost extra runs
+- **Memory kills and tool time limits** — long verify/copy runs were killed by low free memory or the 10-minute tool limit (07-13 re-run single-process with a 1 GB heap; interrupted storage smoke launches left patches and temp users to clean up; EAS `--wait` killed)
+- **Token handling friction** — many short-lived PATs and bypass secrets; revocation repeatedly deferred, and at close five Supabase PATs are still live (one value was pasted into a chat) and the Vercel bypass secret is not rotated
+- **Scope of D-07 deviations** — flagged at close as friction: deviations around D-07 decisions were not bounded up front and had to be reconciled during execution
+- **Mobile tail underestimated** — the store release path (EAS setup failure, iOS provisioning without Sign in with Apple) blocked the mobile flip; it ended waived rather than done
+
+### Patterns Established
+- Gate file + authorization log (`*-AUTHORIZATIONS.md`) recording each approval block with timestamp before any irreversible step
+- Credential retirement planned as a task on every path (success and failure), with user-only dashboard actions called out explicitly
+- Tenant baseline diff (counts, policies, triggers, buckets, auth users) before and after each write to a shared project
+- Waivers recorded as waivers (REQUIREMENTS left `[ ]`, traceability "WAIVED"), never as completions
+
+### Key Lessons
+1. In a shared multi-tenant project, put tenant regression checks in the same run as every write, not as a separate step
+2. Store project refs in one guarded constant; any doc or script that retypes a ref is a risk for an irreversible action
+3. Plan long-running jobs for tool limits: resumable, idempotent, single-process with bounded memory, and poll remote jobs instead of `--wait`
+4. Revoke credentials in the same session that creates them; "later" turns into a carry-over list
+5. Start the mobile store pipeline (signing, capabilities, release workflow) early when a mobile flip is in scope
+
+### Cost Observations
+- Model mix: not tracked for this workstream
+- Sessions: many (82 plans over 15 days, 2026-09-21 → 2026-10-06; 396 commits in range)
+- Notable: checkpoint-heavy phases (typed phrases, PAT handoffs) made progress depend on user availability more than on execution speed
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -206,6 +254,7 @@
 | v1.2 | ~4 | 2 | Data-before-UI strategy, shared catalogue pattern |
 | v1.3 | ~6 | 5 | Security hardening + audit-before-close catches regression |
 | v1.4 | ~12 | 5 | Gamified credit system — DB-first concurrency safety, pre-close audit finds 2 bugs |
+| v1.19 | many | 7 | Supabase consolidation into shared `portfolio` — scratch rehearsal + typed-phrase gates for every irreversible write; waivers recorded as waivers |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -215,3 +264,4 @@
 4. **`.maybeSingle()` not `.single()`** for optional plugin checks — PGRST116 is a common gotcha
 5. **Run `/gsd-audit-milestone` before close** — caught a security regression (v1.3) and 2 functional bugs (v1.4)
 6. **Keep REQUIREMENTS.md traceability current** — stale traceability forces audit to cross-reference VERIFICATION.md files
+7. **Rehearse irreversible infrastructure steps on a scratch project first** — v1.19 caught auth and grant defects on scratch before touching the shared production project
