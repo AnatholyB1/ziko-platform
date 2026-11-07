@@ -1,167 +1,150 @@
-# Founder Offer Go-Live — RUNBOOK
+# Founder Offer Go-Live - RUNBOOK (re-baselined 2026-11-07, post v1.19)
 
-> **Post-v1.19 note:** the ziko database now lives in the shared `portfolio` Supabase project and every ziko table/function carries a `ziko_` prefix (`ziko_app_config`, `ziko_waitlist_signups`, ...). SQL in this runbook uses the prefixed names. The `supabase/migrations/2026081x_*` files cited below are the historical source migrations; the deployed schema is `supabase/portfolio-migrations/`. The project ref and migration-apply procedure below predate the move and must be re-validated against the portfolio project before reuse.
+**Audience:** a person who has not read any planning document and is about to change production.
+This document is the whole procedure; its section order is a safety property. Read it top to bottom
+before running anything.
 
-**Audience:** a person who has not read any planning document for this milestone and is about to
-change production. Read this file top to bottom before running anything. This document **is** the
-whole procedure — its section order is a safety property, not a convenience. Sections 4 through 11
-are added by later plans in this same phase (06-02, 06-03, 06-04). If you find this file with only
-sections 0 through 3 present, **do not improvise the missing sections from memory or from this
-phase's planning docs** — stop and wait for the plan that adds them.
+**Production is the shared portfolio Supabase project, ref `ubxllsvanurkwkohzxau`.** Every ziko table
+and function carries the `ziko_` prefix. The old ziko project (`slkobhavpwsubnsmuhya`) is deleted: never
+query or link it. The deployed schema is `supabase/portfolio-migrations/` (5 files, already applied).
 
-No secret value is ever written into this runbook, into the evidence log
-(`06-GO-LIVE-LOG.md`), or into a chat transcript when results are pasted back. Only command names and
-result values are recorded — never a token, a key, or a connection string.
+**Hard rules (user decisions 2026-11-07):**
+- NO `TRUNCATE` and NO sequence reset on production. `ziko_waitlist_signups` holds 94 real signups.
+- The claim RPC smoke test runs on a disposable database only (section 7).
+- Every production write (sections 8 and 10) is human-fired, on the user's explicit authorization.
+- Reads (`SELECT` only) may be run by the operator or by a session with read-only access.
+- No secret value is ever written into this runbook, the evidence log (`06-GO-LIVE-LOG.md`) or a chat.
+  Record command names and result values only.
 
----
-
-## Section 0 — Preconditions
-
-Confirm all four of the following before touching anything. Each has its own literal check and its
-own fallback if it fails.
-
-**0.1 — You hold production credentials.**
-You need `SUPABASE_ACCESS_TOKEN` for the CLI path used in Section 1/2, and
-`SUPABASE_SERVICE_ROLE_KEY` (or Supabase SQL Editor access) for the direct-query path used in
-Section 3 and later sections. No Claude session in this milestone has ever held either of these for
-production — every check and command in this document was written and rehearsed without a real
-credential, never fired. If you are a Claude session reading this: you cannot complete this section
-and must stop here; this is a human-only document from this point forward.
-
-**0.2 — The two GitHub Actions secrets are actually configured on the repository.**
-CI's `migrate-supabase` job (`.github/workflows/ci.yml`) reads `SUPABASE_PROJECT_ID` and
-`SUPABASE_ACCESS_TOKEN` as repository secrets. Confirm both are present:
-
-```
-gh secret list --repo AnatholyB1/ziko-platform
-```
-
-or open the repository's Settings → Secrets and variables → Actions page directly. Their absence is
-not hypothetical — `STATE.md` already records an unresolved analogue for `test-rls.yml`'s own
-`SUPABASE_TEST_PROJECT_ID`/`SUPABASE_TEST_SERVICE_ROLE_KEY`/`SUPABASE_TEST_URL` secrets, so treat this
-as a real, precedented risk, not a formality. **Fallback if either secret is missing:** do not merge
-and hope. Apply the three pending migration files by hand through the Supabase SQL Editor instead —
-`supabase/migrations/20260815_waitlist_retention_config.sql`,
-`supabase/migrations/20260816_premium_credit_flag.sql`, and
-`supabase/migrations/20260816_premium_credit_grant.sql` — pasting each file's contents in order, then
-proceed to Section 3's confirmation queries as normal.
-
-**0.3 — The production project ref.**
-Every verification query in this document is run against project ref **`slkobhavpwsubnsmuhya`**
-specifically — never against whichever project a terminal or MCP session happens to be linked to at
-the time. `.github/workflows/test-rls.yml` runs a near-identical migration-apply block against a
-*different* project (`SUPABASE_TEST_PROJECT_ID`); confusing the two is the single most likely way to
-believe production is live when it is not (see Section 2's closing note).
-
-**0.4 — The real production web domain.**
-Before running any URL check later in this document (CGU/CGV liveness, entry-point spot-check),
-confirm the actual production site domain by reading `apps/web/.env.local`'s `NEXT_PUBLIC_SITE_URL`
-directly. This research could not read that value — it is a gitignored env file — so any domain named
-in this document's examples (e.g. `ziko-app.com`) is an unconfirmed convenience, not a verified fact.
-Say what the value actually is before using it in a command.
+Each production step below has the same four parts: READ (verification query), FIRE (exact command),
+EXPECT (result), ROLLBACK.
 
 ---
 
-## Section 1 — Merge the milestone branch to `main`
+## Section 0 - Preconditions
+0.1 You can run SQL against project `ubxllsvanurkwkohzxau` (SQL Editor or CLI linked to it). Confirm the
+target before every query: `SELECT current_database(), (SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'ziko\_%')` must show at least 99 ziko_ tables.
+0.2 For writes you hold the user's explicit authorization for that step, quoted in the log.
+0.3 Read `NEXT_PUBLIC_SITE_URL` from the Vercel production env (or `apps/web/.env.local`) and say what it
+is. Examples below use `<site>`; `ziko-app.com` is unconfirmed until you do.
+0.4 CI: the `migrate-portfolio` job in `.github/workflows/ci.yml` is dormant
+(`vars.PORTFOLIO_MIGRATIONS_ENABLED` must NOT be `true` for this go-live: nothing to apply). It also refuses
+any project other than `ubxllsvanurkwkohzxau`. `test-rls.yml` targets a separate test project and proves
+nothing about production.
 
-**State as of planning (2026-08-18):** `git rev-list --count main..HEAD` is 157,
-`git rev-list --count HEAD..main` is 0, and `git diff main --name-status -- supabase/migrations/`
-shows all four migration files as additions (`A`), not modifications — including
-`20260812_waitlist_founder_offer.sql`, which reached production out-of-band during Phase 1's own
-testing, never through this repository's CI.
+## Section 1 - Deploy the code (push main)
+1.1 READ: `git rev-list --count origin/main..milestone/v1.16-waitlist`; `git rev-list --count milestone/v1.16-waitlist..origin/main`; `git diff origin/main --name-status -- supabase/ backend/ apps/`. Report the real numbers.
+1.2 FIRE (human): open a PR `milestone/v1.16-waitlist` -> `main`, land it as ONE merge or squash commit.
+Record PR number and merge SHA.
+1.3 EXPECT: the `push` run on main goes green; `migrate-portfolio` is SKIPPED (dormant by design) and
+`migration-guard` passes. A skipped `migrate-portfolio` is correct here, unlike the old project.
+1.4 ROLLBACK: Vercel dashboard -> previous production deployment -> Promote (no DB effect).
 
-**Do not trust those numbers.** The branch moves. Re-run all three yourself right now:
+## Section 2 - Confirm the deploy
+2.1 READ: `curl -s -o /dev/null -w '%{http_code}' https://ziko-api-lilac.vercel.app/health` -> 200.
+2.2 READ: Vercel production deployment SHA for `ziko-api` and `ziko-web` equals the merge SHA from 1.2.
+A 200 alone does not prove which code runs. If /health is not 200, record it as a finding and stop.
 
-```
-git rev-list --count main..HEAD
-git rev-list --count HEAD..main
-git diff main --name-status -- supabase/migrations/
-```
-
-Report what you actually see.
-
-**Open a pull request from the milestone branch to `main` and land it as a single merge commit or a
-single squash commit.** This is not a style preference — it is load-bearing for Section 2. CI's
-migration-change detector (`.github/workflows/ci.yml`'s `migrate-supabase` job) diffs only the
-checked-out `HEAD` against its immediate parent (`git diff --name-only HEAD~1 HEAD`), and the job's
-checkout uses `fetch-depth: 2`, which fetches exactly enough history for that single comparison to
-resolve and no more. A raw multi-commit fast-forward push of this branch still fires the workflow
-once, but the detector then examines only the very last of however many commits landed in that push —
-if that last commit does not itself touch `supabase/migrations/`, the detector resolves `changed=false`,
-the entire `Setup Supabase CLI` / `Push migrations` step block is skipped by its own guard, and the job
-finishes green having applied nothing. A single merge or squash commit collapses the push to exactly
-one commit against `main`'s prior tip, which is what the detector is actually built to see.
-
-Record the PR number and the merge commit SHA.
-
----
-
-## Section 2 — Confirm CI applied the migrations
-
-Open the GitHub Actions run triggered by the merge **push event on `main`** — not a pull-request run.
-The `migrate-supabase` job's condition is `github.event_name == 'push' && github.ref ==
-'refs/heads/main'`; it does not fire on `pull_request` events at all, so a PR's own checks tell you
-nothing about the migration apply.
-
-Expand the `Apply Supabase migrations` job and read the state of each step:
-
-- `Check for migration changes` — always runs, sets `changed=true` or `changed=false`.
-- `Setup Supabase CLI` — should show as **executed**, not skipped.
-- `Push migrations` — should show as **executed**, not skipped.
-
-A skipped `Setup Supabase CLI` / `Push migrations` pair means the change detector resolved `false` and
-nothing was applied, **regardless of the job's overall colour**. A green job with those two steps
-skipped is not a success — it is Pitfall 2 from `06-RESEARCH.md` happening in real time.
-
-**The badge is not the evidence.** Even if both steps show as executed, do not treat that as proof —
-proceed immediately to Section 3's direct read. Two independent things can go wrong even on a "green"
-run: `supabase migration repair ... || true` silently swallows a repair failure (Assumption A3), and
-`.github/workflows/test-rls.yml` runs an almost identical apply block against a *different* project
-(`SUPABASE_TEST_PROJECT_ID`) — a green run of that workflow proves nothing about production. Only a
-direct query against `slkobhavpwsubnsmuhya` distinguishes "migrations applied to production" from
-"migrations applied to the test project" or "not applied at all."
-
----
-
-## Section 3 — Confirm the pipeline moved, on one artifact at each end
-
-This is the tracer confirmation. It is deliberately narrow: two checks, one per end of the pipeline,
-both run immediately after Section 2.
-
-**3.1 — Database end.** Run, against production (`slkobhavpwsubnsmuhya`) specifically:
-
+## Section 3 - Database state tracer (read-only, no apply)
 ```sql
-SELECT key, value FROM public.ziko_app_config ORDER BY key;
+SELECT version FROM supabase_migrations.schema_migrations WHERE version >= '20261001101852' ORDER BY version;
+SELECT key, value, jsonb_typeof(value) FROM public.ziko_app_config ORDER BY key;
 ```
+EXPECT: 5 versions (20261001101852, ...101853, 20261002090000, ...090001, 20261002160000); config rows
+`premium_credit_cap_enabled` false, `waitlist_retention_years` 3, `waitlist_reveal_threshold` 200. If the
+ledger lists fewer versions, record it; do not hand-apply anything (escalate).
 
-Before this merge, production held exactly one row: `waitlist_reveal_threshold`. A
-`premium_credit_cap_enabled` row now being present is unambiguous proof that a previously-unapplied
-migration landed — this row did not exist by any other path before this plan ran
-(`supabase/migrations/20260816_premium_credit_flag.sql:44`). If the result set is still one row, the
-apply did not happen: say so and stop here, do not retry blind. Escalate to whichever failure shape
-applies — a skipped CI step pair points at the change detector and merge strategy (Section 1/2); an
-executed-looking CI run with no schema change points at the secrets precondition (Section 0.2) or a
-silently swallowed repair failure.
-
-**3.2 — Deploy end.** Run:
-
+## Section 4 - Full artifact check (read-only; any miss halts)
+```sql
+SELECT proname FROM pg_proc WHERE proname IN ('ziko_claim_waitlist_signup','ziko_get_waitlist_founder_status','ziko_grant_premium_credits','ziko_reset_waitlist_founder_sequence') ORDER BY 1;
+SELECT column_name, data_type, column_default FROM information_schema.columns WHERE table_name='ziko_user_profiles' AND column_name='is_lifetime_premium';
+SELECT last_value, is_called FROM public.ziko_waitlist_founder_seq;
 ```
-curl -s https://ziko-api-lilac.vercel.app/health
+EXPECT: 4 function names; one boolean column default false; sequence last_value 95 is_called as observed
+(it must NOT be changed by this go-live).
+
+## Section 5 - Waitlist and consent snapshot (read-only)
+```sql
+SELECT count(*) AS total, count(*) FILTER (WHERE is_founder) AS founders,
+       count(*) FILTER (WHERE consent_given_at IS NULL) AS no_consent,
+       count(*) FILTER (WHERE anonymized_at IS NOT NULL) AS anonymized
+FROM public.ziko_waitlist_signups;
 ```
+EXPECT (2026-11-07 reference): 94 / 94 / 19 / record. Growth is fine, shrinkage is a finding. The 19
+without consent are kept and excluded from any send; their ids are in `DEPLOY-CHECKLIST-v1.16.md` (RGPD).
+Test-account purge (PURGE-05): the portfolio `auth.users` is SHARED with other apps. Run
+`node --env-file=<env> scripts/purge-test-accounts/dry-run.mjs` only after confirming it scopes to ziko
+users (via `ziko_user_profiles`) and uses ziko_ table names; it removes nothing. Record
+`users_scanned`, `candidates`, `flagged_cross_linked`, `to_delete`. `to_delete` > 0 stops the launch and
+hands off to `scripts/purge-test-accounts/RUNBOOK.md` (referenced, not restated).
 
-and confirm HTTP 200. Then open the Vercel dashboard and confirm the current production deployment's
-commit SHA equals the merge commit SHA recorded in Section 1. **A 200 alone only proves the API is
-up** — it does not prove which code is running. The SHA match is what proves Phase 4's credit-gate
-code (the code that reads `premium_credit_cap_enabled` instead of unconditionally bypassing the
-credit gate for `tier='premium'`) is the code actually deployed, not just that some earlier deploy is
-still serving traffic.
+## Section 6 - Premium grandfathering and finite allocation (read-only)
+```sql
+SELECT count(*) FILTER (WHERE tier='premium') AS premium,
+       count(*) FILTER (WHERE tier='premium' AND is_lifetime_premium) AS lifetime,
+       count(*) FILTER (WHERE tier='premium' AND NOT is_lifetime_premium) AS not_grandfathered,
+       count(*) AS profiles
+FROM public.ziko_user_profiles;
+```
+EXPECT: premium 21, lifetime 21, not_grandfathered 0, profiles 40. `not_grandfathered > 0` halts: a premium
+user without the lifetime flag is an unreviewed case (user decision needed).
+Allocation (every premium user must already hold this month's grant, `PREMIUM_MONTHLY_GRANT` = 300,
+written by the cron `/credits/cron/premium-grant` on the 1st at 00:00 UTC, independent of the flag):
+```sql
+SELECT count(*) AS premium_without_grant FROM public.ziko_user_profiles p
+WHERE p.tier='premium' AND NOT EXISTS (SELECT 1 FROM public.ziko_ai_credit_transactions t
+  WHERE t.user_id=p.id AND t.source='premium_grant'
+    AND t.idempotency_key='premium_grant_'||to_char(now() AT TIME ZONE 'UTC','YYYY-MM'));
+```
+EXPECT 0. If > 0: the cron did not fund them. Do not flip the flag. Human trigger of the cron
+(`GET /credits/cron/premium-grant` with the cron secret, idempotent per month) then re-read; or escalate.
 
----
+## Section 7 - Smoke test of `ziko_claim_waitlist_signup` (DISPOSABLE DATABASE ONLY)
+Never run against `ubxllsvanurkwkohzxau`. Use a throwaway Postgres (ports 3140-3179 / 54440-54479 per
+the orchestration file; lock `.planning/.machine-lock`), bootstrapped with
+`scripts/portfolio-migration/00-bootstrap-supabase-functions.sql`, then the 5 files of
+`supabase/portfolio-migrations/` in order.
+```sql
+SELECT * FROM public.ziko_claim_waitlist_signup('smoke@example.invalid','athlete','fr',NULL,NULL);  -- as service_role
+SELECT * FROM public.ziko_claim_waitlist_signup('smoke@example.invalid','athlete','fr',NULL,NULL);  -- repeat
+SELECT * FROM public.ziko_get_waitlist_founder_status();
+```
+EXPECT: first call `is_new` true, `is_founder` true, `founder_rank` 1 (fresh DB); repeat call `is_new`
+false, same rank, no error. The function is service_role-only; an anon call failing is a caller error.
+Also covers Phase 5's carried-forward "real submission success/duplicate" gap at DB level. Drop the
+database afterwards. No production counterpart exists: production rows are real.
 
-**Both checks in Section 3 must pass before proceeding to any later section of this document.** The
-full three-migration confirmation (all three pending migrations, not just the one flag row), the
-purge re-check, the waitlist smoke test and cleanup, the legal-liveness gate, and the flag flip all
-live in sections 4 through 9, added by plan 06-02 and 06-03. **Do not attempt those from memory if
-they are not yet present in this file** — this document is written to be complete for the step it
-covers and incomplete on purpose for the steps it doesn't, so that nobody improvises a destructive
-step from a planning conversation instead of a written, reviewed procedure.
+## Section 8 - Reveal threshold 200 -> 30 (PRODUCTION WRITE, human-fired, explicit authorization)
+READ (before): `SELECT value, jsonb_typeof(value) FROM public.ziko_app_config WHERE key='waitlist_reveal_threshold';` -> 200 / number.
+FIRE: `UPDATE public.ziko_app_config SET value='30'::jsonb, updated_at=now() WHERE key='waitlist_reveal_threshold';` -> `UPDATE 1`.
+EXPECT (after READ): 30 / number. Meaning: the counter stays hidden until remaining <= 30, i.e. 170 of
+200 claimed; at 94 claimed it is hidden. `SELECT * FROM public.ziko_get_waitlist_founder_status();`
+-> `should_display` false.
+ROLLBACK: same UPDATE with `'200'::jsonb`.
+
+## Section 9 - Legal text live (reads, before section 10)
+`curl -sI <site>/fr/cgv`, `<site>/fr/cgu`, `<site>/en/cgv`, `<site>/en/cgu`: all four 200 (a redirect chain
+ending on the same document is fine). Open one in a browser: it must render the terms, not an error
+page. Any failure stops here: the flag does not flip.
+
+## Section 10 - Enable the credit cap (PRODUCTION WRITE, human-fired, after 6 and 9 are green)
+READ (before): `SELECT value, jsonb_typeof(value) FROM public.ziko_app_config WHERE key='premium_credit_cap_enabled';` -> false / boolean.
+FIRE: `UPDATE public.ziko_app_config SET value='true'::jsonb, updated_at=now() WHERE key='premium_credit_cap_enabled';` -> `UPDATE 1`.
+EXPECT (after READ): true / boolean. A string type means the flag is silently off
+(`creditGate.ts` tests `value === true`): reissue. creditGate re-reads on every request, so no deploy.
+After the flip the 21 grandfathered premium users run on the finite 300/month allocation, like everyone.
+ROLLBACK (allowed, immediate, no deploy): `UPDATE ... SET value='false'::jsonb ...` and repeat the READ.
+
+## Section 11 - Public surface and carried-forward Phase 5 gaps
+Click every entry point on `<site>` in fr and en (homepage founders section, both `/coachs` CTAs landing
+on `/fondateurs` with the coach profile pre-selected, header, footer); confirm the founders path is in
+the served sitemap. Submit one real address you control: this CREATES a real row (no cleanup, no
+TRUNCATE); resubmit the same address and confirm an indistinguishable response. Look for the
+`waitlist_signup` event in Vercel Analytics (external dashboard, backstop check; links working says
+nothing about the event). FOND-06 live reveal: it needs the threshold raised, which is a production
+write; do it only with separate explicit authorization, and restore to 30 in the same sitting. Otherwise
+record the gap as open (the disposable-DB test in section 7 covers the RPC, not the display).
+
+## Section 12 - Rollback summary
+Flag back to false (section 10); threshold back to 200 (section 8); delink entry points; Vercel previous
+deployment. There is no irreversible step in this procedure. Do not improvise anything else.
