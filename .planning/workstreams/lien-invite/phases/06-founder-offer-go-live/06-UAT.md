@@ -64,3 +64,50 @@ Caveat: tests ran from a stubbed `pg_net`, no storage service, local PG 18 rathe
 
 `06-teardown.ps1` run at the end: processes on 3141-3144 killed by port, disposable Postgres stopped, `apps/web/.env.local` and the scratch
 directory removed. The production portfolio project (`ubxllsvanurkwkohzxau`) and any real credential were never referenced.
+
+## Addendum — client-DML revoke + red-spec triage (builder B7, branch `phase/06-revoke-rls`)
+
+Same disposable stack, ports 54450 / 3151-3154 (scripts now honour `UAT_*_PORT`, `UAT_PORTS` for teardown). Production portfolio project not touched.
+
+### Migration `supabase/portfolio-migrations/20261107170000_ziko_revoke_client_dml.sql`
+
+Static, idempotent REVOKEs for **every** `ziko_*` table (99), nothing else. Derivation: `pg_policy` as built by all portfolio migrations + a scan of every
+`.from('ziko_*')` writer in apps/, plugins/, packages/, backend/api/src (the only dynamic `.from(var)` is a read in onboarding `ziko-chat.tsx`).
+Rules: (1) TRUNCATE/REFERENCES/TRIGGER/MAINTAIN revoked from anon+authenticated everywhere; (2) anon loses INSERT/UPDATE/DELETE everywhere except
+3 supplement catalog tables that have explicit `TO anon` write policies and are written by the scraper with the anon key; (3) authenticated keeps a DML
+privilege only if a policy covers it AND some code path writes the table with `.from()` (xp/coin/badge/gift/shop writes are SECURITY DEFINER RPCs); (4) server-only
+credit tables (`ziko_user_ai_credits`, `ziko_ai_credit_transactions`, `ziko_user_promo_redemptions`; service-key writers + definer RPCs) are SELECT-only for authenticated.
+SELECT untouched. Default privileges deliberately not altered (shared project; every new ziko table migration must REVOKE explicitly).
+Matrix evidence: `uat/privilege-matrix-before.txt`, `uat/privilege-matrix-after.txt`.
+
+| | before | after |
+|---|---|---|
+| tables with TRUNCATE/REFERENCES/TRIGGER/MAINTAIN for anon+authenticated | 99 x 2 | 0 |
+| anon holds DML | 96 tables full DML | 3 tables (supplement brands/prices/catalog, intentional) |
+| authenticated holds full I/U/D | 92 | 48 full + 22 partial; 29 SELECT-only (config, credits, ledgers, waitlist, definitions, gifts/xp/coin ledgers, ...) |
+
+Proof as the real roles: `authenticated UPDATE ziko_user_ai_credits` -> permission denied (was allowed by the `_own` policy: a user could set their own balance);
+`anon|authenticated TRUNCATE ziko_habits` -> permission denied; `anon DELETE ziko_waitlist_signups` -> permission denied; kept paths (anon supplements, authenticated own-row writes) still work.
+Re-applying the file twice in a transaction: no error. UAT after migration: **36/36**. Backend RLS suite: **123/129 before -> 129/129 after** (with the spec fixes below).
+
+### The 6 red RLS specs — disposition
+
+| Spec | Verdict | Evidence / action |
+|---|---|---|
+| `premium-credit-gate.spec.ts:91`, `waitlist-config-rpc.spec.ts:38` (anon write to `ziko_app_config` expects an error) | real grant posture bug, **fixed in code** (migration) | now `42501`; specs unchanged and green |
+| `onboarding-profile.spec.ts:192` | stale spec | migration 44-01 (Delta 2) deliberately stamps `next_review_due_at=NOW()+7d` on `onboarding_profile` (function comment + `athlete-decisions.spec.ts` asserts it). Spec updated: last_review_at null, due ~ now+7d |
+| `weekly-review-duplicate-fire.spec.ts:152,241` (`no_state`) | **test-harness bug** (pre-existing, also in CI): `src/tools/db.ts clientForUser()` reads `SUPABASE_SERVICE_KEY` and falls back to the anon key; the test env only defines `SUPABASE_SERVICE_ROLE_KEY`, so `fetchWeeklyReviewContext` read `ziko_athlete_state` as anon -> 0 rows -> `no_state`. Fixed in `test/setup.ts` (maps ROLE_KEY -> SERVICE_KEY, tests only) |
+| `coach-rls.spec.ts:200` (needs exercises seed) | env | spec now self-seeds a throwaway `ziko_exercises` row when `seed.sql` is absent and removes it |
+| side effect of the migration | `waitlist-rls.spec.ts` 4 tests asserted the old "silent 0 rows" posture; now PostgREST answers 42501 for anon/authenticated UPDATE/DELETE | assertion widened to "no row written" (42501 or empty) |
+
+### Bugs found (ziko scope)
+
+| SEV | File:line | Problem | Fix |
+|---|---|---|---|
+| HIGH (fixed) | `supabase/portfolio-migrations/20261001101852_portfolio_ziko_schema.sql:1634+` | every ziko table granted all privileges to anon/authenticated; user could write own `ziko_user_ai_credits.balance`; anon could TRUNCATE any table | new revoke migration |
+| MED | `backend/api/src/routes/supplements.ts:5-8`, `scrapers/index.ts` + policies `*_anon_write` (`USING true`) | the supplement catalog scraper writes with the anon (publishable) key, so anyone holding the public anon key can rewrite/delete the supplement catalog | follow-up: scraper -> service role, then drop the 3 anon-write policies and the 3 kept anon DML grants |
+| MED | `backend/api/src/services/creditService.ts:14`, `middleware/creditGate.ts`, `coach/ai/service.ts:30` | `SUPABASE_SERVICE_KEY ?? SUPABASE_PUBLISHABLE_KEY` silent fallback: when the service key is missing, credit writes fail under RLS instead of the process refusing to start | fail fast when the key is absent in production (not changed: needs env confirmation) |
+| LOW | `plugins/pantry/src/screens/{PantryPlugin,RecipeDetail,ShoppingList}.tsx` | read/write unprefixed `shopping_list` / `shopping_list_items`; no such table exists in the portfolio schema (codemod miss or never created) | confirm intent, add table migration or prefix |
+| INFO | tables with `authenticated` DML kept by policy (ziko_coach_*, ziko_ai_cost_log, ...) | backend mixes service-key and user-JWT clients, so a tighter per-table cut needs a code audit | follow-up |
+
+Teardown: `UAT_ROOT=... UAT_PORTS=3151,3152,3153,3154 06-teardown.ps1`, ports 3151-3154 and PG 54450 stopped, scratch removed.
