@@ -25,3 +25,8 @@ Target auth = projet `portfolio` ubxllsvanurkwkohzxau (le projet `ziko` slkobhav
 - SHA-1 keystore EAS prod (public, via Expo GraphQL, package com.ziko.mobile): 66:76:D0:65:58:83:BA:51:6B:6F:50:F5:06:0A:AD:2B:F8:F4:39:9E
 - Android client created in GCP ziko-491420: 450830070582-8m4aval4rinqm50ru6lt6lsj2o280lmr.apps.googleusercontent.com
 - Remaining human: Supabase Google provider (secret, Skip Nonce Check, authorized IDs Web,Android,iOS), Apple capability, Play App Signing SHA-1 (add as 2nd Android client or extra fingerprint), consent screen publish, mailer_autoconfirm decision.
+
+## Update: Play App Signing client (2026-11-07)
+- Play App Signing SHA-1 (public) AC:7B:04:8A:35:30:0B:9E:F6:87:BF:B9:7E:1B:0C:58:E0:13:F6:2C -> Android client 450830070582-7sl8pr0amvkjb383ckt7qa7ii3c2p852.apps.googleusercontent.com (GCP ziko-491420).
+- Authorized Client IDs for Supabase Google provider: Web 72naafunl4eefm18fmudih0sv5nho3rb, Android 8m4aval4rinqm50ru6lt6lsj2o280lmr, Android(Play) 7sl8pr0amvkjb383ckt7qa7ii3c2p852, iOS 16jfrfkhi1de75sm7plrljvrvjbr4rs8 (all 450830070582-*.apps.googleusercontent.com), Web first.
+- NOT done (left to the user): secret entry in Supabase, provider enablement, Apple capability, consent screen publish, mailer_autoconfirm change.
