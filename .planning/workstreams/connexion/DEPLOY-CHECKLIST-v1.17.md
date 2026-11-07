@@ -47,3 +47,12 @@ Etapes (ordre):
 6. Seulement apres 5: Auth > Sign In / Providers > Email: activer "Confirm email" (mailer_autoconfirm=false). Livrer la version mobile contenant l'ecran "Verifie ton email" (phase/03-email-verify) AVANT ce basculement, sinon les inscriptions des anciennes versions de l'app resteront sans session. Verifier les autres apps du projet (sv_, gecko, rh).
 7. Rollback: re-cocher l'autoconfirm (Confirm email OFF).
 Note: le mail "Reset password" (forgot.tsx) reste en lien par defaut: gabarit a revoir separement.
+
+## Etat prod au 2026-11-07 (fait par l'utilisateur, relu par lecture publique de /auth/v1/settings)
+- [x] Supabase portfolio: provider Google active et sauvegarde (4 Client IDs, secret, Skip Nonce Check ON). Relecture: google=true.
+- [x] Apple Developer: Sign In with Apple active sur l'App ID com.ziko.mobile (provisioning profiles a regenerer au prochain build iOS).
+- [ ] Supabase provider Apple (Client IDs com.ziko.mobile): relecture actuelle apple=false.
+- [ ] SMTP Resend: domaine mail.ziko-app.com verifie, expediteur retenu no-reply@mail.ziko-app.com (a utiliser a l'etape 2 ci-dessus a la place de no-reply@ziko-app.com). Note: le backend envoie depuis coach@ziko-app.com (domaine racine ziko-app.com absent du compte Resend visible: a verifier, distinct de mail.ziko-app.com).
+- [ ] Gabarit "Confirm sign up", test d'envoi reel, puis "Confirm email" (mailer_autoconfirm est encore true) apres livraison de l'app avec l'ecran de verification.
+- [ ] Ecran de consentement Google "In production"; [ ] Google Android: les 2 clients (EAS + Play) crees.
+- Preuve flux Google: AUCUN compte de test fourni => flux web/natif non teste.
