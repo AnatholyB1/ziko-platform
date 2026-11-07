@@ -21,4 +21,5 @@ Phases 42, 43, 44 are COMPLETE and already in origin/main (44 verified 5/5, devi
 - [x] 47a merged (815fd362), backend gate green in builder: 193 passed/3 skipped
 - [ ] integration worktree gate (needs npm install --no-save; machine lock)
 - [x] 45 backend, 46 logic, design contracts 45+46 merged (432a1416), gate green
-- [ ] audits 45/46, 47b push builder, UI build after design validation (gallery phases/design-gallery-45-46.html)
+- [x] audits+fixes 45/46, 47b merged; gate green
+- [ ] design validation by user -> UI build 45 overlay + 46 drawer/toast; critique pass; UAT; 47 verification; close-out

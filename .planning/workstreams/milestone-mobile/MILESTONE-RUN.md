@@ -18,3 +18,5 @@ See messages to team-lead (batch 1).
 | 2026-11-07 | merge 47a | milestone/v1.18 | 815fd362 | builder gate: 193 pass, tsc clean |
 | 2026-11-07 | merge 46 logic, 45 backend, design 45/46 (no conflicts) | milestone/v1.18 | 432a1416 | backend tsc OK, backend 249 pass/3 skip/14 todo (8 live specs skipped), root vitest 188/188, sdk tsc OK, mobile tsc 0 errors |
 Not proven: migrations never executed (supabase/portfolio-migrations/20261107100{000,100,200}_*.sql); loader/guard/foreground refetch untested on device; design agent skipped most design skills (re-critique before build).
+| 2026-11-07 | merge 47b, audits 45/46, fixes 45/46 | milestone/v1.18 | (see git log) | backend 267 pass, root 197 pass, mobile tsc 0 err |
+Pending: user validation of design gallery (4 questions) -> then UI build (45 overlay, 46 drawer+toast+unlock queue), critique pass of mockups, final audits of UI, UAT (backend 8080 + Expo web / Playwright), 47 final verification.
