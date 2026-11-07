@@ -10,6 +10,9 @@ import {
   isPluginIdUnlocked,
   getLockedPlugins,
   getNewlyUnlockedPlugins,
+  shouldDiscardLevelRead,
+  reduceLevelRead,
+  FIRST_LEVEL_READ_TIMEOUT_MS,
   getPluginIdFromSegments,
   isPluginRouteLocked,
   PLUGIN_LEVEL_MAP,
@@ -140,5 +143,54 @@ describe('PLUGIN_LEVEL_MAP stays in sync with plugin manifests', () => {
       .map((d) => d.name)
       .sort();
     expect(Object.keys(PLUGIN_LEVEL_MAP).sort()).toEqual(dirs);
+  });
+});
+
+describe('shouldDiscardLevelRead', () => {
+  it('keeps a read for the same user and newest sequence', () => {
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: 'a', requestSeq: 2, appliedSeq: 1 })).toBe(false);
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: 'a', requestSeq: 2, appliedSeq: 2 })).toBe(false);
+  });
+  it('discards after sign-out or account switch', () => {
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: null, requestSeq: 2, appliedSeq: 0 })).toBe(true);
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: undefined, requestSeq: 2, appliedSeq: 0 })).toBe(true);
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: 'b', requestSeq: 2, appliedSeq: 0 })).toBe(true);
+  });
+  it('discards an out-of-order older response', () => {
+    expect(shouldDiscardLevelRead({ requestUserId: 'a', currentUserId: 'a', requestSeq: 1, appliedSeq: 2 })).toBe(true);
+  });
+});
+
+describe('reduceLevelRead', () => {
+  const fresh = { level: 1, loaded: false, fallback: false };
+  it('first read is taken as-is and never announced', () => {
+    expect(reduceLevelRead(fresh, 4)).toEqual({ state: { level: 4, loaded: true, fallback: false }, levelUp: null });
+    expect(reduceLevelRead(fresh, 'x' as unknown as number).state.level).toBe(1);
+  });
+  it('announces a raise after a real read', () => {
+    const r = reduceLevelRead({ level: 2, loaded: true, fallback: false }, 3);
+    expect(r.state.level).toBe(3);
+    expect(r.levelUp).toEqual({ from: 2, to: 3 });
+  });
+  it('never lowers the level (stale response)', () => {
+    const r = reduceLevelRead({ level: 3, loaded: true, fallback: false }, 2);
+    expect(r.state.level).toBe(3);
+    expect(r.levelUp).toBeNull();
+  });
+  it('first real read after the timeout fallback is not announced', () => {
+    const r = reduceLevelRead({ level: 1, loaded: true, fallback: true }, 4);
+    expect(r).toEqual({ state: { level: 4, loaded: true, fallback: false }, levelUp: null });
+  });
+  it('timeout constant is a short positive delay', () => {
+    expect(FIRST_LEVEL_READ_TIMEOUT_MS).toBeGreaterThan(0);
+    expect(FIRST_LEVEL_READ_TIMEOUT_MS).toBeLessThanOrEqual(10000);
+  });
+});
+
+describe('app route directories stay covered by the map', () => {
+  it('every apps/mobile (plugins) route dir has a PLUGIN_LEVEL_MAP entry', () => {
+    const dir = join(__dirname, '..', '..', '..', 'apps', 'mobile', 'app', '(app)', '(plugins)');
+    const dirs = readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+    expect(dirs.filter((d) => !(d in PLUGIN_LEVEL_MAP))).toEqual([]);
   });
 });
