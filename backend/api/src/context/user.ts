@@ -36,13 +36,72 @@ export interface UserContext {
     questions: Array<{ id: string; type: string; label: string }>;
     answers: Array<{ question_id: string; value: string | number }>;
   }>;
+  /** Phase 47 OPS-01: compact coaching state; defaults when no row exists. */
+  athleteState: AthleteStateContext;
+}
+
+export interface AthleteStateContext {
+  level: number;
+  tier: number;
+  points: number;
+  readiness: 'fragile' | 'building' | 'ready';
+  focus: string | null;
+}
+
+/** Hard cap on the focus text injected into the system prompt. */
+export const ATHLETE_STATE_FOCUS_MAX_CHARS = 300;
+
+const READINESS_VALUES = ['fragile', 'building', 'ready'] as const;
+
+/** Fail-safe defaults (mirror the athlete_state column defaults). */
+export const DEFAULT_ATHLETE_STATE: AthleteStateContext = {
+  level: 1,
+  tier: 1,
+  points: 0,
+  readiness: 'fragile',
+  focus: null,
+};
+
+/**
+ * Normalises a raw ziko_athlete_state row (or null) into the bounded
+ * context shape. Only five scalar fields are ever read: no onboarding
+ * profile, rolling summary, decision detail or other free-form JSON.
+ */
+export function toAthleteStateContext(row: any): AthleteStateContext {
+  if (!row) return { ...DEFAULT_ATHLETE_STATE };
+  const int = (v: unknown, fallback: number, min: number) => {
+    const n = Math.floor(Number(v));
+    return Number.isFinite(n) && n >= min ? n : fallback;
+  };
+  const focusRaw =
+    typeof row.current_focus_summary === 'string'
+      ? row.current_focus_summary.replace(/\s+/g, ' ').trim()
+      : '';
+  return {
+    level: int(row.level, 1, 1),
+    tier: int(row.tier, 1, 1),
+    points: int(row.points, 0, 0),
+    readiness: (READINESS_VALUES as readonly string[]).includes(row.readiness)
+      ? row.readiness
+      : 'fragile',
+    focus: focusRaw ? focusRaw.slice(0, ATHLETE_STATE_FOCUS_MAX_CHARS) : null,
+  };
+}
+
+/** System-prompt section; fixed shape, bounded size (<= ~450 chars). */
+export function buildAthleteStateSection(state: AthleteStateContext | null | undefined): string {
+  const s = state ?? DEFAULT_ATHLETE_STATE;
+  return `## Coaching State
+- Level: ${s.level} | Tier: ${s.tier} | Points: ${s.points}
+- Readiness: ${s.readiness}
+- Current focus: ${s.focus ?? 'none set yet'}`;
 }
 
 export async function fetchUserContext(userId: string, userToken?: string): Promise<UserContext> {
   const db = clientForUser(userToken);
   const date = today();
 
-  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes, formResponsesRes] =
+  const [profileRes, pluginsRes, workoutsRes, nutritionRes, habitsRes, logsRes, formResponsesRes, athleteStateRes] =
     await Promise.all([
       db.from('ziko_user_profiles')
         .select('name, age, weight_kg, height_cm, goal, units, settings')
@@ -84,6 +143,10 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
         .eq('athlete_id', userId)
         .order('submitted_at', { ascending: false })
         .limit(5),
+      db.from('ziko_athlete_state')
+        .select('level, tier, points, readiness, current_focus_summary')
+        .eq('user_id', userId)
+        .maybeSingle(),
     ]);
 
   // Nutrition totals
@@ -141,5 +204,6 @@ export async function fetchUserContext(userId: string, userToken?: string): Prom
       questions: r.form_instances?.coach_forms?.questions ?? [],
       answers: r.answers ?? [],
     })),
+    athleteState: toAthleteStateContext(athleteStateRes?.data),
   };
 }
