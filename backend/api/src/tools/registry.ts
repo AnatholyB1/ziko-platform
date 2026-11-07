@@ -616,6 +616,13 @@ export const allToolSchemas: AITool[] = [
   ...CoachingEngineTools.coachingEngineToolSchemas.filter((t) => t.name !== 'create_reward'),
 ];
 
+/**
+ * Executors registered for internal callers only (onboarding / weekly engine).
+ * They are deliberately absent from allToolSchemas and MUST NOT be reachable
+ * through the client-facing POST /ai/tools/execute route.
+ */
+export const INTERNAL_ONLY_TOOLS: ReadonlySet<string> = new Set(['assess_profile', 'create_reward']);
+
 export function getToolExecutor(name: string): ToolExecutor['execute'] | undefined {
   return executors[name];
 }
