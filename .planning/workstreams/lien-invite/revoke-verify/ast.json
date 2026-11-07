@@ -1,0 +1,1966 @@
+{
+ "out": [
+  {
+   "file": "apps/mobile/app/(app)/(plugins)/community/challenge-detail.tsx",
+   "line": 104,
+   "cmd": "insert",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/(plugins)/community/challenge-detail.tsx",
+   "line": 131,
+   "cmd": "delete",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/(plugins)/community/post.tsx",
+   "line": 138,
+   "cmd": "delete",
+   "table": "ziko_post_likes",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/(plugins)/community/post.tsx",
+   "line": 142,
+   "cmd": "insert",
+   "table": "ziko_post_likes",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/(plugins)/community/post.tsx",
+   "line": 153,
+   "cmd": "insert",
+   "table": "ziko_post_comments",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/notifications.tsx",
+   "line": 225,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/notifications.tsx",
+   "line": 254,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/avatar.tsx",
+   "line": 144,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/avatar.tsx",
+   "line": 181,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/avatar.tsx",
+   "line": 220,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/avatar.tsx",
+   "line": 247,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/edit.tsx",
+   "line": 154,
+   "cmd": "upsert",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/edit.tsx",
+   "line": 216,
+   "cmd": "upsert",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/goal-edit.tsx",
+   "line": 81,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/index.tsx",
+   "line": 219,
+   "cmd": "insert",
+   "table": "ziko_body_measurements",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/index.tsx",
+   "line": 256,
+   "cmd": "delete",
+   "table": "ziko_body_measurements",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/security.tsx",
+   "line": 121,
+   "cmd": "upsert",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/security.tsx",
+   "line": 134,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/settings.tsx",
+   "line": 80,
+   "cmd": "upsert",
+   "table": "ziko_notification_preferences",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/settings.tsx",
+   "line": 127,
+   "cmd": "upsert",
+   "table": "ziko_notification_preferences",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/settings.tsx",
+   "line": 388,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/settings.tsx",
+   "line": 393,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/profile/settings.tsx",
+   "line": 398,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/index.tsx",
+   "line": 132,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/index.tsx",
+   "line": 151,
+   "cmd": "delete",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/[id].tsx",
+   "line": 137,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/[id].tsx",
+   "line": 151,
+   "cmd": "delete",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/[id].tsx",
+   "line": 176,
+   "cmd": "update",
+   "table": "ziko_plugin_reviews",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/[id].tsx",
+   "line": 178,
+   "cmd": "insert",
+   "table": "ziko_plugin_reviews",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/store/[id].tsx",
+   "line": 193,
+   "cmd": "delete",
+   "table": "ziko_plugin_reviews",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/program-builder.tsx",
+   "line": 90,
+   "cmd": "insert",
+   "table": "ziko_ai_generated_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 271,
+   "cmd": "insert",
+   "table": "ziko_hydration_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 509,
+   "cmd": "insert",
+   "table": "ziko_session_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 598,
+   "cmd": "insert",
+   "table": "ziko_session_sets",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 656,
+   "cmd": "update",
+   "table": "ziko_session_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 768,
+   "cmd": "update",
+   "table": "ziko_workout_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/session.tsx",
+   "line": 883,
+   "cmd": "insert",
+   "table": "ziko_session_sets",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/summary.tsx",
+   "line": 46,
+   "cmd": "update",
+   "table": "ziko_workout_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 243,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 293,
+   "cmd": "insert",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 310,
+   "cmd": "delete",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 335,
+   "cmd": "insert",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 348,
+   "cmd": "insert",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 356,
+   "cmd": "insert",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 369,
+   "cmd": "insert",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 382,
+   "cmd": "update",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 398,
+   "cmd": "update",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 404,
+   "cmd": "update",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 485,
+   "cmd": "insert",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 497,
+   "cmd": "delete",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 543,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 551,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 557,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 600,
+   "cmd": "upsert",
+   "table": "ziko_notification_preferences",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 667,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(app)/workout/[id].tsx",
+   "line": 675,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/app/(auth)/onboarding/step-7.tsx",
+   "line": 63,
+   "cmd": "upsert",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/components/BugReportModal.tsx",
+   "line": 116,
+   "cmd": "insert",
+   "table": "ziko_bug_reports",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/components/SearchOverlay.tsx",
+   "line": 355,
+   "cmd": "insert",
+   "table": "ziko_friendships",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/hooks/useNotifications.ts",
+   "line": 142,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/hooks/useNotifications.ts",
+   "line": 158,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/lib/PluginLoader.tsx",
+   "line": 45,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/aiStore.ts",
+   "line": 64,
+   "cmd": "insert",
+   "table": "ziko_ai_conversations",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/aiStore.ts",
+   "line": 169,
+   "cmd": "update",
+   "table": "ziko_ai_conversations",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 176,
+   "cmd": "insert",
+   "table": "ziko_workout_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 203,
+   "cmd": "update",
+   "table": "ziko_workout_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 235,
+   "cmd": "upsert",
+   "table": "ziko_session_sets",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 314,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 338,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 344,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 354,
+   "cmd": "insert",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 364,
+   "cmd": "delete",
+   "table": "ziko_program_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 368,
+   "cmd": "insert",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 378,
+   "cmd": "update",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 385,
+   "cmd": "delete",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/mobile/src/stores/workoutStore.ts",
+   "line": 393,
+   "cmd": "update",
+   "table": "ziko_program_exercises",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/web/src/actions/coach-identity.ts",
+   "line": 30,
+   "cmd": "update",
+   "table": "ziko_coach_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/web/src/actions/coach-identity.ts",
+   "line": 37,
+   "cmd": "upsert",
+   "table": "ziko_coach_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/web/src/actions/coach-identity.ts",
+   "line": 64,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "apps/web/src/actions/waitlist.ts",
+   "line": 183,
+   "cmd": "update",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 55,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 59,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 134,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 135,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 139,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.concurrency.test.ts",
+   "line": 140,
+   "cmd": "delete",
+   "table": "ziko_waitlist_signups",
+   "client": "admin"
+  },
+  {
+   "file": "plugins/ai-programs/src/screens/AIProgramsPlugin.tsx",
+   "line": 135,
+   "cmd": "update",
+   "table": "ziko_ai_generated_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/ai-programs/src/screens/AIProgramsPlugin.tsx",
+   "line": 142,
+   "cmd": "update",
+   "table": "ziko_ai_generated_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/cardio/src/screens/CardioDetail.tsx",
+   "line": 216,
+   "cmd": "update",
+   "table": "ziko_cardio_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/cardio/src/screens/CardioDetail.tsx",
+   "line": 241,
+   "cmd": "delete",
+   "table": "ziko_cardio_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/cardio/src/screens/CardioLog.tsx",
+   "line": 62,
+   "cmd": "insert",
+   "table": "ziko_cardio_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/cardio/src/screens/CardioTracker.tsx",
+   "line": 232,
+   "cmd": "insert",
+   "table": "ziko_cardio_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/screens/CommunityPlugin.tsx",
+   "line": 196,
+   "cmd": "insert",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 342,
+   "cmd": "insert",
+   "table": "ziko_friendships",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 349,
+   "cmd": "update",
+   "table": "ziko_friendships",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 353,
+   "cmd": "delete",
+   "table": "ziko_friendships",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 357,
+   "cmd": "delete",
+   "table": "ziko_friendships",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 394,
+   "cmd": "insert",
+   "table": "ziko_community_conversations",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 400,
+   "cmd": "insert",
+   "table": "ziko_conversation_members",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 432,
+   "cmd": "insert",
+   "table": "ziko_community_messages",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 445,
+   "cmd": "update",
+   "table": "ziko_community_conversations",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 473,
+   "cmd": "insert",
+   "table": "ziko_screen_reactions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 498,
+   "cmd": "update",
+   "table": "ziko_screen_reactions",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 512,
+   "cmd": "insert",
+   "table": "ziko_shared_programs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 531,
+   "cmd": "insert",
+   "table": "ziko_group_workouts",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 546,
+   "cmd": "insert",
+   "table": "ziko_group_workout_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 560,
+   "cmd": "insert",
+   "table": "ziko_group_workout_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 587,
+   "cmd": "insert",
+   "table": "ziko_challenges",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 608,
+   "cmd": "insert",
+   "table": "ziko_challenge_teams",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 617,
+   "cmd": "insert",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 630,
+   "cmd": "insert",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 640,
+   "cmd": "upsert",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 652,
+   "cmd": "update",
+   "table": "ziko_challenge_participants",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 703,
+   "cmd": "insert",
+   "table": "ziko_habit_encouragements",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 722,
+   "cmd": "insert",
+   "table": "ziko_app_invites",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 836,
+   "cmd": "insert",
+   "table": "ziko_community_posts",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 844,
+   "cmd": "insert",
+   "table": "ziko_post_likes",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 858,
+   "cmd": "delete",
+   "table": "ziko_post_likes",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/community/src/store.ts",
+   "line": 899,
+   "cmd": "insert",
+   "table": "ziko_post_comments",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 193,
+   "cmd": "update",
+   "table": "ziko_user_gamification",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 296,
+   "cmd": "update",
+   "table": "ziko_user_inventory",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 305,
+   "cmd": "update",
+   "table": "ziko_user_inventory",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 320,
+   "cmd": "update",
+   "table": "ziko_user_gamification",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 336,
+   "cmd": "update",
+   "table": "ziko_user_gamification",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 352,
+   "cmd": "update",
+   "table": "ziko_user_gamification",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/gamification/src/store.ts",
+   "line": 368,
+   "cmd": "update",
+   "table": "ziko_user_gamification",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/habits/src/screens/HabitLogScreen.tsx",
+   "line": 68,
+   "cmd": "insert",
+   "table": "ziko_habits",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/habits/src/screens/HabitsPlugin.tsx",
+   "line": 259,
+   "cmd": "delete",
+   "table": "ziko_habit_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/habits/src/screens/HabitsPlugin.tsx",
+   "line": 268,
+   "cmd": "insert",
+   "table": "ziko_habit_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/habits/src/screens/HabitsPlugin.tsx",
+   "line": 307,
+   "cmd": "insert",
+   "table": "ziko_habits",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/hydration/src/screens/HydrationPlugin.tsx",
+   "line": 210,
+   "cmd": "insert",
+   "table": "ziko_hydration_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/hydration/src/screens/HydrationPlugin.tsx",
+   "line": 234,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/hydration/src/store.ts",
+   "line": 85,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/journal/src/screens/JournalEntry.tsx",
+   "line": 50,
+   "cmd": "insert",
+   "table": "ziko_journal_entries",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/journal/src/screens/JournalPlugin.tsx",
+   "line": 169,
+   "cmd": "insert",
+   "table": "ziko_journal_entries",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/measurements/src/screens/MeasurementsLog.tsx",
+   "line": 72,
+   "cmd": "insert",
+   "table": "ziko_body_measurements",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/measurements/src/screens/MeasurementsPlugin.tsx",
+   "line": 224,
+   "cmd": "insert",
+   "table": "ziko_body_measurements",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/nutrition/src/screens/LogMealScreen.tsx",
+   "line": 124,
+   "cmd": "insert",
+   "table": "ziko_nutrition_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/nutrition/src/screens/NutritionPlugin.tsx",
+   "line": 196,
+   "cmd": "insert",
+   "table": "ziko_nutrition_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/nutrition/src/store.ts",
+   "line": 88,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/nutrition/src/utils/offApi.ts",
+   "line": 58,
+   "cmd": "upsert",
+   "table": "ziko_food_products",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/PantryItemForm.tsx",
+   "line": 162,
+   "cmd": "insert",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/PantryItemForm.tsx",
+   "line": 171,
+   "cmd": "update",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/PantryItemForm.tsx",
+   "line": 199,
+   "cmd": "delete",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/RecipeDetail.tsx",
+   "line": 99,
+   "cmd": "insert",
+   "table": "shopping_list_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/ShoppingList.tsx",
+   "line": 153,
+   "cmd": "update",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/ShoppingList.tsx",
+   "line": 187,
+   "cmd": "update",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/ShoppingList.tsx",
+   "line": 193,
+   "cmd": "insert",
+   "table": "ziko_pantry_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/pantry/src/screens/ShoppingList.tsx",
+   "line": 204,
+   "cmd": "delete",
+   "table": "shopping_list_items",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/persona/src/screens/CoachIAPlugin.tsx",
+   "line": 174,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/persona/src/screens/CoachIAPlugin.tsx",
+   "line": 188,
+   "cmd": "insert",
+   "table": "ziko_ai_conversations",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/sleep/src/screens/SleepLog.tsx",
+   "line": 85,
+   "cmd": "insert",
+   "table": "ziko_sleep_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/sleep/src/store.ts",
+   "line": 47,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/stretching/src/screens/RoutineEditor.tsx",
+   "line": 97,
+   "cmd": "update",
+   "table": "ziko_stretching_routines",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/stretching/src/screens/RoutineEditor.tsx",
+   "line": 105,
+   "cmd": "insert",
+   "table": "ziko_stretching_routines",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/stretching/src/screens/RoutineManager.tsx",
+   "line": 60,
+   "cmd": "delete",
+   "table": "ziko_stretching_routines",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/stretching/src/screens/StretchingSession.tsx",
+   "line": 74,
+   "cmd": "insert",
+   "table": "ziko_stretching_logs",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/supplements/src/screens/SupplementDetailScreen.tsx",
+   "line": 51,
+   "cmd": "delete",
+   "table": "ziko_user_supplement_favorites",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/supplements/src/screens/SupplementDetailScreen.tsx",
+   "line": 54,
+   "cmd": "insert",
+   "table": "ziko_user_supplement_favorites",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/timer/src/screens/TimerEditor.tsx",
+   "line": 114,
+   "cmd": "update",
+   "table": "ziko_timer_presets",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/timer/src/screens/TimerEditor.tsx",
+   "line": 128,
+   "cmd": "insert",
+   "table": "ziko_timer_presets",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/timer/src/screens/TimerManager.tsx",
+   "line": 60,
+   "cmd": "delete",
+   "table": "ziko_timer_presets",
+   "client": "supabase"
+  },
+  {
+   "file": "plugins/timer/src/screens/TimerPlugin.tsx",
+   "line": 108,
+   "cmd": "insert",
+   "table": "ziko_workout_sessions",
+   "client": "supabase"
+  },
+  {
+   "file": "packages/ui/src/components/BugSheet.tsx",
+   "line": 76,
+   "cmd": "insert",
+   "table": "ziko_bug_reports",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/coach/ai/db.ts",
+   "line": 37,
+   "cmd": "update",
+   "table": "ziko_coach_alerts",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/ai/db.ts",
+   "line": 47,
+   "cmd": "update",
+   "table": "ziko_coach_alerts",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/ai/db.ts",
+   "line": 66,
+   "cmd": "insert",
+   "table": "ziko_coach_alerts",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/ai/db.ts",
+   "line": 90,
+   "cmd": "insert",
+   "table": "ziko_ai_tool_audit",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/ai/service.ts",
+   "line": 43,
+   "cmd": "insert",
+   "table": "ziko_ai_cost_log",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/coach/ai/service.ts",
+   "line": 482,
+   "cmd": "insert",
+   "table": "ziko_ai_conversations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/ai/tools.ts",
+   "line": 308,
+   "cmd": "insert",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/branding/db.ts",
+   "line": 15,
+   "cmd": "upsert",
+   "table": "ziko_coach_branding",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 241,
+   "cmd": "update",
+   "table": "ziko_coach_client_links",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 396,
+   "cmd": "insert",
+   "table": "ziko_coach_client_tags",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 411,
+   "cmd": "delete",
+   "table": "ziko_coach_client_tags",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 443,
+   "cmd": "upsert",
+   "table": "ziko_coach_client_notes",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 464,
+   "cmd": "update",
+   "table": "ziko_coach_client_links",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/clients/db.ts",
+   "line": 825,
+   "cmd": "update",
+   "table": "ziko_coach_client_links",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/db.ts",
+   "line": 23,
+   "cmd": "upsert",
+   "table": "ziko_dashboard_configs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/db.ts",
+   "line": 37,
+   "cmd": "delete",
+   "table": "ziko_dashboard_configs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/db.ts",
+   "line": 58,
+   "cmd": "upsert",
+   "table": "ziko_coach_memory",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/service.ts",
+   "line": 223,
+   "cmd": "insert",
+   "table": "ziko_coach_metric_thresholds",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/service.ts",
+   "line": 245,
+   "cmd": "delete",
+   "table": "ziko_coach_metric_thresholds",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/exercises/db.ts",
+   "line": 138,
+   "cmd": "insert",
+   "table": "ziko_coach_exercises",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/exercises/db.ts",
+   "line": 173,
+   "cmd": "update",
+   "table": "ziko_coach_exercises",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/exercises/db.ts",
+   "line": 216,
+   "cmd": "delete",
+   "table": "ziko_coach_exercises",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/identity/db.ts",
+   "line": 28,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/identity/db.ts",
+   "line": 65,
+   "cmd": "update",
+   "table": "ziko_coach_profiles",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/identity/db.ts",
+   "line": 74,
+   "cmd": "upsert",
+   "table": "ziko_coach_profiles",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/imports/db.ts",
+   "line": 37,
+   "cmd": "insert",
+   "table": "ziko_ai_imports",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/imports/db.ts",
+   "line": 116,
+   "cmd": "update",
+   "table": "ziko_ai_imports",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/imports/db.ts",
+   "line": 133,
+   "cmd": "update",
+   "table": "ziko_ai_imports",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/imports/db.ts",
+   "line": 198,
+   "cmd": "insert",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/imports/db.ts",
+   "line": 216,
+   "cmd": "update",
+   "table": "ziko_ai_imports",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/invitations/db.ts",
+   "line": 58,
+   "cmd": "insert",
+   "table": "ziko_coach_invitations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/invitations/db.ts",
+   "line": 118,
+   "cmd": "update",
+   "table": "ziko_coach_invitations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 43,
+   "cmd": "insert",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 143,
+   "cmd": "update",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 161,
+   "cmd": "delete",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 197,
+   "cmd": "insert",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 234,
+   "cmd": "insert",
+   "table": "ziko_workout_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 275,
+   "cmd": "insert",
+   "table": "ziko_coach_program_folders",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/programs/db.ts",
+   "line": 354,
+   "cmd": "insert",
+   "table": "ziko_exercises",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 76,
+   "cmd": "insert",
+   "table": "ziko_coach_client_videos",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 169,
+   "cmd": "insert",
+   "table": "ziko_coach_video_annotations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 194,
+   "cmd": "update",
+   "table": "ziko_coach_video_annotations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 212,
+   "cmd": "delete",
+   "table": "ziko_coach_video_annotations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 261,
+   "cmd": "insert",
+   "table": "ziko_coach_video_annotations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/videos/db.ts",
+   "line": 287,
+   "cmd": "update",
+   "table": "ziko_coach_client_videos",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coach/voice/service.ts",
+   "line": 276,
+   "cmd": "insert",
+   "table": "ziko_coach_vocal_feedbacks",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/coaching-engine/apply.ts",
+   "line": 238,
+   "cmd": "insert",
+   "table": "ziko_ai_cost_log",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/context/conversation.ts",
+   "line": 63,
+   "cmd": "insert",
+   "table": "ziko_ai_conversations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/context/conversation.ts",
+   "line": 93,
+   "cmd": "insert",
+   "table": "ziko_ai_messages",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/context/conversation.ts",
+   "line": 104,
+   "cmd": "update",
+   "table": "ziko_ai_conversations",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/routes/ai.ts",
+   "line": 154,
+   "cmd": "insert",
+   "table": "ziko_ai_cost_log",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/forms.ts",
+   "line": 49,
+   "cmd": "insert",
+   "table": "ziko_coach_forms",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/forms.ts",
+   "line": 88,
+   "cmd": "update",
+   "table": "ziko_coach_forms",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/forms.ts",
+   "line": 123,
+   "cmd": "update",
+   "table": "ziko_coach_forms",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/forms.ts",
+   "line": 301,
+   "cmd": "insert",
+   "table": "ziko_form_responses",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/forms.ts",
+   "line": 314,
+   "cmd": "update",
+   "table": "ziko_form_instances",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/notifications-cron.ts",
+   "line": 90,
+   "cmd": "update",
+   "table": "ziko_notification_tokens",
+   "client": "supabaseAdmin"
+  },
+  {
+   "file": "backend/api/src/routes/notifications.ts",
+   "line": 50,
+   "cmd": "upsert",
+   "table": "ziko_notification_tokens",
+   "client": "supabaseAdmin"
+  },
+  {
+   "file": "backend/api/src/routes/notifications.ts",
+   "line": 82,
+   "cmd": "update",
+   "table": "ziko_notification_tokens",
+   "client": "supabaseAdmin"
+  },
+  {
+   "file": "backend/api/src/routes/onboarding.ts",
+   "line": 43,
+   "cmd": "insert",
+   "table": "ziko_ai_cost_log",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/plugins.ts",
+   "line": 40,
+   "cmd": "upsert",
+   "table": "ziko_user_plugins",
+   "client": "adminClient"
+  },
+  {
+   "file": "backend/api/src/routes/plugins.ts",
+   "line": 56,
+   "cmd": "delete",
+   "table": "ziko_user_plugins",
+   "client": "adminClient"
+  },
+  {
+   "file": "backend/api/src/routes/plugins.ts",
+   "line": 72,
+   "cmd": "update",
+   "table": "ziko_user_plugins",
+   "client": "adminClient"
+  },
+  {
+   "file": "backend/api/src/routes/referral.ts",
+   "line": 41,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/referral.ts",
+   "line": 111,
+   "cmd": "insert",
+   "table": "ziko_app_invites",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/referral.ts",
+   "line": 126,
+   "cmd": "update",
+   "table": "ziko_user_profiles",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/referral.ts",
+   "line": 227,
+   "cmd": "insert",
+   "table": "ziko_user_promo_redemptions",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/referral.ts",
+   "line": 237,
+   "cmd": "update",
+   "table": "ziko_promo_codes",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/routes/supplements.ts",
+   "line": 106,
+   "cmd": "insert",
+   "table": "ziko_user_supplement_favorites",
+   "client": "adminClient"
+  },
+  {
+   "file": "backend/api/src/routes/supplements.ts",
+   "line": 118,
+   "cmd": "delete",
+   "table": "ziko_user_supplement_favorites",
+   "client": "adminClient"
+  },
+  {
+   "file": "backend/api/src/scrapers/index.ts",
+   "line": 95,
+   "cmd": "upsert",
+   "table": "ziko_supplements",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/scrapers/index.ts",
+   "line": 146,
+   "cmd": "insert",
+   "table": "ziko_supplement_prices",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/services/creditService.ts",
+   "line": 59,
+   "cmd": "upsert",
+   "table": "ziko_user_ai_credits",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/services/creditService.ts",
+   "line": 257,
+   "cmd": "insert",
+   "table": "ziko_ai_credit_transactions",
+   "client": "supabase"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 134,
+   "cmd": "insert",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 171,
+   "cmd": "update",
+   "table": "ziko_notification_tokens",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 180,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 221,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 259,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 269,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/services/notificationService.ts",
+   "line": 274,
+   "cmd": "update",
+   "table": "ziko_notification_log",
+   "client": "getSupabaseAdmin()"
+  },
+  {
+   "file": "backend/api/src/tools/ai-programs.ts",
+   "line": 95,
+   "cmd": "insert",
+   "table": "ziko_ai_generated_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/ai-programs.ts",
+   "line": 180,
+   "cmd": "update",
+   "table": "ziko_ai_generated_programs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/cardio.ts",
+   "line": 38,
+   "cmd": "insert",
+   "table": "ziko_cardio_sessions",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/habits.ts",
+   "line": 61,
+   "cmd": "upsert",
+   "table": "ziko_habit_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/habits.ts",
+   "line": 135,
+   "cmd": "insert",
+   "table": "ziko_habits",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/hydration.ts",
+   "line": 15,
+   "cmd": "insert",
+   "table": "ziko_hydration_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/hydration.ts",
+   "line": 84,
+   "cmd": "update",
+   "table": "ziko_user_plugins",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/journal.ts",
+   "line": 22,
+   "cmd": "insert",
+   "table": "ziko_journal_entries",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/measurements.ts",
+   "line": 40,
+   "cmd": "insert",
+   "table": "ziko_body_measurements",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/nutrition.ts",
+   "line": 52,
+   "cmd": "insert",
+   "table": "ziko_nutrition_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/nutrition.ts",
+   "line": 136,
+   "cmd": "delete",
+   "table": "ziko_nutrition_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/pantry.ts",
+   "line": 57,
+   "cmd": "insert",
+   "table": "ziko_pantry_items",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/pantry.ts",
+   "line": 71,
+   "cmd": "update",
+   "table": "ziko_pantry_items",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/pantry.ts",
+   "line": 147,
+   "cmd": "update",
+   "table": "ziko_pantry_items",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/sleep.ts",
+   "line": 31,
+   "cmd": "upsert",
+   "table": "ziko_sleep_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/stretching.ts",
+   "line": 56,
+   "cmd": "insert",
+   "table": "ziko_stretching_logs",
+   "client": "db"
+  },
+  {
+   "file": "backend/api/src/tools/timer.ts",
+   "line": 52,
+   "cmd": "insert",
+   "table": "ziko_timer_presets",
+   "client": "db"
+  }
+ ],
+ "unresolved": [
+  {
+   "file": "apps/mobile/app/(app)/_layout.tsx",
+   "line": 90,
+   "cmd": "delete",
+   "recv": "coachStorage"
+  },
+  {
+   "file": "apps/web/src/app/[locale]/(coach)/coach/imports/[id]/PreviewClient.tsx",
+   "line": 635,
+   "cmd": "delete",
+   "recv": "next"
+  },
+  {
+   "file": "apps/web/src/components/coach/WizardStep4Import.tsx",
+   "line": 261,
+   "cmd": "delete",
+   "recv": "intervalsRef"
+  },
+  {
+   "file": "apps/web/src/components/coach/WizardStep4Import.tsx",
+   "line": 279,
+   "cmd": "delete",
+   "recv": "intervalsRef"
+  },
+  {
+   "file": "apps/web/src/components/coach/WizardStep4Import.tsx",
+   "line": 510,
+   "cmd": "delete",
+   "recv": "intervalsRef"
+  },
+  {
+   "file": "apps/web/src/components/coach/WizardStep4Import.tsx",
+   "line": 514,
+   "cmd": "delete",
+   "recv": "abortControllersRef"
+  },
+  {
+   "file": "apps/web/src/components/coach/WizardStep4Import.tsx",
+   "line": 515,
+   "cmd": "delete",
+   "recv": "pipelineStartedRef"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.validation.test.ts",
+   "line": 127,
+   "cmd": "delete",
+   "recv": "fd"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.validation.test.ts",
+   "line": 135,
+   "cmd": "delete",
+   "recv": "fd"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.validation.test.ts",
+   "line": 143,
+   "cmd": "delete",
+   "recv": "fd"
+  },
+  {
+   "file": "apps/web/test/actions/waitlist.validation.test.ts",
+   "line": 241,
+   "cmd": "delete",
+   "recv": "invalidForm"
+  },
+  {
+   "file": "plugins/coach/src/screens/CoachScreen.tsx",
+   "line": 250,
+   "cmd": "delete",
+   "recv": "coachStorage"
+  },
+  {
+   "file": "backend/api/src/coach/clients/service.ts",
+   "line": 231,
+   "cmd": "delete",
+   "recv": "clientsRouter"
+  },
+  {
+   "file": "backend/api/src/coach/clients/service.ts",
+   "line": 284,
+   "cmd": "delete",
+   "recv": "clientsRouter"
+  },
+  {
+   "file": "backend/api/src/coach/clients/service.ts",
+   "line": 299,
+   "cmd": "delete",
+   "recv": "clientsRouter"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/service.ts",
+   "line": 237,
+   "cmd": "delete",
+   "recv": "dashboardsRouter"
+  },
+  {
+   "file": "backend/api/src/coach/dashboards/service.ts",
+   "line": 285,
+   "cmd": "delete",
+   "recv": "dashboardsRouter"
+  },
+  {
+   "file": "backend/api/src/coach/videos/service.ts",
+   "line": 285,
+   "cmd": "delete",
+   "recv": "videosRouter"
+  },
+  {
+   "file": "backend/api/src/routes/notifications.ts",
+   "line": 78,
+   "cmd": "delete",
+   "recv": "notificationsRouter"
+  },
+  {
+   "file": "backend/api/src/routes/plugins.ts",
+   "line": 52,
+   "cmd": "delete",
+   "recv": "router"
+  },
+  {
+   "file": "backend/api/src/routes/supplements.ts",
+   "line": 115,
+   "cmd": "delete",
+   "recv": "router"
+  }
+ ]
+}

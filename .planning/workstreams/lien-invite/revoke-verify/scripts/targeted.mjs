@@ -1,0 +1,13 @@
+import fs from 'node:fs'; import { execFileSync } from 'node:child_process';
+const TEMP=process.env.TEMP, ROOT=`${TEMP}/ziko-uat-rv`, GW='http://127.0.0.1:3220';
+const keys=Object.fromEntries(fs.readFileSync(`${ROOT}/keys.env`,'utf8').trim().split(/\r?\n/).map(l=>l.split('=')));
+const su=await (await fetch(`${GW}/auth/v1/signup`,{method:'POST',headers:{apikey:keys.UAT_ANON_KEY,'content-type':'application/json'},body:JSON.stringify({email:`tg-${Date.now()}@example.com`,password:'Passw0rd!uat1'})})).json();
+const uid=su.user.id,tok=su.access_token;
+const call=async(m,p,b,pref='return=representation')=>{const r=await fetch(`${GW}/rest/v1/${p}`,{method:m,headers:{apikey:keys.UAT_ANON_KEY,Authorization:`Bearer ${tok}`,'content-type':'application/json',Prefer:pref},body:b?JSON.stringify(b):undefined});return r.status+' '+(await r.text()).slice(0,70).replace(/\s+/g,' ');};
+console.log('user_profiles PATCH own id      :',await call('PATCH',`ziko_user_profiles?id=eq.${uid}`,{age:31}));
+console.log('user_profiles UPSERT own id     :',await call('POST','ziko_user_profiles?on_conflict=id',{id:uid,age:32},'resolution=merge-duplicates,return=representation'));
+const cid=crypto.randomUUID();
+console.log('conversation INSERT (creator)   :',await call('POST','ziko_community_conversations',{id:cid,type:'direct',created_by:uid},'return=minimal'));
+console.log('conv member INSERT self         :',await call('POST','ziko_conversation_members',{conversation_id:cid,user_id:uid},'return=minimal'));
+console.log('conversation UPDATE (member)    :',await call('PATCH',`ziko_community_conversations?id=eq.${cid}`,{name:'x'}));
+console.log('message INSERT (member)         :',await call('POST','ziko_community_messages',{conversation_id:cid,sender_id:uid,type:'text',content:'hi'},'return=minimal'));

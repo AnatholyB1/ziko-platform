@@ -1,0 +1,169 @@
+{
+ "out": [
+  [
+   "authenticated SELECT own ziko_user_ai_credits (control)",
+   "200 [{\"balance\":5}]"
+  ],
+  [
+   "authenticated UPDATE own balance 5->9999 (must be refused)",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user"
+  ],
+  [
+   "authenticated INSERT ziko_ai_credit_transactions",
+   "400 {\"code\":\"PGRST204\",\"details\":null,\"hint\":null,\"message\":\"Could not find the 'action' colum"
+  ],
+  [
+   "authenticated DELETE own ziko_user_ai_credits",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user"
+  ],
+  [
+   "authenticated INSERT ziko_app_config",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_"
+  ],
+  [
+   "authenticated UPDATE ziko_app_config",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_"
+  ],
+  [
+   "authenticated DELETE ziko_app_config",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_"
+  ],
+  [
+   "authenticated SELECT ziko_app_config (RLS deny-all, expect 200 [])",
+   "200 []"
+  ],
+  [
+   "authenticated INSERT ziko_waitlist_signups",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "authenticated UPDATE ziko_waitlist_signups",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "authenticated DELETE ziko_waitlist_signups",
+   "403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "anon INSERT ziko_waitlist_signups",
+   "401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "anon UPDATE ziko_waitlist_signups",
+   "401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "anon DELETE ziko_waitlist_signups",
+   "401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait"
+  ],
+  [
+   "anon UPDATE ziko_app_config",
+   "401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_"
+  ]
+ ],
+ "anonDeleteSweep": {
+  "tables": 99,
+  "denied": 0,
+  "other": [
+   "ziko_ai_conversations\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_c",
+   "ziko_ai_cost_log\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_c",
+   "ziko_ai_credit_transactions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_c",
+   "ziko_ai_generated_programs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_g",
+   "ziko_ai_imports\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_i",
+   "ziko_ai_messages\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_m",
+   "ziko_ai_tool_audit\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_ai_t",
+   "ziko_app_config\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_",
+   "ziko_app_invites\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_app_",
+   "ziko_athlete_decisions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_athl",
+   "ziko_athlete_goals\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_athl",
+   "ziko_athlete_state\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_athl",
+   "ziko_badge_definitions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_badg",
+   "ziko_body_measurements\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_body",
+   "ziko_bug_reports\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_bug_",
+   "ziko_cardio_sessions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_card",
+   "ziko_challenge_participants\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_chal",
+   "ziko_challenge_teams\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_chal",
+   "ziko_challenges\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_chal",
+   "ziko_coach_alerts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_branding\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_client_links\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_client_notes\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_client_tags\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_client_videos\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_exercises\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_forms\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_invitations\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_memory\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_metric_thresholds\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_profiles\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_program_folders\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_video_annotations\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coach_vocal_feedbacks\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coac",
+   "ziko_coin_gifts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coin",
+   "ziko_coin_transactions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_coin",
+   "ziko_community_conversations\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_comm",
+   "ziko_community_messages\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_comm",
+   "ziko_community_posts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_comm",
+   "ziko_community_user_stats\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_comm",
+   "ziko_conversation_members\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_conv",
+   "ziko_dashboard_configs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_dash",
+   "ziko_exercise_import_log\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_exer",
+   "ziko_exercises\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_exer",
+   "ziko_exercises_merge_backup\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_exer",
+   "ziko_food_database\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_food",
+   "ziko_food_products\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_food",
+   "ziko_form_instances\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_form",
+   "ziko_form_responses\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_form",
+   "ziko_friendships\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_frie",
+   "ziko_group_workout_participants\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_grou",
+   "ziko_group_workouts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_grou",
+   "ziko_habit_encouragements\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_habi",
+   "ziko_habit_logs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_habi",
+   "ziko_habits\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_habi",
+   "ziko_health_sync_log\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_heal",
+   "ziko_hydration_logs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_hydr",
+   "ziko_journal_entries\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_jour",
+   "ziko_level_definitions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_leve",
+   "ziko_notification_log\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_noti",
+   "ziko_notification_preferences\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_noti",
+   "ziko_notification_tokens\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_noti",
+   "ziko_nutrition_logs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_nutr",
+   "ziko_pantry_items\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_pant",
+   "ziko_persona_settings\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_pers",
+   "ziko_plugin_reviews\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_plug",
+   "ziko_plugins_registry\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_plug",
+   "ziko_post_comments\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_post",
+   "ziko_post_likes\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_post",
+   "ziko_program_exercises\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_prog",
+   "ziko_program_workouts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_prog",
+   "ziko_promo_codes\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_prom",
+   "ziko_screen_reactions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_scre",
+   "ziko_session_exercises\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_sess",
+   "ziko_session_sets\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_sess",
+   "ziko_shared_programs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_shar",
+   "ziko_shop_items\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_shop",
+   "ziko_sleep_logs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_slee",
+   "ziko_stretching_logs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_stre",
+   "ziko_stretching_routines\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_stre",
+   "ziko_supplement_brands\r: 204 ",
+   "ziko_supplement_categories\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_supp",
+   "ziko_supplement_prices\r: 204 ",
+   "ziko_supplements\r: 204 ",
+   "ziko_timer_presets\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_time",
+   "ziko_user_ai_credits\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_badges\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_gamification\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_inventory\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_plugins\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_profiles\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_promo_redemptions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_user_supplement_favorites\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_user",
+   "ziko_waitlist_signups\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wait",
+   "ziko_wearable_daily_summary\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_wear",
+   "ziko_workout_programs\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_work",
+   "ziko_workout_sessions\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_work",
+   "ziko_xp_gifts\r: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_xp_g",
+   "ziko_xp_transactions: 401 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"droit refusé pour la table ziko_xp_t"
+  ]
+ }
+}

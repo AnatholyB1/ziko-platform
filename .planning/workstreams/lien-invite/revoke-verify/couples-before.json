@@ -1,0 +1,3361 @@
+{
+ "label": "before",
+ "userA": "89ea52c6-ba55-49f2-a466-a03ced96e42e",
+ "userB": "30ec801c-6d4c-45ee-ab05-e058b1f87fcc",
+ "results": [
+  {
+   "k": "ziko_challenge_participants|insert|mobile",
+   "table": "ziko_challenge_participants",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/(plugins)/community/challenge-detail.tsx:104[supabase]",
+    "plugins/community/src/screens/CommunityPlugin.tsx:196[supabase]",
+    "plugins/community/src/store.ts:617[supabase]",
+    "plugins/community/src/store.ts:630[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_challenge_participants »"
+    }
+   }
+  },
+  {
+   "k": "ziko_challenge_participants|delete|mobile",
+   "table": "ziko_challenge_participants",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/(plugins)/community/challenge-detail.tsx:131[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_post_likes|delete|mobile",
+   "table": "ziko_post_likes",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/(plugins)/community/post.tsx:138[supabase]",
+    "plugins/community/src/store.ts:858[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_post_likes|insert|mobile",
+   "table": "ziko_post_likes",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/(plugins)/community/post.tsx:142[supabase]",
+    "plugins/community/src/store.ts:844[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_post_likes »"
+    }
+   }
+  },
+  {
+   "k": "ziko_post_comments|insert|mobile",
+   "table": "ziko_post_comments",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/(plugins)/community/post.tsx:153[supabase]",
+    "plugins/community/src/store.ts:899[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_post_comments »"
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_log|update|mobile",
+   "table": "ziko_notification_log",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/notifications.tsx:225[supabase]",
+    "apps/mobile/app/(app)/notifications.tsx:254[supabase]",
+    "apps/mobile/src/hooks/useNotifications.ts:142[supabase]",
+    "apps/mobile/src/hooks/useNotifications.ts:158[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_profiles|update|mobile",
+   "table": "ziko_user_profiles",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/profile/avatar.tsx:144[supabase]",
+    "apps/mobile/app/(app)/profile/avatar.tsx:181[supabase]",
+    "apps/mobile/app/(app)/profile/avatar.tsx:220[supabase]",
+    "apps/mobile/app/(app)/profile/avatar.tsx:247[supabase]",
+    "apps/mobile/app/(app)/profile/goal-edit.tsx:81[supabase]",
+    "apps/mobile/app/(app)/profile/security.tsx:134[supabase]",
+    "apps/mobile/app/(app)/profile/settings.tsx:388[supabase]",
+    "apps/mobile/app/(app)/profile/settings.tsx:393[supabase]",
+    "apps/mobile/app/(app)/profile/settings.tsx:398[supabase]",
+    "plugins/hydration/src/screens/HydrationPlugin.tsx:234[supabase]",
+    "plugins/persona/src/screens/CoachIAPlugin.tsx:174[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_profiles|upsert|mobile",
+   "table": "ziko_user_profiles",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/profile/edit.tsx:154[supabase]",
+    "apps/mobile/app/(app)/profile/edit.tsx:216[supabase]",
+    "apps/mobile/app/(app)/profile/security.tsx:121[supabase]",
+    "apps/mobile/app/(auth)/onboarding/step-7.tsx:63[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_profiles »"
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_profiles »"
+    }
+   }
+  },
+  {
+   "k": "ziko_body_measurements|insert|mobile",
+   "table": "ziko_body_measurements",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/profile/index.tsx:219[supabase]",
+    "plugins/measurements/src/screens/MeasurementsLog.tsx:72[supabase]",
+    "plugins/measurements/src/screens/MeasurementsPlugin.tsx:224[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_body_measurements »"
+    }
+   }
+  },
+  {
+   "k": "ziko_body_measurements|delete|mobile",
+   "table": "ziko_body_measurements",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/profile/index.tsx:256[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_preferences|upsert|mobile",
+   "table": "ziko_notification_preferences",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/profile/settings.tsx:80[supabase]",
+    "apps/mobile/app/(app)/profile/settings.tsx:127[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:600[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_notification_preferences »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_plugins|upsert|mobile",
+   "table": "ziko_user_plugins",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/store/index.tsx:132[supabase]",
+    "apps/mobile/app/(app)/store/[id].tsx:137[supabase]",
+    "apps/mobile/src/lib/PluginLoader.tsx:45[supabase]",
+    "plugins/hydration/src/store.ts:85[supabase]",
+    "plugins/nutrition/src/store.ts:88[supabase]",
+    "plugins/sleep/src/store.ts:47[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_plugins »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_plugins|delete|mobile",
+   "table": "ziko_user_plugins",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/store/index.tsx:151[supabase]",
+    "apps/mobile/app/(app)/store/[id].tsx:151[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_plugin_reviews|update|mobile",
+   "table": "ziko_plugin_reviews",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/store/[id].tsx:176[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_plugin_reviews|insert|mobile",
+   "table": "ziko_plugin_reviews",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/store/[id].tsx:178[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_plugin_reviews »"
+    }
+   }
+  },
+  {
+   "k": "ziko_plugin_reviews|delete|mobile",
+   "table": "ziko_plugin_reviews",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/store/[id].tsx:193[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_generated_programs|insert|mobile",
+   "table": "ziko_ai_generated_programs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/program-builder.tsx:90[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_generated_programs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_hydration_logs|insert|mobile",
+   "table": "ziko_hydration_logs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/session.tsx:271[supabase]",
+    "plugins/hydration/src/screens/HydrationPlugin.tsx:210[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_hydration_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_session_exercises|insert|mobile",
+   "table": "ziko_session_exercises",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/session.tsx:509[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_session_exercises »"
+    }
+   }
+  },
+  {
+   "k": "ziko_session_sets|insert|mobile",
+   "table": "ziko_session_sets",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/session.tsx:598[supabase]",
+    "apps/mobile/app/(app)/workout/session.tsx:883[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_session_sets »"
+    }
+   }
+  },
+  {
+   "k": "ziko_session_exercises|update|mobile",
+   "table": "ziko_session_exercises",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/session.tsx:656[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_sessions|update|mobile",
+   "table": "ziko_workout_sessions",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/session.tsx:768[supabase]",
+    "apps/mobile/app/(app)/workout/summary.tsx:46[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:203[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_programs|update|mobile",
+   "table": "ziko_workout_programs",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:243[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:543[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:551[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:557[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:667[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:675[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:314[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:338[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:344[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_program_workouts|insert|mobile",
+   "table": "ziko_program_workouts",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:293[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:335[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:356[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:354[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_program_workouts »"
+    }
+   }
+  },
+  {
+   "k": "ziko_program_workouts|delete|mobile",
+   "table": "ziko_program_workouts",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:310[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:364[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_program_exercises|insert|mobile",
+   "table": "ziko_program_exercises",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:348[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:369[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:485[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:368[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_program_exercises »"
+    }
+   }
+  },
+  {
+   "k": "ziko_program_workouts|update|mobile",
+   "table": "ziko_program_workouts",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:382[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:398[supabase]",
+    "apps/mobile/app/(app)/workout/[id].tsx:404[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_program_exercises|delete|mobile",
+   "table": "ziko_program_exercises",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/app/(app)/workout/[id].tsx:497[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:385[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_bug_reports|insert|mobile",
+   "table": "ziko_bug_reports",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/components/BugReportModal.tsx:116[supabase]",
+    "packages/ui/src/components/BugSheet.tsx:76[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_bug_reports »"
+    }
+   }
+  },
+  {
+   "k": "ziko_friendships|insert|mobile",
+   "table": "ziko_friendships",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/components/SearchOverlay.tsx:355[supabase]",
+    "plugins/community/src/store.ts:342[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_friendships »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_conversations|insert|mobile",
+   "table": "ziko_ai_conversations",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/stores/aiStore.ts:64[supabase]",
+    "plugins/persona/src/screens/CoachIAPlugin.tsx:188[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_conversations »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_conversations|update|mobile",
+   "table": "ziko_ai_conversations",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/stores/aiStore.ts:169[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_sessions|insert|mobile",
+   "table": "ziko_workout_sessions",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/stores/workoutStore.ts:176[supabase]",
+    "plugins/timer/src/screens/TimerPlugin.tsx:108[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_workout_sessions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_session_sets|upsert|mobile",
+   "table": "ziko_session_sets",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/stores/workoutStore.ts:235[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_session_sets »"
+    }
+   }
+  },
+  {
+   "k": "ziko_program_exercises|update|mobile",
+   "table": "ziko_program_exercises",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "apps/mobile/src/stores/workoutStore.ts:378[supabase]",
+    "apps/mobile/src/stores/workoutStore.ts:393[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_profiles|update|web",
+   "table": "ziko_coach_profiles",
+   "cmd": "update",
+   "side": "web",
+   "sites": [
+    "apps/web/src/actions/coach-identity.ts:30[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_profiles|upsert|web",
+   "table": "ziko_coach_profiles",
+   "cmd": "upsert",
+   "side": "web",
+   "sites": [
+    "apps/web/src/actions/coach-identity.ts:37[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_profiles »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_profiles|update|web",
+   "table": "ziko_user_profiles",
+   "cmd": "update",
+   "side": "web",
+   "sites": [
+    "apps/web/src/actions/coach-identity.ts:64[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_waitlist_signups|update|web",
+   "table": "ziko_waitlist_signups",
+   "cmd": "update",
+   "side": "web",
+   "sites": [
+    "apps/web/src/actions/waitlist.ts:183[admin]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "PRIV_DENIED",
+     "status": 403,
+     "msg": "droit refusé pour la table ziko_waitlist_signups"
+    },
+    "anon": {
+     "class": "PRIV_DENIED",
+     "status": 401,
+     "msg": "droit refusé pour la table ziko_waitlist_signups"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_generated_programs|update|mobile",
+   "table": "ziko_ai_generated_programs",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/ai-programs/src/screens/AIProgramsPlugin.tsx:135[supabase]",
+    "plugins/ai-programs/src/screens/AIProgramsPlugin.tsx:142[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_cardio_sessions|update|mobile",
+   "table": "ziko_cardio_sessions",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/cardio/src/screens/CardioDetail.tsx:216[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_cardio_sessions|delete|mobile",
+   "table": "ziko_cardio_sessions",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/cardio/src/screens/CardioDetail.tsx:241[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_cardio_sessions|insert|mobile",
+   "table": "ziko_cardio_sessions",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/cardio/src/screens/CardioLog.tsx:62[supabase]",
+    "plugins/cardio/src/screens/CardioTracker.tsx:232[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_cardio_sessions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_friendships|update|mobile",
+   "table": "ziko_friendships",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:349[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_friendships|delete|mobile",
+   "table": "ziko_friendships",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:353[supabase]",
+    "plugins/community/src/store.ts:357[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_community_conversations|insert|mobile",
+   "table": "ziko_community_conversations",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:394[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_community_conversations »"
+    }
+   }
+  },
+  {
+   "k": "ziko_conversation_members|insert|mobile",
+   "table": "ziko_conversation_members",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:400[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_conversation_members »"
+    }
+   }
+  },
+  {
+   "k": "ziko_community_messages|insert|mobile",
+   "table": "ziko_community_messages",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:432[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_community_messages »"
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_community_messages »"
+    }
+   }
+  },
+  {
+   "k": "ziko_community_conversations|update|mobile",
+   "table": "ziko_community_conversations",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:445[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_screen_reactions|insert|mobile",
+   "table": "ziko_screen_reactions",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:473[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_screen_reactions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_screen_reactions|update|mobile",
+   "table": "ziko_screen_reactions",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:498[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_shared_programs|insert|mobile",
+   "table": "ziko_shared_programs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:512[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_shared_programs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_group_workouts|insert|mobile",
+   "table": "ziko_group_workouts",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:531[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_group_workouts »"
+    }
+   }
+  },
+  {
+   "k": "ziko_group_workout_participants|insert|mobile",
+   "table": "ziko_group_workout_participants",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:546[supabase]",
+    "plugins/community/src/store.ts:560[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_group_workout_participants »"
+    }
+   }
+  },
+  {
+   "k": "ziko_challenges|insert|mobile",
+   "table": "ziko_challenges",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:587[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_challenges »"
+    }
+   }
+  },
+  {
+   "k": "ziko_challenge_teams|insert|mobile",
+   "table": "ziko_challenge_teams",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:608[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_challenge_teams »"
+    }
+   }
+  },
+  {
+   "k": "ziko_challenge_participants|upsert|mobile",
+   "table": "ziko_challenge_participants",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:640[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_challenge_participants »"
+    }
+   }
+  },
+  {
+   "k": "ziko_challenge_participants|update|mobile",
+   "table": "ziko_challenge_participants",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:652[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_habit_encouragements|insert|mobile",
+   "table": "ziko_habit_encouragements",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:703[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_habit_encouragements »"
+    }
+   }
+  },
+  {
+   "k": "ziko_app_invites|insert|mobile",
+   "table": "ziko_app_invites",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:722[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_app_invites »"
+    }
+   }
+  },
+  {
+   "k": "ziko_community_posts|insert|mobile",
+   "table": "ziko_community_posts",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/community/src/store.ts:836[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_community_posts »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_gamification|update|mobile",
+   "table": "ziko_user_gamification",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/gamification/src/store.ts:193[supabase]",
+    "plugins/gamification/src/store.ts:320[supabase]",
+    "plugins/gamification/src/store.ts:336[supabase]",
+    "plugins/gamification/src/store.ts:352[supabase]",
+    "plugins/gamification/src/store.ts:368[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "PRIV_DENIED",
+     "status": 403,
+     "msg": "droit refusé pour la table ziko_user_gamification"
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_inventory|update|mobile",
+   "table": "ziko_user_inventory",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/gamification/src/store.ts:296[supabase]",
+    "plugins/gamification/src/store.ts:305[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_habits|insert|mobile",
+   "table": "ziko_habits",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/habits/src/screens/HabitLogScreen.tsx:68[supabase]",
+    "plugins/habits/src/screens/HabitsPlugin.tsx:307[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_habits »"
+    }
+   }
+  },
+  {
+   "k": "ziko_habit_logs|delete|mobile",
+   "table": "ziko_habit_logs",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/habits/src/screens/HabitsPlugin.tsx:259[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_habit_logs|insert|mobile",
+   "table": "ziko_habit_logs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/habits/src/screens/HabitsPlugin.tsx:268[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_habit_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_journal_entries|insert|mobile",
+   "table": "ziko_journal_entries",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/journal/src/screens/JournalEntry.tsx:50[supabase]",
+    "plugins/journal/src/screens/JournalPlugin.tsx:169[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_journal_entries »"
+    }
+   }
+  },
+  {
+   "k": "ziko_nutrition_logs|insert|mobile",
+   "table": "ziko_nutrition_logs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/nutrition/src/screens/LogMealScreen.tsx:124[supabase]",
+    "plugins/nutrition/src/screens/NutritionPlugin.tsx:196[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_nutrition_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_food_products|upsert|mobile",
+   "table": "ziko_food_products",
+   "cmd": "upsert",
+   "side": "mobile",
+   "sites": [
+    "plugins/nutrition/src/utils/offApi.ts:58[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne (expression USING) pour la table « ziko_food_products »"
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_food_products »"
+    }
+   }
+  },
+  {
+   "k": "ziko_pantry_items|insert|mobile",
+   "table": "ziko_pantry_items",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/pantry/src/screens/PantryItemForm.tsx:162[supabase]",
+    "plugins/pantry/src/screens/ShoppingList.tsx:193[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_pantry_items »"
+    }
+   }
+  },
+  {
+   "k": "ziko_pantry_items|update|mobile",
+   "table": "ziko_pantry_items",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/pantry/src/screens/PantryItemForm.tsx:171[supabase]",
+    "plugins/pantry/src/screens/ShoppingList.tsx:153[supabase]",
+    "plugins/pantry/src/screens/ShoppingList.tsx:187[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_pantry_items|delete|mobile",
+   "table": "ziko_pantry_items",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/pantry/src/screens/PantryItemForm.tsx:199[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_sleep_logs|insert|mobile",
+   "table": "ziko_sleep_logs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/sleep/src/screens/SleepLog.tsx:85[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_sleep_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_stretching_routines|update|mobile",
+   "table": "ziko_stretching_routines",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/stretching/src/screens/RoutineEditor.tsx:97[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_stretching_routines|insert|mobile",
+   "table": "ziko_stretching_routines",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/stretching/src/screens/RoutineEditor.tsx:105[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_stretching_routines »"
+    }
+   }
+  },
+  {
+   "k": "ziko_stretching_routines|delete|mobile",
+   "table": "ziko_stretching_routines",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/stretching/src/screens/RoutineManager.tsx:60[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_stretching_logs|insert|mobile",
+   "table": "ziko_stretching_logs",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/stretching/src/screens/StretchingSession.tsx:74[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_stretching_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_supplement_favorites|delete|mobile",
+   "table": "ziko_user_supplement_favorites",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/supplements/src/screens/SupplementDetailScreen.tsx:51[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_supplement_favorites|insert|mobile",
+   "table": "ziko_user_supplement_favorites",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/supplements/src/screens/SupplementDetailScreen.tsx:54[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_supplement_favorites »"
+    }
+   }
+  },
+  {
+   "k": "ziko_timer_presets|update|mobile",
+   "table": "ziko_timer_presets",
+   "cmd": "update",
+   "side": "mobile",
+   "sites": [
+    "plugins/timer/src/screens/TimerEditor.tsx:114[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_timer_presets|insert|mobile",
+   "table": "ziko_timer_presets",
+   "cmd": "insert",
+   "side": "mobile",
+   "sites": [
+    "plugins/timer/src/screens/TimerEditor.tsx:128[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_timer_presets »"
+    }
+   }
+  },
+  {
+   "k": "ziko_timer_presets|delete|mobile",
+   "table": "ziko_timer_presets",
+   "cmd": "delete",
+   "side": "mobile",
+   "sites": [
+    "plugins/timer/src/screens/TimerManager.tsx:60[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_alerts|update|backend",
+   "table": "ziko_coach_alerts",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/db.ts:37[db]",
+    "backend/api/src/coach/ai/db.ts:47[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_alerts|insert|backend",
+   "table": "ziko_coach_alerts",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/db.ts:66[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_alerts »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_tool_audit|insert|backend",
+   "table": "ziko_ai_tool_audit",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/db.ts:90[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_tool_audit »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_cost_log|insert|backend",
+   "table": "ziko_ai_cost_log",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/service.ts:43[supabase]",
+    "backend/api/src/coaching-engine/apply.ts:238[db]",
+    "backend/api/src/routes/ai.ts:154[supabase]",
+    "backend/api/src/routes/onboarding.ts:43[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_cost_log »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_conversations|insert|backend",
+   "table": "ziko_ai_conversations",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/service.ts:482[db]",
+    "backend/api/src/context/conversation.ts:63[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_conversations »"
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_programs|insert|backend",
+   "table": "ziko_workout_programs",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/ai/tools.ts:308[db]",
+    "backend/api/src/coach/imports/db.ts:198[db]",
+    "backend/api/src/coach/programs/db.ts:43[db]",
+    "backend/api/src/coach/programs/db.ts:197[db]",
+    "backend/api/src/coach/programs/db.ts:234[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_workout_programs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_branding|upsert|backend",
+   "table": "ziko_coach_branding",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/branding/db.ts:15[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_branding »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_links|update|backend",
+   "table": "ziko_coach_client_links",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/clients/db.ts:241[db]",
+    "backend/api/src/coach/clients/db.ts:464[db]",
+    "backend/api/src/coach/clients/db.ts:825[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_tags|insert|backend",
+   "table": "ziko_coach_client_tags",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/clients/db.ts:396[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_client_tags »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_tags|delete|backend",
+   "table": "ziko_coach_client_tags",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/clients/db.ts:411[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_notes|upsert|backend",
+   "table": "ziko_coach_client_notes",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/clients/db.ts:443[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_client_notes »"
+    }
+   }
+  },
+  {
+   "k": "ziko_dashboard_configs|upsert|backend",
+   "table": "ziko_dashboard_configs",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/dashboards/db.ts:23[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_dashboard_configs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_dashboard_configs|delete|backend",
+   "table": "ziko_dashboard_configs",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/dashboards/db.ts:37[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_memory|upsert|backend",
+   "table": "ziko_coach_memory",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/dashboards/db.ts:58[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_memory »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_metric_thresholds|insert|backend",
+   "table": "ziko_coach_metric_thresholds",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/dashboards/service.ts:223[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_metric_thresholds »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_metric_thresholds|delete|backend",
+   "table": "ziko_coach_metric_thresholds",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/dashboards/service.ts:245[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_exercises|insert|backend",
+   "table": "ziko_coach_exercises",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/exercises/db.ts:138[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_exercises »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_exercises|update|backend",
+   "table": "ziko_coach_exercises",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/exercises/db.ts:173[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_exercises|delete|backend",
+   "table": "ziko_coach_exercises",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/exercises/db.ts:216[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_profiles|update|backend",
+   "table": "ziko_user_profiles",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/identity/db.ts:28[db]",
+    "backend/api/src/routes/referral.ts:41[supabase]",
+    "backend/api/src/routes/referral.ts:126[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_profiles|update|backend",
+   "table": "ziko_coach_profiles",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/identity/db.ts:65[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_profiles|upsert|backend",
+   "table": "ziko_coach_profiles",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/identity/db.ts:74[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_profiles »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_imports|insert|backend",
+   "table": "ziko_ai_imports",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/imports/db.ts:37[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_imports »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_imports|update|backend",
+   "table": "ziko_ai_imports",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/imports/db.ts:116[db]",
+    "backend/api/src/coach/imports/db.ts:133[db]",
+    "backend/api/src/coach/imports/db.ts:216[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_invitations|insert|backend",
+   "table": "ziko_coach_invitations",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/invitations/db.ts:58[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_invitations »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_invitations|update|backend",
+   "table": "ziko_coach_invitations",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/invitations/db.ts:118[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_programs|update|backend",
+   "table": "ziko_workout_programs",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/programs/db.ts:143[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_workout_programs|delete|backend",
+   "table": "ziko_workout_programs",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/programs/db.ts:161[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_program_folders|insert|backend",
+   "table": "ziko_coach_program_folders",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/programs/db.ts:275[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_program_folders »"
+    }
+   }
+  },
+  {
+   "k": "ziko_exercises|insert|backend",
+   "table": "ziko_exercises",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/programs/db.ts:354[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_exercises »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_videos|insert|backend",
+   "table": "ziko_coach_client_videos",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/videos/db.ts:76[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_client_videos »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_video_annotations|insert|backend",
+   "table": "ziko_coach_video_annotations",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/videos/db.ts:169[db]",
+    "backend/api/src/coach/videos/db.ts:261[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_video_annotations »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_video_annotations|update|backend",
+   "table": "ziko_coach_video_annotations",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/videos/db.ts:194[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_video_annotations|delete|backend",
+   "table": "ziko_coach_video_annotations",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/videos/db.ts:212[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_client_videos|update|backend",
+   "table": "ziko_coach_client_videos",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/videos/db.ts:287[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_vocal_feedbacks|insert|backend",
+   "table": "ziko_coach_vocal_feedbacks",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/coach/voice/service.ts:276[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_vocal_feedbacks »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_messages|insert|backend",
+   "table": "ziko_ai_messages",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/context/conversation.ts:93[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_messages »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_conversations|update|backend",
+   "table": "ziko_ai_conversations",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/context/conversation.ts:104[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_forms|insert|backend",
+   "table": "ziko_coach_forms",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/forms.ts:49[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_coach_forms »"
+    }
+   }
+  },
+  {
+   "k": "ziko_coach_forms|update|backend",
+   "table": "ziko_coach_forms",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/forms.ts:88[supabase]",
+    "backend/api/src/routes/forms.ts:123[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_form_responses|insert|backend",
+   "table": "ziko_form_responses",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/forms.ts:301[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_form_responses »"
+    }
+   }
+  },
+  {
+   "k": "ziko_form_instances|update|backend",
+   "table": "ziko_form_instances",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/forms.ts:314[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_tokens|update|backend",
+   "table": "ziko_notification_tokens",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/notifications-cron.ts:90[supabaseAdmin]",
+    "backend/api/src/routes/notifications.ts:82[supabaseAdmin]",
+    "backend/api/src/services/notificationService.ts:171[getSupabaseAdmin()]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_tokens|upsert|backend",
+   "table": "ziko_notification_tokens",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/notifications.ts:50[supabaseAdmin]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_notification_tokens »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_plugins|upsert|backend",
+   "table": "ziko_user_plugins",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/plugins.ts:40[adminClient]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_plugins »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_plugins|delete|backend",
+   "table": "ziko_user_plugins",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/plugins.ts:56[adminClient]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_plugins|update|backend",
+   "table": "ziko_user_plugins",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/plugins.ts:72[adminClient]",
+    "backend/api/src/tools/hydration.ts:84[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_app_invites|insert|backend",
+   "table": "ziko_app_invites",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/referral.ts:111[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_app_invites »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_promo_redemptions|insert|backend",
+   "table": "ziko_user_promo_redemptions",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/referral.ts:227[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_promo_redemptions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_promo_codes|update|backend",
+   "table": "ziko_promo_codes",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/referral.ts:237[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_supplement_favorites|insert|backend",
+   "table": "ziko_user_supplement_favorites",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/supplements.ts:106[adminClient]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_supplement_favorites »"
+    }
+   }
+  },
+  {
+   "k": "ziko_user_supplement_favorites|delete|backend",
+   "table": "ziko_user_supplement_favorites",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/routes/supplements.ts:118[adminClient]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_supplements|upsert|backend",
+   "table": "ziko_supplements",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/scrapers/index.ts:95[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_supplements »"
+    },
+    "anon": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_supplement_prices|insert|backend",
+   "table": "ziko_supplement_prices",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/scrapers/index.ts:146[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_supplement_prices »"
+    },
+    "anon": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_user_ai_credits|upsert|backend",
+   "table": "ziko_user_ai_credits",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/services/creditService.ts:59[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_user_ai_credits »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_credit_transactions|insert|backend",
+   "table": "ziko_ai_credit_transactions",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/services/creditService.ts:257[supabase]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_credit_transactions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_log|insert|backend",
+   "table": "ziko_notification_log",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/services/notificationService.ts:134[getSupabaseAdmin()]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "RLS_DENIED",
+     "status": 403,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_notification_log »"
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_notification_log »"
+    }
+   }
+  },
+  {
+   "k": "ziko_notification_log|update|backend",
+   "table": "ziko_notification_log",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/services/notificationService.ts:180[getSupabaseAdmin()]",
+    "backend/api/src/services/notificationService.ts:221[getSupabaseAdmin()]",
+    "backend/api/src/services/notificationService.ts:259[getSupabaseAdmin()]",
+    "backend/api/src/services/notificationService.ts:269[getSupabaseAdmin()]",
+    "backend/api/src/services/notificationService.ts:274[getSupabaseAdmin()]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_generated_programs|insert|backend",
+   "table": "ziko_ai_generated_programs",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/ai-programs.ts:95[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_ai_generated_programs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_ai_generated_programs|update|backend",
+   "table": "ziko_ai_generated_programs",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/ai-programs.ts:180[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_cardio_sessions|insert|backend",
+   "table": "ziko_cardio_sessions",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/cardio.ts:38[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_cardio_sessions »"
+    }
+   }
+  },
+  {
+   "k": "ziko_habit_logs|upsert|backend",
+   "table": "ziko_habit_logs",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/habits.ts:61[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_habit_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_habits|insert|backend",
+   "table": "ziko_habits",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/habits.ts:135[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_habits »"
+    }
+   }
+  },
+  {
+   "k": "ziko_hydration_logs|insert|backend",
+   "table": "ziko_hydration_logs",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/hydration.ts:15[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_hydration_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_journal_entries|insert|backend",
+   "table": "ziko_journal_entries",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/journal.ts:22[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_journal_entries »"
+    }
+   }
+  },
+  {
+   "k": "ziko_body_measurements|insert|backend",
+   "table": "ziko_body_measurements",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/measurements.ts:40[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_body_measurements »"
+    }
+   }
+  },
+  {
+   "k": "ziko_nutrition_logs|insert|backend",
+   "table": "ziko_nutrition_logs",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/nutrition.ts:52[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_nutrition_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_nutrition_logs|delete|backend",
+   "table": "ziko_nutrition_logs",
+   "cmd": "delete",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/nutrition.ts:136[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_pantry_items|insert|backend",
+   "table": "ziko_pantry_items",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/pantry.ts:57[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_pantry_items »"
+    }
+   }
+  },
+  {
+   "k": "ziko_pantry_items|update|backend",
+   "table": "ziko_pantry_items",
+   "cmd": "update",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/pantry.ts:71[db]",
+    "backend/api/src/tools/pantry.ts:147[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "OK_0ROWS",
+     "status": 200,
+     "msg": ""
+    }
+   }
+  },
+  {
+   "k": "ziko_sleep_logs|upsert|backend",
+   "table": "ziko_sleep_logs",
+   "cmd": "upsert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/sleep.ts:31[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 200,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_sleep_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_stretching_logs|insert|backend",
+   "table": "ziko_stretching_logs",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/stretching.ts:56[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_stretching_logs »"
+    }
+   }
+  },
+  {
+   "k": "ziko_timer_presets|insert|backend",
+   "table": "ziko_timer_presets",
+   "cmd": "insert",
+   "side": "backend",
+   "sites": [
+    "backend/api/src/tools/timer.ts:52[db]"
+   ],
+   "results": {
+    "authenticated": {
+     "class": "OK",
+     "status": 201,
+     "msg": ""
+    },
+    "anon": {
+     "class": "RLS_DENIED",
+     "status": 401,
+     "msg": "la nouvelle ligne viole la politique de sécurité au niveau ligne pour la table « ziko_timer_presets »"
+    }
+   }
+  }
+ ]
+}

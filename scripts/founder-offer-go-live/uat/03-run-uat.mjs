@@ -10,14 +10,14 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, '../../../.planning/workstreams/lien-invite/phases/06-founder-offer-go-live/uat');
 mkdirSync(OUT, { recursive: true });
-const BASE = 'http://127.0.0.1:3141';
+const BASE = `http://127.0.0.1:${process.env.UAT_WEB_PORT || 3141}`;
 const PGBIN = process.env.PGBIN ?? 'C:/Users/Anatholy/scoop/apps/postgresql/current/bin';
 const CHROMIUM =
   process.env.CHROMIUM_PATH ??
   'C:/Users/Anatholy/AppData/Local/ms-playwright/chromium_headless_shell-1254/chrome-headless-shell-win64/chrome-headless-shell.exe';
 
 const sql = (q) =>
-  execFileSync(`${PGBIN}/psql`, ['-h', '127.0.0.1', '-p', '54440', '-U', 'postgres', '-At', '-F', '|', '-c', q], {
+  execFileSync(`${PGBIN}/psql`, ['-h', '127.0.0.1', '-p', String(process.env.UAT_PG_PORT || 54440), '-U', 'postgres', '-At', '-F', '|', '-c', q], {
     encoding: 'utf8',
   }).trim();
 
