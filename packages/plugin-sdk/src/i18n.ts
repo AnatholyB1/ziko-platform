@@ -888,6 +888,15 @@ const fr: TranslationDict = {
   'plugins.locked.deepLinkMessage': '{name} se débloque au niveau {level}. Tu es niveau {current}.',
   'plugins.unlocked.title': 'Nouveau module débloqué',
   'plugins.unlocked.message': 'Niveau {level} atteint : {names} est maintenant disponible.',
+  'plugins.locked.required': 'Niveau {n} requis',
+  'plugins.locked.level': 'Niveau {n}',
+  'plugins.locked.helper': 'Ces modules s’ouvrent au fil de ta progression avec Ziko.',
+  'plugins.locked.a11y': '{name}, verrouillé, se débloque au niveau {n}',
+  'plugins.locked.a11yHint': 'Affiche le niveau requis',
+  'plugins.unlocked.allDone': 'Tout est débloqué',
+  'plugins.unlocked.toastTitle': 'Niveau {n} atteint',
+  'plugins.unlocked.toastDetail': '{k} modules débloqués',
+  'plugins.unlocked.toastDetailOne': '1 module débloqué',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1772,10 +1781,19 @@ const en: TranslationDict = {
   'plugins.locked.deepLinkMessage': '{name} unlocks at level {level}. You are level {current}.',
   'plugins.unlocked.title': 'New module unlocked',
   'plugins.unlocked.message': 'Level {level} reached: {names} is now available.',
+  'plugins.locked.required': 'Level {n} required',
+  'plugins.locked.level': 'Level {n}',
+  'plugins.locked.helper': 'These modules open up as you progress with Ziko.',
+  'plugins.locked.a11y': '{name}, locked, unlocks at level {n}',
+  'plugins.locked.a11yHint': 'Shows the required level',
+  'plugins.unlocked.allDone': 'Everything is unlocked',
+  'plugins.unlocked.toastTitle': 'Level {n} reached',
+  'plugins.unlocked.toastDetail': '{k} modules unlocked',
+  'plugins.unlocked.toastDetailOne': '1 module unlocked',
 };
 
 // ── All translations ─────────────────────────────────────
-const translations: Record<Locale, TranslationDict> = { fr, en };
+export const translations: Record<Locale, TranslationDict> = { fr, en };
 
 // ── Exercise name translations ───────────────────────────
 export const exerciseNames: Record<string, string> = {
