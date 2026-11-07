@@ -1,5 +1,5 @@
 // Phase 4 plan 04-02 (v1.16, lien-invite) — CRED-03 idempotency and
-// service-role-only proof for grant_premium_credits()
+// service-role-only proof for ziko_grant_premium_credits()
 // (20260816_premium_credit_grant.sql). Follows the house shape from
 // waitlist-config-rpc.spec.ts verbatim: same RUN_DB guard, same
 // getAdminClient/getAnonClient/createTestUser/cleanupTestUsers fixtures,
@@ -20,7 +20,7 @@ function currentMonthKey(): string {
   return new Date().toISOString().slice(0, 7);
 }
 
-describe.skipIf(!RUN_DB)('grant_premium_credits — funds once per calendar month, service-role only (CRED-03, T-04-04)', () => {
+describe.skipIf(!RUN_DB)('ziko_grant_premium_credits — funds once per calendar month, service-role only (CRED-03, T-04-04)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   const createdUserIds: string[] = [];
 

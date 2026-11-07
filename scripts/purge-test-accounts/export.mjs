@@ -218,11 +218,11 @@ function bindFetchProfiles(client) {
     const rows = [];
     for (const batch of chunk(ids, CHUNK_SIZE)) {
       const { data, error } = await client
-        .from('user_profiles')
+        .from('ziko_user_profiles')
         .select('id, tier, subscription_tier, created_at')
         .in('id', batch);
       if (error) {
-        throw new Error(`export: user_profiles query failed: ${error.message}`);
+        throw new Error(`export: ziko_user_profiles query failed: ${error.message}`);
       }
       rows.push(...(data ?? []));
     }
@@ -234,9 +234,9 @@ function bindFetchWaitlistRows(client) {
   return async (emails) => {
     const rows = [];
     for (const batch of chunk(emails, CHUNK_SIZE)) {
-      const { data, error } = await client.from('waitlist_signups').select('email').in('email', batch);
+      const { data, error } = await client.from('ziko_waitlist_signups').select('email').in('email', batch);
       if (error) {
-        throw new Error(`export: waitlist_signups query failed: ${error.message}`);
+        throw new Error(`export: ziko_waitlist_signups query failed: ${error.message}`);
       }
       rows.push(...(data ?? []));
     }

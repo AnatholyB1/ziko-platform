@@ -159,7 +159,7 @@ describe('computeRetroactiveProfile', () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  it('returns { success: false, skipped: "not_onboarded" } without any model call when user_profiles.onboarding_done is false', async () => {
+  it('returns { success: false, skipped: "not_onboarded" } without any model call when ziko_user_profiles.onboarding_done is false', async () => {
     singleResults.ziko_athlete_state = { data: null, error: null };
     singleResults.ziko_user_profiles = { data: { onboarding_done: false }, error: null };
 
@@ -170,7 +170,7 @@ describe('computeRetroactiveProfile', () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  it('returns { success: false, skipped: "not_onboarded" } without any model call when the user_profiles row is absent', async () => {
+  it('returns { success: false, skipped: "not_onboarded" } without any model call when the ziko_user_profiles row is absent', async () => {
     singleResults.ziko_athlete_state = { data: null, error: null };
     singleResults.ziko_user_profiles = { data: null, error: null };
 

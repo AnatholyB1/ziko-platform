@@ -11,7 +11,7 @@ const RUN_DB = Boolean(process.env.SUPABASE_TEST_URL) && process.env.SUPABASE_TE
 
 const PREFIX = `dedupe-${randomUUID().slice(0, 8)}-`;
 
-describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_founder_offer.sql)', () => {
+describe.skipIf(!RUN_DB)('ziko_waitlist_signups + waitlist RPCs (20260812_waitlist_founder_offer.sql)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   let anon: ReturnType<typeof getAnonClient>;
   let rlsUser: TestUser;
@@ -27,14 +27,14 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
     const { error: tableError } = await admin.from('ziko_waitlist_signups').select('id').limit(1);
     if (tableError) {
       throw new Error(
-        `waitlist_signups is not queryable (${tableError.message}) — ` +
+        `ziko_waitlist_signups is not queryable (${tableError.message}) — ` +
         `supabase/migrations/20260812_waitlist_founder_offer.sql has not been applied to this project.`
       );
     }
     const { error: fnError } = await admin.rpc('ziko_normalize_waitlist_email', { p_email: 'preflight@example.com' });
     if (fnError) {
       throw new Error(
-        `normalize_waitlist_email is not callable (${fnError.message}) — ` +
+        `ziko_normalize_waitlist_email is not callable (${fnError.message}) — ` +
         `supabase/migrations/20260812_waitlist_founder_offer.sql has not been applied to this project.`
       );
     }
@@ -112,32 +112,32 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
   });
 
   describe('RPC privilege — all five functions reject the anon key (DATA-06, T-01-18)', () => {
-    it('claim_waitlist_signup errors for anon', async () => {
+    it('ziko_claim_waitlist_signup errors for anon', async () => {
       const { error } = await anon.rpc('ziko_claim_waitlist_signup', { p_email: 'z@example.com', p_audience: 'athlete' });
       expect(error).not.toBeNull();
     });
 
-    it('normalize_waitlist_email errors for anon', async () => {
+    it('ziko_normalize_waitlist_email errors for anon', async () => {
       const { error } = await anon.rpc('ziko_normalize_waitlist_email', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
-    it('get_waitlist_founder_status errors for anon', async () => {
+    it('ziko_get_waitlist_founder_status errors for anon', async () => {
       const { error } = await anon.rpc('ziko_get_waitlist_founder_status');
       expect(error).not.toBeNull();
     });
 
-    it('anonymize_waitlist_signup errors for anon', async () => {
+    it('ziko_anonymize_waitlist_signup errors for anon', async () => {
       const { error } = await anon.rpc('ziko_anonymize_waitlist_signup', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
-    it('reset_waitlist_founder_sequence errors for anon', async () => {
+    it('ziko_reset_waitlist_founder_sequence errors for anon', async () => {
       const { error } = await anon.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 1 });
       expect(error).not.toBeNull();
     });
 
-    it('the service-role client CAN execute claim_waitlist_signup and read the row back (denials above are privilege, not breakage)', async () => {
+    it('the service-role client CAN execute ziko_claim_waitlist_signup and read the row back (denials above are privilege, not breakage)', async () => {
       const email = `${PREFIX}preflight-${randomUUID()}@example.com`;
       createdEmails.push(email);
       const { data, error } = await admin.rpc('ziko_claim_waitlist_signup', { p_email: email, p_audience: 'athlete' });
@@ -150,7 +150,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
     });
   });
 
-  describe('claim_waitlist_signup — normalized dedupe (DATA-04, D-10, T-01-19, T-01-20)', () => {
+  describe('ziko_claim_waitlist_signup — normalized dedupe (DATA-04, D-10, T-01-19, T-01-20)', () => {
     it('Gmail case + sub-addressing + dots collapse to one row and do not burn a second founder rank', async () => {
       await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 900500 });
       const suffix = randomUUID().split('-').join('');
@@ -219,7 +219,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
   });
 
   describe('normalization invariant + field completeness (D-12, DATA-01)', () => {
-    it('every non-anonymized row created by this spec has email_normalized === normalize_waitlist_email(email)', async () => {
+    it('every non-anonymized row created by this spec has email_normalized === ziko_normalize_waitlist_email(email)', async () => {
       const { data: rows } = await admin
         .from('ziko_waitlist_signups')
         .select('email, email_normalized')

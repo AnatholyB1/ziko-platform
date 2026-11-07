@@ -8,7 +8,7 @@ afterAll(async () => {
   if (createdIds.length) await cleanupTestUsers(createdIds);
 });
 
-describe('user_profiles.role', () => {
+describe('ziko_user_profiles.role', () => {
   it('column exists with default client (introspection)', async () => {
     const { error } = await adminClient
       .from('ziko_user_profiles')
@@ -52,7 +52,7 @@ describe('user_profiles.role', () => {
     expect(error).toBeNull();
   });
 
-  it('backfill: no existing user_profiles row has NULL role', async () => {
+  it('backfill: no existing ziko_user_profiles row has NULL role', async () => {
     const { count, error } = await adminClient
       .from('ziko_user_profiles')
       .select('*', { count: 'exact', head: true })

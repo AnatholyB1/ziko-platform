@@ -57,7 +57,7 @@ export async function createTestUser(prefix: string): Promise<TestUser> {
 export async function cleanupTestUsers(userIds: string[]): Promise<void> {
   const admin = getAdminClient();
   for (const id of userIds) {
-    // FK CASCADE on auth.users wipes user_profiles, coach_profiles,
+    // FK CASCADE on auth.users wipes ziko_user_profiles, coach_profiles,
     // coach_invitations, coach_client_links, ai_imports, etc.
     await admin.auth.admin.deleteUser(id);
   }

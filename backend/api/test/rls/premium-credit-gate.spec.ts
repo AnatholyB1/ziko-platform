@@ -12,7 +12,7 @@ import { getAdminClient, getAnonClient, createTestUser, cleanupTestUsers } from 
 // never run there. See waitlist-config-rpc.spec.ts for the same pattern.
 const RUN_DB = Boolean(process.env.SUPABASE_TEST_URL) && process.env.SUPABASE_TEST_URL === process.env.SUPABASE_URL;
 
-describe.skipIf(!RUN_DB)('app_config.premium_credit_cap_enabled — stored as a JSONB boolean, shipped false (CRED-05, T-04-03)', () => {
+describe.skipIf(!RUN_DB)('ziko_app_config.premium_credit_cap_enabled — stored as a JSONB boolean, shipped false (CRED-05, T-04-03)', () => {
   let admin: ReturnType<typeof getAdminClient>;
 
   beforeAll(() => {
@@ -37,7 +37,7 @@ describe.skipIf(!RUN_DB)('app_config.premium_credit_cap_enabled — stored as a 
   });
 });
 
-describe.skipIf(!RUN_DB)('user_profiles.is_lifetime_premium — exists, defaults false (CRED-04, T-04-03)', () => {
+describe.skipIf(!RUN_DB)('ziko_user_profiles.is_lifetime_premium — exists, defaults false (CRED-04, T-04-03)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   const createdUserIds: string[] = [];
 
@@ -46,11 +46,11 @@ describe.skipIf(!RUN_DB)('user_profiles.is_lifetime_premium — exists, defaults
   });
 
   afterAll(async () => {
-    // FK CASCADE on auth.users wipes the user_profiles row created by the trigger.
+    // FK CASCADE on auth.users wipes the ziko_user_profiles row created by the trigger.
     await cleanupTestUsers(createdUserIds);
   });
 
-  it('the column exists on user_profiles and is queryable without error', async () => {
+  it('the column exists on ziko_user_profiles and is queryable without error', async () => {
     const { error } = await admin.from('ziko_user_profiles').select('is_lifetime_premium').limit(1);
     expect(error).toBeNull();
   });
@@ -70,7 +70,7 @@ describe.skipIf(!RUN_DB)('user_profiles.is_lifetime_premium — exists, defaults
   });
 });
 
-describe.skipIf(!RUN_DB)('app_config deny-all posture holds for the new cap row too (CRED-05, T-04-03)', () => {
+describe.skipIf(!RUN_DB)('ziko_app_config deny-all posture holds for the new cap row too (CRED-05, T-04-03)', () => {
   let anon: ReturnType<typeof getAnonClient>;
 
   beforeAll(() => {

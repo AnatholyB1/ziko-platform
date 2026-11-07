@@ -25,9 +25,9 @@ before running the command).
 
 ## 3. What the erasure does
 
-`scripts/waitlist-erasure/erase.mjs` calls `anonymize_waitlist_signup(p_email)` — the
+`scripts/waitlist-erasure/erase.mjs` calls `ziko_anonymize_waitlist_signup(p_email)` — the
 `SECURITY DEFINER`, `service_role`-only RPC Phase 1 already built and proved
-(`supabase/migrations/20260812_waitlist_founder_offer.sql` lines 217-241). It blanks the stored
+(originally `supabase/migrations/20260812_waitlist_founder_offer.sql` lines 217-241; deployed on the shared `portfolio` project as `public.ziko_anonymize_waitlist_signup` in `supabase/portfolio-migrations/20261001101853_portfolio_ziko_functions.sql`). It blanks the stored
 email and identifying fields and sets `anonymized_at`. It **intentionally preserves `founder_rank`
 and `is_founder`** (Phase 1's D-07) — an erasure never renumbers other registrants, and the
 displayed founder count never moves because of an erasure. What happens to a *claimed* founder
