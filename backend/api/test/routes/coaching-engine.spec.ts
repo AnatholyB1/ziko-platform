@@ -257,6 +257,17 @@ describe('coaching-engine routes', () => {
     expect(json.failed).toBeGreaterThanOrEqual(1);
   });
 
+  it('a duplicate RPC result counts as skipped, a real failure still counts as failed', async () => {
+    scriptedDueAthletes = [{ user_id: 'a-1' }, { user_id: 'a-2' }, { user_id: 'a-3' }];
+    mockRunWeeklyReview
+      .mockResolvedValueOnce({ ran: true, success: false, reason: 'duplicate' })
+      .mockResolvedValueOnce({ ran: true, success: false, reason: 'unknown_rpc_failure' })
+      .mockResolvedValueOnce({ ran: true, success: true, decision_id: 'd-3' });
+
+    const res = await makeCronRequest({ authHeader: 'Bearer test-cron-secret' });
+    expect(await res.json()).toEqual({ processed: 3, succeeded: 1, skipped: 1, failed: 1 });
+  });
+
   // ── Cost logging (ENGINE-05) ─────────────────────────────────────────
 
   it('never imports creditCheck/creditDeduct — no cost logging via creditGate on either route', async () => {
