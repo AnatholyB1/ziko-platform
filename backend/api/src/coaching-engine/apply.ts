@@ -367,6 +367,19 @@ export async function runWeeklyReview(
     .maybeSingle();
 
   if (existing) {
+    // The week is already reviewed but the clock never moved (the winner of
+    // a race crashed after the RPC, or the row was re-opened by hand). Roll
+    // the clock through the dedicated DB function so the cron stops
+    // rescanning this athlete every run. Best-effort: a failure (for example
+    // a user-token caller without EXECUTE) is logged and never changes the
+    // outcome; only the service-role cron path is expected to succeed.
+    const { error: clockError } = await db.rpc('ziko_advance_review_clock', {
+      p_user_id: userId,
+      p_week_of: context.weekOf,
+    });
+    if (clockError) {
+      console.error('[WeeklyReview] advance review clock failed:', clockError.message);
+    }
     return { ran: false, reason: 'already_recorded' };
   }
 

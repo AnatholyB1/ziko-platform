@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useThemeStore,
   useTranslation,
-  shouldShowUnlockToast,
+  unlockToastAction,
   unlockToastBottom,
   unlockToastDetailKey,
   unlockToastMotion,
@@ -39,28 +39,36 @@ export function UnlockToast() {
     };
   }, []);
 
-  // Pick up a pending level-up once no blocking overlay is open.
+  // Reactive gate: pick a pending level-up once no blocking overlay is open,
+  // and drop the on-screen toast (without clearing the store entry) if the
+  // overlay opens meanwhile, so it restarts after the overlay closes.
+  const action = unlockToastAction({ shown, levelUp, blockingOverlayOpen: overlayOpen });
   useEffect(() => {
-    if (shown) return;
-    if (shouldShowUnlockToast({ levelUp, blockingOverlayOpen: overlayOpen }) && levelUp) {
-      setShown(levelUp);
-    }
-  }, [levelUp, overlayOpen, shown]);
+    if (action === 'pick' && levelUp) setShown(levelUp);
+    else if (action === 'suspend') setShown(null);
+  }, [action, levelUp]);
 
-  // Display timer + announcement; clear the store entry afterwards.
+  // Announcement: once per displayed toast.
   useEffect(() => {
     if (!shown) return;
     const count = shown.plugins.length;
     const title = t('plugins.unlocked.toastTitle', { n: shown.to });
     const detail = t(unlockToastDetailKey(count), { k: count });
     AccessibilityInfo.announceForAccessibility(`${title}. ${detail}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown]);
+
+  // Display timer: runs only while the toast is shown and no overlay is open;
+  // cleared after display. Cancelled by the cleanup when the overlay opens.
+  useEffect(() => {
+    if (!shown || action !== 'run') return;
     const timer = setTimeout(() => {
       if (useAuthStore.getState().levelUp === shown) useAuthStore.getState().clearLevelUp();
       setShown(null);
     }, UNLOCK_TOAST_DURATION_MS);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shown]);
+  }, [shown, action]);
 
   if (!shown || overlayOpen) return null;
 

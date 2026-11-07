@@ -266,7 +266,13 @@ export default function DashboardScreen() {
   // use it as an immediate name source while the TanStack Query resolves.
   const authProfile = useAuthStore((s) => s.profile);
   const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
-  const lockedSection = useMemo(() => buildLockedSection(effectiveLevel), [effectiveLevel]);
+  const levelLoaded = useAuthStore((s) => s.levelLoaded);
+  // Skip the locked section until the first level read, so a high-level athlete
+  // never briefly sees locked tiles / a wrong "Niveau N requis".
+  const lockedSection = useMemo(
+    () => (levelLoaded ? buildLockedSection(effectiveLevel) : undefined),
+    [effectiveLevel, levelLoaded],
+  );
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();

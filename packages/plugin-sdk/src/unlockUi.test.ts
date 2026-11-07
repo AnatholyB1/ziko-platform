@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   buildLockedSection,
   lockedTapAlertArgs,
   unlockToastBottom,
   shouldShowUnlockToast,
   unlockToastDetailKey,
+  unlockToastAction,
+  openLockedTapAlert,
+  LOCKED_ALERT_DELAY_MS,
   unlockToastMotion,
   UNLOCK_TOAST_DURATION_MS,
   LOCKED_SHORT_NAMES,
@@ -112,5 +115,53 @@ describe('B-05 / B-11 tokens', () => {
     for (const loc of ['fr', 'en'] as const)
       for (const [k, v] of Object.entries(translations[loc]))
         if (k.startsWith('plugins.locked') || k.startsWith('plugins.unlocked')) expect(emoji.test(v), k).toBe(false);
+  });
+});
+
+describe('unlockToastAction (reactive overlay gate)', () => {
+  const up = { plugins: ['journal'] };
+  it('picks a pending level-up only while no overlay is open', () => {
+    expect(unlockToastAction({ shown: null, levelUp: up, blockingOverlayOpen: false })).toBe('pick');
+    expect(unlockToastAction({ shown: null, levelUp: up, blockingOverlayOpen: true })).toBe('none');
+    expect(unlockToastAction({ shown: null, levelUp: null, blockingOverlayOpen: false })).toBe('none');
+    expect(unlockToastAction({ shown: null, levelUp: { plugins: [] }, blockingOverlayOpen: false })).toBe('none');
+  });
+  it('runs the timer while shown and the overlay is closed', () => {
+    expect(unlockToastAction({ shown: up, levelUp: up, blockingOverlayOpen: false })).toBe('run');
+  });
+  it('suspends (cancel timer, reset shown) when the overlay opens mid-display, then re-picks after it closes', () => {
+    expect(unlockToastAction({ shown: up, levelUp: up, blockingOverlayOpen: true })).toBe('suspend');
+    // after suspend: shown = null, levelUp kept in the store, overlay closes
+    expect(unlockToastAction({ shown: null, levelUp: up, blockingOverlayOpen: true })).toBe('none');
+    expect(unlockToastAction({ shown: null, levelUp: up, blockingOverlayOpen: false })).toBe('pick');
+  });
+});
+
+describe('openLockedTapAlert (drawer Modal closes before the alert)', () => {
+  it('closes the drawer first, then shows the title-only alert after the delay', () => {
+    const calls: string[] = [];
+    let scheduled: { fn: () => void; ms: number } | null = null;
+    openLockedTapAlert({
+      minLevel: 3,
+      closeDrawer: () => calls.push('close'),
+      showAlert: (title) => calls.push(`alert:${title}`),
+      translate: (k, p) => `${k}:${p?.n}`,
+      schedule: (fn, ms) => {
+        scheduled = { fn, ms };
+      },
+    });
+    expect(calls).toEqual(['close']);
+    expect(scheduled!.ms).toBe(LOCKED_ALERT_DELAY_MS);
+    scheduled!.fn();
+    expect(calls).toEqual(['close', 'alert:plugins.locked.required:3']);
+  });
+  it('uses setTimeout by default and clamps the level', () => {
+    vi.useFakeTimers();
+    const showAlert = vi.fn();
+    openLockedTapAlert({ minLevel: 99, closeDrawer: () => {}, showAlert, translate: (_k, p) => String(p?.n) });
+    expect(showAlert).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(LOCKED_ALERT_DELAY_MS);
+    expect(showAlert).toHaveBeenCalledWith('5');
+    vi.useRealTimers();
   });
 });

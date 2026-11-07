@@ -82,6 +82,50 @@ export function lockedTapAlertArgs(minLevel: number): { key: string; params: { n
   return { key: 'plugins.locked.required', params: { n: clampLevel(minLevel) } };
 }
 
+export type UnlockToastAction = 'pick' | 'run' | 'suspend' | 'none';
+
+/**
+ * Reactive overlay gate for the unlock toast (46 review, MEDIUM). Re-evaluated
+ * on every change of shown / levelUp / overlay visibility:
+ *  - 'pick'    nothing shown yet, a level-up is pending and no overlay is open
+ *  - 'run'     toast on screen, overlay closed: the display timer may run
+ *  - 'suspend' toast on screen but the overlay opened meanwhile: cancel the
+ *              timer and reset `shown`; the store entry is NOT cleared, so the
+ *              toast restarts once the overlay closes
+ *  - 'none'    nothing to do
+ */
+export function unlockToastAction(args: {
+  shown: unknown | null;
+  levelUp: { plugins: readonly unknown[] } | null | undefined;
+  blockingOverlayOpen: boolean;
+}): UnlockToastAction {
+  if (args.shown) return args.blockingOverlayOpen ? 'suspend' : 'run';
+  return shouldShowUnlockToast({ levelUp: args.levelUp, blockingOverlayOpen: args.blockingOverlayOpen })
+    ? 'pick'
+    : 'none';
+}
+
+/** Delay between closing the drawer Modal and presenting the alert Modal (iOS cannot stack them). */
+export const LOCKED_ALERT_DELAY_MS = 350;
+
+/**
+ * Locked-tile tap (B-09, 46 review MEDIUM): close the drawer FIRST, then show
+ * the title-only alert once the drawer dismissal has had time to finish, so the
+ * alert Modal is never presented on top of a still-open Modal (iOS drops it).
+ */
+export function openLockedTapAlert(args: {
+  minLevel: number;
+  closeDrawer: () => void;
+  showAlert: (title: string) => void;
+  translate: (key: string, params?: Record<string, string | number>) => string;
+  schedule?: (fn: () => void, ms: number) => unknown;
+}): void {
+  const { key, params } = lockedTapAlertArgs(args.minLevel);
+  const title = args.translate(key, params);
+  args.closeDrawer();
+  (args.schedule ?? ((fn, ms) => setTimeout(fn, ms)))(() => args.showAlert(title), LOCKED_ALERT_DELAY_MS);
+}
+
 /**
  * Toast vertical offset above the screen bottom: clears the tab bar
  * (70 + inset) plus a gap (B-14). Negative / NaN inset => 0.

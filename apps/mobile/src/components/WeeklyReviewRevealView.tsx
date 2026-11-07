@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Animated as RNAnimated, Easing } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Animated as RNAnimated, Easing, AccessibilityInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -71,6 +71,12 @@ export function WeeklyReviewRevealView({ vm, step, focus, t, reduceMotion, onCta
     headline = t('coach.weeklyReview.reward.title', { n: vm.reward.tier });
     body = t('coach.weeklyReview.reward.body');
   }
+
+  // Contract section 7: announce the headline on open and on every step change.
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(headline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const key = ctaKey(vm, step);
   const ctaLabel = t(key === 'cta' ? 'coach.weeklyReview.cta' : `coach.weeklyReview.${key}`);
