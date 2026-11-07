@@ -15,6 +15,7 @@ import { fetchWeeklyReviewContext } from './context.js';
 import { decideWeeklyFocus } from './decide.js';
 import { create_program, create_reward } from './tools.js';
 import { logAutonomousCost } from '../lib/autonomousCost.js';
+import { notifyWeeklyReviewComplete } from './weeklyReviewNotify.js';
 import { MIN_TIER, nextRewardState, owedTiers, type GrantRewardResult } from './rewards.js';
 import type { WeeklyDecisionResult, WeeklyReviewContext } from './types.js';
 
@@ -266,6 +267,17 @@ export async function applyWeeklyDecision(
   } catch (err) {
     console.error('[WeeklyReview] reward grant step failed (retried next cycle):', err);
   }
+
+  // Phase 47b (OPS-02): fire-and-forget push, cron source only (gated inside).
+  void notifyWeeklyReviewComplete({
+    userId,
+    weekOf: context.weekOf,
+    source,
+    trajectory: decision.trajectory,
+    summaryChanged: decision.new_focus_summary !== context.state.current_focus_summary,
+    tierUp: reward.tierUp,
+    rewards,
+  });
 
   if (rewards.length > 0) {
     return { success: true, decision_id: result.decision_id!, rewards };
