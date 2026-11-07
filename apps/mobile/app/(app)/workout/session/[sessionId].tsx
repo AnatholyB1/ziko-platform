@@ -39,7 +39,8 @@ export default function HistoryDetailScreen() {
         .select('*, exercises:ziko_exercises(name, target_muscle)')
         .eq('session_id', sessionId)
         .eq('completed', true)
-        .order('order_index');
+        .order('exercise_order', { ascending: true })
+        .order('set_number', { ascending: true });
       return data ?? [];
     },
     enabled: !!sessionId,
@@ -50,7 +51,9 @@ export default function HistoryDetailScreen() {
     : '';
 
   const duration =
-    session?.duration_minutes ??
+    (session?.total_duration_active_seconds != null
+      ? Math.round(session.total_duration_active_seconds / 60)
+      : null) ??
     (session?.started_at && session?.ended_at
       ? Math.round(
           (new Date(session.ended_at).getTime() -

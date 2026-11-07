@@ -874,7 +874,7 @@ export default function DashboardScreen() {
                     {session.name ?? 'Workout'}
                   </Text>
                   <Text style={{ color: '#6B6963', fontSize: 11 }}>
-                    {format(new Date(session.started_at), 'd MMM')} · {Math.round((session.duration_seconds ?? 0) / 60)} min
+                    {format(new Date(session.started_at), 'd MMM')} · {Math.round((session.total_duration_active_seconds ?? (session.ended_at ? (new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 1000 : 0)) / 60)} min
                   </Text>
                 </View>
                 <Text style={{ color: '#22C55E', fontWeight: '800', fontSize: 13 }}>
