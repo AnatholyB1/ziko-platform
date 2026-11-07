@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.16
 milestone_name: Waitlist Fondateurs & Accès Anticipé
 current_phase: 6
-current_phase_name: Founder Offer Go-Live
-status: executing
-stopped_at: Phase 6 context gathered
+current_phase_name: Milestone v1.16 delivered
+status: complete
+stopped_at: v1.16 delivered 2026-11-07 (PR #48 d1955ad9)
 last_updated: "2026-08-18T11:00:46.171Z"
 last_activity: 2026-08-18
 last_activity_desc: Phase 05 plan 06 (merged-tree convergence gate + human UI safety checkpoint) execution complete — Phase 5 done, 6/6 plans

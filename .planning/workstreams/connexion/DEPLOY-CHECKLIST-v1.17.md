@@ -81,3 +81,20 @@ A faire, dans cet ordre, uniquement sur validation de l utilisateur:
 - Gating: seul le helper `isEmailVerified(profile)` (`@ziko/plugin-sdk`) et la banniere d accueil sont livres. Aucune action n est bloquee. Suite a decider: (1) cote serveur `POST /coach/clients/links/redeem` et `POST /credits/earn` refusent si `email_verified_at` est NULL (un gate cote client seul serait contournable), (2) options de cloture: rendre la verification obligatoire apres N jours.
 - Les comptes sociaux purs sont marques verifies seulement si la ligne `ziko_user_profiles` existe deja au moment de l appel; sinon la banniere propose le code.
 - `forgot.tsx` (reinitialisation du mot de passe) reste en lien Supabase par defaut, hors perimetre.
+
+## Livraison code (2026-11-07)
+- [x] PR #49 mergee dans main (a38c210f), CI verte.
+- [x] Build EAS Android preview lance: id 0dd523e8-f054-4678-b5b0-5dac7e45faee (pas de soumission store).
+- [ ] Tester sur appareil avec ce build: Google (nouveau compte, compte existant), linking automatique, persistance de session.
+- [ ] Build iOS + profil de provisioning regenere (entitlement Sign in with Apple), puis tests Apple.
+- [ ] Confirm email: seulement apres livraison de l'app et test d'envoi reel Resend. Jusqu'alors le risque de pre-hijack par linking auto reste ouvert.
+
+## Correctif etat prod (2026-11-07, fait par l'utilisateur, rapporte par team-lead)
+- [x] Supabase provider Apple active (apple=true relu publiquement).
+- [x] SMTP Resend: domaine mail.ziko-app.com verifie, DNS poses sur Vercel, SMTP + gabarit confirm-signup configures.
+- [x] Ecran de consentement Google en production (Branding: accueil, confidentialite /fr/politique-de-confidentialite, cgu, domaine ziko-app.com).
+- [ ] Confirm email (mailer_autoconfirm encore true): apres livraison de l'app, test d'envoi reel fait.
+- [ ] Tests appareil Google/Apple/linking/persistance de session; build iOS + profil.
+- [ ] Page de confidentialite en anglais: /en/privacy renvoie 404.
+- [ ] Verifier coach@ziko-app.com cote Resend (domaine racine absent du compte visible).
+(Les lignes plus haut marquees "[ ]" pour ces memes elements sont perimees.)

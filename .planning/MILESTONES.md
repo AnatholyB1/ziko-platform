@@ -1,5 +1,13 @@
 # Milestones
 
+## v1.17 Connexion Google & Apple (Code delivered: 2026-11-07, validation pending)
+
+**Workstream:** connexion. Code merged to main via PR #49 (a38c210f). Target auth: shared Supabase project `portfolio`.
+**Delivered:** native Google/Apple sign-in code (signInWithIdToken), email-first message on unlinkable email, verify-email OTP step on sign-up (backward compatible with autoconfirm), Confirm-sign-up email template, Google OAuth clients + provider.
+**Open at close:** Confirm email (autoconfirm pre-hijack risk until on), device tests of Google/Apple, automatic linking and session persistence NOT PROVEN, iOS build + provisioning profile, English privacy page (/en/privacy 404), coach@ziko-app.com check on Resend. Done since: Apple + Google providers, Resend SMTP + template, Google consent screen in production.
+
+---
+
 ## v1.8 Sport Dashboards (Shipped: 2026-05-30)
 
 **Phases completed:** 6 phases, 20 plans (Phases 37–41.1, workstream: main / web-coach)
@@ -113,3 +121,6 @@
 - Stale/missing Nyquist VALIDATION.md files for phases 06–09
 
 ---
+
+## v1.16 Waitlist Fondateurs & Accès Anticipé (lien-invite) — delivered 2026-11-07
+6 phases. Go-live on portfolio via PR #48 (d1955ad9): targeted REVOKE, reveal threshold 200->30, premium_credit_cap_enabled true, probes OK. Evidence: .planning/workstreams/lien-invite/phases/06-founder-offer-go-live/06-GO-LIVE-LOG.md. Known follow-ups: full client-DML REVOKE (99 ziko_* tables, built on a disposable DB, not merged), supplements anon-write, creditService key fallback, pantry shopping_list prefix, retention-config CRLF test, tsc errors in test/purge, 19 signups without consent kept and excluded from sends.

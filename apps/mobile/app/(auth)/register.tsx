@@ -10,6 +10,7 @@ import { showAlert } from '@ziko/plugin-sdk';
 import { signUpWithEmail } from '../../src/lib/emailSignup';
 import { EmailCodeForm } from '../../src/components/EmailCodeForm';
 import { useAuthStore } from '../../src/stores/authStore';
+import SocialAuthButtons from '../../src/components/SocialAuthButtons';
 
 function getStrength(pw: string): number {
   let s = 0;
@@ -110,6 +111,11 @@ export default function RegisterScreen() {
             <Text style={{ fontSize: 13.5, color: '#6B6963', marginTop: 8, lineHeight: 19.5 }}>
               2 minutes pour démarrer. Tu pourras compléter ton profil ensuite.
             </Text>
+          </View>
+
+          {/* Social sign-in */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 18 }}>
+            <SocialAuthButtons />
           </View>
 
           {/* Fields */}
