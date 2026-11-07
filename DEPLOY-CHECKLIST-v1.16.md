@@ -62,3 +62,6 @@ f0bb38e7-4e5b-4d95-a1e0-34b719c0377a
 - [x] Lecture prod: 21/21 premium ont premium_grant ce mois-ci: pas de cron manuel necessaire. api.ziko-app.com/health=200, ziko-app.com /fr/fondateurs /fr/cgv /fr/cgu = 200 (7 nov).
 - [ ] Token ziko-ci-portfolio: NON revoque (decision utilisateur).
 - Follow-ups: supplements anon-write (scraper), creditService fallback cle service, plugin pantry shopping_list non prefixe.
+
+## STATUT hardening/ziko-client-dml
+Migration 20261107170000_ziko_revoke_client_dml.sql (99 tables) NON APPROUVEE, NON APPLIQUEE: risque de casser mobile/web (ecritures directes JWT). A trancher par l'utilisateur. Le go-live a applique le REVOKE cible 20261107150000 (ziko_app_config, ziko_waitlist_signups).
