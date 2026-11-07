@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const communityManifest: PluginManifest = {
   id: 'community',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 3,
   name: 'Communauté',
   version: '1.0.0',
   description:

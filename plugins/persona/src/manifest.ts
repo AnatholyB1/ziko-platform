@@ -8,6 +8,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
  */
 const personaManifest: PluginManifest = {
   id: 'persona',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 2,
   name: 'AI Persona & Habits',
   version: '1.0.0',
   description: "Customize your AI coach's personality, name, and coaching style. Build daily habit streaks and get personalised motivational support.",

@@ -853,6 +853,15 @@ const fr: TranslationDict = {
   'coach.weeklyReview.headline': 'Ziko a fait le point sur ta semaine.',
   'coach.weeklyReview.body': 'Ton nouveau focus : {focus}',
   'coach.weeklyReview.cta': 'Voir mon focus',
+  'plugins.locked.section': 'À débloquer',
+  'plugins.locked.badge': 'Niv. {level}',
+  'plugins.locked.title': '{name} est verrouillé',
+  'plugins.locked.message': 'Ce module se débloque au niveau {level}. Tu es niveau {current} : continue sur ta lancée, ça arrive vite.',
+  'plugins.locked.cta': 'Compris',
+  'plugins.locked.deepLinkTitle': 'Module verrouillé',
+  'plugins.locked.deepLinkMessage': '{name} se débloque au niveau {level}. Tu es niveau {current}.',
+  'plugins.unlocked.title': 'Nouveau module débloqué',
+  'plugins.unlocked.message': 'Niveau {level} atteint : {names} est maintenant disponible.',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1702,6 +1711,15 @@ const en: TranslationDict = {
   'coach.weeklyReview.headline': 'Ziko checked in on your week.',
   'coach.weeklyReview.body': 'Your new focus: {focus}',
   'coach.weeklyReview.cta': 'See my focus',
+  'plugins.locked.section': 'To unlock',
+  'plugins.locked.badge': 'Lvl {level}',
+  'plugins.locked.title': '{name} is locked',
+  'plugins.locked.message': 'This module unlocks at level {level}. You are level {current}: keep going, it comes quickly.',
+  'plugins.locked.cta': 'Got it',
+  'plugins.locked.deepLinkTitle': 'Module locked',
+  'plugins.locked.deepLinkMessage': '{name} unlocks at level {level}. You are level {current}.',
+  'plugins.unlocked.title': 'New module unlocked',
+  'plugins.unlocked.message': 'Level {level} reached: {names} is now available.',
 };
 
 // ── All translations ─────────────────────────────────────

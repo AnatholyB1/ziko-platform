@@ -87,6 +87,11 @@ export interface PluginManifest {
   aiSystemPromptAddition?: string;
   /** When true, this plugin is pre-installed for all users and cannot be uninstalled. */
   mandatory?: boolean;
+  /**
+   * Athlete level (1-5) required to load this plugin (progressive unlock).
+   * Defaults to 1. Ignored for `mandatory` plugins, which are always unlocked.
+   */
+  minLevel?: number;
   routes: PluginRoute[];
 }
 

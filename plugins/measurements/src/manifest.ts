@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const measurementsManifest: PluginManifest = {
   id: 'measurements',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 2,
   name: 'Mesures & Progression',
   version: '1.0.0',
   description:
