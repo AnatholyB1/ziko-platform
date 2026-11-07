@@ -113,3 +113,6 @@
 - Stale/missing Nyquist VALIDATION.md files for phases 06–09
 
 ---
+
+## v1.16 Waitlist Fondateurs & Accès Anticipé (lien-invite) — delivered 2026-11-07
+6 phases. Go-live on portfolio via PR #48 (d1955ad9): targeted REVOKE, reveal threshold 200->30, premium_credit_cap_enabled true, probes OK. Evidence: .planning/workstreams/lien-invite/phases/06-founder-offer-go-live/06-GO-LIVE-LOG.md. Known follow-ups: full client-DML REVOKE (99 ziko_* tables, built on a disposable DB, not merged), supplements anon-write, creditService key fallback, pantry shopping_list prefix, retention-config CRLF test, tsc errors in test/purge, 19 signups without consent kept and excluded from sends.
