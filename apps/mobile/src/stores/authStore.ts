@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
-import { getEffectiveLevel, getNewlyUnlockedPlugins } from '@ziko/plugin-sdk';
+import {
+  getEffectiveLevel,
+  getNewlyUnlockedPlugins,
+  reduceLevelRead,
+  shouldDiscardLevelRead,
+  FIRST_LEVEL_READ_TIMEOUT_MS,
+} from '@ziko/plugin-sdk';
 import type { UserProfile, PluginLevelInfo } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { queryClient } from '../lib/queryClient';
@@ -43,19 +49,79 @@ let authListenerStarted = false;
 
 type AuthSet = (partial: Partial<AuthState>) => void;
 
-// Applies a freshly read level. Announces a level-up only when a previous level
-// was already known (first load after sign-in never triggers a toast).
-function applyLevel(set: AuthSet, get: () => AuthState, next: number): void {
-  const { effectiveLevel: prev, levelLoaded } = get();
-  if (levelLoaded && next > prev) {
-    set({
-      effectiveLevel: next,
-      levelLoaded: true,
-      levelUp: { from: prev, to: next, plugins: getNewlyUnlockedPlugins(prev, next) },
-    });
-  } else {
-    set({ effectiveLevel: next, levelLoaded: true });
+// Level state is bound to the current user id. Every id change (sign-out, remote
+// sign-out, account switch) resets it, and reads are tagged with the user id and
+// a monotonic sequence so a late or out-of-order response can never write into
+// the wrong user or lower an already applied level (Phase 46 audit).
+let levelSeq = 0;
+let levelAppliedSeq = 0;
+// true when levelLoaded only reflects the timeout / read-error fallback (level 1),
+// so the first real read afterwards is not announced as a level-up.
+let levelFallback = false;
+let firstReadTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearFirstReadTimer(): void {
+  if (firstReadTimer) {
+    clearTimeout(firstReadTimer);
+    firstReadTimer = null;
   }
+}
+
+// Invalidates in-flight reads and returns the patch that resets user-bound state.
+function levelResetPatch(): Partial<AuthState> {
+  levelSeq += 1;
+  levelAppliedSeq = levelSeq;
+  levelFallback = false;
+  clearFirstReadTimer();
+  return { effectiveLevel: 1, levelLoaded: false, levelUp: null, athleteOnboardingComplete: false };
+}
+
+// Sets session/user; resets level state if the user id changed. Starts the
+// first-read timeout so the route guard / loader never hang if the read stalls.
+function setSessionUser(set: AuthSet, get: () => AuthState, session: Session | null): void {
+  const prevId = get().user?.id ?? null;
+  const nextId = session?.user?.id ?? null;
+  const changed = prevId !== nextId;
+  set({ session, user: session?.user ?? null, ...(changed ? levelResetPatch() : {}) });
+  if (changed && nextId) {
+    firstReadTimer = setTimeout(() => {
+      firstReadTimer = null;
+      if (get().user?.id === nextId && !get().levelLoaded) {
+        levelFallback = true;
+        set({ levelLoaded: true });
+      }
+    }, FIRST_LEVEL_READ_TIMEOUT_MS);
+  }
+}
+
+// Applies a finished read unless it is stale (other user / older than applied).
+function commitLevelRead(set: AuthSet, get: () => AuthState, uid: string, seq: number, read: number): void {
+  if (shouldDiscardLevelRead({
+    requestUserId: uid,
+    currentUserId: get().user?.id,
+    requestSeq: seq,
+    appliedSeq: levelAppliedSeq,
+  })) return;
+  levelAppliedSeq = seq;
+  clearFirstReadTimer();
+  const { effectiveLevel, levelLoaded } = get();
+  const r = reduceLevelRead({ level: effectiveLevel, loaded: levelLoaded, fallback: levelFallback }, read);
+  levelFallback = false;
+  set({
+    effectiveLevel: r.state.level,
+    levelLoaded: true,
+    ...(r.levelUp
+      ? { levelUp: { ...r.levelUp, plugins: getNewlyUnlockedPlugins(r.levelUp.from, r.levelUp.to) } }
+      : {}),
+  });
+}
+
+// Read error: keep the last known level (never re-lock on a transient failure);
+// just unblock consumers on first attempt so level-1 plugins still load.
+function unblockLevelOnError(set: AuthSet, get: () => AuthState, uid: string): void {
+  if (get().user?.id !== uid || get().levelLoaded) return;
+  levelFallback = true;
+  set({ levelLoaded: true });
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -76,18 +142,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   refreshLevel: async () => {
     const user = get().user;
     if (!user) return;
+    const uid = user.id;
+    const seq = ++levelSeq;
     const { data, error } = await supabase
       .from('ziko_athlete_state')
       .select('tier, level')
-      .eq('user_id', user.id)
+      .eq('user_id', uid)
       .maybeSingle();
     if (error) {
-      // Keep the last known level (never re-lock on a transient failure); just
-      // unblock consumers on first attempt so level-1 plugins still load.
-      if (!get().levelLoaded) set({ levelLoaded: true });
+      unblockLevelOnError(set, get, uid);
       return;
     }
-    applyLevel(set, get, getEffectiveLevel(data));
+    commitLevelRead(set, get, uid, seq, getEffectiveLevel(data));
   },
 
   initialize: () => {
@@ -97,7 +163,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     authListenerStarted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      set({ session, user: session?.user ?? null });
+      setSessionUser(set, get, session);
       if (session?.user) {
         await get().refreshProfile();
       } else {
@@ -106,7 +172,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      set({ session, user: session?.user ?? null });
+      setSessionUser(set, get, session);
       if (session?.user) {
         await get().refreshProfile();
       }
@@ -128,8 +194,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     };
   },
 
-  setSession: (session) =>
-    set({ session, user: session?.user ?? null }),
+  setSession: (session) => setSessionUser(set, get, session),
 
   setProfile: (profile) => set({ profile }),
 
@@ -139,10 +204,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       session: null,
       user: null,
       profile: null,
-      athleteOnboardingComplete: false,
-      effectiveLevel: 1,
-      levelLoaded: false,
-      levelUp: null,
+      ...levelResetPatch(),
     });
     queryClient.clear();
   },
@@ -150,21 +212,26 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   refreshProfile: async () => {
     const user = get().user;
     if (!user) return;
+    const uid = user.id;
+    const seq = ++levelSeq;
 
     const [{ data: profileData }, { data: stateData, error: stateError }] = await Promise.all([
-      supabase.from('ziko_user_profiles').select('*').eq('id', user.id).single(),
+      supabase.from('ziko_user_profiles').select('*').eq('id', uid).single(),
       // maybeSingle(): a brand-new athlete has no athlete_state row yet, and
       // single() would surface that as an error.
-      supabase.from('ziko_athlete_state').select('status, tier, level').eq('user_id', user.id).maybeSingle(),
+      supabase.from('ziko_athlete_state').select('status, tier, level').eq('user_id', uid).maybeSingle(),
     ]);
+
+    // Account changed / signed out while the reads were in flight: drop everything.
+    if (get().user?.id !== uid) return;
 
     if (profileData) {
       set({ profile: profileData as UserProfile });
     }
     set({ athleteOnboardingComplete: stateData?.status === 'active' });
     // On a read error keep the last known level rather than re-locking plugins.
-    if (!stateError) applyLevel(set, get, getEffectiveLevel(stateData));
-    else if (!get().levelLoaded) set({ levelLoaded: true });
+    if (!stateError) commitLevelRead(set, get, uid, seq, getEffectiveLevel(stateData));
+    else unblockLevelOnError(set, get, uid);
 
     // ONBOARD-06: pre-v1.18 athlete — onboarding_done is true (old 7-step
     // flow) but athlete_state was never created (never went through Ziko).
