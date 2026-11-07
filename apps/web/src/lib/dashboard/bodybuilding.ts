@@ -112,11 +112,11 @@ export async function fetchBodybuildingData(
       .not('reps', 'is', null),
     supabase
       .from('ziko_body_measurements')
-      .select('measured_at, weight_kg')
+      .select('measured_at:date, weight_kg')
       .eq('user_id', clientId)
-      .gte('measured_at', cutoffDate.toISOString())
+      .gte('date', cutoffDate.toISOString())
       .not('weight_kg', 'is', null)
-      .order('measured_at', { ascending: true }),
+      .order('date', { ascending: true }),
   ]);
 
   if (setsResult.error) {

@@ -58,11 +58,11 @@ export async function fetchHyroxData(
 
   const { data, error } = await supabase
     .from('ziko_cardio_sessions')
-    .select('started_at, duration_min, distance_km, title, activity_type')
+    .select('started_at:date, duration_min, distance_km, title, activity_type')
     .eq('user_id', clientId)
     .in('activity_type', ['hyrox', 'functional'])
-    .gte('started_at', cutoff.toISOString())
-    .order('started_at', { ascending: true });
+    .gte('date', cutoff.toISOString())
+    .order('date', { ascending: true });
 
   if (error) {
     console.error('[hyrox] fetch error:', error);
