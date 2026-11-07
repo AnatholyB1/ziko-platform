@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const gamificationManifest: PluginManifest = {
   id: 'gamification',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 3,
   name: 'Récompenses',
   version: '1.0.0',
   description:

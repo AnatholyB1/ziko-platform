@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const coachManifest: PluginManifest = {
   id: 'coach',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Mon coach',
   version: '1.0.0',
   description: 'Connecte-toi à ton coach personnel.',

@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const nutritionManifest: PluginManifest = {
   id: 'nutrition',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Nutrition Tracker',
   version: '1.0.0',
   description:

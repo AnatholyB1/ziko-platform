@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const timerManifest: PluginManifest = {
   id: 'timer',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Timer & Chrono',
   version: '1.0.0',
   description:

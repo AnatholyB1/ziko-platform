@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const hydrationManifest: PluginManifest = {
   id: 'hydration',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Hydratation',
   version: '1.0.0',
   description:
