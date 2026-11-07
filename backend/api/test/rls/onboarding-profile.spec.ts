@@ -165,7 +165,7 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
     expect(data?.[0].evidence.readiness_confidence).toBe(4);
   });
 
-  it('last_review_at and next_review_due_at remain null after an onboarding_profile decision — must not start the weekly-review clock', async () => {
+  it('last_review_at stays null after an onboarding_profile decision while next_review_due_at is stamped NOW()+7d (cadence starts at onboarding)', async () => {
     const a = await createTestUser('onboarding-profile-review-clock');
     createdUserIds.push(a.id);
 
@@ -188,8 +188,13 @@ describe.skipIf(!RUN_DB)('onboarding_profile — ONBOARD-05 starting-state write
       .select('last_review_at, next_review_due_at')
       .eq('user_id', a.id);
     expect(error).toBeNull();
+    // last_review_at stays weekly_focus-only. Since 44-01 (Delta 2) onboarding_profile DOES stamp
+    // next_review_due_at (NOW()+7d) so the weekly cadence rolls from onboarding completion — see
+    // athlete-decisions.spec.ts "advances on weekly_focus and onboarding_profile".
     expect(data?.[0].last_review_at).toBeNull();
-    expect(data?.[0].next_review_due_at).toBeNull();
+    const due = new Date(data?.[0].next_review_due_at as string).getTime();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    expect(Math.abs(due - (Date.now() + sevenDays))).toBeLessThan(5 * 60 * 1000);
   });
 
   it('a second onboarding_profile call for the same athlete is NOT deduplicated (idempotency index is scoped to weekly_focus) and patches the existing row rather than inserting a second one', async () => {
