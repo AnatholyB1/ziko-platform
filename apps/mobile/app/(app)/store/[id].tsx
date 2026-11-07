@@ -10,7 +10,7 @@ import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { showAlert } from '@ziko/plugin-sdk';
 
-import { usePluginRegistry, useTranslation } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useTranslation, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 
 // ── Design tokens ──────────────────────────────────────────
@@ -69,6 +69,7 @@ const PERM_KEYS: Record<string, string> = {
 export default function PluginDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
   const { registerPlugin } = usePluginRegistry();
   const { t } = useTranslation();
 
@@ -124,6 +125,14 @@ export default function PluginDetailScreen() {
   // ── Install / Uninstall ────────
   const install = async () => {
     if (!user || !manifest || !id) return;
+    if (!isPluginUnlocked(manifest, effectiveLevel)) {
+      showAlert(
+        t('plugins.locked.title', { name: manifest.name }),
+        t('plugins.locked.message', { level: getPluginMinLevel(manifest), current: effectiveLevel }),
+        [{ text: t('plugins.locked.cta') }],
+      );
+      return;
+    }
     const perms = manifest.requiredPermissions ?? [];
     showAlert(
       t('store.installConfirm', { name: manifest.name }),

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { usePluginRegistry, isPluginUnlocked } from '@ziko/plugin-sdk';
+import { usePluginRegistry, isPluginUnlocked, isPluginIdUnlocked } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { aiBridge } from '../lib/ai';
@@ -134,10 +134,17 @@ export function PluginLoader({ children }: PluginLoaderProps) {
       // Do not act on the fail-safe default level before the first read.
       if (!levelLoaded) return;
 
-      // Re-lock: loaded plugins that are above the (possibly lower) level.
-      for (const pluginId of Array.from(loadedRef.current)) {
-        const manifest = manifestCacheRef.current.get(pluginId);
-        if (manifest && !isPluginUnlocked(manifest, effectiveLevel)) {
+      // Re-lock: every plugin above the (possibly lower) level. Walk the
+      // registry's installed ids too, not only loadedRef, so plugins registered
+      // outside the loader (plugin store install) are caught as well.
+      const registry = usePluginRegistry.getState();
+      const candidates = new Set<string>([...loadedRef.current, ...registry.installedPlugins]);
+      for (const pluginId of candidates) {
+        const manifest = registry.manifests[pluginId] ?? manifestCacheRef.current.get(pluginId);
+        const locked = manifest
+          ? !isPluginUnlocked(manifest, effectiveLevel)
+          : !isPluginIdUnlocked(pluginId, effectiveLevel);
+        if (locked) {
           unregisterPlugin(pluginId);
           aiBridge.unregisterPlugin(pluginId);
           loadedRef.current.delete(pluginId);
