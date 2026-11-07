@@ -60,18 +60,35 @@ function OBReady() {
     try {
       const uid = user?.id ?? (await supabase.auth.getUser()).data.user?.id;
       if (uid) {
-        await supabase.from('ziko_user_profiles').upsert({
+        // level / frequency / equipment / sex n'ont pas de colonne dediee :
+        // stockes dans settings.onboarding (merge pour ne pas ecraser les autres reglages).
+        const { data: existing } = await supabase
+          .from('ziko_user_profiles')
+          .select('settings')
+          .eq('id', uid)
+          .maybeSingle();
+        const prevSettings = (existing?.settings ?? {}) as Record<string, unknown>;
+        const { error: upsertError } = await supabase.from('ziko_user_profiles').upsert({
           id: uid,
           goal: obState.goal,
-          level: obState.level,
-          frequency: obState.frequency,
-          equipment: obState.equipment,
-          sex: obState.sex,
           age: obState.age,
           height_cm: obState.height,
           weight_kg: obState.weight,
           onboarding_done: true,
+          settings: {
+            ...prevSettings,
+            onboarding: {
+              level: obState.level,
+              frequency: obState.frequency,
+              equipment: obState.equipment,
+              sex: obState.sex,
+            },
+          },
         });
+        if (upsertError) {
+          showAlert('Erreur', `Impossible d'enregistrer ton profil (${upsertError.code ?? 'erreur'}). Réessaie.`);
+          return;
+        }
       }
       // Trigger mandatory plugin pre-load if available (preloadMandatory is optional static extension)
       await (PluginLoader as any).preloadMandatory?.();

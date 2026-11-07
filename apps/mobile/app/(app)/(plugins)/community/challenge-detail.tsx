@@ -12,12 +12,19 @@ import { supabase } from '../../../../src/lib/supabase';
 
 interface Challenge {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  icon: string | null;
-  duration_days: number;
-  xp_reward: number;
+  type: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  prize_coins: number | null;
   created_at: string;
+}
+
+function durationDays(c: Challenge): number | null {
+  if (!c.start_date || !c.end_date) return null;
+  const d = Math.round((new Date(c.end_date).getTime() - new Date(c.start_date).getTime()) / 86400000);
+  return d > 0 ? d : null;
 }
 
 interface Participant {
@@ -57,7 +64,7 @@ export default function ChallengeDetailRoute() {
       // Load challenge details
       const { data: ch } = await supabase
         .from('ziko_challenges')
-        .select('id, name, description, icon, duration_days, xp_reward, created_at')
+        .select('id, title, description, type, start_date, end_date, prize_coins, created_at')
         .eq('id', challengeId)
         .single();
 
@@ -199,11 +206,11 @@ export default function ChallengeDetailRoute() {
               backgroundColor: `${theme.primary}30`,
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Text style={{ fontSize: 26 }}>{challenge.icon ?? '🏆'}</Text>
+              <Ionicons name="trophy-outline" size={26} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFAF6', lineHeight: 26 }}>
-                {challenge.name}
+                {challenge.title}
               </Text>
               {challenge.description ? (
                 <Text style={{ fontSize: 13, color: 'rgba(255,250,246,0.6)', marginTop: 6, lineHeight: 19 }}>
@@ -211,18 +218,22 @@ export default function ChallengeDetailRoute() {
                 </Text>
               ) : null}
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="time-outline" size={13} color="rgba(255,250,246,0.5)" />
-                  <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.5)' }}>
-                    {challenge.duration_days}j
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Ionicons name="flash-outline" size={13} color={theme.primary} />
-                  <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '700' }}>
-                    +{challenge.xp_reward} XP
-                  </Text>
-                </View>
+                {durationDays(challenge) != null ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="time-outline" size={13} color="rgba(255,250,246,0.5)" />
+                    <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.5)' }}>
+                      {durationDays(challenge)}j
+                    </Text>
+                  </View>
+                ) : null}
+                {challenge.prize_coins ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Ionicons name="flash-outline" size={13} color={theme.primary} />
+                    <Text style={{ fontSize: 12, color: theme.primary, fontWeight: '700' }}>
+                      +{challenge.prize_coins} pièces
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons name="people-outline" size={13} color="rgba(255,250,246,0.5)" />
                   <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.5)' }}>

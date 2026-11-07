@@ -23,7 +23,9 @@ export function parseWorkoutFrequency(freq: string | null | undefined): number {
 }
 
 // ── useProfile ────────────────────────────────────────────────
-// Fetches name, goal, workout_frequency, fitness_level from user_profiles.
+// Fetches name, goal and settings from ziko_user_profiles. workout_frequency /
+// fitness_level have no dedicated column: onboarding stores them in
+// settings.onboarding ({ frequency, level, ... }) and they are derived here.
 // Use profile.name?.split(' ')[0] ?? 'Athlete' to get first name —
 // user_profiles has no first_name column.
 export function useProfile() {
@@ -33,11 +35,17 @@ export function useProfile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ziko_user_profiles')
-        .select('name, goal, workout_frequency, fitness_level')
+        .select('name, goal, settings')
         .eq('id', userId!)
         .single();
       if (error) throw error;
-      return data;
+      const ob = ((data?.settings ?? {}) as { onboarding?: { frequency?: number | string | null; level?: string | null } }).onboarding;
+      return {
+        name: data?.name as string | null,
+        goal: data?.goal as string | null,
+        workout_frequency: ob?.frequency != null ? String(ob.frequency) : null,
+        fitness_level: ob?.level ?? null,
+      };
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 10, // 10 min
@@ -247,7 +255,7 @@ export function useRecentSessions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ziko_workout_sessions')
-        .select('id, name, started_at, total_volume_kg, duration_seconds')
+        .select('id, name, started_at, ended_at, total_volume_kg, total_duration_active_seconds')
         .eq('user_id', userId!)
         .order('started_at', { ascending: false })
         .limit(3);

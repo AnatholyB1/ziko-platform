@@ -14,7 +14,6 @@ import { supabase } from '../../../../src/lib/supabase';
 interface Post {
   id: string;
   content: string;
-  image_url: string | null;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -70,19 +69,34 @@ export default function PostDetailRoute() {
       setUserId(user?.id ?? null);
 
       // Load post with author info
+      // (pas de FK posts.user_id -> user_profiles : profils charges en 2e requete)
       const { data: postRow } = await supabase
         .from('ziko_community_posts')
-        .select('id, content, image_url, likes_count, comments_count, created_at, user_id, user_profiles:ziko_user_profiles!inner(name, avatar_url)')
+        .select('id, content, likes_count, comments_count, created_at, user_id')
         .eq('id', postId)
         .single();
 
       // Load comments with author info
       const { data: commentRows } = await supabase
         .from('ziko_post_comments')
-        .select('id, content, created_at, user_id, user_profiles:ziko_user_profiles!inner(name)')
+        .select('id, content, created_at, user_id')
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
         .limit(30);
+
+      // Profils des auteurs (post + commentaires) en une seule requete
+      const authorIds = Array.from(new Set([
+        ...(postRow ? [postRow.user_id as string] : []),
+        ...((commentRows ?? []).map((c: any) => c.user_id as string)),
+      ].filter(Boolean)));
+      const profileMap: Record<string, { name: string | null; avatar_url: string | null }> = {};
+      if (authorIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('ziko_user_profiles')
+          .select('id, name, avatar_url')
+          .in('id', authorIds);
+        (profs ?? []).forEach((p: any) => { profileMap[p.id] = { name: p.name, avatar_url: p.avatar_url }; });
+      }
 
       // Check if liked
       let likedByMe = false;
@@ -97,11 +111,10 @@ export default function PostDetailRoute() {
       }
 
       if (postRow) {
-        const profile = (postRow as any).user_profiles;
+        const profile = profileMap[postRow.user_id as string];
         setPost({
           id: postRow.id,
           content: postRow.content,
-          image_url: postRow.image_url,
           likes_count: postRow.likes_count ?? 0,
           comments_count: postRow.comments_count ?? 0,
           created_at: postRow.created_at,
@@ -118,7 +131,7 @@ export default function PostDetailRoute() {
           id: c.id,
           content: c.content,
           created_at: c.created_at,
-          author_name: c.user_profiles?.name ?? null,
+          author_name: profileMap[c.user_id]?.name ?? null,
         }))
       );
     } catch (e) {
