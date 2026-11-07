@@ -20,3 +20,8 @@ Target auth = projet `portfolio` ubxllsvanurkwkohzxau (le projet `ziko` slkobhav
 - Phase 2 code merged into milestone/v1.17 (merge of phase/02-signin-ux, 4 commits). Gate: 14/14 vitest, tsc OK. Mock-only; linking (OAUTH-11), device flows, native build NOT proven.
 - Deviations: expo-crypto added (needs native rebuild); Google nonce unsupported by google-signin 16.1.4 -> Supabase "Skip Nonce Check" must be ON for Google; isNewUser = created_at/last_sign_in_at < 10s.
 - Still blocked: items 1-3 above + user decisions Q1-Q4. Plans 01-02..04 and ROADMAP/REQUIREMENTS still cite deleted `ziko` project (rewrite pending).
+
+## Update: Android client (2026-11-07)
+- SHA-1 keystore EAS prod (public, via Expo GraphQL, package com.ziko.mobile): 66:76:D0:65:58:83:BA:51:6B:6F:50:F5:06:0A:AD:2B:F8:F4:39:9E
+- Android client created in GCP ziko-491420: 450830070582-8m4aval4rinqm50ru6lt6lsj2o280lmr.apps.googleusercontent.com
+- Remaining human: Supabase Google provider (secret, Skip Nonce Check, authorized IDs Web,Android,iOS), Apple capability, Play App Signing SHA-1 (add as 2nd Android client or extra fingerprint), consent screen publish, mailer_autoconfirm decision.
