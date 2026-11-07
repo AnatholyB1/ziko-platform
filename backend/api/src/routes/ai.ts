@@ -4,7 +4,7 @@ import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
 import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
-import { fetchUserContext, type UserContext } from '../context/user.js';
+import { fetchUserContext, buildAthleteStateSection, type UserContext } from '../context/user.js';
 import {
   getOrCreateConversation,
   appendMessages,
@@ -83,6 +83,9 @@ function buildSystemPrompt(userCtx: UserContext): string {
       .join('\n');
     sections.push(`## Recent Workouts\n${list}`);
   }
+
+  // Coaching state (OPS-01) — bounded, defaults when no athlete_state row
+  sections.push(buildAthleteStateSection(userCtx.athleteState));
 
   // Installed plugins
   if (userCtx.installedPlugins.length > 0) {
