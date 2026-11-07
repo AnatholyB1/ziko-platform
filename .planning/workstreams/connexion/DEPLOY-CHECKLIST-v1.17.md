@@ -35,3 +35,15 @@ Apple:
 - Supabase > Providers > Apple: Enable ON, Client IDs = com.ziko.mobile, Secret vide (natif seul). Save.
 Ecran de consentement Google (GCP ziko-491420 > Google Auth Platform > Audience): Publish app / In production; scopes openid, email, profile seulement (pas de verification requise).
 Apres: relire https://ubxllsvanurkwkohzxau.supabase.co/auth/v1/settings (external.google/apple = true).
+
+## SMTP Resend + confirmation email par code (valeurs a saisir par l'utilisateur)
+Constat lecture seule: le backend envoie deja depuis `Ziko Coach <coach@ziko-app.com>` (backend/api/src/coach/ai/service.ts). Dans le compte Resend visible (compte anatholyb, Pro) les domaines listes sont: mail.ghjulianu-codani.com, grandouesthabitat.com, geckocabanerestaurant.com, sevalys.com, sellerieduchet.com, contact-selenium-studio.com (tous Verified). **ziko-app.com n'apparait PAS** dans ce compte: soit il est dans un autre compte/equipe Resend (celui de la cle backend), soit il n'est pas verifie. A verifier avant l'etape 1.
+Etapes (ordre):
+1. Resend: domaine d'envoi verifie (SPF/DKIM) ; creer une cle API dediee "supabase-portfolio-smtp" (permission envoi) ; ne jamais la coller dans un chat/commit.
+2. Supabase portfolio > Auth > Emails > SMTP Settings > Enable custom SMTP: Host smtp.resend.com, Port 465, Username resend, Password = la cle API (saisie par l'utilisateur), Sender email = adresse sur le domaine verifie (ex. no-reply@ziko-app.com), Sender name = Ziko. Save.
+3. Auth > Emails > Templates > Confirm sign up: Subject "Ton code de confirmation Ziko" ; corps = contenu de supabase/email-templates/confirm-signup.html (utilise {{ .Token }}, code a 6 chiffres saisi dans l'app, aucun deep link). Save.
+4. Auth > Rate Limits: relever la limite d'emails/heure au besoin.
+5. Test d'envoi reel AVANT de basculer: Auth > Users > inviter/creer un utilisateur de test avec une adresse de l'utilisateur, ou lancer une inscription de test; verifier reception, code, expiration.
+6. Seulement apres 5: Auth > Sign In / Providers > Email: activer "Confirm email" (mailer_autoconfirm=false). Livrer la version mobile contenant l'ecran "Verifie ton email" (phase/03-email-verify) AVANT ce basculement, sinon les inscriptions des anciennes versions de l'app resteront sans session. Verifier les autres apps du projet (sv_, gecko, rh).
+7. Rollback: re-cocher l'autoconfirm (Confirm email OFF).
+Note: le mail "Reset password" (forgot.tsx) reste en lien par defaut: gabarit a revoir separement.
