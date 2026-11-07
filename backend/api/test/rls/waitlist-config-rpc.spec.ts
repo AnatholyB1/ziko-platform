@@ -1,4 +1,4 @@
-// Phase 1 plan 01-02 — app_config deny-all, threshold arbitration, erasure
+// Phase 1 plan 01-02 — ziko_app_config deny-all, threshold arbitration, erasure
 // monotonicity, and the service_role-only sequence-reset contract.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -11,7 +11,7 @@ const RUN_DB = Boolean(process.env.SUPABASE_TEST_URL) && process.env.SUPABASE_TE
 
 const PREFIX = `cfg-${randomUUID().slice(0, 8)}-`;
 
-describe.skipIf(!RUN_DB)('app_config + get_waitlist_founder_status — deny-all, threshold arbitration (T-01-09, T-01-10, T-01-11)', () => {
+describe.skipIf(!RUN_DB)('ziko_app_config + ziko_get_waitlist_founder_status — deny-all, threshold arbitration (T-01-09, T-01-10, T-01-11)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   let anon: ReturnType<typeof getAnonClient>;
   let originalThreshold: unknown;
@@ -27,13 +27,13 @@ describe.skipIf(!RUN_DB)('app_config + get_waitlist_founder_status — deny-all,
     await admin.from('ziko_app_config').update({ value: originalThreshold }).eq('key', 'waitlist_reveal_threshold');
   });
 
-  it('anon reading app_config directly gets zero rows', async () => {
+  it('anon reading ziko_app_config directly gets zero rows', async () => {
     const { data, error } = await anon.from('ziko_app_config').select('*');
     expect(error).toBeNull();
     expect(data).toEqual([]);
   });
 
-  it('anon writing app_config directly gets an error', async () => {
+  it('anon writing ziko_app_config directly gets an error', async () => {
     const { error } = await anon.from('ziko_app_config').update({ value: 999 }).eq('key', 'waitlist_reveal_threshold');
     expect(error).not.toBeNull();
   });
@@ -66,7 +66,7 @@ describe.skipIf(!RUN_DB)('app_config + get_waitlist_founder_status — deny-all,
 // Phase 3 plan 03-03 (LEGAL-08, T-03-10) — the retention row seeded by
 // 20260815_waitlist_retention_config.sql. No afterAll restore here: this
 // suite never mutates the retention row, unlike the threshold row above.
-describe.skipIf(!RUN_DB)('app_config waitlist_retention_years — deny-all holds for the new row too (LEGAL-08)', () => {
+describe.skipIf(!RUN_DB)('ziko_app_config waitlist_retention_years — deny-all holds for the new row too (LEGAL-08)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   let anon: ReturnType<typeof getAnonClient>;
 
@@ -89,7 +89,7 @@ describe.skipIf(!RUN_DB)('app_config waitlist_retention_years — deny-all holds
   });
 });
 
-describe.skipIf(!RUN_DB)('anonymize_waitlist_signup — erasure keeps the founder spot consumed (D-07, T-01-13)', () => {
+describe.skipIf(!RUN_DB)('ziko_anonymize_waitlist_signup — erasure keeps the founder spot consumed (D-07, T-01-13)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   const createdEmails: string[] = [];
 
@@ -104,7 +104,7 @@ describe.skipIf(!RUN_DB)('anonymize_waitlist_signup — erasure keeps the founde
 
   it('anonymizing a founder blanks the address, keeps founder_rank/is_founder, leaves remaining unchanged', async () => {
     // Fast-forward into the founder range (rank <= 200 is what sets is_founder=true in
-    // claim_waitlist_signup) so this row is guaranteed founder status.
+    // ziko_claim_waitlist_signup) so this row is guaranteed founder status.
     await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 150 });
     const email = `${PREFIX}erase-${randomUUID()}@example.com`;
     createdEmails.push(email);
@@ -158,7 +158,7 @@ describe.skipIf(!RUN_DB)('anonymize_waitlist_signup — erasure keeps the founde
   });
 });
 
-describe.skipIf(!RUN_DB)('reset_waitlist_founder_sequence — service_role-only, deterministic next value (T-01-12)', () => {
+describe.skipIf(!RUN_DB)('ziko_reset_waitlist_founder_sequence — service_role-only, deterministic next value (T-01-12)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   let anon: ReturnType<typeof getAnonClient>;
   const createdEmails: string[] = [];
@@ -196,7 +196,7 @@ describe.skipIf(!RUN_DB)('reset_waitlist_founder_sequence — service_role-only,
     expect(rowB.is_founder).toBe(false);
   });
 
-  it('anon cannot execute get_waitlist_founder_status, anonymize_waitlist_signup, or reset_waitlist_founder_sequence', async () => {
+  it('anon cannot execute ziko_get_waitlist_founder_status, ziko_anonymize_waitlist_signup, or ziko_reset_waitlist_founder_sequence', async () => {
     const status = await anon.rpc('ziko_get_waitlist_founder_status');
     expect(status.error).not.toBeNull();
 
