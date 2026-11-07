@@ -1,0 +1,113 @@
+[
+ {
+  "file": "exceeded.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Voir mon focus",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 9,
+  "tapCount": 1,
+  "nonText": [
+   [
+    "progress fill vs track",
+    3.09
+   ]
+  ]
+ },
+ {
+  "file": "met.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Voir mon focus",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 9,
+  "tapCount": 1,
+  "nonText": [
+   [
+    "progress fill vs track",
+    3.09
+   ]
+  ]
+ },
+ {
+  "file": "missed.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Voir mon focus",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 9,
+  "tapCount": 1,
+  "nonText": [
+   [
+    "progress fill vs track",
+    3.09
+   ]
+  ]
+ },
+ {
+  "file": "no-reward.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Voir mon focus",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 7,
+  "tapCount": 1,
+  "nonText": []
+ },
+ {
+  "file": "reward.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Voir mon focus",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 6,
+  "tapCount": 1,
+  "nonText": []
+ },
+ {
+  "file": "tier-up.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "Découvrir ma récompense",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 7,
+  "tapCount": 1,
+  "nonText": []
+ }
+]
