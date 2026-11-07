@@ -1,5 +1,7 @@
 # Founder Offer Go-Live — RUNBOOK
 
+> **Post-v1.19 note:** the ziko database now lives in the shared `portfolio` Supabase project and every ziko table/function carries a `ziko_` prefix (`ziko_app_config`, `ziko_waitlist_signups`, ...). SQL in this runbook uses the prefixed names. The `supabase/migrations/2026081x_*` files cited below are the historical source migrations; the deployed schema is `supabase/portfolio-migrations/`. The project ref and migration-apply procedure below predate the move and must be re-validated against the portfolio project before reuse.
+
 **Audience:** a person who has not read any planning document for this milestone and is about to
 change production. Read this file top to bottom before running anything. This document **is** the
 whole procedure — its section order is a safety property, not a convenience. Sections 4 through 11
@@ -129,7 +131,7 @@ both run immediately after Section 2.
 **3.1 — Database end.** Run, against production (`slkobhavpwsubnsmuhya`) specifically:
 
 ```sql
-SELECT key, value FROM public.app_config ORDER BY key;
+SELECT key, value FROM public.ziko_app_config ORDER BY key;
 ```
 
 Before this merge, production held exactly one row: `waitlist_reveal_threshold`. A
