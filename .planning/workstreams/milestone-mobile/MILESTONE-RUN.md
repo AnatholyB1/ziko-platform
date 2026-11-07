@@ -15,3 +15,4 @@ See messages to team-lead (batch 1).
 ## Deploy checklist items so far
 - Migrations (45: reward catalog + athlete_rewards + grant path) to apply after approval.
 - ANJ/JONUM counsel review before broad release of rewards.
+| 2026-11-07 | merge 47a | milestone/v1.18 | 815fd362 | builder gate: 193 pass, tsc clean |

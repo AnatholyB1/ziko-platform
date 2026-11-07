@@ -18,4 +18,6 @@ Phases 42, 43, 44 are COMPLETE and already in origin/main (44 verified 5/5, devi
 - [x] integration worktree created
 - [x] scouting of 45/46/47 gray areas done (reports summarized in MILESTONE-RUN.md)
 - [ ] user answers (batch 1 sent to team-lead)
-- [ ] 47a builder
+- [x] 47a merged (815fd362), backend gate green in builder: 193 passed/3 skipped
+- [ ] integration worktree gate (needs npm install --no-save; machine lock)
+- [ ] 45, 46 builders + designs: WAITING on user answers (batch 1)
