@@ -63,3 +63,13 @@ Note: le mail "Reset password" (forgot.tsx) reste en lien par defaut: gabarit a 
 - [ ] Tester sur appareil avec ce build: Google (nouveau compte, compte existant), linking automatique, persistance de session.
 - [ ] Build iOS + profil de provisioning regenere (entitlement Sign in with Apple), puis tests Apple.
 - [ ] Confirm email: seulement apres livraison de l'app et test d'envoi reel Resend. Jusqu'alors le risque de pre-hijack par linking auto reste ouvert.
+
+## Correctif etat prod (2026-11-07, fait par l'utilisateur, rapporte par team-lead)
+- [x] Supabase provider Apple active (apple=true relu publiquement).
+- [x] SMTP Resend: domaine mail.ziko-app.com verifie, DNS poses sur Vercel, SMTP + gabarit confirm-signup configures.
+- [x] Ecran de consentement Google en production (Branding: accueil, confidentialite /fr/politique-de-confidentialite, cgu, domaine ziko-app.com).
+- [ ] Confirm email (mailer_autoconfirm encore true): apres livraison de l'app, test d'envoi reel fait.
+- [ ] Tests appareil Google/Apple/linking/persistance de session; build iOS + profil.
+- [ ] Page de confidentialite en anglais: /en/privacy renvoie 404.
+- [ ] Verifier coach@ziko-app.com cote Resend (domaine racine absent du compte visible).
+(Les lignes plus haut marquees "[ ]" pour ces memes elements sont perimees.)

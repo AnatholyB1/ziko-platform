@@ -4,7 +4,7 @@
 
 **Workstream:** connexion. Code merged to main via PR #49 (a38c210f). Target auth: shared Supabase project `portfolio`.
 **Delivered:** native Google/Apple sign-in code (signInWithIdToken), email-first message on unlinkable email, verify-email OTP step on sign-up (backward compatible with autoconfirm), Confirm-sign-up email template, Google OAuth clients + provider.
-**Open at close:** Apple provider in Supabase, Resend SMTP + Confirm email, Google consent screen to production, iOS/Android native builds on device, automatic linking and session persistence NOT PROVEN, autoconfirm pre-hijack risk until Confirm email is on.
+**Open at close:** Confirm email (autoconfirm pre-hijack risk until on), device tests of Google/Apple, automatic linking and session persistence NOT PROVEN, iOS build + provisioning profile, English privacy page (/en/privacy 404), coach@ziko-app.com check on Resend. Done since: Apple + Google providers, Resend SMTP + template, Google consent screen in production.
 
 ---
 
