@@ -23,3 +23,4 @@ Pending: user validation of design gallery (4 questions) -> then UI build (45 ov
 | 2026-11-07 | design refine merged (skills applied, PNGs viewed); UI 45 overlay + UI 46 drawer/toast merged; overlay publishes overlayGateStore | milestone/v1.18 | see git log | mobile tsc 0 err, root vitest 234, backend 267 |
 Next: UI audits 45/46 + real UAT (backend 8080 + Expo web/Playwright, throwaway PG 54420), fixes, 47 final verification, close-out.
 Open: toast queue behind overlay not proven at runtime; CustomAlert default info icon + OK contrast 3.09 (shared component, out of scope).
+| 2026-11-07 | UI audits, real UAT (6/6 PASS), final fixes merged | milestone/v1.18 | see git log | mobile tsc 0 err; backend/root vitest per final run |

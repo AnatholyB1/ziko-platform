@@ -5,6 +5,7 @@
 - [ ] 20261107100100_ziko_athlete_rewards.sql
 - [ ] 20261107100200_ziko_grant_reward_rpc.sql
 - [ ] 20261107100300_ziko_reward_tier_race_fix.sql (UNIQUE(user_id,tier) + FOR UPDATE; verified on throwaway PG: 60 athletes x2 parallel => 0 duplicates)
+- [ ] 20261107100400_ziko_advance_review_clock.sql (NEVER EXECUTED anywhere: test on a throwaway DB first; until applied the cron just logs an error and rescans already_recorded athletes)
 Run the live specs (test/rls/athlete-rewards.spec.ts etc.) only after apply, against the target project.
 
 ## Legal / release
@@ -18,3 +19,6 @@ Run the live specs (test/rls/athlete-rewards.spec.ts etc.) only after apply, aga
 
 ## Env / secrets
 - No new env var introduced so far (diff process.env names again at close-out).
+
+## UAT process slips (disclose)
+- During UAT, 5 calls reached api.anthropic.com with a dummy key (HTTP 401) and 7 Expo push attempts with fake tokens hit exp.host before mocks were fixed. No real data/cost; final evidence from the clean run only.
