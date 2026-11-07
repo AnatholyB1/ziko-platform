@@ -3,7 +3,8 @@
 $ErrorActionPreference = 'Continue'
 $root = if ($env:UAT_ROOT) { $env:UAT_ROOT } else { Join-Path $env:TEMP 'ziko-uat' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
-foreach ($port in 3141, 3142, 3143, 3144) {
+$ports = if ($env:UAT_PORTS) { $env:UAT_PORTS -split "," } else { 3141, 3142, 3143, 3144 }
+foreach ($port in $ports) {
   Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue; "killed pid $($_.OwningProcess) on $port" }
 }
