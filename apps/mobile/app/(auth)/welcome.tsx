@@ -1,17 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
+import { useAuthStore } from '../../src/stores/authStore';
+import {
+  signInWithGoogle, signInWithApple, handleSocialResult, isAppleSignInSupported,
+  type SocialAuthResult,
+} from '../../src/lib/socialAuth';
 
 const AVATAR_COLORS = ['#FF5C1A', '#7B5BD0', '#2E9E5B', '#E8A33A'];
 
 export default function WelcomeScreen() {
-  const handleGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    if (error) showAlert('Erreur', error.message);
+  const [busy, setBusy] = useState<'google' | 'apple' | null>(null);
+
+  const run = async (kind: 'google' | 'apple') => {
+    if (busy) return;
+    setBusy(kind);
+    try {
+      const result: SocialAuthResult = await (kind === 'google' ? signInWithGoogle() : signInWithApple());
+      await handleSocialResult(result, {
+        alert: showAlert,
+        replace: (href) => router.replace(href as any),
+        // Load the profile first so (app)/_layout does not bounce a returning
+        // user to onboarding.
+        beforeRoute: async () => {
+          const { data } = await supabase.auth.getSession();
+          useAuthStore.getState().setSession(data.session);
+          await useAuthStore.getState().refreshProfile();
+        },
+      });
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -91,31 +114,39 @@ export default function WelcomeScreen() {
 
           {/* CTAs */}
           <View style={{ gap: 10 }}>
-            {/* Apple */}
-            <TouchableOpacity
-              onPress={() => showAlert('Bientôt disponible', 'La connexion Apple arrive prochainement.')}
-              style={{
-                paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14,
-                backgroundColor: '#fff',
-                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-              }}
-            >
-              <Ionicons name="logo-apple" size={16} color="#1C1A17" />
-              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#1C1A17' }}>Continuer avec Apple</Text>
-            </TouchableOpacity>
+            {/* Apple (iOS only) */}
+            {isAppleSignInSupported() && (
+              <TouchableOpacity
+                onPress={() => run('apple')}
+                disabled={busy !== null}
+                style={{
+                  paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14,
+                  backgroundColor: '#fff', opacity: busy && busy !== 'apple' ? 0.5 : 1,
+                  flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+                }}
+              >
+                <Ionicons name="logo-apple" size={16} color="#1C1A17" />
+                <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#1C1A17' }}>
+                  {busy === 'apple' ? 'Connexion…' : 'Continuer avec Apple'}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Google */}
             <TouchableOpacity
-              onPress={handleGoogle}
+              onPress={() => run('google')}
+              disabled={busy !== null}
               style={{
                 paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14,
                 borderWidth: 1, borderColor: 'rgba(255,250,246,0.16)',
-                backgroundColor: 'rgba(255,250,246,0.06)',
+                backgroundColor: 'rgba(255,250,246,0.06)', opacity: busy && busy !== 'google' ? 0.5 : 1,
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >
               <Ionicons name="logo-google" size={16} color="#FFFAF6" />
-              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#FFFAF6' }}>Continuer avec Google</Text>
+              <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#FFFAF6' }}>
+                {busy === 'google' ? 'Connexion…' : 'Continuer avec Google'}
+              </Text>
             </TouchableOpacity>
 
             {/* Email → Sign up */}
