@@ -5,9 +5,11 @@
   "small": [],
   "tap": [],
   "contrast": [],
-  "texts": 23,
+  "texts": 22,
   "tapCount": 19,
-  "nonText": []
+  "nonText": [],
+  "ctaFont": null,
+  "forbidden": []
  },
  {
   "file": "level1-locked.html",
@@ -26,7 +28,9 @@
     "lock glyph vs chip (>=3)",
     4.73
    ]
-  ]
+  ],
+  "ctaFont": null,
+  "forbidden": []
  },
  {
   "file": "locked-alert.html",
@@ -35,12 +39,12 @@
   "tap": [],
   "contrast": [
    [
-    "Compris",
+    "OK",
     3.09,
     4.5
    ]
   ],
-  "texts": 39,
+  "texts": 38,
   "tapCount": 20,
   "nonText": [
    [
@@ -51,7 +55,9 @@
     "lock glyph vs chip (>=3)",
     4.73
    ]
-  ]
+  ],
+  "ctaFont": 15,
+  "forbidden": []
  },
  {
   "file": "unlock-toast.html",
@@ -61,6 +67,8 @@
   "contrast": [],
   "texts": 3,
   "tapCount": 0,
-  "nonText": []
+  "nonText": [],
+  "ctaFont": null,
+  "forbidden": []
  }
 ]

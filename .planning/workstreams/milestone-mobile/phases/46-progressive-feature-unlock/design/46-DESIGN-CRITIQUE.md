@@ -1,25 +1,36 @@
-# Phase 46 - Design Critique (self critique + audit of the prototypes)
+# Phase 46 - Design Critique, revision 2 (after viewing all 4 renders)
+
+Method: opened every PNG before and after; read the real `PluginsDrawer.tsx`, `CustomAlert.tsx`, `alert.ts`, `CreditEarnToast.tsx` and the tab bar style; ran `critique` and `audit` on the output. Skills applied: impeccable, shape, high-end-visual-design, design-taste-frontend, frontend-design, layout, typeset, adapt, critique, audit.
+
+## Defects seen in the v1 renders
+1. Drawer drew 5 columns with no horizontal gap. The real drawer (`width: '20%'`, `gap: 16`, `flexWrap`) fits 4 per row (5 x 70 + 4 x 16 > 350). The mock was not exact-match and understated how long the locked section is.
+2. Locked alert showed a custom lock icon and a two-sentence body; the real `showAlert` with a title only renders the default info icon and an "OK" button. Contradicted the locked decision (text only).
+3. Level pills at 11px and a "Tout est débloqué" card whose second line was clipped by the sheet at the bottom (all-unlocked).
+4. Unlock toast: two-line detail inside a fully rounded 24px pill; icon in an extra circle that the real toast pattern does not have; the pill touched or overlapped the tab bar (real tab bar is `70 + insets.bottom`, toast `bottom: 80`).
+5. Home screen behind the drawer/toast was three blank white boxes that read as an unfinished wireframe.
+6. Level 1 peek of a third locked row was a cut-off pair of circles at the bottom edge (looked like a rendering glitch).
+
+## Changes made
+- Real 4-column geometry (cell 70, gap 16).
+- Alert = `showAlert('Niveau 3 requis')` exactly: default icon, title, "OK". No invented copy.
+- Pill 14/700, height 24; all new text >= 14 (only the inherited 10px tile names remain).
+- All-unlocked closing: single muted line with check icon (no card, no second sentence), fully visible.
+- Toast: CreditEarnToast geometry (gap 8, bare 18px icon, radius 24, padding 20/12), one-line detail "6 modules débloqués", offset above a 104px tab bar, 4000ms, queued after the overlay.
+- Skeleton lines inside the background cards so the context reads as a real Home.
+- `measure.js` aligned with phase 45 (forbidden-word/emoji scan, CTA font check, allowlist reduced to tile names).
 
 ## What works
-- The unlocked grid is untouched, so the new section reads as additive and the existing muscle memory survives.
-- Hierarchy: divider, small header with current level, helper, then grey tiles. The next-level pill in primary tint answers "what comes next" without a progress widget.
-- Locked tiles are still tappable and explain themselves, so nothing feels dead.
+- The unlocked grid is untouched, so the locked section reads as additive.
+- Hierarchy: divider, small header with current level, helper, grey tiles; the primary-tint pill answers "what comes next" without a progress widget.
+- Locked tiles stay tappable and explain themselves.
 
-## Findings (audit)
-| # | Severity | Finding | Action taken / proposed |
-|---|---|---|---|
-| F1 | Medium | Tile labels at 10px and "Niv." pills at 11px are below the 14px floor. Constrained by the 5-column grid (70px cells) and by the existing unlocked labels. | Waiver W-2; information repeated at 15px in the alert; Q2. |
-| F2 | Medium | At level 1, 12 locked tiles (3 rows) outweigh 7 unlocked tiles visually, which may feel like "you have little". | Grey, low-contrast tiles and no per-row badges beyond the pill keep it quiet; Q1 offers grouping/collapse. |
-| F3 | Low | Toast is `pointerEvents: none`, so it cannot link to the drawer. Duration extended to 4s to compensate. | Delta documented; Q4. |
-| F4 | Low | Long plugin names truncate; manifest names are not designed for 70px cells. | Require `shortName` in the static source. |
-| F5 | Low | Alert comes from `showAlert` (no custom icon assumed). The prototype shows the lock icon as CustomAlert's icon slot. | Verify the icon slot in build, else the alert is text-only. |
-| F6 | Info | White-on-orange CTA contrast 3.09:1 inherited from CustomAlert (waiver W-1). | Same as Phase 45 Q2. |
+## Remaining (not fixed)
+- 12 locked tiles at level 1 outweigh 7 unlocked ones; mitigated by grey low-contrast tiles. Decision L3 locks the full list.
+- Tile names stay 10px (inherited from the unlocked grid); pills carry the key info at 14px.
+- Alert "OK" contrast 3.09:1 (shared `CustomAlert`, 15/700 is not large text).
+- The toast is `pointerEvents: none`, so it cannot link to the drawer.
 
-Checked and clean: overflow, tap areas, non-text contrast (3.84, 4.73), 5-column geometry, emoji grep, empty-section handling.
-
-## Open questions (max 5)
-1. At low levels, show all locked tiles or group by level with only the next level expanded? Recommended: show all (matches D-04, simplest, transparent roadmap). Alternative: expand next level only, others behind "Voir la suite".
-2. Raise drawer tile labels from 10px to 11-12px for both grids? Recommended: no, keep the unlocked grid unchanged per D-04 and accept W-2. Alternative: 11px for both (small change to a shared component).
-3. Does `showAlert` support an icon, or is the lock glyph out of scope? Recommended: text-only alert if no icon slot (keep the title "Niveau N requis"). Alternative: extend `showAlert` with an optional icon.
-4. Highlight newly unlocked tiles in the drawer (small dot until first open)? Recommended: no for v1.18 (toast is enough). Alternative: dot badge stored in MMKV.
-5. Toast duration 4000ms instead of 2500ms and queued after the review overlay? Recommended: yes. Alternative: keep 2500ms with a one-line message only ("Niveau 2 : 6 modules débloqués").
+## Open questions (max 3)
+1. `CustomAlert` always renders an info icon when no destructive button exists. Accept the default info icon (current), or add an opt-out prop in a shared-component change? Recommended: accept for v1.18.
+2. `CreditEarnToast` has the same `bottom: 80` overlap on notch devices. Fix the shared offset to `70 + insets.bottom + 12` for both toasts? Recommended: yes, one small change shared by both.
+3. Raise the tile names of both grids from 10px to 12px (shared component change)? Recommended: no for v1.18, revisit with the 5-to-4 column fix.

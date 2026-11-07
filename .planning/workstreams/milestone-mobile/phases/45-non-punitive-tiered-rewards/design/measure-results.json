@@ -4,55 +4,41 @@
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Voir mon focus",
-    3.09,
-    4.5
-   ]
-  ],
-  "texts": 9,
+  "contrast": [],
+  "texts": 8,
   "tapCount": 1,
   "nonText": [
    [
     "progress fill vs track",
     3.09
    ]
-  ]
+  ],
+  "ctaFont": 19,
+  "forbidden": []
  },
  {
   "file": "met.html",
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Voir mon focus",
-    3.09,
-    4.5
-   ]
-  ],
-  "texts": 9,
+  "contrast": [],
+  "texts": 8,
   "tapCount": 1,
   "nonText": [
    [
     "progress fill vs track",
     3.09
    ]
-  ]
+  ],
+  "ctaFont": 19,
+  "forbidden": []
  },
  {
   "file": "missed.html",
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Voir mon focus",
-    3.09,
-    4.5
-   ]
-  ],
+  "contrast": [],
   "texts": 9,
   "tapCount": 1,
   "nonText": [
@@ -60,54 +46,44 @@
     "progress fill vs track",
     3.09
    ]
-  ]
+  ],
+  "ctaFont": 19,
+  "forbidden": []
  },
  {
   "file": "no-reward.html",
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Voir mon focus",
-    3.09,
-    4.5
-   ]
-  ],
+  "contrast": [],
   "texts": 7,
   "tapCount": 1,
-  "nonText": []
+  "nonText": [],
+  "ctaFont": 19,
+  "forbidden": []
  },
  {
   "file": "reward.html",
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Voir mon focus",
-    3.09,
-    4.5
-   ]
-  ],
+  "contrast": [],
   "texts": 6,
   "tapCount": 1,
-  "nonText": []
+  "nonText": [],
+  "ctaFont": 19,
+  "forbidden": []
  },
  {
   "file": "tier-up.html",
   "overflowX": false,
   "small": [],
   "tap": [],
-  "contrast": [
-   [
-    "Découvrir ma récompense",
-    3.09,
-    4.5
-   ]
-  ],
+  "contrast": [],
   "texts": 7,
   "tapCount": 1,
-  "nonText": []
+  "nonText": [],
+  "ctaFont": 19,
+  "forbidden": []
  }
 ]
