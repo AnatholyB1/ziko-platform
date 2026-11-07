@@ -7,6 +7,7 @@ import { getOrCreateConversation, appendMessages } from '../context/conversation
 import { AGENT_MODEL, ONBOARDING_MAX_STEPS } from '../config/models.js';
 import { assessProfileSchema, assess_profile } from '../tools/onboarding.js';
 import { computeRetroactiveProfile } from '../tools/onboarding-retroactive.js';
+import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
 
 // ============================================================
 // Phase 43 plan 03 — POST /ai/onboarding/stream (ONBOARD-01, ONBOARD-02,
@@ -33,21 +34,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
-
-function logOnboardingTokenUsage(
-  userId: string,
-  modelId: string,
-  totalUsage: { inputTokens: number | undefined; outputTokens: number | undefined },
-) {
-  Promise.resolve(
-    supabase.from('ziko_ai_cost_log').insert({
-      user_id: userId,
-      model: modelId,
-      input_tokens: totalUsage.inputTokens ?? 0,
-      output_tokens: totalUsage.outputTokens ?? 0,
-    }),
-  ).catch((err: unknown) => console.error('[Onboarding TokenLog] insert failed:', err));
-}
 
 // ─── System prompt ────────────────────────────────────────────────
 
@@ -160,7 +146,12 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     tools,
     stopWhen: [stepCountIs(ONBOARDING_MAX_STEPS), hasToolCall('assess_profile')],
     onFinish: ({ totalUsage }) => {
-      logOnboardingTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+      logAutonomousCost(supabase, {
+        userId,
+        model: 'claude-sonnet-4-20250514',
+        usage: totalUsage,
+        source: SOURCES.onboardingAssess,
+      });
     },
   });
 
