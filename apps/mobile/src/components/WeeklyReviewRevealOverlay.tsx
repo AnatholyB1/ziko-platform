@@ -63,6 +63,9 @@ export function WeeklyReviewRevealOverlay() {
       setSeenMarker(data.last_review_at);
     }
     setDismissed(true);
+    // Phase 46 (D-06): the review may have raised the tier; re-read the level so
+    // newly unlocked plugins register without a restart.
+    useAuthStore.getState().refreshLevel().catch(() => {});
   };
 
   return (
