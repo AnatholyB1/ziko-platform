@@ -192,12 +192,22 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
     await makeLink(tempCoach.id, tempClient.id);
 
     // Need a real exercises row for FK (session_sets.exercise_id NOT NULL REFERENCES exercises.id).
-    const { data: ex, error: exErr } = await admin
-      .from('ziko_exercises')
-      .select('id')
-      .limit(1)
-      .single();
-    if (exErr || !ex) throw new Error(`seed exercises not present: ${exErr?.message ?? 'no row'}`);
+    // Uses a seeded exercise when seed.sql is loaded; otherwise self-seeds a throwaway row
+    // (a disposable test project has no seed.sql) and removes it at the end of the test.
+    let seededExerciseId: string | null = null;
+    const { data: exRows, error: exErr } = await admin.from('ziko_exercises').select('id').limit(1);
+    if (exErr) throw new Error(`exercises lookup: ${exErr.message}`);
+    let ex = exRows?.[0];
+    if (!ex) {
+      const ins = await admin
+        .from('ziko_exercises')
+        .insert({ name: 'rls-spec-exercise', category: 'strength' })
+        .select('id')
+        .single();
+      if (ins.error || !ins.data) throw new Error(`exercise self-seed: ${ins.error?.message ?? 'no row'}`);
+      ex = ins.data;
+      seededExerciseId = ins.data.id;
+    }
 
     const { data: ws, error: wsErr } = await admin
       .from('ziko_workout_sessions')
@@ -219,6 +229,9 @@ describe('coach RLS — 4 mandated cases + additional scenarios', () => {
       .from('ziko_session_sets')
       .select('id')
       .eq('session_id', ws!.id);
+    // Clean up before asserting so a failure does not leak the throwaway exercise.
+    await admin.from('ziko_session_sets').delete().eq('session_id', ws!.id);
+    if (seededExerciseId) await admin.from('ziko_exercises').delete().eq('id', seededExerciseId);
     expect(error).toBeNull();
     expect(data?.length).toBeGreaterThan(0);
   });

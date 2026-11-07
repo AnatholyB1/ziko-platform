@@ -5,6 +5,14 @@ import { resolve } from 'node:path';
 // Loads .env.test (gitignored) which contains SUPABASE_SERVICE_ROLE_KEY
 loadEnv({ path: resolve(__dirname, '../.env.test') });
 
+// src/tools/db.ts clientForUser() reads SUPABASE_SERVICE_KEY (the deploy env name) and silently falls
+// back to the anon/publishable key when it is missing — which makes service-role-only paths
+// (runWeeklyReview, ziko_record_athlete_decision) return no_state. The test env only carries
+// SUPABASE_SERVICE_ROLE_KEY, so mirror the deploy wiring here (tests only, never src/).
+if (!process.env.SUPABASE_SERVICE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  process.env.SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+}
+
 // Remote-DB specs are excluded by vitest.config.ts when these are absent
 // (e.g. CI without Supabase secrets), so a missing var is not an error here.
 const required = [

@@ -9,6 +9,14 @@ import { cleanupTestUsers, createTestUser, getAdminClient, getAnonClient, type T
 // run there. See waitlist-config-rpc.spec.ts (backend/api) for the same pattern.
 const RUN_DB = Boolean(process.env.SUPABASE_TEST_URL) && process.env.SUPABASE_TEST_URL === process.env.SUPABASE_URL;
 
+// Since 20261107170000_ziko_revoke_client_dml anon/authenticated no longer hold UPDATE/DELETE on the
+// waitlist table, so PostgREST answers 42501 permission denied. A silent zero-row RLS no-op (the
+// pre-revoke behaviour) is still an acceptable outcome: the invariant is that no row is written.
+function expectNoRowsWritten(error: { code?: string } | null, data: unknown[] | null) {
+  if (error) expect(error.code).toBe('42501');
+  else expect(data).toEqual([]);
+}
+
 const PREFIX = `dedupe-${randomUUID().slice(0, 8)}-`;
 
 describe.skipIf(!RUN_DB)('ziko_waitlist_signups + waitlist RPCs (20260812_waitlist_founder_offer.sql)', () => {
@@ -66,21 +74,19 @@ describe.skipIf(!RUN_DB)('ziko_waitlist_signups + waitlist RPCs (20260812_waitli
       expect(error).not.toBeNull();
     });
 
-    it('UPDATE matches and affects zero rows (RLS filters the target set silently, not an error)', async () => {
+    it('UPDATE changes no rows (table privilege revoked: permission denied; before the revoke migration it was a silent RLS no-op)', async () => {
       // Confirmed live via direct SQL: with RLS enabled and zero policies, UPDATE's
       // implicit USING clause filters the target set to nothing before WITH CHECK is
       // ever evaluated, so this is a silent no-op — unlike INSERT, which has no
       // existing rows to filter against and therefore throws. .select() surfaces the
       // filtered (empty) result set.
       const { data, error } = await anon.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
 
-    it('DELETE matches and affects zero rows (same silent RLS filter as UPDATE)', async () => {
+    it('DELETE changes no rows (table privilege revoked: permission denied)', async () => {
       const { data, error } = await anon.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
   });
 
@@ -98,16 +104,14 @@ describe.skipIf(!RUN_DB)('ziko_waitlist_signups + waitlist RPCs (20260812_waitli
       expect(error).not.toBeNull();
     });
 
-    it('UPDATE matches and affects zero rows (same silent RLS filter as anon)', async () => {
+    it('UPDATE changes no rows (permission denied, same as anon)', async () => {
       const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
 
-    it('DELETE matches and affects zero rows (same silent RLS filter as anon)', async () => {
+    it('DELETE changes no rows (permission denied, same as anon)', async () => {
       const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
   });
 
