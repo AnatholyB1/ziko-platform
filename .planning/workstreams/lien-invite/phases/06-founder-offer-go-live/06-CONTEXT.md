@@ -38,6 +38,17 @@ noted there as "not something to fold into the waitlist phase."
 
 </domain>
 
+
+## Re-baseline 2026-11-07 (post v1.19, user answers) - SUPERSEDES conflicting decisions below
+
+Faits prod (projet portfolio ubxllsvanurkwkohzxau, lecture seule): ziko project slkobhavpwsubnsmuhya SUPPRIME; tables prefixees `ziko_`; ziko_waitlist_signups = 94 (tous founders, 19 sans consent_given_at), ziko_app_config: premium_credit_cap_enabled=false, waitlist_reveal_threshold=200, retention=3; 21 premium (tous is_lifetime_premium, tous dans la waitlist) sur 40 profils. Deploy = push main + dormant CI migrate-portfolio (PORTFOLIO_MIGRATIONS_ENABLED), migrations dans supabase/portfolio-migrations.
+
+- **D-04 REPLACED:** NO `TRUNCATE`, NO sequence reset on production. The 94 real signups are kept. Smoke test of claim RPC runs on a disposable DB only.
+- **A-01 / CRED-01 SUPERSEDED:** assumption false (21 premium). Decision: those 21 are grandfathered as founders (`is_lifetime_premium` already true) and the credit cap is activated with a finite allocation for everyone, after /cgv and /cgu are confirmed live (D-06 unchanged).
+- **D-05 REPLACED:** reveal threshold moves 200 -> 30 via `ziko_app_config`; prod UPDATE is listed in DEPLOY-CHECKLIST-v1.16.md and executed only on the user's explicit authorization.
+- **New D-07:** the 19 signups without consent_given_at are kept, excluded from any send, and listed in the checklist (RGPD section).
+- D-02 migration path (CI db push on the old project) is obsolete: migrations already live in portfolio; RUNBOOK checks state via read-only queries, no apply.
+
 <decisions>
 ## Implementation Decisions
 

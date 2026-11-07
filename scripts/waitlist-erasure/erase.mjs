@@ -1,6 +1,6 @@
 /**
  * Waitlist erasure — human-triggered invocation of Phase 1's
- * anonymize_waitlist_signup() RPC (D-06, LEGAL-09).
+ * ziko_anonymize_waitlist_signup() RPC (D-06, LEGAL-09).
  *
  * Usage: node scripts/waitlist-erasure/erase.mjs --email <address> --confirm [--log <path>]
  * Requires: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars
@@ -8,7 +8,8 @@
  * This script does not carry Phase 2's full purge ceremony (no dry-run export,
  * no hashed manifest, no two-person rule) — the RPC it calls is a single-row,
  * non-destructive, anonymising UPDATE with no cascade (see
- * supabase/migrations/20260812_waitlist_founder_offer.sql lines 217-241), and
+ * supabase/migrations/20260812_waitlist_founder_offer.sql lines 217-241, now deployed as
+ * public.ziko_anonymize_waitlist_signup in supabase/portfolio-migrations/20261001101853_portfolio_ziko_functions.sql), and
  * that rigor would be disproportionate here. The admin client follows
  * scripts/purge-test-accounts/lib.mjs exactly: read SUPABASE_URL and
  * SUPABASE_SERVICE_ROLE_KEY from the environment, fail fast and by name when
@@ -18,7 +19,7 @@
  * instead of an honest missing-credential message.
  *
  * The email address is passed through to the RPC verbatim, never normalised
- * or lowercased in JavaScript: normalize_waitlist_email() already runs inside
+ * or lowercased in JavaScript: ziko_normalize_waitlist_email() already runs inside
  * the RPC, and a second client-side normalisation would silently diverge if
  * the SQL definition ever changes.
  */
@@ -36,7 +37,7 @@ import { tmpdir } from 'node:os';
  * when it fails a basic single-`@` shape check, or when `--confirm` is
  * absent. The address is trimmed of surrounding whitespace only — no
  * lowercasing, no other normalisation; the RPC's own
- * normalize_waitlist_email() is the single source of truth for that.
+ * ziko_normalize_waitlist_email() is the single source of truth for that.
  * @param {string[]} argv
  * @returns {{ email: string, confirm: boolean, logPath: string }}
  */
@@ -100,7 +101,7 @@ export function createErasureAdminClient() {
 // ── Erasure call ─────────────────────────────────────────────────────────
 
 /**
- * Calls anonymize_waitlist_signup(p_email) and maps the result. `anonymized:
+ * Calls ziko_anonymize_waitlist_signup(p_email) and maps the result. `anonymized:
  * false` (RPC returned `false`, no error) is a legitimate outcome — no
  * matching un-anonymised row was found — and is reported to the caller, not
  * treated as a failure.
@@ -109,7 +110,7 @@ export function createErasureAdminClient() {
  * @returns {Promise<{ ok: boolean, anonymized: boolean, error: string | null }>}
  */
 export async function runErasure(client, email) {
-  const { data, error } = await client.rpc('anonymize_waitlist_signup', { p_email: email });
+  const { data, error } = await client.rpc('ziko_anonymize_waitlist_signup', { p_email: email });
 
   if (error) {
     return { ok: false, anonymized: false, error: error.message ?? String(error) };

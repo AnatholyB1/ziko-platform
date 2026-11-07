@@ -1,5 +1,6 @@
 # RLS Suite — Phase 22 Wave 0 gate, extended in phase 1 (v1.16) to cover the
-# waitlist migration and its two proof suites.
+# waitlist migration and its two proof suites. Since v1.19 it targets the
+# ziko_-prefixed portfolio schema (supabase/portfolio-migrations/), see the apply step.
 #
 # Per .planning/phases/22-schema-foundation-rls-keystone/22-VALIDATION.md,
 # every PR that touches Supabase migrations OR the RLS test scaffold must
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'supabase/migrations/**'
+      - 'supabase/portfolio-migrations/**'
       - 'backend/api/test/rls/**'
       - 'backend/api/vitest.config.ts'
       - 'backend/api/package.json'
@@ -79,30 +81,34 @@ jobs:
           SUPABASE_TEST_URL=${SUPABASE_TEST_URL}
           EOF
 
-      # This workflow previously had no migration-apply step, so a suite could pass
-      # against a schema older than the change under review (01-RESEARCH.md Pitfall 4).
-      # Both steps below are conditional: when SUPABASE_TEST_PROJECT_ID is not
-      # configured, they skip and the suites still run — the workflow degrades to its
-      # pre-phase-1 behavior rather than breaking. Migration application in that case
-      # is manual, covered by the blocking checkpoint at the end of plan 01-02.
+      # SCHEMA UNDER TEST (post v1.19). The specs query the `ziko_`-prefixed tables and
+      # RPCs of the shared `portfolio` schema, which lives in supabase/portfolio-migrations/
+      # (supabase/migrations/ is the frozen, unprefixed legacy history and would create
+      # the WRONG table names). The suite signs users up and deletes them, so it must run
+      # against a DISPOSABLE test project, never the production portfolio project.
+      # Requirements for SUPABASE_TEST_PROJECT_ID's project: it must have the portfolio
+      # prerequisites already (auth gate / baseline from
+      # scripts/portfolio-migration/00-bootstrap-supabase-functions.sql). When
+      # SUPABASE_TEST_PROJECT_ID is unset the apply step is skipped and the suites run
+      # against whatever schema SUPABASE_TEST_URL already holds (apply it manually).
       - name: Setup Supabase CLI
         if: env.SUPABASE_TEST_PROJECT_ID != ''
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
 
-      - name: Apply migrations to test project
+      - name: Apply portfolio migrations to test project
         if: env.SUPABASE_TEST_PROJECT_ID != ''
         run: |
-          supabase link --project-ref ${{ env.SUPABASE_TEST_PROJECT_ID }}
-          NEW=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- supabase/migrations/ | xargs -I{} basename {} .sql)
-          for f in supabase/migrations/*.sql; do
-            version=$(basename "$f" .sql)
-            if ! echo "$NEW" | grep -qx "$version"; then
-              supabase migration repair --status applied "$version" 2>/dev/null || true
-            fi
+          if [ "$SUPABASE_TEST_PROJECT_ID" = "ubxllsvanurkwkohzxau" ]; then
+            echo "::error::refusing to run the RLS suite against the production portfolio project"
+            exit 1
+          fi
+          supabase link --project-ref "$SUPABASE_TEST_PROJECT_ID"
+          for f in $(ls supabase/portfolio-migrations/*.sql | sort); do
+            echo "applying $f"
+            supabase db query --linked -f "$f"
           done
-          supabase db push --include-all
 
       - name: Run RLS suite
         if: steps.secrets_check.outputs.configured == 'true'

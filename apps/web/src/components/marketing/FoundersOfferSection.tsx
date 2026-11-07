@@ -15,7 +15,7 @@ export async function FoundersOfferSection({ locale }: Props) {
       button={tHome('founders.button')}
       note={tHome('founders.note')}
       counterStaticOffer={tFondateurs('counter.preThreshold')}
-      counterRemainingTemplate={tFondateurs('counter.remaining')}
+      counterRemainingTemplate={tFondateurs.raw('counter.remaining') as string}
       counterCompleteHeading={tFondateurs('counter.completeHeading')}
       counterCompleteBody={tFondateurs('counter.completeBody')}
     />

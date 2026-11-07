@@ -2,6 +2,7 @@
 phase: 06
 slug: founder-offer-go-live
 status: ready
+rebaselined: 2026-11-07
 nyquist_compliant: true
 wave_0_complete: false
 created: 2026-08-18
@@ -26,7 +27,7 @@ plans_created: 2026-08-18
 
 **Wave 0 equivalent:** `scripts/founder-offer-go-live/RUNBOOK.md`. Every human-fired step in this phase
 executes that document rather than a summary of it, so no execution task can run before T-06-01
-creates it. `wave_0_complete` flips to `true` in T-06-12 once sections 0 through 11 all exist.
+creates it. `wave_0_complete` flips to `true` in T-06-12 once the runbook sections all exist.
 
 **Probe disclosure:** no edge-probe / prohibition-probe run — phase owns no net-new requirement IDs.
 Phase 6 claims no requirement not already owned by Phases 1–5, there is no phase-local SPEC.md, and
@@ -50,40 +51,47 @@ map below is therefore derived directly from ROADMAP.md's four literal Phase 6 s
 
 ---
 
+## Re-baseline 2026-11-07 (post v1.19)
+
+Production = portfolio project `ubxllsvanurkwkohzxau`, tables `ziko_*`; the old ziko project is deleted.
+No TRUNCATE, no sequence reset (94 real signups kept). The smoke test of `ziko_claim_waitlist_signup`
+runs on a disposable DB only. Threshold 200 -> 30 and the cap flag flip are human-fired UPDATEs on explicit
+authorization. The 21 premium are grandfathered (`is_lifetime_premium`) and receive the finite 300/month
+allocation. All earlier rows referring to the old project, TRUNCATE or "premium count 0" are superseded.
+
 ## Per-Criterion Verification Map
 
 | # | Success Criterion (ROADMAP Phase 6) | Plan | Wave | Closing Task | Supporting Tasks | Verification Type | Command / Check | Expected Evidence | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | The public founder counter reflects only genuine post-launch signups — QA/test signups cleared (table truncated + sequence reset) before the page opens to the public | 06-03 | 3 | **T-06-09** | T-06-07 (authors §7), T-06-08 (one-way `checkpoint:decision`), T-06-10 (records) | scripted SQL, human-fired, one-way | `SELECT * FROM public.claim_waitlist_signup('go-live-smoketest@ziko-app.com', 'athlete');` → `TRUNCATE public.waitlist_signups;` → `SELECT public.reset_waitlist_founder_sequence(1);` → `SELECT count(*) FROM public.waitlist_signups;` | Claim returns `is_new` true / `is_founder` true / `founder_rank` 1; post-cleanup count is 0 with a recorded wall-clock time preceding any entry point being publicly linked | ⬜ pending |
-| 2 | The credit-gate feature flag is flipped only after the CGU/CGV pages describing the AI-credit cap are already live — never flag-before-text | 06-03 | 3 | **T-06-09** | T-06-07 (authors §8–§9), T-06-10 (records) | scripted HTTP check + scripted SQL, human-fired, in strict order | `curl -sI <site>/fr/cgv`, `/fr/cgu`, `/en/cgv`, `/en/cgu` → then `UPDATE public.app_config SET value = 'true', updated_at = NOW() WHERE key = 'premium_credit_cap_enabled';` → `SELECT value, jsonb_typeof(value) FROM public.app_config WHERE key = 'premium_credit_cap_enabled';` | All four status lines are 200, obtained before the `UPDATE`; readback reports value true with type `boolean` (not a JSON string) | ⬜ pending |
-| 3 | The chosen reveal-threshold state at the moment of launch matches what was intended — FOND-06 applied, not just built | 06-02 | 2 | **T-06-05** | T-06-04 (authors §6), T-06-06 (records, marks this row) | scripted SQL, human-fired | `SELECT value FROM public.app_config WHERE key = 'waitlist_reveal_threshold';` | Returns `30` — confirm-not-assume per D-05; counter first appears at 170/200 claimed | ⬜ pending |
-| 4a | All mapped entry points route real traffic to the now-public page | 06-04 | 4 | **T-06-11** | T-06-10 (authors §10), T-06-12 (records) | manual browser click-through on the production domain | Homepage founders section, both `/coachs` CTAs, header link, footer link — French and English; plus served sitemap contains the founders path | Every click lands on `/fondateurs`; both `/coachs` routes arrive with the coach profile pre-selected | ⬜ pending |
-| 4b | Its conversions begin recording from the first live visit | 06-04 | 4 | **T-06-11** | T-06-10 (authors §10), T-06-12 (records) | **backstop** — external dashboard, human-observed | Submit one signup on the live page, then look for the `waitlist_signup` event in the production Vercel Analytics dashboard | The event appears for that submission, with the observed delay recorded; an absent event is a finding, not an approval | ⬜ pending |
+| 1 | The public founder counter reflects only genuine signups. Re-interpreted: no real signup is destroyed; the 94 real rows are kept, claim path proven on a disposable DB | 06-03 | 3 | **T-06-09** | T-06-07 (authors, runs smoke test), T-06-05 (snapshot), T-06-10 | read-only SQL + disposable-DB scripted check | `SELECT count(*) FROM public.ziko_waitlist_signups;` and `SELECT last_value, is_called FROM public.ziko_waitlist_founder_seq;` before and after; smoke test on throwaway DB | count >= 94 and sequence unchanged; smoke test: rank 1 is_new true, repeat is_new false | pending |
+| 2 | Credit-gate flag flipped only after CGU/CGV are live (CRED-05 + LEGAL-05) and with finite allocation for all, grandfathered premium included | 06-03 | 3 | **T-06-09** | T-06-05 (premium + allocation reads), T-06-07, T-06-10 | HTTP checks + SQL, human-fired in strict order | `curl -sI <site>/fr/cgv /fr/cgu /en/cgv /en/cgu` (4x 200), then premium_without_grant = 0, then `UPDATE ... SET value='true'::jsonb ...`, then `SELECT value, jsonb_typeof(value) ...` | 4x 200 before UPDATE; readback true / boolean; rollback `'false'::jsonb` | pending |
+| 3 | Reveal-threshold state at launch matches intent (FOND-06 applied): 200 -> 30 | 06-03 | 3 | **T-06-09** | T-06-05 (reads 200 first), T-06-08 (authorization), T-06-07 | read + human-fired UPDATE | `UPDATE public.ziko_app_config SET value='30'::jsonb, updated_at=now() WHERE key='waitlist_reveal_threshold';` then `SELECT value, jsonb_typeof(value) ...` | 200/number before, 30/number after; should_display false at 94 claimed; rollback `'200'::jsonb` | pending |
+| 4a | Entry points route real traffic to the public page | 06-04 | 4 | **T-06-11** | T-06-10, T-06-12 | manual browser click-through on production | homepage section, both /coachs CTAs, header, footer, fr + en; sitemap | every click lands on /fondateurs; coach pre-selected | pending |
+| 4b | Conversions record from the first live visit | 06-04 | 4 | **T-06-11** | T-06-10, T-06-12 | **backstop** - external dashboard | one real submission, then `waitlist_signup` in Vercel Analytics | event appears; absence is a finding | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky — the recording task in each plan updates its rows.*
+*Status legend: pending / green / red / flaky. The recording task in each plan updates its rows.*
 
-**Why 4b is a backstop rather than an automated check:** the tracking call fires client-side from
-`apps/web/src/components/marketing/WaitlistRoleForm.tsx` and its data lands only in Vercel Analytics.
-No repository-local or command-line path to that dashboard exists in this environment
-(`06-RESEARCH.md` Environment Availability). It also fails independently of 4a — a deploy missing the
-analytics mount produces a perfect click-through and no recorded event — so the two are separate rows
-rather than one.
+4b is a backstop: the tracking call is client-side and lands only in Vercel Analytics; no repo-local path
+exists. 4b fails independently of 4a.
 
 ---
 
-## Supporting Verification (not ROADMAP criteria, but launch preconditions)
+## Supporting Verification (launch preconditions, read-only unless marked)
 
 | Check | Plan | Wave | Task | Command | Expected | Halt condition |
 |---|---|---|---|---|---|---|
-| Merge landed on `main` as a single merge/squash commit | 06-01 | 1 | T-06-02 | `git rev-list --count HEAD..main`; PR merged | PR number and merge commit SHA recorded | — |
-| CI's `migrate-supabase` job applied migrations (not skipped) | 06-01 | 1 | T-06-02 | Actions run on the merge push; `Setup Supabase CLI` and `Push migrations` steps executed | Both steps executed, log tail pasted | Skipped steps ⇒ change detector resolved false ⇒ escalate |
-| Tracer: one migration artifact live | 06-01 | 1 | T-06-02, T-06-03 | `SELECT key, value FROM public.app_config ORDER BY key;` (project `slkobhavpwsubnsmuhya`) | A `premium_credit_cap_enabled` row exists | Absent ⇒ ledger `status: blocked`, phase halts |
-| Tracer: deploy artifact live | 06-01 | 1 | T-06-02, T-06-03 | `curl -s -o /dev/null -w '%{http_code}' https://ziko-api-lilac.vercel.app/health` + deployed SHA | 200 and deployed SHA equals the merge commit | SHA mismatch ⇒ ledger `status: blocked` |
-| All three migrations landed (no partial apply) | 06-02 | 2 | T-06-05 | `app_config` (3 rows) + `information_schema.columns` for `is_lifetime_premium` + `pg_proc` for `grant_premium_credits` and `reset_waitlist_founder_sequence` | All three artifacts present | Any one absent ⇒ escalate with the owning migration named; do not hand-apply |
-| Purge precondition fresh (PURGE-01–05) | 06-02 | 2 | T-06-05 | `node --env-file=apps/web/.env.local scripts/purge-test-accounts/dry-run.mjs` | All four totals recorded; `to_delete` is 0 | Nonzero ⇒ run `scripts/purge-test-accounts/RUNBOOK.md` §3–§7 before launch |
-| CRED-01 re-audit within the launch window | 06-02 | 2 | T-06-05 | `SELECT count(*) FROM public.user_profiles WHERE tier = 'premium';` | 0 | Nonzero ⇒ halt; grandfather question returns to the project owner |
-| Phase 5 carried-forward gap: real submission success/duplicate states | 06-04 | 4 | T-06-11 | Submit an address, then resubmit the same one on the live page | Identical response both times; no hint of prior registration | Not completed ⇒ restated as open with the reason |
-| Phase 5 carried-forward gap: FOND-06 live counter reveal | 06-04 | 4 | T-06-11 | Raise `waitlist_reveal_threshold`, reload, confirm the count appears with no redeploy, restore to 30 | Display changes without a redeploy; value confirmed back at 30 | Not restored ⇒ blocking finding |
+| Code deployed from main as single merge commit | 06-01 | 1 | T-06-02 | PR + Vercel deployed SHA (api + web) + `/health` | SHA = merge SHA; 200 | Mismatch or non-200: blocked |
+| CI migrate-portfolio dormant, nothing applied | 06-01 | 1 | T-06-02 | Actions run on the push; variable PORTFOLIO_MIGRATIONS_ENABLED | job skipped | Variable 'true': stop and ask |
+| Migrations live | 06-01 | 1 | T-06-02 | `SELECT version FROM supabase_migrations.schema_migrations WHERE version >= '20261001101852' ORDER BY 1;` | 5 versions | Short: escalate, no hand-apply |
+| Config baseline | 06-01 | 1 | T-06-02 | `SELECT key, value FROM public.ziko_app_config ORDER BY key;` | cap false, retention 3, threshold 200 | Differs: record and ask |
+| Four artifacts | 06-02 | 2 | T-06-05 | pg_proc (4 ziko_ functions), information_schema.columns (is_lifetime_premium), sequence read | all present | Any miss: blocked |
+| Waitlist snapshot | 06-02 | 2 | T-06-05 | total / founders / no_consent / anonymized | 94 / 94 / 19 / record | Total < 94: blocked |
+| Purge dry-run fresh, ziko-scoped | 06-02 | 2 | T-06-05 | `node --env-file=<env> scripts/purge-test-accounts/dry-run.mjs` | to_delete 0 | > 0: purge RUNBOOK; shared auth.users scope check first |
+| Grandfathered premium | 06-02 | 2 | T-06-05 | premium / lifetime / not_grandfathered / profiles | 21 / 21 / 0 / 40 | not_grandfathered > 0: user decision |
+| Finite allocation | 06-02 | 2 | T-06-05, T-06-09 | premium_without_grant query (current UTC month) | 0 | > 0: trigger idempotent grant cron or escalate; no flip |
+| RGPD exclusion | 06-04 | 4 | T-06-11 | `SELECT count(*) FROM public.ziko_waitlist_signups WHERE consent_given_at IS NULL;` | 19, ids listed in DEPLOY-CHECKLIST-v1.16.md | Any send must filter consent_given_at IS NOT NULL |
+| Phase 5 gap: real submission success/duplicate | 06-04 | 4 | T-06-11 | submit then resubmit on live page; DB level covered by the disposable smoke test | identical response | Not done: restated open |
+| Phase 5 gap: FOND-06 live reveal | 06-04 | 4 | T-06-11 | needs threshold raised in prod: separate authorization, restore 30 same sitting | display changes with no redeploy | Not authorized: restated open |
 
 ---
 
@@ -91,11 +99,11 @@ rather than one.
 
 | Behavior | Requirement | Why Manual | Resolving Task | Test Instructions |
 |----------|-------------|------------|----------------|--------------------|
-| Merge-to-main + CI migration apply landed cleanly | Deploy scope (D-02) | Requires a real GitHub PR merge and observing a real Actions run; no `gh` access and no production credentials in any session | **T-06-02** | Open a PR from the milestone branch to `main`, land it as a single merge or squash commit, watch `.github/workflows/ci.yml`'s `migrate-supabase` job, confirm its apply steps executed rather than being skipped |
-| Production purge dry-run re-check | PURGE-01–05 (D-03) | Requires production `SUPABASE_SERVICE_ROLE_KEY`, which no session in this milestone has held | **T-06-05** | Run `scripts/purge-test-accounts/dry-run.mjs` against production per its RUNBOOK, record all four totals |
-| Live `claim_waitlist_signup()` smoke test + one-way cleanup | Criterion 1 (D-04) | Requires a real production write with `service_role` credentials; the cleanup is irreversible | **T-06-09**, gated by **T-06-08** (`checkpoint:decision`) | Call the RPC as `service_role`, confirm the returned row, then `TRUNCATE` + `reset_waitlist_founder_sequence(1)` and confirm count 0 with a timestamp |
-| CGU/CGV liveness before the flag flip | Criterion 2, LEGAL-05 (D-06) | Requires the production domain, which is read from a gitignored env file | **T-06-09** | `curl -sI` all four locale/document combinations; open one in a browser to confirm it renders the terms rather than a 200 from an error boundary |
-| Entry-point click-through + Analytics conversion check | Criterion 4 | No browser or Vercel Analytics dashboard access from any session; the dashboard has no CLI or repo-local equivalent | **T-06-11** | Human visits each entry point on production in both locales, submits a signup, confirms the `waitlist_signup` event in Vercel Analytics |
+| Merge to main and deploy | Deploy scope | Needs merge rights and Vercel dashboard | **T-06-02** | RUNBOOK sections 1-2 |
+| Production reads | PURGE, CRED-01 | Needs prod SQL access; purge needs service-role env | **T-06-05** | RUNBOOK sections 3-6 |
+| Threshold UPDATE | Criterion 3 (FOND-06) | Production write, explicit authorization | **T-06-08, T-06-09** | RUNBOOK section 8 |
+| Flag UPDATE after legal + allocation gates | Criterion 2 (CRED-05, LEGAL-05) | Production write, explicit authorization | **T-06-08, T-06-09** | RUNBOOK sections 9-10 |
+| Entry-point click-through + Analytics event | Criterion 4 | Browser and external dashboard | **T-06-11** | RUNBOOK section 11 |
 
 ---
 
@@ -117,4 +125,4 @@ rather than one.
 - [ ] `wave_0_complete: true` — set by T-06-12 once RUNBOOK sections 0 through 11 all exist.
 - [ ] All four criteria green — set by T-06-12 from the operator's actual reported results.
 
-**Approval:** planner-signed 2026-08-18
+**Approval:** planner-signed 2026-08-18; re-baselined 2026-11-07 (post v1.19, user decisions Q1-Q4)

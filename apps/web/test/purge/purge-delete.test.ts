@@ -482,21 +482,21 @@ function makeOrphanFakeClient(
 describe('fetchOrphanRows', () => {
   it('reports a hit per matching row across the documented tables and columns', async () => {
     const tables = {
-      user_profiles: [{ id: 'u1' }],
-      coach_client_links: [{ coach_id: 'u1', client_id: 'real1' }],
-      coach_vocal_feedbacks: [],
-      workout_programs: [{ user_id: 'u1' }],
+      ziko_user_profiles: [{ id: 'u1' }],
+      ziko_coach_client_links: [{ coach_id: 'u1', client_id: 'real1' }],
+      ziko_coach_vocal_feedbacks: [],
+      ziko_workout_programs: [{ user_id: 'u1' }],
     };
     const client = makeOrphanFakeClient(tables);
     const hits = await fetchOrphanRows(client as never, ['u1']);
-    expect(hits.some((h: { table: string; column: string }) => h.table === 'user_profiles' && h.column === 'id')).toBe(
+    expect(hits.some((h: { table: string; column: string }) => h.table === 'ziko_user_profiles' && h.column === 'id')).toBe(
       true
     );
     expect(
-      hits.some((h: { table: string; column: string }) => h.table === 'coach_client_links' && h.column === 'coach_id')
+      hits.some((h: { table: string; column: string }) => h.table === 'ziko_coach_client_links' && h.column === 'coach_id')
     ).toBe(true);
     expect(
-      hits.some((h: { table: string; column: string }) => h.table === 'workout_programs' && h.column === 'user_id')
+      hits.some((h: { table: string; column: string }) => h.table === 'ziko_workout_programs' && h.column === 'user_id')
     ).toBe(true);
   });
 
@@ -505,35 +505,35 @@ describe('fetchOrphanRows', () => {
   // These cases pin a representative sample of the new columns.
   it('reports a hit for a lingering reference in friendships.addressee_id (community schema)', async () => {
     const client = makeOrphanFakeClient({
-      friendships: [{ requester_id: 'real1', addressee_id: 'u1' }],
+      ziko_friendships: [{ requester_id: 'real1', addressee_id: 'u1' }],
     });
     const hits = await fetchOrphanRows(client as never, ['u1']);
     expect(
-      hits.some((h: { table: string; column: string }) => h.table === 'friendships' && h.column === 'addressee_id')
+      hits.some((h: { table: string; column: string }) => h.table === 'ziko_friendships' && h.column === 'addressee_id')
     ).toBe(true);
   });
 
   it('reports a hit for a lingering reference in coach_metric_thresholds.client_id (coach-CRM schema)', async () => {
     const client = makeOrphanFakeClient({
-      coach_metric_thresholds: [{ coach_id: 'real1', client_id: 'u1' }],
+      ziko_coach_metric_thresholds: [{ coach_id: 'real1', client_id: 'u1' }],
     });
     const hits = await fetchOrphanRows(client as never, ['u1']);
     expect(
       hits.some(
         (h: { table: string; column: string }) =>
-          h.table === 'coach_metric_thresholds' && h.column === 'client_id'
+          h.table === 'ziko_coach_metric_thresholds' && h.column === 'client_id'
       )
     ).toBe(true);
   });
 
   it('reports a hit for a lingering reference in coach_invitations.used_by (verified against migrations, not in the original review list)', async () => {
     const client = makeOrphanFakeClient({
-      coach_invitations: [{ coach_id: 'real1', used_by: 'u1' }],
+      ziko_coach_invitations: [{ coach_id: 'real1', used_by: 'u1' }],
     });
     const hits = await fetchOrphanRows(client as never, ['u1']);
     expect(
       hits.some(
-        (h: { table: string; column: string }) => h.table === 'coach_invitations' && h.column === 'used_by'
+        (h: { table: string; column: string }) => h.table === 'ziko_coach_invitations' && h.column === 'used_by'
       )
     ).toBe(true);
   });
@@ -552,8 +552,8 @@ describe('fetchOrphanRows', () => {
   });
 
   it('throws, naming the table and column, on a query error rather than returning an empty result', async () => {
-    const client = makeOrphanFakeClient({}, { table: 'coach_vocal_feedbacks', column: 'athlete_id' });
-    await expect(fetchOrphanRows(client as never, ['u1'])).rejects.toThrow(/coach_vocal_feedbacks/);
+    const client = makeOrphanFakeClient({}, { table: 'ziko_coach_vocal_feedbacks', column: 'athlete_id' });
+    await expect(fetchOrphanRows(client as never, ['u1'])).rejects.toThrow(/ziko_coach_vocal_feedbacks/);
     await expect(fetchOrphanRows(client as never, ['u1'])).rejects.toThrow(/athlete_id/);
   });
 });
@@ -561,28 +561,28 @@ describe('fetchOrphanRows', () => {
 describe('summarizeOrphans', () => {
   it('returns a per-table breakdown and total for rows from three tables', () => {
     const rows = [
-      { table: 'user_profiles', column: 'id', id: 'u1' },
-      { table: 'coach_client_links', column: 'coach_id', id: 'u1' },
-      { table: 'workout_programs', column: 'user_id', id: 'u1' },
+      { table: 'ziko_user_profiles', column: 'id', id: 'u1' },
+      { table: 'ziko_coach_client_links', column: 'coach_id', id: 'u1' },
+      { table: 'ziko_workout_programs', column: 'user_id', id: 'u1' },
     ];
     const result = summarizeOrphans(rows);
     expect(result.total).toBe(3);
-    expect(result.byTable['user_profiles.id']).toBe(1);
-    expect(result.byTable['coach_client_links.coach_id']).toBe(1);
-    expect(result.byTable['workout_programs.user_id']).toBe(1);
+    expect(result.byTable['ziko_user_profiles.id']).toBe(1);
+    expect(result.byTable['ziko_coach_client_links.coach_id']).toBe(1);
+    expect(result.byTable['ziko_workout_programs.user_id']).toBe(1);
   });
 
   it('reports success only when the total is zero', () => {
     expect(summarizeOrphans([]).ok).toBe(true);
     expect(
-      summarizeOrphans([{ table: 'user_profiles', column: 'id', id: 'u1' }]).ok
+      summarizeOrphans([{ table: 'ziko_user_profiles', column: 'id', id: 'u1' }]).ok
     ).toBe(false);
   });
 
   it('fails and names the table when a single orphan row exists in any one of the four tables', () => {
-    const result = summarizeOrphans([{ table: 'coach_vocal_feedbacks', column: 'athlete_id', id: 'u1' }]);
+    const result = summarizeOrphans([{ table: 'ziko_coach_vocal_feedbacks', column: 'athlete_id', id: 'u1' }]);
     expect(result.ok).toBe(false);
-    expect(result.byTable['coach_vocal_feedbacks.athlete_id']).toBe(1);
+    expect(result.byTable['ziko_coach_vocal_feedbacks.athlete_id']).toBe(1);
   });
 });
 

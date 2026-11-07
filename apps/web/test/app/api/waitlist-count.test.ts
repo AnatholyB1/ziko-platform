@@ -1,6 +1,6 @@
 // Phase 5 plan 05-03 (T-05-06) — pins the /api/waitlist/count contract: the route
-// relays get_waitlist_founder_status()'s three verdicts verbatim, never touches
-// `waitlist_signups` directly, calls the RPC exactly once per request with no
+// relays ziko_get_waitlist_founder_status()'s three verdicts verbatim, never touches
+// `ziko_waitlist_signups` directly, calls the RPC exactly once per request with no
 // arguments, and degrades to the same honest safe-default on any RPC failure —
 // cached at the edge on success, never cached on the fallback.
 //
