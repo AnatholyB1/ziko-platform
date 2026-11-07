@@ -306,7 +306,15 @@ async function runRewardGrantStep(
   const owned = ((data ?? []) as Array<{ tier: number }>).map((r) => r.tier);
   const results: GrantRewardResult[] = [];
   for (const tier of owedTiers(tierNow, owned)) {
-    results.push((await create_reward({ tier, week_of: weekOf, source }, userId, userToken)) as GrantRewardResult);
+    // Per-tier catch: a failure on tier N+1 must not discard the reveal data
+    // of tier N already granted (the DB state is fine either way; the failed
+    // tier is retried next cycle because owed tiers derive from state).
+    try {
+      results.push((await create_reward({ tier, week_of: weekOf, source }, userId, userToken)) as GrantRewardResult);
+    } catch (err) {
+      console.error(`[WeeklyReview] reward grant for tier ${tier} failed (retried next cycle):`, err);
+      break; // keep earlier grants; remaining owed tiers are retried next cycle
+    }
   }
   return results;
 }

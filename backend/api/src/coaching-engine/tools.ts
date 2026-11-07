@@ -225,6 +225,13 @@ export async function create_program(
 // SOURCES.rewardSelection inside rewards.ts. Every input that matters
 // (athlete, tier reached, eligible pool) is re-read from the database; the
 // params only name which tier and which weekly cycle to anchor idempotency to.
+/** YYYY-MM-DD that is also a real calendar date (rejects 2026-13-45, 2026-02-30). */
+function isRealIsoDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
 export async function create_reward(
   params: Record<string, unknown>,
   userId: string,
@@ -235,7 +242,7 @@ export async function create_reward(
     return { granted: false, reason: 'invalid_tier' };
   }
   const weekOf = params.week_of;
-  if (typeof weekOf !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(weekOf)) {
+  if (typeof weekOf !== 'string' || !isRealIsoDate(weekOf)) {
     return { granted: false, reason: 'invalid_week_of' };
   }
   const db = clientForUser(userToken);

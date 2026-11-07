@@ -291,6 +291,9 @@ describe('create_reward executor (REWARD-03, D-05, D-06)', () => {
     expect(await create_reward({ tier: 1, week_of: '2026-11-08' }, 'u1')).toMatchObject({ granted: false, reason: 'invalid_tier' });
     expect(await create_reward({ tier: 9, week_of: '2026-11-08' }, 'u1')).toMatchObject({ granted: false, reason: 'invalid_tier' });
     expect(await create_reward({ tier: 2, week_of: 'tomorrow' }, 'u1')).toMatchObject({ granted: false, reason: 'invalid_week_of' });
+    for (const bad of ['2026-13-45', '2026-02-30', '2026-00-10']) {
+      expect(await create_reward({ tier: 2, week_of: bad }, 'u1')).toMatchObject({ granted: false, reason: 'invalid_week_of' });
+    }
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
@@ -446,6 +449,24 @@ describe('applyWeeklyDecision - reward wiring', () => {
     );
     const res = await applyWeeklyDecision('u1', decision, ctx({ points: 45, tier: 1 }), 'weekly_review_cron', usage, 'm');
     expect(res).toEqual({ success: true, decision_id: 'w1' });
+  });
+
+  it('a grant failure on a later tier keeps the earlier successful grant in the result', async () => {
+    singles['ziko_athlete_state'] = { data: { tier: 3 }, error: null };
+    tables['ziko_reward_catalog'] = { data: [...POOL, { ...POOL[0]!, id: 'z3', tier: 3, key: 'z3' }], error: null };
+    tables['ziko_athlete_rewards'] = { data: [], error: null };
+    mockGenerateObject.mockResolvedValue({ object: { reward_id: 'a' }, usage: {} });
+    let grants = 0;
+    mockRpc.mockImplementation(async (fn: string) => {
+      if (fn === 'ziko_record_athlete_decision') return { data: { success: true, decision_id: 'w1' }, error: null };
+      grants += 1;
+      return grants === 1
+        ? { data: { success: true, decision_id: 'g1' }, error: null }
+        : { data: null, error: { message: 'tier 3 exploded' } };
+    });
+    const res = await applyWeeklyDecision('u1', decision, ctx({ points: 160, tier: 1 }), 'weekly_review_cron', usage, 'm');
+    expect(res).toMatchObject({ success: true, decision_id: 'w1', rewards: [{ granted: true, tier: 2 }] });
+    expect((res as any).rewards).toHaveLength(1);
   });
 
   it('a missed week at tier 3 keeps points and tier and grants nothing (reward never revoked)', async () => {
