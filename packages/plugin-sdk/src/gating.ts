@@ -53,6 +53,54 @@ export function filterUnlockedPlugins<T extends GatedManifest>(manifests: T[], l
   return manifests.filter((m) => getPluginMinLevel(m) === lowest);
 }
 
+// ── Level read bookkeeping (pure, used by authStore) ─────────────────────
+/** After this long without a first level read the store falls back to level 1. */
+export const FIRST_LEVEL_READ_TIMEOUT_MS = 5000;
+
+/**
+ * True when a finished level read must be dropped: it belongs to another user
+ * than the current one (sign-out / account switch while in flight) or a newer
+ * read has already been applied (out-of-order response).
+ */
+export function shouldDiscardLevelRead(args: {
+  requestUserId: string;
+  currentUserId: string | null | undefined;
+  requestSeq: number;
+  appliedSeq: number;
+}): boolean {
+  return args.currentUserId !== args.requestUserId || args.requestSeq < args.appliedSeq;
+}
+
+export interface LevelReadState {
+  level: number;
+  loaded: boolean;
+  /** true when `loaded` only reflects the timeout fallback, not a real read. */
+  fallback: boolean;
+}
+
+export interface LevelReadResult {
+  state: LevelReadState;
+  /** Set only when a level already known from a real read went up. */
+  levelUp: { from: number; to: number } | null;
+}
+
+/**
+ * Applies a successful read. Same user, real prior read: level never decreases
+ * (tier is server-monotonic, so a lower value is a stale response) and a raise
+ * is announced. First read, or first real read after the timeout fallback:
+ * taken as-is, never announced.
+ */
+export function reduceLevelRead(prev: LevelReadState, read: number): LevelReadResult {
+  const next = clampLevel(read);
+  const known = prev.loaded && !prev.fallback;
+  if (!known) return { state: { level: next, loaded: true, fallback: false }, levelUp: null };
+  const level = Math.max(prev.level, next);
+  return {
+    state: { level, loaded: true, fallback: false },
+    levelUp: level > prev.level ? { from: prev.level, to: level } : null,
+  };
+}
+
 // ── Static locked-plugin metadata (drawer "A debloquer" section) ─────────
 export interface PluginLevelInfo {
   id: string;
@@ -90,7 +138,12 @@ export const PLUGIN_LEVEL_MAP: Readonly<Record<string, PluginLevelInfo>> = {
   supplements:  { id: 'supplements',  name: 'Compléments Alimentaires', icon: 'flask',            minLevel: 4 },
 };
 
-/** Id-based unlock check using the static map. Unknown ids are treated as unlocked (not gated). */
+/**
+ * Id-based unlock check using the static map. Unknown ids are treated as unlocked
+ * (not gated) on purpose: the route guard alert needs a map entry for the plugin
+ * name, so fail-closed would redirect with a nameless alert. Coverage is
+ * enforced in CI instead (gating.test.ts "covers every plugin directory").
+ */
 export function isPluginIdUnlocked(pluginId: string, level: number): boolean {
   const info = PLUGIN_LEVEL_MAP[pluginId];
   if (!info) return true;
