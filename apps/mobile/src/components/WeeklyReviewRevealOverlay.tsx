@@ -6,6 +6,7 @@ import { useTranslation } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { appStorage } from '../lib/storage';
+import { useOverlayGateStore } from '../stores/overlayGateStore';
 import {
   buildReviewViewModel,
   nextStep,
@@ -119,6 +120,12 @@ export function WeeklyReviewRevealOverlay() {
     data.last_review_at !== seenMarker;
 
   const isVisible = isNewReview && !dismissed;
+
+  // Publish visibility so the Phase 46 unlock toast queues behind this overlay.
+  useEffect(() => {
+    useOverlayGateStore.getState().setWeeklyReviewOpen(isVisible);
+    return () => useOverlayGateStore.getState().setWeeklyReviewOpen(false);
+  }, [isVisible]);
 
   // Android back / gesture and the final CTA dismiss every step and write the
   // seen marker (as Phase 44).
