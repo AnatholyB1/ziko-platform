@@ -14,8 +14,8 @@ actual sign-in UX built on top of it.
 
 ## Phases
 
-- [ ] **Phase 1: OAuth Infrastructure** - Native dependencies, iOS/Android build config, and Supabase provider setup that the sign-in UX depends on
-- [ ] **Phase 2: Google & Apple Sign-In UX** - Wire the welcome screen buttons to real native flows, with correct routing, session handling, and automatic account linking
+- [~] **Phase 1: OAuth Infrastructure** (partial: Google config done on portfolio; Apple provider + native build pending) - Native dependencies, iOS/Android build config, and Supabase provider setup that the sign-in UX depends on
+- [~] **Phase 2: Google & Apple Sign-In UX** (code merged in main via PR #49, mock-tested; device validation pending) - Wire the welcome screen buttons to real native flows, with correct routing, session handling, and automatic account linking
 
 ## Phase Details
 

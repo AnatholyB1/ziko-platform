@@ -1,5 +1,13 @@
 # Milestones
 
+## v1.17 Connexion Google & Apple (Code delivered: 2026-11-07, validation pending)
+
+**Workstream:** connexion. Code merged to main via PR #49 (a38c210f). Target auth: shared Supabase project `portfolio`.
+**Delivered:** native Google/Apple sign-in code (signInWithIdToken), email-first message on unlinkable email, verify-email OTP step on sign-up (backward compatible with autoconfirm), Confirm-sign-up email template, Google OAuth clients + provider.
+**Open at close:** Apple provider in Supabase, Resend SMTP + Confirm email, Google consent screen to production, iOS/Android native builds on device, automatic linking and session persistence NOT PROVEN, autoconfirm pre-hijack risk until Confirm email is on.
+
+---
+
 ## v1.8 Sport Dashboards (Shipped: 2026-05-30)
 
 **Phases completed:** 6 phases, 20 plans (Phases 37–41.1, workstream: main / web-coach)

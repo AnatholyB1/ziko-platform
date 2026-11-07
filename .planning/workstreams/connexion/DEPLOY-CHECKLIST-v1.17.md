@@ -56,3 +56,10 @@ Note: le mail "Reset password" (forgot.tsx) reste en lien par defaut: gabarit a 
 - [ ] Gabarit "Confirm sign up", test d'envoi reel, puis "Confirm email" (mailer_autoconfirm est encore true) apres livraison de l'app avec l'ecran de verification.
 - [ ] Ecran de consentement Google "In production"; [ ] Google Android: les 2 clients (EAS + Play) crees.
 - Preuve flux Google: AUCUN compte de test fourni => flux web/natif non teste.
+
+## Livraison code (2026-11-07)
+- [x] PR #49 mergee dans main (a38c210f), CI verte.
+- [x] Build EAS Android preview lance: id 0dd523e8-f054-4678-b5b0-5dac7e45faee (pas de soumission store).
+- [ ] Tester sur appareil avec ce build: Google (nouveau compte, compte existant), linking automatique, persistance de session.
+- [ ] Build iOS + profil de provisioning regenere (entitlement Sign in with Apple), puis tests Apple.
+- [ ] Confirm email: seulement apres livraison de l'app et test d'envoi reel Resend. Jusqu'alors le risque de pre-hijack par linking auto reste ouvert.

@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.17
 milestone_name: Connexion Google & Apple
-status: blocked
-stopped_at: "01-02-PLAN.md Task 1 — blocked on Google Cloud Console OAuth client registration (human action required)"
+status: code-delivered-config-pending
+stopped_at: "v1.17 code merged to main (PR #49, a38c210f); remaining items are prod config + device validation"
 last_updated: "2026-08-23T00:15:00.000Z"
 progress:
   total_phases: 2
@@ -73,3 +73,10 @@ None yet.
 Last session: 2026-08-23T00:15:00.000Z
 Stopped at: 01-02-PLAN.md Task 1 — blocked on Google Cloud Console OAuth client registration
 Resume file: .planning/workstreams/connexion/phases/01-oauth-infrastructure/01-02-PLAN.md (resume at Task 1)
+
+
+## Update 2026-11-07 — v1.17 code delivered
+- PR #49 merged into main (merge commit a38c210f), CI green. Android preview build launched (EAS id 0dd523e8-f054-4678-b5b0-5dac7e45faee).
+- Target auth is project `portfolio` (ubxllsvanurkwkohzxau); `ziko` project was deleted 2026-10-06.
+- Done: native SDKs, Apple entitlement in app.json, Google clients (Web/iOS/Android EAS/Android Play) in GCP ziko-491420, Google provider active on portfolio, Sign In with Apple on App ID, mobile sign-in code (23 mock tests), verify-email OTP step.
+- Remaining (see DEPLOY-CHECKLIST-v1.17.md): Supabase Apple provider; Resend SMTP (no-reply@mail.ziko-app.com) + template + test send, then Confirm email (after app delivery); Google consent screen to production; device tests Google/Apple + automatic linking (NOT PROVEN); iOS build + regenerated provisioning profile.
