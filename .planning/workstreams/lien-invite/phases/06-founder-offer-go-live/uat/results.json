@@ -1,0 +1,254 @@
+{
+  "at": "2026-11-07T14:27:55.644Z",
+  "observed": [
+    {
+      "claimedRank": 187,
+      "counter": null,
+      "shown": false
+    },
+    {
+      "claimedRank": 188,
+      "counter": 12,
+      "shown": true
+    },
+    {
+      "claimedRank": 189,
+      "counter": 11,
+      "shown": true
+    },
+    {
+      "claimedRank": 190,
+      "counter": 10,
+      "shown": true
+    },
+    {
+      "claimedRank": 191,
+      "counter": 9,
+      "shown": true
+    },
+    {
+      "claimedRank": 192,
+      "counter": 8,
+      "shown": true
+    }
+  ],
+  "final": "201|200|201",
+  "results": [
+    {
+      "id": "A-fr-390x844-pre",
+      "label": "fr 390x844: page renders and picker offers both audiences",
+      "pass": true,
+      "evidence": "athlete+coach buttons present"
+    },
+    {
+      "id": "A-fr-390x844-athlete",
+      "label": "fr 390x844 athlete: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (responsable du traitement) collecte votre adresse e-mail pour vous informer du lance...\""
+    },
+    {
+      "id": "A-fr-390x844-enable",
+      "label": "fr 390x844: ticking consent enables submit",
+      "pass": true,
+      "evidence": "enabled after tick"
+    },
+    {
+      "id": "A-fr-390x844-coach",
+      "label": "fr 390x844 coach: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (responsable du traitement) collecte votre adresse e-mail pour vous informer du lance...\""
+    },
+    {
+      "id": "A-fr-1440x900-pre",
+      "label": "fr 1440x900: page renders and picker offers both audiences",
+      "pass": true,
+      "evidence": "athlete+coach buttons present"
+    },
+    {
+      "id": "A-fr-1440x900-athlete",
+      "label": "fr 1440x900 athlete: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (responsable du traitement) collecte votre adresse e-mail pour vous informer du lance...\""
+    },
+    {
+      "id": "A-fr-1440x900-enable",
+      "label": "fr 1440x900: ticking consent enables submit",
+      "pass": true,
+      "evidence": "enabled after tick"
+    },
+    {
+      "id": "A-fr-1440x900-coach",
+      "label": "fr 1440x900 coach: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (responsable du traitement) collecte votre adresse e-mail pour vous informer du lance...\""
+    },
+    {
+      "id": "A-en-390x844-pre",
+      "label": "en 390x844: page renders and picker offers both audiences",
+      "pass": true,
+      "evidence": "athlete+coach buttons present"
+    },
+    {
+      "id": "A-en-390x844-athlete",
+      "label": "en 390x844 athlete: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (data controller) collects your email address to notify you of the app launch and man...\""
+    },
+    {
+      "id": "A-en-390x844-enable",
+      "label": "en 390x844: ticking consent enables submit",
+      "pass": true,
+      "evidence": "enabled after tick"
+    },
+    {
+      "id": "A-en-390x844-coach",
+      "label": "en 390x844 coach: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (data controller) collects your email address to notify you of the app launch and man...\""
+    },
+    {
+      "id": "A-en-1440x900-pre",
+      "label": "en 1440x900: page renders and picker offers both audiences",
+      "pass": true,
+      "evidence": "athlete+coach buttons present"
+    },
+    {
+      "id": "A-en-1440x900-athlete",
+      "label": "en 1440x900 athlete: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (data controller) collects your email address to notify you of the app launch and man...\""
+    },
+    {
+      "id": "A-en-1440x900-enable",
+      "label": "en 1440x900: ticking consent enables submit",
+      "pass": true,
+      "evidence": "enabled after tick"
+    },
+    {
+      "id": "A-en-1440x900-coach",
+      "label": "en 1440x900 coach: consent unchecked by default, separate from submit, submit disabled, RGPD notice shown",
+      "pass": true,
+      "evidence": "checked=false submitDisabled=true separate=true notice=\"Ziko (data controller) collects your email address to notify you of the app launch and man...\""
+    },
+    {
+      "id": "B-disposable",
+      "label": "disposable domain (mailinator.com) refused in the real UI, no row written",
+      "pass": true,
+      "evidence": "ui=\"This email address looks invalid or disposable. Please use a personal \" rows=0"
+    },
+    {
+      "id": "B-disposable-fr",
+      "label": "disposable domain (yopmail.com) refused, fr/coach",
+      "pass": true,
+      "evidence": "Cette adresse e-mail semble invalide ou temporaire. Merci d'utiliser une adresse"
+    },
+    {
+      "id": "C-success",
+      "label": "real submit (fr/athlete, 390x844) shows the success state, founder #1",
+      "pass": true,
+      "evidence": "ui=\"Vous êtes inscrit·e ! Vous êtes fondateur·rice n°1 sur 200.\""
+    },
+    {
+      "id": "C-row",
+      "label": "row written with audience, locale, founder rank, consent timestamp+version, UTM",
+      "pass": true,
+      "evidence": "row=athlete|fr|t|1|t|t|uat|wave1"
+    },
+    {
+      "id": "C-dup",
+      "label": "duplicate (Gmail dot/+suffix variant) shows success, generic sentence, NO rank / founder status",
+      "pass": true,
+      "evidence": "ui=\"Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement.\""
+    },
+    {
+      "id": "C-dup-db",
+      "label": "duplicate created no second row and did not alter stored audience",
+      "pass": true,
+      "evidence": "rows=1 audience=athlete"
+    },
+    {
+      "id": "C-dup-exact",
+      "label": "exact duplicate (en) also neutral generic success, no rank",
+      "pass": true,
+      "evidence": "ui=\"You're in! We'll let you know as soon as we launch.\""
+    },
+    {
+      "id": "D-coach-en",
+      "label": "real submit en/coach: success, founder #2, row audience=coach locale=en",
+      "pass": true,
+      "evidence": "ui=\"You're in! You're founder #2 of 200.\" row=coach|en|2"
+    },
+    {
+      "id": "E-hidden-100",
+      "label": "default threshold: 100 claimed (100 left) -> counter hidden, static offer sentence shown",
+      "pass": true,
+      "evidence": "{\"shown\":false,\"remaining\":null,\"complete\":false,\"pre\":true}"
+    },
+    {
+      "id": "E-hidden-169",
+      "label": "default threshold 30: 169 claimed (31 left) -> still hidden",
+      "pass": true,
+      "evidence": "{\"shown\":false,\"remaining\":null,\"complete\":false,\"pre\":true}"
+    },
+    {
+      "id": "E-reveal-30",
+      "label": "default threshold 30: 170 claimed -> counter appears with the real value 30",
+      "pass": true,
+      "evidence": "{\"shown\":true,\"remaining\":30,\"complete\":false,\"pre\":false}"
+    },
+    {
+      "id": "E-low-hidden",
+      "label": "threshold=12: 186 claimed (14 left) -> hidden",
+      "pass": true,
+      "evidence": "{\"shown\":false,\"remaining\":null,\"complete\":false,\"pre\":true}"
+    },
+    {
+      "id": "E-live-sequence",
+      "label": "live reveal via real submissions: counter appears at threshold, shows 200-claimed exactly, strictly decreasing",
+      "pass": true,
+      "evidence": "observed=[{\"claimedRank\":187,\"counter\":null,\"shown\":false},{\"claimedRank\":188,\"counter\":12,\"shown\":true},{\"claimedRank\":189,\"counter\":11,\"shown\":true},{\"claimedRank\":190,\"counter\":10,\"shown\":true},{\"claimedRank\":191,\"counter\":9,\"shown\":true},{\"claimedRank\":192,\"counter\":8,\"shown\":true}]"
+    },
+    {
+      "id": "E-monotonic",
+      "label": "counter never increases between consecutive observations",
+      "pass": true,
+      "evidence": "values=12>11>10>9>8"
+    },
+    {
+      "id": "E-exact",
+      "label": "every shown value equals 200 - founders claimed in the DB at that moment",
+      "pass": true,
+      "evidence": "[{\"claimedRank\":187,\"counter\":null,\"shown\":false},{\"claimedRank\":188,\"counter\":12,\"shown\":true},{\"claimedRank\":189,\"counter\":11,\"shown\":true},{\"claimedRank\":190,\"counter\":10,\"shown\":true},{\"claimedRank\":191,\"counter\":9,\"shown\":true},{\"claimedRank\":192,\"counter\":8,\"shown\":true}]"
+    },
+    {
+      "id": "E-one-left",
+      "label": "after seeding to 199 founders the counter shows \"Plus que 1\"",
+      "pass": true,
+      "evidence": "{\"claimed\":\"199\",\"shown\":true,\"remaining\":1,\"complete\":false,\"pre\":false}"
+    },
+    {
+      "id": "E-200th",
+      "label": "the 200th real signup is told founder #200",
+      "pass": true,
+      "evidence": "Vous êtes inscrit·e ! Vous êtes fondateur·rice n°200 sur 200."
+    },
+    {
+      "id": "E-full",
+      "label": "at 200 founders the widget flips to the complete state (heading), no remaining number",
+      "pass": true,
+      "evidence": "{\"shown\":false,\"remaining\":null,\"complete\":true,\"pre\":false}"
+    },
+    {
+      "id": "E-201st",
+      "label": "the 201st signup succeeds as non-founder (is_founder=false, rank 201 stored but never shown) with the generic sentence",
+      "pass": true,
+      "evidence": "ui=\"Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement.\" row=f|201"
+    },
+    {
+      "id": "WAIT-06-same",
+      "label": "duplicate success text is identical to a brand-new non-founder success text (no oracle)",
+      "pass": true,
+      "evidence": "new201=\"Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement.\" duplicate=\"Vous êtes inscrit·e ! Nous vous préviendrons dès le lancement.\""
+    }
+  ]
+}
