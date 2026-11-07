@@ -91,6 +91,8 @@ export function WeeklyReviewRevealView({ vm, step, focus, t, reduceMotion, onCta
         pointerEvents="none"
       />
       <SafeAreaView style={{ flex: 1 }}>
+        {/* Relative box inside the safe area so the pills sit 8px below the inset. */}
+        <View style={{ flex: 1 }}>
         {pills ? <StepPills index={pills.index} total={pills.total} t={t} /> : null}
         <ScrollView
           style={{ flex: 1 }}
@@ -133,6 +135,7 @@ export function WeeklyReviewRevealView({ vm, step, focus, t, reduceMotion, onCta
             <Text style={{ fontSize: 19, lineHeight: 24, fontWeight: '700', color: '#fff' }}>{ctaLabel}</Text>
           </TouchableOpacity>
         </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );

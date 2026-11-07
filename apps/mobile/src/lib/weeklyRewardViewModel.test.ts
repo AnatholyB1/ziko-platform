@@ -219,7 +219,7 @@ describe('i18n copy (A-06, A-07, A-10)', () => {
 
   it('missed copy reassures and names neither a loss nor a deduction', () => {
     expect(fr['points.missedSub']).toBe('Pas de points cette semaine. Ton palier et tes récompenses restent à toi.');
-    expect(fr['points.missed']).toBe('Semaine d\'ajustement');
+    expect(fr['points.missed']).toBe('Semaine d’ajustement');
   });
 });
 
