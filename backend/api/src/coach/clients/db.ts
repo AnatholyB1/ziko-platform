@@ -813,7 +813,7 @@ export async function getProgramsForClient(
 }
 
 // ----- PUT /:clientId/shared-note — update shared note on the coach↔client link (PROG-07, PROG-09) -----
-// IDOR guard: WHERE coach_id=coachId AND status='active' ensures coach can only update their own active link.
+// IDOR guard: WHERE coach_id=coachId AND revoked_at IS NULL ensures coach can only update their own active link.
 export async function upsertSharedNote(
   jwt: string,
   coachId: string,
@@ -827,7 +827,7 @@ export async function upsertSharedNote(
     .update({ shared_note: note })
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
-    .eq('status', 'active')
+    .is('revoked_at', null)
     .select('id');
 
   if (error) throw new Error(error.message);

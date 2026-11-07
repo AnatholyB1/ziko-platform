@@ -17,9 +17,11 @@ router.get('/', async (c) => {
     .from('ziko_plugins_registry')
     .select('*')
     .eq('is_active', true)
-    .order('name');
+    .order('plugin_id');
   if (error) return c.json({ error: error.message }, 500);
-  return c.json({ plugins: data });
+  // La table n'a pas de colonne `name` : on l'expose depuis manifest.name (alias de compat).
+  const plugins = (data ?? []).map((p: any) => ({ ...p, name: p.manifest?.name ?? p.plugin_id }));
+  return c.json({ plugins });
 });
 
 /** POST /plugins/:id/install */
@@ -30,8 +32,8 @@ router.post('/:id/install', async (c) => {
   // Verify plugin exists
   const { data: plugin, error: pluginErr } = await adminClient
     .from('ziko_plugins_registry')
-    .select('id, name')
-    .eq('id', pluginId)
+    .select('plugin_id, manifest')
+    .eq('plugin_id', pluginId)
     .eq('is_active', true)
     .single();
 
