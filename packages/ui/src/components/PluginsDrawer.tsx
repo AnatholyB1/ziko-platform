@@ -7,6 +7,7 @@ import {
   useTranslation,
   showAlert,
   LOCKED_TOKENS,
+  openLockedTapAlert,
 } from '@ziko/plugin-sdk';
 import type { LockedSectionModel } from '@ziko/plugin-sdk';
 
@@ -120,6 +121,7 @@ export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds
                       numberOfLines={2}
                       style={{
                         fontSize: 10,
+                        lineHeight: 13,
                         fontWeight: '600',
                         color: theme.muted,
                         textAlign: 'center',
@@ -175,7 +177,9 @@ export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds
                         accessibilityRole="button"
                         accessibilityLabel={t('plugins.locked.a11y', { name: tile.shortName, n: tile.minLevel })}
                         accessibilityHint={t('plugins.locked.a11yHint')}
-                        onPress={() => showAlert(t('plugins.locked.required', { n: tile.minLevel }))}
+                        onPress={() =>
+                          openLockedTapAlert({ minLevel: tile.minLevel, closeDrawer: onClose, showAlert, translate: t })
+                        }
                         style={{ width: '20%', minHeight: 44, alignItems: 'center', gap: 6 }}
                       >
                         <View
