@@ -13,10 +13,8 @@
 //   - never touches creditCheck / creditDeduct — autonomous spend is
 //     platform opex and must not hit the athlete's credit balance
 //
-// Adoption note: coaching-engine/apply.ts (phase 45 owns it) still carries
-// an inline insert for `weekly_review_cron` / `app_open_fallback`. It can
-// switch to this helper later with no behaviour change:
-//   logAutonomousCost(db, { userId, model: modelId, usage, source });
+// Adopted by coaching-engine/apply.ts (weekly sources, Phase 45) and
+// coaching-engine/rewards.ts (reward_selection).
 
 export const SOURCES = {
   onboardingAssess: 'onboarding_assess',

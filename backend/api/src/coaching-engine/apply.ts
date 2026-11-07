@@ -13,7 +13,9 @@
 import { clientForUser } from './db.js';
 import { fetchWeeklyReviewContext } from './context.js';
 import { decideWeeklyFocus } from './decide.js';
-import { create_program } from './tools.js';
+import { create_program, create_reward } from './tools.js';
+import { logAutonomousCost } from '../lib/autonomousCost.js';
+import { MIN_TIER, nextRewardState, owedTiers, type GrantRewardResult } from './rewards.js';
 import type { WeeklyDecisionResult, WeeklyReviewContext } from './types.js';
 
 // ── FOUND-05 rolling-summary recompaction ────────────────────────────────
@@ -114,7 +116,7 @@ export function composeRollingSummary(
 export type WeeklyReviewSource = 'weekly_review_cron' | 'app_open_fallback';
 
 export type ApplyWeeklyDecisionResult =
-  | { success: true; decision_id: string }
+  | { success: true; decision_id: string; rewards?: GrantRewardResult[] }
   | { success: false; reason: string };
 
 /**
@@ -156,6 +158,18 @@ export async function applyWeeklyDecision(
   // line ~129), so this rides the existing atomic write.
   const rollingSummary = composeRollingSummary(context.state.rolling_summary, context, decision);
 
+  // Phase 45 (REWARD-01/02/04): points and tier ride the SAME atomic patch
+  // as the weekly decision, so a duplicate fire (which returns before the
+  // patch is applied) can never double-award. Read from the verdict
+  // context.ts already computed - never re-derived. points/tier are
+  // GREATEST-ratcheted by the RPC; level is deliberately never written
+  // (45 D-03).
+  const reward = nextRewardState(context.state, {
+    met: context.comparison.met,
+    actual_value: context.comparison.actual_value,
+    target_value: context.comparison.target_value,
+  });
+
   const { data, error } = await db.rpc('ziko_record_athlete_decision', {
     p_user_id: userId,
     p_decision_type: 'weekly_focus',
@@ -175,13 +189,19 @@ export async function applyWeeklyDecision(
       met: context.comparison.met,
       actual_value: context.comparison.actual_value,
       target_value: context.comparison.target_value,
+      points_outcome: reward.earned.outcome,
+      points_earned: reward.earned.points,
+      points_total: reward.points,
+      tier: reward.tier,
+      tier_up: reward.tierUp,
     },
     p_source: source,
-    // Open Question 1 (44-RESEARCH.md) resolution: the weekly engine owns
-    // `readiness` only. `level`/`points`/`tier` belong to Phase 45's
-    // reward grant — a second writer of those fields here would have to
-    // be reconciled later, so this patch deliberately never carries them.
+    // Phase 44 owned `readiness` only; Phase 45 adds `points` and `tier`
+    // (monotonic in the RPC). `level` is still never written here - it is
+    // derived from tier on the read side (45 D-03).
     p_state_patch: {
+      points: reward.points,
+      tier: reward.tier,
       readiness: decision.new_readiness,
       current_focus_summary: decision.new_focus_summary,
       rolling_summary: rollingSummary,
@@ -228,23 +248,55 @@ export async function applyWeeklyDecision(
     );
   }
 
-  // ENGINE-05: independent ai_cost_log accounting, fire-and-forget —
-  // mirrors routes/ai.ts's logTokenUsage shape (.catch, never blocking or
-  // failing the review on a logging error). Never imports/calls
-  // creditCheck/creditDeduct/creditGate — the weekly engine is platform
-  // opex and must never touch the athlete's credit balance. The `source`
-  // column is what makes that distinction queryable.
-  Promise.resolve(
-    db.from('ziko_ai_cost_log').insert({
-      user_id: userId,
-      model: modelId,
-      input_tokens: usage.inputTokens,
-      output_tokens: usage.outputTokens,
-      source,
-    }),
-  ).catch((err: unknown) => console.error('[WeeklyReview] ai_cost_log insert failed:', err));
+  // ENGINE-05: independent ai_cost_log accounting, fire-and-forget through
+  // the shared autonomous-cost helper (OPS-03). Never imports/calls
+  // creditCheck/creditDeduct - the weekly engine is platform opex and must
+  // never touch the athlete's credit balance. The `source` column is what
+  // makes that distinction queryable.
+  logAutonomousCost(db, { userId, model: modelId, usage, source });
+
+  // Phase 45 D-06: the reward grant is a SEPARATE step after the weekly
+  // decision is durably recorded. A failure here (model, RPC, network) must
+  // never lose or fail the weekly decision; it is logged and retried on the
+  // next weekly cycle because owed tiers are derived from state, not from
+  // this run.
+  let rewards: GrantRewardResult[] = [];
+  try {
+    rewards = await runRewardGrantStep(db, userId, reward.tier, context.weekOf, source, userToken);
+  } catch (err) {
+    console.error('[WeeklyReview] reward grant step failed (retried next cycle):', err);
+  }
+
+  if (rewards.length > 0) {
+    return { success: true, decision_id: result.decision_id!, rewards };
+  }
 
   return { success: true, decision_id: result.decision_id! };
+}
+
+/**
+ * Grants the reward for every tier the athlete has reached but holds no
+ * reward for yet. Triggered by a tier-up (the new tier has no reward) and
+ * also self-heals a previously failed grant. Goes through create_reward, the
+ * same executor registered in tools/registry.ts.
+ */
+async function runRewardGrantStep(
+  db: ReturnType<typeof clientForUser>,
+  userId: string,
+  tierNow: number,
+  weekOf: string,
+  source: WeeklyReviewSource,
+  userToken?: string,
+): Promise<GrantRewardResult[]> {
+  if (tierNow <= MIN_TIER) return [];
+  const { data, error } = await db.from('ziko_athlete_rewards').select('tier').eq('user_id', userId);
+  if (error) throw new Error(`athlete rewards read failed: ${error.message}`);
+  const owned = ((data ?? []) as Array<{ tier: number }>).map((r) => r.tier);
+  const results: GrantRewardResult[] = [];
+  for (const tier of owedTiers(tierNow, owned)) {
+    results.push((await create_reward({ tier, week_of: weekOf, source }, userId, userToken)) as GrantRewardResult);
+  }
+  return results;
 }
 
 export type RunWeeklyReviewResult =
