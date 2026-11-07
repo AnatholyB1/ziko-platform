@@ -15,3 +15,8 @@ Target auth = projet `portfolio` ubxllsvanurkwkohzxau (le projet `ziko` slkobhav
 ## Next
 - Phase 2 code with mocks (builder, branch phase/02-signin-ux).
 - Rewrite plans 01-02..04 for portfolio, DEPLOY-CHECKLIST-v1.17.md.
+
+## Update 2026-11-07 (later)
+- Phase 2 code merged into milestone/v1.17 (merge of phase/02-signin-ux, 4 commits). Gate: 14/14 vitest, tsc OK. Mock-only; linking (OAUTH-11), device flows, native build NOT proven.
+- Deviations: expo-crypto added (needs native rebuild); Google nonce unsupported by google-signin 16.1.4 -> Supabase "Skip Nonce Check" must be ON for Google; isNewUser = created_at/last_sign_in_at < 10s.
+- Still blocked: items 1-3 above + user decisions Q1-Q4. Plans 01-02..04 and ROADMAP/REQUIREMENTS still cite deleted `ziko` project (rewrite pending).
