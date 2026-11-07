@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '@ziko/plugin-sdk';
-import { signUpWithEmail, verifySignupCode, resendSignupCode } from '../../src/lib/emailSignup';
+import { signUpWithEmail } from '../../src/lib/emailSignup';
+import { EmailCodeForm } from '../../src/components/EmailCodeForm';
+import { useAuthStore } from '../../src/stores/authStore';
 
 function getStrength(pw: string): number {
   let s = 0;
@@ -26,8 +28,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [code, setCode] = useState('');
+  const [pending, setPending] = useState<{ email: string; cooldown: number } | null>(null);
 
   const strength = getStrength(password);
   const valid = name.length > 1 && email.length > 3 && password.length >= 6;
@@ -39,8 +40,8 @@ export default function RegisterScreen() {
       const r = await signUpWithEmail(name, email, password);
       if (r.status === 'error') {
         showAlert('Inscription impossible', r.message);
-      } else if (r.status === 'needs-verification') {
-        setPendingEmail(r.email);
+      } else if (r.status === 'verify-email') {
+        setPending({ email: r.email, cooldown: r.cooldown });
       } else {
         router.replace('/(auth)/onboarding/step-1');
       }
@@ -51,23 +52,10 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleVerify = async () => {
-    if (!pendingEmail) return;
-    setIsLoading(true);
-    try {
-      const r = await verifySignupCode(pendingEmail, code);
-      if (r.status === 'error') showAlert('Vérification impossible', r.message);
-      else router.replace('/(auth)/onboarding/step-1');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (!pendingEmail) return;
-    const r = await resendSignupCode(pendingEmail);
-    if (r.status === 'error') showAlert('Envoi impossible', r.message);
-    else showAlert('Code envoyé', 'Un nouveau code vient de t’être envoyé.');
+  const goOnboarding = () => {
+    // The profile must be in the store before leaving, so the email banner reflects the new state.
+    useAuthStore.getState().refreshProfile().catch(() => {});
+    router.replace('/(auth)/onboarding/step-1');
   };
 
   const fieldStyle = {
@@ -77,45 +65,16 @@ export default function RegisterScreen() {
     color: '#1C1A17', fontSize: 14,
   } as const;
 
-  if (pendingEmail) {
+  if (pending) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
         <View style={{ flex: 1, padding: 24, justifyContent: 'center', paddingBottom: 100 }}>
-          <Text style={{ fontSize: 26, fontWeight: '800', color: '#1C1A17', marginBottom: 10 }}>
-            Vérifie ton email
-          </Text>
-          <Text style={{ fontSize: 14, color: '#6B6963', lineHeight: 21, marginBottom: 20 }}>
-            {`Nous avons envoyé un code à 6 chiffres à ${pendingEmail}. Saisis-le pour activer ton compte.`}
-          </Text>
-          <TextInput
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-            maxLength={8}
-            placeholder="123456"
-            placeholderTextColor="#6B6963"
-            style={{
-              backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA',
-              paddingHorizontal: 14, paddingVertical: 14, color: '#1C1A17', fontSize: 20,
-              letterSpacing: 6, textAlign: 'center', marginBottom: 14,
-            }}
+          <EmailCodeForm
+            email={pending.email}
+            initialCooldown={pending.cooldown}
+            onVerified={goOnboarding}
+            onSkip={goOnboarding}
           />
-          <TouchableOpacity
-            onPress={handleVerify}
-            disabled={code.length < 6 || isLoading}
-            style={{
-              paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-              backgroundColor: code.length < 6 || isLoading ? '#E2E0DA' : '#FF5C1A',
-            }}
-          >
-            <Text style={{ fontWeight: '700', fontSize: 14.5, color: '#fff' }}>Valider</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleResend} style={{ paddingVertical: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 13, color: '#FF5C1A', fontWeight: '700' }}>Renvoyer le code</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPendingEmail(null)} style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 12.5, color: '#6B6963' }}>Changer d’adresse email</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );

@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../src/stores/authStore';
+import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry } from '@ziko/plugin-sdk';
@@ -452,6 +453,8 @@ export default function DashboardScreen() {
         contentContainerStyle={{ padding: 16, paddingTop: 16 + insets.top, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
       >
+        <EmailVerifyBanner />
+
         {/* ── Header ─────────────────────────────────────── */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <View>
