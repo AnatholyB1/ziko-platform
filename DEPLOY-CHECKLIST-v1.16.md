@@ -6,3 +6,7 @@
 - [ ] CI: PORTFOLIO_MIGRATIONS_ENABLED / migrate-portfolio dormant; test-rls.yml exige un projet de test SUPABASE_TEST_PROJECT_ID (bootstrap 00-bootstrap-supabase-functions.sql), refuse la prod.
 - [ ] Revoquer token ziko-ci-portfolio (reporte du v1.19).
 - [ ] Dette: retention-config.test.ts (sha CRLF) et erreurs tsc des tests purge a trancher.
+
+## Reponses utilisateur 2026-11-07
+- Q1 TRUNCATE supprime; Q2 21 premium grand-peres + plafond actif apres verif /cgv /cgu; Q3 seuil 30 (UPDATE prod seulement sur autorisation explicite); Q4 19 inscrits sans consentement: gardes, exclus de tout envoi.
+- RGPD: lister ici les 19 ids (pas d'emails) avant go-live.
