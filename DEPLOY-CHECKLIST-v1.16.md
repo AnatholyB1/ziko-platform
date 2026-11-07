@@ -65,3 +65,6 @@ f0bb38e7-4e5b-4d95-a1e0-34b719c0377a
 
 ## STATUT hardening/ziko-client-dml
 Migration 20261107170000_ziko_revoke_client_dml.sql (99 tables) NON APPROUVEE, NON APPLIQUEE: risque de casser mobile/web (ecritures directes JWT). A trancher par l'utilisateur. Le go-live a applique le REVOKE cible 20261107150000 (ziko_app_config, ziko_waitlist_signups).
+
+## Update 2026-11-07 (team-lead)
+The 99-table client DML REVOKE (20261107170000) was APPLIED to portfolio after an independent replay of 155 write couples (revoke-verify) found one real break (ziko_food_products upsert needs UPDATE); `GRANT UPDATE ... TO authenticated` was added and applied with it. Rollback = uat/privilege-matrix-before.txt.

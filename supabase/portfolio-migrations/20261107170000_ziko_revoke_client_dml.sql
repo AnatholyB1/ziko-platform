@@ -347,3 +347,7 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLE 
 -- ziko_xp_transactions: authenticated: SELECT only
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLE public.ziko_xp_transactions FROM anon;
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLE public.ziko_xp_transactions FROM authenticated;
+
+-- Verified fix (independent replay of 155 write couples on a disposable stack): the Open Food Facts cache upsert is INSERT ... ON CONFLICT DO UPDATE and needs UPDATE.
+-- No UPDATE policy exists on ziko_food_products, so no row becomes modifiable. Applied to portfolio on 2026-11-07.
+GRANT UPDATE ON TABLE public.ziko_food_products TO authenticated;
