@@ -1,8 +1,9 @@
 ---
 phase: 06
 slug: founder-offer-go-live
-status: blocked
+status: open
 started: 2026-08-18
+rebaselined: 2026-11-07
 ---
 
 # Phase 6 — Founder Offer Go-Live: Evidence Ledger
@@ -13,7 +14,13 @@ at. A step that could not be run is written down as a named gap with its reason;
 blank and never marked green (the same discipline `05-06-SUMMARY.md` applied to Phase 5's two
 disclosed gaps).
 
-## Evidence
+> **SUPERSEDED BY v1.19 (2026-11-07).** All rows and escalations E-01..E-04 below refer to the deleted
+> ziko project `slkobhavpwsubnsmuhya` (CLI migration drift, direct MCP migration apply, TRUNCATE-based
+> cleanup). They are kept as history only and are NOT evidence for the current go-live. Production is the
+> portfolio project `ubxllsvanurkwkohzxau` (tables `ziko_*`, migrations already live, no TRUNCATE).
+> Fresh evidence goes in the "Evidence (portfolio, 2026-11-07)" table; every row starts `pending`.
+
+## Evidence - LEGACY (old project, superseded, do not fill)
 
 | RUNBOOK section | Check | Expected result | Observed result | Operator | Timestamp |
 |---|---|---|---|---|---|
@@ -32,7 +39,34 @@ disclosed gaps).
 | 3.2 | `curl -s -o /dev/null -w '%{http_code}' https://ziko-api-lilac.vercel.app/health` | `200` | **500** — see Escalation E-02 | Claude (curl) | 2026-08-18 |
 | 3.2 | Vercel dashboard production deployment SHA (API + web) | Matches merge commit SHA from Section 1 | **Does not match** — most recent `ziko-api` production deployment (`dpl_7YcfNLArhzzvLj79ynhqF3in5dbj`) is still from PR #24 (`23034e868db5190e578ac1cc3d5e86af9c3fcc5f`), not this merge. See Escalation E-03. | Claude (Vercel MCP) | 2026-08-18 |
 
+## Evidence (portfolio ubxllsvanurkwkohzxau, 2026-11-07)
+
+| RUNBOOK section | Check | Expected result | Observed result | Operator | Timestamp |
+|---|---|---|---|---|---|
+| 0.2 | Operator can run SQL on ubxllsvanurkwkohzxau; ziko_ table count >= 99 | Confirmed | pending | - | - |
+| 0.3 | NEXT_PUBLIC_SITE_URL read from Vercel prod env | Real domain reported | pending | - | - |
+| 0.4 | PORTFOLIO_MIGRATIONS_ENABLED is not 'true' (migrate-portfolio dormant) | Not set | pending | - | - |
+| 1 | PR number + single merge/squash SHA; git counts re-run | Recorded | pending | - | - |
+| 2 | /health HTTP code; ziko-api and ziko-web deployed SHA = merge SHA | 200; SHAs match | pending | - | - |
+| 3 | schema_migrations versions >= 20261001101852; ziko_app_config rows | 5 versions; cap false, retention 3, threshold 200 | pending | - | - |
+| 4 | 4 ziko_ functions; is_lifetime_premium column; ziko_waitlist_founder_seq value | all present; seq 95 unchanged | pending | - | - |
+| 5 | waitlist snapshot (total/founders/no_consent/anonymized) | 94/94/19/record | pending | - | - |
+| 5 | purge dry-run four totals (scoped to ziko users) | to_delete 0 | pending | - | - |
+| 6 | premium/lifetime/not_grandfathered/profiles | 21/21/0/40 | pending | - | - |
+| 6 | premium_without_grant for current UTC month | 0 | pending | - | - |
+| 7 | disposable-DB smoke test of ziko_claim_waitlist_signup (first + repeat) | rank 1 is_new true; repeat is_new false | pending | - | - |
+| 8 | threshold READ before / UPDATE 1 / READ after (user authorization quoted) | 200 -> 30 number | pending | - | - |
+| 9 | /fr|/en cgv|cgu HTTP codes + browser render | 4x 200, rendered | pending | - | - |
+| 10 | flag READ before / UPDATE 1 / READ after with jsonb_typeof (authorization quoted; time after section 9 and 6) | false -> true boolean | pending | - | - |
+| 11 | entry points fr/en, sitemap, real submission + repeat, waitlist_signup event, FOND-06 reveal | observed or named gap | pending | - | - |
+
+RGPD: the 19 signups without `consent_given_at` are kept and excluded from any send (ids in DEPLOY-CHECKLIST-v1.16.md).
+
 ## Escalations
+
+*Fresh escalations (post-v1.19) go here, above the legacy entries.*
+
+### Legacy escalations (superseded, history)
 
 **E-01 — [BLOCKING] `Push migrations` failed: production migration-history/filename drift, pre-existing.**
 CI job `Apply Supabase migrations` / step `Push migrations` on the merge run

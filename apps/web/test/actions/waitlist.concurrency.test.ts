@@ -86,7 +86,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — one signup end to end (DATA-01, 
     expect(data?.created_at).not.toBeNull();
   });
 
-  it('normalize_waitlist_email collapses Gmail +suffix/dots and keeps Outlook dots significant', async () => {
+  it('ziko_normalize_waitlist_email collapses Gmail +suffix/dots and keeps Outlook dots significant', async () => {
     const { data: gmailA } = await admin.rpc('ziko_normalize_waitlist_email', {
       p_email: 'Test.User+promo@GMAIL.com',
     });
@@ -127,7 +127,7 @@ describe.skipIf(!RUN_DB)('claimWaitlistSpot — 200-cap race and founder-status 
     if (stale && stale.length > 0) {
       throw new Error(
         `Test project holds ${stale.length} stale founder_rank row(s) in the 140-220 band ` +
-        `(ranks: ${stale.map((r) => r.founder_rank).join(', ')}). Clear waitlist_signups before running this suite.`
+        `(ranks: ${stale.map((r) => r.founder_rank).join(', ')}). Clear ziko_waitlist_signups before running this suite.`
       );
     }
 

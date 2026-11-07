@@ -39,7 +39,7 @@ vi.mock('@/lib/ratelimit', () => ({
 
 // A single `rpc` spy handles both `ziko_claim_waitlist_signup` and
 // `ziko_normalize_waitlist_email` by name (see the default implementation in beforeEach
-// below); `from('waitlist_signups').update(...).eq(...).is(...)` is a small chained
+// below); `from('ziko_waitlist_signups').update(...).eq(...).is(...)` is a small chained
 // mock proving the consent write's exact filter shape.
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({

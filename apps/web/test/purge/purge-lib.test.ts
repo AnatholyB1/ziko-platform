@@ -159,7 +159,7 @@ describe('classifyAccounts', () => {
   it('flags a candidate cross-linked to a non-candidate and excludes it from toDelete', () => {
     const crossLinks = [
       {
-        table: 'coach_client_links',
+        table: 'ziko_coach_client_links',
         candidateColumn: 'coach_id',
         candidateId: 'u1',
         linkedColumn: 'client_id',
@@ -171,7 +171,7 @@ describe('classifyAccounts', () => {
     expect(flagged[0]).toMatchObject({
       candidate_id: 'u1',
       linked_user_id: 'u2',
-      table: 'coach_client_links',
+      table: 'ziko_coach_client_links',
     });
     expect(toDelete.map((c) => c.id)).not.toContain('u1');
   });
@@ -284,7 +284,7 @@ describe('classifyAccounts — multi-link aggregation', () => {
     ];
     const crossLinks = [
       {
-        table: 'coach_client_links',
+        table: 'ziko_coach_client_links',
         candidateColumn: 'coach_id',
         candidateId: 'u1',
         linkedColumn: 'client_id',
@@ -304,14 +304,14 @@ describe('classifyAccounts — multi-link aggregation', () => {
     ];
     const crossLinks = [
       {
-        table: 'coach_client_links',
+        table: 'ziko_coach_client_links',
         candidateColumn: 'coach_id',
         candidateId: 'u1',
         linkedColumn: 'client_id',
         linkedUserId: 'u2',
       },
       {
-        table: 'coach_vocal_feedbacks',
+        table: 'ziko_coach_vocal_feedbacks',
         candidateColumn: 'coach_id',
         candidateId: 'u1',
         linkedColumn: 'athlete_id',
@@ -328,11 +328,11 @@ describe('classifyAccounts — multi-link aggregation', () => {
 describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
   it('flags a candidate as coach_id in coach_vocal_feedbacks opposite a non-candidate athlete_id', async () => {
     const { client } = makeFakeClient({
-      coach_vocal_feedbacks: [{ coach_id: 'cand-1', athlete_id: 'real-1' }],
+      ziko_coach_vocal_feedbacks: [{ coach_id: 'cand-1', athlete_id: 'real-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'coach_vocal_feedbacks',
+      table: 'ziko_coach_vocal_feedbacks',
       candidateColumn: 'coach_id',
       candidateId: 'cand-1',
       linkedColumn: 'athlete_id',
@@ -342,11 +342,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('flags a candidate as athlete_id opposite a non-candidate coach_id — symmetric on both columns', async () => {
     const { client } = makeFakeClient({
-      coach_vocal_feedbacks: [{ coach_id: 'real-1', athlete_id: 'cand-1' }],
+      ziko_coach_vocal_feedbacks: [{ coach_id: 'real-1', athlete_id: 'cand-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'coach_vocal_feedbacks',
+      table: 'ziko_coach_vocal_feedbacks',
       candidateColumn: 'athlete_id',
       candidateId: 'cand-1',
       linkedColumn: 'coach_id',
@@ -356,11 +356,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('flags a candidate as created_by_coach_id on a workout_programs row assigned to a non-candidate', async () => {
     const { client } = makeFakeClient({
-      workout_programs: [{ created_by_coach_id: 'cand-1', assigned_to_user_id: 'real-1' }],
+      ziko_workout_programs: [{ created_by_coach_id: 'cand-1', assigned_to_user_id: 'real-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'workout_programs',
+      table: 'ziko_workout_programs',
       candidateColumn: 'created_by_coach_id',
       candidateId: 'cand-1',
       linkedColumn: 'assigned_to_user_id',
@@ -370,7 +370,7 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('produces no cross-link for a workout_programs row whose assigned_to_user_id is null', async () => {
     const { client } = makeFakeClient({
-      workout_programs: [{ created_by_coach_id: 'cand-1', assigned_to_user_id: null }],
+      ziko_workout_programs: [{ created_by_coach_id: 'cand-1', assigned_to_user_id: null }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toHaveLength(0);
@@ -378,11 +378,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('still detects coach_client_links (task 1 source preserved)', async () => {
     const { client } = makeFakeClient({
-      coach_client_links: [{ coach_id: 'cand-1', client_id: 'real-1' }],
+      ziko_coach_client_links: [{ coach_id: 'cand-1', client_id: 'real-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'coach_client_links',
+      table: 'ziko_coach_client_links',
       candidateColumn: 'coach_id',
       candidateId: 'cand-1',
       linkedColumn: 'client_id',
@@ -392,14 +392,14 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('references all three original cross-link tables in a single pass', async () => {
     const { client } = makeFakeClient({
-      coach_client_links: [{ coach_id: 'cand-1', client_id: 'real-1' }],
-      coach_vocal_feedbacks: [{ coach_id: 'cand-2', athlete_id: 'real-2' }],
-      workout_programs: [{ created_by_coach_id: 'cand-3', assigned_to_user_id: 'real-3' }],
+      ziko_coach_client_links: [{ coach_id: 'cand-1', client_id: 'real-1' }],
+      ziko_coach_vocal_feedbacks: [{ coach_id: 'cand-2', athlete_id: 'real-2' }],
+      ziko_workout_programs: [{ created_by_coach_id: 'cand-3', assigned_to_user_id: 'real-3' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1', 'cand-2', 'cand-3']);
     const tables = new Set(links.map((l) => l.table));
     expect(tables).toEqual(
-      new Set(['coach_client_links', 'coach_vocal_feedbacks', 'workout_programs'])
+      new Set(['ziko_coach_client_links', 'ziko_coach_vocal_feedbacks', 'ziko_workout_programs'])
     );
   });
 
@@ -410,11 +410,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
   // which has the identical coach_id/used_by shape as coach_client_links).
   it('flags a candidate linked through friendships (community schema)', async () => {
     const { client } = makeFakeClient({
-      friendships: [{ requester_id: 'cand-1', addressee_id: 'real-1' }],
+      ziko_friendships: [{ requester_id: 'cand-1', addressee_id: 'real-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'friendships',
+      table: 'ziko_friendships',
       candidateColumn: 'requester_id',
       candidateId: 'cand-1',
       linkedColumn: 'addressee_id',
@@ -424,11 +424,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('flags a candidate linked through coach_metric_thresholds (coach-CRM schema)', async () => {
     const { client } = makeFakeClient({
-      coach_metric_thresholds: [{ coach_id: 'cand-1', client_id: 'real-1' }],
+      ziko_coach_metric_thresholds: [{ coach_id: 'cand-1', client_id: 'real-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'coach_metric_thresholds',
+      table: 'ziko_coach_metric_thresholds',
       candidateColumn: 'coach_id',
       candidateId: 'cand-1',
       linkedColumn: 'client_id',
@@ -438,11 +438,11 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('flags a candidate linked through coach_invitations.used_by (verified against migrations, not in the original review list)', async () => {
     const { client } = makeFakeClient({
-      coach_invitations: [{ coach_id: 'real-1', used_by: 'cand-1' }],
+      ziko_coach_invitations: [{ coach_id: 'real-1', used_by: 'cand-1' }],
     });
     const links = await fetchCrossLinks(client as never, ['cand-1']);
     expect(links).toContainEqual({
-      table: 'coach_invitations',
+      table: 'ziko_coach_invitations',
       candidateColumn: 'used_by',
       candidateId: 'cand-1',
       linkedColumn: 'coach_id',
@@ -452,44 +452,44 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
 
   it('references all 18 declared cross-link tables across a full candidate set', async () => {
     const declaredTables = [
-      'coach_client_links',
-      'coach_vocal_feedbacks',
-      'workout_programs',
-      'coach_invitations',
-      'friendships',
-      'app_invites',
-      'screen_reactions',
-      'shared_programs',
-      'xp_gifts',
-      'coin_gifts',
-      'habit_encouragements',
-      'coach_client_tags',
-      'coach_client_notes',
-      'coach_alerts',
-      'ai_tool_audit',
-      'dashboard_configs',
-      'coach_client_videos',
-      'coach_metric_thresholds',
+      'ziko_coach_client_links',
+      'ziko_coach_vocal_feedbacks',
+      'ziko_workout_programs',
+      'ziko_coach_invitations',
+      'ziko_friendships',
+      'ziko_app_invites',
+      'ziko_screen_reactions',
+      'ziko_shared_programs',
+      'ziko_xp_gifts',
+      'ziko_coin_gifts',
+      'ziko_habit_encouragements',
+      'ziko_coach_client_tags',
+      'ziko_coach_client_notes',
+      'ziko_coach_alerts',
+      'ziko_ai_tool_audit',
+      'ziko_dashboard_configs',
+      'ziko_coach_client_videos',
+      'ziko_coach_metric_thresholds',
     ];
     const columnPairs: Record<string, [string, string]> = {
-      coach_client_links: ['coach_id', 'client_id'],
-      coach_vocal_feedbacks: ['coach_id', 'athlete_id'],
-      workout_programs: ['created_by_coach_id', 'assigned_to_user_id'],
-      coach_invitations: ['coach_id', 'used_by'],
-      friendships: ['requester_id', 'addressee_id'],
-      app_invites: ['inviter_id', 'used_by'],
-      screen_reactions: ['sender_id', 'receiver_id'],
-      shared_programs: ['sender_id', 'receiver_id'],
-      xp_gifts: ['sender_id', 'receiver_id'],
-      coin_gifts: ['sender_id', 'receiver_id'],
-      habit_encouragements: ['sender_id', 'receiver_id'],
-      coach_client_tags: ['coach_id', 'client_id'],
-      coach_client_notes: ['coach_id', 'client_id'],
-      coach_alerts: ['coach_id', 'client_id'],
-      ai_tool_audit: ['coach_id', 'target_client_id'],
-      dashboard_configs: ['coach_id', 'client_id'],
-      coach_client_videos: ['athlete_id', 'coach_id'],
-      coach_metric_thresholds: ['coach_id', 'client_id'],
+      ziko_coach_client_links: ['coach_id', 'client_id'],
+      ziko_coach_vocal_feedbacks: ['coach_id', 'athlete_id'],
+      ziko_workout_programs: ['created_by_coach_id', 'assigned_to_user_id'],
+      ziko_coach_invitations: ['coach_id', 'used_by'],
+      ziko_friendships: ['requester_id', 'addressee_id'],
+      ziko_app_invites: ['inviter_id', 'used_by'],
+      ziko_screen_reactions: ['sender_id', 'receiver_id'],
+      ziko_shared_programs: ['sender_id', 'receiver_id'],
+      ziko_xp_gifts: ['sender_id', 'receiver_id'],
+      ziko_coin_gifts: ['sender_id', 'receiver_id'],
+      ziko_habit_encouragements: ['sender_id', 'receiver_id'],
+      ziko_coach_client_tags: ['coach_id', 'client_id'],
+      ziko_coach_client_notes: ['coach_id', 'client_id'],
+      ziko_coach_alerts: ['coach_id', 'client_id'],
+      ziko_ai_tool_audit: ['coach_id', 'target_client_id'],
+      ziko_dashboard_configs: ['coach_id', 'client_id'],
+      ziko_coach_client_videos: ['athlete_id', 'coach_id'],
+      ziko_coach_metric_thresholds: ['coach_id', 'client_id'],
     };
     const tables: Record<string, Array<Record<string, unknown>>> = {};
     const candidateIds: string[] = [];
@@ -525,7 +525,7 @@ describe('fetchCrossLinks — full cross-link surface (D-05)', () => {
       },
     };
     await expect(fetchCrossLinks(client as never, ['cand-1'])).rejects.toThrow(
-      /coach_client_links/
+      /ziko_coach_client_links/
     );
   });
 
