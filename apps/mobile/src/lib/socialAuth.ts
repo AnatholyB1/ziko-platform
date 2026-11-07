@@ -36,7 +36,22 @@ function isNetworkError(e: unknown): boolean {
   return m.includes('network') || m.includes('fetch') || m.includes('timeout');
 }
 
+const MSG_EMAIL_FIRST =
+  'Un compte existe déjà avec cet email. Connecte-toi d’abord par email, puis réessaie.';
+
+function isEmailTakenError(e: unknown): boolean {
+  const err = e as { code?: string; message?: string };
+  const m = String(err?.message ?? '').toLowerCase();
+  return (
+    err?.code === 'email_exists' ||
+    err?.code === 'identity_already_exists' ||
+    m.includes('already registered') ||
+    m.includes('already been registered')
+  );
+}
+
 function errorResult(e: unknown): SocialAuthResult {
+  if (isEmailTakenError(e)) return { status: 'error', message: MSG_EMAIL_FIRST };
   return { status: 'error', message: isNetworkError(e) ? MSG_NETWORK : MSG_GENERIC };
 }
 

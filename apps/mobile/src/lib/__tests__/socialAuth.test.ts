@@ -68,6 +68,13 @@ describe('Google', () => {
     expect(r.status).toBe('error');
     expect((r as any).message).toMatch(/échoué/);
   });
+  it('email already registered -> email-first message', async () => {
+    h.g.signIn.mockResolvedValue({ type: 'success', data: { idToken: 'tok' } });
+    h.sb.signInWithIdToken.mockResolvedValue({ data: {}, error: { code: 'email_exists', message: 'x' } });
+    const r = await signInWithGoogle();
+    expect(r.status).toBe('error');
+    expect((r as any).message).toMatch(/d.abord par email/);
+  });
   it('network error -> network message', async () => {
     h.g.signIn.mockRejectedValue(new Error('Network request failed'));
     const r = await signInWithGoogle();
