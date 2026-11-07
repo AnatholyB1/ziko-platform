@@ -56,3 +56,15 @@ af5a7df9-6322-4290-91f1-21bcf6112475
 dd384f2e-c197-4172-a3b0-a6f763e032bf
 f0bb38e7-4e5b-4d95-a1e0-34b719c0377a
 (releves en lecture seule le 2026-11-07; re-verifier le compte avant usage: `SELECT count(*) FROM public.ziko_waitlist_signups WHERE consent_given_at IS NULL;` -> 19)
+
+## Ajouts 2026-11-07 (soir)
+- [ ] Migration REVOKE 20261107170000_ziko_revoke_client_dml.sql (99 tables ziko_*): a appliquer AVEC la sequence prod, apres verif mobile/web (risque: ecritures client JWT sur 22 tables a sous-ensemble). Rollback: GRANT inverse (matrices uat/privilege-matrix-before.txt).
+- [x] Lecture prod: 21/21 premium ont premium_grant ce mois-ci: pas de cron manuel necessaire. api.ziko-app.com/health=200, ziko-app.com /fr/fondateurs /fr/cgv /fr/cgu = 200 (7 nov).
+- [ ] Token ziko-ci-portfolio: NON revoque (decision utilisateur).
+- Follow-ups: supplements anon-write (scraper), creditService fallback cle service, plugin pantry shopping_list non prefixe.
+
+## STATUT hardening/ziko-client-dml
+Migration 20261107170000_ziko_revoke_client_dml.sql (99 tables) NON APPROUVEE, NON APPLIQUEE: risque de casser mobile/web (ecritures directes JWT). A trancher par l'utilisateur. Le go-live a applique le REVOKE cible 20261107150000 (ziko_app_config, ziko_waitlist_signups).
+
+## Update 2026-11-07 (team-lead)
+The 99-table client DML REVOKE (20261107170000) was APPLIED to portfolio after an independent replay of 155 write couples (revoke-verify) found one real break (ziko_food_products upsert needs UPDATE); `GRANT UPDATE ... TO authenticated` was added and applied with it. Rollback = uat/privilege-matrix-before.txt.
