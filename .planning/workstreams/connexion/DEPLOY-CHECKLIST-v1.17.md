@@ -56,3 +56,28 @@ Note: le mail "Reset password" (forgot.tsx) reste en lien par defaut: gabarit a 
 - [ ] Gabarit "Confirm sign up", test d'envoi reel, puis "Confirm email" (mailer_autoconfirm est encore true) apres livraison de l'app avec l'ecran de verification.
 - [ ] Ecran de consentement Google "In production"; [ ] Google Android: les 2 clients (EAS + Play) crees.
 - Preuve flux Google: AUCUN compte de test fourni => flux web/natif non teste.
+
+## Phase 3 (branche phase/17-03-app-email-verify): verification email applicative (Resend), SANS "Confirm email" Supabase
+
+Decision utilisateur: `mailer_autoconfirm` RESTE true (projet partage). La preuve de propriete de l email est faite par l app/backend Ziko (code a 6 chiffres via Resend). Les etapes 1 a 7 de la section "SMTP Resend + confirmation email par code" ci-dessus ne sont PLUS a faire: ne pas activer "Confirm email", le gabarit Supabase "Confirm sign up" (supabase/email-templates/confirm-signup.html) reste inutilise, pas de SMTP custom necessaire pour ce flux.
+
+A faire, dans cet ordre, uniquement sur validation de l utilisateur:
+- [ ] 1. Appliquer la migration `supabase/portfolio-migrations/20261107180000_ziko_email_verification.sql` sur le portfolio (ubxllsvanurkwkohzxau). Additive: colonne `ziko_user_profiles.email_verified_at`, trigger de protection de cette colonne, tables `ziko_email_verifications` et `ziko_email_verify_settings` (RLS sans policy, REVOKE client), 5 RPC SECURITY DEFINER (`ziko_email_create_code`, `_verify_attempt`, `_confirm`, `_mark_verified_social`, `_code_age`; EXECUTE seulement a `authenticated`). Non appliquee a ce jour. A appliquer AVANT de deployer le backend et le build mobile (sinon la banniere apparait et send-code echoue en 500).
+- [ ] 2. Choisir un secret aleatoire long (le generer soi-meme, ne jamais le coller dans un chat/commit) et inserer son empreinte: `INSERT INTO public.ziko_email_verify_settings (key, value) VALUES ('backend_secret_sha256', encode(sha256(convert_to('<le secret>', 'UTF8')), 'hex')) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;`. Tant que cette ligne n existe pas, toutes les RPC refusent (fail closed).
+- [ ] 3. Variables Vercel du projet backend (noms uniquement): `EMAIL_FROM` (defaut code: `Ziko <no-reply@mail.ziko-app.com>`), `EMAIL_VERIFY_RPC_SECRET` (le secret de l etape 2, meme valeur), `RESEND_API_KEY` (existe deja, lue par `backend/api/src/coach/ai/service.ts` et par la nouvelle route), `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` (existants; les RPC sont appelees avec le JWT de l utilisateur, pas de service role).
+- [ ] 4. A VERIFIER: la cle `RESEND_API_KEY` du backend appartient peut-etre a un autre compte Resend que celui ou `mail.ziko-app.com` est verifie (le compte visible ne liste pas ziko-app.com). Si la cle n est pas dans le bon compte, l envoi echoue (403 domaine non verifie, la route repond 502). Test a faire apres deploiement avec une adresse de l utilisateur, ou creer une cle dediee dans le bon compte.
+- [ ] 5. Deployer le backend (routes `POST /auth/email/send-code`, `/verify-code`, `/mark-verified-social`), puis publier le build mobile (nouvel ecran code + banniere + durcissement social).
+- [ ] 6. Verifier que Supabase Auth > Email > "Confirm email" reste OFF (autoconfirm true) et ne PAS toucher aux autres apps du projet partage.
+
+### Comportement mark-verified-social
+- Mobile: apres un sign-in Google/Apple reussi, si le profil n est pas verifie: (a) si le compte a une identite `email`, `updateUser({ password: <aleatoire 64 hex> })` puis `signOut({ scope: 'others' })` pour couper un eventuel pre-inscrit, (b) appel de `POST /auth/email/mark-verified-social`.
+- Backend: ne croit pas le client. Il relit l utilisateur avec le JWT (GoTrue `/user`) et exige une identite google/apple dont l email == l email du compte et `email_verified != false`; sinon 403. Si (a) echoue, le profil n est pas marque verifie (le sign-in n est jamais bloque).
+- Effet de bord a communiquer: un utilisateur existant (email + mot de passe, non verifie car `email_verified_at` est NULL pour les 48 comptes actuels) qui se connecte pour la premiere fois avec Google/Apple voit son mot de passe remplace et ses autres appareils deconnectes; il se reconnectera avec Google/Apple ou "Mot de passe oublie".
+
+### Limites connues (a accepter ou traiter)
+- Le JWT d acces deja emis a un attaquant reste valide jusqu a son expiration (defaut 1h) pour tout ce qui ne verifie que la signature (PostgREST/RLS). Les endpoints GoTrue et le backend (authMiddleware -> getUser) le rejettent des que la session est supprimee (observe en local: HTTP 403).
+- Les identites d un email non verifie restent liees au compte; seule la reinitialisation du mot de passe et la revocation des sessions coupent le pre-inscrit.
+- La mitigation depend du client: une app modifiee, ou une autre app du projet partage qui ouvre une session Google/Apple sans ce code, ne l execute pas.
+- Gating: seul le helper `isEmailVerified(profile)` (`@ziko/plugin-sdk`) et la banniere d accueil sont livres. Aucune action n est bloquee. Suite a decider: (1) cote serveur `POST /coach/clients/links/redeem` et `POST /credits/earn` refusent si `email_verified_at` est NULL (un gate cote client seul serait contournable), (2) options de cloture: rendre la verification obligatoire apres N jours.
+- Les comptes sociaux purs sont marques verifies seulement si la ligne `ziko_user_profiles` existe deja au moment de l appel; sinon la banniere propose le code.
+- `forgot.tsx` (reinitialisation du mot de passe) reste en lien Supabase par defaut, hors perimetre.
