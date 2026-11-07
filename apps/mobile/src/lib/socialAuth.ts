@@ -5,6 +5,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+import * as Sentry from '@sentry/react-native';
 import { supabase } from './supabase';
 import { markVerifiedSocial } from './emailVerification';
 
@@ -51,9 +52,22 @@ function isEmailTakenError(e: unknown): boolean {
   );
 }
 
+/** Short technical hint shown after the generic message so a failure can be diagnosed on a device. */
+function diagnosticTag(e: unknown): string {
+  const err = e as { code?: string | number; message?: string };
+  const raw = String(err?.code ?? err?.message ?? 'inconnu');
+  return raw.replace(/\s+/g, ' ').slice(0, 80);
+}
+
 function errorResult(e: unknown): SocialAuthResult {
   if (isEmailTakenError(e)) return { status: 'error', message: MSG_EMAIL_FIRST };
-  return { status: 'error', message: isNetworkError(e) ? MSG_NETWORK : MSG_GENERIC };
+  if (isNetworkError(e)) return { status: 'error', message: MSG_NETWORK };
+  try {
+    Sentry.captureException(e, { tags: { area: 'social-auth' } });
+  } catch {
+    /* never block the UI on telemetry */
+  }
+  return { status: 'error', message: `${MSG_GENERIC} (${diagnosticTag(e)})` };
 }
 
 type SocialUser = {

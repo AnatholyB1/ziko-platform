@@ -31,6 +31,7 @@ vi.mock('../supabase', () => ({
   },
 }));
 vi.mock('../emailVerification', () => ({ markVerifiedSocial: h.mark }));
+vi.mock('@sentry/react-native', () => ({ captureException: vi.fn() }));
 
 import {
   signInWithGoogle, signInWithApple, handleSocialResult, isAppleSignInSupported, hardenAfterSocialSignIn,
