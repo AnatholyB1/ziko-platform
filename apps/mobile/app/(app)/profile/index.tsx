@@ -556,27 +556,32 @@ export default function ProfileScreen() {
         supabase
           .from('ziko_friendships')
           .select('id', { count: 'exact', head: true })
-          .eq('friend_id', userId!),
+          .eq('addressee_id', userId!)
+          .eq('status', 'accepted'),
         supabase
           .from('ziko_friendships')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId!),
+          .eq('requester_id', userId!)
+          .eq('status', 'accepted'),
         supabase
           .from('ziko_habit_logs')
           .select('date')
           .eq('user_id', userId!)
-          .eq('completed', true)
+          .gt('value', 0)
           .gte('date', sixtyDaysAgoStr)
           .order('date', { ascending: false }),
+        // ziko_session_sets has no user_id / is_pr: filter through the owning session.
+        // Personal records = best weight per exercise (computed below), not a stored flag.
         supabase
           .from('ziko_session_sets')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', userId!)
-          .eq('is_pr', true),
+          .select('id, ziko_workout_sessions!inner(user_id)', { count: 'exact', head: true })
+          .eq('ziko_workout_sessions.user_id', userId!)
+          .gt('weight_kg', 0),
         supabase
           .from('ziko_session_sets')
-          .select('exercise_id, weight_kg, performed_at, exercises:ziko_exercises(name)')
-          .eq('user_id', userId!)
+          .select('exercise_id, weight_kg, completed_at, created_at, exercises:ziko_exercises(name), ziko_workout_sessions!inner(user_id)')
+          .eq('ziko_workout_sessions.user_id', userId!)
+          .gt('weight_kg', 0)
           .order('weight_kg', { ascending: false }),
       ]);
 
@@ -610,8 +615,11 @@ export default function ProfileScreen() {
         return count;
       })();
 
-      // PRs: count from session_sets is_pr=true (fallback: 0 if column doesn't exist)
-      const prs = prCountRes.error ? 0 : (prCountRes.count ?? 0);
+      // PRs: number of exercises with a recorded best weight (no stored is_pr flag in the schema)
+      const prs = (() => {
+        if (prRowsRes.error) return 0;
+        return new Set((prRowsRes.data ?? []).map((r: any) => r.exercise_id)).size;
+      })();
 
       // PR rows: top 3 distinct exercises by max weight
       const prRows = (() => {
@@ -621,8 +629,9 @@ export default function ProfileScreen() {
           const exerciseId = row.exercise_id;
           const exerciseName = row.exercises?.name ?? exerciseId ?? 'Exercice';
           const weight = row.weight_kg ?? 0;
-          const date = row.performed_at
-            ? new Date(row.performed_at).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+          const performedAt = row.completed_at ?? row.created_at;
+          const date = performedAt
+            ? new Date(performedAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
             : '';
           if (!exerciseMap.has(exerciseId) || exerciseMap.get(exerciseId)!.weight < weight) {
             exerciseMap.set(exerciseId, { exercise: exerciseName, weight, date });

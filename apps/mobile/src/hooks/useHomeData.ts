@@ -94,7 +94,7 @@ export function useStreak() {
         .from('ziko_habit_logs')
         .select('date')
         .eq('user_id', userId!)
-        .eq('completed', true)
+        .gt('value', 0)
         .gte('date', since)
         .order('date', { ascending: false });
 
