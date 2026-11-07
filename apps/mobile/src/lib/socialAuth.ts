@@ -6,6 +6,7 @@ import {
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { supabase } from './supabase';
+import { markVerifiedSocial } from './emailVerification';
 
 export type SocialAuthResult =
   | { status: 'success'; isNewUser: boolean }
@@ -55,6 +56,51 @@ function errorResult(e: unknown): SocialAuthResult {
   return { status: 'error', message: isNetworkError(e) ? MSG_NETWORK : MSG_GENERIC };
 }
 
+type SocialUser = {
+  id?: string;
+  identities?: { provider?: string }[] | null;
+} | null | undefined;
+
+function randomPassword(): string {
+  return Array.from(Crypto.getRandomBytes(32), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Anti pre-hijack. GoTrue auto-links a Google/Apple identity to an existing email account. If that
+ * email/password account was registered by someone else without proving the address
+ * (mailer_autoconfirm=true), the pre-registrant still holds the password and live sessions.
+ * Right after a social sign-in (fresh session, the provider proved the email) we therefore:
+ *   1. replace the password with a random one nobody knows,
+ *   2. revoke every other session (refresh tokens) with signOut({ scope: 'others' }),
+ *   3. ask the backend to record the email as verified (it re-checks the identity server side).
+ * Only when the account has an 'email' identity AND is not verified yet. Never blocks the sign-in.
+ * Limits: an access JWT already issued to the attacker stays valid until it expires (default 1h);
+ * the email identity stays linked; it only protects clients that run this code.
+ */
+export async function hardenAfterSocialSignIn(user: SocialUser): Promise<'skipped' | 'hardened' | 'failed'> {
+  try {
+    if (!user?.id) return 'skipped';
+    const hasEmailIdentity = (user.identities ?? []).some((i) => i?.provider === 'email');
+    const { data: profile } = await supabase
+      .from('ziko_user_profiles')
+      .select('email_verified_at')
+      .eq('id', user.id)
+      .maybeSingle();
+    if ((profile as { email_verified_at?: string | null } | null)?.email_verified_at) return 'skipped';
+
+    if (hasEmailIdentity) {
+      const upd = await supabase.auth.updateUser({ password: randomPassword() });
+      if (upd.error) return 'failed'; // do not mark verified if the pre-registrant was not cut off
+      const out = await supabase.auth.signOut({ scope: 'others' });
+      if (out.error) return 'failed';
+    }
+    await markVerifiedSocial();
+    return 'hardened';
+  } catch {
+    return 'failed';
+  }
+}
+
 let googleConfigured = false;
 function configureGoogle() {
   if (googleConfigured) return;
@@ -81,6 +127,7 @@ export async function signInWithGoogle(): Promise<SocialAuthResult> {
       token: idToken,
     });
     if (error) return errorResult(error);
+    await hardenAfterSocialSignIn(data?.user);
     return { status: 'success', isNewUser: isFreshAccount(data?.user) };
   } catch (e) {
     const code = (e as { code?: string })?.code;
@@ -126,6 +173,7 @@ export async function signInWithApple(): Promise<SocialAuthResult> {
       nonce: rawNonce,
     });
     if (error) return errorResult(error);
+    await hardenAfterSocialSignIn(data?.user);
 
     // Apple only sends the name on the very first authorization.
     const fn = credential.fullName;

@@ -1,59 +1,67 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const sb = vi.hoisted(() => ({ signUp: vi.fn(), verifyOtp: vi.fn(), resend: vi.fn() }));
-vi.mock('../supabase', () => ({ supabase: { auth: sb } }));
+const h = vi.hoisted(() => ({
+  signUp: vi.fn(),
+  send: vi.fn(),
+  verify: vi.fn(),
+}));
+vi.mock('../supabase', () => ({ supabase: { auth: { signUp: h.signUp } } }));
+vi.mock('../emailVerification', () => ({
+  sendVerificationCode: h.send,
+  verifyEmailCode: h.verify,
+}));
 
 import { signUpWithEmail, verifySignupCode, resendSignupCode } from '../emailSignup';
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('signUpWithEmail', () => {
-  it('session returned (autoconfirm) -> signed-in', async () => {
-    sb.signUp.mockResolvedValue({ data: { session: { access_token: 't' } }, error: null });
-    expect(await signUpWithEmail('A', 'a@b.fr', 'pw1234')).toEqual({ status: 'signed-in' });
-  });
-  it('no session (confirmation on) -> needs-verification', async () => {
-    sb.signUp.mockResolvedValue({ data: { session: null, user: {} }, error: null });
+  it('session + code sent -> verify-email with cooldown', async () => {
+    h.signUp.mockResolvedValue({ data: { session: { access_token: 't' } }, error: null });
+    h.send.mockResolvedValue({ status: 'sent', cooldown: 60 });
     expect(await signUpWithEmail('A', 'a@b.fr', 'pw1234')).toEqual({
-      status: 'needs-verification', email: 'a@b.fr',
+      status: 'verify-email', email: 'a@b.fr', cooldown: 60,
     });
   });
-  it('error surfaces message', async () => {
-    sb.signUp.mockResolvedValue({ data: null, error: { message: 'User already registered' } });
+  it('code send failing never blocks: signed-in', async () => {
+    h.signUp.mockResolvedValue({ data: { session: { access_token: 't' } }, error: null });
+    h.send.mockResolvedValue({ status: 'error', message: 'x' });
+    expect(await signUpWithEmail('A', 'a@b.fr', 'pw1234')).toEqual({ status: 'signed-in' });
+  });
+  it('backend cooldown still shows the code screen', async () => {
+    h.signUp.mockResolvedValue({ data: { session: { access_token: 't' } }, error: null });
+    h.send.mockResolvedValue({ status: 'cooldown', retryAfter: 42 });
+    expect(await signUpWithEmail('A', 'a@b.fr', 'pw1234')).toEqual({
+      status: 'verify-email', email: 'a@b.fr', cooldown: 42,
+    });
+  });
+  it('no session (autoconfirm off) -> explicit error, no code sent', async () => {
+    h.signUp.mockResolvedValue({ data: { session: null, user: {} }, error: null });
     const r = await signUpWithEmail('A', 'a@b.fr', 'pw1234');
-    expect(r).toEqual({ status: 'error', message: 'User already registered' });
+    expect(r.status).toBe('error');
+    expect(h.send).not.toHaveBeenCalled();
+  });
+  it('error surfaces message', async () => {
+    h.signUp.mockResolvedValue({ data: null, error: { message: 'User already registered' } });
+    expect(await signUpWithEmail('A', 'a@b.fr', 'pw1234')).toEqual({
+      status: 'error', message: 'User already registered',
+    });
   });
   it('passes app marker and name', async () => {
-    sb.signUp.mockResolvedValue({ data: { session: null }, error: null });
+    h.signUp.mockResolvedValue({ data: { session: null }, error: null });
     await signUpWithEmail('Zed', 'z@z.fr', 'pw1234');
-    expect(sb.signUp.mock.calls[0][0].options.data).toEqual({ app: 'ziko', full_name: 'Zed' });
+    expect(h.signUp.mock.calls[0][0].options.data).toEqual({ app: 'ziko', full_name: 'Zed' });
   });
 });
 
-describe('verifySignupCode', () => {
-  it('valid code -> verified', async () => {
-    sb.verifyOtp.mockResolvedValue({ data: { session: { access_token: 't' } }, error: null });
-    expect(await verifySignupCode('a@b.fr', '123 456')).toEqual({ status: 'verified' });
-    expect(sb.verifyOtp).toHaveBeenCalledWith({ email: 'a@b.fr', token: '123456', type: 'signup' });
+describe('code helpers delegate to the backend client (no Supabase verifyOtp)', () => {
+  it('verifySignupCode', async () => {
+    h.verify.mockResolvedValue({ status: 'verified' });
+    expect(await verifySignupCode('123456')).toEqual({ status: 'verified' });
+    expect(h.verify).toHaveBeenCalledWith('123456');
   });
-  it('malformed code rejected without a network call', async () => {
-    const r = await verifySignupCode('a@b.fr', 'abc');
-    expect(r.status).toBe('error');
-    expect(sb.verifyOtp).not.toHaveBeenCalled();
-  });
-  it('wrong code -> French error', async () => {
-    sb.verifyOtp.mockResolvedValue({ data: {}, error: { message: 'Token has expired' } });
-    const r = await verifySignupCode('a@b.fr', '000000');
-    expect(r.status).toBe('error');
-    expect((r as any).message).toMatch(/invalide ou expiré/);
-  });
-});
-
-describe('resendSignupCode', () => {
-  it('ok / error', async () => {
-    sb.resend.mockResolvedValue({ error: null });
-    expect((await resendSignupCode('a@b.fr')).status).toBe('verified');
-    sb.resend.mockResolvedValue({ error: { message: 'rate limit' } });
-    expect((await resendSignupCode('a@b.fr')).status).toBe('error');
+  it('resendSignupCode', async () => {
+    h.send.mockResolvedValue({ status: 'sent', cooldown: 60 });
+    expect((await resendSignupCode()).status).toBe('sent');
   });
 });

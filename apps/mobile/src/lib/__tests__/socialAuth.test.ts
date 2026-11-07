@@ -4,7 +4,9 @@ const h = vi.hoisted(() => ({
   platform: { OS: 'ios' },
   g: { configure: vi.fn(), hasPlayServices: vi.fn(), signIn: vi.fn() },
   a: { isAvailableAsync: vi.fn(), signInAsync: vi.fn() },
-  sb: { signInWithIdToken: vi.fn(), updateUser: vi.fn() },
+  sb: { signInWithIdToken: vi.fn(), updateUser: vi.fn(), signOut: vi.fn() },
+  profile: { maybeSingle: vi.fn() },
+  mark: vi.fn(),
 }));
 
 vi.mock('react-native', () => ({ Platform: h.platform }));
@@ -22,10 +24,16 @@ vi.mock('expo-crypto', () => ({
   digestStringAsync: vi.fn(async (_a: string, s: string) => `hash(${s})`),
   CryptoDigestAlgorithm: { SHA256: 'SHA256' },
 }));
-vi.mock('../supabase', () => ({ supabase: { auth: h.sb } }));
+vi.mock('../supabase', () => ({
+  supabase: {
+    auth: h.sb,
+    from: vi.fn(() => ({ select: () => ({ eq: () => ({ maybeSingle: h.profile.maybeSingle }) }) })),
+  },
+}));
+vi.mock('../emailVerification', () => ({ markVerifiedSocial: h.mark }));
 
 import {
-  signInWithGoogle, signInWithApple, handleSocialResult, isAppleSignInSupported,
+  signInWithGoogle, signInWithApple, handleSocialResult, isAppleSignInSupported, hardenAfterSocialSignIn,
 } from '../socialAuth';
 
 const NOW = '2026-01-01T00:00:00Z';
@@ -37,7 +45,11 @@ beforeEach(() => {
   h.platform.OS = 'ios';
   h.g.hasPlayServices.mockResolvedValue(true);
   h.a.isAvailableAsync.mockResolvedValue(true);
-  h.sb.updateUser.mockResolvedValue({});
+  h.sb.updateUser.mockResolvedValue({ error: null });
+  h.sb.signOut.mockResolvedValue({ error: null });
+  h.mark.mockResolvedValue(true);
+  // default: profile already verified -> hardening is a no-op for the pre-existing tests
+  h.profile.maybeSingle.mockResolvedValue({ data: { email_verified_at: '2026-01-01T00:00:00Z' } });
 });
 
 describe('Google', () => {
@@ -136,5 +148,67 @@ describe('handleSocialResult', () => {
     expect(d.replace).toHaveBeenLastCalledWith('/(auth)/onboarding/step-1');
     await handleSocialResult({ status: 'success', isNewUser: false }, d);
     expect(d.replace).toHaveBeenLastCalledWith('/(app)');
+  });
+});
+
+describe('anti pre-hijack hardening after a social sign-in', () => {
+  const linked = { id: 'u1', identities: [{ provider: 'email' }, { provider: 'google' }] };
+  const socialOnly = { id: 'u2', identities: [{ provider: 'google' }] };
+  const unverified = () => h.profile.maybeSingle.mockResolvedValue({ data: { email_verified_at: null } });
+
+  it('email identity + unverified: random password, others signed out, then marked verified (in order)', async () => {
+    unverified();
+    const order: string[] = [];
+    h.sb.updateUser.mockImplementation(async () => { order.push('updateUser'); return { error: null }; });
+    h.sb.signOut.mockImplementation(async () => { order.push('signOut'); return { error: null }; });
+    h.mark.mockImplementation(async () => { order.push('mark'); return true; });
+    expect(await hardenAfterSocialSignIn(linked)).toBe('hardened');
+    expect(order).toEqual(['updateUser', 'signOut', 'mark']);
+    expect(h.sb.updateUser.mock.calls[0][0].password).toHaveLength(64);
+    expect(h.sb.signOut).toHaveBeenCalledWith({ scope: 'others' });
+  });
+  it('already verified: nothing touched', async () => {
+    expect(await hardenAfterSocialSignIn(linked)).toBe('skipped');
+    expect(h.sb.updateUser).not.toHaveBeenCalled();
+    expect(h.sb.signOut).not.toHaveBeenCalled();
+    expect(h.mark).not.toHaveBeenCalled();
+  });
+  it('pure social account (no email identity): no password change, just marked verified', async () => {
+    unverified();
+    expect(await hardenAfterSocialSignIn(socialOnly)).toBe('hardened');
+    expect(h.sb.updateUser).not.toHaveBeenCalled();
+    expect(h.sb.signOut).not.toHaveBeenCalled();
+    expect(h.mark).toHaveBeenCalledTimes(1);
+  });
+  it('password update fails: not marked verified, no signOut, sign-in not blocked', async () => {
+    unverified();
+    h.sb.updateUser.mockResolvedValue({ error: { message: 'reauth needed' } });
+    expect(await hardenAfterSocialSignIn(linked)).toBe('failed');
+    expect(h.sb.signOut).not.toHaveBeenCalled();
+    expect(h.mark).not.toHaveBeenCalled();
+  });
+  it('signOut(others) fails: not marked verified', async () => {
+    unverified();
+    h.sb.signOut.mockResolvedValue({ error: { message: 'x' } });
+    expect(await hardenAfterSocialSignIn(linked)).toBe('failed');
+    expect(h.mark).not.toHaveBeenCalled();
+  });
+  it('google sign-in runs the hardening and still succeeds', async () => {
+    unverified();
+    h.g.signIn.mockResolvedValue({ type: 'success', data: { idToken: 'tok' } });
+    h.sb.signInWithIdToken.mockResolvedValue({ data: { user: { ...oldUser, ...linked } }, error: null });
+    expect(await signInWithGoogle()).toEqual({ status: 'success', isNewUser: false });
+    expect(h.sb.signOut).toHaveBeenCalledWith({ scope: 'others' });
+  });
+  it('apple sign-in runs the hardening and still succeeds', async () => {
+    unverified();
+    h.a.signInAsync.mockResolvedValue({ identityToken: 'itok', fullName: null });
+    h.sb.signInWithIdToken.mockResolvedValue({ data: { user: { ...oldUser, ...linked } }, error: null });
+    expect(await signInWithApple()).toEqual({ status: 'success', isNewUser: false });
+    expect(h.sb.updateUser).toHaveBeenCalledWith({ password: expect.any(String) });
+  });
+  it('a thrown error never breaks the sign-in', async () => {
+    h.profile.maybeSingle.mockRejectedValue(new Error('boom'));
+    expect(await hardenAfterSocialSignIn(linked)).toBe('failed');
   });
 });
