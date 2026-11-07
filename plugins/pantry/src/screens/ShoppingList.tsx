@@ -112,7 +112,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
 
       // 2. Fetch only recipe-sourced shopping list items
       const { data: recipeItems } = await supabase
-        .from('shopping_list_items')
+        .from('ziko_shopping_list_items')
         .select('*')
         .eq('user_id', user.id)
         .eq('source', 'recipe')
@@ -201,7 +201,7 @@ export default function ShoppingList({ supabase }: { supabase: any }) {
           });
         }
       }
-      await supabase.from('shopping_list_items').delete().eq('id', item.id);
+      await supabase.from('ziko_shopping_list_items').delete().eq('id', item.id);
     } catch {
       addShoppingItem(item);
       showAlert(t('pantry.error_save_title'), t('pantry.shop_error_checkoff'));

@@ -32,9 +32,9 @@ async function fetchUserStats(supabase: any, userId: string): Promise<UserStats>
   const [sessionsRes, gamifRes, communityRes, habitsRes] = await Promise.all([
     supabase
       .from('ziko_workout_sessions')
-      .select('id, total_volume_kg, duration_seconds')
+      .select('id, total_volume_kg, total_duration_active_seconds')
       .eq('user_id', userId)
-      .eq('status', 'completed'),
+      .not('ended_at', 'is', null),
     supabase
       .from('ziko_user_gamification')
       .select('xp, current_streak')
@@ -49,12 +49,12 @@ async function fetchUserStats(supabase: any, userId: string): Promise<UserStats>
       .from('ziko_habit_logs')
       .select('id')
       .eq('user_id', userId)
-      .eq('completed', true),
+      .gt('value', 0),
   ]);
 
   const sessions = sessionsRes.data ?? [];
   const totalVolume = sessions.reduce((s: number, r: any) => s + (r.total_volume_kg ?? 0), 0);
-  const totalDuration = sessions.reduce((s: number, r: any) => s + (r.duration_seconds ?? 0), 0);
+  const totalDuration = sessions.reduce((s: number, r: any) => s + (r.total_duration_active_seconds ?? 0), 0);
 
   return {
     totalSessions: sessions.length,
