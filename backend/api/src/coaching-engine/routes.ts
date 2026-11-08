@@ -101,6 +101,10 @@ router.on(['GET', 'POST'], '/cron/weekly-review', async (c) => {
         skipped += 1;
       } else if (value.success) {
         succeeded += 1;
+      } else if (value.reason === 'duplicate') {
+        // A concurrent trigger won the RPC's idempotency race: the review
+        // exists exactly once, so this delivery is a no-op, not a failure.
+        skipped += 1;
       } else {
         failed += 1;
       }

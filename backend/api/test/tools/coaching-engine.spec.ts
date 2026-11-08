@@ -871,7 +871,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
     expect(args.p_state_patch.current_focus_summary).toBe(decision.new_focus_summary);
   });
 
-  it('the p_state_patch never carries level, points or tier keys (Open Question 1 resolution)', async () => {
+  it('the p_state_patch carries points and tier (Phase 45) but never a level key (45 D-03)', async () => {
     const context = buildReviewContext();
     const decision = buildDecision();
 
@@ -887,8 +887,8 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
 
     const [, args] = mockRpc.mock.calls[0];
     expect(args.p_state_patch).not.toHaveProperty('level');
-    expect(args.p_state_patch).not.toHaveProperty('points');
-    expect(args.p_state_patch).not.toHaveProperty('tier');
+    expect(args.p_state_patch).toHaveProperty('points');
+    expect(args.p_state_patch).toHaveProperty('tier');
   });
 
   it('a de-escalate decision lowering readiness from ready to building is applied without a ratchet guard', async () => {
@@ -1188,6 +1188,33 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
     expect(result.ran).toBe(false);
     expect((result as any).reason).toBe('already_recorded');
     expect(mockGenerateObject).not.toHaveBeenCalled();
+    // The review clock is rolled through the dedicated RPC, never by the
+    // decision write path (no decision row is written for an already-recorded week).
+    const clockCalls = mockRpc.mock.calls.filter(([name]) => name === 'ziko_advance_review_clock');
+    expect(clockCalls).toHaveLength(1);
+    expect(clockCalls[0][1]).toEqual({ p_user_id: 'athlete-1', p_week_of: '2020-01-01' });
+    expect(mockRpc.mock.calls.filter(([name]) => name === 'ziko_record_athlete_decision')).toHaveLength(0);
+  });
+
+  it('a failing clock advance is swallowed: already_recorded is still returned', async () => {
+    singleResults.ziko_athlete_state = {
+      data: {
+        next_review_due_at: '2020-01-01T00:00:00Z',
+        last_review_at: '2019-12-25T00:00:00Z',
+        current_focus_detail: { focus_type: 'training_volume', target_metric: 'sessions_completed', target_value: 3 },
+        current_focus_summary: 'Train 3x this week',
+        readiness: 'building',
+        rolling_summary: null,
+      },
+      error: null,
+    };
+    tableResults.ziko_athlete_decisions = { data: [], error: null };
+    tableResults.ziko_workout_sessions = { data: [], error: null };
+    singleResults.ziko_athlete_decisions = { data: { id: 'existing-decision' }, error: null };
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'permission denied' } });
+
+    const result = await runWeeklyReview('athlete-1', 'weekly_review_cron', 'token-1');
+    expect((result as any).reason).toBe('already_recorded');
   });
 });
 

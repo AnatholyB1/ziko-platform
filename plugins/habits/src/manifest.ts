@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const habitsManifest: PluginManifest = {
   id: 'habits',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Daily Habits & Goals',
   version: '1.0.0',
   description:

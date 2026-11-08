@@ -11,7 +11,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { supabase } from '../../src/lib/supabase';
-import { usePluginRegistry } from '@ziko/plugin-sdk';
+import { usePluginRegistry, buildLockedSection } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
@@ -266,6 +266,14 @@ export default function DashboardScreen() {
   // authProfile is populated during initialize() before the home screen mounts —
   // use it as an immediate name source while the TanStack Query resolves.
   const authProfile = useAuthStore((s) => s.profile);
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
+  const levelLoaded = useAuthStore((s) => s.levelLoaded);
+  // Skip the locked section until the first level read, so a high-level athlete
+  // never briefly sees locked tiles / a wrong "Niveau N requis".
+  const lockedSection = useMemo(
+    () => (levelLoaded ? buildLockedSection(effectiveLevel) : undefined),
+    [effectiveLevel, levelLoaded],
+  );
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
@@ -917,6 +925,7 @@ export default function DashboardScreen() {
         onClose={() => setDrawerOpen(false)}
         onNavigate={(path) => router.push(path as any)}
         installedPluginIds={installedPluginIds}
+        lockedSection={lockedSection}
       />
 
       {/* ── Mood Bottom Sheet ───────────────────────────── */}

@@ -75,6 +75,9 @@ export interface WeeklyReviewContext {
     current_focus_detail: Record<string, unknown>;
     rolling_summary: string | null;
     next_review_due_at: string | null;
+    /** Phase 45: current monotonic reward counters (absent => 0 / 1). */
+    points?: number;
+    tier?: number;
   };
   weekOf: string;
   focus: FocusTarget;

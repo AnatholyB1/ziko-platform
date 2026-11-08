@@ -17,6 +17,7 @@ import { clientForUser } from './db.js';
 import { fetchFocusScopedActivity } from './context.js';
 import type { AITool } from '../tools/registry.js';
 import type { FocusType } from './types.js';
+import { grantRewardForTier, MAX_TIER, MIN_TIER, type GrantRewardResult } from './rewards.js';
 
 const MAPPED_FOCUS_TYPES = new Set<FocusType>([
   'training_volume',
@@ -216,6 +217,38 @@ export async function create_program(
   return result;
 }
 
+
+// ── create_reward (Phase 45, REWARD-03, D-05/D-06) ──────────────────────
+// Grants the tier reward after a tier-up. Deliberately NOT reachable from
+// chat (see registry.ts): the athlete never asks for a reward, the weekly
+// engine grants it. No credit gate - autonomous spend is logged with
+// SOURCES.rewardSelection inside rewards.ts. Every input that matters
+// (athlete, tier reached, eligible pool) is re-read from the database; the
+// params only name which tier and which weekly cycle to anchor idempotency to.
+/** YYYY-MM-DD that is also a real calendar date (rejects 2026-13-45, 2026-02-30). */
+function isRealIsoDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+export async function create_reward(
+  params: Record<string, unknown>,
+  userId: string,
+  userToken?: string,
+): Promise<GrantRewardResult> {
+  const tier = Number(params.tier);
+  if (!Number.isInteger(tier) || tier <= MIN_TIER || tier > MAX_TIER) {
+    return { granted: false, reason: 'invalid_tier' };
+  }
+  const weekOf = params.week_of;
+  if (typeof weekOf !== 'string' || !isRealIsoDate(weekOf)) {
+    return { granted: false, reason: 'invalid_week_of' };
+  }
+  const db = clientForUser(userToken);
+  return grantRewardForTier(db, userId, tier, weekOf, normaliseSource(params.source, 'weekly_review_cron'));
+}
+
 // ── Tool schemas ─────────────────────────────────────────────────────────
 // Uses the registry's `parameters` field shape (not the AI SDK's
 // `inputSchema` — that naming applies to the SDK's own tool() wrapper, not
@@ -263,6 +296,25 @@ export const coachingEngineToolSchemas: AITool[] = [
         rationale: { type: 'string', description: 'Why these targets were set, grounded in real evidence.' },
       },
       required: ['focus_summary', 'focus_type', 'target_metric', 'target_value'],
+    },
+  },
+  {
+    name: 'create_reward',
+    description:
+      'Grant the non-monetary reward (badge, title or theme) for a tier the athlete has just reached. ' +
+      'Chosen for the athlete by Ziko from the unowned rewards of that tier; never revokes anything.',
+    parameters: {
+      type: 'object',
+      properties: {
+        tier: { type: 'integer', description: 'The tier reached (2-4).' },
+        week_of: { type: 'string', description: 'ISO date (YYYY-MM-DD) of the weekly cycle that triggered the grant.' },
+        source: {
+          type: 'string',
+          enum: ['weekly_review_cron', 'app_open_fallback'],
+          description: 'What triggered the grant.',
+        },
+      },
+      required: ['tier', 'week_of'],
     },
   },
 ];

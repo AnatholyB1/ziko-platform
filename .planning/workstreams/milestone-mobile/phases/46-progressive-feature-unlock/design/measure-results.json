@@ -1,0 +1,74 @@
+[
+ {
+  "file": "all-unlocked.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [],
+  "texts": 22,
+  "tapCount": 19,
+  "nonText": [],
+  "ctaFont": null,
+  "forbidden": []
+ },
+ {
+  "file": "level1-locked.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [],
+  "texts": 36,
+  "tapCount": 19,
+  "nonText": [
+   [
+    "locked icon vs tile (>=3)",
+    3.84
+   ],
+   [
+    "lock glyph vs chip (>=3)",
+    4.73
+   ]
+  ],
+  "ctaFont": null,
+  "forbidden": []
+ },
+ {
+  "file": "locked-alert.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [
+   [
+    "OK",
+    3.09,
+    4.5
+   ]
+  ],
+  "texts": 38,
+  "tapCount": 20,
+  "nonText": [
+   [
+    "locked icon vs tile (>=3)",
+    3.84
+   ],
+   [
+    "lock glyph vs chip (>=3)",
+    4.73
+   ]
+  ],
+  "ctaFont": 15,
+  "forbidden": []
+ },
+ {
+  "file": "unlock-toast.html",
+  "overflowX": false,
+  "small": [],
+  "tap": [],
+  "contrast": [],
+  "texts": 3,
+  "tapCount": 0,
+  "nonText": [],
+  "ctaFont": null,
+  "forbidden": []
+ }
+]

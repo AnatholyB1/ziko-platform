@@ -1,7 +1,15 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, usePluginRegistry } from '@ziko/plugin-sdk';
+import {
+  useThemeStore,
+  usePluginRegistry,
+  useTranslation,
+  showAlert,
+  LOCKED_TOKENS,
+  openLockedTapAlert,
+} from '@ziko/plugin-sdk';
+import type { LockedSectionModel } from '@ziko/plugin-sdk';
 
 const PLUGIN_COLORS: Record<string, string> = {
   habits: '#FF5C1A', nutrition: '#FF5C1A', persona: '#FF6584', stats: '#E8A33A',
@@ -15,9 +23,12 @@ interface PluginsDrawerProps {
   onClose: () => void;
   onNavigate: (path: string) => void;
   installedPluginIds?: string[];
+  /** Locked-plugin data (Phase 46). Omit to render the drawer exactly as before. */
+  lockedSection?: LockedSectionModel;
 }
 
-export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds }: PluginsDrawerProps) {
+export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds, lockedSection }: PluginsDrawerProps) {
+  const { t } = useTranslation();
   const manifests = usePluginRegistry((s) => s.manifests);
   const registryPlugins = usePluginRegistry((s) => s.installedPlugins);
   const pluginIds = installedPluginIds ?? registryPlugins;
@@ -110,6 +121,7 @@ export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds
                       numberOfLines={2}
                       style={{
                         fontSize: 10,
+                        lineHeight: 13,
                         fontWeight: '600',
                         color: theme.muted,
                         textAlign: 'center',
@@ -121,6 +133,134 @@ export function PluginsDrawer({ visible, onClose, onNavigate, installedPluginIds
                 );
               })}
             </View>
+            {lockedSection?.showLockedSection ? (
+              <View
+                style={{
+                  marginTop: 24,
+                  paddingTop: 16,
+                  borderTopWidth: 1,
+                  borderTopColor: theme.border,
+                }}
+              >
+                <View
+                  accessibilityRole="header"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                >
+                  <Ionicons name="lock-closed" size={16} color={theme.muted} />
+                  <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '700', color: theme.text }}>
+                    {t('plugins.locked.section')}
+                  </Text>
+                  <Text
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: 14,
+                      lineHeight: 20,
+                      fontWeight: '700',
+                      color: LOCKED_TOKENS.primaryInk,
+                    }}
+                  >
+                    {t('plugins.locked.level', { n: lockedSection.level })}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 14, lineHeight: 20, color: theme.muted, marginTop: 4 }}>
+                  {t('plugins.locked.helper')}
+                </Text>
+                <View
+                  style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingTop: 16 }}
+                >
+                  {lockedSection.tiles.map((tile) => {
+                    const next = tile.pillTone === 'next';
+                    return (
+                      <TouchableOpacity
+                        key={tile.id}
+                        activeOpacity={0.75}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('plugins.locked.a11y', { name: tile.shortName, n: tile.minLevel })}
+                        accessibilityHint={t('plugins.locked.a11yHint')}
+                        onPress={() =>
+                          openLockedTapAlert({ minLevel: tile.minLevel, closeDrawer: onClose, showAlert, translate: t })
+                        }
+                        style={{ width: '20%', minHeight: 44, alignItems: 'center', gap: 6 }}
+                      >
+                        <View
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 16,
+                            backgroundColor: LOCKED_TOKENS.lockedBg,
+                            borderWidth: 1,
+                            borderColor: theme.border,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Ionicons name={tile.icon as any} size={24} color={LOCKED_TOKENS.lockedIcon} />
+                          <View
+                            style={{
+                              position: 'absolute',
+                              right: -5,
+                              top: -5,
+                              width: 22,
+                              height: 22,
+                              borderRadius: 11,
+                              backgroundColor: theme.surface,
+                              borderWidth: 1,
+                              borderColor: theme.border,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="lock-closed" size={12} color={theme.muted} />
+                          </View>
+                        </View>
+                        <Text
+                          numberOfLines={2}
+                          style={{
+                            fontSize: 10,
+                            lineHeight: 13,
+                            fontWeight: '600',
+                            color: theme.muted,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {tile.shortName}
+                        </Text>
+                        <View
+                          style={{
+                            height: 24,
+                            paddingHorizontal: 8,
+                            borderRadius: 12,
+                            justifyContent: 'center',
+                            backgroundColor: next ? LOCKED_TOKENS.primaryLight : LOCKED_TOKENS.lockedBg,
+                            borderWidth: next ? 1 : 0,
+                            borderColor: LOCKED_TOKENS.primaryBorder,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 18,
+                              fontWeight: '700',
+                              color: next ? LOCKED_TOKENS.primaryInk : theme.muted,
+                            }}
+                          >
+                            {t('plugins.locked.badge', { level: tile.minLevel })}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+            {lockedSection?.showAllUnlocked ? (
+              <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="checkmark-circle" size={20} color="#2E9E5B" />
+                <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '700', color: theme.muted }}>
+                  {t('plugins.unlocked.allDone')}
+                </Text>
+              </View>
+            ) : null}
           </ScrollView>
         </View>
       </View>

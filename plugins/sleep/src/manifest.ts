@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const sleepManifest: PluginManifest = {
   id: 'sleep',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 2,
   name: 'Sommeil & Récupération',
   version: '1.0.0',
   description:
