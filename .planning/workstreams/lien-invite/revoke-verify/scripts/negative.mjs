@@ -1,0 +1,34 @@
+import fs from 'node:fs'; import { execFileSync } from 'node:child_process';
+const TEMP=process.env.TEMP, ROOT=`${TEMP}/ziko-uat-rv`, GW='http://127.0.0.1:3220';
+const PSQL='C:/Users/Anatholy/scoop/apps/postgresql/current/bin/psql.exe';
+const sql=(q)=>execFileSync(PSQL,['-h','127.0.0.1','-p','54520','-U','postgres','-X','-q','-t','-A','-c',q],{encoding:'utf8'}).trim();
+const keys=Object.fromEntries(fs.readFileSync(`${ROOT}/keys.env`,'utf8').trim().split(/\r?\n/).map(l=>l.split('=')));
+const su=await (await fetch(`${GW}/auth/v1/signup`,{method:'POST',headers:{apikey:keys.UAT_ANON_KEY,'content-type':'application/json'},body:JSON.stringify({email:`neg-${Date.now()}@example.com`,password:'Passw0rd!uat1'})})).json();
+const uid=su.user.id, tok=su.access_token;
+sql(`insert into public.ziko_user_ai_credits(user_id,balance) values ('${uid}',5) on conflict (user_id) do update set balance=5`);
+const call=async(role,method,path,body,prefer='return=representation')=>{const r=await fetch(`${GW}/rest/v1/${path}`,{method,headers:{apikey:keys.UAT_ANON_KEY,Authorization:`Bearer ${role==='anon'?keys.UAT_ANON_KEY:tok}`,'content-type':'application/json',Prefer:prefer},body:body?JSON.stringify(body):undefined});const t=await r.text();return `${r.status} ${t.slice(0,90).replace(/\s+/g,' ')}`;};
+const out=[];const rec=(name,res)=>{out.push([name,res]);console.log(name.padEnd(62),res);};
+rec('authenticated SELECT own ziko_user_ai_credits (control)',await call('auth','GET',`ziko_user_ai_credits?user_id=eq.${uid}&select=balance`));
+rec('authenticated UPDATE own balance 5->9999 (must be refused)',await call('auth','PATCH',`ziko_user_ai_credits?user_id=eq.${uid}`,{balance:9999}));
+console.log('   balance in DB now:',sql(`select balance from public.ziko_user_ai_credits where user_id='${uid}'`));
+rec('authenticated INSERT ziko_ai_credit_transactions',await call('auth','POST','ziko_ai_credit_transactions',{user_id:uid,amount:100,type:'earn',action:'x'}));
+rec('authenticated DELETE own ziko_user_ai_credits',await call('auth','DELETE',`ziko_user_ai_credits?user_id=eq.${uid}`));
+rec('authenticated INSERT ziko_app_config',await call('auth','POST','ziko_app_config',{key:'rv_k',value:1}));
+rec('authenticated UPDATE ziko_app_config',await call('auth','PATCH','ziko_app_config?key=eq.waitlist_reveal_threshold',{value:1}));
+rec('authenticated DELETE ziko_app_config',await call('auth','DELETE','ziko_app_config?key=eq.waitlist_reveal_threshold'));
+rec('authenticated SELECT ziko_app_config (RLS deny-all, expect 200 [])',await call('auth','GET','ziko_app_config?select=key'));
+rec('authenticated INSERT ziko_waitlist_signups',await call('auth','POST','ziko_waitlist_signups',{email:'a@b.co',email_normalized:'a@b.co',audience:'athlete'}));
+rec('authenticated UPDATE ziko_waitlist_signups',await call('auth','PATCH','ziko_waitlist_signups?email=like.*',{audience:'coach'}));
+rec('authenticated DELETE ziko_waitlist_signups',await call('auth','DELETE','ziko_waitlist_signups?email=like.*'));
+rec('anon INSERT ziko_waitlist_signups',await call('anon','POST','ziko_waitlist_signups',{email:'a@b.co',email_normalized:'a@b.co',audience:'athlete'}));
+rec('anon UPDATE ziko_waitlist_signups',await call('anon','PATCH','ziko_waitlist_signups?email=like.*',{audience:'coach'}));
+rec('anon DELETE ziko_waitlist_signups',await call('anon','DELETE','ziko_waitlist_signups?email=like.*'));
+rec('anon UPDATE ziko_app_config',await call('anon','PATCH','ziko_app_config?key=like.*',{value:1}));
+// anon bulk DELETE sweep on every ziko table
+const tabs=sql(`select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','p') and c.relname like 'ziko\_%' order by 1`).split('\n');
+let denied=0, other=[];
+for(const t of tabs){const col=sql(`select attname from pg_attribute where attrelid='public.${t}'::regclass and attnum>0 and not attisdropped order by attnum limit 1`);
+  const r=await call('anon','DELETE',`${t}?${col}=not.is.null`,undefined,'return=minimal');
+  if(r.startsWith('403')&&/droit refus|permission denied/.test(r)) denied++; else other.push(t+': '+r);}
+console.log(`anon bulk DELETE on ${tabs.length} ziko_* tables: ${denied} permission-denied(403/42501); others:`, other);
+fs.writeFileSync(`${TEMP}/rv/negative.json`,JSON.stringify({out,anonDeleteSweep:{tables:tabs.length,denied,other}},null,1));
