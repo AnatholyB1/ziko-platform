@@ -206,8 +206,8 @@ export type GrantRewardResult =
   | { granted: false; reason: string };
 
 /**
- * Grants the reward for `tier` through ziko_grant_reward (service-role-only
- * RPC). Idempotent: a repeat call for an already-rewarded tier or an already
+ * Grants the reward for `tier` through ziko_grant_reward (RPC executable by
+ * the server-side key only). Idempotent: a repeat call for an already-rewarded tier or an already
  * recorded (user, week, tier) returns granted:false without writing.
  */
 export async function grantRewardForTier(
