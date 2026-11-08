@@ -98,3 +98,10 @@ A faire, dans cet ordre, uniquement sur validation de l utilisateur:
 - [ ] Page de confidentialite en anglais: /en/privacy renvoie 404.
 - [ ] Verifier coach@ziko-app.com cote Resend (domaine racine absent du compte visible).
 (Les lignes plus haut marquees "[ ]" pour ces memes elements sont perimees.)
+
+## Cause racine de l'erreur 10 (DEVELOPER_ERROR) sur l'APK preview, 2026-11-07
+- Le client Android GCP "Ziko Android (EAS keystore)" avait le SHA-1 saisi A LA MAIN avec deux octets inverses (6B:6F au lieu de 6F:6B), recopie depuis la valeur hex minuscule d'Expo (6676d065...ba516f6b50...). Erreur de recopie de l'orchestrateur, corrigee dans GCP par team-lead.
+- SHA-1 de reference (credential EAS b6tOYRtzi4 = signature APK v2 du build 72390ee7): 66:76:D0:65:58:83:BA:51:6F:6B:50:F5:06:0A:AD:2B:F8:F4:39:9E (brut Expo: 6676d0655883ba516f6b50f5060aad2bf8f4399e).
+- Regle: ne jamais saisir/comparer un SHA-1 a la main ni sur des valeurs abregees. Copier/coller, ou comparer octet par octet les 20 octets (brut Expo en minuscules -> paires).
+- Verification client Android Play (7sl8pr0amvkjb383ckt7qa7ii3c2p852): enregistre AC:7B:04:8A:35:30:0B:9E:F6:87:BF:B9:7E:1B:0C:58:E0:13:F6:2C ; recopie du presse-papiers Play Console (App signing key, SHA-1) = identique, octet par octet. Aucun ecart.
+- Note: la liste des clients GCP affiche une icone d'avertissement a cote du client Web (non investigue; peut concerner un secret ou l'ecran de consentement).
