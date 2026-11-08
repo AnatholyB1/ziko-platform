@@ -7,6 +7,7 @@ export * from './theme';
 export * from './i18n';
 export * from './gating';
 export * from './unlockUi';
+export * from './onboarding';
 export { useAlertStore, showAlert } from './alert';
 export type { AlertButton } from './alert';
 export {

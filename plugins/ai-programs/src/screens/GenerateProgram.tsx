@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import {
+  useThemeStore,
+  showAlert,
+  parseOnboardingSettings,
+  onboardingLevelToExperience,
+  onboardingEquipmentToProgram,
+  onboardingGoalToProgram,
+} from '@ziko/plugin-sdk';
 import { useAIProgramsStore } from '../store';
 
 const CREDIT_COSTS = { chat: 4, scan: 3, program: 4 } as const;
@@ -53,6 +60,35 @@ export default function GenerateProgram({ supabase }: { supabase: any }) {
   const [split, setSplit] = useState('');
   const [days, setDays] = useState(4);
   const [equipment, setEquipment] = useState('full_gym');
+  const [experience, setExperience] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
+
+  // Pre-fill from the onboarding answers (settings.onboarding) and the profile goal.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase
+          .from('ziko_user_profiles')
+          .select('goal, settings')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (cancelled || !profile) return;
+        const ob = parseOnboardingSettings(profile.settings);
+        const obGoal = onboardingGoalToProgram(profile.goal);
+        if (obGoal && GOALS.some((g) => g.id === obGoal)) setGoal((prev) => prev || obGoal);
+        if (ob.frequency != null) setDays(Math.min(6, Math.max(2, ob.frequency)));
+        const obEquipment = onboardingEquipmentToProgram(ob.equipment);
+        if (obEquipment) setEquipment(obEquipment);
+        const obExperience = onboardingLevelToExperience(ob.level);
+        if (obExperience) setExperience(obExperience);
+      } catch {
+        // Pre-fill is best effort: the form stays usable with its defaults.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [supabase]);
 
   const handleGenerate = async () => {
     if (!goal) { showAlert('Erreur', 'Choisis un objectif'); return; }
@@ -72,7 +108,7 @@ export default function GenerateProgram({ supabase }: { supabase: any }) {
           goal,
           days_per_week: days,
           split_type: split,
-          experience_level: 'intermediate',
+          experience_level: experience,
           equipment,
         }),
       });

@@ -7,7 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useNutritionStore, calculateTDEE } from '../store';
 import type { TDEEProfile } from '../store';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import {
+  useThemeStore,
+  showAlert,
+  parseOnboardingSettings,
+  onboardingSexToGender,
+  onboardingFrequencyToActivity,
+} from '@ziko/plugin-sdk';
 
 // Cross-plugin stores (optional)
 let useHydrationStore: any = null;
@@ -129,7 +135,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
         if (!user) return;
         const { data: profile } = await supabase
           .from('ziko_user_profiles')
-          .select('age, weight_kg, height_cm, goal')
+          .select('age, weight_kg, height_cm, goal, settings')
           .eq('id', user.id)
           .single();
         if (profile) {
@@ -138,6 +144,16 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
           if (profile.height_cm) setHeightCm(profile.height_cm);
           if (profile.goal && GOALS.some((g) => g.key === profile.goal)) {
             setGoal(profile.goal as GoalKey);
+          }
+          // Onboarding answers: sex and weekly training frequency. A previously
+          // saved TDEE profile (tdeeProfile) keeps priority over them.
+          const ob = parseOnboardingSettings(profile.settings);
+          if (!tdeeProfile) {
+            const obGender = onboardingSexToGender(ob.sex);
+            if (obGender) setGender(obGender);
+            const obActivity = onboardingFrequencyToActivity(ob.frequency);
+            const idx = obActivity ? ACTIVITY_LEVELS.findIndex((a) => a.key === obActivity) : -1;
+            if (idx >= 0) setActivityIdx(idx);
           }
         }
       } finally {

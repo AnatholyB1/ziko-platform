@@ -222,7 +222,7 @@ export async function fetchCrossLinks(client, candidateIds) {
  * its linkedUserId is NOT — that is D-05's hazard, a test account entangled
  * with a real one. Free of I/O so it is directly assertable.
  * @param {{ users: Array<{id: string, email: string | undefined, created_at: string, last_sign_in_at: string | null}>, crossLinks: Array<{table: string, candidateColumn: string, candidateId: string, linkedColumn: string, linkedUserId: string}> }} input
- * @returns {{ candidates: Array<object>, flagged: Array<object>, toDelete: Array<object> }}
+ * @returns {{ candidates: Array<{id: string, email: string | undefined, created_at: string, last_sign_in_at: string | null}>, flagged: Array<Record<string, any>>, toDelete: Array<{id: string, email: string | undefined, created_at: string, last_sign_in_at: string | null}> }}
  */
 export function classifyAccounts({ users, crossLinks }) {
   const candidates = users.filter((u) => isTestAccountEmail(u.email));
@@ -260,7 +260,7 @@ export function classifyAccounts({ users, crossLinks }) {
  * binding to any client. This injection seam is what lets the whole pipeline
  * be proven without a service-role key.
  * @param {{ listUsers: () => Promise<Array<object>>, fetchCrossLinks: (candidateIds: string[]) => Promise<Array<object>>, now?: () => Date }} deps
- * @returns {Promise<object>} DryRunReport
+ * @returns {Promise<Record<string, any>>} DryRunReport
  */
 export async function runDryRun({ listUsers, fetchCrossLinks, now = () => new Date() }) {
   const users = await listUsers();
