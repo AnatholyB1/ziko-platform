@@ -536,7 +536,8 @@ export default function ProfileScreen() {
 
   // ── TanStack Query: profile data (extended to include streak + prs) ─
   const { data, isLoading } = useQuery({
-    queryKey: ['profile', userId],
+    // Clé distincte de useProfile() (['profile', userId]) : forme de données différente
+    queryKey: ['profile-screen', userId],
     queryFn: async () => {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
@@ -998,7 +999,7 @@ export default function ProfileScreen() {
 
             <View style={{ flex: 1, alignItems: 'center' }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
-                {fmtN(data?.stats.weeks ?? 0)}
+                {fmtN(data?.stats?.weeks ?? 0)}
               </Text>
               <Text
                 style={{
@@ -1063,7 +1064,7 @@ export default function ProfileScreen() {
 
         {/* Tab content */}
         <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}>
-          {(data?.stats.sessions ?? 0) === 0 ? (
+          {(data?.stats?.sessions ?? 0) === 0 ? (
             /* Empty state */
             <View
               style={{

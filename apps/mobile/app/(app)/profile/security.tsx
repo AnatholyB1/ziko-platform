@@ -120,6 +120,7 @@ export default function SecurityScreen() {
       debounceRef.current = setTimeout(async () => {
         await supabase.from('ziko_user_profiles').upsert({ id: userId, is_public: value });
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+        queryClient.invalidateQueries({ queryKey: ['profile-screen', userId] });
       }, 500);
     } else {
       // show_stats / show_activities: remain in settings JSONB (no dedicated columns)
@@ -135,6 +136,7 @@ export default function SecurityScreen() {
           settings: { ...current, privacy: { ...current.privacy, [key]: value } },
         }).eq('id', userId);
         queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+        queryClient.invalidateQueries({ queryKey: ['profile-screen', userId] });
       }, 500);
     }
   };
