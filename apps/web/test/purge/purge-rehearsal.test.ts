@@ -115,17 +115,17 @@ describe('purge rehearsal — RUNBOOK.md steps 2 through 7 on one fixture', () =
     const pitr = await checkPitrStatus({
       supabaseUrl: 'https://fixtureproj.supabase.co',
       accessToken: 'fixture-access-token',
-      fetchImpl: async () => ({
+      fetchImpl: (async () => ({
         ok: true,
         json: async () => ({ pitr_enabled: true, walg_enabled: true }),
-      }),
+      })) as unknown as typeof fetch,
       now: () => EXPORT_NOW,
     });
     expect(pitr.status).toBe('enabled');
 
     const rows = await collectExportRows({
       report,
-      fetchProfiles: async (ids: string[]) => fixture.ziko_user_profiles.filter((p) => ids.includes(p.id as never)),
+      fetchProfiles: async (ids: string[]) => fixture.ziko_user_profiles.filter((p) => ids.includes((p as { id: string }).id)),
       fetchWaitlistRows: async (emails: string[]) =>
         fixture.ziko_waitlist_signups.filter((w) => emails.includes((w as { email?: string }).email?.toLowerCase() as never)),
     });
@@ -218,7 +218,7 @@ describe('purge rehearsal — RUNBOOK.md steps 2 through 7 on one fixture', () =
     expect(residual.ok).toBe(true);
 
     // ── Step 7: account conservation passes at the floor ────────────────────
-    const conservation = checkAccountConservation({ users: fixture.accounts, manifest: finalManifest, report });
+    const conservation = checkAccountConservation({ users: fixture.accounts, manifest: finalManifest, report: report as { totals: { users_scanned: number } } });
     expect(conservation.expected_floor).toBe(4); // 8 scanned - 4 deleted
     expect(conservation.actual).toBe(4);
     expect(conservation.ok).toBe(true);
@@ -229,7 +229,7 @@ describe('purge rehearsal — RUNBOOK.md steps 2 through 7 on one fixture', () =
     const overDeletionConservation = checkAccountConservation({
       users: fixture.accounts,
       manifest: finalManifest,
-      report,
+      report: report as { totals: { users_scanned: number } },
     });
     expect(overDeletionConservation.ok).toBe(false);
     expect(overDeletionConservation.shortfall).toBe(1);

@@ -150,7 +150,7 @@ export async function collectExportRows({ report, fetchProfiles, fetchWaitlistRo
  * 02-03 recomputes this hash the same way and refuses to act on a mismatch,
  * so a manifest edited between review and execution cannot pass.
  * @param {{ report: object, reportPath: string, csvPath: string, rows: Array<object>, pitr: {status: string, checked_at: string, detail: string}, now?: () => Date }} args
- * @returns {object}
+ * @returns {Record<string, any>}
  */
 export function buildManifest({ report, reportPath, csvPath, rows, pitr, now = () => new Date() }) {
   const candidateIds = (report.to_delete ?? []).map((c) => c.id);

@@ -140,7 +140,7 @@ export function assertManifestIntegrity({ manifest, now, maxAgeMinutes, acceptUn
  * manifest order, awaits one call per id, records every outcome, and
  * continues past a failure rather than aborting (T-02-20).
  * @param {{ manifest: object, deleteAccount: (id: string) => Promise<{ error: { message?: string } | null }>, confirm: boolean, now?: () => Date }} args
- * @returns {Promise<object>}
+ * @returns {Promise<Record<string, any>>}
  */
 export async function runDelete({ manifest, deleteAccount, confirm, now = () => new Date() }) {
   const candidateIds = manifest.candidate_ids;

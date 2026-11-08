@@ -64,7 +64,9 @@ describe('waitlist retention config migration (LEGAL-08, D-05, D-16)', () => {
   });
 
   it('never edits 20260812_waitlist_founder_offer.sql — byte length and sha256 unchanged (T-03-13)', () => {
-    const buf = readFileSync(PRIOR_MIGRATION_PATH);
+    // Normalise CRLF -> LF: the recorded length/hash are of the LF form, and a
+    // Windows checkout (core.autocrlf=true) rewrites line endings on disk.
+    const buf = Buffer.from(readFileSync(PRIOR_MIGRATION_PATH, 'utf8').replace(/\r\n/g, '\n'), 'utf8');
     expect(buf.length).toBe(PRIOR_MIGRATION_BYTE_LENGTH);
 
     const sha256 = createHash('sha256').update(buf).digest('hex');
