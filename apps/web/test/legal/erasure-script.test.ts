@@ -52,7 +52,7 @@ describe('parseErasureArgs', () => {
 });
 
 describe('runErasure', () => {
-  it("calls client.rpc exactly once with 'anonymize_waitlist_signup' and the address passed through verbatim, unnormalized", async () => {
+  it("calls client.rpc exactly once with 'ziko_anonymize_waitlist_signup' and the address passed through verbatim, unnormalized", async () => {
     const calls: Array<{ fn: string; args: unknown }> = [];
     const fakeClient = {
       rpc: async (fn: string, args: unknown) => {
@@ -64,7 +64,7 @@ describe('runErasure', () => {
     await runErasure(fakeClient, 'a@b.test');
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].fn).toBe('anonymize_waitlist_signup');
+    expect(calls[0].fn).toBe('ziko_anonymize_waitlist_signup');
     expect(calls[0].args).toEqual({ p_email: 'a@b.test' });
   });
 
@@ -131,7 +131,7 @@ describe('RUNBOOK.md content (T-03-11)', () => {
     const runbook = readFileSync(resolve(REPO_ROOT, 'scripts/waitlist-erasure/RUNBOOK.md'), 'utf8');
     expect(runbook).toContain('support@ziko-app.com');
     expect(runbook).toContain('--confirm');
-    expect(runbook).toContain('anonymize_waitlist_signup');
+    expect(runbook).toContain('ziko_anonymize_waitlist_signup');
     expect(runbook.toLowerCase()).toMatch(/confirm the requesting address|verify the requester|owns the address/);
   });
 });

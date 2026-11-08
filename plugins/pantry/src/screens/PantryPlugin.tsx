@@ -53,14 +53,14 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
       if (!userId) return [];
       const { data, error } = await supabase
         .from('ziko_pantry_items')
-        .select('id, name, storage_location, category')
+        .select('id, name, storage_location, food_category')
         .eq('user_id', userId);
       if (error) return [];
       return (data ?? []) as Array<{
         id: string;
         name: string;
         storage_location?: string;
-        category?: string;
+        food_category?: string;
       }>;
     },
     enabled: !!userId,
@@ -73,7 +73,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('shopping_list')
+        .from('ziko_shopping_list_items')
         .select('*')
         .eq('user_id', userId);
       if (error) return [];
@@ -86,7 +86,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
 
   const getCategoryCount = (catId: string) => {
     return pantryItems.filter((item) => {
-      const loc = item.storage_location ?? item.category ?? '';
+      const loc = item.storage_location ?? item.food_category ?? '';
       return loc === catId;
     }).length;
   };

@@ -29,7 +29,7 @@ all five.
 - [x] **Phase 3: Legal — CGV & CGU** - Bilingual CGV + revised CGU describing the capped premium offer, counsel-reviewed, live ahead of the code change it describes (completed 2026-08-15)
 - [x] **Phase 4: Credit-Gate Alignment** - Premium AI access becomes generous-but-finite, gated on a production audit and a feature flag (completed 2026-08-16)
 - [x] **Phase 5: Waitlist Page & Entry Points** - The public `/fondateurs` page, its counter, and every CTA that routes visitors to it (completed 2026-08-18)
-- [ ] **Phase 6: Founder Offer Go-Live** - Safe production activation once data, purge, legal, and credit-gate are all confirmed ready
+- [x] **Phase 6: Founder Offer Go-Live** - Safe production activation once data, purge, legal, and credit-gate are all confirmed ready (completed 2026-11-07)
 
 ## Phase Details
 

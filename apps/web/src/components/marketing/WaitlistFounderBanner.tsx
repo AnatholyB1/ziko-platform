@@ -14,7 +14,7 @@ export async function WaitlistFounderBanner({ locale }: Props) {
       heroHeadline={t('hero.headline')}
       heroSubtitle={t('hero.subtitle')}
       counterStaticOffer={t('counter.preThreshold')}
-      counterRemainingTemplate={t('counter.remaining')}
+      counterRemainingTemplate={t.raw('counter.remaining') as string}
       counterCompleteHeading={t('counter.completeHeading')}
       counterCompleteBody={t('counter.completeBody')}
       pickerHeading={t('picker.heading')}
@@ -24,7 +24,7 @@ export async function WaitlistFounderBanner({ locale }: Props) {
       formEmailPlaceholder={t('form.emailPlaceholder')}
       formSubmit={t('form.submit')}
       formSubmitPending={t('form.submitPending')}
-      successFounder={t('success.founder')}
+      successFounder={t.raw('success.founder') as string}
       successGeneric={t('success.generic')}
       errorGeneric={t('error.generic')}
       errorInvalidEmail={t('error.invalidEmail')}

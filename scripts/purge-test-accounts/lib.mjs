@@ -96,6 +96,8 @@ export async function listAllUsers(client) {
 // ── Cross-link detection (D-05) ─────────────────────────────────────────
 
 /**
+ * Table names are the deployed `ziko_`-prefixed names (shared portfolio project);
+ * the migration files cited below are the historical, unprefixed sources.
  * Every cross-user table this purge must check, declared once so the query
  * loop below is the same shape for all of them — every table in
  * supabase/migrations/ with two or more columns `REFERENCES auth.users(id)`.
@@ -114,24 +116,24 @@ export async function listAllUsers(client) {
  * treat any new cross-user table as a required addition here.
  */
 const CROSS_LINK_SOURCES = [
-  { table: 'coach_client_links', columnA: 'coach_id', columnB: 'client_id' },
-  { table: 'coach_vocal_feedbacks', columnA: 'coach_id', columnB: 'athlete_id' },
-  { table: 'workout_programs', columnA: 'created_by_coach_id', columnB: 'assigned_to_user_id' },
-  { table: 'coach_invitations', columnA: 'coach_id', columnB: 'used_by' },
-  { table: 'friendships', columnA: 'requester_id', columnB: 'addressee_id' },
-  { table: 'app_invites', columnA: 'inviter_id', columnB: 'used_by' },
-  { table: 'screen_reactions', columnA: 'sender_id', columnB: 'receiver_id' },
-  { table: 'shared_programs', columnA: 'sender_id', columnB: 'receiver_id' },
-  { table: 'xp_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
-  { table: 'coin_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
-  { table: 'habit_encouragements', columnA: 'sender_id', columnB: 'receiver_id' },
-  { table: 'coach_client_tags', columnA: 'coach_id', columnB: 'client_id' },
-  { table: 'coach_client_notes', columnA: 'coach_id', columnB: 'client_id' },
-  { table: 'coach_alerts', columnA: 'coach_id', columnB: 'client_id' },
-  { table: 'ai_tool_audit', columnA: 'coach_id', columnB: 'target_client_id' },
-  { table: 'dashboard_configs', columnA: 'coach_id', columnB: 'client_id' },
-  { table: 'coach_client_videos', columnA: 'athlete_id', columnB: 'coach_id' },
-  { table: 'coach_metric_thresholds', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_coach_client_links', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_coach_vocal_feedbacks', columnA: 'coach_id', columnB: 'athlete_id' },
+  { table: 'ziko_workout_programs', columnA: 'created_by_coach_id', columnB: 'assigned_to_user_id' },
+  { table: 'ziko_coach_invitations', columnA: 'coach_id', columnB: 'used_by' },
+  { table: 'ziko_friendships', columnA: 'requester_id', columnB: 'addressee_id' },
+  { table: 'ziko_app_invites', columnA: 'inviter_id', columnB: 'used_by' },
+  { table: 'ziko_screen_reactions', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'ziko_shared_programs', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'ziko_xp_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'ziko_coin_gifts', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'ziko_habit_encouragements', columnA: 'sender_id', columnB: 'receiver_id' },
+  { table: 'ziko_coach_client_tags', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_coach_client_notes', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_coach_alerts', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_ai_tool_audit', columnA: 'coach_id', columnB: 'target_client_id' },
+  { table: 'ziko_dashboard_configs', columnA: 'coach_id', columnB: 'client_id' },
+  { table: 'ziko_coach_client_videos', columnA: 'athlete_id', columnB: 'coach_id' },
+  { table: 'ziko_coach_metric_thresholds', columnA: 'coach_id', columnB: 'client_id' },
 ];
 
 // PostgREST's URL length limit is what this guards against — a large

@@ -120,7 +120,7 @@ describe('collectExportRows', () => {
     expect(rows[0]).toMatchObject({ tier: 'free', subscription_tier: 'free', profile_created_at: 'p1' });
   });
 
-  it('lists a matching waitlist_signups email in waitlist_emails', async () => {
+  it('lists a matching ziko_waitlist_signups email in waitlist_emails', async () => {
     const toDelete = [{ id: 'u1', email: 'qa1@ziko-app.com', created_at: 't1' }];
     const report = makeReport(toDelete);
     const rows = await collectExportRows({

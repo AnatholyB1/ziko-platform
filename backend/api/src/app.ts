@@ -29,6 +29,7 @@ import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
 import { coachingEngineRouter } from './coaching-engine/routes.js';
 import { formsRouter, formsCronRouter } from './routes/forms.js';
+import { createAuthEmailRouter } from './routes/auth-email.js';
 const app = new Hono();
 
 // Global middleware
@@ -93,6 +94,7 @@ app.route('/coach/videos', videosRouter);
 app.route('/coaching-engine', coachingEngineRouter);
 app.route('/forms', formsCronRouter);
 app.route('/forms', formsRouter);
+app.route('/auth', createAuthEmailRouter());
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

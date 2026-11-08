@@ -32,7 +32,7 @@ afterEach(() => {
 // ── Fixture project ──────────────────────────────────────────────────────
 // 5 test-domain accounts (one of them a coach cross-linked to the real
 // athlete below), 2 lookalike-domain accounts, 1 real consumer address.
-// coach_vocal_feedbacks, workout_programs and user_profiles carry no row
+// coach_vocal_feedbacks, workout_programs and ziko_user_profiles carry no row
 // referencing any account here — that absence is what a clean, zero-orphan
 // post-purge scan actually proves.
 function makeFixture() {
@@ -49,11 +49,11 @@ function makeFixture() {
     ],
     // D-05's observable end-to-end case: a test-domain coach linked to the
     // real athlete above.
-    coach_client_links: [{ coach_id: 'test-coach-1', client_id: 'real-athlete' }],
-    coach_vocal_feedbacks: [],
-    workout_programs: [],
-    user_profiles: [],
-    waitlist_signups: [],
+    ziko_coach_client_links: [{ coach_id: 'test-coach-1', client_id: 'real-athlete' }],
+    ziko_coach_vocal_feedbacks: [],
+    ziko_workout_programs: [],
+    ziko_user_profiles: [],
+    ziko_waitlist_signups: [],
   };
 }
 
@@ -125,9 +125,9 @@ describe('purge rehearsal — RUNBOOK.md steps 2 through 7 on one fixture', () =
 
     const rows = await collectExportRows({
       report,
-      fetchProfiles: async (ids: string[]) => fixture.user_profiles.filter((p) => ids.includes(p.id as never)),
+      fetchProfiles: async (ids: string[]) => fixture.ziko_user_profiles.filter((p) => ids.includes(p.id as never)),
       fetchWaitlistRows: async (emails: string[]) =>
-        fixture.waitlist_signups.filter((w) => emails.includes((w as { email?: string }).email?.toLowerCase() as never)),
+        fixture.ziko_waitlist_signups.filter((w) => emails.includes((w as { email?: string }).email?.toLowerCase() as never)),
     });
     expect(rows.map((r: { user_id: string }) => r.user_id).sort()).toEqual(
       ['test-user-2', 'test-user-3', 'test-user-4', 'test-user-5'].sort()

@@ -9,7 +9,7 @@ export default function PublicProfileScreen() {
   const theme = useThemeStore((s) => s.theme);
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [following, setFollowing] = useState(false);
-  const [profile, setProfile] = useState<{ name: string; goal: string; totalWorkouts: number } | null>(null);
+  const [profile, setProfile] = useState<{ name: string; goal: string; totalWorkouts: number | null } | null>(null);
 
   // Extracted fetch logic so it can be called from both useEffect and useFocusEffect.
   const fetchProfile = useCallback((id: string) => {
@@ -20,12 +20,19 @@ export default function PublicProfileScreen() {
 
     supabase
       .from('ziko_user_profiles')
-      .select('name, goal, total_workouts')
+      .select('name, goal')
       .eq('id', id)
       .single()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (cancelled) return;
-        if (data) setProfile({ name: data.name, goal: data.goal, totalWorkouts: (data as any).total_workouts ?? 0 });
+        if (!data) return;
+        // Pas de colonne total_workouts : compte des seances (null si illisible via RLS)
+        const { count, error } = await supabase
+          .from('ziko_workout_sessions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', id);
+        if (cancelled) return;
+        setProfile({ name: data.name, goal: data.goal, totalWorkouts: error ? null : (count ?? 0) });
       });
 
     return () => {
@@ -116,7 +123,7 @@ export default function PublicProfileScreen() {
 
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
             {[
-              { v: profile?.totalWorkouts ?? 0, l: 'Séances' },
+              { v: profile?.totalWorkouts ?? '—', l: 'Séances' },
               { v: '—', l: 'Défis' },
               { v: '—', l: 'Abonnés' },
             ].map((s, i) => (

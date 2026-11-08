@@ -9,9 +9,17 @@ import { cleanupTestUsers, createTestUser, getAdminClient, getAnonClient, type T
 // run there. See waitlist-config-rpc.spec.ts (backend/api) for the same pattern.
 const RUN_DB = Boolean(process.env.SUPABASE_TEST_URL) && process.env.SUPABASE_TEST_URL === process.env.SUPABASE_URL;
 
+// Since 20261107170000_ziko_revoke_client_dml anon/authenticated no longer hold UPDATE/DELETE on the
+// waitlist table, so PostgREST answers 42501 permission denied. A silent zero-row RLS no-op (the
+// pre-revoke behaviour) is still an acceptable outcome: the invariant is that no row is written.
+function expectNoRowsWritten(error: { code?: string } | null, data: unknown[] | null) {
+  if (error) expect(error.code).toBe('42501');
+  else expect(data).toEqual([]);
+}
+
 const PREFIX = `dedupe-${randomUUID().slice(0, 8)}-`;
 
-describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_founder_offer.sql)', () => {
+describe.skipIf(!RUN_DB)('ziko_waitlist_signups + waitlist RPCs (20260812_waitlist_founder_offer.sql)', () => {
   let admin: ReturnType<typeof getAdminClient>;
   let anon: ReturnType<typeof getAnonClient>;
   let rlsUser: TestUser;
@@ -27,14 +35,14 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
     const { error: tableError } = await admin.from('ziko_waitlist_signups').select('id').limit(1);
     if (tableError) {
       throw new Error(
-        `waitlist_signups is not queryable (${tableError.message}) — ` +
+        `ziko_waitlist_signups is not queryable (${tableError.message}) — ` +
         `supabase/migrations/20260812_waitlist_founder_offer.sql has not been applied to this project.`
       );
     }
     const { error: fnError } = await admin.rpc('ziko_normalize_waitlist_email', { p_email: 'preflight@example.com' });
     if (fnError) {
       throw new Error(
-        `normalize_waitlist_email is not callable (${fnError.message}) — ` +
+        `ziko_normalize_waitlist_email is not callable (${fnError.message}) — ` +
         `supabase/migrations/20260812_waitlist_founder_offer.sql has not been applied to this project.`
       );
     }
@@ -66,21 +74,19 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       expect(error).not.toBeNull();
     });
 
-    it('UPDATE matches and affects zero rows (RLS filters the target set silently, not an error)', async () => {
+    it('UPDATE changes no rows (table privilege revoked: permission denied; before the revoke migration it was a silent RLS no-op)', async () => {
       // Confirmed live via direct SQL: with RLS enabled and zero policies, UPDATE's
       // implicit USING clause filters the target set to nothing before WITH CHECK is
       // ever evaluated, so this is a silent no-op — unlike INSERT, which has no
       // existing rows to filter against and therefore throws. .select() surfaces the
       // filtered (empty) result set.
       const { data, error } = await anon.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
 
-    it('DELETE matches and affects zero rows (same silent RLS filter as UPDATE)', async () => {
+    it('DELETE changes no rows (table privilege revoked: permission denied)', async () => {
       const { data, error } = await anon.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
   });
 
@@ -98,46 +104,44 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
       expect(error).not.toBeNull();
     });
 
-    it('UPDATE matches and affects zero rows (same silent RLS filter as anon)', async () => {
+    it('UPDATE changes no rows (permission denied, same as anon)', async () => {
       const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').update({ audience: 'coach' }).eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
 
-    it('DELETE matches and affects zero rows (same silent RLS filter as anon)', async () => {
+    it('DELETE changes no rows (permission denied, same as anon)', async () => {
       const { data, error } = await rlsUser.client.from('ziko_waitlist_signups').delete().eq('audience', 'athlete').select();
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expectNoRowsWritten(error, data);
     });
   });
 
   describe('RPC privilege — all five functions reject the anon key (DATA-06, T-01-18)', () => {
-    it('claim_waitlist_signup errors for anon', async () => {
+    it('ziko_claim_waitlist_signup errors for anon', async () => {
       const { error } = await anon.rpc('ziko_claim_waitlist_signup', { p_email: 'z@example.com', p_audience: 'athlete' });
       expect(error).not.toBeNull();
     });
 
-    it('normalize_waitlist_email errors for anon', async () => {
+    it('ziko_normalize_waitlist_email errors for anon', async () => {
       const { error } = await anon.rpc('ziko_normalize_waitlist_email', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
-    it('get_waitlist_founder_status errors for anon', async () => {
+    it('ziko_get_waitlist_founder_status errors for anon', async () => {
       const { error } = await anon.rpc('ziko_get_waitlist_founder_status');
       expect(error).not.toBeNull();
     });
 
-    it('anonymize_waitlist_signup errors for anon', async () => {
+    it('ziko_anonymize_waitlist_signup errors for anon', async () => {
       const { error } = await anon.rpc('ziko_anonymize_waitlist_signup', { p_email: 'z@example.com' });
       expect(error).not.toBeNull();
     });
 
-    it('reset_waitlist_founder_sequence errors for anon', async () => {
+    it('ziko_reset_waitlist_founder_sequence errors for anon', async () => {
       const { error } = await anon.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 1 });
       expect(error).not.toBeNull();
     });
 
-    it('the service-role client CAN execute claim_waitlist_signup and read the row back (denials above are privilege, not breakage)', async () => {
+    it('the service-role client CAN execute ziko_claim_waitlist_signup and read the row back (denials above are privilege, not breakage)', async () => {
       const email = `${PREFIX}preflight-${randomUUID()}@example.com`;
       createdEmails.push(email);
       const { data, error } = await admin.rpc('ziko_claim_waitlist_signup', { p_email: email, p_audience: 'athlete' });
@@ -150,7 +154,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
     });
   });
 
-  describe('claim_waitlist_signup — normalized dedupe (DATA-04, D-10, T-01-19, T-01-20)', () => {
+  describe('ziko_claim_waitlist_signup — normalized dedupe (DATA-04, D-10, T-01-19, T-01-20)', () => {
     it('Gmail case + sub-addressing + dots collapse to one row and do not burn a second founder rank', async () => {
       await admin.rpc('ziko_reset_waitlist_founder_sequence', { p_next_value: 900500 });
       const suffix = randomUUID().split('-').join('');
@@ -219,7 +223,7 @@ describe.skipIf(!RUN_DB)('waitlist_signups + waitlist RPCs (20260812_waitlist_fo
   });
 
   describe('normalization invariant + field completeness (D-12, DATA-01)', () => {
-    it('every non-anonymized row created by this spec has email_normalized === normalize_waitlist_email(email)', async () => {
+    it('every non-anonymized row created by this spec has email_normalized === ziko_normalize_waitlist_email(email)', async () => {
       const { data: rows } = await admin
         .from('ziko_waitlist_signups')
         .select('email, email_normalized')

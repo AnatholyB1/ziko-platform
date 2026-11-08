@@ -14,8 +14,8 @@ actual sign-in UX built on top of it.
 
 ## Phases
 
-- [ ] **Phase 1: OAuth Infrastructure** - Native dependencies, iOS/Android build config, and Supabase provider setup that the sign-in UX depends on
-- [ ] **Phase 2: Google & Apple Sign-In UX** - Wire the welcome screen buttons to real native flows, with correct routing, session handling, and automatic account linking
+- [~] **Phase 1: OAuth Infrastructure** (config done on portfolio: Google + Apple providers, consent screen in production; iOS build/profile + device validation pending) - Native dependencies, iOS/Android build config, and Supabase provider setup that the sign-in UX depends on
+- [~] **Phase 2: Google & Apple Sign-In UX** (code merged in main via PR #49, mock-tested; device validation pending) - Wire the welcome screen buttons to real native flows, with correct routing, session handling, and automatic account linking
 
 ## Phase Details
 
@@ -39,7 +39,7 @@ Plans:
 2. Android build has a registered OAuth client (prod/preview release-keystore SHA-1) wired to `google-services.json`
    *(revised during planning: the local dev/debug keystore SHA-1 is out of scope per CONTEXT.md D-02)*
 3. Supabase Auth dashboard has Google and Apple providers enabled with correct client IDs/secrets
-4. Supabase Auth automatic linking (by verified email) is confirmed active for the `ziko` project
+4. Supabase Auth automatic linking (by verified email) is confirmed active for the `portfolio` project (ziko project deleted 2026-10-06)
    *(revised during planning: RESEARCH.md Finding 1 / Pitfall 7 established there is no toggle to enable —
    automatic linking is default GoTrue behavior. Phase 1 enables the providers, keeps "Allow manual
    linking" OFF, and carries the behavioral linking test into Phase 2, which is the first phase where a

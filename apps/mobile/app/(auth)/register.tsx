@@ -7,7 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '@ziko/plugin-sdk';
-import { supabase } from '../../src/lib/supabase';
+import { signUpWithEmail } from '../../src/lib/emailSignup';
+import { EmailCodeForm } from '../../src/components/EmailCodeForm';
+import { useAuthStore } from '../../src/stores/authStore';
+import SocialAuthButtons from '../../src/components/SocialAuthButtons';
 
 function getStrength(pw: string): number {
   let s = 0;
@@ -26,6 +29,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pending, setPending] = useState<{ email: string; cooldown: number } | null>(null);
 
   const strength = getStrength(password);
   const valid = name.length > 1 && email.length > 3 && password.length >= 6;
@@ -34,18 +38,25 @@ export default function RegisterScreen() {
     if (!valid) return;
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { app: 'ziko', full_name: name } },
-      });
-      if (error) throw error;
-      router.replace('/(auth)/onboarding/step-1');
+      const r = await signUpWithEmail(name, email, password);
+      if (r.status === 'error') {
+        showAlert('Inscription impossible', r.message);
+      } else if (r.status === 'verify-email') {
+        setPending({ email: r.email, cooldown: r.cooldown });
+      } else {
+        router.replace('/(auth)/onboarding/step-1');
+      }
     } catch (err: any) {
-      showAlert('Inscription impossible', err.message ?? 'Une erreur est survenue');
+      showAlert('Inscription impossible', err?.message ?? 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const goOnboarding = () => {
+    // The profile must be in the store before leaving, so the email banner reflects the new state.
+    useAuthStore.getState().refreshProfile().catch(() => {});
+    router.replace('/(auth)/onboarding/step-1');
   };
 
   const fieldStyle = {
@@ -54,6 +65,21 @@ export default function RegisterScreen() {
     paddingHorizontal: 14, paddingVertical: 14,
     color: '#1C1A17', fontSize: 14,
   } as const;
+
+  if (pending) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <View style={{ flex: 1, padding: 24, justifyContent: 'center', paddingBottom: 100 }}>
+          <EmailCodeForm
+            email={pending.email}
+            initialCooldown={pending.cooldown}
+            onVerified={goOnboarding}
+            onSkip={goOnboarding}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
@@ -85,6 +111,11 @@ export default function RegisterScreen() {
             <Text style={{ fontSize: 13.5, color: '#6B6963', marginTop: 8, lineHeight: 19.5 }}>
               2 minutes pour démarrer. Tu pourras compléter ton profil ensuite.
             </Text>
+          </View>
+
+          {/* Social sign-in */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 18 }}>
+            <SocialAuthButtons />
           </View>
 
           {/* Fields */}

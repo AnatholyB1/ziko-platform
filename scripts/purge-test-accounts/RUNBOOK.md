@@ -42,11 +42,11 @@ coach links — the cascade is total and by design, and there is no way to delet
 
 The one real hazard this creates (`research/ARCHITECTURE.md` §6): a test-domain coach or athlete
 account can be linked to a **real** account through any of the 18 tables in `supabase/migrations/`
-that pair two `auth.users` foreign keys: `coach_client_links`, `coach_vocal_feedbacks`,
-`workout_programs`, `coach_invitations`, `friendships`, `app_invites`, `screen_reactions`,
-`shared_programs`, `xp_gifts`, `coin_gifts`, `habit_encouragements`, `coach_client_tags`,
-`coach_client_notes`, `coach_alerts`, `ai_tool_audit`, `dashboard_configs`, `coach_client_videos`,
-and `coach_metric_thresholds` (canonical list: `CROSS_LINK_SOURCES` in
+that pair two `auth.users` foreign keys (deployed on the shared portfolio project with a `ziko_` prefix): `ziko_coach_client_links`, `ziko_coach_vocal_feedbacks`,
+`ziko_workout_programs`, `ziko_coach_invitations`, `ziko_friendships`, `ziko_app_invites`, `ziko_screen_reactions`,
+`ziko_shared_programs`, `ziko_xp_gifts`, `ziko_coin_gifts`, `ziko_habit_encouragements`, `ziko_coach_client_tags`,
+`ziko_coach_client_notes`, `ziko_coach_alerts`, `ziko_ai_tool_audit`, `ziko_dashboard_configs`, `ziko_coach_client_videos`,
+and `ziko_coach_metric_thresholds` (canonical list: `CROSS_LINK_SOURCES` in
 `scripts/purge-test-accounts/lib.mjs`). Deleting that test account would silently sever the real
 counterpart's coaching relationship, social connection, or coach-authored data pointing at them, even
 though the counterpart's own account is completely real. `scripts/purge-test-accounts/dry-run.mjs`

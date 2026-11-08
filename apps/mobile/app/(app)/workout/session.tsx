@@ -346,7 +346,7 @@ export default function WorkoutSessionScreen() {
               .from('ziko_workout_sessions')
               .select('id')
               .eq('user_id', user.id)
-              .eq('completed', true)
+              .not('ended_at', 'is', null)
               .order('ended_at', { ascending: false })
               .limit(1)
               .single();

@@ -19,8 +19,8 @@
 ### Configuration native
 
 - [x] **OAUTH-08**: Le build iOS embarque l'entitlement `com.apple.developer.applesignin`
-- [ ] **OAUTH-09**: Un client OAuth Android est configuré (SHA-1 keystore dev + prod enregistrées) et relié à `google-services.json`
-- [ ] **OAUTH-10**: Les providers Google et Apple sont activés dans le dashboard Supabase Auth du projet `ziko`, avec les client IDs/secrets corrects, et le linking automatique par email vérifié est activé (support d'OAUTH-11)
+- [ ] **OAUTH-09**: Un client OAuth Android est configuré (SHA-1 keystore EAS (preview+prod) + Play App Signing enregistrées) et relié à `google-services.json`
+- [ ] **OAUTH-10**: Les providers Google et Apple sont activés dans le dashboard Supabase Auth du projet `portfolio` (ubxllsvanurkwkohzxau; ex-`ziko` supprimé), avec les client IDs/secrets corrects, et le linking automatique par email vérifié est activé (support d'OAUTH-11)
 
 ## v2 Requirements
 

@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../src/lib/supabase';
+import SocialAuthButtons from '../../src/components/SocialAuthButtons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -69,6 +70,11 @@ export default function LoginScreen() {
             <Text style={{ fontSize: 13.5, color: '#6B6963', marginTop: 8, lineHeight: 19.5 }}>
               Reprends là où tu t'es arrêté.
             </Text>
+          </View>
+
+          {/* Social sign-in */}
+          <View style={{ paddingHorizontal: 24, paddingBottom: 18 }}>
+            <SocialAuthButtons />
           </View>
 
           {/* Fields */}

@@ -14,7 +14,7 @@ export default async function ClientCardioPage({
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
     .from('ziko_cardio_sessions')
-    .select('id, activity_type, duration_min, distance_km, calories, pace, created_at')
+    .select('id, activity_type, duration_min, distance_km, calories:calories_burned, pace:avg_pace_sec_per_km, created_at')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
     .limit(30);

@@ -22,7 +22,7 @@ beforeAll(async () => {
   coach = await createTestUser('inv-coach');
   await adminClient
     .from('ziko_user_profiles')
-    .upsert({ id: coach.id, role: 'coach', display_name: 'TestCoach' });
+    .upsert({ id: coach.id, role: 'coach', name: 'TestCoach' });
   await adminClient
     .from('ziko_coach_profiles')
     .upsert({ user_id: coach.id, display_name: 'TestCoach' });

@@ -43,7 +43,7 @@ export default async function ClientSessionsPage({
   // CRITICAL: .eq('user_id', clientId) — clientId from URL params (NOT user.id = coach!)
   const { data: rows } = await supabase
     .from('ziko_workout_sessions')
-    .select('id, name, created_at, duration_minutes')
+    .select('id, name, created_at, total_duration_active_seconds')
     .eq('user_id', clientId)
     .order('created_at', { ascending: false })
     .limit(30);
@@ -81,7 +81,7 @@ export default async function ClientSessionsPage({
                   </td>
                   <td className="py-3 px-4 text-text">{(row.name as string) ?? '—'}</td>
                   <td className="py-3 px-4 text-muted">
-                    {row.duration_minutes != null ? `${row.duration_minutes} min` : '—'}
+                    {row.total_duration_active_seconds != null ? `${Math.round(Number(row.total_duration_active_seconds) / 60)} min` : '—'}
                   </td>
                 </tr>
               ))}
