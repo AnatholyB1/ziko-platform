@@ -71,10 +71,12 @@ export default function StretchingSession({ supabase }: { supabase: any }) {
     if (isLast) {
       // Save log
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
         const { data: logData } = await supabase.from('ziko_stretching_logs').insert({
-          routine_id: activeRoutine.id,
+          user_id: user.id,
           routine_name: activeRoutine.name,
-          duration_seconds: activeRoutine.exercises.reduce((s, e) => s + e.duration_seconds, 0),
+          duration_sec: activeRoutine.exercises.reduce((s, e) => s + e.duration_seconds, 0),
           date: new Date().toISOString().split('T')[0],
         }).select('id').single();
         // Earn credit and show toast if credited (D-11)

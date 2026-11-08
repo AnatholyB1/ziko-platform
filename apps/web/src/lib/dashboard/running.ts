@@ -69,11 +69,11 @@ export async function fetchRunningData(
 
   const { data, error } = await supabase
     .from('ziko_cardio_sessions')
-    .select('started_at, duration_min, distance_km, activity_type, pace, heart_rate')
+    .select('started_at:date, duration_min, distance_km, activity_type, pace:avg_pace_sec_per_km, heart_rate:avg_heart_rate')
     .eq('user_id', clientId)
     .in('activity_type', ['running', 'cycling', 'cardio'])
-    .gte('started_at', cutoffDate.toISOString())
-    .order('started_at', { ascending: true });
+    .gte('date', cutoffDate.toISOString())
+    .order('date', { ascending: true });
 
   if (error) {
     console.error('[running] fetch error:', error);
@@ -93,7 +93,7 @@ export async function fetchRunningData(
   // Use pace column if set, else compute from duration_min / distance_km
   const paceTrend: RunningPacePoint[] = rows
     .map((r) => {
-      let pace = r.pace ?? null;
+      let pace = r.pace ? r.pace / 60 : null; // colonne en sec/km -> min/km
       if (!pace && r.duration_min && r.distance_km && r.distance_km > 0) {
         pace = r.duration_min / r.distance_km;
       }

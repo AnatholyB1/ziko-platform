@@ -17,6 +17,11 @@
       "import": "./dist/ReloginNotice.mjs",
       "require": "./dist/ReloginNotice.cjs",
       "types": "./dist/ReloginNotice.d.ts"
+    },
+    "./templates/VerifyEmailCode": {
+      "import": "./dist/VerifyEmailCode.mjs",
+      "require": "./dist/VerifyEmailCode.cjs",
+      "types": "./dist/VerifyEmailCode.d.ts"
     }
   },
   "files": ["dist"],

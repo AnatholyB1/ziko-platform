@@ -87,6 +87,11 @@ export interface PluginManifest {
   aiSystemPromptAddition?: string;
   /** When true, this plugin is pre-installed for all users and cannot be uninstalled. */
   mandatory?: boolean;
+  /**
+   * Athlete level (1-5) required to load this plugin (progressive unlock).
+   * Defaults to 1. Ignored for `mandatory` plugins, which are always unlocked.
+   */
+  minLevel?: number;
   routes: PluginRoute[];
 }
 
@@ -110,6 +115,15 @@ export interface UserProfile {
   onboarding_done: boolean;
   /** User role from migration 034. Defaults to 'client'. */
   role?: 'client' | 'coach' | 'both';
+  /** Set server-side only (ziko_email_verify RPCs); null/absent = email not proven yet. */
+  email_verified_at?: string | null;
+}
+
+/** True once the account email was proven (code sent by Ziko, or a Google/Apple identity). */
+export function isEmailVerified(
+  profile: { email_verified_at?: string | null } | null | undefined,
+): boolean {
+  return Boolean(profile?.email_verified_at);
 }
 
 // ── Workout Domain Types ──────────────────────────────────

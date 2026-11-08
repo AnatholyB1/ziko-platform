@@ -144,3 +144,17 @@ left as a blank row, and never marked green by inference or by a bare "approved"
 output. This mirrors the discipline `05-06-SUMMARY.md` applied to Phase 5's two disclosed gaps (real
 submission success/duplicate states never observed live; FOND-06's live counter-reveal never observed),
 which are carried forward and recorded in this same ledger by plan 06-03.
+
+## Go-live executed 2026-11-07 (portfolio ubxllsvanurkwkohzxau) - by team-lead session, authorized by the user in chat ("Oui, tout executer")
+
+| Step | Result |
+|---|---|
+| Pre-reads | config cap=false/retention=3/threshold=200; waitlist 94/19 no consent/0 anonymized; premium 21/21 lifetime/40 profiles; premium_without_grant=0 |
+| Grants | `ziko_revoke_write_grants_config_waitlist` applied (write-class grants removed from anon/authenticated on ziko_app_config and ziko_waitlist_signups, SELECT kept); file 20261107150000_*.sql |
+| Merge + deploy | PR #48 merged (merge commit d1955ad979b468fe822934427ae506d298354f72); CI all green (rls, migration-guard, type-check/lint/test); Vercel ziko-api and ziko-web success; migrate-portfolio skipped (dormant) |
+| Probes | /health 200; /fr|/en cgv|cgu 200 x4; /fr/fondateurs 200 |
+| Threshold | UPDATE 1 row: 200 -> 30 (number) |
+| Cap flag | gate premium_without_grant=0 then UPDATE 1 row: false -> true (boolean); read back true/boolean |
+| RGPD | 19 no-consent signups untouched (kept, excluded from any send) |
+| Not done | live FOND-06 counter check in prod (user said no); ziko-ci-portfolio token NOT revoked (user said no credential revocation); real browser submission in prod not performed (would create a real signup row) |
+Rollback: threshold `UPDATE ... '200'::jsonb`; cap `UPDATE ... 'false'::jsonb` (effective immediately).

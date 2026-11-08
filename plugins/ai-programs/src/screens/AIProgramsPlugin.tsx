@@ -119,7 +119,7 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
       const { data } = await supabase
         .from('ziko_user_profiles')
         .select('goal, weight_kg')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .maybeSingle();
       return data as UserProfile | null;
     },

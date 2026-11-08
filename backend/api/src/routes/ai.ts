@@ -3,8 +3,8 @@ import { stream } from 'hono/streaming';
 import { generateText, streamText, tool, jsonSchema, stepCountIs } from 'ai';
 import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from '../middleware/auth.js';
-import { allToolSchemas, getToolExecutor } from '../tools/registry.js';
-import { fetchUserContext, type UserContext } from '../context/user.js';
+import { allToolSchemas, getToolExecutor, INTERNAL_ONLY_TOOLS } from '../tools/registry.js';
+import { fetchUserContext, buildAthleteStateSection, type UserContext } from '../context/user.js';
 import {
   getOrCreateConversation,
   appendMessages,
@@ -83,6 +83,9 @@ function buildSystemPrompt(userCtx: UserContext): string {
       .join('\n');
     sections.push(`## Recent Workouts\n${list}`);
   }
+
+  // Coaching state (OPS-01) — bounded, defaults when no athlete_state row
+  sections.push(buildAthleteStateSection(userCtx.athleteState));
 
   // Installed plugins
   if (userCtx.installedPlugins.length > 0) {
@@ -174,6 +177,9 @@ router.post('/tools/execute', async (c) => {
     parameters?: Record<string, unknown>;
   }>();
   if (!tool_name) return c.json({ error: 'tool_name is required' }, 400);
+  // Internal-only executors (assess_profile, create_reward) are never callable
+  // by a client; answer exactly like an unknown tool so nothing is disclosed.
+  if (INTERNAL_ONLY_TOOLS.has(tool_name)) return c.json({ error: `Unknown tool: ${tool_name}` }, 404);
   const executor = getToolExecutor(tool_name);
   if (!executor) return c.json({ error: `Unknown tool: ${tool_name}` }, 404);
   try {

@@ -161,12 +161,25 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
       if (!userId || friendIds.length === 0) return [];
       const { data, error } = await supabase
         .from('ziko_workout_sessions')
-        .select('id, name, user_id, started_at, total_duration_seconds, user_profiles:ziko_user_profiles!inner(name)')
+        .select('id, name, user_id, started_at, total_duration_active_seconds')
         .in('user_id', friendIds)
         .order('started_at', { ascending: false })
         .limit(20);
       if (error) throw error;
-      return data ?? [];
+      const sessions = (data ?? []) as any[];
+      // No FK from sessions to ziko_user_profiles (both reference auth.users): fetch names separately.
+      const ids = Array.from(new Set(sessions.map((s) => s.user_id)));
+      const { data: profiles } = ids.length
+        ? await supabase.from('ziko_user_profiles').select('id, name').in('id', ids)
+        : { data: [] as any[] };
+      const nameById = new Map<string, string | null>(
+        (profiles ?? []).map((p: any) => [p.id, p.name] as [string, string | null]),
+      );
+      return sessions.map((s) => ({
+        ...s,
+        total_duration_seconds: s.total_duration_active_seconds ?? 0,
+        user_profiles: { name: nameById.get(s.user_id) ?? null },
+      })) as WorkoutSession[];
     },
     enabled: !!userId && friendIds.length > 0,
   });

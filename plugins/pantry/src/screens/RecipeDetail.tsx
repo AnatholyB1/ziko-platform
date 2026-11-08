@@ -65,7 +65,7 @@ export default function RecipeDetail({ supabase }: Props) {
 
       // Fetch current shopping list (in case store is stale)
       const { data: existingList } = await supabase
-        .from('shopping_list_items')
+        .from('ziko_shopping_list_items')
         .select('name')
         .eq('user_id', user.id);
 
@@ -97,7 +97,7 @@ export default function RecipeDetail({ supabase }: Props) {
       }));
 
       const { data: inserted, error } = await supabase
-        .from('shopping_list_items')
+        .from('ziko_shopping_list_items')
         .insert(rows)
         .select();
 

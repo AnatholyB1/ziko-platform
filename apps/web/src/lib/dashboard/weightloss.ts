@@ -48,11 +48,11 @@ export async function fetchWeightLossData(
   const [bodyweightResult, nutritionResult, setsResult] = await Promise.all([
     supabase
       .from('ziko_body_measurements')
-      .select('measured_at, weight_kg')
+      .select('measured_at:date, weight_kg')
       .eq('user_id', clientId)
-      .gte('measured_at', cutoffStr)
+      .gte('date', cutoffStr)
       .not('weight_kg', 'is', null)
-      .order('measured_at', { ascending: true }),
+      .order('date', { ascending: true }),
 
     supabase
       .from('ziko_nutrition_logs')

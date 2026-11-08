@@ -162,6 +162,7 @@ export default function EditProfileScreen() {
 
       setAvatarUrl(publicUrl);
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile-screen', userId] });
       queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
       queryClient.invalidateQueries({ queryKey: ['badges', userId] });
     } catch (err: any) {
@@ -227,6 +228,7 @@ export default function EditProfileScreen() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['profile-screen', userId] });
       queryClient.invalidateQueries({ queryKey: ['measurements', userId] });
       queryClient.invalidateQueries({ queryKey: ['badges', userId] });
       router.back();

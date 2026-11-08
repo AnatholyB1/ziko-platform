@@ -185,18 +185,17 @@ export default function AIChatScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       const { data } = await supabase
-        .from('ziko_user_profiles')
-        .select('ai_credits_balance')
-        .eq('id', user.id)
-        .limit(1)
-        .single();
+        .from('ziko_user_ai_credits')
+        .select('balance')
+        .eq('user_id', user.id)
+        .maybeSingle();
       return data;
     },
     enabled: !!userId,
     staleTime: 30_000,
   });
 
-  const creditsBalance = creditsData?.ai_credits_balance ?? 0;
+  const creditsBalance = creditsData?.balance ?? 0;
 
   // ── Error guard ───────────────────────────────────────────
   if (creditsError) {

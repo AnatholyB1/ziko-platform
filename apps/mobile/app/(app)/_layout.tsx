@@ -29,6 +29,7 @@ import { useNotificationSetup } from '../../src/hooks/useNotificationSetup';
 import { NotificationPermissionModal } from '../../src/components/NotificationPermissionModal';
 import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 import { WeeklyReviewRevealOverlay } from '../../src/components/WeeklyReviewRevealOverlay';
+import { UnlockToast } from '../../src/components/UnlockToast';
 import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
@@ -319,6 +320,7 @@ export default function AppLayout() {
       />
       <PendingFormsOverlay />
       <WeeklyReviewRevealOverlay />
+      <UnlockToast />
     </>
   );
 }

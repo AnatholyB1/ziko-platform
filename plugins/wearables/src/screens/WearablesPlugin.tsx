@@ -44,8 +44,8 @@ interface WearableDailySummary {
 interface HealthSyncLog {
   user_id: string;
   platform: 'apple_health' | 'health_connect';
-  last_sync_at: string;
-  status: string;
+  synced_at: string;
+  data_type: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
         .from('ziko_health_sync_log')
         .select('*')
         .eq('user_id', userId)
-        .order('last_sync_at', { ascending: false });
+        .order('synced_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -377,7 +377,7 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
                     <Ionicons name="cloud-done-outline" size={18} color="#2E9E5B" />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: theme.muted, fontSize: 12 }}>
-                        Dernière sync BD : {formatSyncTime(log.last_sync_at)} · {log.status}
+                        Dernière sync BD : {formatSyncTime(log.synced_at)} · {log.data_type}
                       </Text>
                     </View>
                   </View>

@@ -187,6 +187,10 @@ const executors: Record<string, ToolExecutor['execute']> = {
   // GET /ai/tools can reach them.
   create_goal: CoachingEngineTools.create_goal,
   create_program: CoachingEngineTools.create_program,
+  // create_reward (Phase 45, REWARD-03) - executor only, like assess_profile:
+  // the weekly engine grants rewards; its schema is filtered out of
+  // allToolSchemas below so chat cannot trigger a grant.
+  create_reward: CoachingEngineTools.create_reward,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -609,8 +613,15 @@ export const allToolSchemas: AITool[] = [
   // (backend/api/src/coaching-engine/apply.ts) and by interactive chat,
   // so they must reach /ai/chat, /ai/chat/stream and GET /ai/tools. Do
   // not "fix" this by removing the spread.
-  ...CoachingEngineTools.coachingEngineToolSchemas,
+  ...CoachingEngineTools.coachingEngineToolSchemas.filter((t) => t.name !== 'create_reward'),
 ];
+
+/**
+ * Executors registered for internal callers only (onboarding / weekly engine).
+ * They are deliberately absent from allToolSchemas and MUST NOT be reachable
+ * through the client-facing POST /ai/tools/execute route.
+ */
+export const INTERNAL_ONLY_TOOLS: ReadonlySet<string> = new Set(['assess_profile', 'create_reward']);
 
 export function getToolExecutor(name: string): ToolExecutor['execute'] | undefined {
   return executors[name];

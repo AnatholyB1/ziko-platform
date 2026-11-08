@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const journalManifest: PluginManifest = {
   id: 'journal',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 2,
   name: 'Journal & Mindset',
   version: '1.0.0',
   description:

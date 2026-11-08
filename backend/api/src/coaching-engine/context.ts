@@ -273,7 +273,7 @@ export async function fetchWeeklyReviewContext(
   const { data: stateRow } = await db
     .from('ziko_athlete_state')
     .select(
-      'next_review_due_at, last_review_at, current_focus_detail, current_focus_summary, readiness, rolling_summary',
+      'next_review_due_at, last_review_at, current_focus_detail, current_focus_summary, readiness, rolling_summary, points, tier',
     )
     .eq('user_id', userId)
     .maybeSingle();
@@ -287,6 +287,8 @@ export async function fetchWeeklyReviewContext(
     current_focus_summary: string | null;
     readiness: string;
     rolling_summary: string | null;
+    points?: number | null;
+    tier?: number | null;
   };
 
   if (!state.next_review_due_at) return null;
@@ -381,6 +383,8 @@ export async function fetchWeeklyReviewContext(
       current_focus_detail: focusDetail,
       rolling_summary: state.rolling_summary,
       next_review_due_at: state.next_review_due_at,
+      points: state.points ?? 0,
+      tier: state.tier ?? 1,
     },
     weekOf,
     focus,

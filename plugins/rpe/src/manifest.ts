@@ -2,6 +2,8 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 
 const manifest: PluginManifest = {
   id: 'rpe',
+  /** Progressive unlock: athlete level required (1-5). */
+  minLevel: 1,
   name: 'Calculateur RPE',
   description: 'Calcule ton 1RM estimé et les zones d\'entraînement à partir du RPE, de la charge et du nombre de reps.',
   version: '1.0.0',

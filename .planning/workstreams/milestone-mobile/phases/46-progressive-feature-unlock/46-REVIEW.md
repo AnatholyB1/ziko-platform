@@ -1,0 +1,26 @@
+# Phase 46 Review (logic part, GATE-01..03)
+
+Scope: packages/plugin-sdk/src/gating.ts(+test), types.ts, i18n keys, apps/mobile/src/stores/authStore.ts, apps/mobile/src/lib/PluginLoader.tsx, apps/mobile/app/(app)/(plugins)/_layout.tsx, all 19 manifests. Base: milestone/v1.18 @ "docs(v1.18): run log after wave A merge".
+
+## Findings
+
+| Sev | Location | Problem | Fix |
+|---|---|---|---|
+| MEDIUM | apps/mobile/src/stores/authStore.ts:136-148 (signOut), :105-110 (listener else-branch), :73-90 (applyLevel) | Level state is not tied to the user. The `onAuthStateChange` else-branch (remote sign-out, revoked token) only nulls `profile`; `effectiveLevel/levelLoaded/levelUp` survive. A different account signing in next inherits the previous level with `levelLoaded=true`, so PluginLoader registers up to level-N plugins and the guard lets routes through before the new read lands; a higher previous level also yields a spurious level-up toast. Also an in-flight `refreshLevel` resolving after sign-out writes the old user's level and `levelLoaded=true` (reproduced on the real store: harness `after signout: 4 true`). | Reset `{effectiveLevel:1, levelLoaded:false, levelUp:null}` whenever user id changes (listener else-branch + id-change). In `refreshLevel`/`refreshProfile`, capture `uid` before await and drop the result if `get().user?.id !== uid`. |
+| MEDIUM | apps/mobile/app/(app)/store/index.tsx:134-137, store/[id].tsx:138 | Plugin store install calls `registerPlugin(manifest)` directly with no `isPluginUnlocked` check. A level-1 athlete can install journal/cardio/ai-programs from the store; the plugin is registered (drawer/modules entry) outside `loadedRef`, so PluginLoader's re-lock loop never unregisters it. Route guard still blocks navigation, so it is a UX/consistency bypass (dead tile, no unlock explanation), not data exposure. | In both install handlers: `if (!isPluginUnlocked(manifest, effectiveLevel)) { showAlert(locked...); return; }`, or hide/disable the install button for locked ids; make PluginLoader re-lock iterate the registry's installed ids, not only `loadedRef`. |
+| LOW | authStore.ts:80-87 | Out-of-order reads can lower the level. Two concurrent reads (foreground + overlay dismiss + refreshProfile) where the older response lands last set `effectiveLevel` back (harness: tier 3 then stale tier 2 -> 2). PluginLoader then unregisters plugins and the guard can bounce the user off a screen with an alert. Tier is server-monotonic (GREATEST), so a decrease is never legitimate for the same user. | Same-user: `next = Math.max(prev, next)` in `applyLevel`; or a request sequence counter. |
+| LOW | PluginLoader.tsx:~100 | Nothing is registered (except mandatory coach) until the first level read finishes. If the read never completes (hang, no network), level-1 plugins stay absent although floor says level 1 must work; only an explicit `error` flips `levelLoaded`. | Add a timeout (e.g. 5 s) that sets `levelLoaded=true` at level 1. |
+| LOW | gating.ts:99-103 | `isPluginIdUnlocked` fails open for ids not in `PLUGIN_LEVEL_MAP` (a new plugin dir added to `(plugins)/` without a map entry is ungated). The sync test (`covers every plugin directory`) mitigates it in CI. | Keep the test; consider fail-closed to level 1 only for ids absent from map once all are listed. |
+| LOW | gating.ts:57 `filterUnlockedPlugins` | Floor helper is tested but not used by PluginLoader (loader relies on level-1 plugins + mandatory coach). Dead code. | Use it or drop it. |
+| LOW | PluginLoader.tsx | `user_plugins` fetch error returns silently and is not retried until level/user changes (pre-existing behaviour, now more visible). | Retry on foreground. |
+| LOW | gating.ts:67-83 | Drawer names in `PLUGIN_LEVEL_MAP` contain mojibake-padded literals (e.g. `'Stretching & Mobilité'` with extra spaces) that exist only to satisfy the manifest sync test; manifests carry the same text. | Verify encoding of both; harmless. |
+| LOW | rollout | Existing athletes with many installed plugins are re-locked on upgrade (all at tier 1) per D-05; no migration of tier. Intended, but needs release-note / toast copy. | Product decision. |
+
+## Verified OK
+- D-03 level map: all 19 manifests' `minLevel` equal `PLUGIN_LEVEL_MAP` and CONTEXT (7/13/17/19 cumulative); enforced by test; coach `mandatory` with minLevel 1.
+- D-02: level derived from `tier`, stored `level` ignored, clamp 1-5, NaN/null/no row -> 1.
+- Floor: mandatory coach loaded before and independent of level read; read error before first success -> level 1 + `levelLoaded=true`; read error after success keeps last level (never re-locks on transient failure).
+- Stale-run protection: `runRef` increments on every effect run and cleanup; every await is followed by `isStale()`; manifest cache avoids reload on re-evaluation.
+- Level-up registration: effect deps `[user?.id, effectiveLevel, levelLoaded]`; re-lock loop unregisters from registry and aiBridge and leaves `ziko_user_plugins` rows untouched.
+- First load after sign-in never emits `levelUp`; AppState subscription removed in initialize cleanup; weekly-review dismiss triggers `refreshLevel`.
+- Route guard: holds (renders null) for gated plugins until `levelLoaded`, redirects with alert after; level-1 plugin routes are never held.

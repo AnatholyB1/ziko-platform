@@ -233,7 +233,7 @@ router.on(['GET', 'POST'], '/monitor-cron', async (c) => {
           supabase
             .from('ziko_coach_profiles')
             .select('display_name')
-            .eq('id', coachId)
+            .eq('user_id', coachId)
             .single(),
         ]);
         const coachDisplayName = (coachProfile as any)?.display_name ?? 'Coach';

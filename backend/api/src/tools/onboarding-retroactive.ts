@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { clientForUser } from './db.js';
 import { AGENT_MODEL } from '../config/models.js';
 import { ONBOARDING_LEVEL, ONBOARDING_TIER } from './onboarding.js';
+import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
 
 // ============================================================
 // Phase 43 plan 04 — retroactive-recompute module (ONBOARD-06)
@@ -249,11 +250,20 @@ export async function computeRetroactiveProfile(
   // 4. Single-shot structured extraction — generateObject, never a
   // conversational multi-turn call, because this reads only the aggregate
   // object and never talks to the athlete.
-  const { object } = await generateObject({
+  const { object, usage } = await generateObject({
     model: AGENT_MODEL,
     schema: RETROACTIVE_PROFILE_SCHEMA,
     system: RETROACTIVE_SYSTEM_PROMPT,
     prompt: buildRetroactivePrompt(aggregates),
+  });
+
+  // OPS-03: autonomous call, cost-visible, never credit-gated. Logged right
+  // after the model call so the spend is recorded even if the RPC fails.
+  logAutonomousCost(db, {
+    userId,
+    model: 'claude-sonnet-4-20250514',
+    usage,
+    source: SOURCES.onboardingRetroactive,
   });
 
   const {

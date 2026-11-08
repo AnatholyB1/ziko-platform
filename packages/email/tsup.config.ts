@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/templates/WeeklyDigest.tsx', 'src/templates/ReloginNotice.tsx'],
+  entry: ['src/templates/WeeklyDigest.tsx', 'src/templates/ReloginNotice.tsx', 'src/templates/VerifyEmailCode.tsx'],
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: false,

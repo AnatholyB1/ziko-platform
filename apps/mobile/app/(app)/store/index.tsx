@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { usePluginRegistry, useTranslation, showAlert } from '@ziko/plugin-sdk';
+import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
 
@@ -76,6 +76,7 @@ const FEATURED_IDS = new Set(['habits', 'ai-programs', 'cardio']);
 // ── Main screen ───────────────────────────────────────────
 export default function PluginStoreScreen() {
   const user = useAuthStore((s) => s.user);
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
   const { registerPlugin } = usePluginRegistry();
   const { t } = useTranslation();
 
@@ -119,6 +120,14 @@ export default function PluginStoreScreen() {
   // ── Install / Uninstall ────────
   const installPlugin = async (pluginId: string, manifest: PluginManifest) => {
     if (!user) return;
+    if (!isPluginUnlocked(manifest, effectiveLevel)) {
+      showAlert(
+        t('plugins.locked.title', { name: manifest.name }),
+        t('plugins.locked.message', { level: getPluginMinLevel(manifest), current: effectiveLevel }),
+        [{ text: t('plugins.locked.cta') }],
+      );
+      return;
+    }
     const perms = manifest.requiredPermissions ?? [];
     showAlert(
       t('store.installConfirm', { name: manifest.name }),

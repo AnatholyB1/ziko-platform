@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ziko design gallery, phases 45 and 46</title>
+<style>
+:root{--bg:#F7F6F3;--surface:#fff;--border:#E2E0DA;--text:#1C1A17;--muted:#6B6963;--primary:#FF5C1A}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;padding:32px 16px 64px}
+h1{font-size:28px;margin:0 0 4px}h2{font-size:18px;margin:40px 0 4px}p{color:var(--muted);font-size:14px;margin:0 0 16px;line-height:20px}
+.row{display:flex;gap:20px;overflow-x:auto;padding-bottom:12px}
+figure{margin:0;flex:none;width:260px}figure img{width:260px;height:auto;border-radius:16px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(28,26,23,.08);display:block}
+figcaption{font-size:14px;margin-top:8px;line-height:20px}figcaption small{display:block;color:var(--muted)}
+a{color:#B8400D}
+</style></head><body>
+<h1>Ziko design gallery</h1>
+<p>Milestone v1.18, workstream milestone-mobile. Prototypes rendered at 390x844, DPR2. Contracts: <a href="45-non-punitive-tiered-rewards/design/45-DESIGN-CONTRACT.md">45</a>, <a href="46-progressive-feature-unlock/design/46-DESIGN-CONTRACT.md">46</a>.</p>
+<h2>Phase 45 - Non-punitive tiered rewards (weekly review overlay)</h2>
+<p>Same structure as the real Phase 44 overlay (centered stack, gap 32, CTA inside, 19px label). Missed week is calm and keeps everything. Revision 2.</p>
+<div class="row">
+<figure><img src="45-non-punitive-tiered-rewards/design/met.png" alt="Objectif atteint"><figcaption>Met<small>+10 pts, Palier 2 70/150</small></figcaption></figure>
+<figure><img src="45-non-punitive-tiered-rewards/design/exceeded.png" alt="Objectif dépassé"><figcaption>Exceeded<small>+15 pts, Palier 2 75/150</small></figcaption></figure>
+<figure><img src="45-non-punitive-tiered-rewards/design/missed.png" alt="Semaine d'ajustement"><figcaption>Missed<small>0 pts, tier and rewards kept</small></figcaption></figure>
+<figure><img src="45-non-punitive-tiered-rewards/design/tier-up.png" alt="Palier atteint"><figcaption>Tier-up (step 2)<small>reward follows</small></figcaption></figure>
+<figure><img src="45-non-punitive-tiered-rewards/design/reward.png" alt="Récompense"><figcaption>Reward (step 3)<small>chosen for you by Ziko</small></figcaption></figure>
+<figure><img src="45-non-punitive-tiered-rewards/design/no-reward.png" alt="Palier sans récompense"><figcaption>Tier-up, no reward<small>grant pending or failed</small></figcaption></figure>
+</div>
+<h2>Phase 46 - Progressive feature unlock (plugins drawer)</h2>
+<p>Light theme. Unlocked grid unchanged (real 4-column geometry), "À débloquer" section below. Revision 2.</p>
+<div class="row">
+<figure><img src="46-progressive-feature-unlock/design/level1-locked.png" alt="Niveau 1 avec section verrouillée"><figcaption>Level 1<small>7 unlocked, 12 locked</small></figcaption></figure>
+<figure><img src="46-progressive-feature-unlock/design/unlock-toast.png" alt="Toast de déblocage"><figcaption>Unlock toast<small>4000ms, queued after the overlay</small></figcaption></figure>
+<figure><img src="46-progressive-feature-unlock/design/all-unlocked.png" alt="Tout débloqué"><figcaption>All unlocked<small>no empty section, one line</small></figcaption></figure>
+<figure><img src="46-progressive-feature-unlock/design/locked-alert.png" alt="Alerte niveau requis"><figcaption>Locked tap<small>showAlert title only</small></figcaption></figure>
+</div>
+</body></html>

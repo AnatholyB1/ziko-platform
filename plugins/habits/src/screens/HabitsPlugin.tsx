@@ -37,7 +37,7 @@ interface HabitLog {
   habit_id: string;
   user_id: string;
   date: string;
-  count: number;
+  value: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
           habit_id: habit.id,
           user_id: userId,
           date: today,
-          count: 1,
+          value: 1,
         });
         if (error) throw error;
       }
@@ -283,7 +283,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         } else {
           return [
             ...old,
-            { id: 'optimistic', habit_id: habit.id, user_id: userId!, date: today, count: 1 },
+            { id: 'optimistic', habit_id: habit.id, user_id: userId!, date: today, value: 1 },
           ];
         }
       });

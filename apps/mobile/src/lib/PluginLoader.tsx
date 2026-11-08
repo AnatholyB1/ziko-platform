@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { usePluginRegistry } from '@ziko/plugin-sdk';
+import { usePluginRegistry, isPluginUnlocked, isPluginIdUnlocked } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { aiBridge } from '../lib/ai';
@@ -60,37 +60,96 @@ interface PluginLoaderProps {
 
 export function PluginLoader({ children }: PluginLoaderProps) {
   const user = useAuthStore((s) => s.user);
+  // Progressive unlock (Phase 46): gating order is mandatory -> minLevel -> is_enabled.
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
+  const levelLoaded = useAuthStore((s) => s.levelLoaded);
   const { registerPlugin, unregisterPlugin } = usePluginRegistry();
   const loadedRef = useRef<Set<string>>(new Set());
+  const manifestCacheRef = useRef<Map<string, PluginManifest>>(new Map());
+  const coachInstalledForRef = useRef<string | null>(null);
+  const runRef = useRef(0);
 
+  // Signout / user switch: unregister everything.
+  useEffect(() => {
+    return () => {
+      for (const pluginId of loadedRef.current) {
+        unregisterPlugin(pluginId);
+        aiBridge.unregisterPlugin(pluginId);
+      }
+      loadedRef.current.clear();
+      manifestCacheRef.current.clear();
+      coachInstalledForRef.current = null;
+    };
+  }, [user?.id]);
+
+  // Re-evaluated whenever the level changes, so a level-up registers newly
+  // unlocked plugins without a restart. Already-installed plugins above the
+  // level are skipped / unregistered (their ziko_user_plugins rows and data are
+  // left untouched).
   useEffect(() => {
     if (!user) return;
 
-    let cancelled = false;
+    const run = ++runRef.current;
+    const isStale = () => run !== runRef.current;
 
-    async function loadInstalledPlugins() {
+    async function getManifest(pluginId: string): Promise<PluginManifest | null> {
+      const cached = manifestCacheRef.current.get(pluginId);
+      if (cached) return cached;
+      const loader = PLUGIN_LOADERS[pluginId];
+      if (!loader) return null;
+      const mod = await loader();
+      const manifest: PluginManifest = mod.default;
+      manifestCacheRef.current.set(pluginId, manifest);
+      return manifest;
+    }
+
+    function register(manifest: PluginManifest) {
+      registerPlugin(manifest);
+      aiBridge.registerPlugin(manifest);
+      loadedRef.current.add(manifest.id);
+    }
+
+    async function syncPlugins() {
       if (!user) return;
 
       for (const pluginId of MANDATORY_PLUGIN_IDS) {
-        if (cancelled) return;
+        if (isStale()) return;
         if (loadedRef.current.has(pluginId)) continue;
-        const loader = PLUGIN_LOADERS[pluginId];
-        if (!loader) continue;
         try {
-          const mod = await loader();
-          if (cancelled) return;
-          const manifest: PluginManifest = mod.default;
-          registerPlugin(manifest);
-          aiBridge.registerPlugin(manifest);
-          loadedRef.current.add(pluginId);
+          const manifest = await getManifest(pluginId);
+          if (isStale() || !manifest) return;
+          register(manifest);
         } catch (err) {
           console.warn(`[PluginLoader] Failed to load mandatory plugin "${pluginId}":`, err);
         }
       }
 
-      if (cancelled) return;
-      await autoInstallCoachPlugin(user.id);
-      if (cancelled) return;
+      if (isStale()) return;
+      if (coachInstalledForRef.current !== user.id) {
+        await autoInstallCoachPlugin(user.id);
+        coachInstalledForRef.current = user.id;
+      }
+      if (isStale()) return;
+
+      // Do not act on the fail-safe default level before the first read.
+      if (!levelLoaded) return;
+
+      // Re-lock: every plugin above the (possibly lower) level. Walk the
+      // registry's installed ids too, not only loadedRef, so plugins registered
+      // outside the loader (plugin store install) are caught as well.
+      const registry = usePluginRegistry.getState();
+      const candidates = new Set<string>([...loadedRef.current, ...registry.installedPlugins]);
+      for (const pluginId of candidates) {
+        const manifest = registry.manifests[pluginId] ?? manifestCacheRef.current.get(pluginId);
+        const locked = manifest
+          ? !isPluginUnlocked(manifest, effectiveLevel)
+          : !isPluginIdUnlocked(pluginId, effectiveLevel);
+        if (locked) {
+          unregisterPlugin(pluginId);
+          aiBridge.unregisterPlugin(pluginId);
+          loadedRef.current.delete(pluginId);
+        }
+      }
 
       const { data: userPlugins, error } = await supabase
         .from('ziko_user_plugins')
@@ -98,41 +157,31 @@ export function PluginLoader({ children }: PluginLoaderProps) {
         .eq('user_id', user.id)
         .eq('is_enabled', true);
 
-      if (cancelled || error || !userPlugins) return;
+      if (isStale() || error || !userPlugins) return;
 
       for (const up of userPlugins) {
-        if (cancelled) return;
+        if (isStale()) return;
         const pluginId = up.plugin_id as string;
         if (loadedRef.current.has(pluginId)) continue;
 
-        const loader = PLUGIN_LOADERS[pluginId];
-        if (!loader) continue;
-
         try {
-          const mod = await loader();
-          if (cancelled) return;
-          const manifest: PluginManifest = mod.default;
-          registerPlugin(manifest);
-          aiBridge.registerPlugin(manifest);
-          loadedRef.current.add(pluginId);
+          const manifest = await getManifest(pluginId);
+          if (isStale() || !manifest) continue;
+          if (!isPluginUnlocked(manifest, effectiveLevel)) continue;
+          register(manifest);
         } catch (err) {
           console.warn(`[PluginLoader] Failed to load plugin "${pluginId}":`, err);
         }
       }
     }
 
-    loadInstalledPlugins();
+    syncPlugins();
 
-    // Cleanup on signout
     return () => {
-      cancelled = true;
-      for (const pluginId of loadedRef.current) {
-        unregisterPlugin(pluginId);
-        aiBridge.unregisterPlugin(pluginId);
-      }
-      loadedRef.current.clear();
+      // Mark this run stale; registered plugins are kept (cleanup is user-scoped above).
+      runRef.current++;
     };
-  }, [user?.id]);
+  }, [user?.id, effectiveLevel, levelLoaded]);
 
   return <>{children}</>;
 }

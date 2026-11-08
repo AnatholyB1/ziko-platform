@@ -53,7 +53,7 @@ beforeAll(async () => {
 
   await adminClient
     .from('ziko_user_profiles')
-    .upsert({ id: coach.id, role: 'coach', display_name: 'Coach' });
+    .upsert({ id: coach.id, role: 'coach', name: 'Coach' });
   await adminClient.from('ziko_coach_profiles').upsert({
     user_id: coach.id,
     display_name: 'Coach Name',
