@@ -128,16 +128,13 @@ async function requestHealthConnectPermissions(): Promise<boolean> {
     const status = await HC.getSdkStatus();
     if (status !== HC.SdkAvailabilityStatus.SDK_AVAILABLE) return false;
 
+    // Minimum scope (Google Play Health Connect policy): only the data types the
+    // plugin actually uses. Steps and sleep feed the daily summary and recovery
+    // score; exercise sessions feed the workout history.
     const granted = await HC.requestPermission([
       { accessType: 'read', recordType: 'Steps' },
-      { accessType: 'read', recordType: 'HeartRate' },
       { accessType: 'read', recordType: 'SleepSession' },
-      { accessType: 'read', recordType: 'Distance' },
-      { accessType: 'read', recordType: 'TotalCaloriesBurned' },
-      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
       { accessType: 'read', recordType: 'ExerciseSession' },
-      { accessType: 'read', recordType: 'Weight' },
-      { accessType: 'read', recordType: 'BodyFat' },
     ]);
     return granted.length > 0;
   } catch {
@@ -167,34 +164,10 @@ async function getHealthConnectSteps(start: Date, end: Date): Promise<StepData[]
   }
 }
 
-async function getHealthConnectHeartRate(start: Date, end: Date): Promise<HeartRateData[]> {
-  try {
-    const HC = require('react-native-health-connect');
-    const result = await HC.readRecords('HeartRate', {
-      timeRangeFilter: {
-        operator: 'between',
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-      },
-    });
-    const byDate: Record<string, number[]> = {};
-    for (const r of result) {
-      const date = new Date(r.startTime).toISOString().split('T')[0];
-      if (!byDate[date]) byDate[date] = [];
-      for (const sample of r.samples ?? []) {
-        byDate[date].push(sample.beatsPerMinute);
-      }
-    }
-    return Object.entries(byDate).map(([date, bpms]) => ({
-      date,
-      avg_bpm: Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length),
-      min_bpm: Math.min(...bpms),
-      max_bpm: Math.max(...bpms),
-      resting_bpm: null,
-    }));
-  } catch {
-    return [];
-  }
+async function getHealthConnectHeartRate(_start: Date, _end: Date): Promise<HeartRateData[]> {
+  // HeartRate is not requested on Android (Health Connect minimum scope), so
+  // there is nothing to read. Apple HealthKit keeps its own adapter below.
+  return [];
 }
 
 async function getHealthConnectSleep(start: Date, end: Date): Promise<SleepData[]> {
@@ -224,36 +197,10 @@ async function getHealthConnectSleep(start: Date, end: Date): Promise<SleepData[
   }
 }
 
-async function getHealthConnectCalories(start: Date, end: Date): Promise<CaloriesData[]> {
-  try {
-    const HC = require('react-native-health-connect');
-    const [activeRes, totalRes] = await Promise.all([
-      HC.readRecords('ActiveCaloriesBurned', {
-        timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
-      }),
-      HC.readRecords('TotalCaloriesBurned', {
-        timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
-      }),
-    ]);
-    const byDate: Record<string, { active: number; total: number }> = {};
-    for (const r of activeRes) {
-      const date = new Date(r.startTime).toISOString().split('T')[0];
-      if (!byDate[date]) byDate[date] = { active: 0, total: 0 };
-      byDate[date].active += r.energy?.inKilocalories ?? 0;
-    }
-    for (const r of totalRes) {
-      const date = new Date(r.startTime).toISOString().split('T')[0];
-      if (!byDate[date]) byDate[date] = { active: 0, total: 0 };
-      byDate[date].total += r.energy?.inKilocalories ?? 0;
-    }
-    return Object.entries(byDate).map(([date, cals]) => ({
-      date,
-      active: Math.round(cals.active),
-      total: Math.round(cals.total),
-    }));
-  } catch {
-    return [];
-  }
+async function getHealthConnectCalories(_start: Date, _end: Date): Promise<CaloriesData[]> {
+  // Active/Total calories are not requested on Android (Health Connect minimum
+  // scope), so there is nothing to read. Apple HealthKit keeps its own adapter.
+  return [];
 }
 
 async function getHealthConnectExercises(start: Date, end: Date): Promise<ExerciseData[]> {

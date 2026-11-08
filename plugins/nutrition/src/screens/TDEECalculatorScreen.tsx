@@ -13,6 +13,7 @@ import {
   parseOnboardingSettings,
   onboardingSexToGender,
   onboardingFrequencyToActivity,
+  getMedicalDisclaimer,
 } from '@ziko/plugin-sdk';
 
 // Cross-plugin stores (optional)
@@ -317,6 +318,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
               ← Modifier les paramètres
             </Text>
           </TouchableOpacity>
+          <Text style={{ marginTop: 20, fontSize: 11.5, lineHeight: 16, color: theme.muted, textAlign: 'center' }}>{getMedicalDisclaimer()}</Text>
         </ScrollView>
       </SafeAreaView>
     );
@@ -481,6 +483,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
             Calculer mes objectifs
           </Text>
         </TouchableOpacity>
+        <Text style={{ marginTop: 20, fontSize: 11.5, lineHeight: 16, color: theme.muted, textAlign: 'center' }}>{getMedicalDisclaimer()}</Text>
       </ScrollView>
     </SafeAreaView>
   );
