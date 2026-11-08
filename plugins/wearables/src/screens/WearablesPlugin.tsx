@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, getMedicalDisclaimer } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import { useWearablesStore } from '../store';
 
@@ -482,6 +482,7 @@ export default function WearablesPlugin({ supabase }: { supabase: any }) {
             )}
           </View>
         )}
+        <Text style={{ marginTop: 20, fontSize: 11.5, lineHeight: 16, color: theme.muted, textAlign: 'center' }}>{getMedicalDisclaimer()}</Text>
       </ScrollView>
     </SafeAreaView>
   );

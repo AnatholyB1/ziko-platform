@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, getMedicalDisclaimer } from '@ziko/plugin-sdk';
 
 export default function OnboardingStep1() {
   const theme = useThemeStore((s) => s.theme);
@@ -71,6 +71,9 @@ export default function OnboardingStep1() {
           >
             <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>Allez, on y va</Text>
           </TouchableOpacity>
+          <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 11, lineHeight: 15, color: theme.muted }}>
+            {getMedicalDisclaimer()}
+          </Text>
           <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: theme.muted }}>
             {'Déjà un compte ? '}
             <Text onPress={() => router.replace('/(auth)/login')} style={{ color: '#FF5C1A', fontWeight: '700' }}>
