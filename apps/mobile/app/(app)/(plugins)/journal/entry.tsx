@@ -1,7 +1,15 @@
 import React from 'react';
+import { useRouter } from 'expo-router';
 import JournalEntry from '@ziko/plugin-journal/screens/JournalEntry';
-import { supabase } from '../../../../src/lib/supabase';
+import { supabase, sessionManager } from '../../../../src/lib/supabase';
 
 export default function JournalEntryRoute() {
-  return <JournalEntry supabase={supabase} />;
+  const router = useRouter();
+  return (
+    <JournalEntry
+      supabase={supabase}
+      requireUser={() => sessionManager.requireUser()}
+      onReauth={() => router.replace('/(auth)/login' as any)}
+    />
+  );
 }
