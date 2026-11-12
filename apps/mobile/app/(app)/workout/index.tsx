@@ -432,14 +432,14 @@ export default function WorkoutIndexScreen() {
     queryKey: ['active-program', userId],
     queryFn: async () => {
       if (!userId) return null;
+      // P7 (D-11): the ACTIVE program, not the most recent one. 0 rows = no active AI program.
       const { data, error } = await supabase
         .from('ziko_ai_generated_programs')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error) return null;
+        .eq('is_active', true)
+        .maybeSingle();
+      if (error || !data) return null;
       return data as AiGeneratedProgram;
     },
     enabled: !!userId,
@@ -476,13 +476,9 @@ export default function WorkoutIndexScreen() {
 
   const tabLabels = ['Semaine type', `${totalWeeks || 'N'} semaines`];
 
+  // P7 (TRAIN-08): the old showAlert had 3 empty handlers; program actions live on the Programmes screen.
   const handleProgramActions = () => {
-    showAlert(goalLabel(activeProgram?.goal, 'Programme'), undefined, [
-      { text: 'Activer', onPress: () => {} },
-      { text: 'Dupliquer', onPress: () => {} },
-      { text: 'Supprimer', style: 'destructive', onPress: () => {} },
-      { text: 'Annuler', style: 'cancel' },
-    ]);
+    router.push('/(app)/workout/programs' as any);
   };
 
   return (
@@ -495,6 +491,8 @@ export default function WorkoutIndexScreen() {
           right={
             <TouchableOpacity
               onPress={handleProgramActions}
+              accessibilityRole="button"
+              accessibilityLabel="Mes programmes"
               style={{
                 width: 32,
                 height: 32,
@@ -834,6 +832,14 @@ export default function WorkoutIndexScreen() {
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
                 Créer un programme
               </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleProgramActions}
+              accessibilityRole="button"
+              accessibilityLabel="Mes programmes"
+              style={{ minHeight: 44, marginTop: 8, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 14 }}>Mes programmes</Text>
             </TouchableOpacity>
           </View>
         )}

@@ -131,23 +131,20 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
 
   const reactivateMutation = useMutation({
     mutationFn: async (programId: string) => {
-      // Step 1: clear all active for this user
-      const { error: e1 } = await supabase
-        .from('ziko_ai_generated_programs')
-        .update({ is_active: false })
-        .eq('user_id', userId);
-      if (e1) throw new Error(e1.message);
-
-      // Step 2: activate selected program
-      const { error: e2 } = await supabase
-        .from('ziko_ai_generated_programs')
-        .update({ is_active: true })
-        .eq('id', programId);
-      if (e2) throw new Error(e2.message);
+      // P7 (TRAIN-07): single atomic path shared with the Programmes screen
+      // (deactivates every program of the user in both tables, then activates this one).
+      const { error } = await supabase.rpc('ziko_set_active_program', {
+        p_kind: 'ai',
+        p_program_id: programId,
+      });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai_programs', userId] });
       queryClient.invalidateQueries({ queryKey: ['ai_program_active', userId] });
+      queryClient.invalidateQueries({ queryKey: ['programs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['program', 'active', userId] });
+      queryClient.invalidateQueries({ queryKey: ['active-program', userId] });
       setReactivatingId(null);
       setActiveTab('Programme');
     },
@@ -157,20 +154,41 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
     },
   });
 
-  const handleReactiver = (programId: string) => {
+  const handleReactiver = async (programId: string) => {
+    // A08: replacing the coach's active program needs an explicit, written confirmation.
+    let coachName: string | null = null;
+    try {
+      const { data } = await supabase
+        .from('ziko_workout_programs')
+        .select('name')
+        .eq('is_active', true)
+        .eq('is_template', false)
+        .not('created_by_coach_id', 'is', null)
+        .or(`user_id.eq.${userId},assigned_to_user_id.eq.${userId}`)
+        .limit(1);
+      coachName = (data as { name: string }[] | null)?.[0]?.name ?? null;
+    } catch {
+      coachName = null;
+    }
+    const confirm = {
+      text: 'Réactiver',
+      onPress: () => {
+        setReactivatingId(programId);
+        reactivateMutation.mutate(programId);
+      },
+    };
+    if (coachName) {
+      showAlert(
+        'Remplacer le programme de ton coach ?',
+        `« ${coachName} » passe en pause, ta progression est conservée. Un seul programme est actif à la fois. Ton coach garde la main sur ses programmes et pourra te le rappeler.`,
+        [{ text: 'Garder le programme du coach', style: 'cancel' }, confirm],
+      );
+      return;
+    }
     showAlert(
       'Réactiver ce programme',
-      'Cela désactivera ton programme actuel et activera celui-ci.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Réactiver',
-          onPress: () => {
-            setReactivatingId(programId);
-            reactivateMutation.mutate(programId);
-          },
-        },
-      ],
+      "Un seul programme est actif à la fois. En activer un autre met l'actuel en pause.",
+      [{ text: 'Annuler', style: 'cancel' }, confirm],
     );
   };
 

@@ -12,6 +12,8 @@ import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useClipboardStore } from '../../../src/stores/clipboardStore';
+import { useAuthStore } from '../../../src/stores/authStore';
+import { coachProgramReplacedBy } from '../../../src/lib/programsService';
 import { useTranslation } from '@ziko/plugin-sdk';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 
@@ -508,10 +510,30 @@ export default function ProgramDetailScreen() {
 
   const handleSetActive = async () => {
     if (!id) return;
-    const store = useWorkoutStore.getState();
-    await store.setActiveProgram(id);
-    showAlert(t('workout.programActive'), t('workout.programActiveDesc'));
-    loadProgram();
+    const doActivate = async () => {
+      try {
+        await useWorkoutStore.getState().setActiveProgram(id);
+        showAlert(t('workout.programActive'), t('workout.programActiveDesc'));
+        loadProgram();
+      } catch (e: unknown) {
+        showAlert('Erreur', e instanceof Error ? e.message : "Impossible d'activer ce programme");
+      }
+    };
+    // A08: replacing the coach's active program needs a written confirmation.
+    const uid = useAuthStore.getState().user?.id;
+    const coachName = uid ? await coachProgramReplacedBy(supabase as any, uid, 'workout', id) : null;
+    if (coachName) {
+      showAlert(
+        'Remplacer le programme de ton coach ?',
+        `« ${coachName} » passe en pause, ta progression est conservée. Un seul programme est actif à la fois. Ton coach garde la main sur ses programmes et pourra te le rappeler.`,
+        [
+          { text: 'Garder le programme du coach', style: 'cancel' },
+          { text: 'Activer', onPress: doActivate },
+        ],
+      );
+      return;
+    }
+    await doActivate();
   };
 
   // ── Cycle helpers ──────────────────────────────────────

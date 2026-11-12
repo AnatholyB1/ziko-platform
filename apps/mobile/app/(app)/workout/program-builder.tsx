@@ -6,8 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../src/lib/supabase';
+import {
+  buildWizardProgramRow,
+  wizardSessionSummaries,
+  DAY_NAMES_FR,
+  activationToast,
+  type ProgramItem,
+} from '../../../src/lib/programs';
+import { loadAllPrograms, setActiveProgram } from '../../../src/lib/programsService';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -35,6 +44,13 @@ const DAYS_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 export default function ProgramBuilderScreen() {
   const theme = useThemeStore((s) => s.theme);
+  const actionBg = getActionPrimary(theme);
+  const queryClient = useQueryClient();
+
+  // End-of-wizard state (A09): the program row once saved + the program it would replace.
+  const [created, setCreated] = useState<{ id: string; name: string; programData: unknown } | null>(null);
+  const [replaced, setReplaced] = useState<ProgramItem | null>(null);
+  const [activating, setActivating] = useState(false);
 
   // Step state (1-4)
   const [step, setStep] = useState(1);
@@ -87,24 +103,28 @@ export default function ProgramBuilderScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non connecte');
 
-      const { error } = await supabase
+      // D-10: name / split_type / days_per_week are NOT NULL; the previous insert omitted them.
+      const { data: row, error } = await supabase
         .from('ziko_ai_generated_programs')
-        .insert({
-          user_id: user.id,
-          goal,
-          program_data: {
-            weeks,
-            days: selectedDays,
-            exercises,
-            generated: true,
-          },
-        });
+        .insert(buildWizardProgramRow(user.id, { goal, weeks, selectedDays, exercises }))
+        .select('id,name,program_data')
+        .single();
 
-      if (error) throw error;
+      if (error || !row) throw error ?? new Error('Programme non enregistre');
 
-      showAlert('Programme cree !', 'Ton programme est pret.', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      let current: ProgramItem | null = null;
+      try {
+        current = (await loadAllPrograms(supabase as any, user.id)).find((i) => i.isActive) ?? null;
+      } catch {
+        current = null;
+      }
+      await Promise.all(
+        [['programs'], ['program', 'active'], ['active-program'], ['ai_programs'], ['ai_program_active']].map((k) =>
+          queryClient.invalidateQueries({ queryKey: k }),
+        ),
+      );
+      setReplaced(current);
+      setCreated({ id: String(row.id), name: String(row.name), programData: row.program_data });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Erreur lors de la creation';
       showAlert('Erreur', msg);
