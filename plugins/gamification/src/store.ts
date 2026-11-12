@@ -346,6 +346,28 @@ export async function syncQuests(supabase: any): Promise<QuestSync> {
   return parseQuestSync(data);
 }
 
+/**
+ * P14 (QUEST-04) : demande au backend de generer des quetes IA. Le declenchement (passage de niveau, plus aucune
+ * quete) et le plafond de 3 sont decides cote serveur : si rien n'est a creer, la reponse est `skipped` et aucun
+ * appel IA n'a lieu. Ne leve jamais ; renvoie true si au moins une quete a ete creee.
+ */
+export async function requestAiQuests(supabase: any): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return false;
+    const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? ''}/quests/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: '{}',
+    });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return body?.status === 'created' && Number(body.created) > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** Variante silencieuse (ex. fin de seance) : ne leve jamais, renvoie les quetes terminees. */
 export async function syncQuestsQuiet(supabase: any): Promise<QuestSync | null> {
   try {

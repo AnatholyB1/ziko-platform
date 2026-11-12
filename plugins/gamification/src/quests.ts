@@ -90,6 +90,14 @@ export function activeCount(quests: Quest[]): number {
   return quests.filter((q) => q.status === 'active').length;
 }
 
+/** Plafond de quetes actives (QUEST-05) : copie d'affichage, la regle est appliquee en base (P14). */
+export const MAX_ACTIVE_QUESTS = 3;
+
+/** Une place est libre : le serveur decide s'il y a lieu de generer (niveau gagne / plus de quete). */
+export function hasFreeQuestSlot(quests: Quest[]): boolean {
+  return activeCount(quests) < MAX_ACTIVE_QUESTS;
+}
+
 /** Ratio 0..1 de la barre de progression. */
 export function questRatio(q: Pick<Quest, 'progress' | 'target' | 'status'>): number {
   if (q.status === 'completed') return 1;

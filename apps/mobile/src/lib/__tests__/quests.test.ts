@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
-  activeCount, completedNote, dailyHeading, expiredNote, groupQuests, parseQuestSync, progressText,
+  activeCount, hasFreeQuestSlot, MAX_ACTIVE_QUESTS, completedNote, dailyHeading, expiredNote, groupQuests, parseQuestSync, progressText,
   questRatio, questToastText, renewLabel, type Quest,
 } from '@ziko/plugin-gamification/quests';
-import { syncQuests, syncQuestsQuiet, awardWorkoutXP } from '@ziko/plugin-gamification/store';
+import { syncQuests, syncQuestsQuiet, awardWorkoutXP, requestAiQuests } from '@ziko/plugin-gamification/store';
 import { historyLabel } from '@ziko/plugin-gamification/rewards';
 
 const row = (over: Record<string, unknown> = {}) => ({
@@ -131,5 +131,35 @@ describe('syncQuests (store)', () => {
     };
     await awardWorkoutXP(supabase, 's1');
     expect(calls.some((c) => c.fn === 'ziko_sync_quests')).toBe(true);
+  });
+});
+
+describe('P14 : generation de quetes IA (cote client)', () => {
+  const sb = (token: string | null = 'tok') => ({ auth: { getSession: async () => ({ data: { session: token ? { access_token: token } : null } }) } });
+  const stubFetch = (impl: any) => { (globalThis as any).fetch = impl; };
+
+  it('hasFreeQuestSlot : plafond de 3 actives, terminees et echues ne comptent pas', () => {
+    expect(MAX_ACTIVE_QUESTS).toBe(3);
+    const a = (id: string, status: any) => quest({ id, status });
+    expect(hasFreeQuestSlot([a('1', 'active'), a('2', 'active'), a('3', 'active')])).toBe(false);
+    expect(hasFreeQuestSlot([a('1', 'active'), a('2', 'completed'), a('3', 'expired')])).toBe(true);
+    expect(hasFreeQuestSlot([])).toBe(true);
+  });
+  it('requestAiQuests : POST /quests/refresh avec le jeton, true seulement si des quetes sont creees', async () => {
+    const calls: any[] = [];
+    stubFetch(async (url: string, init: any) => { calls.push({ url, init }); return { ok: true, json: async () => ({ status: 'created', created: 2 }) }; });
+    expect(await requestAiQuests(sb())).toBe(true);
+    expect(calls[0].url.endsWith('/quests/refresh')).toBe(true);
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].init.headers.Authorization).toBe('Bearer tok');
+    stubFetch(async () => ({ ok: true, json: async () => ({ status: 'skipped', reason: 'not_needed' }) }));
+    expect(await requestAiQuests(sb())).toBe(false);
+  });
+  it('requestAiQuests ne leve jamais : pas de session, HTTP 502, reseau coupe', async () => {
+    stubFetch(async () => { throw new Error('offline'); });
+    expect(await requestAiQuests(sb(null))).toBe(false);
+    expect(await requestAiQuests(sb())).toBe(false);
+    stubFetch(async () => ({ ok: false, json: async () => ({}) }));
+    expect(await requestAiQuests(sb())).toBe(false);
   });
 });
