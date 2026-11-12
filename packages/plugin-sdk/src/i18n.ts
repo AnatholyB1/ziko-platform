@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { exerciseDisplayName } from './displayLabels';
 
 // ── Supported locales ────────────────────────────────────
 export type Locale = 'fr' | 'en';
@@ -1860,11 +1861,8 @@ export function useTranslation() {
   /** Translate an exercise name (English → French if locale is fr).
    * If the DB column name_fr is provided it takes priority over the dict. */
   const tExercise = (name: string, nameFr?: string | null): string => {
-    if (locale === 'fr') {
-      if (nameFr) return nameFr;
-      if (exerciseNames[name]) return exerciseNames[name];
-    }
-    return name;
+    if (locale === 'fr') return exerciseDisplayName(name, nameFr, exerciseNames);
+    return exerciseDisplayName(name);
   };
 
   /** Translate a muscle group key */
