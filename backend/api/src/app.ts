@@ -29,6 +29,7 @@ import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
 import { coachingEngineRouter } from './coaching-engine/routes.js';
 import { formsRouter, formsCronRouter } from './routes/forms.js';
+import { questsRouter } from './routes/quests.js';
 import { createAuthEmailRouter } from './routes/auth-email.js';
 const app = new Hono();
 
@@ -95,6 +96,7 @@ app.route('/coaching-engine', coachingEngineRouter);
 app.route('/forms', formsCronRouter);
 app.route('/forms', formsRouter);
 app.route('/auth', createAuthEmailRouter());
+app.route('/quests', questsRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
