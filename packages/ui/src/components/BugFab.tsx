@@ -42,9 +42,9 @@ export function BugFab() {
   const boundsRef = useRef(bounds);
   boundsRef.current = bounds;
 
-  // Position initiale : bord gauche, juste au-dessus de la barre d'onglets
-  // (le coin droit est la ou se trouvent les boutons d'action).
-  const initial = clampFabPosition(GUTTER, height, bounds);
+  // Position initiale : bord droit, juste au-dessus de la barre d'onglets (UAT run1 : a gauche
+  // il recouvrait le titre « QUICK LOG » ; deplacable par l'utilisateur ensuite).
+  const initial = clampFabPosition(width, height, bounds);
   const pos = useRef(new Animated.ValueXY(initial)).current;
   const last = useRef(initial);
   const [dragging, setDragging] = useState(false);

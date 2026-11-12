@@ -8,6 +8,8 @@ import {
   TextInput,
   Dimensions,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -413,7 +415,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         {/* Habit list */}
         {habits.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
+            <Ionicons name="leaf-outline" size={48} color={theme.primary} style={{ marginBottom: 12 }} />
             <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, marginBottom: 6 }}>
               Aucune habitude
             </Text>
@@ -767,7 +769,8 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
           animationType="slide"
           onRequestClose={() => setShowCreateModal(false)}
         >
-          <View
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{
               flex: 1,
               backgroundColor: 'rgba(0,0,0,0.5)',
@@ -952,7 +955,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
                 <Text style={{ color: '#6B6963', fontSize: 14 }}>Annuler</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       </View>
     );

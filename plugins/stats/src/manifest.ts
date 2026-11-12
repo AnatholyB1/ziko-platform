@@ -4,7 +4,7 @@ const statsManifest: PluginManifest = {
   id: 'stats',
   /** Progressive unlock: athlete level required (1-5). */
   minLevel: 2,
-  name: 'Analytics',
+  name: 'Statistiques',
   version: '1.0.0',
   description:
     'Centre d\'analytics complet — séances, habitudes, nutrition, gamification, conversations IA. Charts interactifs, KPIs, tendances.',
@@ -33,19 +33,19 @@ const statsManifest: PluginManifest = {
   routes: [
     {
       path: '/(plugins)/stats/dashboard',
-      title: 'Analytics',
+      title: 'Statistiques',
       icon: 'stats-chart',
       showInTabBar: true,
     },
     {
       path: '/(plugins)/stats/exercise',
-      title: 'Exercise Stats',
+      title: "Stats d'exercice",
       icon: 'barbell',
       showInTabBar: false,
     },
     {
       path: '/(plugins)/stats/session',
-      title: 'Session Detail',
+      title: 'Détail de la séance',
       icon: 'document-text',
       showInTabBar: false,
     },

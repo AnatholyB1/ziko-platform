@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
+    "./settings": "./src/settings.ts",
     "./store": "./src/store.ts",
     "./screens/HydrationPlugin": "./src/screens/HydrationPlugin.tsx",
     "./screens/HydrationDashboard": "./src/screens/HydrationDashboard.tsx"

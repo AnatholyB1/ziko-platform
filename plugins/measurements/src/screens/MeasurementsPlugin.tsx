@@ -7,6 +7,8 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -511,7 +513,8 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.4)',
@@ -606,7 +609,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

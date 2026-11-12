@@ -23,7 +23,7 @@ const personaManifest: PluginManifest = {
   routes: [
     {
       path: '/(plugins)/persona/customize',
-      title: 'My AI Coach',
+      title: 'Mon coach IA',
       icon: 'person-circle-outline',
       showInTabBar: true,
     },
