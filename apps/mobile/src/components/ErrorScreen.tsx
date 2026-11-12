@@ -6,7 +6,7 @@ import { useThemeStore } from '../stores/themeStore';
 
 // ── Types ──────────────────────────────────────────────────
 
-export type ErrorKind = 'offline' | 'error' | 'empty';
+export type ErrorKind = 'offline' | 'error' | 'empty' | 'module';
 
 interface VariantData {
   tint: string;
@@ -39,6 +39,15 @@ const VARIANTS: Record<ErrorKind, VariantData> = {
     cta: "Recharger l'app",
     secondary: 'Signaler',
   },
+  module: {
+    tint: '#E94B3C',
+    icon: 'alert-circle-outline',
+    eyebrow: 'Module indisponible',
+    title: 'Ce module a rencontré un problème',
+    sub: "L'erreur a été signalée automatiquement. Tu peux réessayer ou revenir à l'accueil.",
+    cta: 'Réessayer',
+    secondary: "Retour à l'accueil",
+  },
   empty: {
     tint: '#6B6963',
     icon: 'albums-outline',
@@ -52,7 +61,19 @@ const VARIANTS: Record<ErrorKind, VariantData> = {
 
 // ── Component ──────────────────────────────────────────────
 
-export function ErrorScreen({ kind, onAction }: { kind: ErrorKind; onAction?: () => void }) {
+export function ErrorScreen({
+  kind,
+  onAction,
+  onSecondary,
+  moduleName,
+}: {
+  kind: ErrorKind;
+  onAction?: () => void;
+  /** Secondary button handler (e.g. back to home). Defaults to `onAction` to keep old call sites unchanged. */
+  onSecondary?: () => void;
+  /** Plugin/module display name, shown in the title for the 'module' kind. */
+  moduleName?: string;
+}) {
   const theme = useThemeStore((s) => s.theme);
   const data = VARIANTS[kind];
 
@@ -83,7 +104,7 @@ export function ErrorScreen({ kind, onAction }: { kind: ErrorKind; onAction?: ()
 
         {/* Title */}
         <Text style={{ fontSize: 26, fontWeight: '800', color: theme.text, lineHeight: 30, letterSpacing: -0.3, textAlign: 'center' }}>
-          {data.title}
+          {kind === 'module' && moduleName ? `${moduleName} : ${data.title}` : data.title}
         </Text>
 
         {/* Body */}
@@ -93,8 +114,9 @@ export function ErrorScreen({ kind, onAction }: { kind: ErrorKind; onAction?: ()
       </View>
 
       {/* CTAs */}
-      <View style={{ paddingHorizontal: 24, paddingBottom: 32, gap: 10 }}>
+      <View style={{ paddingHorizontal: 24, paddingBottom: 100, gap: 10 }}>
         <TouchableOpacity
+          testID="error-screen-primary"
           onPress={onAction}
           style={{ padding: 14, borderRadius: 14, backgroundColor: theme.text, alignItems: 'center' }}
         >
@@ -102,7 +124,8 @@ export function ErrorScreen({ kind, onAction }: { kind: ErrorKind; onAction?: ()
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={onAction}
+          testID="error-screen-secondary"
+          onPress={onSecondary ?? onAction}
           style={{ padding: 12, borderRadius: 14, backgroundColor: theme.text + '0D', alignItems: 'center' }}
         >
           <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>{data.secondary}</Text>

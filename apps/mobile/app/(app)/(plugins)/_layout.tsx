@@ -8,6 +8,7 @@ import {
   useTranslation,
 } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
+import ErrorBoundary from '../../../src/components/ErrorBoundary';
 
 // Shared guard for every plugin route (D-05): a deep link / push notification to
 // a plugin the athlete has not unlocked yet is redirected home with an alert.
@@ -39,7 +40,15 @@ export default function PluginsLayout() {
 
   if (isPending || (levelLoaded && isLocked)) return null;
 
+  // Shared render-error guard for all plugin modules (HABT-02): a crashing screen shows
+  // an error screen whose back button returns home, never a blank blocking screen.
   return (
+    <ErrorBoundary
+      pluginId={pluginId}
+      moduleName={info?.name}
+      resetKey={segments.join('/')}
+      onBack={() => router.replace('/(app)/')}
+    >
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="nutrition/dashboard" />
       <Stack.Screen name="nutrition/log" />
@@ -84,5 +93,6 @@ export default function PluginsLayout() {
       <Stack.Screen name="supplements/detail" />
       <Stack.Screen name="supplements/compare" />
     </Stack>
+    </ErrorBoundary>
   );
 }
