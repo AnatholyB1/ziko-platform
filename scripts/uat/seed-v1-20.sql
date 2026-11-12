@@ -30,7 +30,7 @@ end $$;
 
 -- ============ Programme perso actif : 3 seances x 8 exercices ============
 insert into public.ziko_workout_programs (id, user_id, name, description, days_per_week, is_active)
-values ('d1000000-0000-4000-8000-000000000001', 'a0a0a0a0-0000-4000-8000-0000000000a1', 'UAT Full Body 3x8', 'Seed UAT', 3, true)
+values ('d1000000-0000-4000-8000-000000000001', 'a0a0a0a0-0000-4000-8000-0000000000a1', 'UAT Full Body 3x8', 'Seed UAT', 3, false)
 on conflict (id) do nothing;
 
 insert into public.ziko_program_workouts (id, program_id, day_of_week, name, order_index)
@@ -121,3 +121,19 @@ values
  ('d5000000-0000-4000-8000-000000000005','a0a0a0a0-0000-4000-8000-0000000000a1','Pommes',6,'pieces','pantry','fruits', current_date + 5),
  ('d5000000-0000-4000-8000-000000000006','a0a0a0a0-0000-4000-8000-0000000000a1','Yaourt grec',4,'pieces','fridge','dairy', current_date - 1)
 on conflict (id) do nothing;
+
+-- Etat garanti (rejoue idempotent) : programme perso 3x8 inactif (= P-CREE de P7). Le programme ACTIF seed
+-- est le programme IA ci-dessous (base de P6).
+update public.ziko_workout_programs set is_active = false where id = 'd1000000-0000-4000-8000-000000000001';
+
+-- ============ Programme IA ACTIF (base P6) : 3 seances x 8 exercices ============
+insert into public.ziko_ai_generated_programs (id, user_id, name, goal, split_type, days_per_week, is_active, program_data)
+select 'd6000000-0000-4000-8000-000000000001', 'a0a0a0a0-0000-4000-8000-0000000000a1', 'UAT Full Body Power', 'muscle_gain', 'full_body', 3, true,
+  jsonb_build_object('weeks', jsonb_build_array(jsonb_build_object('w', 1, 'sessions', (
+    select jsonb_agg(jsonb_build_object('name', n.nm, 'exercises', (
+      select jsonb_agg(jsonb_build_object('name', e.name, 'sets', 3, 'reps', 10) order by e.rn)
+      from (select name, row_number() over (order by name, id) rn from public.ziko_exercises where user_id is null order by name, id limit 24) e
+      where (e.rn - 1) / 8 = n.idx))
+      order by n.idx)
+    from (values (0,'Full Body Power'),(1,'Upper'),(2,'Lower')) as n(idx, nm)))))
+where not exists (select 1 from public.ziko_ai_generated_programs where id = 'd6000000-0000-4000-8000-000000000001');
