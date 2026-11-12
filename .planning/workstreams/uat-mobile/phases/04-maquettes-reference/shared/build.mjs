@@ -16,6 +16,8 @@ for(const f of fs.readdirSync(src).filter(x=>x.endsWith('.html')).sort()){
   h=h.replace(/<!--SB-->/g,`<div class="sb"><span>9:41</span><span class="r">${I('cellular',1)}${I('wifi',1)}${I('battery-full',1)}</span></div>`);
   h=h.replace(/<!--RW:(\d)-->/g,(_,k)=>`<div class="ab"><div class="ttl">Récompenses</div><div class="chip tap" style="background:var(--gold-tint);border-color:#EBD9A0;color:#7A5800">${I('disc',1)}<b class="num">340</b></div><div class="ib bd" data-tap>${I('time')}</div></div><div class="tabs">${['Niveau','Succès','Boutique','Quêtes'].map((x,i)=>`<div${i==k?' class="on"':''}>${x}</div>`).join('')}</div>`);
   h=h.replace(/<!--PT:(\d)-->/g,(_,k)=>`<div class="ab"><div class="ttl">Garde-manger</div><div class="ib bd" data-tap>${I('search')}</div></div><div class="tabs">${['Inventaire','Recettes','Courses'].map((x,i)=>`<div${i==k?' class="on"':''}>${x}</div>`).join('')}</div>`);
+  h=h.replace(/<!--AB:([^|>]*?)(?:\|([\w-]+))?(?:\|([\w-]+))?-->/g,(_,t,i1,i2)=>`<div class="ab"><div class="ttl">${t}</div>${[i1,i2].filter(Boolean).map(i=>`<div class="ib bd" data-tap>${I(i)}</div>`).join('')}</div>`);
+  h=h.replace(/<!--TABS:([^>]*?):(\d)-->/g,(_,l,k)=>`<div class="tabs">${l.split('|').map((x,i)=>`<div${i==k?' class="on"':''}>${x}</div>`).join('')}</div>`);
   h=h.replace(/<!--TB:(\d)-->/g,(_,k)=>{const t=[['home','Accueil'],['barbell','Séances'],['sparkles','Coach IA'],['apps','Modules'],['person','Profil']];
     return `<div class="tb">${t.map((x,i)=>`<div${i==k?' class="on"':''}>${I(x[0],i==k)}<span>${x[1]}</span></div>`).join('')}</div>`;});
   h=h.replace(/<i class="ic([^"]*)" data-n="([^"]+)"( data-f)?( style="[^"]*")?><\/i>/g,(_,c,n,fl,st)=>`<i class="ic${c}"${st||""}>${svg(n,!!fl)}</i>`);
@@ -24,7 +26,7 @@ for(const f of fs.readdirSync(src).filter(x=>x.endsWith('.html')).sort()){
   fs.writeFileSync(path.join(root,lot,f),out);pages.push(f);}
 const require=(await import('node:module')).createRequire(import.meta.url);
 const pwPath=process.env.PW_CORE;const {chromium}=require(pwPath);
-const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1700,height:1000},deviceScaleFactor:2,isMobile:false});
+fs.mkdirSync(path.join(root,lot,'png'),{recursive:true});const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1700,height:1000},deviceScaleFactor:2,isMobile:false});
 const meta=[];
 for(const f of pages){const p=await ctx.newPage();await p.goto('file:///'+path.join(root,lot,f).replace(/\\/g,'/'));await p.evaluate(()=>document.fonts.ready);
   const frs=await p.$$('.fr[data-id]');
