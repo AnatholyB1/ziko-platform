@@ -82,7 +82,7 @@ describe('registre des outils (QUEST-03)', () => {
   it('quests_create : duree obligatoire, metriques en liste blanche, noms uniques', () => {
     const s = allToolSchemas.find((t) => t.name === 'quests_create')!;
     expect(s.parameters.required).toEqual(expect.arrayContaining(['title', 'metric', 'target', 'scope', 'duration_hours']));
-    expect(s.parameters.properties.metric!.enum).toEqual(['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs']);
+    expect(s.parameters.properties.metric!.enum).toEqual(['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs', 'measurement_logs']);
     const all = allToolSchemas.map((t) => t.name);
     expect(new Set(all).size).toBe(all.length);
   });
