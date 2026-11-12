@@ -5,6 +5,7 @@ export const CREDIT_COSTS = {
   chat: 4,
   scan: 3,
   program: 4,
+  recipes: 1,
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;

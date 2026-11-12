@@ -4,6 +4,8 @@ import { AGENT_MODEL } from '../config/models.js';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
 import { clientForUser } from '../tools/db.js';
+import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
+import { resolveTargets, resolveDate, sumMeals, remainingMacros } from './pantry-recipes-macros.js';
 
 const RecipeIngredientSchema = z.object({
   name: z.string().describe('Ingredient name in French'),
@@ -34,8 +36,6 @@ const ResponseSchema = z.object({
   recipes: z.array(RecipeSchema),
 });
 
-const DAILY_TARGETS = { calories: 2000, protein_g: 150, carbs_g: 250, fat_g: 65 };
-
 function normalizeStr(s: string): string {
   return s
     .toLowerCase()
@@ -57,19 +57,23 @@ function wordOverlapMatch(pantryName: string, ingredientName: string): boolean {
 const router = new Hono();
 router.use('*', authMiddleware);
 
-router.post('/recipes/suggest', async (c) => {
+// 1 credit per generation (Phase 10, D-08): creditCheck gates (402), creditDeduct charges only on success.
+router.post('/recipes/suggest', creditCheck('recipes'), creditDeduct('recipes'), async (c) => {
   const auth = c.get('auth');
   const { userId } = auth;
 
   const userToken = c.req.header('Authorization')?.replace('Bearer ', '');
 
-  const body: { preferences?: string } = await c.req.json<{ preferences?: string }>().catch(() => ({}));
+  const body: { preferences?: string; date?: string } = await c.req
+    .json<{ preferences?: string; date?: string }>()
+    .catch(() => ({}));
 
-  const today = new Date().toISOString().split('T')[0];
+  // Date LOCALE du client (D-09) : evite le decalage UTC la nuit.
+  const today = resolveDate(body.date);
 
   const db = clientForUser(userToken);
 
-  const [pantryRes, nutritionRes] = await Promise.all([
+  const [pantryRes, nutritionRes, settingsRes] = await Promise.all([
     db
       .from('ziko_pantry_items')
       .select('id, name, quantity, unit, food_category, storage_location')
@@ -80,21 +84,18 @@ router.post('/recipes/suggest', async (c) => {
       .select('calories, protein_g, carbs_g, fat_g')
       .eq('user_id', userId)
       .eq('date', today),
+    db
+      .from('ziko_user_plugins')
+      .select('settings')
+      .eq('user_id', userId)
+      .eq('plugin_id', 'nutrition')
+      .maybeSingle(),
   ]);
 
-  const meals = nutritionRes.data ?? [];
-  const consumed = {
-    calories: meals.reduce((s: number, m: any) => s + (Number(m.calories) || 0), 0),
-    protein_g: meals.reduce((s: number, m: any) => s + (Number(m.protein_g) || 0), 0),
-    carbs_g: meals.reduce((s: number, m: any) => s + (Number(m.carbs_g) || 0), 0),
-    fat_g: meals.reduce((s: number, m: any) => s + (Number(m.fat_g) || 0), 0),
-  };
-  const remaining_macros = {
-    calories: Math.max(0, DAILY_TARGETS.calories - consumed.calories),
-    protein_g: Math.max(0, DAILY_TARGETS.protein_g - consumed.protein_g),
-    carbs_g: Math.max(0, DAILY_TARGETS.carbs_g - consumed.carbs_g),
-    fat_g: Math.max(0, DAILY_TARGETS.fat_g - consumed.fat_g),
-  };
+  // Objectifs reels de l'utilisateur (repli sur les constantes), moins ce qui a ete logue ce jour-la.
+  const targets = resolveTargets(settingsRes?.data?.settings);
+  const consumed = sumMeals((nutritionRes.data ?? []) as Array<Record<string, unknown>>);
+  const remaining_macros = remainingMacros(targets, consumed);
 
   const pantryItems = pantryRes.data ?? [];
   const pantryListStr =
