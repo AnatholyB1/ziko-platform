@@ -32,14 +32,16 @@ export function loadNotifModule(): NotifModule | null {
   }
 }
 
-export type PermissionState = 'granted' | 'denied' | 'unavailable';
+/** 'undetermined' : pas encore accordee ni definitivement refusee (on peut encore demander). */
+export type PermissionState = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
 export async function getReminderPermission(n: NotifModule | null, ask: boolean): Promise<PermissionState> {
   if (!n) return 'unavailable';
   try {
     const cur = await n.getPermissionsAsync();
     if (cur.granted) return 'granted';
-    if (!ask || cur.canAskAgain === false) return 'denied';
+    if (cur.canAskAgain === false) return 'denied';
+    if (!ask) return 'undetermined';
     const res = await n.requestPermissionsAsync();
     return res.granted ? 'granted' : 'denied';
   } catch {

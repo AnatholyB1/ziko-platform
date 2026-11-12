@@ -33,9 +33,9 @@ const hydrationManifest: PluginManifest = {
       parameters: {
         type: 'object',
         properties: {
-          amount_ml: { type: 'integer', description: 'Amount in milliliters (e.g. 250 for a glass)' },
+          amount_ml: { type: 'integer', description: 'Amount in milliliters (e.g. 250 for a glass). Omit to use the user\'s default glass size.' },
         },
-        required: ['amount_ml'],
+        required: [],
       },
     },
     {

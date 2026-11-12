@@ -63,7 +63,7 @@ describe('permission (HY-6)', () => {
   it('accordee', async () => expect(await getReminderPermission(fakeNotif(true).n, true)).toBe('granted'));
   it('refusee sans possibilite de redemander = denied', async () => expect(await getReminderPermission(fakeNotif(false, false).n, true)).toBe('denied'));
   it('refusee apres demande = denied', async () => expect(await getReminderPermission(fakeNotif(false, true).n, true)).toBe('denied'));
-  it('lecture seule (ask=false) ne demande pas', async () => expect(await getReminderPermission(fakeNotif(false, true).n, false)).toBe('denied'));
+  it('lecture seule (ask=false) ne demande pas : undetermined', async () => expect(await getReminderPermission(fakeNotif(false, true).n, false)).toBe('undetermined'));
   it('module absent = unavailable', async () => expect(await getReminderPermission(null, true)).toBe('unavailable'));
 });
 
