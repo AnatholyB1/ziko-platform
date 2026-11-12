@@ -19,6 +19,7 @@ export const Modal = ({ visible, children }: any) =>
   visible ? React.createElement('div', null, children) : null;
 export const ActivityIndicator = () => React.createElement('div', { 'data-testid': 'spinner' });
 export const Dimensions = { get: () => ({ width: 390, height: 800 }) };
+export const useWindowDimensions = () => ({ width: 390, height: 800, scale: 2, fontScale: 1 });
 export const Platform = { OS: 'android', select: (o: any) => o.android ?? o.default };
 export const StyleSheet = { create: (s: any) => s, flatten: (s: any) => s };
 export const Alert = { alert: () => undefined };
