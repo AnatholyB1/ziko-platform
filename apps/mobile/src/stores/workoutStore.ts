@@ -4,6 +4,7 @@ import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramE
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
+import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
 
 const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
@@ -69,7 +70,19 @@ interface WorkoutState {
 
   restoreSession: () => Promise<void>;
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
+  /**
+   * Single entry point for "start today's planned session" (TRAIN-01/02). Loads the AI program,
+   * resolves the session for `dayIndex` (0 = Monday ... 6 = Sunday, or the next planned day when
+   * that day is a rest day), pre-loads its exercises and opens a session. Returns the started
+   * session name, or null (with `reason`) when nothing could be started.
+   */
+  startPlannedSession: (
+    programId: string,
+    dayIndex: number,
+  ) => Promise<{ ok: true; name: string; exerciseCount: number } | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error' }>;
   endSession: () => Promise<void>;
+  /** Drops an in-progress session that has no validated set (TRAIN-03): nothing is kept in DB. */
+  discardSession: () => Promise<void>;
   addSet: (set: Omit<ActiveSet, 'completed'>) => void;
   completeSet: (exerciseId: string, setNumber: number) => Promise<void>;
   startRestTimer: (seconds: number) => void;
@@ -193,6 +206,113 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     }
   },
 
+  startPlannedSession: async (programId, dayIndex) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return { ok: false, reason: 'no_user' };
+
+    const { data: program, error: progErr } = await supabase
+      .from('ziko_ai_generated_programs')
+      .select('id, goal, program_data')
+      .eq('id', programId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (progErr) return { ok: false, reason: 'db_error' };
+    if (!program) return { ok: false, reason: 'no_program' };
+
+    const plan = normalizePlanSessions((program as any).program_data);
+    if (plan.length === 0) return { ok: false, reason: 'no_session' };
+    // Same resolution as the week layout: the planned session for that weekday, else the next one.
+    let picked = plan.find((p) => p.dayIndex === dayIndex);
+    if (!picked) {
+      for (let k = 1; k < 7 && !picked; k++) {
+        picked = plan.find((p) => p.dayIndex === (dayIndex + k) % 7);
+      }
+    }
+    if (!picked) picked = plan[0];
+    if (picked.exercises.length === 0) return { ok: false, reason: 'no_exercises' };
+
+    // Resolve exercise rows (by id first, then by exact name / French name)
+    const ids = picked.exercises.map((e) => e.exercise_id).filter(Boolean) as string[];
+    const byId = new Map<string, Exercise>();
+    const byName = new Map<string, Exercise>();
+    if (ids.length > 0) {
+      const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
+      (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
+    }
+    const missingNames = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id)).map((e) => e.name);
+    if (missingNames.length > 0) {
+      const { data } = await supabase
+        .from('ziko_exercises')
+        .select('*')
+        .or(missingNames.flatMap((n) => [`name.ilike.${n.replace(/[,()]/g, ' ')}`, `name_fr.ilike.${n.replace(/[,()]/g, ' ')}`]).join(','));
+      (data ?? []).forEach((e: any) => {
+        byName.set(String(e.name ?? '').toLowerCase(), e as Exercise);
+        if (e.name_fr) byName.set(String(e.name_fr).toLowerCase(), e as Exercise);
+      });
+    }
+
+    const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
+    picked.exercises.forEach((pe) => {
+      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || byName.get(pe.name.toLowerCase());
+      if (!ex) return; // cannot log sets without a real exercise row (FK)
+      const r = parseReps(pe.reps);
+      workoutExercises.push({
+        id: `planned-${picked!.sourceIndex}-${workoutExercises.length}`,
+        workout_id: '',
+        exercise_id: (ex as any).id,
+        sets: pe.sets,
+        reps: r.reps,
+        reps_min: r.reps_min,
+        reps_max: r.reps_max,
+        duration_seconds: null,
+        duration_min: null,
+        duration_max: null,
+        rest_seconds: pe.rest_seconds ?? null,
+        weight_kg: null,
+        notes: null,
+        order_index: workoutExercises.length,
+        exercises: ex,
+        isPlanned: true,
+      } as any);
+    });
+    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises' };
+
+    const { data, error } = await supabase
+      .from('ziko_workout_sessions')
+      .insert({
+        user_id: user.id,
+        program_workout_id: null,
+        program_id: null,
+        name: picked.name,
+        started_at: new Date().toISOString(),
+        day_of_week: new Date().getDay() || 7,
+      })
+      .select()
+      .single();
+    if (error || !data) return { ok: false, reason: 'db_error' };
+
+    const session = data as WorkoutSession;
+    set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
+    AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
+    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length };
+  },
+
+  discardSession: async () => {
+    const { currentSession } = get();
+    const user = useAuthStore.getState().user;
+    if (currentSession) {
+      try {
+        await supabase.from('ziko_session_sets').delete().eq('session_id', currentSession.id);
+        await supabase.from('ziko_session_exercises').delete().eq('session_id', currentSession.id);
+        await supabase.from('ziko_workout_sessions').delete().eq('id', currentSession.id);
+      } catch {
+        // best effort: orphan rows without sets are excluded from every counter anyway
+      }
+    }
+    if (user) AsyncStorage.removeItem(sessionKey(user.id)).catch(() => {});
+    set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
+  },
+
   endSession: async () => {
     const { currentSession } = get();
     const user = useAuthStore.getState().user;
@@ -282,7 +402,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .gte('started_at', since.toISOString())
       .order('started_at', { ascending: false });
 
-    if (data) set({ recentSessions: data as WorkoutSession[] });
+    // TRAIN-03: sessions without any validated set are not shown nor counted
+    if (data) set({ recentSessions: filterCountableSessions(data as WorkoutSession[]) });
   },
 
   loadExercises: async () => {
