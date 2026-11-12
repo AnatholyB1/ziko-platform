@@ -14,6 +14,9 @@ export interface DraftRecord {
   revision: number;
   status: 'draft' | 'saved';
   saved_program_id: string | null;
+  /** P24 : suite et programme precedent (brouillon issu d'une relance), sinon null. */
+  sequence_id: string | null;
+  previous_program_id: string | null;
 }
 
 export function toRecord(row: any): DraftRecord {
@@ -36,10 +39,13 @@ export function toRecord(row: any): DraftRecord {
     revision: Number(row.revision ?? 0),
     status: row.status === 'saved' ? 'saved' : 'draft',
     saved_program_id: row.saved_program_id ?? null,
+    sequence_id: row.sequence_id ?? null,
+    previous_program_id: row.previous_program_id ?? null,
   };
 }
 
-const COLS = 'id, user_id, conversation_id, name, goal, program_data, revision, status, saved_program_id';
+const COLS =
+  'id, user_id, conversation_id, name, goal, program_data, revision, status, saved_program_id, sequence_id, previous_program_id';
 
 export async function loadDraft(db: WorkshopDb, userId: string, id: string): Promise<DraftRecord | null> {
   const { data, error } = await db.from('ziko_workshop_drafts').select(COLS).eq('id', id).eq('user_id', userId).maybeSingle();
@@ -110,9 +116,21 @@ export async function publishDraft(
 ): Promise<{ programId: string } | { error: string }> {
   if (!draft.program) return { error: 'empty_draft' };
   if (draft.status === 'saved' && draft.saved_program_id) return { programId: draft.saved_program_id };
+  // P24 (D-10) : un brouillon de relance rattache le programme a la suite, a la position suivante (INACTIF).
+  let sequenceCols: { sequence_id?: string; sequence_position?: number } = {};
+  if (draft.sequence_id) {
+    const { data: last } = await db
+      .from('ziko_ai_generated_programs')
+      .select('sequence_position')
+      .eq('sequence_id', draft.sequence_id)
+      .order('sequence_position', { ascending: false })
+      .limit(1);
+    const lastPos = Array.isArray(last) && last[0] ? Number(last[0].sequence_position) || 0 : 0;
+    sequenceCols = { sequence_id: draft.sequence_id, sequence_position: lastPos + 1 };
+  }
   const { data, error } = await db
     .from('ziko_ai_generated_programs')
-    .insert(toProgramRow(userId, draft.program))
+    .insert({ ...toProgramRow(userId, draft.program), ...sequenceCols })
     .select('id')
     .single();
   if (error || !data) return { error: error?.message ?? 'insert failed' };

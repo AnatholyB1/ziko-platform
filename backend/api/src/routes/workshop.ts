@@ -15,6 +15,8 @@ import { createDraft, loadDraft, saveDraftProgram, publishDraft, type DraftRecor
 import { createWorkshopTools, toolLabel } from '../workshop/tools.js';
 import { buildWorkshopSystemPrompt } from '../workshop/prompt.js';
 import { WORKSHOP_MAX_MESSAGE_CHARS, WORKSHOP_MAX_STEPS } from '../workshop/limits.js';
+import { runRelaunchCheck, runRelaunchPropose, dismissRelaunch, previousResultsBlock, getOpenRelaunch } from '../periodization/relaunch.js';
+import { loadCurrentSequence } from '../periodization/store.js';
 
 // ============================================================
 // Phase 23 (v1.20) - Atelier IA de creation de programme (ATEL-01..06, ATEL-10)
@@ -123,6 +125,59 @@ workshopRouter.post('/drafts/:id/publish', async (c) => {
   return c.json({ program_id: res.programId });
 });
 
+// ── P24 : periodisation et relance automatique (ATEL-07/08/09) ───────
+// Aucun creditCheck/creditDeduct ici : appels automatiques ABSORBES (plafond journalier, ziko_ai_cost_log).
+
+// GET /sequence : suite ordonnee courante + relance ouverte
+workshopRouter.get('/sequence', async (c) => {
+  const userId = c.get('auth').userId;
+  const db = clientForUser(bearer(c));
+  const [seq, relaunch] = await Promise.all([loadCurrentSequence(db, userId), getOpenRelaunch(db, userId)]);
+  return c.json({ sequence: seq.sequence, items: seq.items, relaunch });
+});
+
+// POST /relaunch/check : detection de fin de programme (sans IA), idempotent
+workshopRouter.post('/relaunch/check', async (c) => {
+  const userId = c.get('auth').userId;
+  const userToken = bearer(c);
+  const db = clientForUser(userToken);
+  try {
+    const out = await runRelaunchCheck({
+      db,
+      userId,
+      createConversation: async () => (await getOrCreateConversation(userId, undefined, userToken, { source: 'workshop' })).conversationId,
+    });
+    return c.json(out);
+  } catch (err) {
+    console.error('[workshop relaunch check] failed:', err instanceof Error ? err.message : err);
+    return c.json({ error: 'relaunch_check_failed' }, 500);
+  }
+});
+
+// POST /relaunch/:id/propose : UN appel IA automatique (absorbe, plafonne), idempotent
+workshopRouter.post('/relaunch/:id/propose', async (c) => {
+  const userId = c.get('auth').userId;
+  const userToken = bearer(c);
+  const db = clientForUser(userToken);
+  const out = await runRelaunchPropose({
+    db,
+    userId,
+    relaunchId: c.req.param('id'),
+    appendMessages: (conversationId, msgs) => appendMessages(conversationId, msgs, userToken),
+  });
+  if (out.status === 'not_found') return c.json({ error: 'not_found' }, 404);
+  if (out.status === 'dismissed') return c.json({ error: 'dismissed' }, 409);
+  return c.json(out);
+});
+
+// POST /relaunch/:id/dismiss : l'utilisateur ignore la relance (aucune consequence)
+workshopRouter.post('/relaunch/:id/dismiss', async (c) => {
+  const userId = c.get('auth').userId;
+  const db = clientForUser(bearer(c));
+  const ok = await dismissRelaunch(db, userId, c.req.param('id'));
+  return ok ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
+});
+
 // ── POST /stream ─────────────────────────────────────────────────────
 workshopRouter.post('/stream', creditCheck('chat'), creditDeduct('chat'), async (c) => {
   const userId = c.get('auth').userId;
@@ -178,7 +233,7 @@ workshopRouter.post('/stream', creditCheck('chat'), creditDeduct('chat'), async 
 
   const result = streamText({
     model: AGENT_MODEL,
-    system: buildWorkshopSystemPrompt(ctx, draft.program),
+    system: [buildWorkshopSystemPrompt(ctx, draft.program), await previousResultsBlock(db, userId, draft)].filter(Boolean).join('\n\n'),
     messages: [...history, { role: 'user', content: message }],
     tools,
     stopWhen: stepCountIs(WORKSHOP_MAX_STEPS),
