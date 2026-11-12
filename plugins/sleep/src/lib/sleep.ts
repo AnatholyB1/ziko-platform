@@ -304,3 +304,37 @@ export function mapHealthConnectStages(
   }
   return any ? out : null;
 }
+
+// ── Dates locales (jour du reveil, pas UTC) ───────────────────────────────────
+
+export function localDateKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function shiftDateKey(key: string, deltaDays: number): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return localDateKey(new Date(y, m - 1, d + deltaDays));
+}
+
+/** 7 dates locales, ancien -> recent, finissant a `today`. */
+export function lastNDays(today: string, n = 7): string[] {
+  const out: string[] = [];
+  for (let i = n - 1; i >= 0; i--) out.push(shiftDateKey(today, -i));
+  return out;
+}
+
+const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const DAY_INITIALS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+export function dayInitial(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return DAY_INITIALS[new Date(y, m - 1, d).getDay()];
+}
+
+/** `Du 11 au 12 nov.` : la nuit se termine le jour du reveil `key`. */
+export function nightLabel(key: string): string {
+  const prev = shiftDateKey(key, -1);
+  const [, pm, pd] = prev.split('-').map(Number);
+  const [, m, d] = key.split('-').map(Number);
+  return pm === m ? `Du ${pd} au ${d} ${MONTHS[m - 1]}` : `Du ${pd} ${MONTHS[pm - 1]} au ${d} ${MONTHS[m - 1]}`;
+}

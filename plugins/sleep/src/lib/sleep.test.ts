@@ -3,6 +3,7 @@ import {
   nightDurationMin, validateNight, formatDurationMin, formatDurationH, stepTime, resolveNight, homeSleepLabel,
   buildWeekBars, weekAverageH, weekAccessibilityLabel, parseSettings, settingsToJson, stepGoal, EMPTY_SETTINGS,
   mapHealthConnectStages, healthStages, type ManualNight, type HealthNight,
+  localDateKey, shiftDateKey, lastNDays, nightLabel, dayInitial,
 } from './sleep';
 
 const manual: ManualNight = { date: '2026-11-12', bedtime: '23:00', wake_time: '06:45', duration_hours: 7.75, quality: 4, awakenings: 1 };
@@ -118,6 +119,18 @@ describe('reglages (SL-5, D-09)', () => {
     expect(stepGoal(8, 1)).toBe(8.5);
     expect(stepGoal(4, -1)).toBe(4);
     expect(stepGoal(12, 1)).toBe(12);
+  });
+});
+
+describe('dates locales', () => {
+  it('shift / 7 jours / libelle de nuit', () => {
+    expect(shiftDateKey('2026-03-01', -1)).toBe('2026-02-28');
+    expect(lastNDays('2026-11-12')).toHaveLength(7);
+    expect(lastNDays('2026-11-12')[0]).toBe('2026-11-06');
+    expect(nightLabel('2026-11-12')).toBe('Du 11 au 12 nov.');
+    expect(nightLabel('2026-12-01')).toBe('Du 30 nov. au 1 déc.');
+    expect(dayInitial('2026-11-12')).toBe('J');
+    expect(localDateKey(new Date(2026, 10, 12, 23, 59))).toBe('2026-11-12');
   });
 });
 
