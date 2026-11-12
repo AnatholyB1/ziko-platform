@@ -16,6 +16,7 @@ import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
 import { scheduleHabitReminder, cancelHabitReminder, scheduleAllReminders } from '../notifications';
+import { normalizeHabits, normalizeHabitLogs } from '../normalize';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,16 +201,23 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .select('*')
         .eq('user_id', userId);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabits(data);
     },
     enabled: !!userId,
+    retry: 1,
   });
 
   // ── App-start recovery: reschedule all reminders when habits load ────────────
+  // Deferred + fire-and-forget: scheduling is a native side effect and must never
+  // run inside the first paint of the screen nor reject unhandled (HABT-01).
   useEffect(() => {
-    if (habits && habits.length > 0) {
-      scheduleAllReminders(habits as any, 'Ziko');
-    }
+    if (!Array.isArray(habits) || habits.length === 0) return;
+    const timer = setTimeout(() => {
+      scheduleAllReminders(habits as any, 'Ziko').catch((e) =>
+        console.warn('[Habits] reminder recovery failed:', e),
+      );
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [habits]);
 
   // ── Today's logs ─────────────────────────────────────────
@@ -223,7 +231,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .eq('user_id', userId)
         .eq('date', today);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabitLogs(data);
     },
     enabled: !!userId,
   });
@@ -245,7 +253,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .eq('user_id', userId)
         .gte('date', since30);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabitLogs(data);
     },
     enabled: !!userId,
   });
@@ -952,19 +960,29 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
+  // Loading / error states keep the themed background and the header with a working back
+  // button: they used to be a bare, header-less view (blank screen with no way out).
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(app)/' as any);
+  };
+
   if (habitsLoading) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#FF5C1A" />
-    </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PluginHeader title="Habits" onBack={goBack} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 }}>
+        <ActivityIndicator size="large" color="#FF5C1A" />
+      </View>
+    </SafeAreaView>
   );
 
   if (habitsError) return (
-    <ErrorScreen variant="network" onRetry={habitsRefetch} />
+    <ErrorScreen variant="network" onRetry={habitsRefetch} onGoBack={goBack} />
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
-      <PluginHeader title="Habits" onBack={() => router.back()} />
+      <PluginHeader title="Habits" onBack={goBack} />
       <SubTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
       <ScrollView
         contentContainerStyle={{

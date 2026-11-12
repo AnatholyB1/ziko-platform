@@ -1,0 +1,128 @@
+[
+ {
+  "id": "d01-amis",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D01 Amis : le champ de recherche est en haut, toujours visible ; liste des amis (SOC-05)"
+ },
+ {
+  "id": "d02-recherche-live",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D02 Recherche en direct, sans bouton \"Rechercher\" : le bouton de chaque ligne reflète l'état (SOC-01, 04, 05, 08)"
+ },
+ {
+  "id": "d03-recherche-aucun",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D03 Recherche sans résultat : message et conseil, le champ garde le focus"
+ },
+ {
+  "id": "d04-envoi-echec",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D04 Échec de l'envoi : la ligne revient à \"Ajouter\", message précis, nouvel essai en un tap (SOC-01)"
+ },
+ {
+  "id": "d05-en-attente",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D05 En attente : Reçues (Accepter / Refuser) et Envoyées (Annuler), deux sections distinctes (SOC-02, 03)"
+ },
+ {
+  "id": "d06-en-attente-vide",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D06 En attente vide : deux sections gardées, texte honnête dans chacune (SOC-03)"
+ },
+ {
+  "id": "d07-amis-vide",
+  "file": "01-amis.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D07 Aucun ami : la recherche reste en haut, une action claire, pas de liste factice"
+ },
+ {
+  "id": "d08-profil-ami",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D08 Profil public d'un ami : avatar et boutons entièrement visibles sous la bannière, objectif en français (SOC-06, 07)"
+ },
+ {
+  "id": "d09-profil-ami-suite",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D09 Profil public, suite : badges, derniers entraînements, records, défis en commun (SOC-06)"
+ },
+ {
+  "id": "d10-defis",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D10 Défis en commun et partie basse du profil (SOC-06)"
+ },
+ {
+  "id": "d11-profil-inconnu",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D11 Profil d'une personne qui n'est pas amie : un seul bouton, \"Ajouter\" (SOC-04)"
+ },
+ {
+  "id": "d12-profil-envoyee",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D12 Demande envoyée : le même bouton change d'état, avec une annulation claire (SOC-02, 04, 08)"
+ },
+ {
+  "id": "d13-profil-recue",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D13 Demande reçue : Accepter et Refuser directement sur le profil (SOC-03, 04)"
+ },
+ {
+  "id": "d14-profil-erreur",
+  "file": "02-profil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "D14 Profil impossible à charger : erreur et nouvel essai, pas de profil vide"
+ }
+]
