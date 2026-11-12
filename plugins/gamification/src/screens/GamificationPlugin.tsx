@@ -6,7 +6,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useThemeStore } from '@ziko/plugin-sdk';
 import {
   HISTORY_PAGE_SIZE, awardBadges, computeLevelProgress, ensureProfile, equipItem, fetchAchievements,
-  fetchCoinHistory, purchaseItem, type LevelDef, type ShopItem,
+  fetchCoinHistory, purchaseItem, syncQuests, type LevelDef, type ShopItem,
 } from '../store';
 import {
   awardToastText, sortHistory, themeEquipNote, type CoinTx, type InventoryLite, type ShopItemLite,
@@ -15,23 +15,10 @@ import { RewardsHeader, RewardsTabs, Toast, type RewardsTab } from './rewards/ch
 import { AchievementsTab } from './rewards/AchievementsTab';
 import { ShopTab } from './rewards/ShopTab';
 import { HistoryView, LevelTab, type LevelData } from './rewards/LevelTab';
-import { EmptyCard } from './rewards/ui';
+import { QuestsTab } from './rewards/QuestsTab';
+import { questToastText } from '../quests';
 
-/**
- * Onglet Quetes (frontiere P12 / P13, D-16) : P12 ne livre que l'etat vide honnete (B13).
- * AUCUNE quete factice : le contenu reel (quetes du jour / de la semaine) est livre par la phase 13,
- * qui reecrit ce composant.
- */
-function QuestsTab({ theme }: { theme: ReturnType<typeof useThemeStore.getState>['theme'] }) {
-  return (
-    <EmptyCard
-      theme={theme}
-      icon="flag"
-      title="Pas de quête active"
-      message="Tes quêtes apparaîtront ici dès qu'elles seront disponibles."
-    />
-  );
-}
+// Onglet Quetes : `./rewards/QuestsTab` (P13, D-01). Lecture base via `syncQuests`, aucune quete factice.
 
 export interface GamificationPluginProps {
   supabase: any;
@@ -109,6 +96,34 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
     retryDelay: 300,
     queryFn: () => fetchAchievements(supabase, userId as string),
   });
+
+  // ── Quetes (P13) : sync a chaque ouverture/retour sur l'onglet ; la progression vient des donnees reelles ─
+  const questsQ = useQuery({
+    queryKey: ['rewards-quests', userId],
+    enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    retry: 1,
+    retryDelay: 300,
+    queryFn: async () => {
+      const res = await syncQuests(supabase);
+      if (res.newlyCompleted.length > 0) {
+        setToast(questToastText(res.newlyCompleted));
+        // Les pieces gagnees changent le solde, l'historique et le niveau.
+        void qc.invalidateQueries({ queryKey: ['rewards-profile', userId] });
+        void qc.invalidateQueries({ queryKey: ['rewards-recent', userId] });
+        void qc.invalidateQueries({ queryKey: ['rewards-history', userId] });
+      }
+      return res.quests;
+    },
+  });
+  // Retour sur l'onglet Quetes (ex. apres avoir bu de l'eau) : re-mesure.
+  const questsTabSeen = useRef(false);
+  useEffect(() => {
+    if (!questsTabSeen.current) { questsTabSeen.current = true; return; }
+    if (enabled && tab === 'Quêtes') void questsQ.refetch();
+  }, [tab]);
 
   // ── Boutique ───────────────────────────────────────────
   const shopQ = useQuery({
@@ -277,7 +292,15 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
                 theme={theme}
               />
             )}
-            {tab === 'Quêtes' && <QuestsTab theme={theme} />}
+            {tab === 'Quêtes' && (
+              <QuestsTab
+                quests={questsQ.data}
+                loading={questsQ.isLoading || !enabled}
+                error={questsQ.isError}
+                onRetry={() => void questsQ.refetch()}
+                theme={theme}
+              />
+            )}
           </View>
         )}
       </ScrollView>

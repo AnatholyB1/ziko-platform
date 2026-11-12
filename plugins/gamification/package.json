@@ -8,6 +8,7 @@
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
     "./rewards": "./src/rewards.ts",
+    "./quests": "./src/quests.ts",
     "./screens/GamificationPlugin": "./src/screens/GamificationPlugin.tsx",
     "./screens/GamificationDashboard": "./src/screens/GamificationDashboard.tsx"
   },

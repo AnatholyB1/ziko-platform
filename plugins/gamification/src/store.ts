@@ -3,6 +3,7 @@ import {
   buildAchievements, parseAwarded,
   type AwardedBadge, type BadgeDefinition, type BadgeProgressRow, type EarnedBadge,
 } from './rewards';
+import { parseQuestSync, type QuestSync } from './quests';
 
 // ── Types ────────────────────────────────────────────────
 export interface LevelDef {
@@ -252,6 +253,8 @@ export async function awardWorkoutXP(supabase: any, sessionId: string) {
   });
   // D-08 : l'attribution des succes suit la fin de seance (jamais bloquant).
   await awardBadges(supabase);
+  // P13 : la progression des quetes suit la fin de seance (jamais bloquant).
+  await syncQuestsQuiet(supabase);
 }
 
 // ── Award Habit Completion ──────────────────────────────
@@ -327,6 +330,29 @@ export async function fetchAchievements(supabase: any, userId: string) {
   const earned = (earnedRes.data ?? []) as EarnedBadge[];
   const progress = ((progRes.data as any)?.badges ?? []) as BadgeProgressRow[];
   return buildAchievements(defs, earned, progress);
+}
+
+// ── Quetes (P13) ───────────────────────────────────────────────────
+/**
+ * Synchronise les quetes (RPC SECURITY DEFINER `ziko_sync_quests`) : cree les quetes de depart de la
+ * periode, mesure la progression sur les donnees reelles, termine et credite. LEVE en cas d'erreur :
+ * l'onglet affiche la carte d'erreur, jamais de quete de secours (REWD-10).
+ */
+export async function syncQuests(supabase: any): Promise<QuestSync> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('not-authenticated');
+  const { data, error } = await supabase.rpc('ziko_sync_quests', { p_user_id: user.id });
+  if (error) throw error;
+  return parseQuestSync(data);
+}
+
+/** Variante silencieuse (ex. fin de seance) : ne leve jamais, renvoie les quetes terminees. */
+export async function syncQuestsQuiet(supabase: any): Promise<QuestSync | null> {
+  try {
+    return await syncQuests(supabase);
+  } catch {
+    return null;
+  }
 }
 
 // ── Historique des gains (pagine, D-14) ────────────────────────────

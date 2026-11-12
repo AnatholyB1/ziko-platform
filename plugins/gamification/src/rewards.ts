@@ -335,6 +335,7 @@ const SOURCE_LABEL: Record<string, string> = {
   purchase: 'Achat',
   refund: 'Remboursement',
   achievement: 'Succès',
+  quest: 'Quête',
 };
 
 export function historyLabel(tx: Pick<CoinTx, 'source' | 'description'>): string {
