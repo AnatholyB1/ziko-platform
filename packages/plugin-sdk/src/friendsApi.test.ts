@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   sendFriendRequestRpc, searchUsersWithStatus, listFriendships, fetchPublicProfile, normalizePublicProfile,
-  mapSendError, xpToNextLabel, levelProgress, profileGoalText,
+  mapSendError, xpToNextLabel, levelProgress, profileGoalText, runFriendWrite,
 } from './friendsApi';
 
 const rpcClient = (impl: (fn: string, args: any) => any, extra: Record<string, any> = {}) =>
@@ -189,5 +189,23 @@ describe('affichage profil', () => {
     expect(profileGoalText('endurance')).toBe('endurance');
     expect(profileGoalText('some_new_goal')).not.toContain('_');
     expect(profileGoalText(null)).toBe('');
+  });
+});
+
+describe('runFriendWrite (accepter / refuser / annuler / retirer)', () => {
+  it("ok quand l'ecriture aboutit", async () => {
+    expect(await runFriendWrite(Promise.resolve({ error: null, data: [{ id: 'f' }] }), true)).toEqual({ ok: true });
+  });
+  it('erreur serveur => ok:false (jamais avalee)', async () => {
+    expect(await runFriendWrite(Promise.resolve({ error: { code: '500' } }), false)).toMatchObject({ ok: false });
+  });
+  it('0 ligne touchee = refus RLS (un non-destinataire ne peut pas accepter)', async () => {
+    expect(await runFriendWrite(Promise.resolve({ error: null, data: [] }), true)).toMatchObject({ ok: false });
+  });
+  it("sans requireRow, 0 ligne n'est pas une erreur (DELETE idempotent)", async () => {
+    expect(await runFriendWrite(Promise.resolve({ error: null, data: [] }), false)).toEqual({ ok: true });
+  });
+  it('exception reseau => ok:false', async () => {
+    expect(await runFriendWrite(Promise.reject(new Error('Network request failed')), true)).toMatchObject({ ok: false });
   });
 });

@@ -114,3 +114,29 @@ describe('textes propres (SOC-08, AM-7)', () => {
     expect(initialsOf(null)).toBe('?');
   });
 });
+
+import { relativeDayLabel, daysLeftLabel, streakLabel } from './friendRelation';
+
+describe('libelles profil', () => {
+  const now = new Date(2026, 10, 12, 15, 0, 0); // jeudi 12 nov 2026
+  it('relativeDayLabel', () => {
+    expect(relativeDayLabel(new Date(2026, 10, 12, 8), now)).toBe("Aujourd'hui");
+    expect(relativeDayLabel(new Date(2026, 10, 11, 20), now)).toBe('Hier');
+    expect(relativeDayLabel(new Date(2026, 10, 9, 10), now)).toBe('Lundi');
+    expect(relativeDayLabel(new Date(2026, 9, 28, 10), now)).toBe('28 oct.');
+    expect(relativeDayLabel(null, now)).toBe('');
+    expect(relativeDayLabel('nope', now)).toBe('');
+  });
+  it('daysLeftLabel', () => {
+    expect(daysLeftLabel('2026-11-24', now)).toBe('12 jours restants');
+    expect(daysLeftLabel('2026-11-13', now)).toBe('1 jour restant');
+    expect(daysLeftLabel('2026-11-12', now)).toBe('Dernier jour');
+    expect(daysLeftLabel('2026-11-01', now)).toBe('Terminé');
+    expect(daysLeftLabel(null, now)).toBe('');
+  });
+  it('streakLabel', () => {
+    expect(streakLabel(5)).toBe('5 jours');
+    expect(streakLabel(1)).toBe('1 jour');
+    expect(streakLabel(0)).toBe('aucune série');
+  });
+});

@@ -26,13 +26,14 @@ export interface FriendshipEntry {
   handle: string | null;
   avatar_url: string | null;
   goal: string | null;
+  level: number | null;
   status: 'pending' | 'accepted';
   direction: 'sent' | 'received';
   created_at: string;
 }
 
 export interface PublicProfileBadge { slug: string; name: string; icon: string; tier: number | null; earned_at: string | null }
-export interface PublicProfileWorkout { id: string; name: string | null; started_at: string; total_sets: number | null; total_volume_kg: number | null }
+export interface PublicProfileWorkout { id: string; name: string | null; started_at: string; duration_min: number | null; total_exercises: number | null; total_sets: number | null }
 export interface PublicProfileRecord { exercise_id: string; exercise_name: string | null; weight_kg: number; achieved_at: string | null }
 export interface PublicProfileChallenge { id: string; title: string; status: string; end_date: string | null }
 
@@ -214,6 +215,7 @@ export async function listFriendships(supabase: any): Promise<FriendshipEntry[]>
     handle: r.handle ?? null,
     avatar_url: r.avatar_url ?? null,
     goal: r.goal ?? null,
+    level: typeof r.level === 'number' ? r.level : null,
     status: r.status === 'accepted' ? 'accepted' : 'pending',
     direction: r.direction === 'sent' ? 'sent' : 'received',
     created_at: String(r.created_at ?? ''),
@@ -279,4 +281,25 @@ export function levelProgress(p: Pick<PublicProfile, 'xp' | 'xp_to_next'>): numb
 /** Objectif en francais en minuscules (`prise de muscle`), jamais de slug : reutilise goalLabel (XCUT-01). */
 export function profileGoalText(goal: string | null | undefined): string {
   return goalLabel(goal, '').toLocaleLowerCase('fr-FR');
+}
+
+// ── Ecritures sur ziko_friendships (accepter / refuser / annuler / retirer) ──
+
+export interface FriendActionResult { ok: boolean; message?: string }
+
+/**
+ * Execute une ecriture et ne renvoie ok que si elle a reellement abouti. Avec `requireRow`, une reponse
+ * sans ligne touchee (cas ou la RLS filtre silencieusement, ex. un non-destinataire qui tente d'accepter)
+ * est un echec : plus d'erreur avalee (store.ts historique).
+ */
+export async function runFriendWrite(op: PromiseLike<{ error: any; data?: any }>, requireRow: boolean): Promise<FriendActionResult> {
+  const fail: FriendActionResult = { ok: false, message: 'Action impossible. Vérifie ta connexion puis réessaie.' };
+  try {
+    const { error, data } = await op;
+    if (error) return fail;
+    if (requireRow && Array.isArray(data) && data.length === 0) return { ok: false, message: 'Action impossible.' };
+    return { ok: true };
+  } catch {
+    return fail;
+  }
 }

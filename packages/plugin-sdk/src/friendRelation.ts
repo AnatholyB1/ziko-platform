@@ -115,3 +115,41 @@ export function initialsOf(name: string | null | undefined): string {
   if (parts.length === 0) return '?';
   return parts.slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
 }
+
+// ── Libelles du profil / des listes ──────────────────────────
+
+const DAY_MS = 86_400_000;
+const WEEKDAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+/** `Aujourd'hui` / `Hier` / `Lundi` (moins de 7 jours) / `12 nov.` : date relative d'un entrainement. */
+export function relativeDayLabel(input: string | number | Date | null | undefined, now: Date = new Date()): string {
+  if (input === null || input === undefined || input === '') return '';
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return '';
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOf(now) - startOf(d)) / DAY_MS);
+  if (diff <= 0) return "Aujourd'hui";
+  if (diff === 1) return 'Hier';
+  if (diff < 7) return WEEKDAYS[d.getDay()];
+  const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+/** `12 jours restants` / `1 jour restant` / `Dernier jour` / `Terminé` pour un defi (date de fin `YYYY-MM-DD`). */
+export function daysLeftLabel(endDate: string | null | undefined, now: Date = new Date()): string {
+  if (!endDate) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(endDate);
+  if (!m) return '';
+  const end = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const left = Math.round((end - today) / DAY_MS);
+  if (left < 0) return 'Terminé';
+  if (left === 0) return 'Dernier jour';
+  return left === 1 ? '1 jour restant' : `${left} jours restants`;
+}
+
+/** `5 jours` / `1 jour` / `aucune série` pour la serie du profil. */
+export function streakLabel(days: number): string {
+  if (!days || days <= 0) return 'aucune série';
+  return days === 1 ? '1 jour' : `${days} jours`;
+}
