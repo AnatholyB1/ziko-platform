@@ -6,7 +6,8 @@ Integration : branche `milestone/v1.20`, worktree `.claude/worktrees/integration
 | Phase | Etat | Branche | Dernier commit | Gate | Notes |
 |---|---|---|---|---|---|
 | P1 Harness | MERGE (scripts+AVD boot prouves; APK/Maestro/comptes NON prouves) | phase/01-harness-uat-android | 8fb2d2dc | check-migration-names OK | attend schema branche + secrets EAS + .uat/env |
-| P5 P6 P8 | lances (builders) | phase/05,06,08-* | - | - | vague 1 |
+| P8 Quick Log | MERGE (code+17 tests; UAT emulateur en attente) | phase/08-accueil-quick-log | 682b9baa | mobile 103/103, tsc 0 | RLS a confirmer sur branche; dette: outils backend hydration/measurements/journal en UTC |
+| P5 P6 | en cours (builders) | phase/05,06-* | - | - | doivent merger milestone/v1.20 (index.tsx touche par P8) |
 | P2 Session | MERGE (code+tests unitaires; UAT emulateur en attente P1+APK) | phase/02-session-auth-robustes | 93ffc7d7 | mobile 86/86, tsc 0 | transmis a P21: demande inverse, insert ignore |
 | P3 Habitudes | non lance | - | - | - | |
 | P4 Maquettes | non lance | - | - | - | lots A-D |
