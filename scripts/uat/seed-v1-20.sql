@@ -137,3 +137,21 @@ select 'd6000000-0000-4000-8000-000000000001', 'a0a0a0a0-0000-4000-8000-00000000
       order by n.idx)
     from (values (0,'Full Body Power'),(1,'Upper'),(2,'Lower')) as n(idx, nm)))))
 where not exists (select 1 from public.ziko_ai_generated_programs where id = 'd6000000-0000-4000-8000-000000000001');
+
+-- Niveau eleve pour debloquer tous les modules (gating par niveau) : athlete A et B
+update public.ziko_athlete_state set level = 5, points = 500 where user_id in ('a0a0a0a0-0000-4000-8000-0000000000a1','b0b0b0b0-0000-4000-8000-0000000000b1');
+insert into public.ziko_athlete_state (user_id, status, tier, level, points)
+values ('a0a0a0a0-0000-4000-8000-0000000000a1', 'active', 5, 5, 500) on conflict (user_id) do update set tier = 5, level = 5;
+
+-- Solde de pieces et XP (la puce "Solde" lit ziko_user_gamification.coins, pas les transactions)
+insert into public.ziko_user_gamification (user_id, xp, level, coins, current_streak, longest_streak)
+values ('a0a0a0a0-0000-4000-8000-0000000000a1', 350, 3, 480, 5, 7)
+on conflict (user_id) do update set xp = 350, level = 3, coins = 480, current_streak = 5, longest_streak = 7;
+
+-- FIXTURE BRANCHE UNIQUEMENT : ziko_badge_definitions a RLS active et AUCUNE policy SELECT dans les migrations
+-- du depot (constat UAT P12 : Succes = "0 sur 0"). Verifier la prod avant release ; ne pas porter en migration sans decision.
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='ziko_badge_definitions') then
+    create policy "badge_definitions_read_uat" on public.ziko_badge_definitions for select using (true);
+  end if;
+end $$;
