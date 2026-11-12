@@ -1,0 +1,29 @@
+# Demo flow: login -> navigate -> screenshots. Run via scripts/uat/evidence.sh run 01 demo .maestro/demo-login-nav.yaml UAT_EMAIL=... UAT_PASSWORD=...
+# Credentials are passed as env (-e), never stored in the repo. Selectors to be confirmed against the real dev-client.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- launchApp:
+    clearState: true
+- takeScreenshot: 01-launch
+- extendedWaitUntil:
+    visible: "(?i)(connexion|se connecter|email)"
+    timeout: 60000
+- tapOn:
+    text: "(?i)email.*"
+- inputText: ${UAT_EMAIL}
+- tapOn:
+    text: "(?i)mot de passe.*"
+- inputText: ${UAT_PASSWORD}
+- hideKeyboard
+- takeScreenshot: 02-login-filled
+- tapOn:
+    text: "(?i)(se connecter|connexion)"
+- extendedWaitUntil:
+    visible: "(?i)(accueil|aujourd.*hui|bonjour)"
+    timeout: 60000
+- takeScreenshot: 03-home
+- pressKey: back
+- takeScreenshot: 04-after-nav

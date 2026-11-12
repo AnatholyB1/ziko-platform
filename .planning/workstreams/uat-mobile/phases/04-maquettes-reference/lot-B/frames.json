@@ -1,0 +1,209 @@
+[
+ {
+  "id": "b01-niveau",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B01 Récompenses, onglet Niveau (REWD-01) : solde de pièces visible en permanence"
+ },
+ {
+  "id": "b02-succes",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B02 Onglet Succès : les 11 vrais succès, icône propre, condition, progression (REWD-02)"
+ },
+ {
+  "id": "b03-succes-fiche",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B03 Fiche d'un succès débloqué : nom, condition, progression, date de déblocage (REWD-03)"
+ },
+ {
+  "id": "b04-succes-verrouille",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B04 Fiche d'un succès verrouillé : la condition et le reste à faire, jamais de date inventée"
+ },
+ {
+  "id": "b05-succes-erreur",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B05 Succès en erreur : aucune liste de secours affichée (REWD-10)"
+ },
+ {
+  "id": "b06-boutique",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B06 Boutique : solde permanent, 4 catégories, aucune limite de 8, objets possédés/verrouillés distincts (REWD-05, 07)"
+ },
+ {
+  "id": "b07-apercu",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B07 Aperçu avant achat : le thème est montré appliqué, solde après achat, un seul bouton principal (REWD-09)"
+ },
+ {
+  "id": "b08-achat",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B08 Aperçu avec solde suffisant : achat en un tap, confirmation par toast (pas de modale de confirmation)"
+ },
+ {
+  "id": "b09-mes-objets",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B09 Mes objets : un objet équipé par catégorie, équiper en un tap (REWD-06)"
+ },
+ {
+  "id": "b10-historique",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B10 Historique des gains : pièces et XP, groupé par jour (REWD-08)"
+ },
+ {
+  "id": "b11-historique-vide",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B11 Historique vide : honnête, explique comment gagner"
+ },
+ {
+  "id": "b12-quetes",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B12 Onglet Quêtes : quêtes réelles du jour et de la semaine, progression mesurée (jamais inventée)"
+ },
+ {
+  "id": "b13-quetes-vide",
+  "file": "01-recompenses.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B13 Quêtes vides : état honnête tant qu'aucune quête n'est générée"
+ },
+ {
+  "id": "b14-inventaire",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B14 Garde-manger, Inventaire : toucher Frigo ouvre la liste (PANT-01, 04, 07 libellés français)"
+ },
+ {
+  "id": "b15-article",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B15 Détail d'un article : quantité, péremption, actions (PANT-04)"
+ },
+ {
+  "id": "b16-ajout-prerempli",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B16 Ajout d'un article après scan : le formulaire est prérempli, champs modifiables (PANT-02, 03)"
+ },
+ {
+  "id": "b17-scan",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B17 Scan du code-barres : cadre guidé, saisie manuelle toujours accessible"
+ },
+ {
+  "id": "b18-scan-refuse",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B18 Caméra refusée : explication, chemin réglages, repli manuel"
+ },
+ {
+  "id": "b19-recettes",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B19 Recettes IA : tient compte du garde-manger ET des macros restantes du jour (PANT-05)"
+ },
+ {
+  "id": "b20-courses",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B20 Courses : ce qui manque (auto) + ajouts manuels, cocher = ranger (PANT-06)"
+ },
+ {
+  "id": "b21-vide",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B21 Garde-manger vide : deux chemins d'ajout (scan en tête)"
+ },
+ {
+  "id": "b22-courses-vide",
+  "file": "02-pantry.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B22 Courses vides : rien ne manque"
+ },
+ {
+  "id": "b02b-succes-suite",
+  "file": "03-succes-suite.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "B02b Onglet Succès, liste défilée : les 7 autres succès (11 au total : 7 à débloquer, 4 débloqués)"
+ }
+]

@@ -9,7 +9,8 @@ import {
   FIRST_LEVEL_READ_TIMEOUT_MS,
 } from '@ziko/plugin-sdk';
 import type { UserProfile, PluginLevelInfo } from '@ziko/plugin-sdk';
-import { supabase } from '../lib/supabase';
+import { showAlert } from '@ziko/plugin-sdk';
+import { supabase, sessionManager } from '../lib/supabase';
 import { queryClient } from '../lib/queryClient';
 import { triggerRetroactiveRecompute } from '../lib/onboardingRecompute';
 
@@ -46,6 +47,9 @@ interface AuthState {
 }
 
 let authListenerStarted = false;
+// true while signOut() runs, so a SIGNED_OUT event is not reported as an expiry
+let userInitiatedSignOut = false;
+let expiryNoticeShown = false;
 
 type AuthSet = (partial: Partial<AuthState>) => void;
 
@@ -162,7 +166,24 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     authListenerStarted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Called when the session is dead and unrecoverable (D-02): drop local state so the
+    // (app) layout redirects to /(auth)/login, tell the user once, never loop.
+    const handleExpired = async () => {
+      if (expiryNoticeShown || !get().session) return;
+      expiryNoticeShown = true;
+      await sessionManager.clearExpiredSession();
+      set({ session: null, user: null, profile: null, ...levelResetPatch() });
+      queryClient.clear();
+      showAlert('Session expirée', 'Ta session a expiré. Reconnecte-toi pour continuer.');
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) expiryNoticeShown = false;
+      if (event === 'SIGNED_OUT' && !userInitiatedSignOut && get().session) {
+        // auto sign-out of a previously valid session (refresh token rejected)
+        await handleExpired();
+        return;
+      }
       setSessionUser(set, get, session);
       if (session?.user) {
         await get().refreshProfile();
@@ -179,11 +200,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       set({ isLoading: false, isInitialized: true });
     });
 
-    // Foreground refetch: a weekly review may have raised the tier while the app
-    // was backgrounded (D-06).
+    // Foreground: resume token auto-refresh and refresh now if near/after expiry (D-01);
+    // background: stop the refresh timer. A weekly review may also have raised the tier
+    // while backgrounded (D-06).
     const appStateSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && get().user) {
-        get().refreshLevel().catch(() => {});
+      if (state === 'active') {
+        sessionManager
+          .handleForeground()
+          .then((r) => {
+            if (r.status === 'expired') return handleExpired();
+            if (r.status === 'ok' && get().user) return get().refreshLevel();
+          })
+          .catch(() => {});
+      } else {
+        sessionManager.handleBackground().catch(() => {});
       }
     });
 
@@ -199,7 +229,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   setProfile: (profile) => set({ profile }),
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    userInitiatedSignOut = true;
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      userInitiatedSignOut = false;
+    }
     set({
       session: null,
       user: null,
