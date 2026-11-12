@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useThemeStore, showAlert, getActionPrimary, useCreditStore } from '@ziko/plugin-sdk';
@@ -36,12 +36,20 @@ import {
   type StepField,
 } from '../../../src/lib/atelier';
 import { AtelierHttpError, createAtelierClient, type AtelierInfo } from '../../../src/lib/atelierService';
+import { PERIOD_COPY, resultsLines, shouldPropose, type RelaunchView } from '../../../src/lib/periodization';
+import { createPeriodizationClient } from '../../../src/lib/periodizationService';
 
 // Maquette lot A (A10-A15). Bouton plein = getActionPrimary (#CF4509, AA). Aucun emoji : Ionicons.
 const SCRIM = 'rgba(28,26,23,0.45)';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
 
 const client = createAtelierClient({
+  apiUrl: API_URL,
+  getToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+});
+
+// P24 : relance automatique (ouverte depuis le bandeau de l'onglet Seance ou la suite avec ?relaunch=<id>).
+const periodClient = createPeriodizationClient({
   apiUrl: API_URL,
   getToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
 });
@@ -68,6 +76,9 @@ export default function AtelierScreen() {
   const [ctxOpen, setCtxOpen] = useState(false);
   const [edit, setEdit] = useState<EditTarget | null>(null);
   const [saving, setSaving] = useState(false);
+  const { relaunch: relaunchParam } = useLocalSearchParams<{ relaunch?: string }>();
+  const [relaunchInfo, setRelaunchInfo] = useState<RelaunchView | null>(null);
+  const [relaunchBusy, setRelaunchBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -88,8 +99,35 @@ export default function AtelierScreen() {
         const i = await client.getInfo();
         if (!alive) return;
         setInfo(i);
-        if (i.latest_draft) {
-          const { draft, messages } = await client.getDraft(i.latest_draft.id);
+        let draftId: string | null = i.latest_draft?.id ?? null;
+        if (relaunchParam) {
+          // P24 : relance. Idempotent cote serveur : si la proposition automatique n'est pas encore faite, elle l'est ici
+          // (appel absorbe, aucun credit) ; en cas de plafond/panne le bilan s'affiche et l'utilisateur continue a la main.
+          setRelaunchBusy(true);
+          try {
+            const seq = await periodClient.getSequence();
+            const r = seq.relaunch && seq.relaunch.id === relaunchParam ? seq.relaunch : null;
+            if (r && alive) {
+              setRelaunchInfo(r);
+              if (shouldPropose(r)) {
+                const p = await periodClient.propose(r.id).catch(() => null);
+                // une autre requete (bandeau de l'onglet Seance) peut deja generer : on attend sa fin (~24 s max)
+                for (let k = 0; p && p.status === 'pending' && p.skipped === 'busy' && k < 8 && alive; k++) {
+                  await new Promise((res) => setTimeout(res, 3000));
+                  const again = await periodClient.getSequence().catch(() => null);
+                  if (!again?.relaunch || again.relaunch.status !== 'proposing') break;
+                }
+              }
+              if (r.draft_id) draftId = r.draft_id;
+            }
+          } catch {
+            /* on retombe sur le dernier brouillon */
+          } finally {
+            if (alive) setRelaunchBusy(false);
+          }
+        }
+        if (draftId) {
+          const { draft, messages } = await client.getDraft(draftId);
           if (!alive) return;
           setState((s) => ({
             ...s,
@@ -360,6 +398,21 @@ export default function AtelierScreen() {
         </View>
 
         <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+          {relaunchBusy && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <ActivityIndicator color={theme.primary} />
+              <Text style={{ flex: 1, fontSize: 14, color: theme.muted }}>{PERIOD_COPY.bannerPreparing}</Text>
+            </View>
+          )}
+          {relaunchInfo?.results && (
+            <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.surface, marginBottom: 16, gap: 6, shadowColor: '#1C1A17', shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 }}>
+              <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: theme.muted }}>{PERIOD_COPY.resultsTitle.toUpperCase()}</Text>
+              {relaunchInfo.program_name ? <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text }}>{relaunchInfo.program_name}</Text> : null}
+              {resultsLines(relaunchInfo.results).map((l) => (
+                <Text key={l} style={{ fontSize: 14, lineHeight: 20, color: theme.text }}>{l}</Text>
+              ))}
+            </View>
+          )}
           {!showInitial && (
             <TouchableOpacity onPress={() => setCtxOpen((v) => !v)} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 12, marginBottom: 16 }}>
               <Ionicons name="albums" size={18} color={theme.muted} />

@@ -26,6 +26,8 @@ export const SOURCES = {
   workshopWebSearch: 'workshop_web_search',
   // v1.20 Phase 14 : generation automatique de quetes (passage de niveau / plus aucune quete).
   questGeneration: 'quest_generation',
+  // v1.20 Phase 24 : proposition automatique du programme suivant en fin de programme (absorbee, plafonnee).
+  programRelaunch: 'program_relaunch',
 } as const;
 
 export type AutonomousCostSource = (typeof SOURCES)[keyof typeof SOURCES];
