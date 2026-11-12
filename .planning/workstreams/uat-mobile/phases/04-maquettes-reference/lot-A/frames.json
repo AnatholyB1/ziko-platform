@@ -1,0 +1,191 @@
+[
+ {
+  "id": "a01-liste",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A01 Liste des programmes, avec contenu (PROG: tous les programmes, un seul actif)"
+ },
+ {
+  "id": "a02-creer",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A02 Feuille \"Créer un programme\" : deux chemins (assistant 4 étapes ou atelier IA)"
+ },
+ {
+  "id": "a03-vide",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A03 Liste vide (premier lancement, aucun programme)"
+ },
+ {
+  "id": "a04-chargement",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A04 Chargement (squelettes #ECEAE4, jamais orange)"
+ },
+ {
+  "id": "a05-erreur",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A05 Erreur de chargement : message clair, action unique, aucun programme factice"
+ },
+ {
+  "id": "a06-menu-actif",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A06 Menu d'un programme ACTIF : pas d'« Activer », titre lisible sur 2 lignes max"
+ },
+ {
+  "id": "a07-menu-inactif",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A07 Menu d'un programme INACTIF : Activer en tête (primaire), Dupliquer, Supprimer à part"
+ },
+ {
+  "id": "a08-conflit",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A08 Conflit programme IA / coach : la règle est écrite à l'écran avant de confirmer"
+ },
+ {
+  "id": "a09-fin-assistant",
+  "file": "01-programmes.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A09 Fin de l'assistant 4 étapes : séance accessible + « Définir comme programme actif »"
+ },
+ {
+  "id": "a10-atelier-conversation",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A10 Atelier IA, conversation avec contenu : outils visibles, brouillon éditable en direct (ATEL-01 à 06)"
+ },
+ {
+  "id": "a11-atelier-accueil",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A11 Atelier, état initial : suggestions + contexte connu, aucun faux message"
+ },
+ {
+  "id": "a12-atelier-edition",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A12 Édition en direct d'un exercice (sans passer par l'IA) + option « demander à l'IA »"
+ },
+ {
+  "id": "a13-atelier-reflexion",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A13 L'IA travaille : outil en cours, réponse en flux, bouton Arrêter (annule et ne débite pas la suite)"
+ },
+ {
+  "id": "a14-atelier-erreur",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A14 Échec de la réponse : message conservé, « Réessayer » (le crédit n'est pas débité)"
+ },
+ {
+  "id": "a15-atelier-credits",
+  "file": "02-atelier.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A15 Crédits épuisés : saisie désactivée, accès au programme existant conservé, chemin vers les crédits"
+ },
+ {
+  "id": "a16-repas",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A16 Ajout de repas, un écran : repas présélectionné, récap du jour, 4 méthodes sans changer d'écran (NUTR-01 à 04)"
+ },
+ {
+  "id": "a17-repas-deja",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A17 Repas déjà logués aujourd'hui, visibles dans le même écran (méthode : récents)"
+ },
+ {
+  "id": "a18-repas-premier",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A18 Premier repas du jour : récap à zéro, aucune ligne fictive"
+ },
+ {
+  "id": "a19-repas-photo",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A19 Méthode Photo (scan IA) : cadre caméra, action unique, coût en crédit annoncé"
+ },
+ {
+  "id": "a20-repas-manuel",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A20 Méthode Manuel : 5 champs, ajout au repas présélectionné"
+ },
+ {
+  "id": "a21-repas-erreur",
+  "file": "03-repas.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "A21 Code-barres non reconnu : issue immédiate vers la saisie manuelle, sans changer d'écran"
+ }
+]
