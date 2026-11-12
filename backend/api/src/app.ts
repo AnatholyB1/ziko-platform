@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
 import { onboardingRouter } from './routes/onboarding.js';
+import { workshopRouter } from './routes/workshop.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { pushEventsRouter } from './routes/push-events.js';
@@ -65,6 +66,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 // Routes
 // Cron routers are mounted BEFORE their authenticated siblings: those apply authMiddleware to '*'
 // and would 401 Vercel cron calls (which carry only the CRON_SECRET bearer, no user JWT).
+app.route('/ai/workshop', workshopRouter); // v1.20 Phase 23 : atelier IA de programme
 app.route('/ai', aiRouter);
 app.route('/ai', onboardingRouter);
 app.route('/plugins', pluginsRouter);
