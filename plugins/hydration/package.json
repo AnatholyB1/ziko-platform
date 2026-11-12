@@ -14,6 +14,8 @@
   "dependencies": {
     "@ziko/plugin-sdk": "*",
     "@ziko/ui": "*",
+    "expo-haptics": "*",
+    "expo-notifications": "*",
     "zustand": "^5.0.0"
   },
   "peerDependencies": {

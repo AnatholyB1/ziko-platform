@@ -12,6 +12,7 @@ export const CREDIT_COSTS = {
   program: 4,
   import: 0,
   coach_chat: 4, // same cost as athlete chat (AIC-10)
+  recipes: 1, // Garde-manger: POST /pantry/recipes/suggest (v1.20 Phase 10, D-08)
 } as const;
 
 export type CreditAction = keyof typeof CREDIT_COSTS;
@@ -34,6 +35,7 @@ export const DAILY_QUOTAS = {
   scan: { base: 1, bonus: 2 },
   import: { base: 999, bonus: 0 }, // no free-quota gate for imports — cost is paid via costOverride
   coach_chat: { base: 1, bonus: 0 }, // 1 free coach AI chat/day, no activity bonus (AIC-10)
+  recipes: { base: 1, bonus: 0 }, // 1 free pantry recipe generation/day, no activity bonus (v1.20 Phase 10)
 } as const;
 
 // Monthly free quota per action (D-10)

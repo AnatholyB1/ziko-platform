@@ -13,7 +13,11 @@
     "./screens/PantryRecipes": "./src/screens/PantryRecipes.tsx",
     "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx",
     "./screens/RecipeConfirm": "./src/screens/RecipeConfirm.tsx",
-    "./screens/ShoppingList": "./src/screens/ShoppingList.tsx"
+    "./screens/ShoppingList": "./src/screens/ShoppingList.tsx",
+    "./utils/pantryLogic": "./src/utils/pantryLogic.ts",
+    "./utils/barcode": "./src/utils/barcode.ts",
+    "./utils/copy": "./src/utils/copy.ts",
+    "./utils/data": "./src/utils/data.ts"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",

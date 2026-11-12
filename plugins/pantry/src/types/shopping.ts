@@ -1,6 +1,7 @@
-// Shopping list types for Phase 9
+// Shopping list types (Phase 9 + v1.20 Phase 10)
 
-export type ShoppingItemSource = 'low_stock' | 'recipe';
+/** `manual` = ligne ajoutee par l'utilisateur (migration 202612011001 : valeur d'enum + colonnes reason/checked). */
+export type ShoppingItemSource = 'low_stock' | 'recipe' | 'manual';
 
 export interface ShoppingListItem {
   id: string;
@@ -12,5 +13,9 @@ export interface ShoppingListItem {
   pantry_item_id: string | null;
   source: ShoppingItemSource;
   recipe_name: string | null;
+  /** Pourquoi la ligne est dans la liste (absent tant que la migration n'est pas appliquee). */
+  reason?: string | null;
+  /** Coche = pret a ranger (absent tant que la migration n'est pas appliquee). */
+  checked?: boolean;
   created_at: string;
 }
