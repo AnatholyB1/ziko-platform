@@ -1,0 +1,8 @@
+/* Lots C/D : primaire d'action conforme AA (blanc dessus = 4.66:1). Voir CRITIQUE.md Q1. */
+:root{--primary:#CF4509;--primary-press:#B53D05}
+.fr>h2{max-width:390px}
+.sub{font:600 12px var(--font-b);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:20px 0 8px}
+.mini{font-size:14px;color:var(--muted)}
+.rt{display:flex;align-items:center;gap:8px}
+.ph{background:var(--surface-2);border:1px dashed #BDB9B0;border-radius:12px;display:grid;place-items:center;color:var(--muted);font-size:14px}
+.swh{width:52px;height:44px;display:grid;place-items:center;flex:none}
