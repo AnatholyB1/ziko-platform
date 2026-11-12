@@ -5,6 +5,7 @@ Integration : branche `milestone/v1.20`, worktree `.claude/worktrees/integration
 ## Statut par phase
 | Phase | Etat | Branche | Dernier commit | Gate | Notes |
 |---|---|---|---|---|---|
+| P3 Habitudes | MERGE (code+12 tests rendu; cause racine NON reproduite, a trancher en UAT) | phase/03-crash-habitudes-garde-modules | cabd383a | mobile 115, tsc 0 | besoin logcat si crash persiste |
 | P1 Harness | MERGE (scripts+AVD boot prouves; APK/Maestro/comptes NON prouves) | phase/01-harness-uat-android | 8fb2d2dc | check-migration-names OK | attend schema branche + secrets EAS + .uat/env |
 | P8 Quick Log | MERGE (code+17 tests; UAT emulateur en attente) | phase/08-accueil-quick-log | 682b9baa | mobile 103/103, tsc 0 | RLS a confirmer sur branche; dette: outils backend hydration/measurements/journal en UTC |
 | P5 P6 | en cours (builders) | phase/05,06-* | - | - | doivent merger milestone/v1.20 (index.tsx touche par P8) |
