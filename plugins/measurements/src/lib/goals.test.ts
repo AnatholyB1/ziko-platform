@@ -11,6 +11,8 @@ import {
   MEASURES,
   ENTRY_ORDER,
   goalDirection,
+  currentForGoal,
+  formatShortDate,
 } from './goals';
 
 describe('computeGoalProgress (ME-3)', () => {
@@ -122,6 +124,27 @@ describe('latestPerMeasure', () => {
     expect(r.arm_cm).toEqual({ value: 37.2, date: '2026-11-05' });
     expect(r.waist_cm?.value).toBe(84);
     expect(r.hip_cm).toBeUndefined();
+  });
+});
+
+describe('currentForGoal / dates', () => {
+  const goal = { measure_key: 'weight_kg' as const, start_date: '2026-11-01', status: 'active' as const, achieved_value: null };
+  it('prend la dernière mesure depuis le départ, ignore les plus anciennes', () => {
+    const rows = [
+      { date: '2026-11-10', weight_kg: 79.4 },
+      { date: '2026-10-20', weight_kg: 70 },
+    ];
+    expect(currentForGoal(goal, rows)).toBe(79.4);
+    expect(currentForGoal(goal, [{ date: '2026-10-20', weight_kg: 70 }])).toBeNull();
+    expect(currentForGoal(goal, [{ date: '2026-11-10', weight_kg: null, arm_cm: 30 }])).toBeNull();
+  });
+  it('objectif atteint : valeur d atteinte', () => {
+    expect(currentForGoal({ ...goal, status: 'achieved', achieved_value: 75.8 }, [])).toBe(75.8);
+  });
+  it('date courte française', () => {
+    expect(formatShortDate('2026-11-12')).toBe('12 nov.');
+    expect(formatShortDate('2026-10-02T08:00:00Z')).toBe('2 oct.');
+    expect(formatShortDate(null)).toBe('');
   });
 });
 

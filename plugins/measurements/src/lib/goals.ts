@@ -163,3 +163,32 @@ export function latestPerMeasure(
   }
   return out;
 }
+
+const MONTHS_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+/** '2026-11-12' ou ISO complet -> '12 nov.' (pas de décalage de fuseau : on lit les 10 premiers caractères). */
+export function formatShortDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!m) return '';
+  return `${Number(m[3])} ${MONTHS_FR[Number(m[2]) - 1] ?? ''}`.trim();
+}
+
+/**
+ * Valeur courante d'un objectif : dernière valeur de la mesure enregistrée à partir du jour de départ
+ * (une mesure antérieure au départ ne compte pas). Objectif atteint : valeur d'atteinte.
+ * null = aucune nouvelle mesure. `rows` trié du plus récent au plus ancien.
+ */
+export function currentForGoal(
+  goal: Pick<MeasurementGoalRow, 'measure_key' | 'start_date' | 'status' | 'achieved_value'>,
+  rows: MeasureRow[],
+): number | null {
+  if (goal.status === 'achieved' && goal.achieved_value != null) return Number(goal.achieved_value);
+  for (const r of rows) {
+    const v = r[goal.measure_key];
+    if (v == null) continue;
+    if (goal.start_date && r.date && r.date < goal.start_date) continue;
+    return Number(v);
+  }
+  return null;
+}
