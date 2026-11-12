@@ -1,297 +1,335 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Switch, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { useStretchingStore } from '../store';
-import type { StretchExercise, StretchRoutine } from '../store';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { fetchLibrary, fetchRoutine, saveRoutine, deleteRoutine } from '../data';
+import {
+  ZONES, zoneLabel, formatMeasure, isPerso, moveItem, routineSummary, exerciseFromLibrary,
+  filterLibrary, filterCounts,
+  type LibraryFilter, type RoutineExercise,
+} from '../lib';
+import {
+  CARD_SHADOW, ORANGE_TEXT, Badge, Chip, ErrorCard, PrimaryButton, SecondaryButton, Skeleton,
+} from '../components/ui';
 
-const MUSCLE_GROUPS = [
-  'shoulders', 'chest', 'back', 'quads', 'hamstrings',
-  'glutes', 'calves', 'hip_flexors', 'arms', 'core', 'full_body',
-];
-
-const MUSCLE_LABELS: Record<string, string> = {
-  shoulders: 'Épaules', chest: 'Pecs', back: 'Dos', quads: 'Quadriceps',
-  hamstrings: 'Ischio-jambiers', glutes: 'Fessiers', calves: 'Mollets',
-  hip_flexors: 'Psoas', arms: 'Bras', core: 'Abdos', full_body: 'Corps entier',
-};
-
-const TYPE_OPTIONS: { value: StretchRoutine['type']; label: string }[] = [
-  { value: 'pre_workout', label: '🔥 Pré-workout' },
-  { value: 'post_workout', label: '❄️ Post-workout' },
-  { value: 'recovery', label: '💆 Récupération' },
-  { value: 'full_body', label: '🧘 Corps entier' },
-  { value: 'custom', label: '✨ Personnalisé' },
-];
-
-function generateId() {
-  return 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-}
-
+/** Creation / edition d'une routine : ordre, duree totale, routine par defaut (STRE-03, STRE-05, maquette C05). */
 export default function RoutineEditor({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
+  const queryClient = useQueryClient();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
-  const { customRoutines, addCustomRoutine, updateCustomRoutine } = useStretchingStore();
 
-  const existing = editId ? customRoutines.find((r) => r.id === editId) : null;
+  const { data: authData } = useQuery({
+    queryKey: ['auth_user'],
+    queryFn: async () => (await supabase.auth.getUser()).data?.user ?? null,
+  });
+  const userId: string | undefined = authData?.id;
 
-  const [name, setName] = useState(existing?.name ?? '');
-  const [type, setType] = useState<StretchRoutine['type']>(existing?.type ?? 'custom');
-  const [exercises, setExercises] = useState<StretchExercise[]>(existing?.exercises ?? []);
+  const [name, setName] = useState('');
+  const [exercises, setExercises] = useState<RoutineExercise[]>([]);
+  const [isDefault, setIsDefault] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [hydrated, setHydrated] = useState(!editId);
 
-  const totalDuration = exercises.reduce((s, e) => s + e.duration_seconds, 0);
-  const muscleGroups = [...new Set(exercises.map((e) => e.muscle_group))];
+  const { data: existing, isLoading: loadingExisting, isError, error, refetch } = useQuery({
+    queryKey: ['stretching_routine', userId, editId],
+    queryFn: () => fetchRoutine(supabase, userId as string, editId as string),
+    enabled: !!userId && !!editId,
+  });
 
-  const addExercise = () => {
-    setExercises([...exercises, {
-      id: generateId(),
-      name: '',
-      muscle_group: 'full_body',
-      duration_seconds: 30,
-      instructions: '',
-      image_url: null,
-    }]);
-  };
+  useEffect(() => {
+    if (existing && !hydrated) {
+      setName(existing.name);
+      setExercises(existing.exercises);
+      setIsDefault(existing.is_default);
+      setHydrated(true);
+    }
+  }, [existing, hydrated]);
 
-  const updateExercise = (idx: number, field: keyof StretchExercise, value: any) => {
-    setExercises(exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e));
-  };
+  const summary = useMemo(() => routineSummary(exercises), [exercises]);
+  const primary = getActionPrimary(theme);
 
-  const removeExercise = (idx: number) => {
-    setExercises(exercises.filter((_, i) => i !== idx));
-  };
-
-  const moveExercise = (idx: number, dir: -1 | 1) => {
-    const target = idx + dir;
-    if (target < 0 || target >= exercises.length) return;
-    const next = [...exercises];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    setExercises(next);
-  };
+  const updateValue = (idx: number, delta: number) =>
+    setExercises((list) => list.map((e, i) => {
+      if (i !== idx) return e;
+      return e.measure === 'reps'
+        ? { ...e, reps: Math.min(100, Math.max(1, e.reps + delta)) }
+        : { ...e, duration_seconds: Math.min(600, Math.max(5, e.duration_seconds + delta * 5)) };
+    }));
 
   const handleSave = async () => {
-    if (!name.trim()) return showAlert('Erreur', 'Donne un nom à ta routine');
-    if (exercises.length === 0) return showAlert('Erreur', 'Ajoute au moins un exercice');
-    const empty = exercises.find((e) => !e.name.trim());
-    if (empty) return showAlert('Erreur', 'Tous les exercices doivent avoir un nom');
-
+    if (!name.trim()) return showAlert('Routine incomplète', 'Donne un nom à ta routine');
+    if (exercises.length === 0) return showAlert('Routine incomplète', 'Ajoute au moins un exercice');
+    if (!userId) return showAlert('Erreur', 'Session expirée, reconnecte-toi.');
     setSaving(true);
-    const routine: StretchRoutine = {
-      id: existing?.id ?? generateId(),
-      name: name.trim(),
-      type,
-      muscle_groups: muscleGroups,
-      duration_minutes: Math.ceil(totalDuration / 60),
-      exercises,
-      is_custom: true,
-    };
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
-
-      if (existing) {
-        await supabase.from('ziko_stretching_routines').update({
-          name: routine.name, type: routine.type,
-          muscle_groups: routine.muscle_groups,
-          duration_minutes: routine.duration_minutes,
-          exercises: routine.exercises,
-        }).eq('id', routine.id).eq('user_id', user.id);
-        updateCustomRoutine(routine);
-      } else {
-        const { data, error } = await supabase.from('ziko_stretching_routines').insert({
-          id: routine.id, user_id: user.id,
-          name: routine.name, type: routine.type,
-          muscle_groups: routine.muscle_groups,
-          duration_minutes: routine.duration_minutes,
-          exercises: routine.exercises,
-        }).select().single();
-        if (error) throw error;
-        addCustomRoutine(routine);
-      }
+      await saveRoutine(supabase, userId, { id: editId, name, exercises, is_default: isDefault });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['stretching_routines'] }),
+        queryClient.invalidateQueries({ queryKey: ['stretching_routine'] }),
+        queryClient.invalidateQueries({ queryKey: ['stretching_default'] }),
+      ]);
       router.back();
     } catch (e: any) {
-      showAlert('Erreur', e.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', e?.message ?? 'Impossible de sauvegarder');
     }
     setSaving(false);
   };
 
+  const handleDelete = () => {
+    if (!editId || !userId) return;
+    showAlert('Supprimer la routine ?', `« ${name || 'Cette routine'} » sera supprimée. Cette action est définitive.`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer', style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteRoutine(supabase, userId, editId);
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['stretching_routines'] }),
+              queryClient.invalidateQueries({ queryKey: ['stretching_default'] }),
+            ]);
+            router.back();
+          } catch (e: any) {
+            showAlert('Erreur', e?.message ?? 'Impossible de supprimer');
+          }
+        },
+      },
+    ]);
+  };
+
+  const iconBtn = { width: 44, height: 44, alignItems: 'center' as const, justifyContent: 'center' as const };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-          <TouchableOpacity onPress={() => router.back()}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Retour" style={iconBtn}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
-          <Text style={{ color: theme.text, fontSize: 22, fontWeight: '800', marginLeft: 12 }}>
-            {existing ? 'Modifier la routine' : 'Nouvelle routine'}
+          <Text style={{ color: theme.text, fontSize: 22, fontWeight: '800' }}>
+            {editId ? 'Modifier la routine' : 'Nouvelle routine'}
           </Text>
         </View>
 
-        {/* Routine name */}
-        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginBottom: 8 }}>Nom</Text>
-        <TextInput
-          value={name} onChangeText={setName}
-          placeholder="Ma routine d'étirements" placeholderTextColor={theme.muted}
-          style={{
-            backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-            borderWidth: 1, borderColor: theme.border, color: theme.text,
-            fontSize: 16, fontWeight: '600',
-          }}
-        />
-
-        {/* Type */}
-        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginTop: 20, marginBottom: 8 }}>Type</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {TYPE_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              onPress={() => setType(opt.value)}
-              style={{
-                backgroundColor: type === opt.value ? theme.primary + '20' : theme.surface,
-                borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8,
-                borderWidth: 1, borderColor: type === opt.value ? theme.primary : theme.border,
-              }}
-            >
-              <Text style={{ color: type === opt.value ? theme.primary : theme.text, fontWeight: '600', fontSize: 13 }}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Duration summary */}
-        <View style={{
-          backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-          marginTop: 20, borderWidth: 1, borderColor: theme.border,
-          flexDirection: 'row', justifyContent: 'space-around',
-        }}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: theme.primary, fontSize: 20, fontWeight: '800' }}>{exercises.length}</Text>
-            <Text style={{ color: theme.muted, fontSize: 12 }}>exercices</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: theme.primary, fontSize: 20, fontWeight: '800' }}>{Math.ceil(totalDuration / 60)}</Text>
-            <Text style={{ color: theme.muted, fontSize: 12 }}>min</Text>
-          </View>
-        </View>
-
-        {/* Exercises */}
-        <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginTop: 24, marginBottom: 12 }}>Exercices</Text>
-
-        {exercises.map((ex, idx) => (
-          <View key={ex.id} style={{
-            backgroundColor: theme.surface, borderRadius: 14, padding: 14,
-            marginBottom: 12, borderWidth: 1, borderColor: theme.border,
-          }}>
-            {/* Exercise header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-              <Text style={{ color: theme.primary, fontWeight: '800', fontSize: 14, width: 24 }}>{idx + 1}</Text>
-              <View style={{ flex: 1 }} />
-              <TouchableOpacity onPress={() => moveExercise(idx, -1)} style={{ padding: 4 }}>
-                <Ionicons name="chevron-up" size={18} color={idx === 0 ? theme.border : theme.muted} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => moveExercise(idx, 1)} style={{ padding: 4 }}>
-                <Ionicons name="chevron-down" size={18} color={idx === exercises.length - 1 ? theme.border : theme.muted} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => removeExercise(idx)} style={{ padding: 4, marginLeft: 4 }}>
-                <Ionicons name="trash-outline" size={18} color="#F44336" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Name */}
+        {isError ? (
+          <ErrorCard message={(error as Error)?.message ?? 'Impossible de charger la routine'} onRetry={() => refetch()} />
+        ) : editId && (loadingExisting || !hydrated) ? (
+          <Skeleton count={3} />
+        ) : (
+          <>
+            <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700', marginBottom: 8 }}>Nom</Text>
             <TextInput
-              value={ex.name} onChangeText={(v) => updateExercise(idx, 'name', v)}
-              placeholder="Nom de l'exercice" placeholderTextColor={theme.muted}
-              style={{
-                backgroundColor: theme.background, borderRadius: 10, padding: 10,
-                borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 14, fontWeight: '600',
-              }}
+              value={name}
+              onChangeText={setName}
+              placeholder="Réveil articulaire"
+              placeholderTextColor={theme.muted}
+              accessibilityLabel="Nom de la routine"
+              maxLength={60}
+              style={{ backgroundColor: theme.surface, borderRadius: 12, padding: 14, minHeight: 48, borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 16, fontWeight: '600' }}
             />
 
-            {/* Muscle group selector */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                {MUSCLE_GROUPS.map((mg) => (
-                  <TouchableOpacity
-                    key={mg}
-                    onPress={() => updateExercise(idx, 'muscle_group', mg)}
-                    style={{
-                      backgroundColor: ex.muscle_group === mg ? theme.primary + '20' : theme.background,
-                      borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
-                      borderWidth: 1, borderColor: ex.muscle_group === mg ? theme.primary : theme.border,
-                    }}
-                  >
-                    <Text style={{ color: ex.muscle_group === mg ? theme.primary : theme.muted, fontSize: 11, fontWeight: '600' }}>
-                      {MUSCLE_LABELS[mg] ?? mg}
+            <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700', marginTop: 22, marginBottom: 2 }}>Exercices</Text>
+            <Text style={{ color: theme.muted, fontSize: 14, marginBottom: 10 }}>{summary}</Text>
+
+            <View style={{ gap: 8 }}>
+              {exercises.map((ex, idx) => (
+                <View
+                  key={`${ex.exercise_id ?? ex.name}-${idx}`}
+                  style={{ backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1, borderColor: theme.border, padding: 10, ...CARD_SHADOW }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ color: ORANGE_TEXT, fontWeight: '800', fontSize: 15, width: 26, textAlign: 'center' }}>{idx + 1}</Text>
+                    <View style={{ flex: 1, paddingHorizontal: 6 }}>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700' }}>{ex.name}</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, marginTop: 1 }}>{zoneLabel(ex.muscle_group)} · {formatMeasure(ex)}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setExercises((l) => moveItem(l, idx, -1))}
+                      disabled={idx === 0}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Monter ${ex.name}`}
+                      accessibilityState={{ disabled: idx === 0 }}
+                      style={iconBtn}
+                    >
+                      <Ionicons name="chevron-up" size={22} color={idx === 0 ? theme.border : theme.text} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setExercises((l) => moveItem(l, idx, 1))}
+                      disabled={idx === exercises.length - 1}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Descendre ${ex.name}`}
+                      accessibilityState={{ disabled: idx === exercises.length - 1 }}
+                      style={iconBtn}
+                    >
+                      <Ionicons name="chevron-down" size={22} color={idx === exercises.length - 1 ? theme.border : theme.text} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setExercises((l) => l.filter((_, i) => i !== idx))}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Supprimer ${ex.name}`}
+                      style={iconBtn}
+                    >
+                      <Ionicons name="trash-outline" size={22} color="#B3261E" />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8, paddingRight: 4 }}>
+                    <TouchableOpacity
+                      onPress={() => updateValue(idx, -1)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Moins, ${ex.measure === 'reps' ? 'répétitions' : 'durée'} de ${ex.name}`}
+                      style={{ ...iconBtn, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}
+                    >
+                      <Ionicons name="remove" size={20} color={theme.text} />
+                    </TouchableOpacity>
+                    <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, minWidth: 64, textAlign: 'center' }}>
+                      {ex.measure === 'reps' ? `${ex.reps} rép.` : `${ex.duration_seconds} s`}
                     </Text>
+                    <TouchableOpacity
+                      onPress={() => updateValue(idx, 1)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Plus, ${ex.measure === 'reps' ? 'répétitions' : 'durée'} de ${ex.name}`}
+                      style={{ ...iconBtn, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}
+                    >
+                      <Ionicons name="add" size={20} color={theme.text} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setPicking(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Ajouter un exercice"
+              style={{
+                marginTop: 10, minHeight: 52, borderRadius: 14, borderWidth: 2, borderStyle: 'dashed', borderColor: primary,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <Ionicons name="add-circle-outline" size={22} color={ORANGE_TEXT} />
+              <Text style={{ color: ORANGE_TEXT, fontWeight: '700', fontSize: 15 }}>Ajouter un exercice</Text>
+            </TouchableOpacity>
+
+            <View
+              style={{
+                marginTop: 22, backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1, borderColor: theme.border,
+                paddingLeft: 14, paddingRight: 8, minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 10,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700' }}>Routine par défaut</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, marginTop: 1 }}>Ajoutée au début de chaque séance</Text>
+              </View>
+              <View style={{ width: 52, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Switch
+                  value={isDefault}
+                  onValueChange={setIsDefault}
+                  accessibilityRole="switch"
+                  accessibilityLabel="Routine par défaut"
+                  accessibilityState={{ checked: isDefault }}
+                  trackColor={{ false: theme.border, true: primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+            {isDefault ? (
+              <Text style={{ color: theme.muted, fontSize: 13, marginTop: 6 }}>
+                Une seule routine est par défaut : l'actuelle sera remplacée à l'enregistrement.
+              </Text>
+            ) : null}
+
+            <View style={{ marginTop: 22 }}>
+              <PrimaryButton label={saving ? 'Enregistrement…' : 'Enregistrer'} onPress={handleSave} disabled={saving} />
+            </View>
+            {editId ? (
+              <View style={{ marginTop: 10 }}>
+                <SecondaryButton label="Supprimer la routine" danger onPress={handleDelete} />
+              </View>
+            ) : null}
+          </>
+        )}
+      </ScrollView>
+
+      <ExercisePicker
+        visible={picking}
+        supabase={supabase}
+        userId={userId}
+        count={exercises.length}
+        onClose={() => setPicking(false)}
+        onPick={(e) => setExercises((l) => [...l, e])}
+      />
+    </SafeAreaView>
+  );
+}
+
+// ─── Selecteur d'exercices (bibliotheque) ─────────────────────────────────────
+
+function ExercisePicker({
+  visible, supabase, userId, count, onClose, onPick,
+}: {
+  visible: boolean; supabase: any; userId?: string; count: number;
+  onClose: () => void; onPick: (e: RoutineExercise) => void;
+}) {
+  const theme = useThemeStore((s) => s.theme);
+  const [filter, setFilter] = useState<LibraryFilter>('all');
+  const { data: library = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['stretching_library', userId],
+    queryFn: () => fetchLibrary(supabase),
+    enabled: !!userId && visible,
+    staleTime: 60_000,
+  });
+  const counts = useMemo(() => filterCounts(library), [library]);
+  const rows = useMemo(() => filterLibrary(library, filter), [library, filter]);
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 8 }}>
+          <Text style={{ flex: 1, color: theme.text, fontSize: 20, fontWeight: '800' }}>Ajouter un exercice</Text>
+          <SecondaryButton label={count > 0 ? `Terminé (${count})` : 'Terminé'} onPress={onClose} />
+        </View>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
+          {isError ? (
+            <ErrorCard message={(error as Error)?.message ?? 'Impossible de charger la bibliothèque'} onRetry={() => refetch()} />
+          ) : isLoading ? (
+            <Skeleton />
+          ) : (
+            <>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>
+                <Chip label="Tous" count={counts.all} active={filter === 'all'} onPress={() => setFilter('all')} />
+                {ZONES.filter((z) => counts[z] > 0).map((z) => (
+                  <Chip key={z} label={zoneLabel(z)} count={counts[z]} active={filter === z} onPress={() => setFilter(z)} />
+                ))}
+                <Chip label="Mes exercices" count={counts.mine} active={filter === 'mine'} onPress={() => setFilter('mine')} />
+              </ScrollView>
+              <View style={{ gap: 8 }}>
+                {rows.map((ex) => (
+                  <TouchableOpacity
+                    key={ex.id}
+                    onPress={() => onPick(exerciseFromLibrary(ex))}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ajouter ${ex.name}`}
+                    style={{ backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1, borderColor: theme.border, padding: 12, minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700' }}>{ex.name}</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, marginTop: 1 }}>
+                        {zoneLabel(ex.muscle_group)} · {formatMeasure({ measure: ex.measure, duration_seconds: ex.duration_seconds ?? 30, reps: ex.reps ?? 10, sides: ex.sides })}
+                      </Text>
+                    </View>
+                    {isPerso(ex) ? <Badge label="PERSO" /> : null}
+                    <Ionicons name="add-circle" size={26} color={ORANGE_TEXT} />
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-
-            {/* Duration */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 }}>
-              <Ionicons name="timer-outline" size={16} color={theme.muted} />
-              <TouchableOpacity
-                onPress={() => updateExercise(idx, 'duration_seconds', Math.max(10, ex.duration_seconds - 5))}
-                style={{ backgroundColor: theme.background, borderRadius: 8, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}
-              >
-                <Ionicons name="remove" size={16} color={theme.primary} />
-              </TouchableOpacity>
-              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, minWidth: 40, textAlign: 'center' }}>
-                {ex.duration_seconds}s
-              </Text>
-              <TouchableOpacity
-                onPress={() => updateExercise(idx, 'duration_seconds', Math.min(300, ex.duration_seconds + 5))}
-                style={{ backgroundColor: theme.background, borderRadius: 8, width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border }}
-              >
-                <Ionicons name="add" size={16} color={theme.primary} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Instructions */}
-            <TextInput
-              value={ex.instructions} onChangeText={(v) => updateExercise(idx, 'instructions', v)}
-              placeholder="Instructions (optionnel)" placeholderTextColor={theme.muted}
-              multiline
-              style={{
-                backgroundColor: theme.background, borderRadius: 10, padding: 10, marginTop: 10,
-                borderWidth: 1, borderColor: theme.border, color: theme.text, fontSize: 13, minHeight: 44,
-              }}
-            />
-          </View>
-        ))}
-
-        {/* Add exercise button */}
-        <TouchableOpacity
-          onPress={addExercise}
-          style={{
-            borderWidth: 2, borderColor: theme.primary + '44', borderStyle: 'dashed',
-            borderRadius: 14, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
-          }}
-        >
-          <Ionicons name="add-circle-outline" size={22} color={theme.primary} />
-          <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 15 }}>Ajouter un exercice</Text>
-        </TouchableOpacity>
-
-        {/* Save */}
-        <TouchableOpacity
-          onPress={handleSave} disabled={saving}
-          style={{
-            backgroundColor: theme.primary, borderRadius: 14, padding: 16,
-            alignItems: 'center', marginTop: 24, opacity: saving ? 0.6 : 1,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
-            {saving ? 'Sauvegarde...' : existing ? 'Mettre à jour' : 'Créer la routine'}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
