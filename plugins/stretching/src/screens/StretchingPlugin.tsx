@@ -1,106 +1,31 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import { useThemeStore, getActionPrimary } from '@ziko/plugin-sdk';
+import { SubTabs, PluginHeader } from '@ziko/ui';
+import {
+  fetchLibrary, fetchRoutines, fetchLogs,
+} from '../data';
+import {
+  ZONES, zoneLabel, filterLibrary, filterCounts, formatMeasure, isPerso, routineSummary,
+  computeStats, buildMonthGrid, calendarCellLabel, lastSessionLabel, MONTH_NAMES,
+  type LibraryExercise, type LibraryFilter, type RoutineRow,
+} from '../lib';
+import {
+  CARD_SHADOW, ORANGE_TEXT, Badge, Chip, ErrorCard, PrimaryButton, SecondaryButton, Skeleton,
+} from '../components/ui';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const PRIMARY = '#FF5C1A';
-const TABS = ['Routines', 'Bibliothèque', 'Suivi'];
+// Ordre du contrat de design (lot C, ST-6) : Bibliotheque / Routines / Suivi.
+const TABS = ['Bibliothèque', 'Routines', 'Suivi'];
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-
-const CARD_SHADOW = {
-  shadowColor: '#1C1A17',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  elevation: 3,
-};
-
-const ICON_COLORS = ['#FF5C1A', '#2E7BF6', '#7C3AED', '#2E9E5B'];
-
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getToday(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-function getLast7Days(): string[] {
-  const days: string[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toISOString().split('T')[0]);
-  }
-  return days;
-}
-
-function getMonthStart(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-}
-
-// ─── MiniBars (local, absolute pixel heights) ─────────────────────────────────
-
-function MiniBars({
-  data,
-  color,
-  max,
-}: {
-  data: Array<{ l: string; v: number; today?: boolean }>;
-  color: string;
-  max?: number;
-}) {
-  const m = max ?? Math.max(...data.map((d) => d.v), 1);
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 80 }}>
-      {data.map((d, i) => (
-        <View
-          key={i}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: 80, gap: 5 }}
-        >
-          <View
-            style={{
-              width: '100%',
-              height: Math.max((d.v / m) * 72, 4),
-              backgroundColor: d.today ? color : color + '47',
-              borderRadius: 5,
-            }}
-          />
-          <Text
-            style={{
-              fontSize: 9.5,
-              fontWeight: '700',
-              color: d.today ? color : '#6B6963',
-            }}
-          >
-            {d.l}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function StretchingPlugin({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
-  const [activeTab, setActiveTab] = useState<string>('Routines');
-  const library: Array<{ name: string; sub: string }> = [];
+  const [activeTab, setActiveTab] = useState<string>('Bibliothèque');
 
-  // ── Auth user ────────────────────────────────────────────────────────────
   const { data: authData } = useQuery({
     queryKey: ['auth_user'],
     queryFn: async () => {
@@ -108,292 +33,329 @@ export default function StretchingPlugin({ supabase }: { supabase: any }) {
       return data?.user ?? null;
     },
   });
-  const userId = authData?.id;
-
-  // ── Routines query ───────────────────────────────────────────────────────
-  const { data: routines = [], isLoading: loadingRoutines } = useQuery({
-    queryKey: ['stretching_routines', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const { data } = await supabase
-        .from('ziko_stretching_routines')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      return data ?? [];
-    },
-    enabled: !!userId,
-  });
-
-  // ── Logs 7 days ──────────────────────────────────────────────────────────
-  const { data: logs7 = [] } = useQuery({
-    queryKey: ['stretching_logs_7days', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const { data } = await supabase
-        .from('ziko_stretching_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', sevenDaysAgo.toISOString().split('T')[0])
-        .order('date', { ascending: true });
-      return data ?? [];
-    },
-    enabled: !!userId,
-  });
-
-  // ── Count this month ─────────────────────────────────────────────────────
-  const { data: countMonth = 0 } = useQuery({
-    queryKey: ['stretching_count_month', userId],
-    queryFn: async () => {
-      if (!userId) return 0;
-      const { count } = await supabase
-        .from('ziko_stretching_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('date', getMonthStart());
-      return count ?? 0;
-    },
-    enabled: !!userId,
-  });
-
-  // ── AISuggestion logic — Routines tab ────────────────────────────────────
-  const lastLog = logs7.length > 0 ? logs7[logs7.length - 1] : null;
-  const today = getToday();
-  const yesterday = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  })();
-
-  let routinesAISuggestion = 'Continue sur ta lancée — mobilité quotidienne !';
-  if (lastLog) {
-    const daysSince = Math.floor(
-      (new Date(today).getTime() - new Date(lastLog.date).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysSince > 2) {
-      routinesAISuggestion = `Tu as fait ${lastLog.routine_name ?? 'une séance'} il y a ${daysSince}j — la routine Post-séance réduira tes courbatures.`;
-    }
-  }
-
-  // ── MiniBars 7 days data ─────────────────────────────────────────────────
-  const last7Days = getLast7Days();
-  const barsData = last7Days.map((date, i) => {
-    const log = logs7.find((l: any) => l.date === date);
-    return {
-      l: DAY_LABELS[i],
-      v: log ? Math.round(log.duration_sec / 60) : 0,
-      today: i === 6,
-    };
-  });
-
-  // ── AISuggestion — Suivi tab ─────────────────────────────────────────────
-  const missedDays = last7Days.filter((date) => !logs7.find((l: any) => l.date === date));
-  const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-  let suiviAISuggestion = 'Super constance cette semaine !';
-  if (missedDays.length > 0) {
-    const missedDayName = dayNames[new Date(missedDays[0]).getDay()];
-    suiviAISuggestion = `Tu sautes les routines le ${missedDayName}. Ajoute un rappel à 21h ?`;
-  }
+  const userId: string | undefined = authData?.id;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <PluginHeader title="Stretching" onBack={() => router.back()} />
       <SubTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      {activeTab === 'Bibliothèque' && <LibraryTab supabase={supabase} userId={userId} />}
+      {activeTab === 'Routines' && <RoutinesTab supabase={supabase} userId={userId} />}
+      {activeTab === 'Suivi' && <TrackingTab supabase={supabase} userId={userId} onLaunch={() => setActiveTab('Routines')} />}
+    </SafeAreaView>
+  );
+}
 
-      {/* ── ROUTINES ──────────────────────────────────────────────────────── */}
-      {activeTab === 'Routines' && (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <AISuggestion text={routinesAISuggestion} />
+// ─── Bibliotheque (STRE-01, STRE-02) ──────────────────────────────────────────
 
-          {loadingRoutines ? (
-            <ActivityIndicator color={PRIMARY} style={{ marginTop: 40 }} />
-          ) : routines.length === 0 ? (
-            <View
-              style={{
-                backgroundColor: theme.surface,
-                borderRadius: 16,
-                padding: 24,
-                alignItems: 'center',
-                marginTop: 16,
-                ...CARD_SHADOW,
-              }}
-            >
-              <Ionicons name="body-outline" size={40} color={PRIMARY + '66'} />
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 15,
-                  fontWeight: '600',
-                  marginTop: 12,
-                  textAlign: 'center',
-                }}
-              >
-                Aucune routine créée
+function LibraryTab({ supabase, userId }: { supabase: any; userId?: string }) {
+  const theme = useThemeStore((s) => s.theme);
+  const [filter, setFilter] = useState<LibraryFilter>('all');
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const { data: library = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['stretching_library', userId],
+    queryFn: () => fetchLibrary(supabase),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const counts = useMemo(() => filterCounts(library), [library]);
+  const rows = useMemo(() => filterLibrary(library, filter), [library, filter]);
+  const zones = ZONES.filter((z) => counts[z] > 0);
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      {isError ? (
+        <ErrorCard message={(error as Error)?.message ?? 'Impossible de charger la bibliothèque'} onRetry={() => refetch()} />
+      ) : isLoading || !userId ? (
+        <Skeleton />
+      ) : (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>
+            <Chip label="Tous" count={counts.all} active={filter === 'all'} onPress={() => setFilter('all')} />
+            {zones.map((z) => (
+              <Chip key={z} label={zoneLabel(z)} count={counts[z]} active={filter === z} onPress={() => setFilter(z)} />
+            ))}
+            <Chip label="Mes exercices" count={counts.mine} active={filter === 'mine'} onPress={() => setFilter('mine')} />
+          </ScrollView>
+
+          {rows.length === 0 ? (
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 24, alignItems: 'center', ...CARD_SHADOW }}>
+              <Ionicons name="body-outline" size={36} color={theme.muted} />
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 10 }}>
+                {filter === 'mine' ? 'Aucun exercice à toi' : 'Aucun exercice'}
               </Text>
-              <Text style={{ color: theme.muted, fontSize: 13, marginTop: 4, textAlign: 'center' }}>
-                Commence par en créer une !
+              <Text style={{ color: theme.muted, fontSize: 14, marginTop: 6, textAlign: 'center' }}>
+                {filter === 'mine'
+                  ? 'Ajoute un étirement que tu fais déjà : nom, zone, durée. Il rejoint la bibliothèque et tes routines.'
+                  : 'Aucun exercice dans cette zone.'}
               </Text>
             </View>
           ) : (
-            <View style={{ gap: 10, marginTop: 8 }}>
-              {routines.map((routine: any, index: number) => {
-                const accentColor = ICON_COLORS[index % 4];
-                const exoCount =
-                  Array.isArray(routine.exercises) ? routine.exercises.length : 0;
-                return (
-                  <View
-                    key={routine.id}
-                    style={{
-                      backgroundColor: theme.surface,
-                      borderRadius: 16,
-                      padding: 14,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 12,
-                      ...CARD_SHADOW,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 12,
-                        backgroundColor: accentColor + '24',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Ionicons name="body-outline" size={20} color={accentColor} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>
-                        {routine.name}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>
-                        {routine.duration_minutes ?? 0} min · {exoCount} exos · {routine.type ?? 'custom'}
-                      </Text>
-                    </View>
-                    <Ionicons name="play-outline" size={16} color={accentColor} />
-                  </View>
-                );
-              })}
+            <View style={{ gap: 8 }}>
+              {rows.map((ex) => (
+                <ExerciseRow key={ex.id} ex={ex} open={openId === ex.id} onToggle={() => setOpenId(openId === ex.id ? null : ex.id)} />
+              ))}
             </View>
           )}
-        </ScrollView>
-      )}
 
-      {/* ── BIBLIOTHÈQUE ─────────────────────────────────────────────────── */}
-      {activeTab === 'Bibliothèque' && (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: '600',
-              color: theme.muted,
-              marginBottom: 12,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
-            6 exercices essentiels
+          <View style={{ marginTop: 16 }}>
+            <PrimaryButton
+              label="Créer un exercice"
+              icon="add"
+              onPress={() => router.push('/(app)/(plugins)/stretching/exercise' as any)}
+            />
+          </View>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+function ExerciseRow({ ex, open, onToggle }: { ex: LibraryExercise; open: boolean; onToggle: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+  const measure = formatMeasure({
+    measure: ex.measure, duration_seconds: ex.duration_seconds ?? 30, reps: ex.reps ?? 10, sides: ex.sides,
+  });
+  return (
+    <TouchableOpacity
+      onPress={onToggle}
+      accessibilityRole="button"
+      accessibilityLabel={`${ex.name}, ${zoneLabel(ex.muscle_group)}, ${measure}${isPerso(ex) ? ', exercice perso' : ''}`}
+      accessibilityState={{ expanded: open }}
+      style={{
+        backgroundColor: theme.surface, borderRadius: 14, borderWidth: 1, borderColor: theme.border,
+        padding: 12, minHeight: 64, ...CARD_SHADOW,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(207,69,9,0.10)', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="body-outline" size={20} color={ORANGE_TEXT} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: theme.text }}>{ex.name}</Text>
+          <Text style={{ fontSize: 13, color: theme.muted, marginTop: 2 }}>{zoneLabel(ex.muscle_group)} · {measure}</Text>
+        </View>
+        {isPerso(ex) ? <Badge label="PERSO" /> : null}
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={theme.muted} />
+      </View>
+      {open ? (
+        <Text style={{ color: theme.muted, fontSize: 14, marginTop: 10, lineHeight: 20 }}>
+          {ex.instructions?.trim() ? ex.instructions : 'Pas de consigne pour cet exercice.'}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+}
+
+// ─── Routines (STRE-03, STRE-05) ──────────────────────────────────────────────
+
+function RoutinesTab({ supabase, userId }: { supabase: any; userId?: string }) {
+  const theme = useThemeStore((s) => s.theme);
+  const primary = getActionPrimary(theme);
+
+  const { data: routines = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['stretching_routines', userId],
+    queryFn: () => fetchRoutines(supabase, userId as string),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  const launch = (r: RoutineRow) =>
+    router.push({ pathname: '/(app)/(plugins)/stretching/session' as any, params: { routineId: r.id } });
+  const edit = (r: RoutineRow) =>
+    router.push({ pathname: '/(app)/(plugins)/stretching/editor' as any, params: { editId: r.id } });
+  const create = () => router.push('/(app)/(plugins)/stretching/editor' as any);
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      {isError ? (
+        <ErrorCard message={(error as Error)?.message ?? 'Impossible de charger les routines'} onRetry={() => refetch()} />
+      ) : isLoading || !userId ? (
+        <Skeleton count={3} />
+      ) : (
+        <>
+          <Text style={{ color: theme.muted, fontSize: 14, marginBottom: 12, lineHeight: 20 }}>
+            La routine par défaut s'ajoute au début de chaque séance. Tu peux la passer d'un tap.
           </Text>
-          <View style={{ gap: 8 }}>
-            {library.map((item) => (
-              <View
-                key={item.name}
-                style={{
-                  backgroundColor: theme.surface,
-                  borderRadius: 14,
-                  padding: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 12,
-                  ...CARD_SHADOW,
-                }}
-              >
+
+          {routines.length === 0 ? (
+            <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 24, alignItems: 'center', ...CARD_SHADOW }}>
+              <Ionicons name="list-outline" size={36} color={theme.muted} />
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 10 }}>Aucune routine</Text>
+              <Text style={{ color: theme.muted, fontSize: 14, marginTop: 6, textAlign: 'center' }}>
+                Assemble des exercices de la bibliothèque dans l'ordre que tu veux.
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 10 }}>
+              {routines.map((r) => (
                 <View
+                  key={r.id}
                   style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    backgroundColor: 'rgba(255,92,26,0.14)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    backgroundColor: theme.surface, borderRadius: 16, padding: 14,
+                    borderWidth: r.is_default ? 2 : 1, borderColor: r.is_default ? primary : theme.border,
+                    ...CARD_SHADOW,
                   }}
                 >
-                  <Ionicons name="body-outline" size={16} color={PRIMARY} />
+                  <TouchableOpacity
+                    onPress={() => launch(r)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Lancer ${r.name}, ${routineSummary(r.exercises)}${r.is_default ? ', routine par défaut' : ''}`}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>{r.name}</Text>
+                        {r.is_default ? <Badge label="PAR DÉFAUT" /> : null}
+                      </View>
+                      <Text style={{ fontSize: 14, color: theme.muted, marginTop: 3 }}>{routineSummary(r.exercises)}</Text>
+                    </View>
+                    <Ionicons name="play-circle" size={32} color={primary} />
+                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                    <SecondaryButton label="Modifier" onPress={() => edit(r)} />
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: '700', color: theme.text }}>
-                    {item.name}
-                  </Text>
-                  <Text style={{ fontSize: 10.5, color: theme.muted, marginTop: 1 }}>
-                    {item.sub}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={14} color={theme.muted} />
+              ))}
+            </View>
+          )}
+
+          <View style={{ marginTop: 16 }}>
+            <PrimaryButton label="Créer une routine" icon="add" onPress={create} />
+          </View>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+// ─── Suivi (STRE-04) ──────────────────────────────────────────────────────────
+
+function TrackingTab({ supabase, userId, onLaunch }: { supabase: any; userId?: string; onLaunch: () => void }) {
+  const theme = useThemeStore((s) => s.theme);
+
+  const { data: logs = [], isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['stretching_logs', userId],
+    queryFn: () => fetchLogs(supabase, userId as string),
+    enabled: !!userId,
+    staleTime: 0,
+  });
+
+  const now = new Date();
+  const stats = useMemo(() => computeStats(logs, new Date()), [logs]);
+  const grid = useMemo(() => buildMonthGrid(new Date(), stats.days), [stats.days]);
+
+  if (isError) {
+    return (
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
+        <ErrorCard message={(error as Error)?.message ?? 'Impossible de charger le suivi'} onRetry={() => refetch()} />
+      </ScrollView>
+    );
+  }
+  if (isLoading || !userId) {
+    return (
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}>
+        <Skeleton count={3} />
+      </ScrollView>
+    );
+  }
+
+  const empty = logs.length === 0;
+  const lastMinutes = stats.last ? Math.round((stats.last.duration_sec ?? 0) / 60) : 0;
+  const tile = (value: number, unit: string) => (
+    <View
+      style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 12, ...CARD_SHADOW }}
+      accessible
+      accessibilityLabel={`${value} ${unit}`}
+    >
+      <Text style={{ fontSize: 26, fontWeight: '800', color: ORANGE_TEXT }}>{value}</Text>
+      <Text style={{ fontSize: 13, color: theme.muted, marginTop: 2 }}>{unit}</Text>
+    </View>
+  );
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      {empty ? (
+        <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 24, alignItems: 'center', marginBottom: 12, ...CARD_SHADOW }}>
+          <Ionicons name="calendar-outline" size={36} color={theme.muted} />
+          <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 10 }}>Aucune séance pour l'instant</Text>
+          <Text style={{ color: theme.muted, fontSize: 14, marginTop: 6, textAlign: 'center' }}>
+            Fais une première routine : tes minutes, ta série et ton calendrier apparaîtront ici.
+          </Text>
+          <View style={{ marginTop: 14, alignSelf: 'stretch' }}>
+            <PrimaryButton label="Lancer une routine" onPress={onLaunch} />
+          </View>
+        </View>
+      ) : null}
+
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+        {tile(stats.weekSessions, stats.weekSessions > 1 ? 'séances cette semaine' : 'séance cette semaine')}
+        {tile(stats.weekMinutes, 'min cumulées')}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+        {tile(stats.streak, stats.streak > 1 ? 'jours de série' : 'jour de série')}
+        <View
+          style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 12, ...CARD_SHADOW }}
+          accessible
+          accessibilityLabel={stats.last ? `Dernière séance, ${lastSessionLabel(stats.last.date, now)}, ${stats.last.routine_name ?? 'routine'}, ${lastMinutes} minutes` : 'Dernière séance, aucune'}
+        >
+          <Text style={{ fontSize: 13, color: theme.muted }}>Dernière séance</Text>
+          {stats.last ? (
+            <>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: theme.text, marginTop: 2 }}>{lastSessionLabel(stats.last.date, now)}</Text>
+              <Text style={{ fontSize: 13, color: theme.muted, marginTop: 2 }} numberOfLines={2}>
+                {stats.last.routine_name ?? 'Routine'}, {lastMinutes} min
+              </Text>
+            </>
+          ) : (
+            <Text style={{ fontSize: 17, fontWeight: '800', color: theme.muted, marginTop: 2 }}>Aucune</Text>
+          )}
+        </View>
+      </View>
+
+      <View style={{ backgroundColor: theme.surface, borderRadius: 16, borderWidth: 1, borderColor: theme.border, padding: 14, ...CARD_SHADOW }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 10 }}>
+          {MONTH_NAMES[now.getMonth()]} {now.getFullYear()}
+        </Text>
+        <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+          {DAY_LABELS.map((d, i) => (
+            <View key={i} style={{ flex: 1, alignItems: 'center' }} accessibilityElementsHidden importantForAccessibility="no">
+              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.muted }}>{d}</Text>
+            </View>
+          ))}
+        </View>
+        {grid.map((week, wi) => (
+          <View key={wi} style={{ flexDirection: 'row' }}>
+            {week.map((c) => (
+              <View key={c.key} style={{ flex: 1, alignItems: 'center', paddingVertical: 2 }}>
+                {c.inMonth ? (
+                  <View
+                    accessible
+                    accessibilityLabel={calendarCellLabel(c)}
+                    style={{
+                      width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: c.hasSession ? 'rgba(207,69,9,0.16)' : 'transparent',
+                      borderWidth: c.isToday ? 2 : 0, borderColor: theme.text,
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, color: c.hasSession ? ORANGE_TEXT : theme.text, fontWeight: c.hasSession ? '800' : '400' }}>
+                      {c.day}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{ width: 38, height: 38 }} />
+                )}
               </View>
             ))}
           </View>
-        </ScrollView>
-      )}
-
-      {/* ── SUIVI ────────────────────────────────────────────────────────── */}
-      {activeTab === 'Suivi' && (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Monthly summary */}
-          <View
-            style={{
-              backgroundColor: theme.surface,
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 12,
-              ...CARD_SHADOW,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-              <Text style={{ fontSize: 28, fontWeight: '700', color: PRIMARY }}>
-                {countMonth}
-              </Text>
-              <Text style={{ fontSize: 12, color: theme.muted }}>séances ce mois</Text>
-            </View>
-          </View>
-
-          {/* MiniBars 7 days */}
-          <View
-            style={{
-              backgroundColor: theme.surface,
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 12,
-              ...CARD_SHADOW,
-            }}
-          >
-            <Text
-              style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 12 }}
-            >
-              7 derniers jours
-            </Text>
-            <MiniBars data={barsData} color={PRIMARY} />
-            <Text style={{ fontSize: 11, color: theme.muted, marginTop: 10 }}>
-              Durée en minutes par session
-            </Text>
-          </View>
-
-          <AISuggestion text={suiviAISuggestion} />
-        </ScrollView>
-      )}
-    </SafeAreaView>
+        ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: 'rgba(207,69,9,0.16)' }} />
+          <Text style={{ fontSize: 13, color: theme.muted }}>Jour avec séance · contour noir : aujourd'hui</Text>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
