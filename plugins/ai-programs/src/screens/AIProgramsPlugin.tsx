@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ interface UserProfile {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getProgramName(p: AIProgram): string {
-  return p.program_data?.name ?? `Programme ${new Date(p.created_at).toLocaleDateString('fr-FR')}`;
+  return p.program_data?.name ?? `Programme ${formatDateFr(new Date(p.created_at))}`;
 }
 
 function getProgramWeeks(p: AIProgram): number {

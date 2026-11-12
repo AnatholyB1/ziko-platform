@@ -60,7 +60,7 @@ export function computeTips(data: HomeDataForTips): Tip[] {
   // 4. Default motivational tip (always present)
   tips.push({
     key: 'default',
-    tag: 'Coach Ziko',
+    tag: 'Conseil',
     text: "Consistance > intensité. Montre-toi aujourd'hui, même 30 minutes, ça compte.",
   });
 

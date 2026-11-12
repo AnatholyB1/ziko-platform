@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useCameraPermissions } from 'expo-camera';
-import { useThemeStore, useTranslation, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { usePantryStore } from '../store';
 import BarcodeScanner from './BarcodeScanner';
 
@@ -436,7 +436,7 @@ export default function PantryItemForm({
           >
             <Text style={{ fontSize: 16, color: expirationDate ? theme.text : theme.muted }}>
               {expirationDate
-                ? expirationDate.toLocaleDateString('fr-FR')
+                ? formatDateFr(expirationDate)
                 : t('pantry.field_expiry_none')}
             </Text>
           </TouchableOpacity>

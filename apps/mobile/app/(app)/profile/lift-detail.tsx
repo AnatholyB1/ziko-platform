@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
+import { formatDateFr } from '@ziko/plugin-sdk';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ export default function LiftDetailScreen() {
   const prHistory = useMemo(() => history.filter((h) => h.isPR).reverse(), [history]);
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    formatDateFr(new Date(iso), { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>

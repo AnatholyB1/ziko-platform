@@ -2,7 +2,7 @@ import React, { useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatDateFr } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -74,9 +74,9 @@ function ChallengeCard({ challenge }: { challenge: Challenge }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           <Ionicons name="calendar-outline" size={14} color="#7A7670" />
           <Text style={{ fontSize: 12, color: theme.muted }}>
-            {new Date(challenge.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            {formatDateFr(new Date(challenge.start_date), { day: 'numeric', month: 'short' })}
             {' → '}
-            {new Date(challenge.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            {formatDateFr(new Date(challenge.end_date), { day: 'numeric', month: 'short' })}
           </Text>
         </View>
         {challenge.status === 'active' && (

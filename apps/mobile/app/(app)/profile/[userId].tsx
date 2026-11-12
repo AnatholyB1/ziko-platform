@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, goalLabel } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 
 export default function PublicProfileScreen() {
@@ -118,7 +118,7 @@ export default function PublicProfileScreen() {
             {profile?.name ?? 'Chargement…'}
           </Text>
           <Text style={{ fontSize: 12, color: theme.muted }}>
-            Objectif : {profile?.goal ?? '—'}
+            Objectif : {goalLabel(profile?.goal, '—')}
           </Text>
 
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>

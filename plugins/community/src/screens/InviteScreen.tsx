@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
   Share, RefreshControl,
 } from 'react-native';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -363,7 +363,7 @@ export default function InviteScreen({ supabase }: { supabase: any }) {
                         <Text style={{ fontSize: 13, color: theme.text }}>{enc.message}</Text>
                       )}
                       <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>
-                        {new Date(enc.created_at).toLocaleDateString('fr-FR')}
+                        {formatDateFr(new Date(enc.created_at))}
                       </Text>
                     </View>
                   </View>

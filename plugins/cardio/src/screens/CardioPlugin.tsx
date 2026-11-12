@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatDateFr } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ function getRelativeDate(dateStr: string): string {
 
   if (entryDateStr === todayStr) return "Auj.";
   if (entryDateStr === yesterdayStr) return 'Hier';
-  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+  return formatDateFr(date, { weekday: 'short', day: 'numeric' });
 }
 
 function getActivityIcon(type: string): keyof typeof Ionicons.glyphMap {

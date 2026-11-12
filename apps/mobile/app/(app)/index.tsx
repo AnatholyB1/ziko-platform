@@ -11,7 +11,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { supabase } from '../../src/lib/supabase';
-import { usePluginRegistry, buildLockedSection } from '@ziko/plugin-sdk';
+import { usePluginRegistry, buildLockedSection, goalLabel } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
@@ -117,8 +117,8 @@ function MissionCardContent({
   const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
   const todaySession = sessions[0] ?? null;
   const exercises: any[] = todaySession?.exercises ?? todaySession?.sets ?? [];
-  const sessionName: string = todaySession?.name ?? todaySession?.title ?? activeProgram?.goal ?? 'Séance du jour';
-  const programName: string = activeProgram?.goal ?? 'Programme IA';
+  const sessionName: string = todaySession?.name ?? todaySession?.title ?? goalLabel(activeProgram?.goal, 'Séance du jour');
+  const programName: string = goalLabel(activeProgram?.goal, 'Programme IA');
   const duration: number = todaySession?.duration_minutes ?? todaySession?.duration ?? 45;
 
   return (
@@ -341,7 +341,7 @@ export default function DashboardScreen() {
   // ── Start Mission handler ─────────────────────────────────────────────────
   const handleStartMission = async () => {
     const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
-    const sessionName: string = sessions[0]?.name ?? sessions[0]?.title ?? activeProgram?.goal ?? 'Séance du jour';
+    const sessionName: string = sessions[0]?.name ?? sessions[0]?.title ?? goalLabel(activeProgram?.goal, 'Séance du jour');
     await startSession(undefined, sessionName);
     router.push('/(app)/workout/session' as any);
   };
@@ -601,7 +601,9 @@ export default function DashboardScreen() {
                   <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF5C1A', letterSpacing: 0.8, textTransform: 'uppercase' }}>
                     Coach Ziko
                   </Text>
-                  <Text style={{ fontSize: 10, color: theme.muted }}>· {currentTip.tag}</Text>
+                  {currentTip.tag && currentTip.tag.trim().toLowerCase() !== 'coach ziko' ? (
+                    <Text style={{ fontSize: 10, color: theme.muted }}>· {currentTip.tag}</Text>
+                  ) : null}
                 </View>
                 <Text key={tipIndex} style={{ fontSize: 13.5, lineHeight: 19, color: theme.text }}>{currentTip.text}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>

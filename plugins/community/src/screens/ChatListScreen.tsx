@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl, Modal, FlatList, ActivityIndicator,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatDateFr } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -125,7 +125,7 @@ export default function ChatListScreen({ supabase }: { supabase: any }) {
                 </Text>
               </View>
               <Text style={{ fontSize: 11, color: '#B0ADA8' }}>
-                {new Date(conv.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                {formatDateFr(new Date(conv.updated_at), { day: 'numeric', month: 'short' })}
               </Text>
             </TouchableOpacity>
           ))

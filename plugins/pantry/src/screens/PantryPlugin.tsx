@@ -16,7 +16,7 @@ import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const PRIMARY = '#FF5C1A';
-const TABS = ['Inventaire', 'Recettes', 'Shopping'];
+const TABS = ['Inventaire', 'Recettes', 'Courses'];
 
 const CATEGORIES = [
   { id: 'fridge', label: 'Frigo', icon: 'snow-outline' as const, color: '#2E7BF6' },
@@ -343,7 +343,7 @@ export default function PantryPlugin({ supabase }: { supabase: any }) {
         )}
 
         {/* ── TAB: Shopping ── */}
-        {activeTab === 'Shopping' && (
+        {activeTab === 'Courses' && (
           <View>
             <Text
               style={{

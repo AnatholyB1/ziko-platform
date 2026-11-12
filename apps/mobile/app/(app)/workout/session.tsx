@@ -1028,7 +1028,7 @@ export default function WorkoutSessionScreen() {
             </View>
             <TouchableOpacity onPress={handleEndSession}
               style={{ backgroundColor: theme.danger + '22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 13 }}>End</Text>
+              <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 13 }}>Terminer</Text>
             </TouchableOpacity>
             {hasHydration && favContainer && (
               <TouchableOpacity onPress={handleQuickWater}
@@ -1605,7 +1605,7 @@ export default function WorkoutSessionScreen() {
         </View>
         <TouchableOpacity onPress={handleEndSession}
           style={{ backgroundColor: theme.danger + '22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-          <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 14 }}>End</Text>
+          <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 14 }}>Terminer</Text>
         </TouchableOpacity>
         {hasHydration && favContainer && (
           <TouchableOpacity onPress={handleQuickWater}

@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatDateFr, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -214,7 +214,7 @@ function DayRow({
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
               >
                 <Text style={{ fontSize: 10, color: theme.muted }}>
-                  {ex.name} · {ex.sets} × {ex.reps}
+                  {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)} · {ex.sets} × {ex.reps}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -321,7 +321,7 @@ function SessionCard({ session, theme }: { session: WorkoutSession; theme: any }
     const diff = Math.floor((today.getTime() - d.getTime()) / 86400000);
     if (diff === 0) return "Aujourd'hui";
     if (diff === 1) return 'Hier';
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return formatDateFr(d, { day: 'numeric', month: 'short' });
   }
 
   function fmtDuration(s: WorkoutSession) {
@@ -456,7 +456,7 @@ export default function WorkoutIndexScreen() {
   const tabLabels = ['Semaine type', `${totalWeeks || 'N'} semaines`];
 
   const handleProgramActions = () => {
-    showAlert(activeProgram?.goal ?? 'Programme', undefined, [
+    showAlert(goalLabel(activeProgram?.goal, 'Programme'), undefined, [
       { text: 'Activer', onPress: () => {} },
       { text: 'Dupliquer', onPress: () => {} },
       { text: 'Supprimer', style: 'destructive', onPress: () => {} },
@@ -469,7 +469,7 @@ export default function WorkoutIndexScreen() {
       {/* WSHeader — only when active program */}
       {activeProgram ? (
         <WSHeader
-          title={activeProgram.goal}
+          title={goalLabel(activeProgram.goal, 'Programme')}
           sub="Coach Ziko · Intermédiaire"
           right={
             <TouchableOpacity

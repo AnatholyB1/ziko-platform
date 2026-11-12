@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { supabase } from '../../../../src/lib/supabase';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ function relativeTime(dateStr: string): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
+  return formatDateFr(new Date(dateStr), {
     day: 'numeric', month: 'long', year: 'numeric',
   });
 }
