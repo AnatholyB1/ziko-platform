@@ -14,6 +14,8 @@ for(const f of fs.readdirSync(src).filter(x=>x.endsWith('.html')).sort()){
   h=h.replace(/<!--INC:(\w+)-->/g,(_,n)=>fs.readFileSync(path.join(src,n+".frag"),"utf8"));
   const I=(n,f)=>`<i class="ic" data-n="${n}"${f?' data-f':''}></i>`;
   h=h.replace(/<!--SB-->/g,`<div class="sb"><span>9:41</span><span class="r">${I('cellular',1)}${I('wifi',1)}${I('battery-full',1)}</span></div>`);
+  h=h.replace(/<!--RW:(\d)-->/g,(_,k)=>`<div class="ab"><div class="ttl">Récompenses</div><div class="chip tap" style="background:var(--gold-tint);border-color:#EBD9A0;color:#7A5800">${I('disc',1)}<b class="num">340</b></div><div class="ib bd" data-tap>${I('time')}</div></div><div class="tabs">${['Niveau','Succès','Boutique','Quêtes'].map((x,i)=>`<div${i==k?' class="on"':''}>${x}</div>`).join('')}</div>`);
+  h=h.replace(/<!--PT:(\d)-->/g,(_,k)=>`<div class="ab"><div class="ttl">Garde-manger</div><div class="ib bd" data-tap>${I('search')}</div></div><div class="tabs">${['Inventaire','Recettes','Courses'].map((x,i)=>`<div${i==k?' class="on"':''}>${x}</div>`).join('')}</div>`);
   h=h.replace(/<!--TB:(\d)-->/g,(_,k)=>{const t=[['home','Accueil'],['barbell','Séances'],['sparkles','Coach IA'],['apps','Modules'],['person','Profil']];
     return `<div class="tb">${t.map((x,i)=>`<div${i==k?' class="on"':''}>${I(x[0],i==k)}<span>${x[1]}</span></div>`).join('')}</div>`;});
   h=h.replace(/<i class="ic([^"]*)" data-n="([^"]+)"( data-f)?( style="[^"]*")?><\/i>/g,(_,c,n,fl,st)=>`<i class="ic${c}"${st||""}>${svg(n,!!fl)}</i>`);

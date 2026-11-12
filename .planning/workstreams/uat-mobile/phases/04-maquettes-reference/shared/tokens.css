@@ -8,8 +8,8 @@
 :root{
   --bg:#F7F6F3;--surface:#FFFFFF;--border:#E2E0DA;--primary:#FF5C1A;--text:#1C1A17;--muted:#6B6963;
   --primary-tint:#FFF0E8;--primary-press:#E5500F;--surface-2:#F0EFE9;
-  --success:#1F8A4C;--success-tint:#E6F4EC;--warn:#A86A00;--warn-tint:#FDF3DC;--danger:#C73A2E;--danger-tint:#FBE9E7;--info:#2563C9;--info-tint:#E8F0FD;
-  --gold:#B8860B;--gold-tint:#FBF1D3;
+  --success:#17703D;--success-tint:#E6F4EC;--warn:#8A5700;--warn-tint:#FDF3DC;--danger:#B5301F;--danger-tint:#FBE9E7;--info:#2563C9;--info-tint:#E8F0FD;
+  --gold:#9A6F00;--gold-tint:#FBF1D3;
   --font-d:Manrope,system-ui,sans-serif;--font-b:Geist,system-ui,sans-serif;
   /* echelle 4pt */--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;
   --r-card:16px;--r-ctl:12px;--r-chip:999px;
@@ -46,13 +46,13 @@ body{background:#E9E7E1;font-family:var(--font-b);color:var(--text);-webkit-font
 .ico.pr{background:var(--primary-tint);color:var(--primary)}.ico.gd{background:var(--gold-tint);color:var(--gold)}.ico.ok{background:var(--success-tint);color:var(--success)}.ico.lk{background:var(--surface-2);color:#8A877F}.ico.in{background:var(--info-tint);color:var(--info)}
 /* boutons : 48px, primaire pleine */
 .btn{height:48px;border-radius:var(--r-ctl);display:flex;align-items:center;justify-content:center;gap:8px;font:600 15px var(--font-b);padding:0 20px;border:1px solid var(--border);background:var(--surface);color:var(--text);white-space:nowrap}
-.btn.p{background:var(--primary);border-color:var(--primary);color:#fff}.btn.d{color:var(--danger);border-color:#F0C9C5}.btn.t{border-color:transparent;background:transparent;color:var(--primary)}
+.btn.p{background:var(--primary);border-color:var(--primary);color:#fff}.btn.d{color:var(--danger);border-color:#F0C9C5}.btn.t{border-color:transparent;background:transparent;color:#B53D05}
 .btn.ds{background:var(--surface-2);color:#8A877F;border-color:var(--border)}.btn.full{width:100%}.btn.sm{height:44px;font-size:14px;padding:0 14px}
 /* chips / badges */
 .chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font:500 14px var(--font-b);white-space:nowrap}
 .chip.tap{height:44px;padding:0 16px}.chip.on{background:var(--text);border-color:var(--text);color:#fff}.chip.pr{background:var(--primary-tint);border-color:#FFD2BC;color:#B53D05}
 .bdg{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:999px;font:600 12px var(--font-b);letter-spacing:.02em}
-.bdg.ok{background:var(--success-tint);color:var(--success)}.bdg.pr{background:var(--primary);color:#fff}.bdg.in{background:var(--info-tint);color:var(--info)}.bdg.wn{background:var(--warn-tint);color:var(--warn)}.bdg.gy{background:var(--surface-2);color:var(--muted)}.bdg.gd{background:var(--gold-tint);color:var(--gold)}
+.bdg.ok{background:var(--success-tint);color:var(--success)}.bdg.pr{background:var(--primary);color:#fff}.bdg.in{background:var(--info-tint);color:var(--info)}.bdg.wn{background:var(--warn-tint);color:var(--warn)}.bdg.gy{background:var(--surface-2);color:var(--muted)}.bdg.gd{background:var(--gold-tint);color:#7A5800}
 /* segmente / onglets */
 .seg{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px}.seg>*{flex:1;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:600 14px var(--font-b);color:var(--muted);white-space:nowrap}
 .seg>.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(28,26,23,.12)}
@@ -76,3 +76,4 @@ body{background:#E9E7E1;font-family:var(--font-b);color:var(--text);-webkit-font
 .inp{height:48px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 14px;font-size:15px;color:var(--muted)}.inp.foc{border:2px solid var(--primary);padding:0 13px;color:var(--text)}
 .focus{outline:3px solid #FF5C1A55;outline-offset:2px}
 .ann{position:absolute;border:2px dashed #2563C9;border-radius:10px;pointer-events:none}
+.pr-t{color:#B53D05}
