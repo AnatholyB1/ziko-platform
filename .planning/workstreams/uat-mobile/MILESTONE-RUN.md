@@ -6,7 +6,7 @@ Integration : branche `milestone/v1.20`, worktree `.claude/worktrees/integration
 | Phase | Etat | Branche | Dernier commit | Gate | Notes |
 |---|---|---|---|---|---|
 | P1 Harness | non lance | - | - | - | attend decisions A1/A2 (checklist) |
-| P2 Session | non lance | - | - | - | |
+| P2 Session | MERGE (code+tests unitaires; UAT emulateur en attente P1+APK) | phase/02-session-auth-robustes | 93ffc7d7 | mobile 86/86, tsc 0 | transmis a P21: demande inverse, insert ignore |
 | P3 Habitudes | non lance | - | - | - | |
 | P4 Maquettes | non lance | - | - | - | lots A-D |
 | P5-P26 | non lances | - | - | - | voir plan de pipeline dans `ORCHESTRATION-v1.20-uat-mobile.md` |
