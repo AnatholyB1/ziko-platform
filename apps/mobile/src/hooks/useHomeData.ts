@@ -210,8 +210,10 @@ export function useWeeklySessions() {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
       const { data, error } = await supabase
         .from('ziko_workout_sessions')
-        .select('id, started_at, name, total_volume_kg')
+        .select('id, started_at, name, total_volume_kg, total_sets')
         .eq('user_id', userId!)
+        // TRAIN-03: a session without any validated set is not counted (see isCountableSession)
+        .or('total_sets.gt.0,total_volume_kg.gt.0')
         .gte('started_at', weekAgo)
         .order('started_at', { ascending: false });
       if (error) throw error;
@@ -255,8 +257,9 @@ export function useRecentSessions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ziko_workout_sessions')
-        .select('id, name, started_at, ended_at, total_volume_kg, total_duration_active_seconds')
+        .select('id, name, started_at, ended_at, total_volume_kg, total_duration_active_seconds, total_sets')
         .eq('user_id', userId!)
+        .or('total_sets.gt.0,total_volume_kg.gt.0')
         .order('started_at', { ascending: false })
         .limit(3);
       if (error) throw error;

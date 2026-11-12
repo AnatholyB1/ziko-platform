@@ -10,8 +10,9 @@ import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../src/stores/authStore';
 import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
+import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
 import { supabase } from '../../src/lib/supabase';
-import { usePluginRegistry, buildLockedSection } from '@ziko/plugin-sdk';
+import { usePluginRegistry, buildLockedSection, showAlert } from '@ziko/plugin-sdk';
 import { useTranslation } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
@@ -114,12 +115,13 @@ function MissionCardContent({
   }
 
   // Populated state — parse program_data defensively
-  const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
-  const todaySession = sessions[0] ?? null;
-  const exercises: any[] = todaySession?.exercises ?? todaySession?.sets ?? [];
-  const sessionName: string = todaySession?.name ?? todaySession?.title ?? activeProgram?.goal ?? 'Séance du jour';
+  // TRAIN-01: show (and later start) the session planned for today, same resolver as the button
+  const todayPick = pickSessionForToday(normalizePlanSessions(activeProgram?.program_data), jsDayToIndex(new Date().getDay()));
+  const todaySession: any = todayPick?.session ?? null;
+  const exercises: any[] = todaySession?.exercises ?? [];
+  const sessionName: string = todaySession?.name ?? activeProgram?.goal ?? 'Séance du jour';
   const programName: string = activeProgram?.goal ?? 'Programme IA';
-  const duration: number = todaySession?.duration_minutes ?? todaySession?.duration ?? 45;
+  const duration: number = Math.max(30, exercises.length * 6);
 
   return (
     <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
@@ -258,7 +260,7 @@ export default function DashboardScreen() {
   const theme = useThemeStore((s) => s.theme);
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const startSession = useWorkoutStore((s) => s.startSession);
+  const startPlannedSession = useWorkoutStore((s) => s.startPlannedSession);
   const { width: screenWidth } = useWindowDimensions();
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -340,9 +342,13 @@ export default function DashboardScreen() {
 
   // ── Start Mission handler ─────────────────────────────────────────────────
   const handleStartMission = async () => {
-    const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
-    const sessionName: string = sessions[0]?.name ?? sessions[0]?.title ?? activeProgram?.goal ?? 'Séance du jour';
-    await startSession(undefined, sessionName);
+    // TRAIN-01 (D-01): single start path -> the planned session with its exercises, never an empty quick session
+    if (!activeProgram?.id) return;
+    const res = await startPlannedSession(activeProgram.id, jsDayToIndex(new Date().getDay()));
+    if (!res.ok) {
+      showAlert('Séance indisponible', "Impossible de démarrer la séance prévue (exercices introuvables). Ouvre ton programme pour la vérifier.");
+      return;
+    }
     router.push('/(app)/workout/session' as any);
   };
 
@@ -864,7 +870,9 @@ export default function DashboardScreen() {
             </View>
           ) : (
             recentSessions.map((session) => (
-              <View key={session.id} style={{
+              <TouchableOpacity key={session.id} activeOpacity={0.8}
+                onPress={() => router.push(`/(app)/workout/session/${session.id}` as any)}
+                style={{
                 backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
                 borderWidth: 1, borderColor: '#E2E0DA',
                 shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
@@ -890,7 +898,7 @@ export default function DashboardScreen() {
                     ? session.total_volume_kg.toLocaleString('fr-FR') + ' kg'
                     : '—'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>

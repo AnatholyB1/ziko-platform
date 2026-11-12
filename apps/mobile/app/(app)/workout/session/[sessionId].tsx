@@ -265,10 +265,13 @@ export default function HistoryDetailScreen() {
                   label: 'SÉRIES',
                 },
                 {
-                  value: session.avg_heart_rate != null ? `${session.avg_heart_rate}` : '—',
-                  unit: session.avg_heart_rate != null ? 'bpm' : '',
-                  label: 'FC MOY.',
+                  value: `${Object.keys(exerciseGroups).length}`,
+                  unit: '',
+                  label: 'EXOS',
                 },
+                ...(session.avg_heart_rate != null
+                  ? [{ value: `${session.avg_heart_rate}`, unit: 'bpm', label: 'FC MOY.' }]
+                  : []),
               ].map((stat) => (
                 <View key={stat.label} style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 1 }}>
