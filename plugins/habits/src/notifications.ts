@@ -52,8 +52,8 @@ export async function scheduleHabitReminder(
   if (!habit.reminder_time) return;
   const n = N();
   if (!n) return;
-  ensureHandler(n);
   try {
+    ensureHandler(n);
     const [h, m] = habit.reminder_time.split(':').map(Number);
     await cancelHabitReminder(habit.id);
     await n.scheduleNotificationAsync({
