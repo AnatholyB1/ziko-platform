@@ -8,6 +8,7 @@ export * from './i18n';
 export * from './displayLabels';
 export * from './gating';
 export * from './unlockUi';
+export * from './mealLog';
 export * from './onboarding';
 export * from './disclaimer';
 export { useAlertStore, showAlert } from './alert';
