@@ -6,6 +6,7 @@ import {
   buildProgramList,
   duplicateName,
   menuActionsFor,
+  needsCoachConfirmation,
   validateProgramName,
   type ProgramItem,
   type ProgramKind,
@@ -36,6 +37,27 @@ export async function loadAllPrograms(client: Client, userId: string): Promise<P
   if (w.error) fail(w.error, 'Impossible de charger tes programmes');
   if (a.error) fail(a.error, 'Impossible de charger tes programmes');
   return buildProgramList((w.data ?? []) as any[], (a.data ?? []) as any[], userId);
+}
+
+/**
+ * For entry points other than the Programmes screen (program detail, AI programs tab): returns the
+ * name of the active COACH program that activating the target would replace, or null when no A08
+ * confirmation is needed. Never throws: on a load error returns null (the RPC stays the guard).
+ */
+export async function coachProgramReplacedBy(
+  client: Client,
+  userId: string,
+  kind: ProgramKind,
+  programId: string,
+): Promise<string | null> {
+  try {
+    const items = await loadAllPrograms(client, userId);
+    const target = items.find((i) => i.kind === kind && i.id === programId);
+    if (!target || !needsCoachConfirmation(items, target)) return null;
+    return items.find((i) => i.isActive && i.source === 'coach')?.name ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function setActiveProgram(client: Client, kind: ProgramKind, programId: string): Promise<void> {

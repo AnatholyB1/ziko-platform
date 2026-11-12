@@ -427,15 +427,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     if (data) {
       const programs = data as WorkoutProgram[];
-      let active = programs.find((p) => p.is_active) ?? null;
-
-      // Auto-activate if there are programs but none is active
-      if (!active && programs.length > 0) {
-        const first = programs[0];
-        await supabase.from('ziko_workout_programs').update({ is_active: true }).eq('id', first.id);
-        first.is_active = true;
-        active = first;
-      }
+      // P7 (D-09): no auto-activation. 0 active program is a valid state; activation is explicit.
+      const active = programs.find((p) => p.is_active) ?? null;
 
       set({ programs, activeProgram: active });
     }
@@ -455,17 +448,13 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
-    // Deactivate all first
-    await supabase
-      .from('ziko_workout_programs')
-      .update({ is_active: false })
-      .eq('user_id', user.id);
-
-    // Activate selected
-    await supabase
-      .from('ziko_workout_programs')
-      .update({ is_active: true })
-      .eq('id', programId);
+    // P7 (TRAIN-07): single atomic path (deactivates every program of the user, both tables,
+    // then activates this one). Replaces the old non-atomic "update all false / update one true".
+    const { error } = await supabase.rpc('ziko_set_active_program', {
+      p_kind: 'workout',
+      p_program_id: programId,
+    });
+    if (error) throw new Error(error.message);
 
     // Reload
     await get().loadPrograms();
