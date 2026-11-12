@@ -58,7 +58,8 @@ describe('awardBadges (D-08)', () => {
     await awardWorkoutXP(supabase, 'sess-1');
     const order = calls.map((c) => c.fn);
     expect(order.indexOf('ziko_award_xp')).toBeGreaterThan(-1);
-    expect(order[order.length - 1]).toBe('ziko_check_and_award_badges');
+    expect(order.indexOf('ziko_check_and_award_badges')).toBeGreaterThan(order.indexOf('ziko_award_xp'));
+    expect(order[order.length - 1]).toBe('ziko_sync_quests'); // P13 : les quetes suivent, en dernier
   });
 });
 

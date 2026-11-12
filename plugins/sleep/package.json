@@ -7,6 +7,9 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./lib/sleep": "./src/lib/sleep.ts",
+    "./lib/data": "./src/lib/data.ts",
+    "./lib/reminders": "./src/lib/reminders.ts",
     "./screens/SleepPlugin": "./src/screens/SleepPlugin.tsx",
     "./screens/SleepDashboard": "./src/screens/SleepDashboard.tsx",
     "./screens/SleepLog": "./src/screens/SleepLog.tsx"
@@ -16,6 +19,7 @@
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
+    "expo-notifications": "*",
     "zustand": "^5.0.0",
     "date-fns": "^4.0.0"
   },

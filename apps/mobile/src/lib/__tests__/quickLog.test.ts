@@ -131,6 +131,13 @@ describe('humeur 1/jour (QLOG-03)', () => {
     expect(db.tables.ziko_journal_entries[0]).toMatchObject({ mood: 2, context: 'general', date: D });
     expect(await getTodayMood(db, U, '2026-11-13')).toBeNull();
   });
+  it('P22 : l humeur de l accueil est TOUJOURS l entree general du jour (matin comme soir)', async () => {
+    for (const h of [8, 14, 21]) {
+      const db = fakeDb();
+      await saveTodayMood(db, U, 4, h, D);
+      expect(db.tables.ziko_journal_entries[0].context).toBe('general');
+    }
+  });
   it('refuse une humeur hors 1-5', async () => {
     await expect(saveTodayMood(fakeDb(), U, 6, 10, D)).rejects.toThrow();
     await expect(saveTodayMood(fakeDb(), U, 0, 10, D)).rejects.toThrow();
