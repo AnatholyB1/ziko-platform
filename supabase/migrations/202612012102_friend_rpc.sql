@@ -135,6 +135,7 @@ RETURNS TABLE (
   handle        text,
   avatar_url    text,
   goal          text,
+  level         integer,   -- niveau de gamification de l'autre partie (NULL si inconnu)
   status        text,      -- pending | accepted
   direction     text,      -- sent | received
   created_at    timestamptz
@@ -157,12 +158,14 @@ BEGIN
          o.handle,
          o.avatar_url,
          o.goal,
+         g.level,
          f.status,
          CASE WHEN f.requester_id = v_me THEN 'sent' ELSE 'received' END,
          f.created_at
   FROM public.ziko_friendships f
   JOIN public.ziko_user_profiles o
     ON o.id = CASE WHEN f.requester_id = v_me THEN f.addressee_id ELSE f.requester_id END
+  LEFT JOIN public.ziko_user_gamification g ON g.user_id = o.id
   WHERE (f.requester_id = v_me OR f.addressee_id = v_me)
     AND f.status IN ('pending', 'accepted')
   ORDER BY f.created_at DESC;

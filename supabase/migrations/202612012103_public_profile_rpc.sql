@@ -119,12 +119,13 @@ BEGIN
 
   -- 3 derniers entrainements termines
   SELECT coalesce(jsonb_agg(jsonb_build_object(
-           'id', w.id, 'name', w.name, 'started_at', w.started_at,
-           'total_sets', w.total_sets, 'total_volume_kg', w.total_volume_kg)
+           'id', w.id, 'name', w.name, 'started_at', w.started_at, 'duration_min', w.duration_min,
+           'total_exercises', w.total_exercises, 'total_sets', w.total_sets)
            ORDER BY w.started_at DESC), '[]'::jsonb)
   INTO v_workouts
   FROM (
-    SELECT s.id, s.name, s.started_at, s.total_sets, s.total_volume_kg
+    SELECT s.id, s.name, s.started_at, s.total_sets, s.total_exercises,
+           GREATEST(round(extract(epoch FROM (s.ended_at - s.started_at)) / 60.0), 0)::integer AS duration_min
     FROM public.ziko_workout_sessions s
     WHERE s.user_id = p_user AND s.ended_at IS NOT NULL
     ORDER BY s.started_at DESC
