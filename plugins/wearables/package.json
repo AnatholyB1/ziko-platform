@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
+    "@ziko/plugin-sleep": "*",
     "@ziko/ui": "*",
     "zustand": "^5.0.0"
   },
