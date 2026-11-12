@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ function formatRelativeDate(dateStr: string): string {
 
   if (entryDateStr === todayStr) return "Aujourd'hui";
   if (entryDateStr === yesterdayStr) return 'Hier';
-  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+  return formatDateFr(date, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 // ─── MiniBars (local) ─────────────────────────────────────────────────────────

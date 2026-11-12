@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Svg, { Circle } from 'react-native-svg';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -567,7 +567,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: chartMaxHeight }}>
             {dailyKcal.map((day) => {
               const barHeight = maxKcal > 0 ? (day.kcal / maxKcal) * chartMaxHeight : 4;
-              const dayLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 3);
+              const dayLabel = formatDateFr(new Date(day.date + 'T12:00:00'), { weekday: 'short' }).slice(0, 3);
               return (
                 <View key={day.date} style={{ flex: 1, alignItems: 'center' }}>
                   <View

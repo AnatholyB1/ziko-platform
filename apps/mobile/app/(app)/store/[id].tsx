@@ -8,7 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatDateFr } from '@ziko/plugin-sdk';
 
 import { usePluginRegistry, useTranslation, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
@@ -556,7 +556,7 @@ export default function PluginDetailScreen() {
                     <Text style={{ color: MUTED, fontSize: 13, marginTop: 4, lineHeight: 19 }}>{review.body}</Text>
                   )}
                   <Text style={{ color: MUTED, fontSize: 11, marginTop: 8 }}>
-                    {new Date(review.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {formatDateFr(new Date(review.created_at), { day: 'numeric', month: 'long', year: 'numeric' })}
                   </Text>
                 </View>
               ))}

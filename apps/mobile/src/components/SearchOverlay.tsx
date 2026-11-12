@@ -9,7 +9,7 @@ import { supabase, sessionManager } from '../lib/supabase';
 import { sendFriendRequestFromSearch } from '../lib/friendRequest';
 import { useQuery } from '@tanstack/react-query';
 import { EmptyState } from '@ziko/ui';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatDateFr, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 
 // ── Main component ─────────────────────────────────────────
 
@@ -232,7 +232,7 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 13, fontWeight: '600', color: '#1C1A17' }}>
-                            {ex.name}
+                            {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}
                           </Text>
                           <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 1 }}>
                             {ex.category}
@@ -285,10 +285,10 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 13, fontWeight: '600', color: '#1C1A17' }}>
-                            {prog.goal}
+                            {goalLabel(prog.goal)}
                           </Text>
                           <Text style={{ fontSize: 12, color: '#6B6963', marginTop: 1 }}>
-                            {new Date(prog.created_at).toLocaleDateString('fr-FR')}
+                            {formatDateFr(new Date(prog.created_at))}
                           </Text>
                         </View>
                       </View>

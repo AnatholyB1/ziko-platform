@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeStore, topInsetShortfall } from '@ziko/plugin-sdk';
 
 export interface WSHeaderProps {
   title: string;
@@ -13,6 +14,18 @@ export interface WSHeaderProps {
 
 export default function WSHeader({ title, sub, onBack, right, dark = false }: WSHeaderProps) {
   const theme = useThemeStore((s) => s.theme);
+  const insets = useSafeAreaInsets();
+  const ref = useRef<View>(null);
+  const [extraTop, setExtraTop] = useState(0);
+
+  // XCUT-03 : si l'en-tete se retrouve sous la barre de statut (ecran hors SafeAreaView),
+  // on ajoute exactement le manque. Deja degage -> 0 (pas de double padding).
+  const handleLayout = useCallback(() => {
+    ref.current?.measureInWindow((_x, y) => {
+      const next = topInsetShortfall(y, insets.top);
+      setExtraTop((prev) => (prev === next ? prev : next));
+    });
+  }, [insets.top]);
 
   const containerBg = dark ? 'rgba(28,26,23,0.94)' : theme.background + 'F0';
   const containerBorderColor = dark ? 'rgba(255,250,246,0.06)' : theme.border;
@@ -23,12 +36,15 @@ export default function WSHeader({ title, sub, onBack, right, dark = false }: WS
 
   return (
     <View
+      ref={ref}
+      onLayout={handleLayout}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingTop: 12 + extraTop,
+        paddingBottom: 12,
         backgroundColor: containerBg,
         borderBottomWidth: 1,
         borderBottomColor: containerBorderColor,

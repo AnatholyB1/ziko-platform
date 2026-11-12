@@ -5,7 +5,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, STORAGE_BUCKETS, formatDateFr, goalLabel } from '@ziko/plugin-sdk';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -456,7 +456,7 @@ function PRBadgesTab({ badges }: { badges: BadgeItem[] }) {
                 }}
               >
                 {b.earned_at
-                  ? new Date(b.earned_at).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).toUpperCase()
+                  ? formatDateFr(new Date(b.earned_at), { month: 'short', year: '2-digit' }).toUpperCase()
                   : ''}
               </Text>
             </View>
@@ -632,7 +632,7 @@ export default function ProfileScreen() {
           const weight = row.weight_kg ?? 0;
           const performedAt = row.completed_at ?? row.created_at;
           const date = performedAt
-            ? new Date(performedAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+            ? formatDateFr(new Date(performedAt), { month: 'short', day: 'numeric' })
             : '';
           if (!exerciseMap.has(exerciseId) || exerciseMap.get(exerciseId)!.weight < weight) {
             exerciseMap.set(exerciseId, { exercise: exerciseName, weight, date });
@@ -938,7 +938,7 @@ export default function ProfileScreen() {
               <Text
                 style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginTop: 1 }}
               >
-                {data?.profile?.goal ?? 'Ajoute ton objectif'}
+                {goalLabel(data?.profile?.goal, 'Ajoute ton objectif')}
               </Text>
             </View>
           </View>

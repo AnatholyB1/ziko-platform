@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatDateFr } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -72,7 +72,7 @@ export default function SessionDetail({ supabase }: { supabase: any }) {
             {session?.name ?? 'Séance libre'}
           </Text>
           <Text style={{ fontSize: 13, color: theme.muted }}>
-            {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {formatDateFr(date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </Text>
         </View>
       </View>

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, RefreshControl,
 } from 'react-native';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, goalLabel } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -214,7 +214,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }}>{u.name || 'Utilisateur'}</Text>
                       {u.goal ? (
-                        <Text style={{ fontSize: 12, color: theme.muted, marginTop: 1 }}>{u.goal}</Text>
+                        <Text style={{ fontSize: 12, color: theme.muted, marginTop: 1 }}>{goalLabel(u.goal)}</Text>
                       ) : null}
                       {isFriend && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
@@ -360,7 +360,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text }}>Demande d'ami</Text>
                   <Text style={{ fontSize: 12, color: theme.muted }}>
-                    {new Date(req.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    {formatDateFr(new Date(req.created_at), { day: 'numeric', month: 'short' })}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => handleAccept(req.id)}
@@ -398,7 +398,7 @@ export default function FriendsScreen({ supabase }: { supabase: any }) {
                 <Avatar name={f.name} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }}>{f.name || 'Ami'}</Text>
-                  <Text style={{ fontSize: 12, color: theme.muted }}>{f.goal || ''}</Text>
+                  <Text style={{ fontSize: 12, color: theme.muted }}>{goalLabel(f.goal)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   <TouchableOpacity onPress={() => handleGift(f)}

@@ -16,7 +16,7 @@ import Svg, {
   LinearGradient as SvgLinearGradient,
   Stop,
 } from 'react-native-svg';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { supabase } from '../../../src/lib/supabase';
 import WSHeader from '../../../src/components/WSHeader';
@@ -440,7 +440,7 @@ export default function WorkoutSummaryScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>
-                        {ex.name}
+                        {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}
                       </Text>
                       {ex.isNewPR ? (
                         <Text
