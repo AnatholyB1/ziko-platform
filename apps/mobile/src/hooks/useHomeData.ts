@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { localDateKey } from '../lib/localDate';
+import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
 
 // ── Fallback constants ────────────────────────────────────────
 // daily_water_goal_ml, weekly_goal, and sleep_goal do NOT exist
 // as DB columns — use these hardcoded defaults throughout the app.
 export const HOME_DEFAULTS = {
   hydrationGoalMl: 2500,
-  sleepTargetH: 8,
   weeklyGoalDefault: 4,
 } as const;
 
@@ -124,24 +124,26 @@ export function useStreak() {
   });
 }
 
-// ── useSleepToday ─────────────────────────────────────────────
-// Fetches today's sleep_logs entry. Row may not exist — returns null when nothing logged.
-export function useSleepToday() {
+// ── useSleepSettings / useSleepToday ──────────────────────────
+// SLP-06 : meme resolution que l'ecran Sommeil (plugins/sleep/src/lib/data.ts) : la source connectee prime,
+// sinon la saisie manuelle ; rien -> null (aucune valeur par defaut). Date = jour du reveil, locale.
+export function useSleepSettings() {
   const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['sleep', 'today', userId],
-    queryFn: async () => {
-      const today = localDateKey();
-      const { data, error } = await supabase
-        .from('ziko_sleep_logs')
-        .select('duration_hours, quality, bedtime, wake_time')
-        .eq('user_id', userId!)
-        .eq('date', today)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? null;
-    },
+    queryKey: ['sleep', 'settings', userId],
+    queryFn: () => fetchSleepSettings(supabase, userId!),
     enabled: !!userId,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useSleepToday() {
+  const userId = useAuthStore((s) => s.user?.id);
+  const { data: settings } = useSleepSettings();
+  return useQuery({
+    queryKey: ['sleep', 'today', userId, settings?.source ?? 'auto'],
+    queryFn: () => fetchSleepNight(supabase, userId!, localDateKey(), settings),
+    enabled: !!userId && settings !== undefined,
     staleTime: 1000 * 60 * 10, // 10 min
   });
 }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
+import { mapHealthConnectStages } from '@ziko/plugin-sleep/lib/sleep';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -22,6 +23,8 @@ export interface SleepData {
   wake_time: string;
   duration_hours: number;
   quality: number | null;
+  /** Minutes par stade fournies par la source (P17 D-12). null = la source ne les fournit pas. */
+  stages?: { deepMin: number; lightMin: number; remMin: number; awakeMin: number } | null;
 }
 
 export interface CaloriesData {
@@ -47,6 +50,10 @@ export interface HealthSummary {
   heart_rate_avg: number | null;
   heart_rate_resting: number | null;
   sleep_hours: number | null;
+  sleep_deep_min?: number | null;
+  sleep_light_min?: number | null;
+  sleep_rem_min?: number | null;
+  sleep_awake_min?: number | null;
   exercises: ExerciseData[];
 }
 
@@ -190,6 +197,7 @@ async function getHealthConnectSleep(start: Date, end: Date): Promise<SleepData[
         wake_time: wakeTime.toTimeString().slice(0, 5),
         duration_hours: Math.round((durationMs / 3600000) * 10) / 10,
         quality: null,
+        stages: mapHealthConnectStages(r.stages),
       };
     });
   } catch {
@@ -613,6 +621,10 @@ export const useWearablesStore = create<WearablesState>()((set, get) => ({
       heart_rate_avg: dayHR?.avg_bpm ?? null,
       heart_rate_resting: dayHR?.resting_bpm ?? null,
       sleep_hours: daySleep?.duration_hours ?? null,
+      sleep_deep_min: daySleep?.stages?.deepMin ?? null,
+      sleep_light_min: daySleep?.stages?.lightMin ?? null,
+      sleep_rem_min: daySleep?.stages?.remMin ?? null,
+      sleep_awake_min: daySleep?.stages?.awakeMin ?? null,
       exercises: exercises.filter((e) => e.date === date),
     };
   },
