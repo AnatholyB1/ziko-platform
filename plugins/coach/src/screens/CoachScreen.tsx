@@ -27,11 +27,13 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { fr, enUS } from 'date-fns/locale';
-import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS, getActionPrimary } from '@ziko/plugin-sdk';
+import { PluginHeader } from '@ziko/ui';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
+import CoachCard, { CoachCardSkeleton } from './CoachCard';
+import { resolveLinkedView } from './coachLinked';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -82,6 +84,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
   const clearCoachTheme = useThemeStore((s) => s.clearCoachTheme);
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const actionColor = getActionPrimary(theme);
   const user = useAuthStore((s) => s.user);
 
   // ── Local state ──
@@ -99,6 +103,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   const {
     data,
     isLoading,
+    isError,
+    isFetching,
     refetch,
   } = useQuery<LinkStatusResponse>({
     queryKey: ['coach-link', user?.id],
@@ -113,7 +119,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
       return res.json();
     },
     staleTime: 30_000,
-    enabled: !!user?.id,
+    // Pas de garde sur user?.id : un store pas encore hydrate ne doit pas afficher l'etat A
+    // (saisie de code) a un athlete deja lie (COACH-01).
   });
 
   const link = data?.link ?? null;
@@ -122,35 +129,37 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   const { data: sessionsCount } = useQuery<number | null>({
     queryKey: ['coach-sessions', user?.id, link?.created_at],
     queryFn: async () => {
-      if (!user?.id || !link?.created_at) return null;
+      const uid = user?.id ?? (await supabase.auth.getUser()).data?.user?.id;
+      if (!uid || !link?.created_at) return null;
       const { count, error } = await supabase
         .from('ziko_workout_sessions')
         .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+        .eq('user_id', uid)
         .gte('started_at', link.created_at);
       if (error) return null;
       return count ?? null;
     },
     staleTime: 30_000,
-    enabled: !!link && !!user?.id,
+    enabled: !!link,
   });
 
   const { data: habitsPct } = useQuery<number | null>({
     queryKey: ['coach-habits-pct', user?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
+      const uid = user?.id ?? (await supabase.auth.getUser()).data?.user?.id;
+      if (!uid) return null;
       const today = new Date().toISOString().slice(0, 10);
       const { data: habitsData, error: habitsError } = await supabase
         .from('ziko_habits')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', uid)
         .eq('is_active', true);
       if (habitsError || !habitsData || habitsData.length === 0) return null;
 
       const { data: logsData, error: logsError } = await supabase
         .from('ziko_habit_logs')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', uid)
         .eq('date', today);
       if (logsError) return null;
 
@@ -159,7 +168,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
       return Math.round((completed / total) * 100);
     },
     staleTime: 30_000,
-    enabled: !!link && !!user?.id,
+    enabled: !!link,
   });
 
   // ── Handlers ──
@@ -311,8 +320,40 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   // ── Loading state ──
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={theme.primary} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <PluginHeader title={t('coach.screen_title')} onBack={() => router.back()} />
+        <View style={{ padding: 16 }}>
+          <CoachCardSkeleton />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Erreur complete (reseau) : jamais d'ecran vide, on ne devine pas l'etat du lien ──
+  if (isError && !data) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+        <PluginHeader title={t('coach.screen_title')} onBack={() => router.back()} />
+        <View style={{ padding: 16 }}>
+          <View
+            accessibilityRole="alert"
+            style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 16, padding: 16, gap: 12 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="cloud-offline" size={20} color="#B91C1C" />
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#B91C1C' }}>Impossible de charger</Text>
+            </View>
+            <Text style={{ fontSize: 14, color: '#7F1D1D' }}>Vérifie ta connexion, puis réessaie.</Text>
+            <TouchableOpacity
+              onPress={() => refetch()}
+              disabled={isFetching}
+              accessibilityRole="button"
+              style={{ minHeight: 44, borderRadius: 12, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
+            >
+              {isFetching ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Réessayer</Text>}
+            </TouchableOpacity>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -320,13 +361,10 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   // ── Determine current state ──
   const isStateB = preview !== null;
   const isStateC = !isStateB && link !== null;
-
-  // ── Shared screen title ──
-  const ScreenTitle = () => (
-    <Text style={{ fontSize: 28, fontWeight: '700', color: '#1C1A17', marginBottom: 8 }}>
-      {t('coach.screen_title')}
-    </Text>
-  );
+  const linkedView = resolveLinkedView(data);
+  const avatarUri = linkedView?.logoPath
+    ? supabase.storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(linkedView.logoPath).data.publicUrl
+    : linkedView?.photoUrl ?? null;
 
   // ── Avatar component (shared between State B and C) ──
   const CoachAvatar = ({
@@ -395,6 +433,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PluginHeader title={t('coach.screen_title')} onBack={() => router.back()} />
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={
@@ -405,7 +444,6 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         {/* ── STATE A: Code Entry ── */}
         {!isStateB && !isStateC && (
           <>
-            <ScreenTitle />
             <Text style={{ fontSize: 14, color: '#6B6963', marginBottom: 16 }}>
               {t('coach.state_a.subtitle')}
             </Text>
@@ -489,7 +527,6 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         {/* ── STATE B: Coach Preview ── */}
         {isStateB && preview && (
           <>
-            <ScreenTitle />
             <Text style={{ fontSize: 14, color: '#6B6963', marginBottom: 8 }}>
               {t('coach.state_b.subtitle')}
             </Text>
@@ -563,89 +600,35 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
           </>
         )}
 
-        {/* ── STATE C: Linked Coach ── */}
-        {isStateC && link && data?.preview && (
-          <>
-            <ScreenTitle />
-
-            <View style={cardStyle}>
-              {/* Avatar row */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <CoachAvatar photoUrl={data.preview.photo_signed_url} logoUrl={data.branding?.logo_url ?? null} displayName={data.preview.display_name} />
-                <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: '#1C1A17' }}>
-                    {data.preview.display_name}
-                  </Text>
-                  {data.preview.kyc_status === 'verified' && (
-                    <View
-                      style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}
-                      accessibilityLabel={t('coach.state_b.kyc_badge')}
-                    >
-                      <Ionicons name="shield-checkmark" size={16} color="#16A34A" />
-                      <Text style={{ fontSize: 14, color: '#16A34A' }}>
-                        {t('coach.state_b.kyc_badge')}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* Specialty chips */}
-              <SpecialtyChips specialties={data.preview.specialties} />
-
-              {/* Stats row */}
-              <View style={{ flexDirection: 'row', marginTop: 12, gap: 16 }}>
-                <View>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: '#1C1A17' }}>
-                    {sessionsCount !== null && sessionsCount !== undefined ? sessionsCount : '--'}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#6B6963' }}>
-                    {t('coach.state_c.sessions_label')}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: '#1C1A17' }}>
-                    {habitsPct !== null && habitsPct !== undefined ? `${habitsPct}%` : '--'}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#6B6963' }}>
-                    {t('coach.state_c.progress_label')}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Linked since */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-                <Ionicons name="calendar-outline" size={16} color="#6B6963" style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: 14, color: '#6B6963' }}>
-                  {t('coach.state_c.linked_since').replace(
-                    '{{date}}',
-                    format(new Date(link.created_at), 'dd/MM/yyyy', { locale: fr }),
-                  )}
-                </Text>
-              </View>
-
-              {/* Divider */}
-              <View style={{ height: 1, backgroundColor: '#E2E0DA', marginTop: 16 }} />
-
-              {/* Revoke button */}
-              <TouchableOpacity
-                onPress={() => setShowRevokeModal(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('coach.state_c.revoke')}
-                style={{
-                  marginTop: 16,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons name="trash-outline" size={18} color="#DC2626" style={{ marginRight: 8 }} />
-                <Text style={{ fontSize: 14, color: '#DC2626' }}>
-                  {t('coach.state_c.revoke')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </>
+        {/* ── STATE C: Linked Coach (avec ou sans profil : jamais vide) ── */}
+        {isStateC && link && linkedView && (
+          <View style={{ marginTop: 8 }}>
+            <CoachCard
+              view={linkedView}
+              avatarUri={avatarUri}
+              actionColor={actionColor}
+              onRetry={() => refetch()}
+              retrying={isFetching}
+              stats={[
+                { value: sessionsCount !== null && sessionsCount !== undefined ? String(sessionsCount) : '--', label: t('coach.state_c.sessions_label') },
+                { value: habitsPct !== null && habitsPct !== undefined ? `${habitsPct}%` : '--', label: t('coach.state_c.progress_label') },
+              ]}
+              footer={
+                <>
+                  <View style={{ height: 1, backgroundColor: '#E2E0DA', marginTop: 16 }} />
+                  <TouchableOpacity
+                    onPress={() => setShowRevokeModal(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('coach.state_c.revoke')}
+                    style={{ marginTop: 4, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#DC2626" style={{ marginRight: 8 }} />
+                    <Text style={{ fontSize: 14, color: '#DC2626' }}>{t('coach.state_c.revoke')}</Text>
+                  </TouchableOpacity>
+                </>
+              }
+            />
+          </View>
         )}
 
       </ScrollView>

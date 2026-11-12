@@ -120,6 +120,7 @@ export async function getTodayMood(
     .select('id, mood')
     .eq('user_id', userId)
     .eq('date', date)
+    .eq('context', 'general') // P22 (Q-P22b) : l'humeur de l'accueil = entree 'general' du jour
     .order('created_at', { ascending: false })
     .limit(1);
   fail(res.error, 'mood select');
@@ -147,7 +148,7 @@ export async function saveTodayMood(
   }
   const res: QueryResult = await client
     .from('ziko_journal_entries')
-    .insert({ user_id: userId, mood, context: moodContext(hour), date });
+    .insert({ user_id: userId, mood, context: 'general', date });
   fail(res.error, 'mood insert');
   return 'inserted';
 }
