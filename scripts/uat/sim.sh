@@ -13,7 +13,7 @@ cmd="${1:?cmd}"; shift || true
 case "$cmd" in
   background)
     $A shell input keyevent KEYCODE_HOME; sleep "${1:-5}"
-    $A shell monkey -p "$UAT_PKG" -c android.intent.category.LAUNCHER 1 >/dev/null; echo "backgrounded ${1:-5}s then resumed";;
+    $A shell monkey -p "$UAT_PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1 || true; echo "backgrounded ${1:-5}s then resumed";;
   gps)
     # emu geo fix takes lon lat
     $A emu geo fix "$2" "$1"; echo "gps set lat=$1 lon=$2";;
