@@ -58,3 +58,8 @@ ziko-backups/
 *.tar.gpg
 scripts/portfolio-migration/.decom-*
 .ziko-decom/
+
+# v1.20 UAT harness
+uat-evidence/
+.planning/.machine-lock
+scripts/uat/.env.uat

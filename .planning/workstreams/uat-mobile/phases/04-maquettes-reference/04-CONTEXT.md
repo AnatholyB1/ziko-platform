@@ -1,0 +1,14 @@
+# Phase 4: Maquettes de reference (DSGN) - Context
+
+**Gathered:** 2026-11-12 (recap chantier 17 + decisions utilisateur). Req : DSGN-01. Travail de design pur : AUCUN code applicatif.
+
+## Decisions verrouillees
+- **D-01** 11 surfaces en 4 lots : **A** liste des programmes + atelier IA (conversation) + ajout de repas ; **B** Recompenses (onglets Niveau/Succes/Boutique-Mes objets/Quetes) + Pantry (Frigo/Congelateur/liste/ajout/scan/recettes/courses) ; **C** Stretching (bibliotheque/routines/suivi) + Complements (4 onglets, catalogue, comparateur, rappels) + presets Timer (3 onglets) + saisie de sommeil ; **D** profil public + Amis (En attente recues/envoyees, recherche en haut en direct).
+- **D-02** Charte Ziko : theme clair, fond `#F7F6F3`, surface `#FFFFFF`, bord `#E2E0DA`, primaire `#FF5C1A`, texte `#1C1A17`, muted `#6B6963`. Carte : rayon 16, bord 1px, ombre `#1C1A17` 0.08 / rayon 12 / elevation 3. Ionicons uniquement, jamais d'emoji. Pas de mode sombre. Libelles en francais. `index.html` racine du repo = maquette de reference (cartes en ombre, AICoachInline garde son bord primaire).
+- **D-03** Methode : skills `impeccable`, `shape`, `high-end-visual-design`, `design-taste-frontend`, `frontend-design`, `layout`, `typeset`, `adapt`, `ui-ux-pro-max`, puis `critique` et `audit` sur sa propre sortie. Prototypes HTML+CSS (`tokens.css` partage) rendus par Playwright a **390x844 DPR2** (mobile = seule cible ; pas de desktop), variantes avec contenu / vide / erreur / chargement. Placeholders honnetes, pas de fausses photos, pas de copie de concurrents.
+- **D-04** Questions a trancher DANS les maquettes : (a) rappels Complements par moment de la journee (recommandation de depart : 3 creneaux Matin/Midi/Soir + heure par creneau) ; (b) couleur du module Journal (le violet actuel est juge a revoir : proposer 2 options dans la charte) ; (c) lien Recompenses "Mes objets" (equiper) et boutique (4 categories : titres, badges, themes, bannieres) ; (d) fusion Suivre/ami dans les boutons du profil public.
+- **D-05** Livrables par lot, sous `phases/04-maquettes-reference/design/lot-<X>/` : `*.html`, `tokens.css`, PNG rendus, `NN-DESIGN-CONTRACT-lot-<X>.md` (tokens, tous les etats, microcopy FR, mouvement + reduced-motion, accessibilite, **criteres d'acceptation mesurables** : cibles tactiles >= 44px, texte >= 14px, contraste, safe-area, `paddingBottom: 100`), `MOCKUPS.md` (index), `CRITIQUE.md` (<= 5 questions ouvertes). Galerie HTML statique ouverte pour l'utilisateur (une validation par lot). PNG hors git (`.git/info/exclude`) sauf les finaux compresses du contrat.
+- **D-06** La maquette valide gagne sur toute divergence (rendu exact) : chaque UI-SPEC de phase visuelle references sa maquette canonique.
+
+## Ordre / parallelisme
+Un designer lots A+B, un designer lots C+D (parallele). Lot A d'abord dans chaque binome (debloque P7, P9, P23), lot D en dernier.

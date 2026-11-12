@@ -43,7 +43,7 @@ Convention `supabase/migrations/20261201PPSS_description.sql` (PP = phase 2 chif
 | `packages/plugin-sdk/src/i18n.ts` (1886 l.) | personne (hot spot) | chaque phase AJOUTE son propre namespace a la fin (`rewards.*`, `pantry.*`...) ; conflits de virgules/ordre resolus au merge, validation par `tsc` |
 | `apps/mobile/src/lib/PluginLoader.tsx` | P25 | autres phases : aucun changement attendu |
 | `apps/mobile/app/(app)/index.tsx` (accueil) | P8 (Quick Log, tuiles) | P5 (slug, safe-area, "Coach Ziko" x2) et P6 (boutons "Allez c'est parti", "Demarrer la seance") = edits localises, pas de reecriture ; merge ordre P5 -> P6 -> P8 |
-| Composants d'onglets/header partages (`WSHeader.tsx`, tab bars) | P5 (XCUT-04/06) | P17/P18/P22 consomment le composant, ne le modifient pas |
+| Composants d'onglets/header partages (`WSHeader.tsx`, tab bars) | P5 (XCUT-03 header, XCUT-05 onglets) | P17/P18/P22 consomment le composant, ne le modifient pas |
 | `apps/mobile/app/(app)/workout/*`, `workoutStore.ts` | P6 | P7 (liste/activation), P18 (routine par defaut en debut de seance), P23 : apres P6 ; P18 additif (hook en debut de seance) |
 | `ErrorBoundary.tsx`, `ErrorScreen.tsx` (garde modules) | P3 | - |
 | `authStore.ts`, client supabase mobile | P2 | P21/P22 lisent |
