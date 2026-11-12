@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   awardBadges, equipItem, fetchAchievements, fetchCoinHistory, awardWorkoutXP, HISTORY_PAGE_SIZE,
-} from '../../../../../plugins/gamification/src/store';
+} from '@ziko/plugin-gamification/store';
 
 type Call = { fn: string; args: any };
 

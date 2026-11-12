@@ -4,7 +4,7 @@ import {
   itemsInCategory, missingCoinsShort, missingCoinsText, ownedByCategory, parseAwarded, awardToastText, relativeDay,
   remainingHint, shopItemState, sortHistory, stripEmoji, themeEquipNote, tierCoins, unlockedLong, unlockedShort,
   type BadgeDefinition, type ShopItemLite,
-} from '../../../../../plugins/gamification/src/rewards';
+} from '@ziko/plugin-gamification/rewards';
 
 // Les 11 definitions reelles (supabase/migrations/20260522143410_profile_settings_gap.sql).
 const DEFS: BadgeDefinition[] = [
