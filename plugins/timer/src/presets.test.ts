@@ -142,7 +142,7 @@ describe('moteur de decompte (G-06)', () => {
     expect(phaseAt(phases, totalDuration(C22)).done).toBe(true);
   });
   it('Séance (effort 0) : uniquement des phases de repos', () => {
-    const phases = buildPhases({ ...defaultsForTab('Séance'), name: 'x' });
+    const phases = buildPhases(defaultsForTab('Séance'));
     expect(phases.every((p) => p.kind === 'rest')).toBe(true);
     expect(phases).toHaveLength(4);
   });
