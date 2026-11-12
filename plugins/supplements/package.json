@@ -12,7 +12,8 @@
     "./screens/SupplementCompare": "./src/screens/SupplementCompareScreen.tsx"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
