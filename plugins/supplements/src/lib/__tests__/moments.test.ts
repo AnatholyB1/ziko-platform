@@ -8,6 +8,7 @@ import {
   stepDose,
   buildTodayGroups,
   formatProgress,
+  formatDayLabel,
   intakeKey,
   type StackEntry,
 } from '../moments';
@@ -56,6 +57,13 @@ describe('dose', () => {
     expect(stepDose(1, 'gélule', 1)).toBe(2);
     expect(stepDose(5, 'mg', 1)).toBe(10);
     expect(stepDose(5, 'mg', -1)).toBe(5);
+  });
+});
+
+describe('formatDayLabel', () => {
+  it('jour + date en francais', () => {
+    expect(formatDayLabel(new Date(2026, 10, 12, 10))).toBe('Jeudi 12 nov.');
+    expect(formatDayLabel(new Date(2026, 2, 1, 10))).toBe('Dimanche 1 mars');
   });
 });
 

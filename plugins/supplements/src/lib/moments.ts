@@ -141,3 +141,11 @@ export function formatProgress(groups: readonly TodayGroup[]): { taken: number; 
   const taken = rows.filter((r) => r.taken).length;
   return { taken, total: rows.length, label: `${taken} sur ${rows.length} pris` };
 }
+
+const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const MONTHS_SHORT = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+/** "Jeudi 12 nov." (sans Intl : Hermes/Android ne l'embarque pas toujours en fr). */
+export function formatDayLabel(d: Date): string {
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+}

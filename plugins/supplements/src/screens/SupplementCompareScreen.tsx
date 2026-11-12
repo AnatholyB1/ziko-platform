@@ -6,8 +6,9 @@ import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation, getActionPrimary } from '@ziko/plugin-sdk';
 import { useSupplementsStore } from '../store';
+import { formatPrice, toPriceNumber } from '../lib/pricing';
 
 export default function SupplementCompareScreen() {
   const theme = useThemeStore((s) => s.theme);
@@ -38,7 +39,7 @@ export default function SupplementCompareScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             style={{
-              backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
+              backgroundColor: getActionPrimary(theme), borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12,
               marginTop: 20,
             }}>
             <Text style={{ color: '#fff', fontWeight: '700' }}>{t('supplements.browseSupplements')}</Text>
@@ -116,14 +117,14 @@ export default function SupplementCompareScreen() {
               theme={theme}
               colWidth={colWidth}
               values={compareList.map((s) => (
-                s.latest_price ? `${s.latest_price.price.toFixed(2)}€` : '-'
+                formatPrice(s.latest_price?.price)
               ))}
               highlightBest
               compareList={compareList}
               getBestIdx={(items) => {
                 let bestIdx = -1; let bestVal = Infinity;
                 items.forEach((s, i) => {
-                  const p = s.latest_price?.price;
+                  const p = toPriceNumber(s.latest_price?.price);
                   if (p != null && p < bestVal) { bestVal = p; bestIdx = i; }
                 });
                 return bestIdx;
@@ -137,8 +138,8 @@ export default function SupplementCompareScreen() {
                 theme={theme}
                 colWidth={colWidth}
                 values={compareList.map((s) => (
-                  s.latest_price?.price_per_serving
-                    ? `${s.latest_price.price_per_serving.toFixed(2)}€`
+                  s.latest_price?.price_per_serving != null
+                    ? formatPrice(s.latest_price.price_per_serving)
                     : '-'
                 ))}
                 highlightBest
@@ -146,7 +147,7 @@ export default function SupplementCompareScreen() {
                 getBestIdx={(items) => {
                   let bestIdx = -1; let bestVal = Infinity;
                   items.forEach((s, i) => {
-                    const p = s.latest_price?.price_per_serving;
+                    const p = toPriceNumber(s.latest_price?.price_per_serving);
                     if (p != null && p < bestVal) { bestVal = p; bestIdx = i; }
                   });
                   return bestIdx;
