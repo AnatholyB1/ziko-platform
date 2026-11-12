@@ -22,6 +22,8 @@ export const SOURCES = {
   weeklyReviewCron: 'weekly_review_cron',
   appOpenFallback: 'app_open_fallback',
   rewardSelection: 'reward_selection',
+  // v1.20 Phase 14 : generation automatique de quetes (passage de niveau / plus aucune quete).
+  questGeneration: 'quest_generation',
 } as const;
 
 export type AutonomousCostSource = (typeof SOURCES)[keyof typeof SOURCES];

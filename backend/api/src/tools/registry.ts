@@ -14,6 +14,7 @@ import * as NavigationTools from './navigation.js';
 import * as CoachTools from './coach.js';
 import * as OnboardingTools from './onboarding.js';
 import * as CoachingEngineTools from '../coaching-engine/tools.js';
+import * as QuestsTools from './quests.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -191,6 +192,9 @@ const executors: Record<string, ToolExecutor['execute']> = {
   // the weekly engine grants rewards; its schema is filtered out of
   // allToolSchemas below so chat cannot trigger a grant.
   create_reward: CoachingEngineTools.create_reward,
+  // v1.20 Phase 14 (QUEST-03) : quetes IA (plafond de 3 actives applique en base).
+  quests_get: QuestsTools.quests_get,
+  quests_create: QuestsTools.quests_create,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -591,6 +595,35 @@ const coachToolSchemas: AITool[] = [
   },
 ];
 
+// ── Quests tool schemas (v1.20 Phase 14, QUEST-03) ─────────
+const questsToolSchemas: AITool[] = [
+  {
+    name: 'quests_get',
+    description:
+      "List the user's quests (active, completed, and not-completed ones) with the number of free slots (max 3 active). Call before creating a quest. A quest that was not completed in time is shown neutrally as 'Non terminée' with no penalty.",
+    parameters: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'quests_create',
+    description:
+      "Create ONE time-limited quest for the user, personalized to their profile, level and goal (call once per quest, at most as many as there are free slots; never more than 3 active in total). The user cannot refuse or delete a quest. Progress is measured automatically from real data: workout_sessions (sessions with at least one set), hydration_ml (water in ml), nutrition_logs (meals logged), habit_logs (habits ticked). Always give a duration. Never describe a missed quest as a failure or punishment.",
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short French title, e.g. "Boire 2,5 litres d\'eau"' },
+        description: { type: 'string', description: 'One short French sentence (optional)' },
+        icon: { type: 'string', description: 'Ionicons name, lowercase with dashes (e.g. water, barbell). Never an emoji.' },
+        metric: { type: 'string', enum: ['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs'] },
+        target: { type: 'number', description: 'Target value (sessions / ml / meals / habits)' },
+        scope: { type: 'string', enum: ['daily', 'weekly'] },
+        duration_hours: { type: 'integer', description: 'Time limit in hours (daily 12-48, weekly 72-336)' },
+        reward_coins: { type: 'integer', description: 'Coin reward (daily 5-40, weekly 20-120)' },
+      },
+      required: ['title', 'metric', 'target', 'scope', 'duration_hours'],
+    },
+  },
+];
+
 export const allToolSchemas: AITool[] = [
   ...habitsToolSchemas,
   ...nutritionToolSchemas,
@@ -606,6 +639,7 @@ export const allToolSchemas: AITool[] = [
   ...pantryToolSchemas,
   ...navigationToolSchemas,
   ...coachToolSchemas,
+  ...questsToolSchemas,
   // create_goal/create_program (Phase 44, ENGINE-06) — deliberately
   // included here, the inverse of the onboarding executor's deliberate
   // exclusion from this array (see the `executors` map above): ENGINE-06
