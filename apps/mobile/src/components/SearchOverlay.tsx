@@ -1,15 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, KeyboardAvoidingView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Platform, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '../stores/themeStore';
 import { useAuthStore } from '../stores/authStore';
 import { supabase, sessionManager } from '../lib/supabase';
-import { sendFriendRequestFromSearch } from '../lib/friendRequest';
+import FriendRelationButton from '@ziko/plugin-community/components/FriendRelationButton';
 import { useQuery } from '@tanstack/react-query';
 import { EmptyState } from '@ziko/ui';
-import { showAlert, formatDateFr, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
+import {
+  formatDateFr, goalLabel, exerciseDisplayName, exerciseNames,
+  searchUsersWithStatus, sendFriendRequestRpc, requestSentToast, requestFailedBanner, normalizeRelation,
+  type FriendRelation,
+} from '@ziko/plugin-sdk';
 
 // ── Main component ─────────────────────────────────────────
 
@@ -19,7 +23,12 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const userId = user?.id ?? '';
-  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  // Etat optimiste par utilisateur : meme notion d'amitie que l'ecran Amis et le profil (SOC-04)
+  const [overrides, setOverrides] = useState<Record<string, { relation: FriendRelation; friendship_id?: string | null }>>({});
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+  const [sendFailed, setSendFailed] = useState<{ id: string; name: string | null; title: string; message: string } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -34,7 +43,9 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     if (visible) {
       setQuery('');
       setDebouncedQuery('');
-      setSentIds(new Set());
+      setOverrides({});
+      setToast(null);
+      setSendFailed(null);
       const t = setTimeout(() => inputRef.current?.focus(), 150);
       return () => clearTimeout(t);
     }
@@ -71,30 +82,62 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
     enabled: debouncedQuery.length >= 2 && !!userId,
   });
 
-  // Section 3 — Users (accent + case insensitive via RPC, fallback to ilike)
+  // Section 3 — Users (RPC serveur : accent-insensible, 2 caracteres min, etat de relation calcule avec auth.uid())
   const { data: users, isLoading: loadingUsers } = useQuery({
-    queryKey: ['search_users', debouncedQuery],
+    queryKey: ['search_users', userId, debouncedQuery],
     queryFn: async () => {
       if (!userId) return [];
-      // Try RPC first (migration 064 — accent-insensitive)
-      const { data: rpcData, error: rpcError } = await supabase.rpc('ziko_search_users_fuzzy', {
-        search_query: debouncedQuery.trim(),
-        calling_user_id: userId,
-        result_limit: 5,
-      });
-      if (!rpcError && rpcData) return rpcData as { id: string; name: string; avatar_url: string | null }[];
-      // Fallback: ilike
-      const { data, error } = await supabase
-        .from('ziko_user_profiles')
-        .select('id, name, avatar_url')
-        .neq('id', userId)
-        .ilike('name', `%${debouncedQuery}%`)
-        .limit(5);
-      if (error) throw error;
-      return data ?? [];
+      return searchUsersWithStatus(supabase, debouncedQuery.trim(), 5);
     },
     enabled: debouncedQuery.length >= 2,
+    staleTime: 0,
   });
+
+  const showToast = (text: string) => {
+    setToast(text);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  };
+
+  const setBusy = (id: string, on: boolean) =>
+    setBusyIds((prev) => { const n = new Set(prev); if (on) n.add(id); else n.delete(id); return n; });
+
+  // Envoi : optimiste, rollback + bandeau precis en cas d'echec (aucun etat faux)
+  const addFriend = async (u: { id: string; name: string | null }) => {
+    setSendFailed(null);
+    setBusy(u.id, true);
+    setOverrides((p) => ({ ...p, [u.id]: { relation: 'sent' } }));
+    const out = await sendFriendRequestRpc(supabase, u.id, { requireUser: () => sessionManager.requireUser() });
+    setBusy(u.id, false);
+    if (out.ok) {
+      setOverrides((p) => ({ ...p, [u.id]: { relation: out.relation, friendship_id: out.friendshipId } }));
+      showToast(out.autoAccepted ? `Tu es maintenant ami avec ${u.name ?? 'cet utilisateur'}` : requestSentToast(u.name));
+    } else {
+      setOverrides((p) => { const n = { ...p }; delete n[u.id]; return n; });
+      const std = requestFailedBanner(u.name);
+      setSendFailed({ id: u.id, name: u.name, title: std.title, message: out.reason === 'network' || out.reason === 'unknown' ? std.message : out.message });
+    }
+  };
+
+  const cancelRequest = async (u: { id: string }, friendshipId: string | null | undefined) => {
+    if (!friendshipId) return;
+    setBusy(u.id, true);
+    const { error } = await supabase.from('ziko_friendships').delete().eq('id', friendshipId);
+    setBusy(u.id, false);
+    if (!error) setOverrides((p) => ({ ...p, [u.id]: { relation: 'none' } }));
+    else showToast('Action impossible. Vérifie ta connexion puis réessaie.');
+  };
+
+  const acceptRequest = async (u: { id: string; name: string | null }, friendshipId: string | null | undefined) => {
+    if (!friendshipId) return;
+    setBusy(u.id, true);
+    const { data, error } = await supabase.from('ziko_friendships').update({ status: 'accepted' }).eq('id', friendshipId).select('id');
+    setBusy(u.id, false);
+    if (!error && (data ?? []).length > 0) {
+      setOverrides((p) => ({ ...p, [u.id]: { relation: 'friend', friendship_id: friendshipId } }));
+      showToast(`Tu es maintenant ami avec ${u.name ?? 'cet utilisateur'}`);
+    } else showToast('Action impossible. Vérifie ta connexion puis réessaie.');
+  };
 
   const isLoading = loadingExercises || loadingPrograms || loadingUsers;
 
@@ -302,6 +345,21 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
 
                 {/* Section Utilisateurs */}
                 {sectionTitle('Utilisateurs')}
+                {sendFailed ? (
+                  <View style={{ marginBottom: 10 }}>
+                    <View style={{ padding: 12, borderRadius: 12, backgroundColor: '#FBE9E7', flexDirection: 'row', gap: 10 }}>
+                      <Ionicons name="alert-circle" size={20} color="#B3261E" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: '700', color: '#7A1A14' }}>{sendFailed.title}</Text>
+                        <Text style={{ color: '#7A1A14', marginTop: 2 }}>{sendFailed.message}</Text>
+                        <TouchableOpacity onPress={() => addFriend({ id: sendFailed.id, name: sendFailed.name })} style={{ marginTop: 8, flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                          <Ionicons name="refresh" size={16} color="#7A1A14" />
+                          <Text style={{ fontWeight: '700', color: '#7A1A14' }}>Réessayer</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
                 {users && users.length > 0 ? (
                   <View
                     style={{
@@ -313,7 +371,8 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                     }}
                   >
                     {users.map((u, i) => {
-                      const alreadySent = sentIds.has(u.id);
+                      const rel = overrides[u.id]?.relation ?? normalizeRelation(u.relation);
+                      const fid = overrides[u.id]?.friendship_id ?? u.friendship_id;
                       return (
                         <View
                           key={u.id}
@@ -326,47 +385,34 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                             borderTopColor: '#E2E0DA',
                           }}
                         >
-                          {/* Avatar */}
-                          <TouchableOpacity onPress={() => { onClose(); router.push(`/(app)/profile/${u.id}` as any); }}>
-                            {u.avatar_url ? (
-                              <Image source={{ uri: u.avatar_url }} style={{ width: 36, height: 36, borderRadius: 18 }} />
-                            ) : (
-                              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#FF5C1A24', alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ fontSize: 14, fontWeight: '700', color: '#FF5C1A' }}>
-                                  {u.name ? u.name.charAt(0).toUpperCase() : '?'}
-                                </Text>
-                              </View>
-                            )}
+                          {/* Avatar = initiales (jamais de photo) */}
+                          <TouchableOpacity
+                            accessibilityElementsHidden
+                            importantForAccessibility="no-hide-descendants"
+                            onPress={() => { onClose(); router.push(`/(app)/profile/${u.id}` as any); }}
+                          >
+                            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0EFE9', alignItems: 'center', justifyContent: 'center' }}>
+                              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1C1A17' }}>
+                                {u.name ? u.name.charAt(0).toUpperCase() : '?'}
+                              </Text>
+                            </View>
                           </TouchableOpacity>
 
                           {/* Name */}
                           <TouchableOpacity style={{ flex: 1 }} onPress={() => { onClose(); router.push(`/(app)/profile/${u.id}` as any); }}>
                             <Text style={{ fontSize: 13, fontWeight: '600', color: '#1C1A17' }}>{u.name}</Text>
+                            {u.handle ? <Text style={{ fontSize: 11, color: '#6B6963', marginTop: 1 }}>@{u.handle}</Text> : null}
                           </TouchableOpacity>
 
-                          {/* Add friend button */}
-                          {alreadySent ? (
-                            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F7F6F3', borderWidth: 1, borderColor: '#E2E0DA' }}>
-                              <Text style={{ fontSize: 11, fontWeight: '600', color: '#6B6963' }}>Envoy\u00e9</Text>
-                            </View>
-                          ) : (
-                            <TouchableOpacity
-                              onPress={async () => {
-                                const res = await sendFriendRequestFromSearch(u.id, {
-                                  requireUser: () => sessionManager.requireUser(),
-                                  insert: (row) => supabase.from('ziko_friendships').insert(row) as any,
-                                });
-                                if (res.ok) {
-                                  setSentIds((prev) => new Set([...prev, u.id]));
-                                } else {
-                                  showAlert('Erreur', res.message);
-                                }
-                              }}
-                              style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <Ionicons name="person-add-outline" size={16} color="#FF5C1A" />
-                            </TouchableOpacity>
-                          )}
+                          {/* Bouton d'etat unique : identique a l'ecran Amis et au profil */}
+                          <FriendRelationButton
+                            relation={rel}
+                            name={u.name}
+                            busy={busyIds.has(u.id)}
+                            onAdd={() => addFriend(u)}
+                            onCancel={() => cancelRequest(u, fid)}
+                            onAccept={() => acceptRequest(u, fid)}
+                          />
                         </View>
                       );
                     })}
@@ -380,6 +426,19 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
             )}
           </ScrollView>
         </KeyboardAvoidingView>
+        {toast ? (
+          <View
+            pointerEvents="none"
+            accessibilityLiveRegion="polite"
+            style={{
+              position: 'absolute', left: 16, right: 16, bottom: insets.bottom + 24, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16,
+              backgroundColor: '#1C1A17', flexDirection: 'row', alignItems: 'center', gap: 10,
+            }}
+          >
+            <Ionicons name="checkmark-circle" size={20} color="#8EDBA9" />
+            <Text style={{ color: '#FFFFFF', fontSize: 14, flex: 1 }}>{toast}</Text>
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
