@@ -17,6 +17,7 @@ import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import WSHeader from '../../../src/components/WSHeader';
+import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
@@ -563,6 +564,9 @@ export default function WorkoutIndexScreen() {
       >
         {/* ResumeBar */}
         {currentSession && <ResumeBar session={currentSession} theme={theme} />}
+
+        {/* P24 : fin de programme -> bilan + relance de l'atelier (bandeau neutre) */}
+        <ProgramRelaunchBanner />
 
         {/* Loading state */}
         {isLoading && (

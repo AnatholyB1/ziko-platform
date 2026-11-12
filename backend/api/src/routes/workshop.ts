@@ -147,7 +147,8 @@ workshopRouter.post('/relaunch/check', async (c) => {
       userId,
       createConversation: async () => (await getOrCreateConversation(userId, undefined, userToken, { source: 'workshop' })).conversationId,
     });
-    return c.json(out);
+    const seq = await loadCurrentSequence(db, userId);
+    return c.json({ ...out, has_sequence: seq.items.length > 0 });
   } catch (err) {
     console.error('[workshop relaunch check] failed:', err instanceof Error ? err.message : err);
     return c.json({ error: 'relaunch_check_failed' }, 500);
