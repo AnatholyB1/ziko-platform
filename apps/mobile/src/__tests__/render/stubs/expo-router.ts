@@ -13,3 +13,5 @@ export const router = {
 export const useRouter = () => router;
 export const useSegments = () => ['(app)', '(plugins)', 'habits', 'dashboard'];
 export const Stack: any = () => null;
+export const useFocusEffect = (_cb: unknown) => undefined;
+export const useLocalSearchParams = () => ({});

@@ -327,3 +327,53 @@ export function missingIngredientRows(recipe: RecipeLike, pantry: PantryRow[]) {
     .filter((i) => av.missing.includes(i.name))
     .map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit, recipe_name: recipe.name }));
 }
+
+// ── Quantite : pas du stepper et "Utiliser" ───────────────
+
+/** Pas d'ajustement : 50 g/ml, 0,25 kg/L, 1 pour les unites comptees. */
+export function quantityStep(unit: string): number {
+  if (unit === 'g' || unit === 'ml') return 50;
+  if (unit === 'kg' || unit === 'L') return 0.25;
+  return 1;
+}
+
+/** Nouvelle quantite apres un pas (bornee a 0, arrondie a 2 decimales). */
+export function stepQuantity(current: number, unit: string, direction: 1 | -1): number {
+  const next = current + direction * quantityStep(unit);
+  return Math.max(0, Math.round(next * 100) / 100);
+}
+
+// ── Macros restantes du jour (miroir de backend/api/src/routes/pantry-recipes-macros.ts) ──
+
+export interface MacroBudgetLike {
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
+export const DEFAULT_MACRO_TARGETS: MacroBudgetLike = { calories: 2000, protein_g: 150, carbs_g: 250, fat_g: 65 };
+
+function pos(v: unknown): number | null {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Affichage avant generation ; la reponse serveur (remaining_macros) reste la reference apres appel. */
+export function remainingFromSettings(settings: unknown, meals: Array<Record<string, unknown>>): MacroBudgetLike {
+  const s = (settings && typeof settings === 'object' ? settings : {}) as Record<string, unknown>;
+  const t: MacroBudgetLike = {
+    calories: pos(s.calorie_goal) ?? DEFAULT_MACRO_TARGETS.calories,
+    protein_g: pos(s.protein_goal) ?? pos(s.protein_goal_g) ?? DEFAULT_MACRO_TARGETS.protein_g,
+    carbs_g: pos(s.carbs_goal) ?? pos(s.carbs_goal_g) ?? DEFAULT_MACRO_TARGETS.carbs_g,
+    fat_g: pos(s.fat_goal) ?? pos(s.fat_goal_g) ?? DEFAULT_MACRO_TARGETS.fat_g,
+  };
+  const sum = (k: string) => meals.reduce((acc, m) => acc + (Number(m[k]) || 0), 0);
+  const rest = (target: number, key: string) => Math.max(0, Math.round(target - sum(key)));
+  return {
+    calories: rest(t.calories, 'calories'),
+    protein_g: rest(t.protein_g, 'protein_g'),
+    carbs_g: rest(t.carbs_g, 'carbs_g'),
+    fat_g: rest(t.fat_g, 'fat_g'),
+  };
+}

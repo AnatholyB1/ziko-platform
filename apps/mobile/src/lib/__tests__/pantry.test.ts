@@ -7,11 +7,11 @@ import {
   countByLocation, filterByLocation, filterBySearch, expiryBadge, daysUntil, formatShortDateFr,
   computeMissing, planRanger, recipeAvailability, fitsRemainingMacros, normalizeUnit, formatQuantity,
   formatThousands, missingIngredientRows, todayLocalISO, type PantryRow,
-} from '../../../../../plugins/pantry/src/utils/pantryLogic';
+} from '@ziko/plugin-pantry/utils/pantryLogic';
 import {
   parseOffQuantity, parseOffProduct, mapOffCategory, lookupBarcode,
-} from '../../../../../plugins/pantry/src/utils/barcode';
-import { COPY, allCopyStrings } from '../../../../../plugins/pantry/src/utils/copy';
+} from '@ziko/plugin-pantry/utils/barcode';
+import { COPY, allCopyStrings } from '@ziko/plugin-pantry/utils/copy';
 
 const TODAY = '2026-11-12';
 
