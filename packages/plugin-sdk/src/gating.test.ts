@@ -190,7 +190,7 @@ describe('reduceLevelRead', () => {
 describe('app route directories stay covered by the map', () => {
   it('every apps/mobile (plugins) route dir has a PLUGIN_LEVEL_MAP entry', () => {
     const dir = join(__dirname, '..', '..', '..', 'apps', 'mobile', 'app', '(app)', '(plugins)');
-    const dirs = readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+    const dirs = readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).filter((n) => n !== 'crash-test').sort(); // crash-test = route UAT (P3), pas un plugin
     expect(dirs.filter((d) => !(d in PLUGIN_LEVEL_MAP))).toEqual([]);
   });
 });

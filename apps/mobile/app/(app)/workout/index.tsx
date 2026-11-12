@@ -17,6 +17,7 @@ import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import WSHeader from '../../../src/components/WSHeader';
+import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
 // ── ResumeBar ──────────────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ function SubTabs({
 interface SessionEntry {
   name: string;
   focus?: string;
-  exercises?: Array<{ name: string; sets: number; reps: string; exercise_id?: string }>;
+  exercises?: Array<{ name: string; sets: number; reps: string | number | null; exercise_id?: string | null }>;
 }
 
 function DayRow({
@@ -334,7 +335,7 @@ function SessionCard({ session, theme }: { session: WorkoutSession; theme: any }
 
   return (
     <TouchableOpacity
-      onPress={() => router.push('/(app)/workout/history' as any)}
+      onPress={() => router.push(`/(app)/workout/session/${session.id}` as any)}
       style={{
         backgroundColor: theme.surface,
         borderRadius: 14,
@@ -417,6 +418,8 @@ export default function WorkoutIndexScreen() {
   const currentSession = useWorkoutStore((s) => s.currentSession);
   const recentSessions = useWorkoutStore((s) => s.recentSessions);
   const loadRecentSessions = useWorkoutStore((s) => s.loadRecentSessions);
+  const startPlannedSession = useWorkoutStore((s) => s.startPlannedSession);
+  const [starting, setStarting] = useState(false);
 
   const [activeTab, setActiveTab] = useState(0);
 
@@ -447,11 +450,29 @@ export default function WorkoutIndexScreen() {
   const totalWeeks = weeks.length;
   const currentWeek = 1; // Most recent program starts at week 1
   const progressPct = totalWeeks > 0 ? (currentWeek / totalWeeks) * 100 : 0;
-  const weekSessions = weeks[0]?.sessions ?? [];
+  // TRAIN-04: weekday-resolved layout (Mon..Sun), `null` = real rest day
+  const planSessions = React.useMemo(() => normalizePlanSessions(programData), [programData]);
+  const weekSlots = React.useMemo(() => buildWeekLayout(planSessions), [planSessions]);
 
-  // Today's session name for sticky CTA
-  const todayIndex = (new Date().getDay() + 6) % 7; // 0=Mon … 6=Sun
-  const todaySessionName = weekSessions[todayIndex]?.name ?? weekSessions[0]?.name ?? 'Séance';
+  // TRAIN-02: the sticky CTA starts the planned session (with its exercises), same resolver as home
+  const todayIndex = jsDayToIndex(new Date().getDay()); // 0=Mon … 6=Sun
+  const todayPick = pickSessionForToday(planSessions, todayIndex);
+  const todaySessionName = todayPick?.session.name ?? 'Séance';
+
+  const handleStartToday = async () => {
+    if (!activeProgram || starting) return;
+    setStarting(true);
+    try {
+      const res = await startPlannedSession(activeProgram.id, todayIndex);
+      if (!res.ok) {
+        showAlert('Séance indisponible', "Impossible de démarrer la séance prévue (exercices introuvables). Vérifie ton programme.");
+        return;
+      }
+      router.push('/(app)/workout/session' as any);
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const tabLabels = ['Semaine type', `${totalWeeks || 'N'} semaines`];
 
@@ -734,27 +755,15 @@ export default function WorkoutIndexScreen() {
             <View style={{ marginTop: 8 }}>
               {activeTab === 0 ? (
                 /* Semaine type */
-                weekSessions.length > 0 ? (
-                  weekSessions.map((session, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={DAY_LABELS[i] ?? String(i + 1)}
-                      session={session}
-                      isRest={false}
-                      theme={theme}
-                    />
-                  ))
-                ) : (
-                  DAY_LABELS.map((label, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={label}
-                      session={null}
-                      isRest={true}
-                      theme={theme}
-                    />
-                  ))
-                )
+                DAY_LABELS.map((label, i) => (
+                  <DayRow
+                    key={i}
+                    dayLabel={label}
+                    session={weekSlots[i]}
+                    isRest={weekSlots[i] === null}
+                    theme={theme}
+                  />
+                ))
               ) : (
                 /* N semaines */
                 weeks.map((week, i) => (
@@ -870,7 +879,8 @@ export default function WorkoutIndexScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout/session')}
+            onPress={handleStartToday}
+            disabled={starting}
             style={{
               width: '100%',
               paddingVertical: 12,
