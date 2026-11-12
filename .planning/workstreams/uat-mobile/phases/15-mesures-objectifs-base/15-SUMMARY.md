@@ -5,7 +5,7 @@ Branche `phase/15-mesures` (base `milestone/v1.20`, merge de `milestone/v1.20` f
 ## Livre
 - Decision D-01 : etendre `ziko_athlete_goals` (detail : `15-RESEARCH.md`). Colonnes nullables `measure_key, start_value, unit, start_date, achieved_at, achieved_value` ; les lignes de l'outil IA `create_goal` restent valides.
 - Migrations (fichiers) : `supabase/migrations/202612011501_measurement_goals_extend.sql` (colonnes, CHECK, index unique 1 objectif actif par mesure, trigger verrou D-04, RPC `ziko_create_measurement_goal` SECURITY DEFINER) ; `202612011502_measurement_goals_achieved_trigger.sql` (passage auto a `achieved`).
-- Logique pure `plugins/measurements/src/lib/goals.ts` (+ `goals.test.ts`, 29 tests) : formule du %, sens baisse/hausse, validation, 7 mesures, dernieres valeurs.
+- Logique pure `plugins/measurements/src/lib/goals.ts` (+ `goals.test.ts`, 25 tests) : formule du %, sens baisse/hausse, validation, 7 mesures, dernieres valeurs.
 - UI `screens/GoalsTab.tsx` (E10 vide, E11 cartes, E12 atteint + `Definir le suivant`, E13/E14 creation, E16 feuille verrou, squelettes, erreur) ; `MeasurementsPlugin.tsx` (76/78/40 supprimes, saisie 7 mesures ordre E15, poids seul obligatoire) ; `MeasurementsLog.tsx` idem ; boutons pleins = `getActionPrimary(theme)` (#CF4509).
 - Backend : `measurements_get_progress` renvoie aussi les objectifs en base (lecture seule, additif). L'outil de gestion IA = P16.
 - Tests : harness SQL `plugins/measurements/db-tests/measurement-goals.harness.sql` ; spec RLS `backend/api/test/rls/measurement-goals.spec.ts` (garde `RUN_DB`).
@@ -16,7 +16,7 @@ Branche `phase/15-mesures` (base `milestone/v1.20`, merge de `milestone/v1.20` f
 |---|---|---|
 | MEAS-01 base | VERIFIED (logique + SQL local), UAT en file | RPC + table testees sur PostgreSQL 18 jetable (stubs) ; 0 valeur 76/78/40 dans `MeasurementsPlugin.tsx` (grep) ; onglet lit `ziko_athlete_goals` |
 | MEAS-04 7 mesures | VERIFIED (unitaire) | test d'ordre E13/E15 ; saisie et creation partagent `MEASURES`/`ENTRY_ORDER` |
-| MEAS-05 % | VERIFIED (unitaire) | 12 cas dont 43, 30, 0, mauvais sens, >= cible = 100, 99,6 -> 99, depart = cible, bornage grille |
+| MEAS-05 % | VERIFIED (unitaire) | 11 cas dont 43, 30, 0, mauvais sens, >= cible = 100, 99,6 -> 99, depart = cible, bornage grille |
 | MEAS-06 verrou/suivant | PARTIAL | UI sans edition (revue de code) ; SQL local : UPDATE/INSERT client refuses (privilege), trigger refuse meme avec GRANT remis, atteint puis 2e objectif OK. Non prouve sur base Supabase reelle ni sur emulateur |
 
 ## Gate
