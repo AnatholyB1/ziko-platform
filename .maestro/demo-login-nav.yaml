@@ -5,8 +5,11 @@ env:
   UAT_EMAIL: ${UAT_EMAIL}
   UAT_PASSWORD: ${UAT_PASSWORD}
 ---
-- launchApp:
-    clearState: true
+# Pre-requis (scripts/uat/dev-open.sh): app deja ouverte sur le bundle Metro via lien profond adb.
+# (Maestro openLink ne pilote pas le dev-launcher; clearState efface l'URL du serveur de dev.)
+- tapOn:
+    text: "Continue"
+    optional: true
 - takeScreenshot: 01-launch
 - extendedWaitUntil:
     visible: "(?i)(connexion|se connecter|email)"
