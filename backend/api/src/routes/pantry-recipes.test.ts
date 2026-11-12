@@ -140,7 +140,7 @@ describe('POST /pantry/recipes/suggest - credits (D-08)', () => {
     mockQuota.mockResolvedValue(QUOTA_EMPTY);
     const res = await post(buildApp());
     expect(res.status).toBe(402);
-    const body = await res.json();
+    const body = (await res.json()) as any;
     expect(body.error).toBe('insufficient_credits');
     expect(body.required).toBe(1);
     expect(mockGenerate).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe('POST /pantry/recipes/suggest - macros restantes (D-09, P-4)', () => {
     mockQuota.mockResolvedValue(QUOTA_OK_FREE);
     const res = await post(buildApp(), { date: '2026-11-12', preferences: 'rapide' });
     expect(res.status).toBe(200);
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.remaining_macros).toEqual({ calories: 1160, protein_g: 78, carbs_g: 170, fat_g: 45 });
     // meals queried for the client's local date, not the server's UTC date
     expect(eqSpies).toContainEqual(['ziko_nutrition_logs', 'date', '2026-11-12']);
@@ -205,7 +205,7 @@ describe('POST /pantry/recipes/suggest - macros restantes (D-09, P-4)', () => {
     userTables({ settings: undefined, meals: [{ calories: 500, protein_g: 30, carbs_g: 50, fat_g: 10 }] });
     mockQuota.mockResolvedValue(QUOTA_OK_FREE);
     const res = await post(buildApp(), {});
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.remaining_macros).toEqual({ calories: 1500, protein_g: 120, carbs_g: 200, fat_g: 55 });
   });
 
@@ -213,7 +213,7 @@ describe('POST /pantry/recipes/suggest - macros restantes (D-09, P-4)', () => {
     userTables();
     mockQuota.mockResolvedValue(QUOTA_OK_FREE);
     const res = await post(buildApp());
-    const json = await res.json();
+    const json = (await res.json()) as any;
     expect(json.recipes[0].ingredients[0].pantry_item_id).toBe('p1');
   });
 });
