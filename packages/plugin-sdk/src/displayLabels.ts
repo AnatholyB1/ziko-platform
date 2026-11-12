@@ -169,3 +169,18 @@ export function snapFabX(x: number, b: FabBounds): number {
   const right = Math.max(left, b.screenW - b.size - b.gutter);
   return x + b.size / 2 < b.screenW / 2 ? left : right;
 }
+
+// ── Barres d'onglets (XCUT-05) ───────────────────────────────
+
+/** Gouttiere laterale de la charte. */
+export const TAB_GUTTER = 16;
+
+/**
+ * Marge laterale a appliquer a une barre d'onglets mesuree `layoutWidth` sur un
+ * ecran large de `screenWidth` : si elle touche deja les bords (ecran sans
+ * padding), on ajoute la gouttiere ; si le parent la marge deja, 0.
+ */
+export function tabsSideMargin(layoutWidth: number, screenWidth: number, gutter = TAB_GUTTER): number {
+  if (!Number.isFinite(layoutWidth) || !Number.isFinite(screenWidth)) return 0;
+  return layoutWidth >= screenWidth - gutter ? gutter : 0;
+}

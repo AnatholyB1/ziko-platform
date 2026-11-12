@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   goalLabel, capitalizeFirst, exerciseDisplayName, formatDateFr,
-  topInsetShortfall, clampFabPosition, snapFabX, MONTHS_FR_LONG, MONTHS_FR_SHORT,
+  topInsetShortfall, clampFabPosition, snapFabX, tabsSideMargin, MONTHS_FR_LONG, MONTHS_FR_SHORT,
 } from './displayLabels';
 
 describe('goalLabel (XCUT-01)', () => {
@@ -99,5 +99,18 @@ describe('FAB bug (XCUT-04)', () => {
   it('s\'accroche au bord le plus proche', () => {
     expect(snapFabX(30, b)).toBe(16);
     expect(snapFabX(300, b)).toBe(342);
+  });
+});
+
+describe('tabsSideMargin (XCUT-05)', () => {
+  it('ajoute la gouttiere 16 quand la barre touche les bords', () => {
+    expect(tabsSideMargin(400, 400)).toBe(16);
+    expect(tabsSideMargin(390, 400)).toBe(16);
+  });
+  it('0 quand le parent a deja des marges (pas de double marge)', () => {
+    expect(tabsSideMargin(368, 400)).toBe(0);
+  });
+  it('entrees invalides -> 0', () => {
+    expect(tabsSideMargin(NaN, 400)).toBe(0);
   });
 });
