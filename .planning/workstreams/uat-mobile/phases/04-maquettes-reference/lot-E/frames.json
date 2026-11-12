@@ -1,0 +1,146 @@
+[
+ {
+  "id": "e01-aujourdhui",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E01 Aujourd'hui : jauge, trois tuiles de quantité redessinées (HYDR-01), journal du jour"
+ },
+ {
+  "id": "e02-appui",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E02 État pressé puis confirmation : tuile +500 enfoncée, jauge mise à jour, annulation possible 5 s"
+ },
+ {
+  "id": "e03-reglages",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E03 Réglages : objectif + 4 lignes cliquables avec leur valeur actuelle (HYDR-02 à 05)"
+ },
+ {
+  "id": "e04-rappels",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E04 Feuille Rappels : interrupteur, intervalle, plage horaire, résumé calculé (HYDR-02)"
+ },
+ {
+  "id": "e05-verre",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E05 Feuille Taille de verre par défaut : choix parmi 6 contenances (HYDR-03)"
+ },
+ {
+  "id": "e06-cafe",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E06 Feuille Café et thé : interrupteur + pourcentage compté, exemple calculé (HYDR-04)"
+ },
+ {
+  "id": "e07-bonus",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E07 Feuille Bonus jour de séance : stepper de 100 ml, objectif du jour de séance calculé (HYDR-05)"
+ },
+ {
+  "id": "e08-objectif-clavier",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E08 Objectif quotidien avec clavier ouvert : champ et bouton restent visibles au-dessus du clavier (HYDR-06)"
+ },
+ {
+  "id": "e09-notifs-refusees",
+  "file": "01-hydratation.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E09 Notifications refusées par le système : l'interrupteur reste actif mais un bandeau explique et propose les réglages"
+ },
+ {
+  "id": "e10-objectifs-vide",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E10 Objectifs sans objectif : état vide actionnable, plus de 76 kg / 78 cm / 40 cm en dur (MEAS-01)"
+ },
+ {
+  "id": "e11-objectifs-liste",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E11 Objectifs en cours : % de complétion à la baisse et à la hausse, objectif verrouillé tant qu'il est en cours (MEAS-05, 06)"
+ },
+ {
+  "id": "e12-objectif-atteint",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E12 Objectif atteint : 100 %, badge ATTEINT, action « Définir le suivant » (MEAS-06)"
+ },
+ {
+  "id": "e13-creer-objectif",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E13 Créer un objectif : mesure, départ, cible, sens et écart calculés (MEAS-04, D-05)"
+ },
+ {
+  "id": "e14-creer-erreur",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E14 Validation : cible identique au départ ou hors plage, message sous le champ, création bloquée"
+ },
+ {
+  "id": "e15-saisie-mesures",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E15 Saisie des mesures : les 7 mesures proposées, seul le poids est obligatoire (MEAS-04)"
+ },
+ {
+  "id": "e16-objectif-verrouille",
+  "file": "02-mesures.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "E16 Toucher un objectif en cours : feuille d'information, aucune modification possible (MEAS-06)"
+ }
+]

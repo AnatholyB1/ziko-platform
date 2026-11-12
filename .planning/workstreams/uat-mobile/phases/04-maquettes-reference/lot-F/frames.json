@@ -1,0 +1,47 @@
+[
+ {
+  "id": "f01-coach-lie",
+  "file": "01-coach.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "F01 Mon coach, coach lié : en-tête PluginHeader + retour, carte coach (nom, KYC, spécialités, depuis le), 2 stats (COACH-01, 02)"
+ },
+ {
+  "id": "f02-coach-degrade",
+  "file": "01-coach.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "F02 Mon coach, profil indisponible : jamais d'écran vide, carte « Coach lié » + réessayer (COACH-01, cause G-05)"
+ },
+ {
+  "id": "f03-journal-aujourdhui",
+  "file": "02-journal.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "F03 Journal, Aujourd'hui : humeur en Ionicons (5 niveaux + libellé), énergie et stress de 1 à 5, sarcelle (JRNL-02)"
+ },
+ {
+  "id": "f04-journal-erreur",
+  "file": "02-journal.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "F04 Journal, bas de l'écran : moment, notes, enregistrement refusé car session expirée, saisie conservée (JRNL-01)"
+ },
+ {
+  "id": "f05-journal-historique",
+  "file": "02-journal.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "F05 Journal, Historique : tendance 7 jours en sarcelle (jour sans entrée = barre absente), liste avec icône et libellé"
+ }
+]
