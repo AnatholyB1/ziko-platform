@@ -4,7 +4,7 @@ const habitsManifest: PluginManifest = {
   id: 'habits',
   /** Progressive unlock: athlete level required (1-5). */
   minLevel: 1,
-  name: 'Daily Habits & Goals',
+  name: 'Habitudes & Objectifs',
   version: '1.0.0',
   description:
     'Track your daily goals: water intake, workouts, sleep, nutrition and custom habits. Get smart reminders and celebrate streaks — fully connected to your AI coach, workout history and nutrition plugin.',
@@ -86,13 +86,13 @@ You have access to the user's daily habit tracker. When they ask about their hab
   routes: [
     {
       path: '/(plugins)/habits/dashboard',
-      title: 'Habits',
+      title: 'Habitudes',
       icon: 'checkmark-circle-outline',
       showInTabBar: true,
     },
     {
       path: '/(plugins)/habits/log',
-      title: 'Add Habit',
+      title: 'Ajouter une habitude',
       icon: 'add-circle-outline',
       showInTabBar: false,
     },

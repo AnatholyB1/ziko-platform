@@ -3,12 +3,14 @@ import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { localDateKey } from '../lib/localDate';
 import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
+import { DEFAULT_GOAL_ML, fetchEffectiveGoalMl } from '@ziko/plugin-hydration/settings';
 
 // ── Fallback constants ────────────────────────────────────────
 // daily_water_goal_ml, weekly_goal, and sleep_goal do NOT exist
 // as DB columns — use these hardcoded defaults throughout the app.
 export const HOME_DEFAULTS = {
-  hydrationGoalMl: 2500,
+  // Objectif d'eau : source unique = reglages Hydratation (plugin). Valeur de repli seulement.
+  hydrationGoalMl: DEFAULT_GOAL_ML,
   weeklyGoalDefault: 4,
 } as const;
 
@@ -150,7 +152,7 @@ export function useSleepToday() {
 
 // ── useHydrationToday ─────────────────────────────────────────
 // Sums all hydration_logs.amount_ml for today.
-// Returns { totalMl } — goal is HOME_DEFAULTS.hydrationGoalMl (2500).
+// Returns { totalMl, goalMl } — goalMl = same value as the Hydratation screen (fetchEffectiveGoalMl).
 export function useHydrationToday() {
   const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
@@ -167,7 +169,13 @@ export function useHydrationToday() {
         (sum: number, r: { amount_ml: number | null }) => sum + (r.amount_ml ?? 0),
         0,
       );
-      return { totalMl };
+      let goalMl: number = HOME_DEFAULTS.hydrationGoalMl;
+      try {
+        goalMl = await fetchEffectiveGoalMl(supabase, userId!);
+      } catch {
+        // objectif indisponible : repli sur le defaut plutot que de casser l'accueil
+      }
+      return { totalMl, goalMl };
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 min

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  Modal, TextInput, useWindowDimensions,
+  Modal, TextInput, useWindowDimensions, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -12,7 +12,7 @@ import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
 import { supabase } from '../../src/lib/supabase';
-import { usePluginRegistry, buildLockedSection, goalLabel } from '@ziko/plugin-sdk';
+import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useTranslation, showAlert } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
@@ -162,7 +162,7 @@ function MissionCardContent({
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFB287' }}>{i + 1}</Text>
               </View>
               <Text style={{ flex: 1, color: 'rgba(255,250,246,0.92)', fontSize: 12 }}>
-                {e.name ?? e.exercise_name ?? 'Exercice'}
+                {exerciseDisplayName(e.name ?? e.exercise_name, e.name_fr ?? e.exercises?.name_fr, exerciseNames) || 'Exercice'}
               </Text>
               <Text style={{ color: 'rgba(255,250,246,0.55)', fontSize: 11 }}>
                 {e.scheme ?? e.sets != null ? `${e.sets ?? ''}×${e.reps ?? ''}` : ''}
@@ -319,7 +319,8 @@ export default function DashboardScreen() {
   const sleepTargetH = sleepSettings?.goalHours ?? 0;
   const sleepPct = sleepTargetH > 0 ? Math.min(100, Math.round((sleepH / sleepTargetH) * 100)) : 0;
   const waterMl = hydrationData?.totalMl ?? 0;
-  const waterPct = Math.min(100, Math.round((waterMl / HOME_DEFAULTS.hydrationGoalMl) * 100));
+  const waterGoalMl = hydrationData?.goalMl ?? HOME_DEFAULTS.hydrationGoalMl;
+  const waterPct = Math.min(100, Math.round((waterMl / waterGoalMl) * 100));
   const kcal = nutritionData?.totalCalories ?? 0;
   const nutritionPct = Math.min(100, Math.round((kcal / NUTRITION_GOAL_KCAL) * 100));
   const weeklyGoal = parseWorkoutFrequency(profile?.workout_frequency);
@@ -330,7 +331,7 @@ export default function DashboardScreen() {
   // Formule documentee dans src/lib/quickLog.ts (computeFormScore).
   const formScore = computeFormScore({
     sleepH: sleepTargetH > 0 ? sleepH : 0, sleepTargetH,
-    waterMl, waterGoalMl: HOME_DEFAULTS.hydrationGoalMl,
+    waterMl, waterGoalMl,
     kcal, todayDone, weeklyCount, weeklyGoal,
   });
   const loadPct = formScore.parts.find((p) => p.key === 'load')?.pct ?? 0;
@@ -345,7 +346,7 @@ export default function DashboardScreen() {
   const { tips } = useAITips({
     sleepDurationH: sleepH,
     hydrationMl: waterMl,
-    hydrationGoalMl: HOME_DEFAULTS.hydrationGoalMl,
+    hydrationGoalMl: waterGoalMl,
     unmetHabitName: undefined, // DEFERRED: habit tip requires useHabitsToday (Phase 37)
   });
   const [tipIndex, setTipIndex] = useState(0);
@@ -497,7 +498,7 @@ export default function DashboardScreen() {
   // ── Segment rows ──────────────────────────────────────────────────────────
   const segmentParts = [
     { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepData ? `${formatDurationH(sleepH)}${sleepData.quality != null ? ` · qualité ${sleepData.quality} / 5` : ''}` : 'Aucune nuit enregistrée' },
-    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(HOME_DEFAULTS.hydrationGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
+    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(waterGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
     { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: kcal > 0 ? `${kcal} kcal` : 'Loggue ton repas' },
     { value: loadPct, max: 100, color: '#22C55E', icon: 'flash-outline' as const, label: 'Charge', sub: `${weeklyCount}/${weeklyGoal} séances` },
   ];
@@ -745,7 +746,7 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(59,130,246,0.14)' }}>
@@ -769,7 +770,7 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(34,197,94,0.14)' }}>
@@ -794,7 +795,7 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.14)' }}>
@@ -816,7 +817,7 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,92,26,0.14)' }}>
@@ -968,7 +969,7 @@ export default function DashboardScreen() {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: '#1C1A17', fontWeight: '700', fontSize: 13 }}>
-                    {session.name ?? 'Workout'}
+                    {session.name ?? 'Séance'}
                   </Text>
                   <Text style={{ color: '#6B6963', fontSize: 11 }}>
                     {format(new Date(session.started_at), 'd MMM')} · {Math.round((session.total_duration_active_seconds ?? (session.ended_at ? (new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 1000 : 0)) / 60)} min
@@ -1019,6 +1020,7 @@ export default function DashboardScreen() {
 
       {/* ── Mood Bottom Sheet ───────────────────────────── */}
       <Modal visible={showMoodSheet} transparent animationType="slide" onRequestClose={() => setShowMoodSheet(false)}>
+        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
           activeOpacity={1}
@@ -1049,10 +1051,12 @@ export default function DashboardScreen() {
             ))}
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Weight Bottom Sheet ─────────────────────────── */}
       <Modal visible={showWeightSheet} transparent animationType="slide" onRequestClose={() => setShowWeightSheet(false)}>
+        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
           activeOpacity={1}
@@ -1086,6 +1090,7 @@ export default function DashboardScreen() {
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Confirmer</Text>
           </TouchableOpacity>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

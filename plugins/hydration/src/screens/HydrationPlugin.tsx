@@ -15,7 +15,7 @@ import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import {
   type HydrationSettings, DEFAULT_SETTINGS, QUICK_AMOUNTS, MAX_LOG_ML, localDateKey,
-  fetchSettings, saveSettings, hasWorkoutOnDay, effectiveGoalMl, coffeeCountedMl,
+  DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchSettings, saveSettings, hasWorkoutOnDay, effectiveGoalMl, coffeeCountedMl,
   remindersRowValue, glassRowValue, coffeeRowValue, bonusRowValue, formatLitres,
 } from '../settings';
 import { loadNotifModule, getReminderPermission, syncHydrationReminders, type PermissionState } from '../reminders';
@@ -44,7 +44,6 @@ const INFO_BLUE = WATER; // #2563C9 (contrat lot E : 5,67:1 sur blanc)
 const TABS = ["Aujourd'hui", 'Historique', 'Réglages'];
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const MAX_BAR_ML = 3000;
-const DEFAULT_GOAL = 2000;
 
 // ─── Card shadow style ─────────────────────────────────────────────────────────
 
@@ -216,16 +215,16 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
   });
 
   // Objectif de base depuis user_profiles (inchange)
-  const { data: baseGoalMl = DEFAULT_GOAL } = useQuery<number>({
+  const { data: baseGoalMl = DEFAULT_GOAL_ML } = useQuery<number>({
     queryKey: ['hydration_goals', userId],
     queryFn: async () => {
-      if (!userId) return DEFAULT_GOAL;
+      if (!userId) return DEFAULT_GOAL_ML;
       const { data } = await supabase
         .from('ziko_user_profiles')
         .select('settings')
         .eq('id', userId)
         .single();
-      return data?.settings?.hydration_goal_ml ?? DEFAULT_GOAL;
+      return baseGoalFromProfileSettings(data?.settings);
     },
     enabled: !!userId,
   });
@@ -290,6 +289,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(['hydration_settings', userId], saved);
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'goal', userId] });
       setSheet(null);
     },
     onError: (err: any) => {
@@ -315,6 +315,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hydration_goals', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'goal', userId] });
       setSheet(null);
     },
     onError: (err: any) => {

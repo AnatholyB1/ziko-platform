@@ -106,6 +106,15 @@ export function coffeeCountedMl(drinkMl: number, s: Pick<HydrationSettings, 'cou
   return Math.round((drinkMl * s.coffeeTeaPct) / 100);
 }
 
+/** Objectif de base par defaut (ml) : une seule valeur pour l'accueil et l'ecran Hydratation. */
+export const DEFAULT_GOAL_ML = 2000;
+
+/** Objectif de base lu dans `ziko_user_profiles.settings.hydration_goal_ml` (sinon defaut). */
+export function baseGoalFromProfileSettings(settings: { hydration_goal_ml?: unknown } | null | undefined): number {
+  const v = Number(settings?.hydration_goal_ml);
+  return Number.isFinite(v) && v >= GOAL_MIN_ML && v <= GOAL_MAX_ML ? v : DEFAULT_GOAL_ML;
+}
+
 export function effectiveGoalMl(baseGoalMl: number, hasWorkoutToday: boolean, s: Pick<HydrationSettings, 'workoutBonusMl'>): number {
   return baseGoalMl + (hasWorkoutToday ? s.workoutBonusMl : 0);
 }
@@ -203,4 +212,18 @@ export async function hasWorkoutOnDay(client: HydrationClient, userId: string, d
     .limit(1);
   if (res.error) throw new Error(res.error.message);
   return (res.data ?? []).length > 0;
+}
+
+/**
+ * Objectif du jour = objectif de base (profil) + bonus jour de seance (reglages P11).
+ * Source de verite unique, lue par l'accueil ET par le plugin Hydratation.
+ */
+export async function fetchEffectiveGoalMl(client: HydrationClient, userId: string, d: Date = new Date()): Promise<number> {
+  const prof = await client.from('ziko_user_profiles').select('settings').eq('id', userId).maybeSingle();
+  const base = baseGoalFromProfileSettings(prof?.data?.settings);
+  const [settings, workout] = await Promise.all([
+    fetchSettings(client, userId),
+    hasWorkoutOnDay(client, userId, d),
+  ]);
+  return effectiveGoalMl(base, workout, settings);
 }
