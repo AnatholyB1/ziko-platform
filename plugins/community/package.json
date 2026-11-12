@@ -9,6 +9,7 @@
     "./store": "./src/store.ts",
     "./screens/CommunityPlugin": "./src/screens/CommunityPlugin.tsx",
     "./screens/CommunityDashboard": "./src/screens/CommunityDashboard.tsx",
+    "./components/FriendRelationButton": "./src/components/FriendRelationButton.tsx",
     "./screens/FriendsScreen": "./src/screens/FriendsScreen.tsx",
     "./screens/ChatListScreen": "./src/screens/ChatListScreen.tsx",
     "./screens/ConversationScreen": "./src/screens/ConversationScreen.tsx",

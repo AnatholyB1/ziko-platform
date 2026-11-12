@@ -7,6 +7,7 @@ export {
   sendFriendRequest,
   acceptFriendRequest,
   declineFriendRequest,
+  cancelFriendRequest,
   removeFriend,
   getOrCreateDMConversation,
   loadMessages,
