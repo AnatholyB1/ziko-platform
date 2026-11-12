@@ -23,3 +23,5 @@ Non execute encore : npm install + type-check/lint/test/build de `milestone/v1.2
 ## Suite
 1. Utilisateur : trancher A1-A4 de `DEPLOY-CHECKLIST-v1.20.md` et confirmer le plan.
 2. Orchestrateur : `npm install --no-save` dans l'integration, gate de base, puis lancer vague 0a (P1, P2, P3 builders ; P4 design lots A+B ; discuss P1-P3).
+- 2026-11-12 INCIDENT: rm -rf node_modules sur junctions de worktrees perimes a vide des dossiers du repo principal (restaures via git checkout ; env gitignores et node_modules du principal perdus). Regle: jamais rm -rf node_modules de worktree.
+- 2026-11-12 (reprise): decisions A1=branche Supabase jetable `uat-v1-20` (ref oloobswzsziidjwycthm, creee, sans donnees), A2=EAS cloud (attend `eas login` utilisateur), A3=21 dossiers orphelins agent-* supprimes (2 worktrees enregistres gardes), env backend/web regeneres via `vercel env pull` = valeurs PRODUCTION: INTERDITES aux agents de test (utiliser l'URL/cle de la branche uat-v1-20). Prochaine etape: gate de base, Maestro + AVD, lancer vague 0a.
