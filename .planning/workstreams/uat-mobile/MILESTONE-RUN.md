@@ -11,7 +11,7 @@ Integration : branche `milestone/v1.20`, worktree `.claude/worktrees/integration
 | P5 P6 | en cours (builders) | phase/05,06-* | - | - | doivent merger milestone/v1.20 (index.tsx touche par P8) |
 | P2 Session | MERGE (code+tests unitaires; UAT emulateur en attente P1+APK) | phase/02-session-auth-robustes | 93ffc7d7 | mobile 86/86, tsc 0 | transmis a P21: demande inverse, insert ignore |
 | P3 Habitudes | non lance | - | - | - | |
-| P4 Maquettes | non lance | - | - | - | lots A-D |
+| P4 Maquettes | MERGE lots A-D (validation visuelle utilisateur en attente) | phase/04-design-ab, phase/04-design-cd | 0679989a | - | PNG non commites (regenerer render.sh) |
 | P5-P26 | non lances | - | - | - | voir plan de pipeline dans `ORCHESTRATION-v1.20-uat-mobile.md` |
 
 ## Ce qui tourne
