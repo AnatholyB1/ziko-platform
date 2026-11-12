@@ -24,7 +24,7 @@ Branche `phase/23-atelier` (base `milestone/v1.20`). Exigences ATEL-01..06 et AT
 
 ## Migrations (fichiers seulement, bloc 2301-2309)
 - `202612012301_ziko_workshop_drafts.sql` : table `ziko_workshop_drafts` (id, user_id, conversation_id, name, goal, program_data jsonb, revision int, status 'draft'|'saved', saved_program_id, created_at, updated_at), index, RLS own, trigger `updated_at`.
-- `202612012302_cost_log_workshop_source.sql` : etend le CHECK `source` de `ziko_ai_cost_log` si present (a verifier : voir la migration de `source`).
+- (pas de 2302 : `ziko_ai_cost_log.source` n'a aucun CHECK, verifie dans `20260902100100_ai_cost_log_source.sql`.) RLS : lecture seule client, ecriture backend (service key).
 
 ## Hors scope
 Periodisation et relance automatique (P24), edition de programme coach, exercices de la bibliotheque `ziko_exercises` (l'IA nomme les exercices en texte libre ; rattachement `exercise_id` fait au demarrage de seance par P6).
