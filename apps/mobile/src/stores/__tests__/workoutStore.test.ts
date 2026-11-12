@@ -19,7 +19,8 @@ function builder(table: string) {
   return b;
 }
 
-vi.mock('../../lib/supabase', () => ({ supabase: { from: (t: string) => builder(t) } }));
+const rpcMock = vi.fn(async (..._a: any[]) => ({ error: null as any }));
+vi.mock('../../lib/supabase', () => ({ supabase: { from: (t: string) => builder(t), rpc: (...a: any[]) => rpcMock(...a) } }));
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}), removeItem: vi.fn(async () => {}) },
 }));
@@ -111,5 +112,20 @@ describe('loadRecentSessions filter (D-02)', () => {
     ];
     await useWorkoutStore.getState().loadRecentSessions(30);
     expect(useWorkoutStore.getState().recentSessions.map((s) => s.id)).toEqual(['a']);
+  });
+});
+
+describe('setActiveProgram (P7, TRAIN-07)', () => {
+  it('goes through the atomic RPC, no direct is_active updates, no auto-activation on load', async () => {
+    rpcMock.mockClear();
+    tables['ziko_workout_programs'] = [{ id: 'p1', is_active: false }];
+    await useWorkoutStore.getState().setActiveProgram('p1');
+    expect(rpcMock).toHaveBeenCalledWith('ziko_set_active_program', { p_kind: 'workout', p_program_id: 'p1' });
+    expect(calls.filter((c) => c.op === 'update')).toHaveLength(0);
+    expect(useWorkoutStore.getState().activeProgram).toBeNull(); // 0 active stays 0 (D-09)
+  });
+  it('throws when the RPC fails', async () => {
+    rpcMock.mockResolvedValueOnce({ error: { message: 'program not found' } });
+    await expect(useWorkoutStore.getState().setActiveProgram('x')).rejects.toThrow('program not found');
   });
 });

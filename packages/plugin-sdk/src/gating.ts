@@ -128,7 +128,7 @@ export const PLUGIN_LEVEL_MAP: Readonly<Record<string, PluginLevelInfo>> = {
   sleep:        { id: 'sleep',        name: 'Sommeil & Récupération', icon: 'moon-outline',  minLevel: 2 },
   measurements: { id: 'measurements', name: 'Mesures & Progression',   icon: 'resize-outline',         minLevel: 2 },
   stats:        { id: 'stats',        name: 'Analytics',               icon: 'stats-chart',            minLevel: 2 },
-  pantry:       { id: 'pantry',       name: 'Garde-Manger',            icon: 'storefront-outline',     minLevel: 2 },
+  pantry:       { id: 'pantry',       name: 'Garde-manger',            icon: 'storefront-outline',     minLevel: 2 },
   persona:      { id: 'persona',      name: 'AI Persona & Habits',     icon: 'person-circle-outline',  minLevel: 2 },
   gamification: { id: 'gamification', name: 'Récompenses',        icon: 'trophy',                 minLevel: 3 },
   cardio:       { id: 'cardio',       name: 'Cardio & Running',        icon: 'fitness-outline',        minLevel: 3 },
