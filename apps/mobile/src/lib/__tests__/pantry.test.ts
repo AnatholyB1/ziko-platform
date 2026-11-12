@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   countByLocation, filterByLocation, filterBySearch, expiryBadge, daysUntil, formatShortDateFr,
   computeMissing, planRanger, recipeAvailability, fitsRemainingMacros, normalizeUnit, formatQuantity,
-  formatThousands, missingIngredientRows, todayLocalISO, type PantryRow,
+  formatThousands, missingIngredientRows, todayLocalISO, stepQuantity, remainingFromSettings, type PantryRow,
 } from '@ziko/plugin-pantry/utils/pantryLogic';
 import {
   parseOffQuantity, parseOffProduct, mapOffCategory, lookupBarcode,
@@ -274,5 +274,19 @@ describe('P-2 / PANT-07 : aucun mot anglais visible', () => {
     expect(COPY.shopPut(1)).toBe('Ranger 1 article dans le garde-manger');
     expect(COPY.shopPut(2)).toBe('Ranger 2 articles dans le garde-manger');
     expect(COPY.cameraOffTitle).toBe("L'accès à la caméra est désactivé");
+  });
+});
+
+describe('fiche article : pas de quantite et macros restantes', () => {
+  it('steps by unit and never goes below zero', () => {
+    expect(stepQuantity(400, 'g', -1)).toBe(350);
+    expect(stepQuantity(30, 'g', -1)).toBe(0);
+    expect(stepQuantity(1, 'kg', 1)).toBe(1.25);
+    expect(stepQuantity(0, 'pieces', -1)).toBe(0);
+    expect(stepQuantity(6, 'pieces', 1)).toBe(7);
+  });
+  it('remainingFromSettings mirrors the server: goals minus meals, floor 0, defaults', () => {
+    expect(remainingFromSettings({ calorie_goal: 2600, protein_goal: 180 }, [{ calories: 1440, protein_g: 102 }])).toEqual({ calories: 1160, protein_g: 78, carbs_g: 250, fat_g: 65 });
+    expect(remainingFromSettings(null, [{ calories: 5000 }]).calories).toBe(0);
   });
 });

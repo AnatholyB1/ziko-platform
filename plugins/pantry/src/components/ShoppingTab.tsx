@@ -35,6 +35,7 @@ function CheckBox({ checked, label, onPress }: { checked: boolean; label: string
       accessibilityRole="checkbox"
       accessibilityLabel={label}
       accessibilityState={{ checked }}
+      testID="shopping-checkbox"
       style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
     >
       <View
