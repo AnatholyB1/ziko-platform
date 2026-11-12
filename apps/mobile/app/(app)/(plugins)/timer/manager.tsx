@@ -1,7 +1,6 @@
-import React from 'react';
-import TimerManager from '@ziko/plugin-timer/screens/TimerManager';
-import { supabase } from '../../../../src/lib/supabase';
+import { Redirect } from 'expo-router';
 
+// P20 : la gestion des presets vit dans chaque onglet du Timer ; cette route (ancien deep link IA) redirige.
 export default function TimerManagerRoute() {
-  return <TimerManager supabase={supabase} />;
+  return <Redirect href="/(plugins)/timer/dashboard" />;
 }
