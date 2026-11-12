@@ -15,4 +15,5 @@ export const VISION_MODEL = anthropic('claude-haiku-4-5-20251001');
 // conversation only, NOT a change to stepCountIs(5) used by /ai/chat/stream.
 // Derivation: at most 4 logical questions, ~2 model round-trips each (8),
 // plus one terminal assess_profile call is covered within that budget.
-export const ONBOARDING_MAX_STEPS = 8;
+// v1.20 P16 : +2 pour la phase "objectifs de mesures" (set_measure_goal, cout absorbe et journalise).
+export const ONBOARDING_MAX_STEPS = 10;

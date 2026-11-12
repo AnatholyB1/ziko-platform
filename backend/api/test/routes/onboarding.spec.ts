@@ -164,14 +164,14 @@ describe('POST /ai/onboarding/stream', () => {
   });
 
   // ── Narrowed tool surface + stopWhen ─────────────────────────────────
-  it('hands streamText a tools object with exactly the key set [assess_profile]', async () => {
+  it('hands streamText a tools object with exactly the key set [set_measure_goal, assess_profile] (v1.20 P16 widened the single-tool surface by one measurement-goal tool)', async () => {
     mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
     scriptedParts = [];
 
     await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } });
 
     expect(capturedStreamTextArgs).not.toBeNull();
-    expect(Object.keys(capturedStreamTextArgs.tools)).toEqual(['assess_profile']);
+    expect(Object.keys(capturedStreamTextArgs.tools)).toEqual(['set_measure_goal', 'assess_profile']);
   });
 
   it('builds stopWhen as an array of [stepCountIs(ONBOARDING_MAX_STEPS), hasToolCall(assess_profile)]', async () => {
@@ -204,6 +204,29 @@ describe('POST /ai/onboarding/stream', () => {
     expect(prompt).toMatch(/confidence/i);
     expect(prompt).toMatch(/adherence risk/i);
     expect(prompt).toMatch(/emoji/i);
+  });
+
+  // ── v1.20 P16 (MEAS-02) : goal SSE event ──────────────────────────────
+  it('emits a goal SSE event only for a successful set_measure_goal tool-result', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [
+      { type: 'tool-result', toolName: 'set_measure_goal', output: { success: true, goal_id: 'g-1', goal: { measure_key: 'weight_kg', measure: 'Poids', start_value: 82, target_value: 76, unit: 'kg', target_date: null } } },
+      { type: 'tool-result', toolName: 'set_measure_goal', output: { success: false, error: 'target_equals_start' } },
+    ];
+    const text = await (await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } })).text();
+    expect(text.match(/"type":"goal"/g)).toHaveLength(1);
+    expect(text).toContain('"id":"g-1"');
+    expect(text).toContain('"target_value":76');
+    expect(text).not.toContain('target_equals_start');
+    // un objectif seul ne termine pas l'onboarding : sans assess_profile, cap_reached reste emis
+    expect(text).toContain('"type":"cap_reached"');
+  });
+
+  it('system prompt asks for measurement goals before the terminal action and forbids invented numbers', () => {
+    const prompt = buildOnboardingSystemPrompt('fr');
+    expect(prompt).toContain('set_measure_goal');
+    expect(prompt.indexOf('Measurement goals')).toBeLessThan(prompt.indexOf('Terminal action'));
+    expect(prompt).toMatch(/Never invent a number/);
   });
 
   // ── SSE mission / cap_reached events ─────────────────────────────────

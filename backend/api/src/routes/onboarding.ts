@@ -8,6 +8,7 @@ import { AGENT_MODEL, ONBOARDING_MAX_STEPS } from '../config/models.js';
 import { assessProfileSchema, assess_profile } from '../tools/onboarding.js';
 import { computeRetroactiveProfile } from '../tools/onboarding-retroactive.js';
 import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
+import { createGoal } from '../measurements/service.js';
 
 // ============================================================
 // Phase 43 plan 03 — POST /ai/onboarding/stream (ONBOARD-01, ONBOARD-02,
@@ -65,6 +66,9 @@ Across your questions you must gather clear signal on exactly these three catego
 2. Self-reported confidence — how sure you are in your experience-level read, based on how clear or vague the athlete's answer was.
 3. Adherence risk and constraints — what could make this athlete drop off (time, past injuries, motivation blockers, schedule, etc.).
 The exact wording of each question, and how you sequence them from one turn to the next adapting to the athlete's prior answer, is entirely your discretion. The three categories above are not optional and are not negotiable.
+
+## Measurement goals (v1.20, before the terminal action)
+After the three categories above are clear, help the athlete set 1 or 2 body-measurement goals in this same conversation. Ask what they want to change (weight, waist, arms, chest, thighs, hips, body fat %), their current value and the value they aim for, and optionally a target date. Propose a realistic target, wait for the athlete to agree, then call set_measure_goal once per agreed goal (measure_key + target_value, plus start_value only if the athlete gave their current value). Never invent a number the athlete did not give or accept. If the athlete does not want a measurement goal, skip this step. These goals are fixed once created and the athlete cannot edit them later: say so in one short sentence. This step does not count toward the 4 questions limit of the signal categories but keep it to at most 3 more turns.
 
 ## Terminal action
 Once — and only once — you have enough signal across all three categories, call the assess_profile tool exactly one time. Never call it before that point. After the tool call, write one short closing message in Ziko's voice that introduces the athlete's first mission. Do not ask any further questions after calling the tool.
@@ -132,6 +136,21 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
   // registry. A wider surface would let the model burn steps on off-task
   // tools inside the tight ONBOARDING_MAX_STEPS budget.
   const tools = {
+    set_measure_goal: tool({
+      description:
+        "Save ONE body-measurement goal the athlete explicitly agreed on. measure_key: weight_kg, waist_cm, arm_cm, chest_cm, thigh_cm, hip_cm or body_fat_pct. target_value in kg, cm or %. start_value only if the athlete stated their current value. target_date optional (YYYY-MM-DD, future).",
+      inputSchema: jsonSchema<Record<string, unknown>>({
+        type: 'object',
+        properties: {
+          measure_key: { type: 'string', enum: ['weight_kg', 'waist_cm', 'arm_cm', 'chest_cm', 'thigh_cm', 'hip_cm', 'body_fat_pct'] },
+          target_value: { type: 'number' },
+          start_value: { type: 'number' },
+          target_date: { type: 'string' },
+        },
+        required: ['measure_key', 'target_value'],
+      } as any),
+      execute: async (input) => createGoal(userId, input as Record<string, unknown>),
+    }),
     assess_profile: tool({
       description: assessProfileSchema.description,
       inputSchema: jsonSchema<Record<string, unknown>>(assessProfileSchema.parameters as any),
@@ -181,6 +200,16 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
           if (text && !text.includes('<invoke') && !text.includes('</invoke>') && !text.includes('<parameter')) {
             chunks.push(text);
             await s.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
+          }
+        } else if (part.type === 'tool-result' && (part as any).toolName === 'set_measure_goal') {
+          // MEAS-02 : la carte d'objectif n'apparait que pour une ecriture reussie en base.
+          const out = ((part as any).output ?? (part as any).result) as
+            | { success?: boolean; goal?: Record<string, unknown>; goal_id?: string }
+            | undefined;
+          if (out?.success === true && out.goal) {
+            await s.write(`data: ${JSON.stringify({ type: 'goal', goal: { id: out.goal_id, ...out.goal } })}
+
+`);
           }
         } else if (part.type === 'tool-result' && (part as any).toolName === 'assess_profile') {
           assessProfileObserved = true;

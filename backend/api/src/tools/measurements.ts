@@ -1,5 +1,6 @@
 import { clientForUser } from './db.js';
 import { earnCredits } from '../services/creditService.js';
+import { manageMeasurementGoals } from '../measurements/service.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -148,4 +149,10 @@ export async function measurements_get_progress(
         }
       : null,
   };
+}
+
+// ── Tool: measurements_goals (v1.20 Phase 16, MEAS-03/07/08/09) ──
+// Gestion des objectifs de mesures par l'agent. Logique et garde-fous dans ../measurements/service.ts.
+export async function measurements_goals(params: Record<string, unknown>, userId: string): Promise<unknown> {
+  return manageMeasurementGoals(params, userId);
 }
