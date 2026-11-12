@@ -6,6 +6,8 @@ export * from './types';
 export * from './theme';
 export * from './i18n';
 export * from './displayLabels';
+export * from './friendRelation';
+export * from './friendsApi';
 export * from './gating';
 export * from './unlockUi';
 export * from './onboarding';
