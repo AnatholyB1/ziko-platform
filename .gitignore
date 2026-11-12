@@ -63,3 +63,4 @@ scripts/portfolio-migration/.decom-*
 uat-evidence/
 .planning/.machine-lock
 scripts/uat/.env.uat
+.uat/
