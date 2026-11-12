@@ -323,7 +323,7 @@ export default function ProgramsScreen() {
   };
   const goAtelier = () => {
     setSheet({ type: 'none' });
-    router.push('/(app)/workout/ai-generate' as any);
+    router.push('/(app)/workout/atelier' as any); // v1.20 P23 : atelier IA conversationnel
   };
 
   // ── Body ───────────────────────────────────────────────────────
