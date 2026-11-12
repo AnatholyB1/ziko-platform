@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemeStore } from '../stores/themeStore';
 import { useAuthStore } from '../stores/authStore';
-import { supabase } from '../lib/supabase';
+import { supabase, sessionManager } from '../lib/supabase';
+import { sendFriendRequestFromSearch } from '../lib/friendRequest';
 import { useQuery } from '@tanstack/react-query';
 import { EmptyState } from '@ziko/ui';
 import { showAlert } from '@ziko/plugin-sdk';
@@ -351,16 +352,14 @@ export function SearchOverlay({ visible, onClose }: { visible: boolean; onClose:
                           ) : (
                             <TouchableOpacity
                               onPress={async () => {
-                                try {
-                                  const { error } = await supabase.from('ziko_friendships').insert({
-                                    requester_id: userId,
-                                    addressee_id: u.id,
-                                    status: 'pending',
-                                  });
-                                  if (error) throw error;
+                                const res = await sendFriendRequestFromSearch(u.id, {
+                                  requireUser: () => sessionManager.requireUser(),
+                                  insert: (row) => supabase.from('ziko_friendships').insert(row) as any,
+                                });
+                                if (res.ok) {
                                   setSentIds((prev) => new Set([...prev, u.id]));
-                                } catch {
-                                  showAlert('Erreur', 'Impossible d\'envoyer la demande');
+                                } else {
+                                  showAlert('Erreur', res.message);
                                 }
                               }}
                               style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: '#FF5C1A18', alignItems: 'center', justifyContent: 'center' }}
