@@ -42,10 +42,11 @@ const sleepManifest: PluginManifest = {
       parameters: {
         type: 'object',
         properties: {
-          date: { type: 'string', description: 'Date (YYYY-MM-DD)' },
+          date: { type: 'string', description: 'Wake-up date in the user\'s local time (YYYY-MM-DD)' },
           bedtime: { type: 'string', description: 'Bedtime (HH:MM)' },
           wake_time: { type: 'string', description: 'Wake time (HH:MM)' },
           quality: { type: 'integer', description: 'Quality 1-5' },
+          awakenings: { type: 'integer', description: 'Number of awakenings during the night (0-20, optional)' },
           notes: { type: 'string', description: 'Optional notes' },
         },
         required: ['bedtime', 'wake_time', 'quality'],

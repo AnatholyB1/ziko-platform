@@ -27,11 +27,13 @@ import {
   useProfile,
   parseWorkoutFrequency,
   useSleepToday,
+  useSleepSettings,
   useHydrationToday,
   useNutritionToday,
   useSessionStreak,
   HOME_DEFAULTS,
 } from '../../src/hooks/useHomeData';
+import { formatDurationH } from '@ziko/plugin-sleep/lib/sleep';
 import { useAITips, dismissTip } from '../../src/hooks/useAITips';
 import { useSmartActions } from '../../src/hooks/useSmartActions';
 import { useTodayWeight, useTodayMood } from '../../src/hooks/useQuickLog';
@@ -288,6 +290,7 @@ export default function DashboardScreen() {
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
+  const { data: sleepSettings } = useSleepSettings();
   const { data: sleepData, isLoading: sleepLoading } = useSleepToday();
   const { data: hydrationData, isLoading: hydrationLoading } = useHydrationToday();
   const { data: nutritionData, isLoading: nutritionLoading } = useNutritionToday();
@@ -311,8 +314,10 @@ export default function DashboardScreen() {
   });
 
   // ── Derived wellness values ───────────────────────────────────────────────
-  const sleepH = sleepData?.duration_hours ?? 0;
-  const sleepPct = Math.min(100, Math.round((sleepH / HOME_DEFAULTS.sleepTargetH) * 100));
+  // P17 (SLP-06) : meme nuit que l'ecran Sommeil ; cible = reglage (aucune cible -> jauge a 0, pas de 8 h en dur).
+  const sleepH = sleepData?.durationH ?? 0;
+  const sleepTargetH = sleepSettings?.goalHours ?? 0;
+  const sleepPct = sleepTargetH > 0 ? Math.min(100, Math.round((sleepH / sleepTargetH) * 100)) : 0;
   const waterMl = hydrationData?.totalMl ?? 0;
   const waterPct = Math.min(100, Math.round((waterMl / HOME_DEFAULTS.hydrationGoalMl) * 100));
   const kcal = nutritionData?.totalCalories ?? 0;
@@ -324,7 +329,7 @@ export default function DashboardScreen() {
   // Score "Forme du jour" (QLOG-05) : moyenne des composantes AVEC donnees, etat vide sinon.
   // Formule documentee dans src/lib/quickLog.ts (computeFormScore).
   const formScore = computeFormScore({
-    sleepH, sleepTargetH: HOME_DEFAULTS.sleepTargetH,
+    sleepH: sleepTargetH > 0 ? sleepH : 0, sleepTargetH,
     waterMl, waterGoalMl: HOME_DEFAULTS.hydrationGoalMl,
     kcal, todayDone, weeklyCount, weeklyGoal,
   });
@@ -464,7 +469,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['program', 'active'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'weekly'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'recent'] }),
-      queryClient.invalidateQueries({ queryKey: ['sleep', 'today'] }),
+      queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['session_streak'] }),
@@ -491,7 +496,7 @@ export default function DashboardScreen() {
 
   // ── Segment rows ──────────────────────────────────────────────────────────
   const segmentParts = [
-    { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepH > 0 ? `${Math.floor(sleepH)}h${Math.round((sleepH % 1) * 60) > 0 ? Math.round((sleepH % 1) * 60) + 'min' : ''}` : 'Pas de données' },
+    { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepData ? `${formatDurationH(sleepH)}${sleepData.quality != null ? ` · qualité ${sleepData.quality} / 5` : ''}` : 'Aucune nuit enregistrée' },
     { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(HOME_DEFAULTS.hydrationGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
     { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: kcal > 0 ? `${kcal} kcal` : 'Loggue ton repas' },
     { value: loadPct, max: 100, color: '#22C55E', icon: 'flash-outline' as const, label: 'Charge', sub: `${weeklyCount}/${weeklyGoal} séances` },
