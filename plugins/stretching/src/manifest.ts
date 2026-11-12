@@ -103,9 +103,9 @@ You can recommend stretching routines based on the user's recent workouts. When 
       showInTabBar: false,
     },
     {
-      path: '/(plugins)/stretching/manager',
-      title: 'Mes routines',
-      icon: 'list-outline',
+      path: '/(plugins)/stretching/exercise',
+      title: 'Nouvel exercice',
+      icon: 'add-circle-outline',
       showInTabBar: false,
     },
   ],

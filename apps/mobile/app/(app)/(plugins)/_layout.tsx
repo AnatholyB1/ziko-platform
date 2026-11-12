@@ -71,6 +71,8 @@ export default function PluginsLayout() {
       <Stack.Screen name="community/invite" />
       <Stack.Screen name="stretching/dashboard" />
       <Stack.Screen name="stretching/session" />
+      <Stack.Screen name="stretching/editor" />
+      <Stack.Screen name="stretching/exercise" />
       <Stack.Screen name="sleep/dashboard" />
       <Stack.Screen name="sleep/log" />
       <Stack.Screen name="measurements/dashboard" />

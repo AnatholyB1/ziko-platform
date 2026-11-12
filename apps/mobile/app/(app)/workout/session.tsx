@@ -16,6 +16,7 @@ import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 import { playSound, playCountdownBeep, isSoundEnabled, setSoundEnabled } from '../../../src/lib/sounds';
 import RestTimer from '../../../src/components/RestTimer';
+import { DefaultStretchingCard } from '@ziko/plugin-stretching/components/DefaultStretchingCard';
 
 let useHydrationStore: any = null;
 try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
@@ -256,6 +257,8 @@ export default function WorkoutSessionScreen() {
   const isGuided = workoutExercises.length > 0;
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const hasStretching = enabledPlugins.includes('stretching');
+  // P18 (STRE-06) : `Passer` retire la routine par defaut pour la seance en cours (etat local, non persiste).
+  const [stretchSkipped, setStretchSkipped] = useState(false);
   const hasHydration = enabledPlugins.includes('hydration');
 
   // ── Hydration quick-add ────────────────────────────────
@@ -950,6 +953,9 @@ export default function WorkoutSessionScreen() {
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 120 }}>
+            {hasStretching && (
+              <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} />
+            )}
             <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
               Program Overview
             </Text>
@@ -998,22 +1004,6 @@ export default function WorkoutSessionScreen() {
           </ScrollView>
 
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
-            {hasStretching && (
-              <TouchableOpacity
-                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
-                style={{
-                  backgroundColor: theme.warn + '15', borderRadius: 14, padding: 14, marginBottom: 12,
-                  borderWidth: 1, borderColor: theme.warn + '44', flexDirection: 'row', alignItems: 'center', gap: 10,
-                }}
-              >
-                <Ionicons name="flame-outline" size={22} color={theme.warn} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
-                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant la séance</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity onPress={startWorkout}
               style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
               <Ionicons name="play" size={20} color="#fff" />
@@ -1643,28 +1633,14 @@ export default function WorkoutSessionScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 120 }}>
+        {hasStretching && (
+          <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} />
+        )}
         {freeExercises.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
             <Ionicons name="barbell-outline" size={44} color={theme.muted} />
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.addFirstExercise')}</Text>
             <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.addFirstExerciseDesc')}</Text>
-            {hasStretching && (
-              <TouchableOpacity
-                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
-                style={{
-                  backgroundColor: theme.warn + '15', borderRadius: 14, padding: 14, marginTop: 20,
-                  borderWidth: 1, borderColor: theme.warn + '44', flexDirection: 'row', alignItems: 'center', gap: 10,
-                  width: '100%',
-                }}
-              >
-                <Ionicons name="flame-outline" size={22} color={theme.warn} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
-                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant ta séance</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-              </TouchableOpacity>
-            )}
           </View>
         )}
 

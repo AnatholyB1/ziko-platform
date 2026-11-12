@@ -24,6 +24,8 @@ export const SOURCES = {
   rewardSelection: 'reward_selection',
   // v1.20 Phase 23 : sous-appels de recherche web de l'atelier (absorbes, plafonnes)
   workshopWebSearch: 'workshop_web_search',
+  // v1.20 Phase 14 : generation automatique de quetes (passage de niveau / plus aucune quete).
+  questGeneration: 'quest_generation',
 } as const;
 
 export type AutonomousCostSource = (typeof SOURCES)[keyof typeof SOURCES];

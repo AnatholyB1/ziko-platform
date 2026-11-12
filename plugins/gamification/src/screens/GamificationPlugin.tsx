@@ -6,7 +6,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useThemeStore } from '@ziko/plugin-sdk';
 import {
   HISTORY_PAGE_SIZE, awardBadges, computeLevelProgress, ensureProfile, equipItem, fetchAchievements,
-  fetchCoinHistory, purchaseItem, syncQuests, type LevelDef, type ShopItem,
+  fetchCoinHistory, purchaseItem, requestAiQuests, syncQuests, type LevelDef, type ShopItem,
 } from '../store';
 import {
   awardToastText, sortHistory, themeEquipNote, type CoinTx, type InventoryLite, type ShopItemLite,
@@ -16,7 +16,7 @@ import { AchievementsTab } from './rewards/AchievementsTab';
 import { ShopTab } from './rewards/ShopTab';
 import { HistoryView, LevelTab, type LevelData } from './rewards/LevelTab';
 import { QuestsTab } from './rewards/QuestsTab';
-import { questToastText } from '../quests';
+import { hasFreeQuestSlot, questToastText } from '../quests';
 
 // Onglet Quetes : `./rewards/QuestsTab` (P13, D-01). Lecture base via `syncQuests`, aucune quete factice.
 
@@ -107,7 +107,12 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
     retry: 1,
     retryDelay: 300,
     queryFn: async () => {
-      const res = await syncQuests(supabase);
+      let res = await syncQuests(supabase);
+      // P14 : une place libre => le backend decide (niveau gagne / plus de quete) ; si des quetes IA sont creees, re-mesure.
+      if (hasFreeQuestSlot(res.quests) && (await requestAiQuests(supabase))) {
+        const again = await syncQuests(supabase);
+        res = { quests: again.quests, newlyCompleted: [...res.newlyCompleted, ...again.newlyCompleted] };
+      }
       if (res.newlyCompleted.length > 0) {
         setToast(questToastText(res.newlyCompleted));
         // Les pieces gagnees changent le solde, l'historique et le niveau.
