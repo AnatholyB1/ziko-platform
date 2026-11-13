@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
+import PluginStoreButton from '../../../src/components/PluginStoreButton';
 import { isMandatoryPlugin, uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 
 // ── Design tokens ──────────────────────────────────────────
@@ -398,27 +399,15 @@ const PluginCard = React.memo(function PluginCard({
           ) : null}
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          onPress={isInstalled ? onUninstall : onInstall}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityState={mandatory ? { disabled: true } : undefined}
-          style={{
-            minHeight: 44, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4,
-            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-            backgroundColor: isInstalled ? '#E2E0DA' : PRIMARY,
-            flexShrink: 0,
-          }}
-        >
-          {mandatory ? <Ionicons name="lock-closed-outline" size={14} color={MUTED} /> : null}
-          <Text style={{
-            fontSize: 12, fontWeight: '700',
-            color: isInstalled ? MUTED : '#FFFFFF',
-          }}>
-            {isInstalled ? (mandatory ? 'Obligatoire' : 'Installé') : 'Installer'}
-          </Text>
-        </TouchableOpacity>
+        {/* CTA : reste pressable pour un module obligatoire (alerte explicative) */}
+        <PluginStoreButton
+          isInstalled={isInstalled}
+          mandatory={mandatory}
+          onInstall={onInstall}
+          onUninstall={onUninstall}
+          primary={PRIMARY}
+          muted={MUTED}
+        />
       </View>
     </View>
   );
