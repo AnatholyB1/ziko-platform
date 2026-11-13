@@ -6,6 +6,7 @@ import { tool, jsonSchema } from 'ai';
 import { applyOps, DraftError, type DraftOp, type DraftProgram } from './draft.js';
 import { listSkills, getSkill } from './skills.js';
 import { runWebSearch, type SearchRunner } from './webSearch.js';
+import { matchExerciseNames } from '../lib/exerciseMatch.js';
 import { loadDraft, saveDraftProgram, type DraftRecord } from './store.js';
 import { renderContext, type WorkshopContext, type WorkshopDb } from './context.js';
 import { WORKSHOP_WEB_SEARCH_PER_MESSAGE } from './limits.js';
@@ -154,12 +155,15 @@ export function createWorkshopTools(deps: WorkshopToolDeps) {
       }),
       execute: async (input) => {
         const ctx = await deps.getContext();
-        const q = input?.exercise?.toLowerCase();
+        const q = input?.exercise?.trim();
         if (!q) return { context: renderContext(ctx, 6000) };
+        // Appariement exact normalise d'abord ; sinon l'unique plus proche (jamais "squat" -> "jump squat" si "Squat" existe).
+        const known = [...new Set([...ctx.records.map((r) => r.exercise), ...ctx.recentSessions.flatMap((s) => s.top_sets.map((t) => t.exercise))])];
+        const wanted = new Set(matchExerciseNames(q, known));
         return {
-          records: ctx.records.filter((r) => r.exercise.toLowerCase().includes(q)),
+          records: ctx.records.filter((r) => wanted.has(r.exercise)),
           sessions: ctx.recentSessions
-            .map((s) => ({ ...s, top_sets: s.top_sets.filter((t) => t.exercise.toLowerCase().includes(q)) }))
+            .map((s) => ({ ...s, top_sets: s.top_sets.filter((t) => wanted.has(t.exercise)) }))
             .filter((s) => s.top_sets.length > 0),
         };
       },
