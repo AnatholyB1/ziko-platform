@@ -15,7 +15,7 @@ import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import {
   type HydrationSettings, DEFAULT_SETTINGS, QUICK_AMOUNTS, MAX_LOG_ML, localDateKey,
-  DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchSettings, saveSettings, hasWorkoutOnDay, effectiveGoalMl, coffeeCountedMl,
+  DEFAULT_GOAL_ML, fetchBaseGoalMl, fetchEffectiveGoalMl, resolveGoalMl, fetchSettings, saveSettings, effectiveGoalMl, coffeeCountedMl,
   remindersRowValue, glassRowValue, coffeeRowValue, bonusRowValue, formatLitres,
 } from '../settings';
 import { loadNotifModule, getReminderPermission, syncHydrationReminders, resyncRemindersFromDb, type PermissionState } from '../reminders';
@@ -206,31 +206,27 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     staleTime: 60_000,
   });
 
-  // Jour de seance : au moins une seance dont started_at est dans le jour local
-  const { data: workoutToday = false } = useQuery<boolean>({
-    queryKey: ['hydration_workout_today', userId, today],
-    queryFn: () => hasWorkoutOnDay(supabase, userId as string),
+  // Objectif de base (reglage du profil) : sert a la ligne "Objectif" et a la feuille de reglage uniquement.
+  // Une erreur de lecture est remontee par fetchBaseGoalMl (jamais un 2,0 L par defaut mis en cache).
+  const { data: baseGoalMl = DEFAULT_GOAL_ML } = useQuery<number>({
+    queryKey: ['hydration_goals', userId],
+    queryFn: () => fetchBaseGoalMl(supabase, userId as string),
+    enabled: !!userId,
+  });
+
+  // Objectif affiche = base + bonus les jours de seance (HYDR-05) : MEME fonction et MEME cache que l'accueil
+  // (['hydration','today'].goalMl) => une seule source, pas de valeur par defaut avant chargement.
+  const homeCached = queryClient.getQueryData<{ goalMl?: number }>(['hydration', 'today', userId])?.goalMl;
+  const { data: goalData } = useQuery<number>({
+    queryKey: ['hydration_goal_effective', userId, today],
+    queryFn: () =>
+      resolveGoalMl(() => fetchEffectiveGoalMl(supabase, userId as string), {
+        previous: queryClient.getQueryData<{ goalMl?: number }>(['hydration', 'today', userId])?.goalMl,
+      }),
     enabled: !!userId,
     staleTime: 60_000,
   });
-
-  // Objectif de base depuis user_profiles (inchange)
-  const { data: baseGoalMl = DEFAULT_GOAL_ML } = useQuery<number>({
-    queryKey: ['hydration_goals', userId],
-    queryFn: async () => {
-      if (!userId) return DEFAULT_GOAL_ML;
-      const { data } = await supabase
-        .from('ziko_user_profiles')
-        .select('settings')
-        .eq('id', userId)
-        .single();
-      return baseGoalFromProfileSettings(data?.settings);
-    },
-    enabled: !!userId,
-  });
-
-  // Objectif affiche = base + bonus les jours de seance (HYDR-05)
-  const goalMl = effectiveGoalMl(baseGoalMl, workoutToday, settings);
+  const goalMl = goalData ?? homeCached ?? effectiveGoalMl(baseGoalMl, false, settings);
 
   // ─── Mutations ──────────────────────────────────────────────────────────────
 
@@ -293,6 +289,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       queryClient.setQueryData(['hydration_settings', userId], saved);
       // L'objectif de l'accueil vit dans ['hydration','today',userId] (goalMl), pas dans une cle 'goal'.
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['hydration_goal_effective', userId] });
       setSheet(null);
     },
     onError: (err: any) => {
@@ -318,6 +315,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hydration_goals', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration_goal_effective', userId] });
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
       setSheet(null);
     },
