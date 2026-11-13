@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity } from 'react-native';
 import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, useTranslation } from '@ziko/plugin-sdk';
 import { useCreditStore } from '../stores/creditStore';
 
+// Libelles via les cles partagees `credits.earn.<source>` (fr/en) de @ziko/plugin-sdk.
 const EARN_ACTIVITIES = [
-  { source: 'workout',     label: 'Log a workout',          icon: 'barbell-outline' as const },
-  { source: 'habit',       label: 'Complete daily habits',  icon: 'checkmark-circle-outline' as const },
-  { source: 'meal',        label: 'Log a meal',             icon: 'restaurant-outline' as const },
-  { source: 'measurement', label: 'Log body measurements',  icon: 'body-outline' as const },
-  { source: 'stretch',     label: 'Complete a stretch',     icon: 'fitness-outline' as const },
-  { source: 'cardio',      label: 'Log a cardio session',   icon: 'bicycle-outline' as const },
+  { source: 'workout',     icon: 'barbell-outline' as const },
+  { source: 'habit',       icon: 'checkmark-circle-outline' as const },
+  { source: 'meal',        icon: 'restaurant-outline' as const },
+  { source: 'measurement', icon: 'body-outline' as const },
+  { source: 'stretch',     icon: 'fitness-outline' as const },
+  { source: 'cardio',      icon: 'bicycle-outline' as const },
 ] as const;
 
 function formatCountdown(resetTimestamp: string): string {
@@ -28,6 +29,7 @@ export default function CreditExhaustionSheet() {
   const exhaustionData = useCreditStore((s) => s.exhaustionData);
   const hideSheet = useCreditStore((s) => s.hideExhaustionSheet);
   const theme = useThemeStore((s) => s.theme);
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
@@ -75,16 +77,18 @@ export default function CreditExhaustionSheet() {
             <View style={{ alignItems: 'center', marginBottom: 20 }}>
               <Ionicons name="flash" size={32} color="#FFB800" />
               <Text style={{ color: theme.text, fontSize: 20, fontWeight: '800', marginTop: 8 }}>
-                Credits IA epuises
+                {t('credits.exhausted.title')}
               </Text>
+              {/* earn_hint renvoye par l'API est un texte anglais fixe : on affiche la cle partagee localisee. */}
               <Text style={{ color: theme.muted, fontSize: 14, marginTop: 4, textAlign: 'center' }}>
-                {exhaustionData.earn_hint || 'Complete des activites pour gagner des credits'}
+                {t('credits.exhausted.hint')}
               </Text>
             </View>
 
             {/* Earn activities checklist (EARN-09) */}
             <View style={{ marginBottom: 20 }}>
-              {EARN_ACTIVITIES.map(({ source, label, icon }) => {
+              {EARN_ACTIVITIES.map(({ source, icon }) => {
+                const label = t(`credits.earn.${source}`);
                 const done = exhaustionData.earned_today?.includes(source) ?? false;
                 return (
                   <View key={source} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
@@ -116,7 +120,7 @@ export default function CreditExhaustionSheet() {
               marginBottom: 20,
             }}>
               <Text style={{ color: theme.muted, fontSize: 13 }}>
-                Reset dans {countdown}
+                {t('credits.exhausted.reset', { countdown })}
               </Text>
             </View>
 
@@ -130,7 +134,7 @@ export default function CreditExhaustionSheet() {
                 alignItems: 'center',
               }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Fermer</Text>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{t('general.close')}</Text>
             </TouchableOpacity>
           </MotiView>
         </TouchableOpacity>
