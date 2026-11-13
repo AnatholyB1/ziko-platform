@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { chooseActive, coachWorkoutsToProgramData, getActiveProgram, loadProgramForSession } from '../activeProgram';
+import { activeProgramView, chooseActive, coachWorkoutsToProgramData, getActiveProgram, loadProgramForSession } from '../activeProgram';
+
+describe('activeProgramView (run7 : Entrainement vs Programmes)', () => {
+  const prog = (program_data: any) => ({ id: 'p', kind: 'coach' as const, name: 'X', goal: null, program_data });
+  it('une erreur de lecture sans donnee n est PAS "aucun programme"', () => {
+    expect(activeProgramView({ isLoading: false, isError: true, program: undefined })).toBe('error');
+  });
+  it('chargement puis vide', () => {
+    expect(activeProgramView({ isLoading: true, isError: false, program: undefined })).toBe('loading');
+    expect(activeProgramView({ isLoading: false, isError: false, program: null })).toBe('empty');
+  });
+  it('programme coach sans jour : message dedie, jamais un ecran vide', () => {
+    expect(activeProgramView({ isLoading: false, isError: false, program: prog(coachWorkoutsToProgramData([])) })).toBe('no-sessions');
+  });
+  it('programme avec seances : ready, meme si une relecture echoue (donnee en cache)', () => {
+    const p = prog(coachWorkoutsToProgramData([{ id: 'w', name: 'A', day_of_week: 1, program_exercises: [] }]));
+    expect(activeProgramView({ isLoading: false, isError: true, program: p })).toBe('ready');
+  });
+});
 import { normalizePlanSessions, pickSessionForToday } from '../workoutPlan';
 
 // Faux client chaine : chaque table renvoie ses lignes ; les filtres sont ignores (les tests posent les lignes

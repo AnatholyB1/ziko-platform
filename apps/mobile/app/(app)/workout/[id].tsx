@@ -812,6 +812,13 @@ export default function ProgramDetailScreen() {
         )}
 
         {/* Workout days */}
+        {workouts.length === 0 && (
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Ionicons name="calendar-outline" size={28} color={theme.muted} style={{ marginBottom: 8 }} />
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>Ce programme n'a pas encore de séances</Text>
+            <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4, textAlign: 'center' }}>Ajoute une séance pour le commencer.</Text>
+          </View>
+        )}
         {workouts.map((workout) => (
           <View key={workout.id} style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
             {/* Day header */}
