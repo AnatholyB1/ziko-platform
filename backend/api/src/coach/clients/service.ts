@@ -3,6 +3,7 @@
 //   GET    /links/me         — current active link + coach preview (always 200)
 //   POST   /links/preview    — peek a code; constant-time envelope; rate-limited
 //   POST   /links/redeem     — redeem a code; constant-time envelope; rate-limited
+//   GET    /links/history    — athlete's past (revoked) coaches, read-only (P25 MCOA-03)
 //   DELETE /links/:id        — athlete revokes own link (INVITE-06)
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
@@ -10,6 +11,7 @@ import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
 import { notificationService } from '../../services/notificationService.js';
 import { redemptionRateLimit } from './ratelimit.js';
+import { getLinkHistory } from './history.js';
 import {
   getActiveLink,
   peekInvitation,
@@ -71,6 +73,18 @@ clientsRouter.get('/links/me', async (c) => {
   try {
     const result = await getActiveLink(jwt, userId);
     return c.json(result);
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// GET /coach/clients/links/history — athlete's own past coaches (revoked links, MCOA-03). Read-only.
+clientsRouter.get('/links/history', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  try {
+    const history = await getLinkHistory(jwt, userId);
+    return c.json({ history });
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }

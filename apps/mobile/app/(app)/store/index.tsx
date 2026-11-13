@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
+import { isMandatoryPlugin, uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 
 // ── Design tokens ──────────────────────────────────────────
 const BG      = '#F7F6F3';
@@ -153,6 +154,12 @@ export default function PluginStoreScreen() {
 
   const uninstallPlugin = async (pluginId: string) => {
     if (!user) return;
+    // P25 (MCOA-02) : un module obligatoire (Mon coach) ne se desinstalle jamais, meme si l'UI l'appelle.
+    const decision = uninstallDecision(pluginId, plugins.find((p) => p.plugin_id === pluginId)?.manifest as any);
+    if (!decision.allowed) {
+      showAlert(decision.title, decision.message);
+      return;
+    }
     showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
@@ -297,7 +304,7 @@ export default function PluginStoreScreen() {
                       }}
                     >
                       <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFAF6' }}>
-                        {isInstalled ? 'Installé \u2713' : 'Installer'}
+                        {isInstalled && isMandatoryPlugin(p.plugin_id, m as any) ? 'Obligatoire' : isInstalled ? 'Installé \u2713' : 'Installer'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -357,6 +364,7 @@ const PluginCard = React.memo(function PluginCard({
 }) {
   const m = plugin.manifest;
   const color = PLUGIN_COLORS[plugin.plugin_id] ?? PRIMARY;
+  const mandatory = isMandatoryPlugin(plugin.plugin_id, m as any);
 
   return (
     <View style={{
@@ -394,17 +402,21 @@ const PluginCard = React.memo(function PluginCard({
         <TouchableOpacity
           onPress={isInstalled ? onUninstall : onInstall}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityState={mandatory ? { disabled: true } : undefined}
           style={{
+            minHeight: 44, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4,
             paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
             backgroundColor: isInstalled ? '#E2E0DA' : PRIMARY,
             flexShrink: 0,
           }}
         >
+          {mandatory ? <Ionicons name="lock-closed-outline" size={14} color={MUTED} /> : null}
           <Text style={{
             fontSize: 12, fontWeight: '700',
             color: isInstalled ? MUTED : '#FFFFFF',
           }}>
-            {isInstalled ? 'Installé' : 'Installer'}
+            {isInstalled ? (mandatory ? 'Obligatoire' : 'Installé') : 'Installer'}
           </Text>
         </TouchableOpacity>
       </View>

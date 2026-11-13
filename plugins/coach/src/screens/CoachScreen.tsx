@@ -33,7 +33,25 @@ import { useThemeStore, useTranslation, showAlert, coachStorage, STORAGE_BUCKETS
 import { PluginHeader } from '@ziko/ui';
 import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
 import CoachCard, { CoachCardSkeleton } from './CoachCard';
+import PrescribedProgramCard from './PrescribedProgramCard';
 import { resolveLinkedView } from './coachLinked';
+import {
+  resolveCoachState,
+  buildHistoryRows,
+  isRevokeConfirmed,
+  revokeModalBody,
+  revokeDoneMessage,
+  type HistoryItemRaw,
+} from './coachState';
+import {
+  loadPrescribedRow,
+  loadActiveCandidates,
+  prescribedProgramView,
+  resumePrescribed,
+  needsReplaceConfirmation,
+  replaceConfirmCopy,
+  type PrescribedView,
+} from './prescribedProgram';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -98,6 +116,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [revokeInput, setRevokeInput] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
 
   // ── Link status query ──
   const {
@@ -170,6 +190,71 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     staleTime: 30_000,
     enabled: !!link,
   });
+
+  // ── Historique des coachs (etat A, MCOA-03) : lecture seule, un echec masque simplement le bloc ──
+  const { data: historyData } = useQuery<HistoryItemRaw[]>({
+    queryKey: ['coach-history', user?.id],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/coach/clients/links/history`,
+        { headers: { Authorization: `Bearer ${session?.access_token}` } },
+      );
+      if (!res.ok) throw new Error('Failed to fetch coach history');
+      const json = await res.json();
+      return (json.history ?? []) as HistoryItemRaw[];
+    },
+    staleTime: 60_000,
+    enabled: !!data && !link,
+  });
+  const historyRows = buildHistoryRows(historyData);
+
+  // ── Programme prescrit par le coach (etat C, MCOA-04) ──
+  const {
+    data: prescribed,
+    isLoading: prescribedLoading,
+    isError: prescribedError,
+    refetch: refetchPrescribed,
+  } = useQuery<PrescribedView | null>({
+    queryKey: ['coach-prescribed', user?.id, link?.coach_id],
+    queryFn: async () => {
+      const uid = user?.id ?? (await supabase.auth.getUser()).data?.user?.id;
+      if (!uid || !link?.coach_id) return null;
+      const [row, items] = await Promise.all([
+        loadPrescribedRow(supabase, uid, link.coach_id),
+        loadActiveCandidates(supabase, uid),
+      ]);
+      return prescribedProgramView(row, items);
+    },
+    staleTime: 30_000,
+    enabled: !!link,
+  });
+
+  const doResume = useCallback(async (view: PrescribedView) => {
+    setIsResuming(true);
+    try {
+      await resumePrescribed(supabase, view.id);
+      queryClient.invalidateQueries({ queryKey: ['coach-prescribed'] });
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+    } catch {
+      showAlert(t('coach.error.try_again'), '');
+    } finally {
+      setIsResuming(false);
+    }
+  }, [supabase, queryClient, t]);
+
+  const handleResume = useCallback((view: PrescribedView) => {
+    if (isResuming) return;
+    if (!needsReplaceConfirmation(view)) {
+      void doResume(view);
+      return;
+    }
+    const copy = replaceConfirmCopy(view);
+    showAlert(copy.title, copy.message, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Remplacer', onPress: () => { void doResume(view); } },
+    ]);
+  }, [isResuming, doResume]);
 
   // ── Handlers ──
   const handleCodeChange = useCallback((v: string) => {
@@ -260,8 +345,12 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         setShowRevokeModal(false);
         setRevokeInput('');
         queryClient.invalidateQueries({ queryKey: ['coach-link', user?.id] });
+        queryClient.invalidateQueries({ queryKey: ['coach-history', user?.id] });
+        queryClient.invalidateQueries({ queryKey: ['coach-prescribed'] });
         setCode('');
         setPreview(null);
+        // Sans punition : on rassure (historique/programmes conserves), aucune donnee supprimee.
+        showAlert('Coach retiré', revokeDoneMessage(resolveLinkedView(data)?.name ?? 'ton coach'));
       } else {
         showAlert(t('coach.error.revoke_failed'), t('coach.error.try_again'));
       }
@@ -270,7 +359,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     } finally {
       setIsRevoking(false);
     }
-  }, [link, isRevoking, supabase, queryClient, user?.id, t, clearCoachTheme]);
+  }, [link, data, isRevoking, supabase, queryClient, user?.id, t, clearCoachTheme]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -359,8 +448,16 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
   }
 
   // ── Determine current state ──
-  const isStateB = preview !== null;
-  const isStateC = !isStateB && link !== null;
+  // Un lien actif l'emporte sur un apercu : jamais de saisie de code a un athlete deja lie (D-02).
+  const screenState = resolveCoachState({
+    isLoading: false,
+    isError,
+    hasData: !!data,
+    hasActiveLink: link !== null,
+    hasPreview: preview !== null,
+  });
+  const isStateB = screenState === 'preview';
+  const isStateC = screenState === 'linked';
   const linkedView = resolveLinkedView(data);
   const avatarUri = linkedView?.logoPath
     ? supabase.storage.from(STORAGE_BUCKETS.coachLogos).getPublicUrl(linkedView.logoPath).data.publicUrl
@@ -502,7 +599,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                 height: 52,
                 borderRadius: 14,
                 marginTop: 24,
-                backgroundColor: code.length === 6 && !isSubmitting ? theme.primary : '#E2E0DA',
+                backgroundColor: code.length === 6 && !isSubmitting ? actionColor : '#E2E0DA',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
@@ -521,6 +618,35 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                 </Text>
               )}
             </TouchableOpacity>
+
+            {/* Anciens coachs (MCOA-03) : lecture seule, uniquement s'il y a un historique */}
+            {historyRows.length > 0 && (
+              <View style={{ ...cardStyle, marginTop: 32, padding: 0 }}>
+                <TouchableOpacity
+                  onPress={() => setHistoryOpen((v) => !v)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: historyOpen }}
+                  style={{ minHeight: 48, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#6B6963' }}>ANCIENS COACHS</Text>
+                  <Ionicons name={historyOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#6B6963" />
+                </TouchableOpacity>
+                {historyOpen && historyRows.map((r) => (
+                  <View
+                    key={r.id}
+                    style={{ paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#E2E0DA', flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                  >
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F7F6F3', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="person-outline" size={18} color="#6B6963" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '700', color: '#1C1A17' }}>{r.name}</Text>
+                      {r.range ? <Text style={{ fontSize: 14, color: '#6B6963' }}>{r.range}</Text> : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </>
         )}
 
@@ -570,11 +696,12 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
               <TouchableOpacity
                 onPress={handleConfirmLink}
                 disabled={isLinking}
+                accessibilityRole="button"
                 style={{
                   height: 52,
                   borderRadius: 14,
                   marginTop: 16,
-                  backgroundColor: theme.primary,
+                  backgroundColor: actionColor,
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -590,7 +717,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
 
               <TouchableOpacity
                 onPress={() => { setPreview(null); setCode(''); }}
-                style={{ marginTop: 12, alignItems: 'center' }}
+                accessibilityRole="button"
+                style={{ marginTop: 12, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Text style={{ fontSize: 14, color: theme.primary }}>
                   {t('coach.state_b.cancel')}
@@ -622,11 +750,23 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                     accessibilityLabel={t('coach.state_c.revoke')}
                     style={{ marginTop: 4, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Ionicons name="trash-outline" size={18} color="#DC2626" style={{ marginRight: 8 }} />
+                    <Ionicons name="person-remove-outline" size={18} color="#DC2626" style={{ marginRight: 8 }} />
                     <Text style={{ fontSize: 14, color: '#DC2626' }}>{t('coach.state_c.revoke')}</Text>
                   </TouchableOpacity>
                 </>
               }
+            />
+
+            {/* ── Programme prescrit par le coach (MCOA-04) ── */}
+            <PrescribedProgramCard
+              loading={prescribedLoading}
+              error={prescribedError}
+              view={prescribed ?? null}
+              actionColor={actionColor}
+              resuming={isResuming}
+              onRetry={() => refetchPrescribed()}
+              onOpen={(id) => router.push(`/(app)/workout/${id}` as any)}
+              onResume={handleResume}
             />
           </View>
         )}
@@ -643,16 +783,16 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24 }}>
             <Text style={{ fontSize: 20, fontWeight: '700', color: '#1C1A17' }}>
-              {t('coach.revoke_modal.title')}
+              Retirer ton coach ?
             </Text>
             <Text style={{ fontSize: 14, color: '#6B6963', marginTop: 8 }}>
-              {t('coach.revoke_modal.body')}
+              {revokeModalBody(linkedView?.name ?? 'ton coach')}
             </Text>
 
             <TextInput
               value={revokeInput}
               onChangeText={setRevokeInput}
-              placeholder={t('coach.revoke_modal.placeholder')}
+              placeholder="Tape COACH pour confirmer"
               placeholderTextColor="#6B6963"
               autoCapitalize="characters"
               autoCorrect={false}
@@ -688,12 +828,12 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
 
               <TouchableOpacity
                 onPress={handleRevoke}
-                disabled={revokeInput.trim() !== 'COACH' || isRevoking}
+                disabled={!isRevokeConfirmed(revokeInput) || isRevoking}
                 style={{
                   flex: 1,
                   height: 48,
                   borderRadius: 12,
-                  backgroundColor: revokeInput.trim() === 'COACH' ? '#DC2626' : '#E2E0DA',
+                  backgroundColor: isRevokeConfirmed(revokeInput) ? '#DC2626' : '#E2E0DA',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -705,10 +845,10 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
                     style={{
                       fontSize: 16,
                       fontWeight: '700',
-                      color: revokeInput.trim() === 'COACH' ? '#FFFFFF' : '#6B6963',
+                      color: isRevokeConfirmed(revokeInput) ? '#FFFFFF' : '#6B6963',
                     }}
                   >
-                    {t('coach.revoke_modal.confirm')}
+                    Retirer
                   </Text>
                 )}
               </TouchableOpacity>
