@@ -3,7 +3,7 @@
 // - AUCUN exercice resolu / pas de seance -> alerte claire avec lien vers l'edition du programme.
 
 export type PlannedStartResult =
-  | { ok: true; unresolved?: string[] }
+  | { ok: true; unresolved?: string[]; replaced?: Array<{ from: string; to: string }> }
   | { ok: false; reason: string; unresolved?: string[] };
 
 export interface PlannedStartFeedback {
@@ -19,13 +19,20 @@ const MAX_LISTED = 3;
 export function plannedStartFeedback(res: PlannedStartResult): PlannedStartFeedback {
   if (res.ok) {
     const un = res.unresolved ?? [];
-    if (un.length === 0) return { navigate: true };
-    const shown = un.slice(0, MAX_LISTED).join(', ');
-    const more = un.length > MAX_LISTED ? ` +${un.length - MAX_LISTED}` : '';
-    return {
-      navigate: true,
-      toast: `${un.length === 1 ? 'Exercice absent du catalogue, ignoré' : 'Exercices absents du catalogue, ignorés'} : ${shown}${more}`,
-    };
+    const rep = res.replaced ?? [];
+    const parts: string[] = [];
+    if (rep.length > 0) {
+      const shown = rep.slice(0, MAX_LISTED).map((r) => `${r.from} par ${r.to}`).join(', ');
+      const more = rep.length > MAX_LISTED ? ` +${rep.length - MAX_LISTED}` : '';
+      parts.push(`${rep.length === 1 ? 'Exercice remplacé' : 'Exercices remplacés'} : ${shown}${more}`);
+    }
+    if (un.length > 0) {
+      const shown = un.slice(0, MAX_LISTED).join(', ');
+      const more = un.length > MAX_LISTED ? ` +${un.length - MAX_LISTED}` : '';
+      parts.push(`${un.length === 1 ? 'Exercice absent du catalogue, ignoré' : 'Exercices absents du catalogue, ignorés'} : ${shown}${more}`);
+    }
+    if (parts.length === 0) return { navigate: true };
+    return { navigate: true, toast: parts.join(' · ') };
   }
   const un = res.unresolved ?? [];
   if (res.reason === 'no_exercises' && un.length > 0) {

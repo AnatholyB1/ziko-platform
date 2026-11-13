@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
-import { resolveExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
+import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
 import { classifyRestoredSession, classifyLiveSession } from '../lib/staleSession';
 
@@ -88,7 +88,7 @@ interface WorkoutState {
     programId: string,
     dayIndex: number,
   ) => Promise<
-    | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[] }
+    | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[]; /** exercices du programme remplaces par la ligne catalogue la plus proche */ replaced?: Array<{ from: string; to: string }> }
     | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error'; unresolved?: string[] }
   >;
   endSession: () => Promise<void>;
@@ -334,8 +334,16 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const unresolved: string[] = [];
 
     const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
+    const replaced: Array<{ from: string; to: string }> = [];
     picked.exercises.forEach((pe) => {
-      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || resolveExercise(pe.name, candidates, exerciseNames);
+      let ex: any = (pe.exercise_id && byId.get(pe.exercise_id)) || null;
+      if (!ex) {
+        const m = matchExercise(pe.name, candidates, exerciseNames);
+        if (m) {
+          ex = m.row;
+          if (m.kind === 'approx') replaced.push({ from: pe.name, to: String(m.row.name ?? m.row.name_fr ?? '') });
+        }
+      }
       if (!ex) {
         unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
         return;
@@ -379,7 +387,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const session = data as WorkoutSession;
     set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
     AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
-    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length, unresolved };
+    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length, unresolved, replaced };
   },
 
   discardSession: async () => {
