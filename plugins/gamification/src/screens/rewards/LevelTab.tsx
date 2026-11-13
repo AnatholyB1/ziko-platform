@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ThemePalette } from '@ziko/plugin-sdk';
 import {
-  GOLD, formatAmount, historyLabel, relativeDay, xpLine,
+  GOLD, formatAmount, historyLabel, relativeDay, xpLine, levelCaption,
   type CoinTx,
 } from '../../rewards';
 import { Card, EmptyCard, ErrorCard, PrimaryButton, ProgressBar, SkeletonRows } from './ui';
@@ -17,6 +17,8 @@ export interface LevelData {
   xpToNext: number;
   xpProgress: number;
   streak: number;
+  /** Vrai dernier niveau du catalogue atteint (jamais vrai si le catalogue est vide). */
+  isMax: boolean;
 }
 
 /** B01 : niveau, XP, serie en cours, succes debloques, derniers gains. Donnees reelles uniquement. */
@@ -47,7 +49,7 @@ export function LevelTab({
           </View>
         ) : null}
         <Text style={{ fontSize: 12, color: theme.cardDarkText + 'B3', marginTop: 8 }}>
-          {data.nextLevel !== null ? `${data.xpToNext} XP pour le niveau ${data.nextLevel}` : 'Niveau maximum atteint'}
+          {levelCaption(data)}
         </Text>
       </View>
 
