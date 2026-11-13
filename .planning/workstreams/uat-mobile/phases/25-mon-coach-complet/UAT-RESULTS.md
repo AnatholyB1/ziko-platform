@@ -29,3 +29,6 @@ Emulateur + liens profonds `ziko://coach/dashboard`, SQL branche, API REST avec 
 | Revocation legitime directe (revoked_at + revoked_by='client') | 200 (autorise ; contourne le bug backend) |
 | Remettre revoked_at/revoked_by a NULL apres revocation | 200 avec 0 ligne ; etat relu inchange : BLOQUE |
 Aucune attaque n'a reussi. Branche restauree ensuite (lien actif, par SQL service_role).
+
+## Run 8 (2026-11-13) - re-vérification 401 Mon coach
+PASS : athlète banni 60 s (`sim-session-expiry.mjs --seconds=60`, nécessite `UAT_SUPABASE_URL` exporté), ouverture de Mon coach -> message `Session expirée` (et non une coupure réseau) (`uat-evidence/p25/coach401b.png`). Avant le ban, même écran = `Ton coach depuis le 13 nov. 2026`.
