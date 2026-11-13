@@ -8,6 +8,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 import { showAlert, formatDateFr } from '@ziko/plugin-sdk';
 
 import { usePluginRegistry, useTranslation, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
@@ -153,6 +154,11 @@ export default function PluginDetailScreen() {
 
   const uninstall = async () => {
     if (!user || !id) return;
+    const decision = uninstallDecision(String(id), manifest as any);
+    if (!decision.allowed) {
+      showAlert(decision.title, decision.message);
+      return;
+    }
     showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {

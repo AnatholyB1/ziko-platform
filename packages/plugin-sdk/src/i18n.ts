@@ -828,7 +828,7 @@ const fr: TranslationDict = {
   'coach.state_c.progress_label': 'Habitudes aujourd\'hui',
   'coach.state_c.revoke': 'Retirer ce coach',
   'coach.revoke_modal.title': 'Retirer ce coach ?',
-  'coach.revoke_modal.body': 'Cette action supprime le lien avec votre coach. Tapez COACH pour confirmer.',
+  'coach.revoke_modal.body': 'Votre historique et vos programmes sont conservés. Tapez COACH pour confirmer.',
   'coach.revoke_modal.placeholder': 'COACH',
   'coach.revoke_modal.cancel': 'Garder mon coach',
   'coach.revoke_modal.confirm': 'Confirmer',
