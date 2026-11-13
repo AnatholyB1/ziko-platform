@@ -130,23 +130,47 @@ export function prefixMatchesRoute(prefix: string): boolean {
   );
 }
 
+// Objets `{ pathname: ... }` (router.push / <Link href={{ pathname }}>) : l'expression peut etre un ternaire
+// (`pathname: ok ? '/a' : '/b'`) ; on en extrait tous les litteraux commencant par `/`.
+const PATHNAME_EXPR_RE = /pathname\s*:\s*([^,}\n]+)/g;
+const SLASH_LIT_RE = /(['"`])(\/(?:\\.|(?!\1)[^\\\n])*)\1/g;
+
+/** Litteraux de route d'un source (forme chaine ET forme objet `{pathname}`), avec leur position. */
+export function scanRouteLiterals(src: string): Array<{ index: number; target: string }> {
+  const out: Array<{ index: number; target: string }> = [];
+  const seen = new Set<string>();
+  const push = (index: number, target: string) => {
+    const key = `${index}:${target}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ index, target });
+  };
+  for (const re of [NAV_RE, HREF_RE]) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(src))) if (isCandidate(m[2])) push(m.index, m[2]);
+  }
+  PATHNAME_EXPR_RE.lastIndex = 0;
+  let p: RegExpExecArray | null;
+  while ((p = PATHNAME_EXPR_RE.exec(src))) {
+    SLASH_LIT_RE.lastIndex = 0;
+    let l: RegExpExecArray | null;
+    while ((l = SLASH_LIT_RE.exec(p[1]))) if (isCandidate(l[2])) push(p.index, l[2]);
+  }
+  return out;
+}
+
 function collect(): Hit[] {
   const hits: Hit[] = [];
   for (const f of sourceFiles()) {
     if (PREFIX_FILES.test(f)) continue;
     const src = readFileSync(f, 'utf8');
     const seen = new Set<string>();
-    for (const re of [NAV_RE, HREF_RE]) {
-      re.lastIndex = 0;
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(src))) {
-        const lit = m[2];
-        if (!isCandidate(lit)) continue;
-        const key = `${m.index}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        hits.push({ file: f, line: src.slice(0, m.index).split('\n').length, target: lit });
-      }
+    for (const h of scanRouteLiterals(src)) {
+      const key = `${h.index}:${h.target}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      hits.push({ file: f, line: src.slice(0, h.index).split('\n').length, target: h.target });
     }
     GROUP_STR_RE.lastIndex = 0;
     let g: RegExpExecArray | null;
@@ -172,6 +196,17 @@ describe('routes expo-router reelles', () => {
     expect(matchesRoute('/(app)/(tabs)/workout')).toBe(false);
     expect(matchesRoute('/(app)/(workout)/session')).toBe(false);
     expect(matchesRoute('/(app)/store/a/b')).toBe(false);
+  });
+
+  it('le scanner couvre aussi les formes objet { pathname } de Link href et router.push (run7)', () => {
+    const t = (s: string) => scanRouteLiterals(s).map((h) => h.target);
+    expect(t(`router.push({ pathname: '/(app)/(tabs)/x', params: { a: 1 } })`)).toContain('/(app)/(tabs)/x');
+    expect(t(`<Link href={{ pathname: "/(app)/nope/zz" }}>x</Link>`)).toContain('/(app)/nope/zz');
+    expect(t(`router.replace({\n  pathname: '/(app)/workout/summary',\n})`)).toContain('/(app)/workout/summary');
+    expect(t(`router.push({ pathname: ok ? '/(app)/a/one' : '/(app)/b/two' })`)).toEqual(['/(app)/a/one', '/(app)/b/two']);
+    expect(t('<Link href={`/(app)/profile/${id}`} />')).toContain('/(app)/profile/${id}');
+    // une route objet inexistante est bien detectee comme invalide
+    expect(t(`router.push({ pathname: '/(app)/(tabs)/workout' })`).some((x) => !matchesRoute(x))).toBe(true);
   });
 
   it('tout litteral de navigation correspond a une route existante', () => {
