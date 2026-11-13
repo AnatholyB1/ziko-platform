@@ -12,6 +12,9 @@ import {
 } from '../context/conversation.js';
 import { AGENT_MODEL, VISION_MODEL } from '../config/models.js';
 import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
+import { userRateLimit } from '../middleware/userRateLimit.js';
+import type { CreditAction } from '../config/credits.js';
+import type { Context, Next } from 'hono';
 import { STORAGE_BUCKETS } from '../config/buckets.js';
 
 const router = new Hono();
@@ -169,7 +172,31 @@ function logTokenUsage(
 
 router.get('/tools', (c) => c.json({ tools: allToolSchemas }));
 
-router.post('/tools/execute', async (c) => {
+// Audit securite v1.20 (constat 6) : /tools/execute etait un contournement du credit gate. Les outils qui appellent un
+// LLM (ai_programs_generate / ai_programs_adjust : Sonnet jusqu'a 4000 tokens) sont soumis au MEME credit que
+// POST /ai/programs/generate ('program') et a un plafond de debit plus serre ; tous les outils ont un plafond par
+// utilisateur. Un outil LLM ajoute plus tard doit etre declare ici.
+export const LLM_TOOL_CREDIT: Readonly<Record<string, CreditAction>> = {
+  ai_programs_generate: 'program',
+  ai_programs_adjust: 'program',
+};
+const toolsExecuteLimiter = userRateLimit(30, '1 m', 'ai-tools-execute');
+const llmToolsLimiter = userRateLimit(4, '1 m', 'ai-tools-execute-llm');
+
+async function llmToolGate(c: Context, next: Next) {
+  let toolName: unknown;
+  try {
+    toolName = ((await c.req.json()) as { tool_name?: unknown } | null)?.tool_name;
+  } catch {
+    return next(); // corps invalide : le handler repond 400
+  }
+  const action = typeof toolName === 'string' && Object.hasOwn(LLM_TOOL_CREDIT, toolName) ? LLM_TOOL_CREDIT[toolName] : undefined;
+  if (!action) return next();
+  const deduct = (() => creditDeduct(action)(c, next)) as Next;
+  return llmToolsLimiter(c, (() => creditCheck(action)(c, deduct)) as Next);
+}
+
+router.post('/tools/execute', toolsExecuteLimiter, llmToolGate, async (c) => {
   const auth = c.get('auth');
   const userToken = c.req.header('Authorization')?.replace('Bearer ', '');
   const { tool_name, parameters = {} } = await c.req.json<{
@@ -188,7 +215,8 @@ router.post('/tools/execute', async (c) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Tool Error] ${tool_name}:`, msg);
-    return c.json({ error: msg }, 500);
+    // Message generique : le detail (Postgres, SDK) reste dans les logs serveur.
+    return c.json({ error: 'Tool execution failed' }, 500);
   }
 });
 
