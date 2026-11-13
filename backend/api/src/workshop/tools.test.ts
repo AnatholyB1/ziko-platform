@@ -8,7 +8,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createFakeDb } from './fakeDb.testutil.js';
 import { createWorkshopTools, toolLabel } from './tools.js';
-import { createDraft, loadDraft, saveDraftProgram, publishDraft } from './store.js';
+import { createDraft, loadDraft, saveDraftProgram, publishDraft, publishedProgramId } from './store.js';
 import { fetchWorkshopContext, renderContext, epley, contextCounts } from './context.js';
 import { WORKSHOP_WEB_SEARCH_DAILY_CAP } from './limits.js';
 import { runWebSearch } from './webSearch.js';
@@ -127,6 +127,21 @@ describe('publishDraft', () => {
     const b: any = await publishDraft(db, U, saved);
     expect(b.programId).toBe(a.programId);
     expect(db.tables.ziko_ai_generated_programs).toHaveLength(1);
+  });
+
+  it('revue B M6 : deux "Enregistrer" concurrents creent UN seul programme (meme id, pas de doublon ni de 500)', async () => {
+    const { db, draft, tools } = await setup();
+    await tools.workshop_set_draft.execute!({ program }, opts);
+    const rec = (await loadDraft(db, U, draft.id))!;
+    const [a, b, c]: any[] = await Promise.all([publishDraft(db, U, rec), publishDraft(db, U, rec), publishDraft(db, U, rec)]);
+    expect(a.programId).toBeTruthy();
+    expect(b.programId).toBe(a.programId);
+    expect(c.programId).toBe(a.programId);
+    expect(db.tables.ziko_ai_generated_programs).toHaveLength(1);
+    expect((await loadDraft(db, U, draft.id))!.saved_program_id).toBe(a.programId);
+    expect(publishedProgramId(draft.id)).toBe(a.programId);
+    expect(publishedProgramId(draft.id)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(publishedProgramId('other')).not.toBe(a.programId);
   });
 
   it('refuses an empty draft', async () => {
