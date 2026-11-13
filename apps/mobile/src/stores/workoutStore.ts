@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
+import { resolveExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
+import { exerciseNames } from '@ziko/plugin-sdk';
+import { classifyRestoredSession, classifyLiveSession } from '../lib/staleSession';
 
 const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
@@ -69,6 +72,11 @@ interface WorkoutState {
   saveSessionNotes: (id: string, notes: string) => void;
 
   restoreSession: () => Promise<void>;
+  /**
+   * Seance fantome : si la seance en cours est perimee (> STALE_SESSION_HOURS), la cloture sans credit ni XP
+   * (ou la supprime si aucune serie validee). Renvoie true si elle a ete retiree de l'etat.
+   */
+  settleStaleSession: () => Promise<boolean>;
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   /**
    * Single entry point for "start today's planned session" (TRAIN-01/02). Loads the AI program,
@@ -79,7 +87,10 @@ interface WorkoutState {
   startPlannedSession: (
     programId: string,
     dayIndex: number,
-  ) => Promise<{ ok: true; name: string; exerciseCount: number } | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error' }>;
+  ) => Promise<
+    | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[] }
+    | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error'; unresolved?: string[] }
+  >;
   endSession: () => Promise<void>;
   /** Drops an in-progress session that has no validated set (TRAIN-03): nothing is kept in DB. */
   discardSession: () => Promise<void>;
@@ -99,6 +110,52 @@ interface WorkoutState {
   updateProgramExercise: (exerciseId: string, data: Partial<ProgramExerciseInput>) => Promise<void>;
   removeProgramExercise: (exerciseId: string) => Promise<void>;
   reorderProgramExercises: (workoutId: string, exerciseIds: string[]) => Promise<void>;
+}
+
+/** Series validees d'une seance (plus recentes d'abord). Vide en cas d'erreur de lecture. */
+async function fetchCompletedSets(sessionId: string): Promise<Array<{ completed_at?: string | null; created_at?: string | null }>> {
+  try {
+    const { data } = await supabase
+      .from('ziko_session_sets')
+      .select('completed_at, created_at')
+      .eq('session_id', sessionId)
+      .eq('completed', true)
+      .order('created_at', { ascending: false });
+    return (data ?? []) as Array<{ completed_at?: string | null; created_at?: string | null }>;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Retire une seance ouverte perimee : 'discard' supprime la ligne et ses enfants ; 'autoclose' la termine a
+ * l'heure de sa derniere serie. Jamais de credit, jamais d'XP (ne passe PAS par endSession).
+ */
+async function closeOpenSession(
+  session: WorkoutSession,
+  verdict: 'discard' | 'autoclose',
+  sets: Array<{ completed_at?: string | null; created_at?: string | null }>,
+  userId: string,
+): Promise<void> {
+  try {
+    if (verdict === 'discard') {
+      await supabase.from('ziko_session_sets').delete().eq('session_id', session.id);
+      await supabase.from('ziko_session_exercises').delete().eq('session_id', session.id);
+      await supabase.from('ziko_workout_sessions').delete().eq('id', session.id);
+    } else {
+      const last = sets[0];
+      const endedAt = last?.completed_at ?? last?.created_at ?? session.started_at;
+      await supabase
+        .from('ziko_workout_sessions')
+        .update({ ended_at: endedAt, total_sets: sets.length })
+        .eq('id', session.id)
+        .is('ended_at', null);
+    }
+  } catch {
+    // best effort : la seance reste de toute facon retiree de la reprise ci-dessous
+  }
+  AsyncStorage.removeItem(sessionKey(userId)).catch(() => {});
+  useWorkoutStore.setState({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
 }
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
@@ -135,13 +192,35 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .is('ended_at', null)
         .single();
       if (data) {
-        set({ currentSession: data as WorkoutSession });
+        const open = data as WorkoutSession;
+        // Seance fantome : sans serie validee, ou ouverte depuis trop longtemps, on ne la propose plus.
+        const sets = await fetchCompletedSets(open.id);
+        const verdict = classifyRestoredSession({ startedAt: open.started_at, completedSets: sets.length });
+        if (verdict === 'resume') {
+          set({ currentSession: open });
+        } else {
+          await closeOpenSession(open, verdict, sets, user.id);
+        }
       } else {
         await AsyncStorage.removeItem(sessionKey(user.id));
       }
     } catch {
       await AsyncStorage.removeItem(sessionKey(user.id));
     }
+  },
+
+  settleStaleSession: async () => {
+    const { currentSession } = get();
+    const user = useAuthStore.getState().user;
+    if (!currentSession || !user) return false;
+    // Seance deja ecoulee en memoire : l'anciennete decide (cf. classifyLiveSession).
+    const early = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: 1 });
+    if (early === 'resume') return false;
+    const sets = await fetchCompletedSets(currentSession.id);
+    const verdict = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: sets.length });
+    if (verdict === 'resume') return false;
+    await closeOpenSession(currentSession, verdict, sets, user.id);
+    return true;
   },
 
   startSession: async (programWorkoutId, name) => {
@@ -231,30 +310,36 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     if (!picked) picked = plan[0];
     if (picked.exercises.length === 0) return { ok: false, reason: 'no_exercises' };
 
-    // Resolve exercise rows (by id first, then by exact name / French name)
+    // Resolve exercise rows : par id d'abord, puis par nom (exact normalise casse/accents, alias, unique plus
+    // proche, anglais <-> francais via exerciseNames). Un exercice non resolu NE bloque PAS la seance.
     const ids = picked.exercises.map((e) => e.exercise_id).filter(Boolean) as string[];
     const byId = new Map<string, Exercise>();
-    const byName = new Map<string, Exercise>();
     if (ids.length > 0) {
       const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
       (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
     }
-    const missingNames = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id)).map((e) => e.name);
-    if (missingNames.length > 0) {
-      const { data } = await supabase
-        .from('ziko_exercises')
-        .select('*')
-        .or(missingNames.flatMap((n) => [`name.ilike.${n.replace(/[,()]/g, ' ')}`, `name_fr.ilike.${n.replace(/[,()]/g, ' ')}`]).join(','));
-      (data ?? []).forEach((e: any) => {
-        byName.set(String(e.name ?? '').toLowerCase(), e as Exercise);
-        if (e.name_fr) byName.set(String(e.name_fr).toLowerCase(), e as Exercise);
-      });
+    const missing = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id));
+    let candidates: CatalogRow[] = [];
+    if (missing.length > 0) {
+      const patterns = [...new Set(missing.flatMap((e) => searchPatternsFor(e.name, exerciseNames)))];
+      if (patterns.length > 0) {
+        const { data } = await supabase
+          .from('ziko_exercises')
+          .select('*')
+          .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
+          .limit(300);
+        candidates = (data ?? []) as CatalogRow[];
+      }
     }
+    const unresolved: string[] = [];
 
     const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
     picked.exercises.forEach((pe) => {
-      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || byName.get(pe.name.toLowerCase());
-      if (!ex) return; // cannot log sets without a real exercise row (FK)
+      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || resolveExercise(pe.name, candidates, exerciseNames);
+      if (!ex) {
+        unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
+        return;
+      }
       const r = parseReps(pe.reps);
       workoutExercises.push({
         id: `planned-${picked!.sourceIndex}-${workoutExercises.length}`,
@@ -275,7 +360,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         isPlanned: true,
       } as any);
     });
-    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises' };
+    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
 
     const { data, error } = await supabase
       .from('ziko_workout_sessions')
@@ -294,7 +379,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const session = data as WorkoutSession;
     set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
     AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
-    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length };
+    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length, unresolved };
   },
 
   discardSession: async () => {

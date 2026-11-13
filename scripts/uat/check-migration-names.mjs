@@ -14,7 +14,7 @@ for (const f of readdirSync(dir)) {
   const m = f.match(/^20261201(\d{2})(\d{2})_[a-z0-9_]+\.sql$/);
   if (!m) { bad.push(`${f}: must match 20261201PPSS_description.sql`); continue; }
   const pp = Number(m[1]); const ss = Number(m[2]);
-  if (pp < 1 || pp > 28) bad.push(`${f}: PP must be 01-28 (27 = durcissement securite, 28 = correctifs revue B)`);
+  if (pp < 1 || pp > 29) bad.push(`${f}: PP must be 01-29 (27 = durcissement securite, 28 = correctifs revue B, 29 = correctifs UAT run4)`);
   if (ss < 1 || ss > 9) bad.push(`${f}: SS must be 01-09`);
   const k = m[1] + m[2];
   if (seen.has(k)) bad.push(`${f}: duplicate PPSS with ${seen.get(k)}`);

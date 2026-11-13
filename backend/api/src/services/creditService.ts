@@ -101,6 +101,7 @@ export async function earnCredits(
   });
 
   if (error || !data) {
+    if (error) console.error(`[creditService] earnCredits RPC failed (source=${source}): ${error.code ?? ''} ${error.message}`.trim());
     return { credited: false };
   }
 
@@ -134,6 +135,13 @@ export async function deductCredits(
   });
 
   if (error || !data) {
+    // Ne JAMAIS avaler : une RPC de debit en erreur (ex. 42P10 ON CONFLICT, GRANT manquant) laisse le
+    // solde et le ledger inchanges sans aucune trace cote HTTP (run4 P23 : 4 tours > quota, 200, rien
+    // de debite, rien de journalise). Le comportement de facturation reste inchange : on journalise.
+    console.error(
+      `[creditService] deductCredits failed (action=${action}, cost=${p_cost}): ` +
+        `${error ? `${error.code ?? ''} ${error.message}`.trim() : 'empty RPC result'}`,
+    );
     return { success: false, balance: 0, required: p_cost };
   }
 

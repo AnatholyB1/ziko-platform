@@ -13,13 +13,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getProgramWeekCount, getProgramSessionsPerWeek, getProgramSessionList } from '../lib/programShape';
+import { getProgramWeekCount, getProgramSessionsPerWeek } from '../lib/programShape';
+import { getProgramDisplayName, getProgramStatus } from '../lib/programStatus';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AIProgram {
   id: string;
   user_id: string;
+  name?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
   goal: string;
   program_data: Record<string, any> | null;
   is_active: boolean;
@@ -34,7 +38,7 @@ interface UserProfile {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getProgramName(p: AIProgram): string {
-  return p.program_data?.name ?? `Programme ${formatDateFr(new Date(p.created_at))}`;
+  return getProgramDisplayName(p, (d) => formatDateFr(d));
 }
 
 function getProgramWeeks(p: AIProgram): number {
@@ -46,13 +50,7 @@ function getProgramSessions(p: AIProgram): number {
 }
 
 function getProgramProgress(p: AIProgram): number {
-  // Derive a display progress (0–100) from JSONB; default 0
-  const sessions = getProgramSessionList(p.program_data);
-  if (Array.isArray(sessions) && sessions.length > 0) {
-    const done = sessions.filter((s: any) => s.completed).length;
-    return Math.round((done / sessions.length) * 100);
-  }
-  return p.is_active ? 20 : 100;
+  return getProgramStatus(p).progress;
 }
 
 function getGenerateAISuggestion(goal?: string, sessionsPerWeek?: number): string {
@@ -550,8 +548,9 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
             allPrograms.map((program) => {
               const name = getProgramName(program);
               const weeks = getProgramWeeks(program);
-              const progress = getProgramProgress(program);
               const isActive = program.id === activeProgram?.id || program.is_active;
+              const status = getProgramStatus(isActive ? { ...program, is_active: true } : program);
+              const isCompleted = status.kind === 'completed';
               const isReactivating = reactivatingId === program.id;
 
               return (
@@ -593,7 +592,7 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
                     </Text>
                     <View
                       style={{
-                        backgroundColor: isActive ? 'rgba(46,123,246,0.12)' : 'rgba(46,158,91,0.12)',
+                        backgroundColor: isActive ? 'rgba(46,123,246,0.12)' : isCompleted ? 'rgba(46,158,91,0.12)' : 'rgba(28,26,23,0.06)',
                         paddingHorizontal: 8,
                         paddingVertical: 3,
                         borderRadius: 999,
@@ -603,19 +602,19 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
                         style={{
                           fontSize: 11,
                           fontWeight: '700',
-                          color: isActive ? '#2E7BF6' : '#2E9E5B',
+                          color: isActive ? '#2E7BF6' : isCompleted ? '#2E9E5B' : theme.muted,
                         }}
                       >
-                        {isActive ? 'En cours' : 'Terminé'}
+                        {status.label}
                       </Text>
                     </View>
                   </View>
 
                   {/* Sub info */}
                   <Text style={{ fontSize: 13, color: theme.muted, marginBottom: 8 }}>
-                    {isActive
-                      ? `En cours · ${progress}% · ${weeks} sem`
-                      : `Terminé · 100% · ${weeks} sem`}
+                    {status.kind === 'unstarted'
+                      ? `Pas encore démarré · ${weeks} sem`
+                      : `${status.label} · ${status.progress}% · ${weeks} sem`}
                   </Text>
 
                   {/* Progress bar */}
@@ -629,10 +628,10 @@ export default function AIProgramsPlugin({ supabase }: { supabase: SupabaseClien
                   >
                     <View
                       style={{
-                        backgroundColor: isActive ? '#FF5C1A' : '#2E9E5B',
+                        backgroundColor: isActive ? '#FF5C1A' : isCompleted ? '#2E9E5B' : theme.muted,
                         height: 4,
                         borderRadius: 2,
-                        width: `${isActive ? Math.min(progress, 100) : 100}%`,
+                        width: `${Math.min(status.progress, 100)}%`,
                       }}
                     />
                   </View>

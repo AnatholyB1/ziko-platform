@@ -188,6 +188,15 @@ export function creditDeduct(action: CreditAction) {
     // Fire-and-forget: deduction errors must not fail the response the client already received
     creditService
       .deductCredits(userId, action, idempotencyKey)
+      .then((res) => {
+        // Un solde insuffisant au moment du debit (course) ou une RPC en erreur : le tour est deja
+        // servi, on ne peut plus refuser, mais la perte doit etre visible dans les logs.
+        if (res && res.success === false) {
+          console.error(
+            `[creditDeduct] charge NOT applied (action=${action}, user=${userId}, required=${res.required ?? '?'}, balance=${res.balance})`,
+          );
+        }
+      })
       .catch((err) => {
         console.error('[creditDeduct] deduction failed:', err);
       });
