@@ -935,6 +935,16 @@ const fr: TranslationDict = {
   'meal.fatField': 'Lipides (g)',
   'meal.grams': 'Quantité (g)',
   'meal.removeItem': 'Retirer',
+  // ── Crédits IA : feuille d'épuisement ──
+  'credits.exhausted.title': 'Crédits IA épuisés',
+  'credits.exhausted.hint': 'Complète des activités pour gagner des crédits',
+  'credits.exhausted.reset': 'Réinitialisation dans {countdown}',
+  'credits.earn.workout': 'Enregistrer une séance',
+  'credits.earn.habit': 'Valider tes habitudes du jour',
+  'credits.earn.meal': 'Enregistrer un repas',
+  'credits.earn.measurement': 'Enregistrer tes mesures corporelles',
+  'credits.earn.stretch': 'Faire une séance de mobilité',
+  'credits.earn.cardio': 'Enregistrer une séance de cardio',
 };
 
 // ── English translations ─────────────────────────────────
@@ -1865,6 +1875,16 @@ const en: TranslationDict = {
   'meal.fatField': 'Fat (g)',
   'meal.grams': 'Amount (g)',
   'meal.removeItem': 'Remove',
+  // ── AI credits: exhaustion sheet ──
+  'credits.exhausted.title': 'AI credits used up',
+  'credits.exhausted.hint': 'Complete activities to earn credits',
+  'credits.exhausted.reset': 'Resets in {countdown}',
+  'credits.earn.workout': 'Log a workout',
+  'credits.earn.habit': 'Complete your daily habits',
+  'credits.earn.meal': 'Log a meal',
+  'credits.earn.measurement': 'Log body measurements',
+  'credits.earn.stretch': 'Complete a stretch',
+  'credits.earn.cardio': 'Log a cardio session',
 };
 
 // ── All translations ─────────────────────────────────────

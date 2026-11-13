@@ -458,17 +458,21 @@ export async function revokeClientLinkByCoach(
   jwt: string,
   coachId: string,
   clientId: string,
-): Promise<{ revoked_at: string }> {
+): Promise<{ revoked_at: string | null; count: number }> {
   const db = createUserClient(jwt);
   const revokedAt = new Date().toISOString();
-  const { error } = await db
+  // select('id') : on veut le NOMBRE de lignes modifiees. Une revocation qui ne
+  // modifie aucune ligne ne doit jamais etre presentee comme un succes (run3 MC-8).
+  const { data, error } = await db
     .from('ziko_coach_client_links')
     .update({ revoked_at: revokedAt })
     .eq('coach_id', coachId)
     .eq('client_id', clientId)
-    .is('revoked_at', null);
+    .is('revoked_at', null)
+    .select('id');
   if (error) throw new Error(error.message);
-  return { revoked_at: revokedAt };
+  const count = data?.length ?? 0;
+  return { revoked_at: count > 0 ? revokedAt : null, count };
 }
 
 // ----- GET /:id/summary — executive summary aggregates (CLIENT-04) -----

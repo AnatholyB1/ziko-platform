@@ -68,6 +68,10 @@ export async function coach_revoke_link(
 
   const result = await revokeLink(userToken, userId, link.id);
 
+  if (!result.revoked_at) {
+    return { ok: false, error: 'revoke_failed', message: 'The coach link could not be revoked.' };
+  }
+
   return {
     ok: true,
     link_id: link.id,

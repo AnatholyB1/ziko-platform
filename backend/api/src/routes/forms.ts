@@ -8,6 +8,17 @@ const supabase = createClient(
   process.env.SUPABASE_PUBLISHABLE_KEY!,
 );
 
+// Client PORTEUR DU JWT de l'athlete : le client ci-dessus est anonyme (auth.uid() NULL), donc la RLS
+// (form_instances_athlete / form_responses_athlete) renvoie 0 ligne. Les routes athlete lisent/ecrivent
+// ses propres lignes via ce client (run3 : /athlete/forms/pending).
+function athleteDb(c: { req: { header: (n: string) => string | undefined } }) {
+  const jwt = c.req.header('Authorization')?.slice(7) ?? '';
+  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+  });
+}
+
 // ziko_create_form_instances_for_trigger est reservee a service_role (migration 202612012701).
 const formsRpc = createServiceRpcClient();
 
@@ -236,12 +247,12 @@ router.post('/coach/forms/:id/send', async (c) => {
 router.get('/athlete/forms/pending', async (c) => {
   const { userId } = c.get('auth');
   try {
-    const { data, error } = await supabase
+    const { data, error } = await athleteDb(c)
       .from('ziko_form_instances')
       .select(`
         id,
         form_id,
-        coach_forms!inner (
+        coach_forms:ziko_coach_forms!inner (
           title,
           questions
         )
@@ -286,7 +297,8 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
     const { answers } = body as { answers?: unknown[] };
 
     // Fetch the instance and verify ownership
-    const { data: instance, error: fetchError } = await supabase
+    const db = athleteDb(c);
+    const { data: instance, error: fetchError } = await db
       .from('ziko_form_instances')
       .select('id, status, form_id')
       .eq('id', instanceId)
@@ -302,7 +314,7 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
     }
 
     // Insert form_responses
-    const { data: responseRow, error: insertError } = await supabase
+    const { data: responseRow, error: insertError } = await db
       .from('ziko_form_responses')
       .insert({
         instance_id: instanceId,
@@ -315,7 +327,7 @@ router.post('/athlete/forms/:instanceId/submit', async (c) => {
     if (insertError) throw insertError;
 
     // Update instance status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from('ziko_form_instances')
       .update({ status: 'submitted', submitted_at: new Date().toISOString() })
       .eq('id', instanceId);

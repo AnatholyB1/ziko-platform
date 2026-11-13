@@ -4,7 +4,7 @@
 //   POST   /links/preview    — peek a code; constant-time envelope; rate-limited
 //   POST   /links/redeem     — redeem a code; constant-time envelope; rate-limited
 //   GET    /links/history    — athlete's past (revoked) coaches, read-only (P25 MCOA-03)
-//   DELETE /links/:id        — athlete revokes own link (INVITE-06)
+//   DELETE /links/:id        — athlete (link id) OR coach (client id) revokes; 404 if 0 row
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
 import { createServiceRpcClient } from '../../lib/serviceClient.js';
@@ -303,36 +303,29 @@ clientsRouter.put('/:id/notes', async (c) => {
   }
 });
 
-// DELETE /links/:clientId — COACH-side revoke (CLIENT-08, D-20)
-// NOTE: registered BEFORE DELETE /links/:id (athlete-side) — Hono matches in registration order.
-// coach handler checks coach_id = userId; athlete handler checks client_id = userId.
-// Both are safe independently due to their WHERE clause authorization.
-clientsRouter.delete('/links/:clientId', async (c) => {
-  const { userId } = c.get('auth');
-  const jwt = c.req.header('Authorization')!.slice(7);
-  const clientId = c.req.param('clientId');
-  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
-  try {
-    const result = await revokeClientLinkByCoach(jwt, userId, clientId);
-    return c.json({ ok: true, revoked_at: result.revoked_at });
-  } catch (err: any) {
-    console.error('[coach/clients] DELETE /links/:clientId error:', err.message);
-    console.error('[coach/clients] unexpected error:', err?.message);
-    return c.json({ error: 'Internal error' }, 500);
-  }
-});
-
-// DELETE /coach/clients/links/:id — athlete revoke (INVITE-06)
+// DELETE /coach/clients/links/:id — UN SEUL handler pour les deux roles (INVITE-06 + CLIENT-08).
+// Avant run3 : deux routes `/links/:x` de meme forme ; Hono prenait la premiere (coach) qui ne
+// modifiait aucune ligne pour un athlete et repondait 200 (retrait jamais effectif, MC-8).
+// Resolution du parametre :
+//   1. athlete : `id` = id d'un lien ACTIF dont l'appelant est client_id (mobile : link.id)
+//   2. coach   : `id` = client_id d'un lien ACTIF dont l'appelant est coach_id (web)
+// Les deux passent par le JWT utilisateur : RLS + trigger ziko_coach_link_guard posent `revoked_by`
+// ('client' / 'coach') sans que l'appelant puisse le falsifier. 0 ligne modifiee -> 404, jamais 200.
 clientsRouter.delete('/links/:id', async (c) => {
   const { userId } = c.get('auth');
   const jwt = c.req.header('Authorization')!.slice(7);
   const id = c.req.param('id');
   if (!UUID_REGEX.test(id)) return c.json({ error: 'Invalid id format' }, 400);
   try {
-    await revokeLink(jwt, userId, id);
-    return c.json({ ok: true });
+    const own = await revokeLink(jwt, userId, id);
+    if (own.revoked_at) return c.json({ ok: true, revoked_at: own.revoked_at, revoked_by: 'client' });
+    const asCoach = await revokeClientLinkByCoach(jwt, userId, id);
+    if (asCoach.count > 0) {
+      return c.json({ ok: true, revoked_at: asCoach.revoked_at, revoked_by: 'coach' });
+    }
+    return c.json({ error: 'Link not found or already revoked' }, 404);
   } catch (err: any) {
-    console.error('[coach/clients] unexpected error:', err?.message);
+    console.error('[coach/clients] DELETE /links/:id error:', err?.message);
     return c.json({ error: 'Internal error' }, 500);
   }
 });

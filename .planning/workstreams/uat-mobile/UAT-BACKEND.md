@@ -53,8 +53,17 @@ aucun changement de code dans `backend/api/src` (prod inchangee). `POST /v1/mess
   (suffixe `::force` pour emettre meme si l'outil n'est pas liste dans la requete); (2) file d'attente
   `POST http://127.0.0.1:8211/__script {"tool":"...","input":{...},"count":1}` (GET liste + journal, DELETE vide);
   (3) env `FAKE_ANTHROPIC_TOOL` / `FAKE_ANTHROPIC_TOOL_INPUT` systematique.
-- Apres un `tool_result`, repond un texte de confirmation (pas de boucle `stopWhen`).
-- Journal des appels: `GET /__script` (champ `log`: modele, stream, nb d'outils, decision).
+- Scripter 2 tours (outil puis reponse) pour LIRE le resultat/les codes d'erreur de l'outil (run3 P16): le SDK
+  (`stopWhen: stepCountIs(5)`) renvoie lui-meme un 2e appel `/v1/messages` dont le dernier message est un
+  `tool_result`. Le faux y repond `C'est fait ... Resultat de l'outil : <outil> [erreur] -> <contenu du tool_result>`
+  (le texte remonte dans la reponse du chat) ET journalise `tool_results: [{tool, is_error, content}]` dans
+  `GET /__script` -> `log[]` (dernier element). Exemple: `POST /__script {"tool":"measurements_set_goal","input":{...}}`,
+  envoyer le message de chat, puis lire `log` : `content` = `{"ok":false,"error":"goal_exists"}`.
+  `FAKE_ANTHROPIC_ECHO_RESULT=0` retablit l'ancien texte generique (le journal reste renseigne).
+- Enchainer 2 outils: entree de file `{"tool":"b","input":{...},"afterResult":true}` = emise APRES le resultat du
+  1er outil (tour 2), le texte final n'arrive qu'au tour 3. Test: `scripts/uat/fake-anthropic.test.ts` (processus reel).
+- Apres un `tool_result` sans entree `afterResult`, repond le texte (pas de boucle).
+- Journal des appels: `GET /__script` (champ `log`: modele, stream, nb d'outils, decision, `tool_results`).
 
 ## Preuves (2026-11-12)
 - `GET /health` -> 200.
