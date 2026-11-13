@@ -7,7 +7,7 @@ const nutritionManifest: PluginManifest = {
   name: 'Suivi nutritionnel',
   version: '1.0.0',
   description:
-    'Track your daily nutrition: log meals, monitor macros, and get AI-powered dietary advice tailored to your fitness goals.',
+    "Suis ton alimentation au quotidien : enregistre tes repas, surveille tes macros et reçois des conseils nutritionnels IA adaptés à tes objectifs.",
   icon: 'restaurant',
   category: 'nutrition',
   price: 'free',

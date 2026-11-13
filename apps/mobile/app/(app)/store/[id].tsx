@@ -12,6 +12,7 @@ import { uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 import { showAlert, formatDateFr } from '@ziko/plugin-sdk';
 
 import { usePluginRegistry, useTranslation, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
+import { storeDescription } from '../../../src/lib/pluginCopy';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 
 // ── Design tokens ──────────────────────────────────────────
@@ -281,7 +282,7 @@ export default function PluginDetailScreen() {
 
             {/* Short description */}
             <Text style={{ fontSize: 13, color: 'rgba(255,250,246,0.7)', marginTop: 10, lineHeight: 20 }}>
-              {manifest.description}
+              {storeDescription(String(id), manifest.description)}
             </Text>
 
             {/* Full-width CTA */}
@@ -337,7 +338,7 @@ export default function PluginDetailScreen() {
           {/* ── À propos ────────────────────── */}
           <Card>
             <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 10 }}>À propos</Text>
-            <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22 }}>{manifest.description}</Text>
+            <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22 }}>{storeDescription(String(id), manifest.description)}</Text>
             {/* Screenshots */}
             {screenshots && screenshots.length > 0 && (
               <ScrollView

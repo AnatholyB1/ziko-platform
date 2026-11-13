@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
+import { storeDescription } from '../../../src/lib/pluginCopy';
 import PluginStoreButton from '../../../src/components/PluginStoreButton';
 import { isMandatoryPlugin, uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 
@@ -290,7 +291,7 @@ export default function PluginStoreScreen() {
                       numberOfLines={2}
                       style={{ fontSize: 12, color: 'rgba(255,250,246,0.65)', marginTop: 4, lineHeight: 18 }}
                     >
-                      {m.description}
+                      {storeDescription(p.plugin_id, m.description)}
                     </Text>
 
                     {/* Install CTA */}
@@ -390,7 +391,7 @@ const PluginCard = React.memo(function PluginCard({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{m.name}</Text>
           <Text numberOfLines={2} style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 17 }}>
-            {m.description}
+            {storeDescription(plugin.plugin_id, m.description)}
           </Text>
           {rating ? (
             <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
