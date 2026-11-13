@@ -14,6 +14,7 @@ import FriendRelationButton from '@ziko/plugin-community/components/FriendRelati
 import { getOrCreateDMConversation, acceptFriendRequest, declineFriendRequest, cancelFriendRequest, removeFriend } from '@ziko/plugin-community/store';
 import { supabase, sessionManager } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
+import PrivateProfileNotice from '../../../src/components/PrivateProfileNotice';
 
 // Profil public (P21, SOC-04/06/07/08). Donnees : RPC ziko_get_public_profile (bornee au contrat,
 // jamais de sante / poids). Un profil qui ne charge pas affiche la carte D14, jamais un contenu partiel.
@@ -292,6 +293,10 @@ export default function PublicProfileScreen() {
             </View>
           ) : null}
 
+          {profile.is_private ? (
+            <PrivateProfileNotice name={name} />
+          ) : (
+          <>
           {/* Amis / abonnes (Q-P21c : abonnes = amities acceptees ou le profil est destinataire) */}
           <View style={{ flexDirection: 'row', gap: 24, marginTop: 14 }}>
             <View>
@@ -418,6 +423,9 @@ export default function PublicProfileScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          )}
+
+          </>
           )}
 
           {/* Actions d'un ami (deplacees depuis la liste d'amis : Message, Comparer, Cadeau) */}
