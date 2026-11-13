@@ -16,3 +16,10 @@ Methode : `[[tool:measurements_goals {...}]]` puis SQL branche. Le faux ne renvo
 
 ## Run 7 (2026-11-13)
 IM-1..3, IM-8..12, IM-14 : NON-TESTE (arret par budget de contexte; prochaine etape dans UAT-RUN7-RESUME.md)
+
+## Run 8 (2026-11-13) - faux Anthropic (`/__script`), chat via `uat-evidence/tool.sh`
+- IM-1 PASS (backend) : `/ai/onboarding/stream` + faux `set_measure_goal waist_cm 90->84` -> événement SSE `type:goal` + ligne `ziko_athlete_goals` ; rendu de la carte dans l'écran d'onboarding NON-TESTE (compte neuf requis). IM-2 PASS : `target_equals_start`, pas de ligne. IM-14 PASS : aucun débit crédit (solde 20 inchangé), lignes `ziko_ai_cost_log` source `onboarding_assess`.
+- IM-3 PASS : onglet Mesures > Objectifs liste les objectifs avec %, aucun bouton de modification (seulement `Définir le suivant` sur l'objectif atteint).
+- IM-5 PASS (`start_value_required`, aucune ligne), IM-6 PASS (`goal_too_recent`, seuil réel 28 j), IM-7 PASS (`reason_not_allowed`).
+- IM-8 PASS : `start_date` antidaté 40 j (UPDATE avec `session_replication_role=replica`, le trigger `measurement_goal_locked` bloque sinon), 2 mesures, `revise stagnation 69.5` : cible 68 -> 69.5, ligne `ziko_goal_revisions`, `must_tell_user` présent. IM-9 PASS : bandeau `Ziko a ajusté ton objectif / Cible 68 → 69,5 kg / Raison : Ta progression est stable depuis plus de 4 semaines`, `Compris` -> `acknowledged_at` rempli, bandeau disparu (capture `uat-evidence/p16/im9.png`). IM-10 PASS (`revision_too_soon`, délai 14 j). IM-11 PASS (`user_statement_required` puis succès, phrase journalisée). IM-12 PARTIEL : quête `Mets à jour : poids` créée (hebdo, cible 2, 168 h, 40 pièces, `free_slots_left:1`) ; complétion et refus `max_active_quests` NON-TESTE.
+- Mineur : `reason_detail` d'une stagnation dit `Progression de 0 % sur 35 j.` (cohérent avec le seed).
