@@ -131,6 +131,7 @@ export function normalizeProposals(raw: unknown, max: number, meta?: Record<stri
 export type ClaimReason =
   | 'requested'
   | 'no_quest'
+  | 'starters_done'
   | 'level_up'
   | 'full'
   | 'not_needed'

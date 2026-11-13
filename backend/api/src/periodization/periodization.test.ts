@@ -312,6 +312,31 @@ describe('runRelaunchPropose (UN appel IA automatique, absorbe)', () => {
     expect(db.tables.ziko_workshop_drafts[0].program_data).toEqual({});
   });
 
+  it('revue B M4 : une panne du modele consomme le plafond du jour (pas de rappel en boucle vers le fournisseur)', async () => {
+    const { db, relaunchId } = await closedState();
+    const failing = fakeRunner({ throws: true });
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const deps = { db, userId: U, relaunchId, now: NOW, runner: failing.runner, appendMessages: vi.fn(async () => undefined) };
+    await runRelaunchPropose(deps);
+    expect(db.tables.ziko_ai_cost_log).toEqual([expect.objectContaining({ user_id: U, source: 'program_relaunch', input_tokens: 0 })]);
+    for (let i = 0; i < 5; i++) {
+      const again = await runRelaunchPropose(deps);
+      expect(again).toMatchObject({ status: 'pending', skipped: 'daily_cap' });
+    }
+    expect(failing.calls).toHaveLength(1);
+  });
+
+  it('revue B M4 : la reservation est faite AVANT l\'appel (le plafond est deja pris pendant que le modele tourne)', async () => {
+    const { db, relaunchId } = await closedState();
+    let seenDuringCall = -1;
+    const slow = async (args: any) => {
+      seenDuringCall = (db.tables.ziko_ai_cost_log ?? []).filter((r: any) => r.source === 'program_relaunch').length;
+      return fakeRunner().runner(args);
+    };
+    await runRelaunchPropose({ db, userId: U, relaunchId, now: NOW, runner: slow as any, appendMessages: vi.fn(async () => undefined) });
+    expect(seenDuringCall).toBe(1);
+  });
+
   it('le modele n\'a rien ecrit dans le brouillon : pending, pas de message d\'historique', async () => {
     const { db, relaunchId } = await closedState();
     const { runner } = fakeRunner({ setDraft: false });

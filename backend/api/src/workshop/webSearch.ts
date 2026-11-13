@@ -5,7 +5,7 @@
 import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { AGENT_MODEL } from '../config/models.js';
-import { logAutonomousCost, SOURCES, type CostLogDb } from '../lib/autonomousCost.js';
+import { reserveCostSlot, settleCostSlot } from '../lib/costReservation.js';
 import { WORKSHOP_WEB_SEARCH_DAILY_CAP, WORKSHOP_WEB_SEARCH_SOURCE } from './limits.js';
 
 export interface WebSearchResult {
@@ -50,23 +50,29 @@ export async function runWebSearch(
   now = new Date(),
 ): Promise<WebSearchResult> {
   if (!query || query.trim().length < 3) return { ok: false, summary: 'query too short', sources: [], reason: 'error' };
-  const used = await countWebSearchesToday(db, userId, now);
-  if (used >= WORKSHOP_WEB_SEARCH_DAILY_CAP) {
+  // Revue B (M5) : slot reserve AVANT l'appel (insert atomique + rang du jour) ; un echec du runner le consomme aussi
+  // (l'API de recherche a pu etre facturee), et des tours paralleles ne depassent pas le plafond.
+  const slot = await reserveCostSlot(db, {
+    userId,
+    source: WORKSHOP_WEB_SEARCH_SOURCE,
+    model: AGENT_MODEL.modelId,
+    dailyCap: WORKSHOP_WEB_SEARCH_DAILY_CAP,
+    now,
+  });
+  if (!slot.ok) {
     return {
       ok: false,
-      summary: 'Daily web search limit reached. Continue without the web and say so to the user.',
+      summary:
+        slot.reason === 'daily_cap'
+          ? 'Daily web search limit reached. Continue without the web and say so to the user.'
+          : 'Web search unavailable. Continue without the web and say so to the user.',
       sources: [],
-      reason: 'daily_cap',
+      reason: slot.reason === 'daily_cap' ? 'daily_cap' : 'error',
     };
   }
   try {
     const out = await runner(query.trim());
-    logAutonomousCost(db as CostLogDb, {
-      userId,
-      model: 'claude-sonnet-4-20250514',
-      usage: out.usage,
-      source: SOURCES.workshopWebSearch,
-    });
+    await settleCostSlot(db, slot.id, out.usage);
     return {
       ok: true,
       summary: out.text.slice(0, 2500),

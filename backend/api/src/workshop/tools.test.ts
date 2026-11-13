@@ -11,6 +11,7 @@ import { createWorkshopTools, toolLabel } from './tools.js';
 import { createDraft, loadDraft, saveDraftProgram, publishDraft } from './store.js';
 import { fetchWorkshopContext, renderContext, epley, contextCounts } from './context.js';
 import { WORKSHOP_WEB_SEARCH_DAILY_CAP } from './limits.js';
+import { runWebSearch } from './webSearch.js';
 import { normalizeProgram } from './draft.js';
 import { TRAINING_SKILLS, getSkill } from './skills.js';
 
@@ -197,7 +198,28 @@ describe('skills and web search', () => {
     });
     const res: any = await tools.workshop_web_search.execute!({ query: 'anything here' }, opts);
     expect(res).toMatchObject({ ok: false, reason: 'error' });
-    expect(db.tables.ziko_ai_cost_log ?? []).toHaveLength(0);
+    // Revue B (M5) : l'appel en echec consomme quand meme un slot (la recherche a pu etre facturee).
+    expect(db.tables.ziko_ai_cost_log).toEqual([expect.objectContaining({ user_id: U, source: 'workshop_web_search', input_tokens: 0, output_tokens: 0 })]);
+  });
+
+  it('revue B M5 : 30 recherches simultanees -> au plus le plafond du jour part au fournisseur', async () => {
+    const db: any = createFakeDb();
+    const runner = vi.fn(async () => ({ text: 'ok', sources: [], usage: { inputTokens: 1, outputTokens: 1 } }));
+    const results = await Promise.all(Array.from({ length: 30 }, (_, i) => runWebSearch(db, U, `parallel query ${i}`, runner as any)));
+    expect(runner).toHaveBeenCalledTimes(WORKSHOP_WEB_SEARCH_DAILY_CAP);
+    expect(results.filter((r) => r.ok)).toHaveLength(WORKSHOP_WEB_SEARCH_DAILY_CAP);
+    expect(results.filter((r) => !r.ok && r.reason === 'daily_cap')).toHaveLength(30 - WORKSHOP_WEB_SEARCH_DAILY_CAP);
+  });
+
+  it('revue B M5 : les echecs consomment le plafond (20 echecs => la 21e recherche est refusee sans appel)', async () => {
+    const db: any = createFakeDb();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const runner = vi.fn(async () => { throw new Error('provider down'); });
+    const base = Date.now();
+    for (let i = 0; i < WORKSHOP_WEB_SEARCH_DAILY_CAP; i++) await runWebSearch(db, U, `failing query ${i}`, runner as any, new Date(base + i * 1000));
+    const res = await runWebSearch(db, U, 'one more query', runner as any, new Date(base + 60_000));
+    expect(res).toMatchObject({ ok: false, reason: 'daily_cap' });
+    expect(runner).toHaveBeenCalledTimes(WORKSHOP_WEB_SEARCH_DAILY_CAP);
   });
 
   it('labels tools for the UI chips', () => {
