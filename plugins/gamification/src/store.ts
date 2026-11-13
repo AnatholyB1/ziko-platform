@@ -220,13 +220,13 @@ async function updateStreak(supabase: any, userId: string, profile: Gamification
       if (xpAmount > 0) {
         await supabase.rpc('ziko_award_xp', {
           p_user_id: userId, p_amount: xpAmount, p_source: 'streak_bonus',
-          p_source_id: null, p_description: `🔥 Streak ${milestone} jours !`,
+          p_source_id: null, p_description: `Streak ${milestone} jours !`,
         });
       }
       if (coinAmount > 0) {
         await supabase.rpc('ziko_award_coins', {
           p_user_id: userId, p_amount: coinAmount, p_source: 'streak_bonus',
-          p_source_id: null, p_description: `🔥 Bonus streak ${milestone} jours`,
+          p_source_id: null, p_description: `Bonus streak ${milestone} jours`,
         });
       }
     }
@@ -245,11 +245,11 @@ export async function awardWorkoutXP(supabase: any, sessionId: string) {
 
   await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.workout, p_source: 'workout',
-    p_source_id: sessionId, p_description: `💪 Séance terminée : +${XP_REWARDS.workout} XP`,
+    p_source_id: sessionId, p_description: `Séance terminée : +${XP_REWARDS.workout} XP`,
   });
   await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.workout, p_source: 'workout',
-    p_source_id: sessionId, p_description: `💰 Séance terminée : +${COIN_REWARDS.workout} pièces`,
+    p_source_id: sessionId, p_description: `Séance terminée : +${COIN_REWARDS.workout} pièces`,
   });
   // D-08 : l'attribution des succes suit la fin de seance (jamais bloquant).
   await awardBadges(supabase);
@@ -267,11 +267,11 @@ export async function awardHabitXP(supabase: any, habitName: string) {
 
   await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.habit, p_source: 'habit',
-    p_source_id: null, p_description: `✅ ${habitName} : +${XP_REWARDS.habit} XP`,
+    p_source_id: null, p_description: `${habitName} : +${XP_REWARDS.habit} XP`,
   });
   await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.habit, p_source: 'habit',
-    p_source_id: null, p_description: `💰 ${habitName} : +${COIN_REWARDS.habit} pièces`,
+    p_source_id: null, p_description: `${habitName} : +${COIN_REWARDS.habit} pièces`,
   });
 }
 
