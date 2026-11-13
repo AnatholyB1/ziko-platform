@@ -1,11 +1,15 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth.js';
 import { createClient } from '@supabase/supabase-js';
+import { createServiceRpcClient } from '../lib/serviceClient.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_PUBLISHABLE_KEY!,
 );
+
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 202612012701).
+const formsRpc = createServiceRpcClient();
 
 const router = new Hono();
 router.use('*', authMiddleware);
@@ -139,7 +143,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
     // Distribute form instances after activation
     if (target === 'one' && client_id) {
       // Send to one specific client
-      const { error: rpcErr } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
+      const { error: rpcErr } = await formsRpc.rpc('ziko_create_form_instances_for_trigger', {
         p_trigger_type: 'manual',
         p_athlete_id: client_id,
         p_coach_id: userId,
@@ -157,7 +161,7 @@ router.post('/coach/forms/:id/publish', async (c) => {
         console.warn('[POST /coach/forms/:id/publish] clients fetch error:', clientsErr.message);
       } else {
         for (const link of linkedClients ?? []) {
-          const { error: rpcErr } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
+          const { error: rpcErr } = await formsRpc.rpc('ziko_create_form_instances_for_trigger', {
             p_trigger_type: 'manual',
             p_athlete_id: link.client_id,
             p_coach_id: userId,
@@ -210,7 +214,7 @@ router.post('/coach/forms/:id/send', async (c) => {
 
     let totalCount = 0;
     for (const athleteId of athlete_ids as string[]) {
-      const { data, error } = await supabase.rpc('ziko_create_form_instances_for_trigger', {
+      const { data, error } = await formsRpc.rpc('ziko_create_form_instances_for_trigger', {
         p_trigger_type: 'manual',
         p_athlete_id: athleteId,
         p_coach_id: userId,
@@ -368,7 +372,7 @@ cronRouter.get('/cron/trigger-fixed-date', async (c) => {
       }
 
       for (const athlete of athletes ?? []) {
-        const { data, error: rpcErr } = await supabase.rpc(
+        const { data, error: rpcErr } = await formsRpc.rpc(
           'ziko_create_form_instances_for_trigger',
           {
             p_trigger_type: 'fixed_date',
