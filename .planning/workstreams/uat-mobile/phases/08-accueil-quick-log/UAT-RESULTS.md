@@ -11,3 +11,9 @@
 | U16-U17 | NON-TESTE | |
 | U18 | PASS | Reseau coupe + tap eau : alerte "Eau non enregistree - Verifie ta connexion et reessaie." ; retour de la tuile non verifie. |
 Layout shift grille Quick Log non reproduit (5 taps a coordonnees fixes ont tous compte).
+
+## Run 6 (2026-11-13, uat/run6)
+- Accueil programme coach actif : PASS ('0 exos' = fixture sans exercices)
+- Eau stable 2.6L / 2.0L x3 relances a froid : PASS
+- kcal sans objectif (490 kcal) ; badge '1 jours' ; invalidation apres seance NON-TESTE (nav cassee P6)
+Detail : ../../UAT-RESULTS-run6.md
