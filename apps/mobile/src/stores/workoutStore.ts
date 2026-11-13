@@ -4,7 +4,7 @@ import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramE
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
-import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
+import { normalizePlanSessions, parseReps, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
 import { loadProgramForSession } from '../lib/activeProgram';
 import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
@@ -159,6 +159,27 @@ async function closeOpenSession(
   useWorkoutStore.setState({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
 }
 
+/**
+ * Une seule seance ouverte a la fois (UAT run 6 : un 2e demarrage laissait la 1re ouverte). Avant d'en
+ * creer une nouvelle on ferme les precedentes : sans serie validee => supprimee, sinon terminee a l'heure
+ * de sa derniere serie. Best effort : un echec ici ne bloque jamais le demarrage.
+ */
+async function closeStaleOpenSessions(userId: string): Promise<void> {
+  try {
+    const { data } = await supabase
+      .from('ziko_workout_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .is('ended_at', null);
+    for (const open of (data ?? []) as WorkoutSession[]) {
+      const sets = await fetchCompletedSets(open.id);
+      await closeOpenSession(open, sets.length === 0 ? 'discard' : 'autoclose', sets, userId);
+    }
+  } catch {
+    // best effort
+  }
+}
+
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   currentSession: null,
   lastCompletedSession: null,
@@ -266,13 +287,14 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       }
     }
 
+    await closeStaleOpenSessions(user.id);
     const { data, error } = await supabase
       .from('ziko_workout_sessions')
       .insert({
         user_id: user.id,
         program_workout_id: programWorkoutId ?? null,
         program_id: programId,
-        name: name ?? 'Quick Workout',
+        name: resolveSessionName(name),
         started_at: new Date().toISOString(),
         day_of_week: new Date().getDay() || 7,
       })
@@ -367,6 +389,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     });
     if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
 
+    await closeStaleOpenSessions(user.id);
+    const sessionName = resolveSessionName(picked.name, (program as any).name);
     const { data, error } = await supabase
       .from('ziko_workout_sessions')
       .insert({
@@ -374,7 +398,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         // programme coach : la seance reste rattachee a son programme / sa journee ; IA : pas de FK.
         program_workout_id: program.kind === 'coach' ? (program.program_data?.sessions?.[picked.sourceIndex]?.workout_id ?? null) : null,
         program_id: program.kind === 'coach' ? program.id : null,
-        name: picked.name,
+        name: sessionName,
         started_at: new Date().toISOString(),
         day_of_week: new Date().getDay() || 7,
       })
@@ -385,7 +409,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const session = data as WorkoutSession;
     set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
     AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
-    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length, unresolved, replaced };
+    return { ok: true, name: sessionName, exerciseCount: workoutExercises.length, unresolved, replaced };
   },
 
   discardSession: async () => {

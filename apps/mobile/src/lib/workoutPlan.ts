@@ -227,3 +227,19 @@ export function filterCountableSessions<T extends CountableSessionLike>(sessions
 export function shouldPersistSession(completedSetsCount: number): boolean {
   return completedSetsCount > 0;
 }
+
+/** Nom par defaut d'une seance sans programme (remplace l'ancien 'Quick Workout' anglais). */
+export const DEFAULT_SESSION_NAME = 'Séance libre';
+
+/**
+ * Nom affichable d'une seance : un nom de jour de programme trop court / peu parlant ("A", "B", "1") est
+ * prefixe du nom du programme quand il existe ; sinon 'Séance libre'.
+ */
+export function resolveSessionName(raw: string | null | undefined, programName?: string | null): string {
+  const name = (raw ?? '').trim();
+  const prog = (programName ?? '').trim();
+  if (name.length >= 3) return name;
+  if (name && prog) return `${prog} · ${name}`;
+  if (prog) return prog;
+  return DEFAULT_SESSION_NAME;
+}
