@@ -1,0 +1,30 @@
+# FIX run4 (branche fix/uat-run4, base milestone/v1.20)
+
+## Corrige
+
+1. **P23 quota gratuit "non decompte" : faux negatif, cause reelle = debit casse + erreur avalee.**
+   Rejoue sur la BRANCHE de test (`oloobswzsziidjwycthm`, jamais la prod) :
+   - INSERT exact `type='quota'` en role `service_role` : OK (le trigger `balance_after` stampe 20) ; en role `anon` : `42501 permission denied` (GRANT revoque par le durcissement). Les GRANT/RLS/contrainte/colonnes ne sont donc PAS la cause tant que le backend utilise la cle service (c'est le cas en prod ; si l'env local n'avait que la cle publishable, l'insert etait refuse et journalise).
+   - Le ledger de l'athlete contenait DEJA, ce jour UTC, 3 lignes `quota/chat` (00:23 UTC) + 6 gains (`earn`) : plafond chat = 1 + min(gains, 2) = 3. Les 4 tours du run4 etaient donc HORS quota gratuit et partaient sur la voie "solde" : `creditDeduct` -> RPC `ziko_deduct_ai_credits` -> 42P10 (ON CONFLICT sans predicat), erreur retournee par supabase-js et **ignoree** (`deductCredits` renvoyait `{success:false}`, que `creditDeduct` jetait). D'ou 200, ledger/solde inchanges, rien dans le log.
+   - Correction (commit `4200697d`) : journalisation uniquement. `deductCredits`/`earnCredits` loggent le code/message d'erreur RPC ; `creditDeduct` logge `charge NOT applied` si `success:false`. Aucune ligne de facturation modifiee.
+   - Test : `backend/api/src/middleware/creditQuotaStrict.integration.test.ts` (vrai `creditCheck`+`creditDeduct`+`creditService`, faux client STRICT : insert refuse si role != service_role / type hors CHECK / doublon ; flag absent, tier free, 2 gains). 3 cas : 3 tours gratuits -> 3 lignes quota sans erreur ; 4e tour avec RPC 42P10 -> 200, ledger/solde inchanges ET erreur journalisee ; insert anon 42501 -> journalise, reponse 200.
+   - **Interaction avec le debit casse (DIFFERE, non active)** : tant que `ziko_deduct_ai_credits` leve 42P10, tout tour AU-DELA du quota gratuit est servi GRATUITEMENT (cout IA non facture) ; le quota gratuit lui-meme est bien decompte et borne. Le 402 n'arrive que si le solde est < cout. La correction de la facturation (predicat ON CONFLICT de la RPC) reste a faire au deploiement, par decision utilisateur ; les logs `[creditService] deductCredits failed ... 42P10` / `charge NOT applied` permettent d'en mesurer l'ampleur d'ici la.
+
+2. **P24 "Squat" (commit `391fd854`)** : `startPlannedSession` resout les noms via le nouveau `apps/mobile/src/lib/exerciseMatch.ts` (exact normalise casse/accents/ponctuation, alias generique `squat` -> `back squat`, unique plus proche, ambigu -> aucun, FR/EN via `exerciseNames`) avec pre-filtre `ilike` elargi (`%mot%`, equivalent anglais d'un nom francais). La seance demarre avec les exercices resolus ; les autres sont retournes dans `unresolved` et signales par un toast neutre (`neutralToast` : ToastAndroid / showAlert) ; si AUCUN n'est resolu : alerte claire + bouton "Modifier le programme" (vers `/(app)/workout/programs`). Ecrans : accueil et onglet Seance (`applyPlannedStartFeedback`). Tests : `exerciseMatch.test.ts` (10), `workoutStore.test.ts` (+2, 2 attentes mises a jour), pas de regression.
+
+3. **Seance fantome (commit `fb22215f`)** : `lib/staleSession.ts` (seuil 6 h, horloge injectable). `restoreSession` : sans serie validee -> supprimee (rien en base) ; > 6 h avec series -> cloturee a l'heure de la derniere serie (`ended_at`, `total_sets`), sans passer par `endSession` donc ni credit ni XP ; sinon reprise. Nouveau `settleStaleSession()` (appele par l'onglet Seance) pour l'etat en memoire. Le bandeau n'apparait plus pour une seance perimee et "Reprendre" re-verifie la seance au tap (toast "n'est plus disponible", jamais d'ouverture d'une seance rapide vide). Tests : `workoutStoreStale.test.ts` (7, `vi.setSystemTime`, dont la limite 6 h pile / +1 s, aucun appel de credit).
+
+4. **P7 mineurs (commit `1760c2e9`)** : UI `plugins/ai-programs` : nom = colonne `name` (puis `program_data.name`, puis libelle date) ; "Termine" seulement si `completed_at` ; jamais demarre -> "Pas encore demarre" ; demarre puis desactive -> "En pause" ; plus de 20 %/100 % inventes (0 sans seance cochee). Module `lib/programStatus.ts` + 7 tests. Migration `supabase/migrations/202612012901_active_program_clear_completed.sql` (NON appliquee, idempotente, partie de la derniere version de `ziko_set_active_program` = 202612010703) : la reactivation d'un programme IA remet `completed_at` a NULL. `check-migration-names.mjs` etendu a PP 29.
+
+## Gate (verte)
+type-check mobile + backend ; `npx vitest run` racine 1088 ; `backend/api` 565 (+3 skipped) ; mobile 496 ; rendu mobile 82. Test statique des GRANT inclus et vert. Pas de `.expo/types/router.d.ts` present.
+
+## Non corrige / limites
+- Facturation (debit reel, 42P10) : volontairement non touchee (voir point 1).
+- Tests = faux Supabase : ne prouvent pas le SQL reel de la migration 2901 (a rejouer sur la branche apres application) ni les `ilike` PostgREST (le pre-filtre `or(name.ilike...)` n'est pas execute contre la vraie base).
+- "Squat" -> "Back Squat" est un choix d'alias explicite ; tout autre nom generique ambigu reste non resolu (signale, jamais devine).
+- Seance restauree apres redemarrage : les exercices en memoire ne sont pas reconstruits (la reprise ouvre la seance libre existante, pas une nouvelle).
+- Hors perimetre non traite : `daily_earned:6` pour `daily_cap:4` dans `GET /credits/balance` (note run4).
+
+## A re-verifier sur emulateur
+Demarrage de la seance du jour avec "Squat" (toast eventuel pour les exercices non resolus) ; absence du bandeau "Seance en cours 705 min" apres relance de l'app et ledger/`workout_sessions` (ligne cloturee ou supprimee) ; "Reprendre" sur une seance recente ; Bibliotheque programmes IA (noms, statuts) ; apres application de 2901 sur la branche : reactiver un programme termine puis verifier que le bandeau P24 "Programme termine" disparait ; logs backend lors d'un 5e `POST /ai/chat` hors quota (`deductCredits failed ... 42P10`).
