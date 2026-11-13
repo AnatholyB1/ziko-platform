@@ -7,13 +7,15 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth.js';
+import { userRateLimit } from '../middleware/userRateLimit.js';
 import { createUserClient } from '../coach/clients/db.js';
 import { refreshLeague } from '../league/service.js';
 
 export const leagueRouter = new Hono();
 leagueRouter.use('*', authMiddleware);
 
-leagueRouter.post('/refresh', async (c) => {
+// Anti-spam (audit securite v1.20) : 6 appels / minute / utilisateur ; les plafonds en base restent la vraie borne de cout.
+leagueRouter.post('/refresh', userRateLimit(6, '1 m', 'league-refresh'), async (c) => {
   const { userId } = c.get('auth');
   const out = await refreshLeague(userId);
   if (out.status === 'error') return c.json(out, 502);

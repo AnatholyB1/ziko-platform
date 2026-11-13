@@ -3,6 +3,7 @@ import { stream } from 'hono/streaming';
 import { streamText, stepCountIs } from 'ai';
 import { authMiddleware } from '../middleware/auth.js';
 import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
+import { userRateLimit } from '../middleware/userRateLimit.js';
 import { CREDIT_COSTS } from '../config/credits.js';
 import { AGENT_MODEL } from '../config/models.js';
 import { clientForUser } from '../tools/db.js';
@@ -137,7 +138,9 @@ workshopRouter.get('/sequence', async (c) => {
 });
 
 // POST /relaunch/check : detection de fin de programme (sans IA), idempotent
-workshopRouter.post('/relaunch/check', async (c) => {
+// Anti-spam (audit securite v1.20) : 10 appels / minute / utilisateur sur check + propose (plafonds en base inchanges).
+const relaunchLimiter = userRateLimit(10, '1 m', 'workshop-relaunch');
+workshopRouter.post('/relaunch/check', relaunchLimiter, async (c) => {
   const userId = c.get('auth').userId;
   const userToken = bearer(c);
   const db = clientForUser(userToken);
@@ -156,14 +159,14 @@ workshopRouter.post('/relaunch/check', async (c) => {
 });
 
 // POST /relaunch/:id/propose : UN appel IA automatique (absorbe, plafonne), idempotent
-workshopRouter.post('/relaunch/:id/propose', async (c) => {
+workshopRouter.post('/relaunch/:id/propose', relaunchLimiter, async (c) => {
   const userId = c.get('auth').userId;
   const userToken = bearer(c);
   const db = clientForUser(userToken);
   const out = await runRelaunchPropose({
     db,
     userId,
-    relaunchId: c.req.param('id'),
+    relaunchId: c.req.param('id') ?? '',
     appendMessages: (conversationId, msgs) => appendMessages(conversationId, msgs, userToken),
   });
   if (out.status === 'not_found') return c.json({ error: 'not_found' }, 404);

@@ -57,6 +57,9 @@ export interface PublicProfile {
   recent_workouts: PublicProfileWorkout[];
   records: PublicProfileRecord[];
   common_challenges: PublicProfileChallenge[];
+  /** Migration 202612012702 : profil prive vu par un non-ami = contrat vide (seuls nom / handle / avatar / relation). */
+  avatar_url?: string | null;
+  is_private?: boolean;
 }
 
 export type SendOutcome =
