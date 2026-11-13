@@ -155,3 +155,14 @@ do $$ begin
     create policy "badge_definitions_read_uat" on public.ziko_badge_definitions for select using (true);
   end if;
 end $$;
+
+-- ===== run2 : fixtures branche uat-v1-20 UNIQUEMENT =====
+-- (a) GRANT manquants sur la branche (ziko_stretching_exercises: migration 1801 sans GRANT ; supplements: tables sans GRANT authenticated)
+grant select on public.ziko_stretching_exercises to authenticated, anon;
+grant insert, update, delete on public.ziko_stretching_exercises to authenticated;
+grant select, insert, update, delete on public.ziko_supplement_intakes, public.ziko_supplement_reminder_prefs, public.ziko_user_supplement_stack to authenticated;
+grant all on public.ziko_stretching_exercises, public.ziko_supplement_intakes, public.ziko_supplement_reminder_prefs, public.ziko_user_supplement_stack to service_role;
+-- (b) programme IA: forme canonique (weeks numerique + sessions top-level) ; la forme weeks[] fait planter AIProgramsPlugin (P7)
+update public.ziko_ai_generated_programs
+   set program_data = jsonb_build_object('name', name, 'weeks', 8, 'sessions', program_data->'weeks'->0->'sessions')
+ where id = 'd6000000-0000-4000-8000-000000000001' and jsonb_typeof(program_data->'weeks') = 'array';
