@@ -20,6 +20,7 @@ import {
 } from '../settings';
 import { loadNotifModule, getReminderPermission, syncHydrationReminders, resyncRemindersFromDb, type PermissionState } from '../reminders';
 import { lightImpact } from '../haptics';
+import { QUICK_TILE_OUTER_STYLE, quickTileCardStyle } from '../tileStyles';
 import {
   WATER, RemindersSheet, GlassSheet, CoffeeSheet, BonusSheet, GoalSheet, AmountSheet,
 } from './HydrationSheets';
@@ -516,24 +517,18 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             disabled={tilesLocked || logMutation.isPending}
             accessibilityRole="button"
             accessibilityLabel={`Ajouter ${amount} millilitres`}
-            style={({ pressed }) => [
-              pressed ? undefined : CARD_SHADOW,
-              {
-                flex: 1,
-                height: 132,
-                backgroundColor: pressed ? '#F0EFE9' : theme.surface,
-                borderRadius: 16,
-                borderWidth: pressed ? 2 : 1,
-                borderColor: pressed ? getActionPrimary(theme) : theme.border,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: 4,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
-                opacity: tilesLocked && !pressed ? 0.7 : 1,
-              },
-            ]}
+            style={QUICK_TILE_OUTER_STYLE}
           >
+            {({ pressed }) => (
+            <View
+              style={quickTileCardStyle({
+                pressed,
+                locked: tilesLocked || logMutation.isPending,
+                surface: theme.surface,
+                border: theme.border,
+                primary: getActionPrimary(theme),
+              })}
+            >
             <View style={{ height: 14, justifyContent: 'center' }}>
               {settings.glassMl === amount ? (
                 <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '800', color: '#B53D05' }}>PAR DÉFAUT</Text>
@@ -546,6 +541,8 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
               <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }}>+{amount}</Text>
               <Text style={{ fontSize: 14, color: theme.muted }}>ml</Text>
             </View>
+            </View>
+            )}
           </Pressable>
         ))}
       </View>
