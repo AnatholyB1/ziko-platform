@@ -27,13 +27,39 @@ function decide(req) {
   const hasToolResult = Array.isArray(last?.content) && last.content.some((b) => b.type === 'tool_result');
   const toolNames = (req.tools ?? []).map((t) => t.name);
   if (hasToolResult) {
-    return { kind: 'text', text: "C'est fait (reponse simulee par le faux Anthropic UAT). L'action demandee a ete executee." };
+    // Tour 2 : le SDK (stopWhen: stepCountIs) renvoie le tool_result ; le faux le RESTITUE dans sa reponse
+    // et dans le journal (`GET /__script` -> log[].tool_results) pour lire les codes d'erreur (ex. {"ok":false,"error":"..."}).
+    const names = new Map();
+    for (const m of msgs) {
+      if (m.role === 'assistant' && Array.isArray(m.content)) {
+        for (const b of m.content) if (b.type === 'tool_use') names.set(b.id, b.name);
+      }
+    }
+    const results = last.content
+      .filter((b) => b.type === 'tool_result')
+      .map((b) => ({
+        tool: names.get(b.tool_use_id) ?? 'inconnu',
+        is_error: !!b.is_error,
+        content: textOf(b.content) || JSON.stringify(b.content ?? null),
+      }));
+    // Enchainement : une entree de file `afterResult:true` emet un 2e outil apres ce resultat (tour 3, etc.).
+    const q = queue[0];
+    if (q?.afterResult && (toolNames.includes(q.tool) || q.force)) {
+      const pick = { tool: q.tool, input: q.input ?? {} };
+      if (--q.count <= 0) queue.shift();
+      return { kind: 'tool', tool: pick.tool, input: pick.input, tool_results: results };
+    }
+    if (process.env.FAKE_ANTHROPIC_ECHO_RESULT === '0') {
+      return { kind: 'text', text: "C'est fait (reponse simulee par le faux Anthropic UAT). L'action demandee a ete executee.", tool_results: results };
+    }
+    const shown = results.map((r) => `${r.tool}${r.is_error ? ' [erreur]' : ''} -> ${r.content.slice(0, 600)}`).join(' | ');
+    return { kind: 'text', text: `C'est fait (reponse simulee par le faux Anthropic UAT). Resultat de l'outil : ${shown}`, tool_results: results };
   }
   const userText = last?.role === 'user' ? textOf(last.content) : '';
   const m = userText.match(/\[\[tool:([A-Za-z0-9_\-]+)(?:\s+(\{[\s\S]*?\}))?\s*(::force)?\]\]/);
   let pick = null;
   if (m) pick = { tool: m[1], input: m[2] ? JSON.parse(m[2]) : {}, force: !!m[3] };
-  else if (queue.length) {
+  else if (queue.length && !queue[0].afterResult) {
     const q = queue[0];
     if (toolNames.includes(q.tool) || q.force) {
       pick = { tool: q.tool, input: q.input ?? {}, force: q.force };
@@ -95,14 +121,14 @@ const server = http.createServer((req, res) => {
       if (req.method === 'GET') return json(200, { queue, log: log.slice(-20) });
       if (req.method === 'DELETE') { queue.length = 0; return json(200, { ok: true }); }
       const s = JSON.parse(body || '{}');
-      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force });
+      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force, afterResult: !!s.afterResult });
       return json(200, { ok: true, queued: queue.length });
     }
     if (path === '/v1/messages' && req.method === 'POST') {
       let r;
       try { r = JSON.parse(body); } catch { return json(400, { type: 'error', error: { type: 'invalid_request_error', message: 'bad json' } }); }
       const d = decide(r);
-      log.push({ at: new Date().toISOString(), model: r.model, stream: !!r.stream, tools: (r.tools ?? []).length, decision: d.kind === 'tool' ? `tool:${d.tool}` : 'text' });
+      log.push({ at: new Date().toISOString(), model: r.model, stream: !!r.stream, tools: (r.tools ?? []).length, decision: d.kind === 'tool' ? `tool:${d.tool}` : 'text', ...(d.tool_results ? { tool_results: d.tool_results } : {}) });
       if (r.stream) return sse(res, r, d);
       return json(200, nonStream(r, d));
     }
