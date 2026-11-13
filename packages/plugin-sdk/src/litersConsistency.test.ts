@@ -32,7 +32,7 @@ describe('displayStreak : une seule serie (gamification) pour accueil / Recompen
   it('profil absent / jamais d\'activite : 0', () => {
     expect(displayStreak(null, now)).toBe(0);
     expect(displayStreak({ current_streak: 0, last_activity_date: null }, now)).toBe(0);
-    expect(displayStreak({ current_streak: 3, last_activity_date: null }, now)).toBe(0);
+    expect(displayStreak({ current_streak: 3, last_activity_date: null }, now)).toBe(3); // date inconnue : serie enregistree
   });
   it('les trois ecrans lisent displayStreak (plus de calcul local de serie)', () => {
     const root = resolve(__dirname, '../../..');

@@ -23,7 +23,9 @@ export function displayStreak(
   now: Date = new Date(),
 ): number {
   const cur = Number(profile?.current_streak ?? 0);
-  if (!(cur > 0) || !profile?.last_activity_date) return 0;
+  if (!(cur > 0)) return 0;
+  // Date inconnue (donnee ancienne) : on ne devine pas une rupture, on garde la serie enregistree.
+  if (!profile?.last_activity_date) return Math.floor(cur);
   const y = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   y.setDate(y.getDate() - 1);
   const last = String(profile.last_activity_date).slice(0, 10);

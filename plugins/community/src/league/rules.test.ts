@@ -104,7 +104,7 @@ describe('carte d entree (E3/E4)', () => {
   const st = (o: Record<string, unknown> = {}) => parseLeagueState(raw(o));
   it('sans donnees : accroche neutre', () => expect(entryView(null).subtitle).toBe('Ta régularité, à ton rythme'));
   it('verrouille : niveau requis, sans compteur', () => {
-    expect(entryView(parseLeagueState({ unlocked: false, required_tier: 3, tier: 1 }))).toEqual({ subtitle: `Se débloque au niveau ${LEAGUE_UNLOCK_TIER}`, badge: null });
+    expect(entryView(parseLeagueState({ unlocked: false, required_tier: 3, tier: 1 }))).toEqual({ subtitle: `Se débloque au palier ${LEAGUE_UNLOCK_TIER}`, badge: null });
   });
   it('sans faction : Choisis ta faction', () => expect(entryView(st({ faction: null })).subtitle).toBe('Choisis ta faction'));
   it('faction + palier', () => expect(entryView(st()).subtitle).toBe('Running · Argent'));
