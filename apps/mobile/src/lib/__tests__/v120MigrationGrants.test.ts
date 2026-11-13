@@ -33,6 +33,39 @@ describe('v1.20 migrations: explicit table GRANTs', () => {
     });
   }
 
+  // Run3 : `service_role` n'a AUCUN privilege par defaut sur le schema portfolio. Toute table creee OU etendue
+  // par une migration v1.20 ET lue/ecrite par le backend (`.from('<table>')` dans backend/api/src) doit etre
+  // accordee a service_role (le backend la lit via le client service, sinon "permission denied").
+  const touched = new Set<string>(created.map((c) => c.table));
+  for (const sql of sqlByFile.values()) {
+    const re = /alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:public\.)?"?(ziko_[a-z0-9_]+)"?/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sql))) touched.add(m[1]);
+  }
+  const SRC = path.resolve(__dirname, '../../../../../backend/api/src');
+  function walk(dir: string, out: string[] = []): string[] {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p, out);
+      else if (/\.ts$/.test(e.name) && !/\.test\.ts$/.test(e.name) && !/testutil/.test(e.name)) out.push(p);
+    }
+    return out;
+  }
+  const backendSrc = walk(SRC).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
+  const usedByBackend = [...touched].filter((t) => new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]`).test(backendSrc)).sort();
+
+  it('detects v1.20 tables used by the backend', () => {
+    expect(usedByBackend.length).toBeGreaterThanOrEqual(5);
+    expect(usedByBackend).toContain('ziko_workshop_drafts');
+    expect(usedByBackend).toContain('ziko_athlete_goals');
+  });
+
+  for (const t of usedByBackend) {
+    it(`${t} (used by backend/api/src) is granted to service_role`, () => {
+      expect(hasGrant(t, 'service_role')).toBe(true);
+    });
+  }
+
   it('client-facing tables read by the mobile app are granted to authenticated', () => {
     for (const t of [
       'ziko_hydration_settings',
