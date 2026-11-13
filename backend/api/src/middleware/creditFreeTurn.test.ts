@@ -98,7 +98,7 @@ describe('tour annonce a 4 credits : debit seulement hors quota gratuit (factura
     const app = buildApp();
     const res = await turn(app);
     expect(res.status).toBe(200);
-    expect((await res.json()).announced_cost).toBe(4);
+    expect(((await res.json()) as { announced_cost: number }).announced_cost).toBe(4);
     await flush();
     expect(db.deductCalls).toHaveLength(0);
     expect(db.balance).toBe(20);

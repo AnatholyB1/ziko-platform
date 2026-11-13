@@ -5,6 +5,10 @@ import {
 } from './displayLabels';
 
 describe('goalLabel (XCUT-01)', () => {
+  it('run 9 : `strength` (frise Ma suite, en-tete du programme) devient `Force`', () => {
+    expect(goalLabel('strength')).toBe('Force');
+    expect(goalLabel('strength', 'strength')).toBe('Force');
+  });
   it('traduit les slugs connus', () => {
     expect(goalLabel('muscle_gain')).toBe('Prise de muscle');
     expect(goalLabel('fat_loss')).toBe('Perte de gras');

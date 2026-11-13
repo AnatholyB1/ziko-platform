@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { programHeader, programProgress, programProvenance, normalizeWorkoutRow } from '../programs';
 import { itemSubtitle } from '../periodization';
-// Le SDK (index) tire react-native : on teste la vraie table de libelles via son fichier pur.
-import { goalLabel } from '../../../../../packages/plugin-sdk/src/displayLabels';
+// Traducteur de test : la vraie table (`strength` -> `Force`) est verifiee par packages/plugin-sdk/src/displayLabels.test.ts ;
+// un import relatif du SDK sortirait du projet TS mobile (TS6307).
+const goalLabel = (g: string | null | undefined, fb = ''): string => (g === 'strength' ? 'Force' : g === 'muscle_gain' ? 'Prise de masse' : g || fb);
 
 const ME = 'user-1';
 
