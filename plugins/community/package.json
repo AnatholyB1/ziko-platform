@@ -19,7 +19,11 @@
     "./screens/CompareScreen": "./src/screens/CompareScreen.tsx",
     "./screens/InviteScreen": "./src/screens/InviteScreen.tsx",
     "./screens/PostDetailScreen": "./src/screens/PostDetailScreen.tsx",
-    "./screens/GroupsScreen": "./src/screens/GroupsScreen.tsx"
+    "./screens/GroupsScreen": "./src/screens/GroupsScreen.tsx",
+    "./screens/LeagueScreen": "./src/screens/LeagueScreen.tsx",
+    "./league/cards": "./src/league/cards.tsx",
+    "./league/rules": "./src/league/rules.ts",
+    "./league/api": "./src/league/api.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
