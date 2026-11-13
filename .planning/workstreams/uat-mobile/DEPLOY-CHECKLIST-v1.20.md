@@ -34,3 +34,11 @@ Blocs `20261201PPSS` : P7 0701, P8 0801, P9 0901 (reserve), P10 1001, P11 1101, 
 
 ## F. Apres le milestone (hors perimetre sauf demande explicite)
 - [ ] Push / PR, application des migrations en prod, deploiement Vercel/EAS, nettoyage du compte et de la branche de test, suppression des worktrees d'integration.
+
+## G. Suite de l'incident du 2026-11-12 (env perdus)
+- [ ] L'utilisateur regenere `apps/web/.env.local`, `apps/web/.env.test`, `backend/api/.env.local`, `.vercel` (repo principal). Tant que ce n'est pas fait : phases backend/web/RLS = mocks ou reportees ; le `.env` mobile (valeurs publiques) a ete recree par la session principale.
+- [ ] `npm install` du repo principal a refaire par l'utilisateur (node_modules racine vide).
+
+## H. Actions PRODUCTION effectuees (avec accord explicite de l'utilisateur)
+- [x] 2026-11-13: migration `202612012501_coach_link_guard.sql` appliquee en PROD (ref ubxllsvanurkwkohzxau) via execute_sql dans UNE transaction (BEGIN/COMMIT), en reponse a la faille RLS de `ziko_coach_client_links` (UPDATE ouvert a toutes les colonnes pour coach et athlete => un coach pouvait reecrire client_id et obtenir is_coach_of sur un athlete arbitraire). Colonnes verifiees avant (id, coach_id, client_id, expires_at, revoked_at, created_at, shared_note). Verifie apres (lecture): colonne revoked_by, trigger ziko_coach_link_guard_trg actif (enabled=O), policies client_revoke + coach_update (UPDATE) + participant_read (SELECT), 7 liens inchanges (7 actifs). Non inscrit dans schema_migrations (execute_sql, pas apply_migration): le fichier du depot reste la reference; CI (push main) le rejouera sans effet (idempotent).
+- A faire plus tard (deploiement complet): 2502, 2503 et toutes les autres migrations v1.20 (liste en section C), policy badge 1203 en prod.
