@@ -13,7 +13,9 @@ import { showAlert } from '@ziko/plugin-sdk';
 import { supabase, sessionManager } from '../lib/supabase';
 import { queryClient } from '../lib/queryClient';
 import { triggerRetroactiveRecompute } from '../lib/onboardingRecompute';
-import { loadInitialSession, deferProfileRefresh } from '../lib/authInit';
+import { loadInitialSession, deferProfileRefresh, readPersistedSession } from '../lib/authInit';
+import { isPermanentAuthError } from '../lib/sessionManager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
   session: Session | null;
@@ -196,6 +198,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     void loadInitialSession({
       getSession: () => supabase.auth.getSession(),
+      // hors ligne au demarrage a froid : session persistee (mode degrade), pas l'ecran Bienvenue
+      readPersistedSession: () => readPersistedSession(AsyncStorage, process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''),
+      isPermanentError: isPermanentAuthError,
       applySession: (session) => setSessionUser(set, get, session as Session | null),
       refreshProfile: () => get().refreshProfile(),
       done: () => set({ isLoading: false, isInitialized: true }),
