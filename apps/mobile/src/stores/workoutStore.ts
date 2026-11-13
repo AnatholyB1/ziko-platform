@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
+import { resolveExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
+import { exerciseNames } from '@ziko/plugin-sdk';
 
 const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
@@ -79,7 +81,10 @@ interface WorkoutState {
   startPlannedSession: (
     programId: string,
     dayIndex: number,
-  ) => Promise<{ ok: true; name: string; exerciseCount: number } | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error' }>;
+  ) => Promise<
+    | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[] }
+    | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error'; unresolved?: string[] }
+  >;
   endSession: () => Promise<void>;
   /** Drops an in-progress session that has no validated set (TRAIN-03): nothing is kept in DB. */
   discardSession: () => Promise<void>;
@@ -231,30 +236,36 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     if (!picked) picked = plan[0];
     if (picked.exercises.length === 0) return { ok: false, reason: 'no_exercises' };
 
-    // Resolve exercise rows (by id first, then by exact name / French name)
+    // Resolve exercise rows : par id d'abord, puis par nom (exact normalise casse/accents, alias, unique plus
+    // proche, anglais <-> francais via exerciseNames). Un exercice non resolu NE bloque PAS la seance.
     const ids = picked.exercises.map((e) => e.exercise_id).filter(Boolean) as string[];
     const byId = new Map<string, Exercise>();
-    const byName = new Map<string, Exercise>();
     if (ids.length > 0) {
       const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
       (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
     }
-    const missingNames = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id)).map((e) => e.name);
-    if (missingNames.length > 0) {
-      const { data } = await supabase
-        .from('ziko_exercises')
-        .select('*')
-        .or(missingNames.flatMap((n) => [`name.ilike.${n.replace(/[,()]/g, ' ')}`, `name_fr.ilike.${n.replace(/[,()]/g, ' ')}`]).join(','));
-      (data ?? []).forEach((e: any) => {
-        byName.set(String(e.name ?? '').toLowerCase(), e as Exercise);
-        if (e.name_fr) byName.set(String(e.name_fr).toLowerCase(), e as Exercise);
-      });
+    const missing = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id));
+    let candidates: CatalogRow[] = [];
+    if (missing.length > 0) {
+      const patterns = [...new Set(missing.flatMap((e) => searchPatternsFor(e.name, exerciseNames)))];
+      if (patterns.length > 0) {
+        const { data } = await supabase
+          .from('ziko_exercises')
+          .select('*')
+          .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
+          .limit(300);
+        candidates = (data ?? []) as CatalogRow[];
+      }
     }
+    const unresolved: string[] = [];
 
     const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
     picked.exercises.forEach((pe) => {
-      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || byName.get(pe.name.toLowerCase());
-      if (!ex) return; // cannot log sets without a real exercise row (FK)
+      const ex = (pe.exercise_id && byId.get(pe.exercise_id)) || resolveExercise(pe.name, candidates, exerciseNames);
+      if (!ex) {
+        unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
+        return;
+      }
       const r = parseReps(pe.reps);
       workoutExercises.push({
         id: `planned-${picked!.sourceIndex}-${workoutExercises.length}`,
@@ -275,7 +286,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         isPlanned: true,
       } as any);
     });
-    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises' };
+    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
 
     const { data, error } = await supabase
       .from('ziko_workout_sessions')
@@ -294,7 +305,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const session = data as WorkoutSession;
     set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
     AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
-    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length };
+    return { ok: true, name: picked.name, exerciseCount: workoutExercises.length, unresolved };
   },
 
   discardSession: async () => {

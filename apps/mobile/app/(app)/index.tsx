@@ -11,6 +11,8 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
+import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
+import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useTranslation, showAlert } from '@ziko/plugin-sdk';
@@ -379,11 +381,12 @@ export default function DashboardScreen() {
     // TRAIN-01 (D-01): single start path -> the planned session with its exercises, never an empty quick session
     if (!activeProgram?.id) return;
     const res = await startPlannedSession(activeProgram.id, jsDayToIndex(new Date().getDay()));
-    if (!res.ok) {
-      showAlert('Séance indisponible', "Impossible de démarrer la séance prévue (exercices introuvables). Ouvre ton programme pour la vérifier.");
-      return;
-    }
-    router.push('/(app)/workout/session' as any);
+    applyPlannedStartFeedback(res, {
+      toast: neutralToast,
+      alert: showAlert,
+      openEdit: () => router.push('/(app)/workout/programs' as any),
+      openSession: () => router.push('/(app)/workout/session' as any),
+    });
   };
 
   // ── Smart Actions ─────────────────────────────────────────────────────────

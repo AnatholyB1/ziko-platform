@@ -18,6 +18,8 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import WSHeader from '../../../src/components/WSHeader';
 import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner';
+import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback';
+import { neutralToast } from '../../../src/lib/neutralToast';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
@@ -465,11 +467,12 @@ export default function WorkoutIndexScreen() {
     setStarting(true);
     try {
       const res = await startPlannedSession(activeProgram.id, todayIndex);
-      if (!res.ok) {
-        showAlert('Séance indisponible', "Impossible de démarrer la séance prévue (exercices introuvables). Vérifie ton programme.");
-        return;
-      }
-      router.push('/(app)/workout/session' as any);
+      applyPlannedStartFeedback(res, {
+        toast: neutralToast,
+        alert: showAlert,
+        openEdit: () => router.push('/(app)/workout/programs' as any),
+        openSession: () => router.push('/(app)/workout/session' as any),
+      });
     } finally {
       setStarting(false);
     }
