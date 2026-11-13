@@ -13,3 +13,6 @@ Methode : `[[tool:measurements_goals {...}]]` puis SQL branche. Le faux ne renvo
 | IM-13 | indice | `authenticated` : SELECT seul sur `ziko_athlete_goals` (pas d'INSERT) ; UPDATE REST direct non rejoue. |
 | IM-1/2/3, IM-8..12, IM-14 | NON-TESTE | onboarding, bandeau de revision (sans maquette), quetes, credits. |
 | Env | | `service_role` sans AUCUN privilege sur `ziko_athlete_goals`, `ziko_goal_revisions`, `ziko_workshop_drafts`, `ziko_program_sequences`, `ziko_program_relaunches` sur la branche (classe GRANT v1.20 deja suivie) ; fixtures GRANT appliquees sur la branche seulement. |
+
+## Run 7 (2026-11-13)
+IM-1..3, IM-8..12, IM-14 : NON-TESTE (arret par budget de contexte; prochaine etape dans UAT-RUN7-RESUME.md)

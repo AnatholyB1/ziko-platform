@@ -18,3 +18,6 @@ Seed : "Bloc de volume" actif, started_at = now-30 j, 2 semaines x 2 seances ; s
 - Squat -> 'Squat complet barre' sans fixture : PASS (toast non observe)
 - Bandeau apres reactivation, B..F : NON-TESTE
 Detail : ../../UAT-RESULTS-run6.md
+
+## Run 7 (2026-11-13)
+B..F : NON-TESTE (budget)
