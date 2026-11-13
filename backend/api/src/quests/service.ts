@@ -32,20 +32,30 @@ import {
 
 type Db = ReturnType<typeof clientForUser>;
 
-/** Metrique -> plugin qui l'alimente (workout_sessions : fonction de base, toujours disponible). */
+/**
+ * Metrique -> plugin qui l'alimente. `null` = disponible pour tout le monde :
+ *  - workout_sessions : fonction de base ;
+ *  - hydration_ml, measurement_logs : alimentees par le Quick Log de l'accueil (apps/mobile/src/lib/quickLog.ts),
+ *    ouvert meme sans le plugin, et l'ecran Hydratation reste accessible (UAT run2 : quests_create renvoyait
+ *    metric_unavailable alors que l'ecran s'ouvrait). Seuls nutrition et habitudes exigent leur plugin.
+ */
 const METRIC_PLUGIN: Record<QuestMetric, string | null> = {
   workout_sessions: null,
-  hydration_ml: 'hydration',
+  hydration_ml: null,
   nutrition_logs: 'nutrition',
   habit_logs: 'habits',
-  measurement_logs: 'measurements',
+  measurement_logs: null,
 };
 
-/** Metriques proposables a cette personne : on ne lui demande pas de logger de l'eau sans le plugin Hydratation. */
+/** Plugins obligatoires (toujours charges, ex. coach) : comptent comme installes pour la disponibilite. */
+const MANDATORY_PLUGINS: readonly string[] = ['coach'];
+
+/** Metriques proposables a cette personne : plugin installe, plugin obligatoire, ou metrique du socle. */
 export function allowedMetrics(installedPlugins: readonly string[]): QuestMetric[] {
+  const active = new Set<string>([...installedPlugins, ...MANDATORY_PLUGINS]);
   return QUEST_METRICS.filter((m) => {
     const p = METRIC_PLUGIN[m];
-    return p === null || installedPlugins.includes(p);
+    return p === null || active.has(p);
   });
 }
 

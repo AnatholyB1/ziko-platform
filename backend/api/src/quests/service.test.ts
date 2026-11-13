@@ -126,7 +126,7 @@ describe('refreshQuestsAuto', () => {
 
   it('sortie du modele inexploitable ou metrique non disponible : rien cree', async () => {
     const { db, calls } = makeDb({ claim: { proceed: true, reason: 'no_quest', slots: 3, level: 1, active: 0 }, plugins: [] });
-    const hydrationOnly = { object: { quests: [GEN_OK.object.quests[0]] }, usage: {} };
+    const hydrationOnly = { object: { quests: [{ ...GEN_OK.object.quests[0], metric: 'nutrition_logs' }] }, usage: {} };
     const out = await refreshQuestsAuto('u1', { db, generate: async () => hydrationOnly });
     expect(out).toEqual({ status: 'error', reason: 'generation_failed' });
     expect(calls.find((c) => c.rpc === 'ziko_create_ai_quests')).toBeUndefined();
@@ -173,8 +173,14 @@ describe('createQuestFromChat (appel declenche par l\'utilisateur)', () => {
   it('quete invalide ou metrique sans plugin : erreur, aucune reservation consommee', async () => {
     const { db, calls } = makeDb({ claim: { proceed: true, reason: 'requested', slots: 3, level: 1, active: 0 }, plugins: ['nutrition'] });
     expect(((await createQuestFromChat('u1', { ...quest, metric: 'steps' }, { db })) as any).error).toBe('invalid_quest');
-    expect(((await createQuestFromChat('u1', quest, { db })) as any).error).toBe('metric_unavailable');
+    expect(((await createQuestFromChat('u1', { ...quest, metric: 'habit_logs' }, { db })) as any).error).toBe('metric_unavailable');
     expect(calls).toHaveLength(0);
+  });
+
+  it('hydration_ml reste disponible sans le plugin Hydratation (UAT run2 : plus de metric_unavailable)', async () => {
+    const { db } = makeDb({ claim: { proceed: true, reason: 'requested', slots: 3, level: 1, active: 0 }, plugins: ['coach'] });
+    const res: any = await createQuestFromChat('u1', quest, { db });
+    expect(res.error).not.toBe('metric_unavailable');
   });
 });
 
@@ -199,9 +205,13 @@ describe('listQuestsForChat', () => {
 });
 
 describe('helpers', () => {
-  it('allowedMetrics suit les plugins actifs', () => {
-    expect(allowedMetrics([])).toEqual(['workout_sessions']);
-    expect(allowedMetrics(['hydration', 'habits'])).toEqual(['workout_sessions', 'hydration_ml', 'habit_logs']);
+  it('allowedMetrics suit les plugins actifs, les metriques du socle restent ouvertes', () => {
+    // Quick Log accueil = hydratation + mesures sans plugin ; nutrition/habitudes exigent leur plugin.
+    expect(allowedMetrics([])).toEqual(['workout_sessions', 'hydration_ml', 'measurement_logs']);
+    expect(allowedMetrics(['coach'])).toContain('hydration_ml');
+    expect(allowedMetrics(['hydration', 'habits'])).toEqual(['workout_sessions', 'hydration_ml', 'habit_logs', 'measurement_logs']);
+    expect(allowedMetrics(['nutrition'])).toContain('nutrition_logs');
+    expect(allowedMetrics([])).not.toContain('nutrition_logs');
   });
   it('loadIdentity applique des valeurs par defaut (profil vide)', async () => {
     const { db } = makeDb({ plugins: [], quests: [] });
