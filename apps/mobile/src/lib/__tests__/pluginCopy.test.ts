@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { storeDescription, looksEnglish } from '../pluginCopy';
-import habits from '../../../../../plugins/habits/src/manifest';
-import nutrition from '../../../../../plugins/nutrition/src/manifest';
-import persona from '../../../../../plugins/persona/src/manifest';
+import habits from '@ziko/plugin-habits/manifest';
+import nutrition from '@ziko/plugin-nutrition/manifest';
+import persona from '@ziko/plugin-persona/manifest';
 
 describe('descriptions du store en francais (run5)', () => {
   it('le registre en anglais (habits, nutrition, persona) est remplace par le libelle francais', () => {
