@@ -15,3 +15,7 @@ GRANT : `ziko_workshop_drafts` sans privilege -> `POST /ai/workshop/stream` = 50
 
 ## Run 7 (2026-11-13)
 Feuille d'epuisement (solde 0 + quota 0) et quete creee a 21 h : NON-TESTE (budget)
+
+## Run 8 (2026-11-13)
+- Feuille d'épuisement PASS : solde 0 (`ziko_user_ai_credits.balance=0`, quota du jour déjà consommé : `daily_earned 6 / cap 4`), puce `0 crédit` rouge, envoi d'un message -> feuille `Crédits IA épuisés / Complète des activités pour gagner des crédits` (6 activités listées, `Réinitialisation dans 5h 46m`), en français (`uat-evidence/p23/exhaust2.png`). Solde remis à 20 ensuite.
+- Atelier A..F restants : NON-TESTE (budget).

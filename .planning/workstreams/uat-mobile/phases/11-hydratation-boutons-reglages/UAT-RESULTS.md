@@ -17,3 +17,6 @@ Incoherence objectif accueil 2.5 L vs ecran 2.0 L : connue (fix/uat-run1), toujo
 | HY-8 bonus seance | PASS (indirect) | objectif `2,0 L + 0,5 L les jours de séance`, carte `/ 2.5L` |
 | HY-3/5/6/9 | NON-TESTE | |
 Ecart : jauge `12.1L / 2.5L` (point) vs reglages `2,0 L` (virgule).
+
+## Run 8 (2026-11-13) - re-vérification fix HY-2
+PASS : tuiles `+250 / +500 / +750 ml` mesurées sur la capture (`uat-evidence/p11/hy.png`) : ~343 px de haut = ~131 dp (densité 2,625) avec fond blanc, bord et ombre.

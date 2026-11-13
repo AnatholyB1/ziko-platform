@@ -6,3 +6,6 @@
 | QA-10 | PASS | 3 actives -> `quests_create` execute, aucune ligne creee. Debit chat non verifiable (balance 7 stable). |
 | QA-11 | PASS | `workout_sessions` weekly 40 pieces -> `source=ai`, `ai_meta.trigger=chat`, expiration +168 h. |
 Observation: `quests_create` avec `hydration_ml` -> `metric_unavailable` car l'athlete UAT n'a que le plugin `coach` dans `ziko_user_plugins` alors que l'ecran Hydratation s'ouvre : verifier que la regle "plugin installe" est voulue.
+
+## Run 8 (2026-11-13)
+Voir phase 13 (même fonction `ziko_quest_metric_value`, fenêtre `created_at >= période` pour les quêtes IA) : PASS en SQL.

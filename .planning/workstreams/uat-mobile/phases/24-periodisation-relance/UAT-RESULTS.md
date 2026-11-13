@@ -21,3 +21,11 @@ Detail : ../../UAT-RESULTS-run6.md
 
 ## Run 7 (2026-11-13)
 B..F : NON-TESTE (budget)
+
+## Run 8 (2026-11-13)
+Programme `Bloc de volume` réactivé par SQL (is_active, results=null), seed 2 séances sur 4 dans la fenêtre.
+- Flow A PASS (backend + UI) : `relaunch/check` clôt le programme (`completed_at`, `results.adherence_pct=50`, `hint=consolidate`), bandeau `Programme terminé : Bloc de volume / 2 séances sur 4 prévues / 1 212 kg de volume total` + `Préparer la suite` (`uat-evidence/p24/flowA4.png`, écran `/(app)/workout`), l'atelier s'ouvre sur `BILAN DU PROGRAMME` (`jump squat : 140 -> 142,9 kg`, `La suite consolide ce niveau avant de monter.`).
+- Coût absorbé PASS : `propose` -> 1 ligne `ziko_ai_cost_log` source `program_relaunch`, solde 20 -> 20 ; relance `proposed`, brouillon 4 semaines x 3 séances. Idempotence PASS : `check`/`propose` répétés -> `already:true`, journal du faux inchangé, 1 seule ligne cost_log.
+- Flow B (partiel) PASS : `publish` du brouillon -> `Bloc de force` `sequence_position=2`, même `sequence_id`, `is_active=false`, AUCUN programme actif. Activation via `Définir comme programme actif` et frise `Ma suite` NON-TESTE.
+- Remarque harnais : `check` lancé par l'API avant l'app -> relance `pending`, écran `Préparer la suite` (pas d'auto-propose) ; `?relaunch` génère alors la proposition. Le 2e élément de file du faux (`workshop_set_draft`) doit porter `afterResult:true`.
+- Flow C (variantes 100 %/0 séance), D, E (plafond, panne, course), F : NON-TESTE.
