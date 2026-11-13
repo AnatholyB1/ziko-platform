@@ -18,7 +18,7 @@ for (const [file, sql] of sqlByFile) {
 }
 
 function hasGrant(table: string, role: string): boolean {
-  const re = new RegExp(`grant\\s+[^;]*?\\bon\\s+(?:table\\s+)?public\\.${table}\\b[^;]*?\\bto\\b[^;]*?\\b${role}\\b`, 'is');
+  const re = new RegExp(`grant\\s+[^;]*?\\bon\\s+(?:table\\s+)?(?:public\\.[a-z0-9_]+\\s*,\\s*)*public\\.${table}\\b[^;]*?\\bto\\b[^;]*?\\b${role}\\b`, 'is');
   return re.test(allSql);
 }
 
