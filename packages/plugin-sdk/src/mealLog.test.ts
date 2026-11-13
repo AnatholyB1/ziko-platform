@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   mealTypeForHour, formatClock, sumMacros, scaleFood, addLabel, buildInsertRows, groupByMeal,
-  deriveRecents, dateKeyDaysAgo, scanCostLabel, SCAN_CREDIT_COST, isNetworkError, parsePending, enqueuePending,
+  deriveRecents, dateKeyDaysAgo, localDateKey, scanCostLabel, SCAN_CREDIT_COST, isNetworkError, parsePending, enqueuePending,
   removePending, parsePrefs, saveMeal, DEFAULT_MEAL_PREFS, type BasketItem,
 } from './mealLog';
 
@@ -185,5 +185,33 @@ describe('saveMeal : un seul insert groupe (D-06)', () => {
     const c = client({ data: [], error: null });
     expect((await saveMeal(c, [])).status).toBe('error');
     expect(c.from).not.toHaveBeenCalled();
+  });
+});
+
+describe('localDateKey (UAT run2 P9: la date d\'ecriture est recalculee, pas memorisee au montage)', () => {
+  it('renvoie la date locale YYYY-MM-DD', () => {
+    expect(localDateKey(new Date(2026, 10, 12, 23, 59))).toBe('2026-11-12');
+  });
+  it('bascule au jour suivant apres minuit (pas de date perimee)', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date(2026, 10, 12, 23, 59, 30));
+      const before = localDateKey();
+      vi.setSystemTime(new Date(2026, 10, 13, 0, 0, 30));
+      const after = localDateKey();
+      expect(before).toBe('2026-11-12');
+      expect(after).toBe('2026-11-13');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('l\'ecran ne memorise plus la date au montage', () => {
+    const src = readFileSync(resolve(__dirname, '../../../plugins/nutrition/src/screens/LogMealScreen.tsx'), 'utf8');
+    expect(src).not.toMatch(/const today = useMemo/);
+    expect(src).toMatch(/buildInsertRows\(barItems, uid, localDateKey\(\), mealType\)/);
+  });
+  it('la barre d\'action reste au-dessus du clavier Android (KeyboardAvoidingView height)', () => {
+    const src = readFileSync(resolve(__dirname, '../../../plugins/nutrition/src/screens/LogMealScreen.tsx'), 'utf8');
+    expect(src).toMatch(/behavior=\{Platform\.OS === 'ios' \? 'padding' : 'height'\}/);
   });
 });

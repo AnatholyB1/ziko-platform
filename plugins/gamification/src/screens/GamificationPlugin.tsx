@@ -9,7 +9,7 @@ import {
   fetchCoinHistory, purchaseItem, requestAiQuests, syncQuests, type LevelDef, type ShopItem,
 } from '../store';
 import {
-  awardToastText, sortHistory, themeEquipNote, type CoinTx, type InventoryLite, type ShopItemLite,
+  awardToastText, isMaxLevel, sortHistory, themeEquipNote, type CoinTx, type InventoryLite, type ShopItemLite,
 } from '../rewards';
 import { RewardsHeader, RewardsTabs, Toast, type RewardsTab } from './rewards/chrome';
 import { AchievementsTab } from './rewards/AchievementsTab';
@@ -71,6 +71,7 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
         xpToNext,
         xpProgress,
         streak: profile.current_streak ?? 0,
+        isMax: isMaxLevel(profile.level ?? 1, levels, nextLevel?.level ?? null),
       };
       return { coins: profile.coins ?? 0, playerLevel: profile.level ?? 1, level };
     },

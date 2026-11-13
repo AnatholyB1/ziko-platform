@@ -19,7 +19,7 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0",
-    "expo-router": "*"
+    "react-native": "^0.81.5",
+    "expo-router": "~6.0.23"
   }
 }

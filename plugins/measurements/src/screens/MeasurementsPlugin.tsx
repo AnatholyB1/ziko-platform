@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore, showAlert, formatDateFr, getActionPrimary } from '@ziko/plugin-sdk';
 import GoalsTab, { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
 import { ENTRY_ORDER, getMeasure, parseDecimal, type MeasureKey } from '../lib/goals';
+import { weightCoachTip } from '../lib/coachTip';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -397,7 +398,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
             {/* AISuggestion */}
             <View style={{ marginBottom: 16 }}>
               <AISuggestion
-                text="Pèse-toi le matin à jeun, toujours au même moment. Tes dernières mesures sont bien stables."
+                text={weightCoachTip(latestMeasurement)}
                 tintColor={SUCCESS}
               />
             </View>

@@ -366,6 +366,24 @@ export function sortHistory<T extends { created_at: string }>(rows: T[]): T[] {
 }
 
 // ── Niveau ───────────────────────────────────────────────
+/**
+ * Vrai dernier niveau : "maximum" seulement si le catalogue des niveaux est connu (non vide), qu'il
+ * n'existe pas de niveau suivant ET que le niveau du joueur atteint le plus haut niveau du catalogue.
+ * Catalogue vide/illisible (RLS) => inconnu, jamais "maximum" (UAT run2 : "Niveau maximum" au niveau 3).
+ */
+export function isMaxLevel(playerLevel: number, levels: Array<{ level: number }>, nextLevel: number | null): boolean {
+  if (levels.length === 0 || nextLevel !== null) return false;
+  return playerLevel >= Math.max(...levels.map((l) => l.level));
+}
+
+export function levelCaption(
+  d: { nextLevel: number | null; xpToNext: number; isMax: boolean },
+): string {
+  if (d.isMax) return 'Niveau maximum atteint';
+  if (d.nextLevel !== null) return `${d.xpToNext} XP pour le niveau ${d.nextLevel}`;
+  return 'Prochain niveau indisponible';
+}
+
 export function xpLine(xp: number, nextXp: number | null): string {
   return nextXp === null ? `${xp} XP` : `${xp} / ${nextXp} XP`;
 }

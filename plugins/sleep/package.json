@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
-    "expo-notifications": "*",
+    "expo-notifications": "~0.32.16",
     "zustand": "^5.0.0",
     "date-fns": "^4.0.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0"
+    "react-native": "^0.81.5"
   }
 }
