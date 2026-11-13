@@ -7,6 +7,7 @@
  * - file d'attente hors-ligne pour la saisie manuelle (M-5, "sera synchronisee")
  * - libelle du cout reel de la methode Photo (D-10)
  */
+import { requestQuestRefresh } from './questRefresh';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export const MEAL_TYPES: readonly MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
@@ -345,6 +346,7 @@ export async function saveMeal(client: MealClient, rows: readonly InsertRow[]): 
       }
       return isNetworkError(res.error) ? { status: 'network' } : { status: 'error', message: String(res.error.message) };
     }
+    requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
     return { status: 'saved', data: (res.data ?? []) as Array<LoggedRow & { id: string }> };
   } catch (e) {
     return isNetworkError(e) ? { status: 'network' } : { status: 'error', message: String((e as Error)?.message ?? e) };

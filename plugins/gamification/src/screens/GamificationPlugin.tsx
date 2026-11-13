@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, takeQuestCompletions } from '@ziko/plugin-sdk';
 import {
   HISTORY_PAGE_SIZE, awardBadges, computeLevelProgress, ensureProfile, equipItem, fetchAchievements,
   fetchCoinHistory, purchaseItem, requestAiQuests, syncQuests, type LevelDef, type ShopItem,
@@ -114,6 +114,9 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
         const again = await syncQuests(supabase);
         res = { quests: again.quests, newlyCompleted: [...res.newlyCompleted, ...again.newlyCompleted] };
       }
+      // Quetes terminees par une synchro en arriere-plan (apres un log) : annoncees ici, une seule fois.
+      const background = takeQuestCompletions().filter((c) => !res.newlyCompleted.some((n) => n.id === c.id));
+      res = { quests: res.quests, newlyCompleted: [...res.newlyCompleted, ...background] };
       if (res.newlyCompleted.length > 0) {
         setToast(questToastText(res.newlyCompleted));
         // Les pieces gagnees changent le solde, l'historique et le niveau.

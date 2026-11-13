@@ -16,7 +16,7 @@ import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
-import { useTranslation, showAlert, formatLitersFr } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -447,6 +447,7 @@ export default function DashboardScreen() {
     setTimeout(() => setWaterConfirmed(false), 2000);
     try {
       await logWater(supabase, userId, WATER_STEP_ML);
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       void resyncRemindersFromDb(supabase, userId); // rappels : stop si l'objectif est atteint
     } catch {
       queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
@@ -463,6 +464,7 @@ export default function DashboardScreen() {
     setShowMoodSheet(false);
     try {
       await saveTodayMood(supabase, userId, value);
+      requestQuestRefresh();
       setMoodConfirmed(true);
       setTimeout(() => setMoodConfirmed(false), 2000);
     } catch {
@@ -482,6 +484,7 @@ export default function DashboardScreen() {
     setWeightInput('');
     try {
       await saveTodayWeight(supabase, userId, value);
+      requestQuestRefresh();
       setWeightConfirmed(true);
       setTimeout(() => setWeightConfirmed(false), 2000);
     } catch {

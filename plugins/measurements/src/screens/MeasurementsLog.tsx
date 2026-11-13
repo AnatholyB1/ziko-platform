@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore, showAlert, useCreditStore, getActionPrimary, localDateKey } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, useCreditStore, getActionPrimary, localDateKey, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseDecimal, ENTRY_ORDER, getMeasure } from '../lib/goals';
 import { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
@@ -78,6 +78,7 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
         ),
       }).select().single();
       if (error) throw error;
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       if (data) addEntry(data);
       queryClient.invalidateQueries({ queryKey: [RECENT_MEASURES_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [GOALS_QUERY_KEY] });
