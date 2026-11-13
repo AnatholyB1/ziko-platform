@@ -11,6 +11,7 @@ import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useUnits } from '../../../src/hooks/useUnits';
+import { displayStreak } from '@ziko/plugin-gamification/streak';
 
 // ── Badge type ───────────────────────────────────────────────────
 type BadgeItem = {
@@ -597,23 +598,14 @@ export default function ProfileScreen() {
         return weekStrs.size;
       })();
 
-      // Streak: consecutive days backward from today using habit_logs
-      const streak = (() => {
-        const logDates = (habitLogsRes.data ?? []).map((l: any) => l.date as string);
-        const uniqueDates = [...new Set(logDates)].sort().reverse();
-        let count = 0;
-        let current = today;
-        for (const d of uniqueDates) {
-          if (d === current) {
-            count++;
-            const prev = new Date(current);
-            prev.setDate(prev.getDate() - 1);
-            current = prev.toISOString().split('T')[0];
-          } else {
-            break;
-          }
-        }
-        return count;
+      // Serie : meme source que l'accueil et Recompenses (ziko_user_gamification, displayStreak) - UAT run 9, defaut 4
+      const streak = await (async () => {
+        const { data: g } = await supabase
+          .from('ziko_user_gamification')
+          .select('current_streak, last_activity_date')
+          .eq('user_id', userId!)
+          .maybeSingle();
+        return displayStreak(g);
       })();
 
       // PRs: number of exercises with a recorded best weight (no stored is_pr flag in the schema)

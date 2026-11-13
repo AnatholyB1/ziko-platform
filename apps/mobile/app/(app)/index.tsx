@@ -35,7 +35,7 @@ import {
   useHydrationToday,
   useNutritionGoal,
   useNutritionToday,
-  useSessionStreak,
+  useGamificationStreak,
   HOME_DEFAULTS,
 } from '../../src/hooks/useHomeData';
 import { formatDurationH } from '@ziko/plugin-sleep/lib/sleep';
@@ -300,7 +300,7 @@ export default function DashboardScreen() {
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
-  const { data: streak = 0 } = useSessionStreak();
+  const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
@@ -508,7 +508,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
-      queryClient.invalidateQueries({ queryKey: ['session_streak'] }),
+      queryClient.invalidateQueries({ queryKey: ['streak'] }),
     ]).catch(() => setLoadError(true));
     setRefreshing(false);
   };

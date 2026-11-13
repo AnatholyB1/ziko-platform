@@ -17,6 +17,7 @@ import { ShopTab } from './rewards/ShopTab';
 import { HistoryView, LevelTab, type LevelData } from './rewards/LevelTab';
 import { QuestsTab } from './rewards/QuestsTab';
 import { hasFreeQuestSlot, questToastText } from '../quests';
+import { displayStreak } from '../streak';
 
 // Onglet Quetes : `./rewards/QuestsTab` (P13, D-01). Lecture base via `syncQuests`, aucune quete factice.
 
@@ -70,7 +71,7 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
         nextXp: nextLevel?.xp_required ?? null,
         xpToNext,
         xpProgress,
-        streak: profile.current_streak ?? 0,
+        streak: displayStreak(profile),
         isMax: isMaxLevel(profile.level ?? 1, levels, nextLevel?.level ?? null),
       };
       return { coins: profile.coins ?? 0, playerLevel: profile.level ?? 1, level };

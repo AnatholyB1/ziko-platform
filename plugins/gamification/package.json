@@ -9,6 +9,7 @@
     "./store": "./src/store.ts",
     "./rewards": "./src/rewards.ts",
     "./quests": "./src/quests.ts",
+    "./streak": "./src/streak.ts",
     "./screens/GamificationPlugin": "./src/screens/GamificationPlugin.tsx",
     "./screens/GamificationDashboard": "./src/screens/GamificationDashboard.tsx"
   },
