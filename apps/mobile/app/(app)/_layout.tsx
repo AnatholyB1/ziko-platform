@@ -1,6 +1,7 @@
 import '../../src/tasks/notificationTask';
 import React, { useEffect } from 'react';
 import { AppState } from 'react-native';
+import { decideAppGate } from '../../src/lib/profileGate';
 import { Tabs, Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -129,6 +130,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
+  const profileStatus = useAuthStore((s) => s.profileStatus);
   const insets = useSafeAreaInsets();
   const theme = useThemeStore((s) => s.theme);
   const userId = useAuthStore((s) => s.user?.id);
@@ -248,8 +250,10 @@ export default function AppLayout() {
     };
   }, [userId, queryClient]);
 
-  if (!session) return <Redirect href="/(auth)/login" />;
-  if (!profile?.onboarding_done) return <Redirect href="/(auth)/onboarding/step-1" />;
+  const gate = decideAppGate({ hasSession: !!session, profile, profileStatus });
+  if (gate === 'login') return <Redirect href="/(auth)/login" />;
+  if (gate === 'onboarding') return <Redirect href="/(auth)/onboarding/step-1" />;
+  if (gate === 'wait') return null;
 
   return (
     <>
