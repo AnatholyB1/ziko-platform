@@ -29,7 +29,7 @@ function makeClient(results: Record<string, any> = {}) {
 }
 
 const item = (over: Partial<ProgramItem> = {}): ProgramItem => ({
-  id: 'p1', kind: 'ai', source: 'ai', name: 'PPL', subtitle: '', isActive: false, createdAt: '2026-11-01', daysPerWeek: 3, progress: null, ...over,
+  id: 'p1', kind: 'ai', source: 'ai', name: 'PPL', subtitle: '', isActive: false, status: 'not_started', createdAt: '2026-11-01', daysPerWeek: 3, progress: null, ...over,
 });
 
 describe('loadAllPrograms', () => {

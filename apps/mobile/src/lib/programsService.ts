@@ -30,7 +30,7 @@ export async function loadAllPrograms(client: Client, userId: string): Promise<P
       .eq('is_template', false),
     client
       .from('ziko_ai_generated_programs')
-      .select('id,user_id,name,goal,days_per_week,is_active,created_at,program_data')
+      .select('id,user_id,name,goal,days_per_week,is_active,created_at,program_data,started_at,completed_at')
       .eq('user_id', userId),
   ]);
   // Never fall back to a fake program on error (A05).
@@ -105,7 +105,7 @@ export async function duplicateProgram(
       .select('id,user_id,name,goal,days_per_week,is_active,created_at,program_data')
       .single();
     if (e2 || !ins) fail(e2, 'Impossible de dupliquer ce programme');
-    return { ...item, id: String(ins.id), name, isActive: false, source: item.source === 'ai' ? 'ai' : 'created' };
+    return { ...item, id: String(ins.id), name, isActive: false, status: 'not_started' as const, source: item.source === 'ai' ? 'ai' : 'created' };
   }
 
   const { data: src, error: e1 } = await client

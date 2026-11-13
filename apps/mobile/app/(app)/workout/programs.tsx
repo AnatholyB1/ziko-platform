@@ -16,6 +16,7 @@ import {
   deleteConfirmationText,
   filterPrograms,
   menuActionsFor,
+  PROGRAM_STATUS_LABELS,
   needsCoachConfirmation,
   type MenuAction,
   type ProgramFilter,
@@ -270,6 +271,9 @@ export default function ProgramsScreen() {
           {sourceBadge(item)}
         </View>
         <Text numberOfLines={1} style={{ fontSize: 14, color: theme.muted, marginTop: 2 }}>{item.subtitle}</Text>
+        <View style={{ flexDirection: 'row', marginTop: 6 }}>
+          <Badge label={PROGRAM_STATUS_LABELS[item.status].toUpperCase()} />
+        </View>
       </TouchableOpacity>
       <MenuButton item={item} />
     </View>
