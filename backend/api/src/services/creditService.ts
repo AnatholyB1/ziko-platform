@@ -254,15 +254,19 @@ export async function getQuotaStatus(userId: string, action: CreditAction): Prom
  */
 export async function trackQuotaUsage(userId: string, source: string, idempotencyKey: string): Promise<void> {
   try {
-    await supabase.from('ziko_ai_credit_transactions').insert({
+    // supabase-js ne LEVE pas : l'erreur est dans le retour. Ne pas l'ignorer, sinon un INSERT refuse
+    // (contrainte, index unique) laisse dailyUsed fige et le quota gratuit devient illimite.
+    const { error } = await supabase.from('ziko_ai_credit_transactions').insert({
       user_id: userId,
       type: 'quota',
       amount: 0,
       source,
       idempotency_key: idempotencyKey,
     });
-  } catch {
+    if (error) console.error('[creditService] trackQuotaUsage insert failed:', error.message);
+  } catch (err) {
     // Best-effort — quota tracking must never fail the AI response
+    console.error('[creditService] trackQuotaUsage threw:', (err as Error)?.message);
   }
 }
 
