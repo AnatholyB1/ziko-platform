@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import {
   mealTypeForHour, formatClock, sumMacros, scaleFood, addLabel, buildInsertRows, groupByMeal,
   deriveRecents, dateKeyDaysAgo, localDateKey, scanCostLabel, SCAN_CREDIT_COST, isNetworkError, parsePending, enqueuePending,
-  removePending, parsePrefs, saveMeal, DEFAULT_MEAL_PREFS, type BasketItem,
+  removePending, parsePrefs, saveMeal, DEFAULT_MEAL_PREFS, runExclusive, newRowId, type BasketItem,
 } from './mealLog';
 
 describe('mealTypeForHour (M-2, creneaux du contrat)', () => {
@@ -188,6 +188,58 @@ describe('saveMeal : un seul insert groupe (D-06)', () => {
   });
 });
 
+describe('double tap / renvoi : pas de doublon (revue A #15)', () => {
+  const basket = [{ key: '1', food_name: 'A', calories: 1, protein_g: 0, carbs_g: 0, fat_g: 0, serving_g: 100 }];
+
+  it('runExclusive ignore le 2e tap pendant que le 1er tourne, puis se libere', async () => {
+    const lock = { current: false };
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const work = vi.fn(async () => { await gate; return 'ok'; });
+    const first = runExclusive(lock, work);
+    const second = await runExclusive(lock, work); // 2e tap, meme tick que l'etat React non rendu
+    expect(second).toBeUndefined();
+    expect(work).toHaveBeenCalledTimes(1);
+    release();
+    expect(await first).toBe('ok');
+    expect(lock.current).toBe(false);
+    await runExclusive(lock, async () => 'again');
+    expect(lock.current).toBe(false);
+  });
+
+  it('runExclusive libere le verrou meme si fn rejette', async () => {
+    const lock = { current: false };
+    await expect(runExclusive(lock, async () => { throw new Error('x'); })).rejects.toThrow('x');
+    expect(lock.current).toBe(false);
+  });
+
+  it('chaque ligne recoit un id (cle d\'idempotence), absent sans generateur', () => {
+    const withIds = buildInsertRows(basket, 'u', '2026-11-12', 'dinner', newRowId);
+    expect(withIds[0].id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(buildInsertRows(basket, 'u', '2026-11-12', 'dinner')[0]).not.toHaveProperty('id');
+  });
+
+  it('renvoi d\'un lot deja insere (23505) : traite comme enregistre, relu par id, jamais re-insere', async () => {
+    const rows = buildInsertRows(basket, 'u', '2026-11-12', 'dinner', () => 'row-1');
+    const inSel = vi.fn(async () => ({ data: [{ id: 'row-1' }], error: null }));
+    const client = {
+      from: vi.fn(() => ({
+        insert: () => ({ select: async () => ({ data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } }) }),
+        select: () => ({ in: inSel }),
+      })),
+    };
+    const r = await saveMeal(client, rows);
+    expect(r).toEqual({ status: 'saved', data: [{ id: 'row-1' }] });
+    expect(inSel).toHaveBeenCalledWith('id', ['row-1']);
+  });
+
+  it('doublon sans id (ancien format en file) : reste une erreur, pas de faux succes', async () => {
+    const rows = buildInsertRows(basket, 'u', '2026-11-12', 'dinner');
+    const client = { from: () => ({ insert: () => ({ select: async () => ({ data: null, error: { code: '23505', message: 'duplicate key' } }) }) }) };
+    expect((await saveMeal(client, rows)).status).toBe('error');
+  });
+});
+
 describe('localDateKey (UAT run2 P9: la date d\'ecriture est recalculee, pas memorisee au montage)', () => {
   it('renvoie la date locale YYYY-MM-DD', () => {
     expect(localDateKey(new Date(2026, 10, 12, 23, 59))).toBe('2026-11-12');
@@ -208,7 +260,7 @@ describe('localDateKey (UAT run2 P9: la date d\'ecriture est recalculee, pas mem
   it('l\'ecran ne memorise plus la date au montage', () => {
     const src = readFileSync(resolve(__dirname, '../../../plugins/nutrition/src/screens/LogMealScreen.tsx'), 'utf8');
     expect(src).not.toMatch(/const today = useMemo/);
-    expect(src).toMatch(/buildInsertRows\(barItems, uid, localDateKey\(\), mealType\)/);
+    expect(src).toMatch(/buildInsertRows\(barItems, uid, localDateKey\(\), mealType, newRowId\)/);
   });
   it('la barre d\'action reste au-dessus du clavier Android (KeyboardAvoidingView height)', () => {
     const src = readFileSync(resolve(__dirname, '../../../plugins/nutrition/src/screens/LogMealScreen.tsx'), 'utf8');

@@ -13,7 +13,7 @@ import { useNutritionStore } from '../store';
 import {
   useThemeStore, useTranslation, showAlert, useCreditStore, getActionPrimary,
   MEAL_TYPES, MEAL_METHODS, mealTypeForHour, formatClock, sumMacros, scaleFood, addLabel,
-  buildInsertRows, groupByMeal, deriveRecents, dateKeyDaysAgo, localDateKey, RECENTS_WINDOW_DAYS, scanCostLabel,
+  buildInsertRows, newRowId, runExclusive, groupByMeal, deriveRecents, dateKeyDaysAgo, localDateKey, RECENTS_WINDOW_DAYS, scanCostLabel,
   SCAN_CREDIT_COST, parsePending, enqueuePending, removePending, parsePrefs, saveMeal,
   type MealType, type MealMethod, type BasketItem, type PendingMeal, type MealPrefs,
 } from '@ziko/plugin-sdk';
@@ -99,6 +99,9 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
   const [custom, setCustom] = useState<CustomEntry>(EMPTY_CUSTOM);
   const [focused, setFocused] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Verrou SYNCHRONE : `saving` est un etat (asynchrone), deux taps rapides passaient avant son rendu.
+  const commitLock = useRef(false);
+  const flushLock = useRef(false);
 
   // Photo
   const [scanImage, setScanImage] = useState<string | null>(null);
@@ -166,6 +169,8 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
 
   // ── File d'attente hors-ligne (M-5) ──
   const flushPending = useCallback(async () => {
+    if (flushLock.current) return; // mount + retour au premier plan : un seul flush a la fois
+    flushLock.current = true;
     try {
       let list = parsePending(await AsyncStorage.getItem(PENDING_KEY));
       if (list.length === 0) { setPending([]); return; }
@@ -181,6 +186,7 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
       await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(list));
       setPending(list);
     } catch { /* reessai a la prochaine ouverture */ }
+    finally { flushLock.current = false; }
   }, [supabase]);
 
   useEffect(() => {
@@ -249,13 +255,17 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
   // ── Enregistrement groupe (D-06, D-11, D-13) ──
   const commit = async () => {
     if (barItems.length === 0 || saving) return;
+    await runExclusive(commitLock, commitInner);
+  };
+
+  const commitInner = async () => {
     setSaving(true);
     let uid = userId;
     if (!uid) {
       try { uid = (await supabase.auth.getUser()).data?.user?.id ?? null; } catch { uid = null; }
     }
     if (!uid) { setSaving(false); showAlert(t('general.error'), t('nutrition.notAuth')); return; }
-    const rows = buildInsertRows(barItems, uid, localDateKey(), mealType);
+    const rows = buildInsertRows(barItems, uid, localDateKey(), mealType, newRowId);
     const res = await saveMeal(supabase, rows);
     if (res.status === 'saved') {
       res.data.forEach((d) => addLog(d as any));

@@ -99,6 +99,8 @@ export function addLabel(n: number): string {
 }
 
 export interface InsertRow {
+  /** Cle d'idempotence generee cote client : un renvoi du meme lot (reponse perdue) ne cree pas de doublon. */
+  id?: string;
   user_id: string;
   date: string;
   meal_type: MealType;
@@ -119,9 +121,11 @@ export function buildInsertRows(
   userId: string,
   date: string,
   mealType: MealType,
+  newId?: () => string,
 ): InsertRow[] {
   return basket.map((b) => {
     const row: InsertRow = {
+      ...(newId ? { id: newId() } : {}),
       user_id: userId,
       date,
       meal_type: mealType,
@@ -297,12 +301,48 @@ export type SaveMealResult =
   | { status: 'network' }
   | { status: 'error'; message: string };
 
+/**
+ * Verrou synchrone (ref) : un second appel pendant que `fn` tourne est ignore (undefined).
+ * Un etat React (`saving`) ne suffit pas : deux taps rapides passent avant son rendu.
+ */
+export async function runExclusive<T>(lock: { current: boolean }, fn: () => Promise<T>): Promise<T | undefined> {
+  if (lock.current) return undefined;
+  lock.current = true;
+  try {
+    return await fn();
+  } finally {
+    lock.current = false;
+  }
+}
+
+/** UUID v4 pour les cles d'idempotence (Math.random suffit : unicite, pas securite). */
+export function newRowId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function isDuplicateKey(err: { message?: unknown; code?: unknown }): boolean {
+  return String(err.code ?? '') === '23505' || /duplicate key/i.test(String(err.message ?? ''));
+}
+
 /** UN seul `insert([...])` sur ziko_nutrition_logs pour tout le panier. */
 export async function saveMeal(client: MealClient, rows: readonly InsertRow[]): Promise<SaveMealResult> {
   if (rows.length === 0) return { status: 'error', message: 'empty basket' };
   try {
     const res = await client.from('ziko_nutrition_logs').insert([...rows]).select();
     if (res.error) {
+      // Lot deja insere (renvoi apres une reponse perdue) : on le relit, on ne le recree pas.
+      if (isDuplicateKey(res.error) && rows.every((r) => r.id)) {
+        const ids = rows.map((r) => r.id as string);
+        try {
+          const prev = await client.from('ziko_nutrition_logs').select().in('id', ids);
+          return { status: 'saved', data: (prev?.data ?? []) as Array<LoggedRow & { id: string }> };
+        } catch {
+          return { status: 'saved', data: [] };
+        }
+      }
       return isNetworkError(res.error) ? { status: 'network' } : { status: 'error', message: String(res.error.message) };
     }
     return { status: 'saved', data: (res.data ?? []) as Array<LoggedRow & { id: string }> };
