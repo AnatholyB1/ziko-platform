@@ -148,13 +148,7 @@ insert into public.ziko_user_gamification (user_id, xp, level, coins, current_st
 values ('a0a0a0a0-0000-4000-8000-0000000000a1', 350, 3, 480, 5, 7)
 on conflict (user_id) do update set xp = 350, level = 3, coins = 480, current_streak = 5, longest_streak = 7;
 
--- FIXTURE BRANCHE UNIQUEMENT : ziko_badge_definitions a RLS active et AUCUNE policy SELECT dans les migrations
--- du depot (constat UAT P12 : Succes = "0 sur 0"). Verifier la prod avant release ; ne pas porter en migration sans decision.
-do $$ begin
-  if not exists (select 1 from pg_policies where tablename='ziko_badge_definitions') then
-    create policy "badge_definitions_read_uat" on public.ziko_badge_definitions for select using (true);
-  end if;
-end $$;
+-- (run4) fixture badge_definitions_read_uat SUPPRIMEE : la policy 1203 ziko_badge_definitions_select_authenticated suffit (verifie UAT run4).
 
 -- ===== run2 : fixtures branche uat-v1-20 UNIQUEMENT =====
 -- (a) GRANT manquants sur la branche (ziko_stretching_exercises: migration 1801 sans GRANT ; supplements: tables sans GRANT authenticated)
