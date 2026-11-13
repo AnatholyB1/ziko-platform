@@ -11,6 +11,30 @@ export type ProgramSource = 'ai' | 'coach' | 'created';
 export type ProgramFilter = 'all' | 'ai' | 'coach' | 'created';
 export type MenuAction = 'activate' | 'duplicate' | 'rename' | 'delete';
 
+export type ProgramStatus = 'active' | 'paused' | 'completed' | 'not_started';
+
+export const PROGRAM_STATUS_LABELS: Record<ProgramStatus, string> = {
+  active: 'Actif',
+  paused: 'En pause',
+  completed: 'Terminé',
+  not_started: 'Pas encore démarré',
+};
+
+/**
+ * Statut visible sur chaque ligne de la liste (UAT run 6 : aucune etiquette). Actif = is_active ;
+ * sinon Termine (completed_at), En pause (deja demarre : started_at, ou semaine de cycle > 1), sinon
+ * Pas encore demarre. Un programme coach sans started_at est juge demarre des la semaine 2.
+ */
+export function deriveProgramStatus(
+  row: { is_active?: unknown; completed_at?: unknown; started_at?: unknown },
+  progress: { week: number } | null,
+): ProgramStatus {
+  if (row.is_active === true) return 'active';
+  if (row.completed_at) return 'completed';
+  if (row.started_at || (progress && progress.week > 1)) return 'paused';
+  return 'not_started';
+}
+
 export interface ProgramItem {
   id: string;
   kind: ProgramKind;
@@ -19,6 +43,7 @@ export interface ProgramItem {
   /** Second line of the row, e.g. "Atelier IA · 6 séances par semaine". */
   subtitle: string;
   isActive: boolean;
+  status: ProgramStatus;
   createdAt: string;
   daysPerWeek: number | null;
   /** Progress, only when the data really exists (workout programs with a cycle). */
@@ -68,6 +93,7 @@ export function normalizeWorkoutRow(row: Row, userId: string): ProgramItem {
     name: nameOf(row, 'Programme sans nom'),
     subtitle: parts.join(' · '),
     isActive: row.is_active === true,
+    status: deriveProgramStatus(row, progress),
     createdAt: String(row.created_at ?? row.updated_at ?? ''),
     daysPerWeek: days,
     progress,
@@ -87,6 +113,7 @@ export function normalizeAiRow(row: Row): ProgramItem {
     name: nameOf(row, 'Programme sans nom'),
     subtitle: parts.join(' · '),
     isActive: row.is_active === true,
+    status: deriveProgramStatus(row, null),
     createdAt: String(row.created_at ?? ''),
     daysPerWeek: days,
     progress: null,
@@ -105,7 +132,7 @@ export function buildProgramList(workoutRows: Row[], aiRows: Row[], userId: stri
   ];
   const actives = items.filter((i) => i.isActive).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const keep = actives[0]?.id;
-  const out = items.map((i) => (i.isActive && i.id !== keep ? { ...i, isActive: false } : i));
+  const out = items.map((i) => (i.isActive && i.id !== keep ? { ...i, isActive: false, status: i.status === 'active' ? 'paused' : i.status } : i));
   return out.sort((a, b) => {
     if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
     return b.createdAt.localeCompare(a.createdAt);

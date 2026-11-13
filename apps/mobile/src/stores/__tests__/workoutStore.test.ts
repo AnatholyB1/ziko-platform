@@ -64,7 +64,7 @@ describe('startPlannedSession (D-01, TRAIN-01/02)', () => {
     tables['ziko_workout_sessions:insert'] = { id: 's1', name: 'Full Body Power', started_at: new Date().toISOString() };
 
     const res = await useWorkoutStore.getState().startPlannedSession('p1', 0); // Monday
-    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 2, unresolved: [] });
+    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 2, unresolved: [], replaced: [] });
     const st = useWorkoutStore.getState();
     expect(st.currentSession?.id).toBe('s1');
     expect(st.currentWorkoutExercises.map((e) => e.exercise_id)).toEqual(['e1', 'e2']);
@@ -104,7 +104,7 @@ describe('startPlannedSession : exercice inconnu ne bloque pas la seance (run4 P
     ];
     tables['ziko_workout_sessions:insert'] = { id: 's1', name: 'Full Body Power', started_at: new Date().toISOString() };
     const res = await useWorkoutStore.getState().startPlannedSession('p1', 0);
-    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 2, unresolved: [] });
+    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 2, unresolved: [], replaced: [{ from: 'Squat', to: 'back squat' }] });
     expect(useWorkoutStore.getState().currentWorkoutExercises.map((e) => e.exercise_id)).toEqual(['e1', 'e2']);
   });
 
@@ -113,7 +113,7 @@ describe('startPlannedSession : exercice inconnu ne bloque pas la seance (run4 P
     tables['ziko_exercises'] = [{ id: 'e2', name: 'Bench Press', name_fr: 'Developpe couche' }];
     tables['ziko_workout_sessions:insert'] = { id: 's1', name: 'Full Body Power', started_at: new Date().toISOString() };
     const res = await useWorkoutStore.getState().startPlannedSession('p1', 0);
-    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 1, unresolved: ['Squat'] });
+    expect(res).toEqual({ ok: true, name: 'Full Body Power', exerciseCount: 1, unresolved: ['Squat'], replaced: [] });
     expect(useWorkoutStore.getState().currentSession?.id).toBe('s1');
   });
 });
@@ -154,5 +154,48 @@ describe('setActiveProgram (P7, TRAIN-07)', () => {
   it('throws when the RPC fails', async () => {
     rpcMock.mockResolvedValueOnce({ error: { message: 'program not found' } });
     await expect(useWorkoutStore.getState().setActiveProgram('x')).rejects.toThrow('program not found');
+  });
+});
+
+describe('une seule seance ouverte a la fois (UAT run 6)', () => {
+  const sessionCall = (op: string) => calls.find((c) => c.table === 'ziko_workout_sessions' && c.op === op);
+
+  it('startSession ferme la seance ouverte precedente : sans serie => supprimee avant la creation', async () => {
+    tables['ziko_workout_sessions'] = [{ id: 'old', started_at: new Date().toISOString(), ended_at: null }];
+    tables['ziko_session_sets'] = [];
+    tables['ziko_workout_sessions:insert'] = { id: 'new', name: 'Séance libre', started_at: new Date().toISOString() };
+    await useWorkoutStore.getState().startSession();
+    expect(sessionCall('delete')).toBeDefined();
+    expect(calls.indexOf(sessionCall('delete')!)).toBeLessThan(calls.indexOf(sessionCall('insert')!));
+    expect(useWorkoutStore.getState().currentSession?.id).toBe('new');
+  });
+
+  it('avec series validees : terminee (update ended_at), pas supprimee', async () => {
+    tables['ziko_workout_sessions'] = [{ id: 'old', started_at: new Date().toISOString(), ended_at: null }];
+    tables['ziko_session_sets'] = [{ completed_at: '2026-11-13T10:00:00Z', created_at: '2026-11-13T10:00:00Z' }];
+    tables['ziko_workout_sessions:insert'] = { id: 'new', started_at: new Date().toISOString() };
+    await useWorkoutStore.getState().startSession();
+    expect(sessionCall('update')?.payload).toMatchObject({ ended_at: '2026-11-13T10:00:00Z', total_sets: 1 });
+    expect(sessionCall('delete')).toBeUndefined();
+  });
+
+  it('nom par defaut : "Séance libre" (plus "Quick Workout")', async () => {
+    tables['ziko_workout_sessions:insert'] = { id: 'n', started_at: new Date().toISOString() };
+    await useWorkoutStore.getState().startSession();
+    expect(sessionCall('insert')?.payload.name).toBe('Séance libre');
+  });
+
+  it('seance planifiee : un nom de jour "A" est prefixe du nom du programme', async () => {
+    tables['ziko_ai_generated_programs'] = {
+      ...fullBody,
+      name: 'Force 5x5',
+      program_data: { weeks: [{ w: 1, sessions: [{ name: 'A', exercises: [{ name: 'Squat', sets: 4, reps: '5', exercise_id: 'e1' }] }] }] },
+    };
+    tables['ziko_exercises'] = [{ id: 'e1', name: 'Back Squat', name_fr: null }];
+    tables['ziko_workout_sessions:insert'] = { id: 's1', started_at: new Date().toISOString() };
+    const res: any = await useWorkoutStore.getState().startPlannedSession('p1', 0);
+    expect(res.ok).toBe(true);
+    expect(res.name).toBe('Force 5x5 · A');
+    expect(sessionCall('insert')?.payload.name).toBe('Force 5x5 · A');
   });
 });

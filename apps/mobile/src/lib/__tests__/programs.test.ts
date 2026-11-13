@@ -13,7 +13,11 @@ import {
   buildWizardProgramRow,
   wizardSessionSummaries,
   PROGRAM_RULE_TEXT,
+  PROGRAM_STATUS_LABELS,
+  deriveProgramStatus,
 } from '../programs';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const ME = 'user-1';
 const COACH = 'coach-1';
@@ -148,5 +152,42 @@ describe('wizard output (TRAIN-09, D-10)', () => {
     const r = buildWizardProgramRow(ME, { goal: 'wellness', weeks: 4, selectedDays: [1], exercises: [] });
     expect(r.name).toBe('Bien-être · 1 séance/sem');
     expect(wizardSessionSummaries(r.program_data)).toHaveLength(1);
+  });
+});
+
+describe('statut visible par programme (UAT run 6, P7)', () => {
+  const list = buildProgramList(workoutRows, aiRows, ME);
+  const get = (id: string) => list.find((i) => i.id === id)!;
+  it('actif => Actif', () => {
+    expect(get('w-coach').status).toBe('active');
+    expect(PROGRAM_STATUS_LABELS.active).toBe('Actif');
+  });
+  it('jamais demarre => Pas encore démarré', () => {
+    expect(get('w-mine').status).toBe('not_started');
+    expect(get('a-ppl').status).toBe('not_started');
+    expect(PROGRAM_STATUS_LABELS.not_started).toBe('Pas encore démarré');
+  });
+  it('deja demarre puis desactive => En pause', () => {
+    const l = buildProgramList([], [{ ...aiRows[0], started_at: '2026-10-21T00:00:00Z' }], ME);
+    expect(l[0].status).toBe('paused');
+    expect(deriveProgramStatus({ is_active: false }, { week: 3 })).toBe('paused');
+    expect(PROGRAM_STATUS_LABELS.paused).toBe('En pause');
+  });
+  it('completed_at => Terminé (meme avec started_at)', () => {
+    expect(deriveProgramStatus({ is_active: false, started_at: 'x', completed_at: 'y' }, null)).toBe('completed');
+    expect(PROGRAM_STATUS_LABELS.completed).toBe('Terminé');
+  });
+  it('un actif retrograde par l invariant 0/1 devient En pause', () => {
+    const l = buildProgramList(
+      [{ ...workoutRows[0], id: 'w-old', created_at: '2026-01-01T00:00:00Z' }, workoutRows[0]],
+      [],
+      ME,
+    );
+    expect(l.filter((i) => i.status === 'active')).toHaveLength(1);
+    expect(l.find((i) => i.id === 'w-old')?.status).toBe('paused');
+  });
+  it('chaque ligne de liste affiche l etiquette de statut (cablage source)', () => {
+    const src = readFileSync(resolve(__dirname, '../../../app/(app)/workout/programs.tsx'), 'utf8');
+    expect(src).toMatch(/PROGRAM_STATUS_LABELS\[item\.status\]/);
   });
 });

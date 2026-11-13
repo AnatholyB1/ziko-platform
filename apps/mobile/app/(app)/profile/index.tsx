@@ -1102,7 +1102,7 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={() => {
                   try {
-                    router.push('/(app)/(workout)/session' as any);
+                    router.push('/(app)/workout');
                   } catch {
                     showAlert('Navigation', 'Lance une séance depuis le menu principal.');
                   }

@@ -167,6 +167,21 @@ describe('defi de groupe (S9)', () => {
     expect(collectiveView(base({ my_status: 'invited', my_contribution: null })).mineLine).toBeNull();
     expect(collectiveView(base({ role: 'coach', my_status: null, my_contribution: null })).mineLine).toBeNull();
   });
+  it('sous 3 participants : total masque (pas "0 / 10000"), pas de barre, ma contribution reste visible', () => {
+    const v = collectiveView(base({ total: 0, total_hidden: true, joined_count: 1, my_contribution: 4000 }));
+    expect(v.groupLine).toBe('Total masqué (moins de 3 participants)');
+    expect(v.groupLine).not.toMatch(/0 \//);
+    expect(v.hidden).toBe(true);
+    expect(v.ratio).toBe(0);
+    expect(v.mineLine).toBe('Ma contribution : 4000');
+  });
+  it('parseCollective : total null du backend => masque (jamais lu comme 0)', () => {
+    const raw = { id: 'c', title: 'x', metric: 'hydration_ml', target_total: 10000, total: null, total_hidden: true, joined_count: 1, my_contribution: 500, my_status: 'joined', role: 'athlete', end_date: '2026-11-22' };
+    const p = parseCollective(raw)!;
+    expect(p.total_hidden).toBe(true);
+    expect(collectiveView(p).hidden).toBe(true);
+    expect(parseCollective({ ...raw, total: 4000, total_hidden: false })?.total_hidden).toBe(false);
+  });
   it('parseCollective : metrique de sante ou forme invalide rejetee', () => {
     expect(parseCollective({ id: 'c', title: 'x', metric: 'weight_kg' })).toBeNull();
     expect(parseCollective({ id: 'c' })).toBeNull();
@@ -174,7 +189,7 @@ describe('defi de groupe (S9)', () => {
     expect(parseCollective({ id: 'c', title: 'x', metric: 'habit_logs', target_total: 30, total: 3, joined_count: 2, my_contribution: null, my_status: 'invited', role: 'athlete', end_date: '2026-11-22' })?.my_contribution).toBeNull();
   });
   it('la vue ne porte aucun identifiant ni nom d une autre personne', () => {
-    expect(Object.keys(collectiveView(base())).sort()).toEqual(['groupLine', 'mineLine', 'participantsLine', 'ratio']);
+    expect(Object.keys(collectiveView(base())).sort()).toEqual(['groupLine', 'hidden', 'mineLine', 'participantsLine', 'ratio']);
   });
 });
 
