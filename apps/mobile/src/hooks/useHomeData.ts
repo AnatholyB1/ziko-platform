@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
+import { getActiveProgram } from '../lib/activeProgram';
 import { localDateKey, consecutiveDayStreak } from '../lib/localDate';
 import { COUNTABLE_SESSION_OR_FILTER } from '../lib/workoutPlan';
 import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
@@ -247,14 +248,8 @@ export function useActiveAIProgram() {
   return useQuery({
     queryKey: ['program', 'active', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ziko_ai_generated_programs')
-        .select('*')
-        .eq('user_id', userId!)
-        .eq('is_active', true)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? null;
+      // Programme actif de l'une OU l'autre table (IA / coach) : une seule fonction de lecture.
+      return await getActiveProgram(supabase as any, userId!);
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 min

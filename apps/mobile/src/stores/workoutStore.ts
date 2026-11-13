@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
+import { loadProgramForSession } from '../lib/activeProgram';
 import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
 import { classifyRestoredSession, classifyLiveSession } from '../lib/staleSession';
@@ -289,16 +290,12 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return { ok: false, reason: 'no_user' };
 
-    const { data: program, error: progErr } = await supabase
-      .from('ziko_ai_generated_programs')
-      .select('id, goal, program_data')
-      .eq('id', programId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // Le programme actif peut venir de l'une des deux tables (IA ou coach) : lecture unifiee.
+    const { program, error: progErr } = await loadProgramForSession(supabase as any, user.id, programId);
     if (progErr) return { ok: false, reason: 'db_error' };
     if (!program) return { ok: false, reason: 'no_program' };
 
-    const plan = normalizePlanSessions((program as any).program_data);
+    const plan = normalizePlanSessions(program.program_data);
     if (plan.length === 0) return { ok: false, reason: 'no_session' };
     // Same resolution as the week layout: the planned session for that weekday, else the next one.
     let picked = plan.find((p) => p.dayIndex === dayIndex);
@@ -374,8 +371,9 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .from('ziko_workout_sessions')
       .insert({
         user_id: user.id,
-        program_workout_id: null,
-        program_id: null,
+        // programme coach : la seance reste rattachee a son programme / sa journee ; IA : pas de FK.
+        program_workout_id: program.kind === 'coach' ? (program.program_data?.sessions?.[picked.sourceIndex]?.workout_id ?? null) : null,
+        program_id: program.kind === 'coach' ? program.id : null,
         name: picked.name,
         started_at: new Date().toISOString(),
         day_of_week: new Date().getDay() || 7,

@@ -133,7 +133,8 @@ function MissionCardContent({
   const todaySession: any = todayPick?.session ?? null;
   const exercises: any[] = todaySession?.exercises ?? [];
   const sessionName: string = todaySession?.name ?? goalLabel(activeProgram?.goal, 'Séance du jour');
-  const programName: string = goalLabel(activeProgram?.goal, 'Programme IA');
+  const programName: string =
+    activeProgram?.kind === 'coach' && activeProgram?.name ? activeProgram.name : goalLabel(activeProgram?.goal, 'Programme IA');
   const duration: number = Math.max(30, exercises.length * 6);
 
   return (
@@ -195,7 +196,13 @@ function MissionCardContent({
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push(`/(app)/(plugins)/ai-programs/${activeProgram?.id}` as any)}
+            onPress={() =>
+              router.push(
+                (activeProgram?.kind === 'coach'
+                  ? `/(app)/workout/${activeProgram?.id}`
+                  : `/(app)/(plugins)/ai-programs/${activeProgram?.id}`) as any,
+              )
+            }
             style={{
               width: 48, height: 48, backgroundColor: 'rgba(255,250,246,0.10)',
               borderRadius: 10, alignItems: 'center', justifyContent: 'center',
