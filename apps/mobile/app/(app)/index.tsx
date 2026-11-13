@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { daysLabel, nutritionRingSub } from '../../src/lib/frLabels';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
   Modal, TextInput, useWindowDimensions, KeyboardAvoidingView, Platform,
@@ -530,7 +531,7 @@ export default function DashboardScreen() {
   const segmentParts = [
     { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepData ? `${formatDurationH(sleepH)}${sleepData.quality != null ? ` · qualité ${sleepData.quality} / 5` : ''}` : 'Aucune nuit enregistrée' },
     { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(waterGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
-    { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: kcal > 0 ? `${kcal} kcal` : 'Loggue ton repas' },
+    { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: nutritionRingSub(kcal, kcalGoal) },
     { value: loadPct, max: 100, color: '#22C55E', icon: 'flash-outline' as const, label: 'Charge', sub: `${weeklyCount}/${weeklyGoal} séances` },
   ];
 
@@ -568,7 +569,7 @@ export default function DashboardScreen() {
               }}>
                 <Ionicons name="flame" size={13} color="#FF5C1A" />
                 <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#FF5C1A' }}>
-                  {streak} jours
+                  {daysLabel(streak)}
                 </Text>
               </View>
             )}
@@ -856,7 +857,7 @@ export default function DashboardScreen() {
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Repas</Text>
             {kcal > 0 && (
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#FF5C1A' }}>{Math.round(kcal)} kcal</Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#FF5C1A' }}>{nutritionRingSub(kcal, kcalGoal)}</Text>
             )}
           </TouchableOpacity>
         </View>

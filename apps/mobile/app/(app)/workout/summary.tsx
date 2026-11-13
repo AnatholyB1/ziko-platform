@@ -20,6 +20,7 @@ import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@z
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { supabase } from '../../../src/lib/supabase';
 import WSHeader from '../../../src/components/WSHeader';
+import { setsCompletedLabel } from '../../../src/lib/frLabels';
 
 export default function WorkoutSummaryScreen() {
   const theme = useThemeStore((s) => s.theme);
@@ -70,7 +71,7 @@ export default function WorkoutSummaryScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${session.highlight ?? 'Séance'}\n${durationMin} min · ${totalSets} séries · ${(totalVolume / 1000).toFixed(1)}t${prs.length ? '\n' + prs.map((p) => p.name).join(', ') + ' — nouveau record !' : ''}`,
+        message: `${session.highlight ?? 'Séance'}\n${durationMin} min · ${totalSets} ${totalSets < 2 ? 'série' : 'séries'} · ${(totalVolume / 1000).toFixed(1)}t${prs.length ? '\n' + prs.map((p) => p.name).join(', ') + ' — nouveau record !' : ''}`,
       });
     } catch (_) {
       // user cancelled
@@ -140,7 +141,7 @@ export default function WorkoutSummaryScreen() {
                   textTransform: 'uppercase',
                 }}
               >
-                Highlight
+                Temps fort
               </Text>
             </View>
 
@@ -155,7 +156,7 @@ export default function WorkoutSummaryScreen() {
               }}
             >
               {session.highlight ??
-                `${durationMin} min · ${totalSets} séries complétées`}
+                `${durationMin} min · ${setsCompletedLabel(totalSets)}`}
             </Text>
 
             {/* 4-up stats grid */}
