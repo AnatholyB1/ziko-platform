@@ -18,3 +18,10 @@ Preuves locales (gitignore): uat-evidence/09/. Methode: lien profond ziko://nutr
 | U14 | PASS partiel | Bouton plein orange fonce (#CF4509 visuel), cartes arrondies + ombre, focus champ bord primaire. Mesures dp non prises. |
 | U15 | NON-TESTE | Photo reelle (1 appel reel max, non declenche). |
 Observation: ecran monte avant minuit garde la date de montage (`today` memoise, LogMealScreen.tsx:87) -> lignes datees de la veille a 00:01.
+
+## Run 7 (2026-11-13)
+| Id | Verdict | Preuve |
+|---|---|---|
+| U1 1 tap + <= 4 taps | PASS | tuile Repas -> ecran unique (1 tap); champ recherche, `poulet`, resultat, `Ajouter 1 aliment` = 4 taps au total; retour accueil; base : `Poulet rôti` snack 190 kcal; recap `490 -> 680 / 2000 kcal` |
+| U12 code-barres introuvable | BLOQUE | camera virtuelle de l'emulateur : le segment Code n'offre que `Alignez le code-barres pour scanner` (pas de saisie manuelle), aucun code injectable ; permission camera ok (p9-barcode.png) |
+| U15 photo | NON-TESTE | route vision = faux Anthropic (sortie structuree a scripter) ; budget |

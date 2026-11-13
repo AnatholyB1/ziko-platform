@@ -21,3 +21,20 @@
 - Ecarts : seance nommee 'A', '1 series completees', 'HIGHLIGHT' EN, seance ouverte restante apres 2e demarrage
 - B, D, E, F, mode libre : NON-TESTE
 Detail : ../../UAT-RESULTS-run6.md
+
+## Run 7 (2026-11-13) : verification FIX-UAT-RUN6
+| Critere | Verdict | Preuve |
+|---|---|---|
+| `Sauvegarder & fermer` | PASS | seance rapide (1 serie) -> Terminer -> resume -> `Sauvegarder & fermer` atterrit sur l'onglet Entrainement, pas d'Unmatched Route (p6-after.png) |
+| Accueil rafraichi sans relance | PASS | tuile Charge `2/4` -> `4/4 séances` apres retour; ecart : +2 pour une seule seance et incoherence avec `2 séances sur 4 prévues` (onglet Entrainement) |
+| Resume | PASS partiel | `Temps fort`, `1 série complétée` OK; reste `1 séries · meilleure : —` (pluriel) et `0 kg` de volume pour 12x60 kg |
+| Cold start avion != Bienvenue | PASS | accueil affiche, pas d'onboarding. Ecart : au meme demarrage `Communauté se débloque au niveau 3. Tu es niveau 1.` alors que le niveau en base est 3 |
+| Defi collectif 1 participant | PASS | `Total masqué (moins de 3 participants)`, `1 participant`, `Ma contribution : 4000`, pas de barre (p26-collective.png) |
+
+## Run 7 (suite) : Flows B / D / E
+| Flow | Verdict | Preuve |
+|---|---|---|
+| B bouton `Démarrer la séance d'aujourd'hui · Séance` | PASS partiel | present en bas de la page programme avant effacement des donnees locales ; la seance ouverte s'appelle `Séance rapide` (nom du bouton `Séance` != titre de la seance ouverte) |
+| Entrainement vs Programmes | FAIL | apres reconnexion (effacement des donnees de l'app) l'onglet Entrainement affiche `Aucun programme actif` alors que `ziko_workout_programs.is_active=true` et que la liste `Programmes` montre `Force 5x5, bloc 2` `ACTIF` (`start_date` null). Avant l'effacement le meme ecran montrait le programme (etat local persiste) : l'onglet ne relit pas la base |
+| D semaine type | NON-TESTE / BLOQUE | le programme coach `Force 5x5, bloc 2` ouvre le constructeur avec `0 jours / semaine` (aucun jour en base) ; il faut activer `UAT Full Body 3x8` pour tester (p6-prog.png) |
+| E detail depuis Recent | NON-TESTE | budget |
