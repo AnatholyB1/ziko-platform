@@ -1,0 +1,36 @@
+# v1.20 UAT Mobile — état au 2026-11-13 (fin de session d'orchestration)
+
+Branche d'intégration : `milestone/v1.20` (worktree `.claude/worktrees/integration-v1.20`). Rien n'est poussé ni mergé dans `main`.
+
+## Ce qui est fait
+- **26 phases sur 26 construites et fusionnées** (P1–P26, maquettes lots A–F). Aucun conflit non résolu.
+- Audits : sécurité, revue A (P1–P12, P15), revue B (P13–P26) — rapports `AUDIT-*.md`, corrections `FIX-SECURITY.md`, `FIX-REVIEW-A/B.md`.
+- UAT sur émulateur Android (harnais P1) : 8 runs, 8 cycles de correction (`FIX-UAT-RUN1..7.md`).
+- Gate de référence (dernière exécution) : vitest racine 1168 tests OK ; backend ≥ 569 OK ; rendu mobile 89 OK ; `tsc` mobile/backend 0 erreur (hors fichier `.expo/types/router.d.ts` généré périmé : le supprimer avant `tsc`) ; test statique GRANT vert ; noms de migrations OK (52 fichiers).
+
+## Ce qui N'EST PAS prouvé (honnêteté)
+- Aucune phase n'est « vérifiée de bout en bout » au sens strict : l'UAT couvre une partie des critères de chaque phase.
+- **Jamais testé sur émulateur** (détail dans `UAT-RESULTS-run*.md`) : P26 LG-1, 7 (UI), 12 (puce), 23–25 ; P16 IM-4, 12 (complétion), 13 ; P24 activation par l'UI et variantes C–F ; P23 atelier A–F ; création de quête à 21 h par l'UI ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; caméra virtuelle (scan code-barres) ; comparaison aux maquettes (jamais faite systématiquement).
+- Le **faux Anthropic** prouve le câblage, pas la qualité du vrai modèle. Aucun appel Anthropic réel n'a été fait (autorisé : 1 par UAT d'outil IA, jamais utilisé).
+- Les migrations ont été rejouées sur la branche de test `uat-v1-20` (copie du schéma ziko_*), pas sur le schéma prod réel.
+- Incohérence non résolue : le résumé de l'agent du run 8 évoque un FAIL « saisie d'eau après création d'une quête non comptée », mais ses tableaux et `phases/13-*/UAT-RESULTS.md` donnent PASS (SQL). À rejouer par l'UI.
+
+## Actions PRODUCTION réalisées (accord explicite de l'utilisateur)
+1. `202612012501_coach_link_guard` appliquée en prod (faille RLS `ziko_coach_client_links`).
+2. REVOKE EXECUTE de `ziko_earn_ai_credits` / `ziko_deduct_ai_credits` (PUBLIC/anon/authenticated) et de `ziko_search_users_fuzzy` (anon). Détail : `DEPLOY-CHECKLIST-v1.20.md` sections H et J.
+Rien d'autre n'a été écrit en prod.
+
+## Défauts connus laissés ouverts
+- **Facturation** : `ziko_deduct_ai_credits` lève 42P10 (ON CONFLICT sans prédicat) → probablement aucun débit réel. Décision : corriger AU DÉPLOIEMENT, date d'activation à fixer par l'utilisateur.
+- **Déployé en prod aujourd'hui (origin/main)** et corrigé seulement dans le milestone : retrait du coach côté athlète sans effet (route masquée), « Sauvegarder & fermer » → Unmatched Route, `ziko_friendships` sans migration 2101, 9 fonctions SECURITY DEFINER encore appelables hors 2701 (voir `AUDIT-SECURITY.md`), policy de lecture manquante sur `ziko_badge_definitions` et `ziko_level_definitions`.
+- Communauté : « niveau 1 » (règle `ziko_athlete_state.tier`, décision D-02) vs niveau gamification 3 : message à reformuler en « palier » (non fait).
+- Notification : l'écran « Activer / Plus tard » réapparaît après la modale de ligue (à confirmer).
+- `plugins/nutrition` : `expo-image-manipulator ~13.1.7` vs `^55.0.13` dans apps/mobile (Expo ~54 attend ~14.0.x) → `npx expo install --check` + rebuild EAS avant release.
+- Constats d'audit BASSES non traités ; dette de dates UTC hors périmètre (cardio, coach, community, stats, wearables, calendar, profile, onboarding).
+- LEAG-05 partiel (pas d'écran coach pour créer un défi) ; MEAS-10/11 inexistantes dans REQUIREMENTS.
+
+## Suite recommandée
+1. Run 9 d'UAT sur les flows listés « jamais testé » (procédure : `UAT-RUN8-RESUME.md`).
+2. Déploiement coordonné : backend d'abord (service key Vercel déjà présente), puis migrations dans l'ordre des noms (`DEPLOY-CHECKLIST-v1.20.md`), 2101 après comptage de doublons en lecture seule, correction de la facturation à la date choisie.
+3. EAS : `npx expo install --check`, rebuild dev-client, tests avatar/photo repas.
+4. PR `milestone/v1.20` → `main` seulement sur demande explicite de l'utilisateur.
