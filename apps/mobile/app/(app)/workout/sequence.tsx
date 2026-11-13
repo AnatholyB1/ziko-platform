@@ -6,7 +6,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, getActionPrimary } from '@ziko/plugin-sdk';
+import { useThemeStore, getActionPrimary, goalLabel } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import { PERIOD_COPY, STATUS_LABEL, itemSubtitle, lastDone, resultsLines, type RelaunchView, type SequenceItem } from '../../../src/lib/periodization';
 import { createPeriodizationClient } from '../../../src/lib/periodizationService';
@@ -98,7 +98,7 @@ export default function SequenceScreen() {
             >
               <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: it.status === 'active' ? theme.primary : theme.muted }}>{`${it.position}. ${STATUS_LABEL[it.status]}`}</Text>
               <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text }}>{it.name}</Text>
-              {itemSubtitle(it) !== '' && <Text style={{ fontSize: 14, color: theme.muted }}>{itemSubtitle(it)}</Text>}
+              {itemSubtitle(it, (g) => goalLabel(g, g)) !== '' && <Text style={{ fontSize: 14, color: theme.muted }}>{itemSubtitle(it, (g) => goalLabel(g, g))}</Text>}
             </View>
           </View>
         ))}

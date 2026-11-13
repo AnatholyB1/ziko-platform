@@ -13,6 +13,7 @@ import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
 import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
+import { programHeader } from '../../src/lib/programs';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
@@ -134,8 +135,7 @@ function MissionCardContent({
   const todaySession: any = todayPick?.session ?? null;
   const exercises: any[] = todaySession?.exercises ?? [];
   const sessionName: string = todaySession?.name ?? goalLabel(activeProgram?.goal, 'Séance du jour');
-  const programName: string =
-    activeProgram?.kind === 'coach' && activeProgram?.name ? activeProgram.name : goalLabel(activeProgram?.goal, 'Programme IA');
+  const programName: string = programHeader(activeProgram as any, null, goalLabel, 'Programme').title; // titre seul : provenance non affichee ici
   const duration: number = Math.max(30, exercises.length * 6);
 
   return (
