@@ -180,6 +180,8 @@ async function closeStaleOpenSessions(userId: string): Promise<void> {
   }
 }
 
+let startSessionInFlight: Promise<void> | null = null;
+
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   currentSession: null,
   lastCompletedSession: null,
@@ -245,7 +247,11 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     return true;
   },
 
-  startSession: async (programWorkoutId, name) => {
+  // Une seule ouverture a la fois : deux appels concurrents (double montage de l'ecran) inseraient deux
+  // seances ouvertes (closeStaleOpenSessions de chacun s'execute avant l'insert de l'autre) -> doublon compte.
+  startSession: (programWorkoutId, name) => {
+    if (startSessionInFlight) return startSessionInFlight;
+    const run = (async () => {
     const user = useAuthStore.getState().user;
     if (!user) return;
 
@@ -306,6 +312,11 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
       AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
     }
+    })().finally(() => {
+      startSessionInFlight = null;
+    });
+    startSessionInFlight = run;
+    return run;
   },
 
   startPlannedSession: async (programId, dayIndex) => {
