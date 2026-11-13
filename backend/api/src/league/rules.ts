@@ -8,6 +8,8 @@
 export const LEAGUE_UNLOCK_TIER = 3;
 /** Appels IA automatiques (transition) absorbes par la plateforme : plafond par jour et par personne. */
 export const LEAGUE_AI_DAILY_CAP = 1;
+/** Repos du modele apres un refus de transition (revue B M3) : evite 1 appel Sonnet par jour et par personne eligible. */
+export const LEAGUE_AI_DECLINE_COOLDOWN_DAYS = 7;
 export const TRANSITION_REASON_MAX = 300;
 
 export type LeagueTrack = 'habits' | 'performance';

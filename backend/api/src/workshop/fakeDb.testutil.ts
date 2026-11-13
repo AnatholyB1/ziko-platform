@@ -23,6 +23,11 @@ export function createFakeDb(seed: Record<string, Row[]> = {}) {
     const run = () => {
       const all = tables[table];
       if (op === 'insert') {
+        // Cle primaire explicite deja prise : comme PostgreSQL (23505), l'INSERT echoue et n'ecrit rien.
+        const ids = (Array.isArray(payload) ? payload : [payload]).map((p: Row) => p.id).filter((x: unknown) => x !== undefined);
+        if (ids.some((i: unknown) => all.some((r) => r.id === i))) {
+          return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } };
+        }
         const rows = (Array.isArray(payload) ? payload : [payload]).map((p: Row) => ({
           id: p.id ?? `${table}-${++seq}`,
           revision: 0,

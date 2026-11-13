@@ -106,11 +106,11 @@ Règles transverses : exécution via `/orchestrate-milestone` (parallélisation 
 
 ### Quêtes (QUEST)
 
-- [ ] **QUEST-01**: Les quêtes sont stockées en base avec une progression calculée à partir des données réelles
-- [ ] **QUEST-02**: Les quêtes de départ sont identiques pour tous les utilisateurs
-- [ ] **QUEST-03**: L'agent IA dispose d'un outil de gestion de quêtes
+- [x] **QUEST-01**: Les quêtes sont stockées en base avec une progression calculée à partir des données réelles
+- [x] **QUEST-02**: Les quêtes de départ sont identiques pour tous les utilisateurs
+- [x] **QUEST-03**: L'agent IA dispose d'un outil de gestion de quêtes
 - [ ] **QUEST-04**: L'IA crée de nouvelles quêtes à chaque passage de niveau ou quand il n'en reste aucune
-- [ ] **QUEST-05**: Au plus 3 quêtes sont actives ; le nombre créé complète ce qui reste
+- [x] **QUEST-05**: Au plus 3 quêtes sont actives ; le nombre créé complète ce qui reste
 - [ ] **QUEST-06**: L'utilisateur ne peut pas refuser une quête ; chaque quête a une durée limite
 - [ ] **QUEST-07**: Une quête expirée reste visible "échouée" hors du compte des 3 jusqu'à son remplacement
 - [ ] **QUEST-08**: Les quêtes proposées sont personnalisées selon l'identité de la personne
@@ -129,16 +129,16 @@ Règles transverses : exécution via `/orchestrate-milestone` (parallélisation 
 
 ### Sommeil (SLP)
 
-- [ ] **SLP-01**: L'utilisateur logue sa nuit à la main (coucher, lever, qualité /5, réveils)
-- [ ] **SLP-02**: Sans donnée, l'écran affiche un état vide avec "Logger ma nuit" (plus de données factices)
+- [x] **SLP-01**: L'utilisateur logue sa nuit à la main (coucher, lever, qualité /5, réveils)
+- [x] **SLP-02**: Sans donnée, l'écran affiche un état vide avec "Logger ma nuit" (plus de données factices)
 - [ ] **SLP-03**: Les phases (profond/léger/REM) ne s'affichent que si une source connectée les fournit
 - [ ] **SLP-04**: Une source connectée prime sur la saisie manuelle
 - [ ] **SLP-05**: Les réglages (cible, rappel coucher, source, réveil intelligent, routine pré-sommeil) sont éditables
-- [ ] **SLP-06**: L'accueil et l'écran Sommeil affichent des données cohérentes
+- [x] **SLP-06**: L'accueil et l'écran Sommeil affichent des données cohérentes
 
 ### Stretching (STRE)
 
-- [ ] **STRE-01**: La bibliothèque affiche les exercices de stretching
+- [x] **STRE-01**: La bibliothèque affiche les exercices de stretching
 - [ ] **STRE-02**: L'utilisateur crée ses propres exercices de stretching
 - [ ] **STRE-03**: L'utilisateur voit, crée et modifie des routines
 - [ ] **STRE-04**: Le Suivi affiche séances de la semaine, minutes cumulées, série, dernière séance et calendrier
@@ -152,24 +152,24 @@ Règles transverses : exécution via `/orchestrate-milestone` (parallélisation 
 - [ ] **SUPP-03**: Le comparateur de prix avec liens (écrans `SupplementCompareScreen`/`DetailScreen`) est de nouveau accessible
 - [ ] **SUPP-04**: L'utilisateur ajoute un produit à son stack avec dose et moment de prise
 - [ ] **SUPP-05**: "Mon stack" ne contient que les produits choisis et est éditable
-- [ ] **SUPP-06**: Les prix ne s'affichent plus en "NaN€"
+- [x] **SUPP-06**: Les prix ne s'affichent plus en "NaN€"
 - [ ] **SUPP-07**: Les rappels se règlent par moment de la journée (à confirmer en maquette)
 
 ### Timer (TIMR)
 
 - [ ] **TIMR-01**: L'utilisateur crée, modifie et supprime ses presets sur les onglets Séance, Tabata et Intervalle
-- [ ] **TIMR-02**: Un preset règle nom, effort, repos, séries, rounds + repos entre rounds, échauffement
+- [x] **TIMR-02**: Un preset règle nom, effort, repos, séries, rounds + repos entre rounds, échauffement
 - [ ] **TIMR-03**: Le preset de test "Exemple" est retiré
 
 ### Social & Amis (SOC)
 
-- [ ] **SOC-01**: L'ajout d'ami fonctionne depuis la recherche globale
+- [x] **SOC-01**: L'ajout d'ami fonctionne depuis la recherche globale
 - [ ] **SOC-02**: Une demande envoyée apparaît dans "En attente" (section envoyées)
 - [ ] **SOC-03**: "En attente" sépare reçues (Accepter/Refuser) et envoyées (Annuler)
 - [ ] **SOC-04**: "Suivre" et "ami" sont une seule notion ; le bouton reflète l'état (ajouter / demande envoyée / ami)
 - [ ] **SOC-05**: Chercher place le champ en haut et recherche en direct, sans bouton "Rechercher"
-- [ ] **SOC-06**: Le profil public affiche niveau+XP, badges, série, derniers entraînements, PR, défis en commun, objectif en français, nombre d'amis/abonnés
-- [ ] **SOC-07**: Le profil public s'affiche sans avatar ni boutons coupés sous la bannière
+- [x] **SOC-06**: Le profil public affiche niveau+XP, badges, série, derniers entraînements, PR, défis en commun, objectif en français, nombre d'amis/abonnés
+- [x] **SOC-07**: Le profil public s'affiche sans avatar ni boutons coupés sous la bannière
 - [ ] **SOC-08**: Le texte "Demande envoyée" s'affiche sans échappement unicode brut
 
 ### Journal (JRNL)
@@ -179,7 +179,7 @@ Règles transverses : exécution via `/orchestrate-milestone` (parallélisation 
 
 ### Mon coach (COACH)
 
-- [ ] **COACH-01**: L'écran Mon coach affiche le profil du coach quand un coach est déjà lié
+- [x] **COACH-01**: L'écran Mon coach affiche le profil du coach quand un coach est déjà lié
 - [ ] **COACH-02**: L'écran Mon coach a un header et un retour cohérents avec les autres écrans, et une UI améliorée
 
 ### Corrections transverses (XCUT)
@@ -233,139 +233,141 @@ Règles transverses : exécution via `/orchestrate-milestone` (parallélisation 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HARN-01 | Phase 1 | Pending |
-| HARN-02 | Phase 1 | Pending |
-| HARN-03 | Phase 1 | Pending |
-| HARN-04 | Phase 1 | Pending |
-| HARN-05 | Phase 1 | Pending |
-| HARN-06 | Phase 1 | Pending |
-| HARN-07 | Phase 1 | Pending |
-| SESS-01 | Phase 2 | Pending |
-| SESS-02 | Phase 2 | Pending |
-| SESS-03 | Phase 2 | Pending |
-| SESS-04 | Phase 2 | Pending |
-| HABT-01 | Phase 3 | Pending |
-| HABT-02 | Phase 3 | Pending |
-| DSGN-01 | Phase 4 | Pending |
-| XCUT-01 | Phase 5 | Pending |
-| XCUT-02 | Phase 5 | Pending |
-| XCUT-03 | Phase 5 | Pending |
-| XCUT-04 | Phase 5 | Pending |
-| XCUT-05 | Phase 5 | Pending |
-| XCUT-06 | Phase 5 | Pending |
-| XCUT-07 | Phase 5 | Pending |
-| TRAIN-01 | Phase 6 | Pending |
-| TRAIN-02 | Phase 6 | Pending |
-| TRAIN-03 | Phase 6 | Pending |
-| TRAIN-04 | Phase 6 | Pending |
-| TRAIN-05 | Phase 6 | Pending |
-| TRAIN-10 | Phase 6 | Pending |
-| TRAIN-06 | Phase 7 | Pending |
-| TRAIN-07 | Phase 7 | Pending |
-| TRAIN-08 | Phase 7 | Pending |
-| TRAIN-09 | Phase 7 | Pending |
-| QLOG-01 | Phase 8 | Pending |
-| QLOG-02 | Phase 8 | Pending |
-| QLOG-03 | Phase 8 | Pending |
-| QLOG-04 | Phase 8 | Pending |
-| QLOG-05 | Phase 8 | Pending |
-| NUTR-01 | Phase 9 | Pending |
-| NUTR-02 | Phase 9 | Pending |
-| NUTR-03 | Phase 9 | Pending |
-| NUTR-04 | Phase 9 | Pending |
-| PANT-01 | Phase 10 | Pending |
-| PANT-02 | Phase 10 | Pending |
-| PANT-03 | Phase 10 | Pending |
-| PANT-04 | Phase 10 | Pending |
-| PANT-05 | Phase 10 | Pending |
-| PANT-06 | Phase 10 | Pending |
-| PANT-07 | Phase 10 | Pending |
-| HYDR-01 | Phase 11 | Pending |
-| HYDR-02 | Phase 11 | Pending |
-| HYDR-03 | Phase 11 | Pending |
-| HYDR-04 | Phase 11 | Pending |
-| HYDR-05 | Phase 11 | Pending |
-| HYDR-06 | Phase 11 | Pending |
-| REWD-01 | Phase 12 | Pending |
-| REWD-02 | Phase 12 | Pending |
-| REWD-03 | Phase 12 | Pending |
-| REWD-04 | Phase 12 | Pending |
-| REWD-05 | Phase 12 | Pending |
-| REWD-06 | Phase 12 | Pending |
-| REWD-07 | Phase 12 | Pending |
-| REWD-08 | Phase 12 | Pending |
-| REWD-09 | Phase 12 | Pending |
-| REWD-10 | Phase 12 | Pending |
-| QUEST-01 | Phase 13 | Pending |
-| QUEST-02 | Phase 13 | Pending |
-| QUEST-03 | Phase 14 | Pending |
-| QUEST-04 | Phase 14 | Pending |
-| QUEST-05 | Phase 14 | Pending |
-| QUEST-06 | Phase 14 | Pending |
-| QUEST-07 | Phase 14 | Pending |
-| QUEST-08 | Phase 14 | Pending |
-| MEAS-01 | Phase 15 | Pending |
-| MEAS-04 | Phase 15 | Pending |
-| MEAS-05 | Phase 15 | Pending |
-| MEAS-06 | Phase 15 | Pending |
-| MEAS-02 | Phase 16 | Pending |
-| MEAS-03 | Phase 16 | Pending |
-| MEAS-07 | Phase 16 | Pending |
-| MEAS-08 | Phase 16 | Pending |
-| MEAS-09 | Phase 16 | Pending |
-| SLP-01 | Phase 17 | Pending |
-| SLP-02 | Phase 17 | Pending |
-| SLP-03 | Phase 17 | Pending |
-| SLP-04 | Phase 17 | Pending |
-| SLP-05 | Phase 17 | Pending |
-| SLP-06 | Phase 17 | Pending |
-| STRE-01 | Phase 18 | Pending |
-| STRE-02 | Phase 18 | Pending |
-| STRE-03 | Phase 18 | Pending |
-| STRE-04 | Phase 18 | Pending |
-| STRE-05 | Phase 18 | Pending |
-| STRE-06 | Phase 18 | Pending |
-| SUPP-01 | Phase 19 | Pending |
-| SUPP-02 | Phase 19 | Pending |
-| SUPP-03 | Phase 19 | Pending |
-| SUPP-04 | Phase 19 | Pending |
-| SUPP-05 | Phase 19 | Pending |
-| SUPP-06 | Phase 19 | Pending |
-| SUPP-07 | Phase 19 | Pending |
-| TIMR-01 | Phase 20 | Pending |
-| TIMR-02 | Phase 20 | Pending |
-| TIMR-03 | Phase 20 | Pending |
-| SOC-01 | Phase 21 | Pending |
-| SOC-02 | Phase 21 | Pending |
-| SOC-03 | Phase 21 | Pending |
-| SOC-04 | Phase 21 | Pending |
-| SOC-05 | Phase 21 | Pending |
-| SOC-06 | Phase 21 | Pending |
-| SOC-07 | Phase 21 | Pending |
-| SOC-08 | Phase 21 | Pending |
-| JRNL-01 | Phase 22 | Pending |
-| JRNL-02 | Phase 22 | Pending |
-| COACH-01 | Phase 22 | Pending |
-| COACH-02 | Phase 22 | Pending |
-| ATEL-01 | Phase 23 | Pending |
-| ATEL-02 | Phase 23 | Pending |
-| ATEL-03 | Phase 23 | Pending |
-| ATEL-04 | Phase 23 | Pending |
-| ATEL-05 | Phase 23 | Pending |
-| ATEL-06 | Phase 23 | Pending |
-| ATEL-10 | Phase 23 | Pending |
-| ATEL-07 | Phase 24 | Pending |
-| ATEL-08 | Phase 24 | Pending |
-| ATEL-09 | Phase 24 | Pending |
-| MCOA-01 | Phase 25 | Pending |
-| MCOA-02 | Phase 25 | Pending |
-| MCOA-03 | Phase 25 | Pending |
-| MCOA-04 | Phase 25 | Pending |
-| LEAG-01 | Phase 26 | Pending |
-| LEAG-02 | Phase 26 | Pending |
-| LEAG-03 | Phase 26 | Pending |
-| LEAG-04 | Phase 26 | Pending |
-| LEAG-05 | Phase 26 | Pending |
-| LEAG-06 | Phase 26 | Pending |
+| HARN-01 | Phase 1 | Implemented (UAT pending) |
+| HARN-02 | Phase 1 | Implemented (UAT pending) |
+| HARN-03 | Phase 1 | Implemented (UAT pending) |
+| HARN-04 | Phase 1 | Implemented (UAT pending) |
+| HARN-05 | Phase 1 | Implemented (UAT pending) |
+| HARN-06 | Phase 1 | Implemented (UAT pending) |
+| HARN-07 | Phase 1 | Implemented (UAT pending) |
+| SESS-01 | Phase 2 | Implemented (UAT pending) |
+| SESS-02 | Phase 2 | Implemented (UAT pending) |
+| SESS-03 | Phase 2 | Implemented (UAT pending) |
+| SESS-04 | Phase 2 | Implemented (UAT pending) |
+| HABT-01 | Phase 3 | Implemented (UAT pending) |
+| HABT-02 | Phase 3 | Implemented (UAT pending) |
+| DSGN-01 | Phase 4 | Implemented (UAT pending) |
+| XCUT-01 | Phase 5 | Implemented (UAT pending) |
+| XCUT-02 | Phase 5 | Implemented (UAT pending) |
+| XCUT-03 | Phase 5 | Implemented (UAT pending) |
+| XCUT-04 | Phase 5 | Implemented (UAT pending) |
+| XCUT-05 | Phase 5 | Implemented (UAT pending) |
+| XCUT-06 | Phase 5 | Implemented (UAT pending) |
+| XCUT-07 | Phase 5 | Implemented (UAT pending) |
+| TRAIN-01 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-02 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-03 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-04 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-05 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-10 | Phase 6 | Implemented (UAT pending) |
+| TRAIN-06 | Phase 7 | Implemented (UAT pending) |
+| TRAIN-07 | Phase 7 | Implemented (UAT pending) |
+| TRAIN-08 | Phase 7 | Implemented (UAT pending) |
+| TRAIN-09 | Phase 7 | Implemented (UAT pending) |
+| QLOG-01 | Phase 8 | Implemented (UAT pending) |
+| QLOG-02 | Phase 8 | Implemented (UAT pending) |
+| QLOG-03 | Phase 8 | Implemented (UAT pending) |
+| QLOG-04 | Phase 8 | Implemented (UAT pending) |
+| QLOG-05 | Phase 8 | Implemented (UAT pending) |
+| NUTR-01 | Phase 9 | Implemented (UAT pending) |
+| NUTR-02 | Phase 9 | Implemented (UAT pending) |
+| NUTR-03 | Phase 9 | Implemented (UAT pending) |
+| NUTR-04 | Phase 9 | Implemented (UAT pending) |
+| PANT-01 | Phase 10 | Implemented (UAT pending) |
+| PANT-02 | Phase 10 | Implemented (UAT pending) |
+| PANT-03 | Phase 10 | Implemented (UAT pending) |
+| PANT-04 | Phase 10 | Implemented (UAT pending) |
+| PANT-05 | Phase 10 | Implemented (UAT pending) |
+| PANT-06 | Phase 10 | Implemented (UAT pending) |
+| PANT-07 | Phase 10 | Implemented (UAT pending) |
+| HYDR-01 | Phase 11 | Implemented (UAT pending) |
+| HYDR-02 | Phase 11 | Implemented (UAT pending) |
+| HYDR-03 | Phase 11 | Implemented (UAT pending) |
+| HYDR-04 | Phase 11 | Implemented (UAT pending) |
+| HYDR-05 | Phase 11 | Implemented (UAT pending) |
+| HYDR-06 | Phase 11 | Implemented (UAT pending) |
+| REWD-01 | Phase 12 | Implemented (UAT pending) |
+| REWD-02 | Phase 12 | Implemented (UAT pending) |
+| REWD-03 | Phase 12 | Implemented (UAT pending) |
+| REWD-04 | Phase 12 | Implemented (SQL local OK ; UAT pending) |
+| REWD-05 | Phase 12 | Implemented (UAT pending) |
+| REWD-06 | Phase 12 | Implemented (SQL local OK ; UAT pending) |
+| REWD-07 | Phase 12 | Implemented (UAT pending) |
+| REWD-08 | Phase 12 | Implemented (UAT pending) |
+| REWD-09 | Phase 12 | Implemented (UAT pending) |
+| REWD-10 | Phase 12 | Implemented (UAT pending) |
+| QUEST-01 | Phase 13 | Verified (emulator, quetes de depart ; quetes IA : fenetre corrigee par 2801, UAT pending) |
+| QUEST-02 | Phase 13 | Verified (emulator) |
+| QUEST-03 | Phase 14 | Verified (emulator) |
+| QUEST-04 | Phase 14 | Implemented (SQL local OK ; UAT pending ; corrige revue B H1/M1, migrations 2801/2802 non appliquees) |
+| QUEST-05 | Phase 14 | Verified (emulator) |
+| QUEST-06 | Phase 14 | Implemented (SQL local OK ; UAT pending) |
+| QUEST-07 | Phase 14 | Implemented (SQL local OK ; UAT pending) |
+| QUEST-08 | Phase 14 | Implemented (pertinence non prouvee ; UAT pending) |
+| MEAS-01 | Phase 15 | Implemented (SQL local OK ; UAT pending) |
+| MEAS-04 | Phase 15 | Implemented (UAT pending) |
+| MEAS-05 | Phase 15 | Implemented (UAT pending) |
+| MEAS-06 | Phase 15 | Implemented (SQL local OK ; UAT pending) |
+| MEAS-02 | Phase 16 | Implemented (UAT pending ; run2 non teste) |
+| MEAS-03 | Phase 16 | Implemented (UAT pending) |
+| MEAS-07 | Phase 16 | Implemented (SQL local OK ; UAT pending) |
+| MEAS-08 | Phase 16 | Implemented (UAT pending) |
+| MEAS-09 | Phase 16 | Implemented (SQL local OK ; UAT pending) |
+| SLP-01 | Phase 17 | Verified (emulator) |
+| SLP-02 | Phase 17 | Verified (emulator) |
+| SLP-03 | Phase 17 | Implemented (UAT pending) |
+| SLP-04 | Phase 17 | Implemented (UAT pending) |
+| SLP-05 | Phase 17 | Implemented (UAT pending) |
+| SLP-06 | Phase 17 | Verified (emulator) |
+| STRE-01 | Phase 18 | Verified (emulator) |
+| STRE-02 | Phase 18 | Implemented (UAT pending) |
+| STRE-03 | Phase 18 | Implemented (UAT pending) |
+| STRE-04 | Phase 18 | Implemented (UAT pending) |
+| STRE-05 | Phase 18 | Implemented (UAT pending) |
+| STRE-06 | Phase 18 | Implemented (UAT pending ; lancement auto optionnel, revue B M9) |
+| SUPP-01 | Phase 19 | Implemented (UAT pending) |
+| SUPP-02 | Phase 19 | Implemented (UAT pending) |
+| SUPP-03 | Phase 19 | Implemented (UAT pending) |
+| SUPP-04 | Phase 19 | Implemented (UAT pending) |
+| SUPP-05 | Phase 19 | Implemented (UAT pending) |
+| SUPP-06 | Phase 19 | Verified (emulator) |
+| SUPP-07 | Phase 19 | Implemented (UAT pending) |
+| TIMR-01 | Phase 20 | Implemented (UAT pending) |
+| TIMR-02 | Phase 20 | Verified (emulator) |
+| TIMR-03 | Phase 20 | Implemented (UAT pending ; preset Exemple non edite masque a l affichage, revue B M11) |
+| SOC-01 | Phase 21 | Verified (emulator) |
+| SOC-02 | Phase 21 | Implemented (UAT pending) |
+| SOC-03 | Phase 21 | Implemented (UAT pending) |
+| SOC-04 | Phase 21 | Implemented (UAT pending) |
+| SOC-05 | Phase 21 | Implemented (UAT pending) |
+| SOC-06 | Phase 21 | Verified (emulator) |
+| SOC-07 | Phase 21 | Verified (emulator) |
+| SOC-08 | Phase 21 | Implemented (UAT pending) |
+| JRNL-01 | Phase 22 | Implemented (UAT pending) |
+| JRNL-02 | Phase 22 | Implemented (UAT pending) |
+| COACH-01 | Phase 22 | Verified (emulator) |
+| COACH-02 | Phase 22 | Implemented (UAT pending) |
+| ATEL-01 | Phase 23 | Implemented (UAT pending) |
+| ATEL-02 | Phase 23 | Implemented (UAT pending ; plafond reserve avant appel, revue B M5) |
+| ATEL-03 | Phase 23 | Implemented (UAT pending) |
+| ATEL-04 | Phase 23 | Implemented (UAT pending) |
+| ATEL-05 | Phase 23 | Implemented (UAT pending) |
+| ATEL-06 | Phase 23 | Implemented (UAT pending) |
+| ATEL-10 | Phase 23 | Implemented (UAT pending) |
+| ATEL-07 | Phase 24 | Implemented (UAT pending) |
+| ATEL-08 | Phase 24 | Implemented (UAT pending) |
+| ATEL-09 | Phase 24 | Implemented (UAT pending ; plafond reserve avant appel, revue B M4) |
+| MCOA-01 | Phase 25 | Implemented (UAT pending) |
+| MCOA-02 | Phase 25 | Implemented (UAT pending) |
+| MCOA-03 | Phase 25 | Implemented (UAT pending) |
+| MCOA-04 | Phase 25 | Implemented (UAT pending) |
+| LEAG-01 | Phase 26 | Implemented (SQL local OK ; UAT pending) |
+| LEAG-02 | Phase 26 | Implemented (SQL local OK ; UAT pending) |
+| LEAG-03 | Phase 26 | Implemented (SQL local + mock OK ; UAT pending ; cooldown revue B M3, migration 2804 non appliquee) |
+| LEAG-04 | Phase 26 | Implemented (SQL local OK ; UAT pending ; corrige revue B M2, migration 2803 non appliquee) |
+| LEAG-05 | Phase 26 | Partial (RPC + route OK, aucun ecran coach web ; UAT pending) |
+| LEAG-06 | Phase 26 | Implemented (SQL local OK ; UAT pending) |
 
-**Coverage:** 134/134 exigences mappées, 0 orphelin, 0 doublon.
+**Coverage:** 134/134 exigences mappées, 0 orphelin, 0 doublon (MEAS-10/MEAS-11 n'existent pas : voir FIX-REVIEW-B.md).
+
+**Statuts (revue B, 2026-11-13)** : `Verified (emulator)` = PASS explicite dans UAT-RESULTS run1/run2 (case cochée). `Implemented (SQL local OK ; UAT pending)` = migrations rejouées sur Postgres local avec stubs, PAS une base réelle (case non cochée). `Implemented (UAT pending)` = code + tests mock/DOM, aucune preuve émulateur. P1-P12 : non reclassés exigence par exigence (aucune preuve émulateur retenue ici), donc `Implemented (UAT pending)`.

@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { playSound, playCountdownBeep } from '@ziko/sounds';
 import {
   TIMER_TABS, type TimerTab, type TimerPresetItem, type Phase,
-  rowToPreset, tabForType, presetSummary, totalDuration, formatTotal, buildPhases, phaseAt,
+  rowToPreset, visiblePresets, tabForType, presetSummary, totalDuration, formatTotal, buildPhases, phaseAt,
   duplicateName, toDbPayload, PHASE_LABEL,
 } from '../presets';
 
@@ -84,7 +84,7 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map(rowToPreset);
+      return visiblePresets((data ?? []).map(rowToPreset));
     },
   });
 

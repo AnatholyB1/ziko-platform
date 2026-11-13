@@ -29,5 +29,6 @@ export type {
 } from './hooks';
 export { useCreditStore } from './creditStore';
 export type { CreditExhaustionData } from './creditStore';
+export { getPluginPref, setPluginPref } from './prefs';
 export { STORAGE_BUCKETS } from './buckets';
 export type { StorageBucket } from './buckets';

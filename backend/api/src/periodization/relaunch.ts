@@ -7,12 +7,12 @@
 // Non punitif (D-06) : ce module n'importe aucun service de credits/gamification/serie.
 import { generateText, stepCountIs } from 'ai';
 import { AGENT_MODEL } from '../config/models.js';
-import { logAutonomousCost, SOURCES, type CostLogDb } from '../lib/autonomousCost.js';
+import { reserveCostSlot, settleCostSlot } from '../lib/costReservation.js';
 import { fetchWorkshopContext, type WorkshopDb } from '../workshop/context.js';
 import { createDraft, loadDraft, type DraftRecord } from '../workshop/store.js';
 import { createWorkshopTools } from '../workshop/tools.js';
 import { WORKSHOP_MAX_STEPS } from '../workshop/limits.js';
-import { PROGRAM_RELAUNCH_DAILY_CAP } from './limits.js';
+import { PROGRAM_RELAUNCH_COST_SOURCE, PROGRAM_RELAUNCH_DAILY_CAP } from './limits.js';
 import { evaluateProgress, effectiveStart } from './progress.js';
 import { computeResults, renderResultsForPrompt, type ProgramResults } from './results.js';
 import { buildRelaunchSystemPrompt, RELAUNCH_USER_MESSAGE } from './prompt.js';
@@ -184,6 +184,19 @@ export async function runRelaunchPropose(deps: ProposeDeps): Promise<ProposeOutc
   }
   if (!(await claimPropose(db, userId, rel, now))) return { status: 'pending', draft_id: draft.id, skipped: 'busy' };
 
+  // Revue B (M4) : le slot de cout est reserve AVANT l'appel (insert atomique) ; un echec du modele le consomme aussi.
+  const slot = await reserveCostSlot(db, {
+    userId,
+    source: PROGRAM_RELAUNCH_COST_SOURCE,
+    model: AGENT_MODEL.modelId,
+    dailyCap: PROGRAM_RELAUNCH_DAILY_CAP,
+    now,
+  });
+  if (!slot.ok) {
+    await setRelaunchStatus(db, userId, rel.id, 'pending', {}, now);
+    return { status: 'pending', draft_id: draft.id, skipped: slot.reason === 'daily_cap' ? 'daily_cap' : 'ai_error' };
+  }
+
   try {
     const results: ProgramResults | null = rel.results ?? (await loadProgram(db, userId, rel.program_id))?.results ?? null;
     const prev = await loadProgram(db, userId, rel.program_id);
@@ -207,12 +220,7 @@ export async function runRelaunchPropose(deps: ProposeDeps): Promise<ProposeOutc
     // G-7 : pas de recherche web dans un tour automatique (cout/latence, aucun arbitrage utilisateur possible)
     const { workshop_web_search: _web, ...tools } = all;
     const out = await (deps.runner ?? defaultRelaunchRunner)({ system, prompt: RELAUNCH_USER_MESSAGE, tools });
-    logAutonomousCost(db as CostLogDb, {
-      userId,
-      model: 'claude-sonnet-4-20250514',
-      usage: out.usage,
-      source: SOURCES.programRelaunch,
-    });
+    await settleCostSlot(db, slot.id, out.usage);
     const after = await loadDraft(db, userId, draft.id);
     if (!after?.program) {
       await setRelaunchStatus(db, userId, rel.id, 'pending', {}, now);

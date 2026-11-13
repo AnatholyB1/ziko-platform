@@ -38,10 +38,10 @@ const Q = (metric, target = 1, extra = {}) => ({ title: `Quete ${metric}`, metri
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(root, 'scripts/uat/p12-rewards-sql/stub-schema.sql'), 'utf8'));
 await q(readFileSync(resolve(root, 'scripts/uat/p13-quests-sql/stub-extra.sql'), 'utf8'));
-for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state', '202612011402_quest_sync_ai_handover']) {
+for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state', '202612011402_quest_sync_ai_handover', '202612012802_quest_ai_relay']) {
   await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
 }
-console.log('Migrations 1201, 1301, 1302, 1401, 1402 appliquees sur la base locale jetable.');
+console.log('Migrations 1201, 1301, 1302, 1401, 1402, 2802 appliquees sur la base locale jetable.');
 
 const U = (n) => `00000000-0000-0000-0000-00000000040${n}`;
 const [U1, U2, U3, U4, U5, U6, U7, U8] = [1, 2, 3, 4, 5, 6, 7, 8].map(U);
@@ -59,9 +59,10 @@ ok('aucune quete synchronisee : not_initialized, pas d appel IA', c.proceed === 
 let r = await sync(U1);
 ok('3 quetes de depart actives', r.quests.length === 3 && await countActive(U1) === 3);
 c = await claim(U1);
-ok('3 actives : full (0 place), pas d appel IA', c.proceed === false && c.reason === 'full' && c.slots === 0, JSON.stringify(c));
+ok('3 departs ouverts, rien termine : not_needed, pas d appel IA (revue B M1 : l IA ne s impose pas a un nouveau joueur)', c.proceed === false && c.reason === 'not_needed' && c.slots === 3, JSON.stringify(c));
 let res = await createAi(U1, [Q('habit_logs'), Q('nutrition_logs')]);
-ok('plafond : 0 creee, 2 ignorees quand 3 sont deja actives', res.created.length === 0 && res.skipped === 2 && await countActive(U1) === 3, JSON.stringify(res));
+ok('revue B M1 : une quete de depart ouverte ne bloque pas l IA : 2 creees, 2 departs ecartes (statut neutre), plafond 3 conserve', res.created.length === 2 && res.skipped === 0 && res.starters_retired === 2 && await countActive(U1) === 3, JSON.stringify(res));
+ok('les departs ecartes sont expired (jamais supprimes)', Number((await q(`SELECT COUNT(*) n FROM public.ziko_user_quests WHERE user_id=$1 AND source='starter' AND status='expired'`, [U1])).rows[0].n) === 2);
 
 console.log('\n[3] Plus aucune quete : declenche, le nombre cree complete ce qui reste');
 await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE user_id=$1`, [U1]);
@@ -86,32 +87,41 @@ ok('demande utilisateur (force) : requested, hors quota', f1.proceed === true &&
 await q(`UPDATE public.ziko_quest_ai_state SET auto_day = auto_day - 1 WHERE user_id=$1`, [U2]);
 ok('lendemain : le quota est remis a zero', (await claim(U2)).proceed === true);
 
-console.log('\n[5] Passage de niveau');
+console.log('\n[5] Passage de niveau (departs ouverts : l IA passe quand meme)');
 await sync(U3);
-await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE user_id=$1 AND scope='weekly'`, [U3]);
-await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE id = (SELECT id FROM public.ziko_user_quests WHERE user_id=$1 AND status='active' LIMIT 1)`, [U3]);
-// 1 active restante => 2 places ; niveau 1
 await q(`INSERT INTO public.ziko_user_gamification (user_id, level) VALUES ($1, 1) ON CONFLICT (user_id) DO UPDATE SET level = 1`, [U3]);
 c = await claim(U3);
-ok('niveau inchange, 1 active : not_needed (le niveau 1 est memorise)', c.proceed === false && c.reason === 'not_needed' && c.slots === 2, JSON.stringify(c));
+ok('niveau inchange, 3 departs ouverts : not_needed (le niveau 1 est memorise)', c.proceed === false && c.reason === 'not_needed' && c.slots === 3, JSON.stringify(c));
 await q(`UPDATE public.ziko_user_gamification SET level = 2 WHERE user_id=$1`, [U3]);
 c = await claim(U3);
-ok('niveau 1 -> 2 : level_up, 2 places', c.proceed === true && c.reason === 'level_up' && c.slots === 2 && c.level === 2, JSON.stringify(c));
+ok('niveau 1 -> 2 : level_up MEME sans place libre (3 departs ouverts), 3 places IA', c.proceed === true && c.reason === 'level_up' && c.slots === 3 && c.level === 2, JSON.stringify(c));
 c = await claim(U3);
 ok('le meme niveau ne redeclenche pas', c.proceed === false && c.reason === 'not_needed', JSON.stringify(c));
-res = await createAi(U3, [Q('habit_logs'), Q('nutrition_logs'), Q('hydration_ml', 1500)]);
-ok('niveau gagne : le nombre cree complete ce qui reste (2 sur 3)', res.created.length === 2 && res.skipped === 1 && await countActive(U3) === 3, JSON.stringify(res));
+res = await createAi(U3, [Q('habit_logs'), Q('nutrition_logs'), Q('hydration_ml', 1500), Q('workout_sessions', 2)]);
+ok('niveau gagne : 3 creees, 1 ignoree, les 3 departs ecartes, 3 actives', res.created.length === 3 && res.skipped === 1 && res.starters_retired === 3 && await countActive(U3) === 3, JSON.stringify(res));
 
-console.log('\n[6] Niveau gagne alors que 3 quetes sont actives : rien a creer, niveau consomme');
+console.log('\n[6] Niveau gagne alors que 3 quetes IA sont actives : rien a creer, niveau consomme');
 await sync(U4);
 await q(`INSERT INTO public.ziko_user_gamification (user_id, level) VALUES ($1, 1) ON CONFLICT (user_id) DO UPDATE SET level = 1`, [U4]);
 await claim(U4);
+await createAi(U4, [Q('habit_logs'), Q('nutrition_logs'), Q('hydration_ml', 1500)]);
 await q(`UPDATE public.ziko_user_gamification SET level = 3 WHERE user_id=$1`, [U4]);
 c = await claim(U4);
-ok('level_up avec 3 actives : full, pas d appel IA', c.proceed === false && c.reason === 'full', JSON.stringify(c));
-await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE id = (SELECT id FROM public.ziko_user_quests WHERE user_id=$1 AND status='active' LIMIT 1)`, [U4]);
+ok('level_up avec 3 quetes IA actives : full, pas d appel IA', c.proceed === false && c.reason === 'full', JSON.stringify(c));
+await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE id = (SELECT id FROM public.ziko_user_quests WHERE user_id=$1 AND status='active' AND source='ai' LIMIT 1)`, [U4]);
 c = await claim(U4);
 ok('une place se libere ensuite : pas de rattrapage du niveau deja consomme', c.proceed === false && c.reason === 'not_needed', JSON.stringify(c));
+
+console.log('\n[6b] Revue B M1 : 2 departs termines sur 3 -> l IA prend le relais sans place libre');
+const U9 = U(9); await q(`INSERT INTO auth.users (id) VALUES ($1)`, [U9]);
+await sync(U9);
+await q(`UPDATE public.ziko_user_quests SET status='completed', completed_at=now() WHERE id IN (SELECT id FROM public.ziko_user_quests WHERE user_id=$1 AND source='starter' ORDER BY created_at, slug LIMIT 2)`, [U9]);
+c = await claim(U9);
+ok('2 departs termines, 1 ouvert : starters_done, proceed, 3 places', c.proceed === true && c.reason === 'starters_done' && c.slots === 3 && c.active === 1, JSON.stringify(c));
+res = await createAi(U9, [Q('habit_logs'), Q('nutrition_logs'), Q('hydration_ml', 1500)]);
+ok('3 creees, le depart restant est ecarte (neutre), 3 actives IA', res.created.length === 3 && res.starters_retired === 1 && await countActive(U9) === 3, JSON.stringify(res));
+r = await sync(U9);
+ok('apres le relais, plus aucun depart actif et aucun nouveau depart', r.quests.filter((x) => x.status === 'active').every((x) => x.source === 'ai'), JSON.stringify(r.quests.map((x) => [x.source, x.status])));
 
 console.log('\n[7] Course : deux creations simultanees ne depassent jamais 3 actives');
 await sync(U5);

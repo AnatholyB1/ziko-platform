@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isLegacyExamplePreset, visiblePresets,
   totalDuration, formatTotal, formatDurationShort, tabForType, typeForTab, rowToPreset, presetSummary,
   validatePreset, fieldsForTab, stepField, clampField, defaultsForTab, normalizeForTab, toDbPayload,
   buildPhases, phaseAt, duplicateName, type PresetFields,
@@ -145,5 +146,25 @@ describe('moteur de decompte (G-06)', () => {
     const phases = buildPhases(defaultsForTab('Séance'));
     expect(phases.every((p) => p.kind === 'rest')).toBe(true);
     expect(phases).toHaveLength(4);
+  });
+});
+
+describe('preset de test "Exemple" (TIMR-03, revue B M11)', () => {
+  const base = { name: 'Exemple', type: 'hiit', warmup_sec: 0, work_sec: 30, rest_sec: 15, sets: 1, rounds: 8, round_rest_sec: 0 };
+  it('masque l ancien exemple non edite (champs P20 aux defauts 0 / 1 / 0)', () => {
+    expect(isLegacyExamplePreset(base)).toBe(true);
+    expect(visiblePresets([base, { ...base, name: 'Mon HIIT' }]).map((p) => p.name)).toEqual(['Mon HIIT']);
+  });
+  it('affiche un Exemple edite (echauffement, series ou repos entre rounds modifies) ou renomme', () => {
+    expect(isLegacyExamplePreset({ ...base, warmup_sec: 60 })).toBe(false);
+    expect(isLegacyExamplePreset({ ...base, sets: 3 })).toBe(false);
+    expect(isLegacyExamplePreset({ ...base, round_rest_sec: 30 })).toBe(false);
+    expect(isLegacyExamplePreset({ ...base, name: 'Exemple 2' })).toBe(false);
+    expect(visiblePresets([{ ...base, sets: 2 }])).toHaveLength(1);
+  });
+  it('aucune donnee supprimee : le filtre ne fait que masquer a l affichage', () => {
+    const all = [base, { ...base, name: 'Autre' }];
+    visiblePresets(all);
+    expect(all).toHaveLength(2);
   });
 });

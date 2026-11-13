@@ -41,7 +41,7 @@ const sync = (uid) => rpc(uid, 'ziko_league_sync', [uid]);
 
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(here, 'stub-schema.sql'), 'utf8'));
-const MIGS = ['202612012601_factions_leagues_schema', '202612012602_faction_rpc', '202612012603_league_sync', '202612012604_league_ai_gate', '202612012605_collective_challenges'];
+const MIGS = ['202612012601_factions_leagues_schema', '202612012602_faction_rpc', '202612012603_league_sync', '202612012604_league_ai_gate', '202612012605_collective_challenges', '202612012803_league_neutral_absence', '202612012804_league_ai_decline_cooldown'];
 for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
 // Rejouabilite (idempotence) : tout est rejoue une 2e fois sans erreur.
 for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
@@ -83,7 +83,7 @@ const play = async (uid, hs, pairsList) => {
   await q(`UPDATE public.ziko_league_state SET last_week_closed = $2::date WHERE user_id = $1`, [uid, await ws(N + 1)]);
   return sync(uid);
 };
-const FULL = 21, EMPTY = 0, MID = 10;
+const FULL = 21, EMPTY = 0, MID = 10, LOW = 3; // LOW = 3/21 = 14 % : activite reelle mais faible (une semaine EMPTY est neutre depuis la revue B M2)
 const state = async (uid) => one(`SELECT * FROM public.ziko_league_state WHERE user_id = $1`, [uid]);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -258,6 +258,7 @@ console.log('\n[5] Paliers amortis (LEAG-04)');
   await q(`UPDATE public.ziko_habit_logs SET date = date - 21 WHERE user_id = $1`, [u5]);
   await q(`UPDATE public.ziko_league_state SET last_week_closed = last_week_closed - 21 WHERE user_id = $1`, [u5]);
   // reajuste : la derniere cloturee est maintenant ws(4) ; on laisse sync cloturer ws(3), ws(2), ws(1) (vides)
+  for (const off of [3, 2, 1]) await logWeek(u5, hs5, off, LOW);
   st = await sync(u5);
   ok('3 semaines basses de suite : -1 palier seulement (3 -> 2)', st.division === 2 && st.peak_division === 3, JSON.stringify(st));
   const o5 = (await q(`SELECT outcome FROM public.ziko_league_weeks WHERE user_id = $1 ORDER BY week_start DESC LIMIT 1`, [u5])).rows[0].outcome;
@@ -307,6 +308,7 @@ console.log('\n[6] Non punitif : aucune ecriture vers XP / pieces / serie / tier
   await q(`UPDATE public.ziko_league_weeks SET week_start = week_start - 21 WHERE user_id = $1`, [u]);
   await q(`UPDATE public.ziko_habit_logs SET date = date - 21 WHERE user_id = $1`, [u]);
   await q(`UPDATE public.ziko_league_state SET last_week_closed = last_week_closed - 21 WHERE user_id = $1`, [u]);
+  for (const off of [3, 2, 1]) await logWeek(u, hs, off, LOW);
   st = await sync(u);
   ok('une descente de palier a bien eu lieu', st.division === 2, JSON.stringify(st));
   const s1 = await snap();

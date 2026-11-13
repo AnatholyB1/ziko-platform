@@ -1,4 +1,5 @@
 // Phase 23 (v1.20) - D-02/D-03 : acces a `ziko_workshop_drafts` (service key => filtre user_id partout).
+import { createHash } from 'node:crypto';
 import type { DraftProgram } from './draft.js';
 import { normalizeProgram, toProgramRow } from './draft.js';
 import type { WorkshopDb } from './context.js';
@@ -128,16 +129,39 @@ export async function publishDraft(
     const lastPos = Array.isArray(last) && last[0] ? Number(last[0].sequence_position) || 0 : 0;
     sequenceCols = { sequence_id: draft.sequence_id, sequence_position: lastPos + 1 };
   }
+  // Revue B (M6) : identifiant du programme DERIVE du brouillon. Deux "Enregistrer" concurrents (double tap, reessai
+  // reseau) visent la meme cle primaire : le second INSERT echoue (23505) et renvoie le programme deja cree, au lieu
+  // de creer un doublon ou de provoquer un 500 sur l'index unique de position de suite.
+  const programId = publishedProgramId(draft.id);
   const { data, error } = await db
     .from('ziko_ai_generated_programs')
-    .insert({ ...toProgramRow(userId, draft.program), ...sequenceCols })
+    .insert({ id: programId, ...toProgramRow(userId, draft.program), ...sequenceCols })
     .select('id')
     .single();
-  if (error || !data) return { error: error?.message ?? 'insert failed' };
+  let id: string | undefined = data?.id;
+  if (error || !id) {
+    const dup = error?.code === '23505' || /duplicate key|unique/i.test(error?.message ?? '');
+    if (!dup) return { error: error?.message ?? 'insert failed' };
+    const { data: existing } = await db
+      .from('ziko_ai_generated_programs')
+      .select('id')
+      .eq('id', programId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!existing?.id) return { error: error?.message ?? 'insert failed' };
+    id = existing.id as string;
+  }
   await db
     .from('ziko_workshop_drafts')
-    .update({ status: 'saved', saved_program_id: data.id })
+    .update({ status: 'saved', saved_program_id: id })
     .eq('id', draft.id)
     .eq('user_id', userId);
-  return { programId: data.id };
+  return { programId: id! };
+}
+
+/** UUID stable (forme v5) derive de l'id du brouillon : un brouillon ne produit jamais deux programmes. */
+export function publishedProgramId(draftId: string): string {
+  const h = createHash('sha1').update(`ziko-workshop-publish:${draftId}`).digest('hex');
+  const variant = ((parseInt(h.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${variant}${h.slice(18, 20)}-${h.slice(20, 32)}`;
 }

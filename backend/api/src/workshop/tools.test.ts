@@ -8,9 +8,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createFakeDb } from './fakeDb.testutil.js';
 import { createWorkshopTools, toolLabel } from './tools.js';
-import { createDraft, loadDraft, saveDraftProgram, publishDraft } from './store.js';
+import { createDraft, loadDraft, saveDraftProgram, publishDraft, publishedProgramId } from './store.js';
 import { fetchWorkshopContext, renderContext, epley, contextCounts } from './context.js';
 import { WORKSHOP_WEB_SEARCH_DAILY_CAP } from './limits.js';
+import { runWebSearch } from './webSearch.js';
 import { normalizeProgram } from './draft.js';
 import { TRAINING_SKILLS, getSkill } from './skills.js';
 
@@ -128,6 +129,21 @@ describe('publishDraft', () => {
     expect(db.tables.ziko_ai_generated_programs).toHaveLength(1);
   });
 
+  it('revue B M6 : deux "Enregistrer" concurrents creent UN seul programme (meme id, pas de doublon ni de 500)', async () => {
+    const { db, draft, tools } = await setup();
+    await tools.workshop_set_draft.execute!({ program }, opts);
+    const rec = (await loadDraft(db, U, draft.id))!;
+    const [a, b, c]: any[] = await Promise.all([publishDraft(db, U, rec), publishDraft(db, U, rec), publishDraft(db, U, rec)]);
+    expect(a.programId).toBeTruthy();
+    expect(b.programId).toBe(a.programId);
+    expect(c.programId).toBe(a.programId);
+    expect(db.tables.ziko_ai_generated_programs).toHaveLength(1);
+    expect((await loadDraft(db, U, draft.id))!.saved_program_id).toBe(a.programId);
+    expect(publishedProgramId(draft.id)).toBe(a.programId);
+    expect(publishedProgramId(draft.id)).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(publishedProgramId('other')).not.toBe(a.programId);
+  });
+
   it('refuses an empty draft', async () => {
     const { db, draft } = await setup();
     const rec = (await loadDraft(db, U, draft.id))!;
@@ -197,7 +213,28 @@ describe('skills and web search', () => {
     });
     const res: any = await tools.workshop_web_search.execute!({ query: 'anything here' }, opts);
     expect(res).toMatchObject({ ok: false, reason: 'error' });
-    expect(db.tables.ziko_ai_cost_log ?? []).toHaveLength(0);
+    // Revue B (M5) : l'appel en echec consomme quand meme un slot (la recherche a pu etre facturee).
+    expect(db.tables.ziko_ai_cost_log).toEqual([expect.objectContaining({ user_id: U, source: 'workshop_web_search', input_tokens: 0, output_tokens: 0 })]);
+  });
+
+  it('revue B M5 : 30 recherches simultanees -> au plus le plafond du jour part au fournisseur', async () => {
+    const db: any = createFakeDb();
+    const runner = vi.fn(async () => ({ text: 'ok', sources: [], usage: { inputTokens: 1, outputTokens: 1 } }));
+    const results = await Promise.all(Array.from({ length: 30 }, (_, i) => runWebSearch(db, U, `parallel query ${i}`, runner as any)));
+    expect(runner).toHaveBeenCalledTimes(WORKSHOP_WEB_SEARCH_DAILY_CAP);
+    expect(results.filter((r) => r.ok)).toHaveLength(WORKSHOP_WEB_SEARCH_DAILY_CAP);
+    expect(results.filter((r) => !r.ok && r.reason === 'daily_cap')).toHaveLength(30 - WORKSHOP_WEB_SEARCH_DAILY_CAP);
+  });
+
+  it('revue B M5 : les echecs consomment le plafond (20 echecs => la 21e recherche est refusee sans appel)', async () => {
+    const db: any = createFakeDb();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const runner = vi.fn(async () => { throw new Error('provider down'); });
+    const base = Date.now();
+    for (let i = 0; i < WORKSHOP_WEB_SEARCH_DAILY_CAP; i++) await runWebSearch(db, U, `failing query ${i}`, runner as any, new Date(base + i * 1000));
+    const res = await runWebSearch(db, U, 'one more query', runner as any, new Date(base + 60_000));
+    expect(res).toMatchObject({ ok: false, reason: 'daily_cap' });
+    expect(runner).toHaveBeenCalledTimes(WORKSHOP_WEB_SEARCH_DAILY_CAP);
   });
 
   it('labels tools for the UI chips', () => {
