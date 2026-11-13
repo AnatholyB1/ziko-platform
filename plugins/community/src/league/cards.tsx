@@ -233,7 +233,7 @@ export function CollectiveCard({ c, item, busy, onJoin, onDecline, onLeave }: Co
     <View style={card(c)}>
       <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{item.title}</Text>
       <Text style={{ fontSize: 14, color: c.text, marginTop: 6 }}>{v.groupLine}</Text>
-      <ProgressBar ratio={v.ratio} c={c} />
+      {v.hidden ? null : <ProgressBar ratio={v.ratio} c={c} />}
       <Text style={{ fontSize: 12, color: c.muted, marginTop: 8 }}>{v.participantsLine}</Text>
       {v.mineLine ? <Text style={{ fontSize: 13, color: c.text, marginTop: 4 }}>{v.mineLine}</Text> : null}
       {item.my_status === 'invited' ? (

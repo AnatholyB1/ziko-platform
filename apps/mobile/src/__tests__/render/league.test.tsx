@@ -150,6 +150,12 @@ describe('CollectiveCard (S9)', () => {
     expect(c.querySelectorAll('button')).toHaveLength(0);
     expect(c.textContent).not.toContain('Ma contribution');
   });
+  it('1 participant (total masque, UAT run 6) : pas de "0 / 10000", mention du masquage + ma contribution', async () => {
+    const c = await mount(<CollectiveCard {...props} item={item({ total: 0, total_hidden: true, joined_count: 1, my_contribution: 4000 })} />);
+    expect(c.textContent).toContain('Total masqué (moins de 3 participants)');
+    expect(c.textContent).not.toContain('Groupe : 0');
+    expect(c.textContent).toContain('Ma contribution : 4000');
+  });
   it('sans defi : message et icone', async () => {
     const c = await mount(<NoCollective c={C} />);
     expect(c.textContent).toContain("Aucun défi de groupe pour l'instant");

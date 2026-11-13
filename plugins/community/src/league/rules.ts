@@ -170,6 +170,8 @@ export interface CollectiveProgress {
   metric: CollectiveMetric;
   target_total: number;
   total: number;
+  /** true sous 3 participants : le backend renvoie total = null (confidentialite), jamais 0. */
+  total_hidden?: boolean;
   joined_count: number;
   my_contribution: number | null;
   my_status: 'invited' | 'joined' | 'declined' | null;
@@ -179,6 +181,8 @@ export interface CollectiveProgress {
 
 export interface CollectiveView {
   groupLine: string;
+  /** Total masque : ne pas afficher de barre de progression ni de pourcentage. */
+  hidden: boolean;
   ratio: number;
   participantsLine: string;
   mineLine: string | null;
@@ -187,10 +191,12 @@ export interface CollectiveView {
 export function collectiveView(p: CollectiveProgress): CollectiveView {
   const unit = COLLECTIVE_UNIT[p.metric] ?? '';
   const target = Math.max(0, p.target_total);
-  const total = Math.max(0, p.total);
+  const total = Math.max(0, p.total ?? 0);
+  const hidden = p.total_hidden === true;
   return {
-    groupLine: `Groupe : ${total} / ${target} ${unit}`,
-    ratio: target > 0 ? Math.min(1, total / target) : 0,
+    groupLine: hidden ? 'Total masqué (moins de 3 participants)' : `Groupe : ${total} / ${target} ${unit}`,
+    hidden,
+    ratio: !hidden && target > 0 ? Math.min(1, total / target) : 0,
     participantsLine: `${p.joined_count} participant${p.joined_count > 1 ? 's' : ''}`,
     mineLine: p.my_status === 'joined' && p.my_contribution !== null ? `Ma contribution : ${p.my_contribution}` : null,
   };
@@ -209,6 +215,7 @@ export function parseCollective(raw: unknown): CollectiveProgress | null {
     metric,
     target_total: Number(r.target_total ?? 0),
     total: Number(r.total ?? 0),
+    total_hidden: r.total_hidden === true || r.total === null || r.total === undefined,
     joined_count: Number(r.joined_count ?? 0),
     my_contribution: r.my_contribution === null || r.my_contribution === undefined ? null : Number(r.my_contribution),
     my_status: status,
