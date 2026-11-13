@@ -40,6 +40,8 @@ export function getProgramStatus(p: ProgramLike): { kind: ProgramStatusKind; lab
   // Un programme reactive est actif meme s'il porte encore un ancien completed_at (la RPC le remet a NULL).
   if (p.is_active) return { kind: 'active', label: 'En cours', progress: p.completed_at ? 0 : progress };
   if (p.completed_at) return { kind: 'completed', label: 'Terminé', progress: 100 };
-  if (p.started_at) return { kind: 'paused', label: 'En pause', progress };
+  // `started_at` est pose des la 1re activation (trigger P24) : un programme active puis desactive sans aucune
+  // seance faite n'est PAS "en pause 0 %" mais "Pas encore demarre" (run5 P7).
+  if (p.started_at && progress > 0) return { kind: 'paused', label: 'En pause', progress };
   return { kind: 'unstarted', label: 'Pas encore démarré', progress: 0 };
 }

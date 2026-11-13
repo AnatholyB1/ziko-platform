@@ -7,7 +7,14 @@
  *    (deadlock connu). On differe donc le chargement du profil hors du callback.
  */
 export interface InitialSessionDeps {
-  getSession: () => Promise<{ data: { session: { user?: unknown } | null } }>;
+  getSession: () => Promise<{ data: { session: { user?: unknown } | null }; error?: unknown }>;
+  /**
+   * Demarrage a froid HORS LIGNE (run5) : si getSession ne rend pas de session a cause d'une erreur reseau
+   * (refresh impossible, jeton d'acces expire), on relit la session PERSISTEE : l'app s'ouvre en mode degrade
+   * au lieu de l'ecran Bienvenue. Une erreur PERMANENTE (jeton revoque) reste une vraie deconnexion (regle P2).
+   */
+  readPersistedSession?: () => Promise<{ user?: unknown } | null>;
+  isPermanentError?: (err: unknown) => boolean;
   applySession: (session: { user?: unknown } | null) => void;
   refreshProfile: () => Promise<unknown>;
   /** Toujours appele une fois (succes ou echec) : isLoading=false, isInitialized=true. */
@@ -16,9 +23,16 @@ export interface InitialSessionDeps {
 
 export async function loadInitialSession(deps: InitialSessionDeps): Promise<void> {
   try {
-    const {
-      data: { session },
-    } = await deps.getSession();
+    const res = await deps.getSession();
+    let session = res.data.session;
+    if (!session && res.error && deps.readPersistedSession && !deps.isPermanentError?.(res.error)) {
+      try {
+        const persisted = await deps.readPersistedSession();
+        if (persisted?.user) session = persisted;
+      } catch {
+        /* stockage illisible : deconnecte */
+      }
+    }
     deps.applySession(session);
     if (session?.user) {
       try {
@@ -46,4 +60,25 @@ export function deferProfileRefresh(
       .then(refresh)
       .catch(() => {});
   });
+}
+
+/** Cle de stockage par defaut de supabase-js v2 : sb-<premier label du host>-auth-token. */
+export function supabaseStorageKey(supabaseUrl: string): string {
+  try {
+    return `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`;
+  } catch {
+    return 'supabase.auth.token';
+  }
+}
+
+/** Relit la session persistee (sans reseau). Rend null si absente, illisible ou sans jeton de rafraichissement. */
+export async function readPersistedSession<T = { user?: unknown }>(
+  storage: { getItem: (k: string) => Promise<string | null> },
+  supabaseUrl: string,
+): Promise<T | null> {
+  const raw = await storage.getItem(supabaseStorageKey(supabaseUrl));
+  if (!raw) return null;
+  const parsed = JSON.parse(raw);
+  const s = parsed?.currentSession ?? parsed;
+  return s && typeof s === 'object' && s.refresh_token && s.user ? (s as T) : null;
 }

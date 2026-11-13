@@ -4,7 +4,7 @@ import {
   coffeeCountedMl, effectiveGoalMl, validateGoalMl, validateAmountMl, remindersRowValue,
   glassRowValue, coffeeRowValue, bonusRowValue, localDayBoundsIso, localDateKey,
   rowToSettings, settingsToRow, fetchSettings, saveSettings, hasWorkoutOnDay,
-  DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchEffectiveGoalMl,
+  DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchEffectiveGoalMl, fetchBaseGoalMl, resolveGoalMl, COUNTABLE_SESSION_OR_FILTER,
 } from './settings';
 
 describe('rappels', () => {
@@ -114,7 +114,7 @@ describe('persistance (client simule)', () => {
   });
   it('hasWorkoutOnDay : vrai si une seance, faux sinon', async () => {
     const mk = (rows: unknown[]) => ({
-      from: () => ({ select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ limit: () => Promise.resolve({ data: rows, error: null }) }) }) }) }) }),
+      from: () => ({ select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ or: () => ({ limit: () => Promise.resolve({ data: rows, error: null }) }) }) }) }) }) }),
     });
     expect(await hasWorkoutOnDay(mk([{ id: 'x' }]), 'u1')).toBe(true);
     expect(await hasWorkoutOnDay(mk([]), 'u1')).toBe(false);
@@ -131,7 +131,7 @@ describe('objectif unique accueil/plugin (UAT run1 #4)', () => {
       if (table === 'ziko_hydration_settings') {
         return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: hydrationRow, error: null }) }) }) };
       }
-      return { select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ limit: () => Promise.resolve({ data: sessions, error: null }) }) }) }) }) };
+      return { select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ or: () => ({ limit: () => Promise.resolve({ data: sessions, error: null }) }) }) }) }) }) };
     },
   });
 
@@ -146,5 +146,32 @@ describe('objectif unique accueil/plugin (UAT run1 #4)', () => {
   it('valeur profil hors bornes -> defaut', () => {
     expect(baseGoalFromProfileSettings({ hydration_goal_ml: 99999 })).toBe(2000);
     expect(baseGoalFromProfileSettings(null)).toBe(2000);
+  });
+});
+
+describe('objectif stable (run5 : 2,5 L puis 2,0 L apres relance)', () => {
+  it('le bonus jour de seance ne compte que les seances COMPTABLES (une seance fantome ne le fait pas apparaitre)', async () => {
+    const or = vi.fn().mockReturnValue({ limit: () => Promise.resolve({ data: [], error: null }) });
+    const client = { from: () => ({ select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ or }) }) }) }) }) };
+    await hasWorkoutOnDay(client, 'u1');
+    expect(or).toHaveBeenCalledWith(COUNTABLE_SESSION_OR_FILTER);
+  });
+  it('erreur de lecture du profil : remontee (jamais 2,0 L par defaut mis en cache)', async () => {
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: { message: 'offline' } }) }) }) }) };
+    await expect(fetchBaseGoalMl(client, 'u1')).rejects.toThrow('offline');
+  });
+  it('resolveGoalMl : lecture ok -> valeur persistee', async () => {
+    const persist = vi.fn().mockResolvedValue(undefined);
+    expect(await resolveGoalMl(async () => 2500, { persist })).toBe(2500);
+    expect(persist).toHaveBeenCalledWith(2500);
+  });
+  it('resolveGoalMl : lecture en echec -> derniere valeur connue (memoire, puis stockage), defaut en dernier recours', async () => {
+    const boom = async () => {
+      throw new Error('offline');
+    };
+    expect(await resolveGoalMl(boom, { previous: 2500, readPersisted: async () => 3000 })).toBe(2500);
+    expect(await resolveGoalMl(boom, { readPersisted: async () => 2500 })).toBe(2500);
+    expect(await resolveGoalMl(boom, { readPersisted: async () => null })).toBe(DEFAULT_GOAL_ML);
+    expect(await resolveGoalMl(boom, { previous: 99, readPersisted: async () => { throw new Error('storage'); } })).toBe(DEFAULT_GOAL_ML);
   });
 });

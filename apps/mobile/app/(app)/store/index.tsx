@@ -9,6 +9,8 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
+import { storeDescription } from '../../../src/lib/pluginCopy';
+import PluginStoreButton from '../../../src/components/PluginStoreButton';
 import { isMandatoryPlugin, uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 
 // ── Design tokens ──────────────────────────────────────────
@@ -289,7 +291,7 @@ export default function PluginStoreScreen() {
                       numberOfLines={2}
                       style={{ fontSize: 12, color: 'rgba(255,250,246,0.65)', marginTop: 4, lineHeight: 18 }}
                     >
-                      {m.description}
+                      {storeDescription(p.plugin_id, m.description)}
                     </Text>
 
                     {/* Install CTA */}
@@ -389,7 +391,7 @@ const PluginCard = React.memo(function PluginCard({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{m.name}</Text>
           <Text numberOfLines={2} style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 17 }}>
-            {m.description}
+            {storeDescription(plugin.plugin_id, m.description)}
           </Text>
           {rating ? (
             <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
@@ -398,27 +400,15 @@ const PluginCard = React.memo(function PluginCard({
           ) : null}
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          onPress={isInstalled ? onUninstall : onInstall}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityState={mandatory ? { disabled: true } : undefined}
-          style={{
-            minHeight: 44, justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: 4,
-            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-            backgroundColor: isInstalled ? '#E2E0DA' : PRIMARY,
-            flexShrink: 0,
-          }}
-        >
-          {mandatory ? <Ionicons name="lock-closed-outline" size={14} color={MUTED} /> : null}
-          <Text style={{
-            fontSize: 12, fontWeight: '700',
-            color: isInstalled ? MUTED : '#FFFFFF',
-          }}>
-            {isInstalled ? (mandatory ? 'Obligatoire' : 'Installé') : 'Installer'}
-          </Text>
-        </TouchableOpacity>
+        {/* CTA : reste pressable pour un module obligatoire (alerte explicative) */}
+        <PluginStoreButton
+          isInstalled={isInstalled}
+          mandatory={mandatory}
+          onInstall={onInstall}
+          onUninstall={onUninstall}
+          primary={PRIMARY}
+          muted={MUTED}
+        />
       </View>
     </View>
   );

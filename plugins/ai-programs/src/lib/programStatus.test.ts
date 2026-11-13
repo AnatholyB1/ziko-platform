@@ -26,6 +26,9 @@ describe('getProgramStatus (P7 run4)', () => {
     const p = { ...base, started_at: 'x', program_data: { sessions: [{ completed: true }, { completed: false }] } };
     expect(getProgramStatus(p)).toMatchObject({ kind: 'paused', progress: 50 });
   });
+  it('active puis desactive sans aucune seance (started_at pose par le trigger) : Pas encore demarre, pas "En pause 0 %"', () => {
+    expect(getProgramStatus({ ...base, started_at: '2026-11-01T00:00:00Z' })).toEqual({ kind: 'unstarted', label: 'Pas encore démarré', progress: 0 });
+  });
   it('actif : en cours, 0 % sans seance cochee (aucun pourcentage invente) ; ancien completed_at ignore', () => {
     expect(getProgramStatus({ ...base, is_active: true })).toMatchObject({ kind: 'active', progress: 0 });
     expect(getProgramStatus({ ...base, is_active: true, completed_at: '2026-10-01T00:00:00Z' })).toMatchObject({ kind: 'active', progress: 0 });

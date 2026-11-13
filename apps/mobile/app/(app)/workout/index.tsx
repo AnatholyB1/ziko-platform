@@ -21,6 +21,7 @@ import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner
 import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../../src/lib/neutralToast';
 import { isStaleSession } from '../../../src/lib/staleSession';
+import { getActiveProgram } from '../../../src/lib/activeProgram';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
@@ -451,15 +452,12 @@ export default function WorkoutIndexScreen() {
     queryKey: ['active-program', userId],
     queryFn: async () => {
       if (!userId) return null;
-      // P7 (D-11): the ACTIVE program, not the most recent one. 0 rows = no active AI program.
-      const { data, error } = await supabase
-        .from('ziko_ai_generated_programs')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .maybeSingle();
-      if (error || !data) return null;
-      return data as AiGeneratedProgram;
+      // P7 (D-11): the ACTIVE program (IA OR coach table), not the most recent one.
+      try {
+        return ((await getActiveProgram(supabase as any, userId)) as unknown as AiGeneratedProgram) ?? null;
+      } catch {
+        return null;
+      }
     },
     enabled: !!userId,
   });
@@ -506,7 +504,7 @@ export default function WorkoutIndexScreen() {
       {/* WSHeader — only when active program */}
       {activeProgram ? (
         <WSHeader
-          title={goalLabel(activeProgram.goal, 'Programme')}
+          title={(activeProgram as any).kind === 'coach' && (activeProgram as any).name ? (activeProgram as any).name : goalLabel(activeProgram.goal, 'Programme')}
           sub="Coach Ziko · Intermédiaire"
           right={
             <TouchableOpacity

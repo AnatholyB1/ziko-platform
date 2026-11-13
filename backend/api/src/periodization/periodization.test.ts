@@ -187,8 +187,8 @@ describe('runRelaunchCheck (cloture + relance, sans IA)', () => {
     const db: any = createFakeDb(seed());
     const createConversation = makeConv();
     await runRelaunchCheck({ db, userId: U, now: NOW, createConversation });
-    // simule un echec de closeProgram apres la creation de la relance : le programme est encore actif
-    Object.assign(db.tables.ziko_ai_generated_programs[0], { is_active: true, completed_at: null });
+    // simule un echec de closeProgram apres la creation de la relance : l'UPDATE est atomique : le programme est encore actif, sans results
+    Object.assign(db.tables.ziko_ai_generated_programs[0], { is_active: true, completed_at: null, results: null });
     await runRelaunchCheck({ db, userId: U, now: NOW, createConversation });
     expect(db.tables.ziko_program_relaunches).toHaveLength(1);
     expect(db.tables.ziko_workshop_drafts).toHaveLength(1);
@@ -374,6 +374,22 @@ describe('publication, suite et relance ignoree', () => {
     const row: any = { id: 'd1', user_id: U, status: 'draft', saved_program_id: null, sequence_id: null, previous_program_id: null, program: { name: 'N', goal: 'g', split_type: 'x', days_per_week: 1, weeks_count: 1, weeks: [{ w: 1, sessions: [] }] } };
     await publishDraft(db, U, row);
     expect(db.tables.ziko_ai_generated_programs[0].sequence_id).toBeUndefined();
+  });
+
+  it('programme reactive apres sa cloture : pas re-clos, relance traitee, bandeau disparu (run5 P24)', async () => {
+    const { db, relaunchId } = await closedState();
+    const p = db.tables.ziko_ai_generated_programs.find((x: any) => x.id === 'p1');
+    expect(p.completed_at).toBeTruthy();
+    expect((await getOpenRelaunch(db, U))?.id).toBe(relaunchId); // programme termine : bandeau affiche
+    // reactivation (RPC P7) : is_active=true, completed_at=NULL, `results` conserve
+    p.is_active = true;
+    p.completed_at = null;
+    expect(await getOpenRelaunch(db, U)).toBeNull();
+    const check = await runRelaunchCheck({ db, userId: U, now: NOW, createConversation: makeConv() });
+    expect(check.closed_program_id).toBeNull();
+    expect(check.relaunch).toBeNull();
+    expect(p).toMatchObject({ is_active: true, completed_at: null });
+    expect(db.tables.ziko_program_relaunches[0].status).toBe('dismissed');
   });
 
   it('ignorer la relance : aucune consequence, plus proposee', async () => {

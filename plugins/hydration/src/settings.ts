@@ -200,7 +200,14 @@ export async function saveSettings(client: HydrationClient, userId: string, s: H
   return clean;
 }
 
-/** Jour de seance = au moins une seance dont started_at tombe dans le jour local (D-05). */
+/** Meme predicat que isCountableSession (apps/mobile workoutPlan) : une seance fantome/vide ne compte pas. */
+export const COUNTABLE_SESSION_OR_FILTER = 'total_sets.gt.0,total_volume_kg.gt.0,and(total_sets.is.null,ended_at.not.is.null)';
+
+/**
+ * Jour de seance = au moins une seance COMPTABLE (D-05) dont started_at tombe dans le jour local.
+ * run5 : compter aussi les seances fantomes/vides faisait passer l'objectif de 2,5 L a 2,0 L des que la seance
+ * fantome etait nettoyee (bonus jour de seance qui disparait sans raison visible).
+ */
 export async function hasWorkoutOnDay(client: HydrationClient, userId: string, d: Date = new Date()): Promise<boolean> {
   const { startIso, endIso } = localDayBoundsIso(d);
   const res = await client
@@ -209,6 +216,7 @@ export async function hasWorkoutOnDay(client: HydrationClient, userId: string, d
     .eq('user_id', userId)
     .gte('started_at', startIso)
     .lt('started_at', endIso)
+    .or(COUNTABLE_SESSION_OR_FILTER)
     .limit(1);
   if (res.error) throw new Error(res.error.message);
   return (res.data ?? []).length > 0;
@@ -218,12 +226,51 @@ export async function hasWorkoutOnDay(client: HydrationClient, userId: string, d
  * Objectif du jour = objectif de base (profil) + bonus jour de seance (reglages P11).
  * Source de verite unique, lue par l'accueil ET par le plugin Hydratation.
  */
-export async function fetchEffectiveGoalMl(client: HydrationClient, userId: string, d: Date = new Date()): Promise<number> {
+export async function fetchBaseGoalMl(client: HydrationClient, userId: string): Promise<number> {
   const prof = await client.from('ziko_user_profiles').select('settings').eq('id', userId).maybeSingle();
-  const base = baseGoalFromProfileSettings(prof?.data?.settings);
+  // Une erreur de lecture n'est PAS "pas de reglage" : on la remonte (jamais un 2,0 L par defaut mis en cache).
+  if (prof?.error) throw new Error(prof.error.message);
+  return baseGoalFromProfileSettings(prof?.data?.settings);
+}
+
+export async function fetchEffectiveGoalMl(client: HydrationClient, userId: string, d: Date = new Date()): Promise<number> {
+  const base = await fetchBaseGoalMl(client, userId);
   const [settings, workout] = await Promise.all([
     fetchSettings(client, userId),
     hasWorkoutOnDay(client, userId, d),
   ]);
   return effectiveGoalMl(base, workout, settings);
+}
+
+export interface GoalFallbackDeps {
+  /** Derniere valeur connue en memoire (cache react-query), sinon undefined. */
+  previous?: number | null;
+  /** Derniere valeur persistee (demarrage a froid hors ligne), sinon null. */
+  readPersisted?: () => Promise<number | null>;
+  persist?: (ml: number) => Promise<void>;
+}
+
+const validGoal = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v >= GOAL_MIN_ML && v <= GOAL_MAX_ML + BONUS_MAX_ML;
+
+/**
+ * Objectif du jour STABLE : valeur lue en base ; en cas d'echec de lecture (hors ligne, demarrage a froid),
+ * derniere valeur connue (memoire puis persistee) et seulement en dernier recours le defaut. La valeur lue est
+ * persistee pour le prochain demarrage. Une seule fonction pour l'accueil et l'ecran Hydratation.
+ */
+export async function resolveGoalMl(fetcher: () => Promise<number>, deps: GoalFallbackDeps = {}): Promise<number> {
+  try {
+    const ml = await fetcher();
+    deps.persist?.(ml).catch(() => {});
+    return ml;
+  } catch {
+    if (validGoal(deps.previous)) return deps.previous;
+    try {
+      const persisted = await deps.readPersisted?.();
+      if (validGoal(persisted)) return persisted;
+    } catch {
+      /* stockage indisponible */
+    }
+    return DEFAULT_GOAL_ML;
+  }
 }

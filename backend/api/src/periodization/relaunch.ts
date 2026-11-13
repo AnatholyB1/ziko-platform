@@ -62,6 +62,9 @@ async function toView(db: WorkshopDb, userId: string, r: RelaunchRow): Promise<R
 async function findOpenRelaunch(db: WorkshopDb, userId: string): Promise<RelaunchRow | null> {
   for (const r of await listRecentRelaunches(db, userId)) {
     if (r.status === 'dismissed') continue;
+    // Programme reactive (actif, non termine) : la relance qui le concerne n'a plus lieu d'etre affichee.
+    const prog = await loadProgram(db, userId, r.program_id);
+    if (prog && prog.is_active === true && !prog.completed_at) continue;
     if (r.draft_id) {
       const d = await loadDraft(db, userId, r.draft_id);
       if (!d || d.status !== 'draft') continue;
@@ -91,7 +94,13 @@ export async function runRelaunchCheck(deps: CheckDeps): Promise<{ relaunch: Rel
   let closedId: string | null = null;
 
   const active = await loadActiveProgram(db, userId);
-  if (active) {
+  if (active && active.results) {
+    // Programme REACTIVE apres sa cloture (closeProgram a ecrit `results`, la RPC de reactivation a remis
+    // completed_at a NULL) : l'athlete a choisi de le reprendre. On ne le re-clot pas et la relance qui le
+    // concernait est traitee, sinon le bandeau "Programme termine" resterait (run5 P24).
+    const rel = await loadRelaunchByProgram(db, userId, active.id);
+    if (rel && rel.status !== 'dismissed') await setRelaunchStatus(db, userId, rel.id, 'dismissed');
+  } else if (active) {
     const start = effectiveStart({ startedAt: active.started_at, createdAt: active.created_at });
     const sessions = Number.isNaN(start.getTime()) ? [] : await fetchSessionsSince(db, userId, start);
     const progress = evaluateProgress(
