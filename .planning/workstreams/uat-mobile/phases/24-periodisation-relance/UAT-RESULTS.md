@@ -1,3 +1,16 @@
+## Run 9 (2026-11-13, UI émulateur) - Flow B 1-2 : activation du programme suivant par l'interface
+Captures `uat-evidence/run9/m1.png`, `p2.png`, `p3.png`, `p5.png`, `t2.png`, `t3.png`.
+| Id | Verdict | Détail |
+|---|---|---|
+| B-1 activation par l'UI | PASS | Programmes > menu `...` de `Bloc de force` (PAS ENCORE DÉMARRÉ) > `Définir comme programme actif` > modale `Remplacer le programme de ton coach ?` (`Force 5x5, bloc 2 passe en pause. Ta progression est conservée.`) > `Activer Bloc de force`. Base : `Bloc de force` `is_active=true`, `sequence_position=2` ; aucun autre actif (`ziko_workout_programs` actifs = 0, 1 seul actif au total). |
+| B-2 frise `Ma suite` | PASS | `1. TERMINÉ Bloc de volume`, `2. EN COURS Bloc de force` (carte bord orange, pastille pleine), bilan `2 séances sur 4 prévues / 1 212 kg / jump squat 140 -> 142,9 kg / La suite consolide...`. Un seul `EN COURS`. Avant activation la ligne 2 affichait `2. SUIVANT` (gris). Les cartes de la frise ne sont pas cliquables (pas d'activation depuis `Ma suite`). |
+| B-3 `Plus tard` | NON-TESTE (partiel P23) | Le `Plus tard` de la modale d'enregistrement a été touché sur l'atelier P23 (programme `Atelier run9`, inactif) ; l'état `Aucun programme actif` n'a pas été rejoué sur la chaîne P24. |
+| C (100 % / 0 séance), D, E, F | NON-TESTE | Non joués (budget contexte). |
+| Piège harnais | CONSTAT | Un lien profond vers un écran déjà monté ne le recharge pas : `Ma suite` est restée `SUIVANT` après activation tant que l'écran n'a pas été remonté (retour onglet Entraînement > `Ma suite`). Vérifier côté appli que `sequence.tsx` refetch au focus. |
+| Ecart mesurable (maquette) 1 | FAIL | Onglet Entraînement, programme actif `Bloc de force` : titre `Force` (au lieu de `Bloc de force`) et sous-titre `Coach Ziko · Intermédiaire` codé en dur : `apps/mobile/app/(app)/workout/index.tsx:499-500` (`goalLabel(activeProgram.goal)` pour tout programme non coach). `Créé par moi` dans Programmes. |
+| Ecart mesurable 2 | FAIL | Libellé anglais brut `strength` dans la frise (`2 semaines · strength`, `4 semaines · strength`) en UI française. |
+| Ecart mesurable 3 | CONSTAT | Programme coach actif : Programmes `Semaine 3 sur 8 · 38 %` vs Entraînement `1 SEMAINE / 0 TOTAL` (deux calculs de progression différents). `Bloc de force` (issu de la chaîne de relance) sans badge `IA` dans Programmes alors que `Bloc de volume` l'a. |
+
 # UAT-RESULTS P24 (run2) - NON-TESTE
 
 Seed "programme echu" non cree ; a faire run3.
