@@ -215,6 +215,22 @@ export function shouldShowDefaultCard(routine: { exercises: unknown[] } | null |
   return !!routine && routine.exercises.length > 0 && !skipped;
 }
 
+/** Reglage (par appareil) : lancer la routine par defaut automatiquement au debut de chaque seance (revue B M9). */
+export const STRETCH_AUTO_START_PREF = 'stretching.autoStartDefault';
+
+/**
+ * Lancement automatique en debut de seance (STRE-06) : reglage actif, routine par defaut non vide, `Passer` non
+ * touche, et pas deja lance pour cette seance (une seance = un lancement au plus).
+ */
+export function shouldAutoLaunchDefault(p: {
+  enabled: boolean;
+  routine: { exercises: unknown[] } | null | undefined;
+  skipped: boolean;
+  alreadyLaunched: boolean;
+}): boolean {
+  return p.enabled && !p.alreadyLaunched && shouldShowDefaultCard(p.routine, p.skipped);
+}
+
 // ─── Dates locales ────────────────────────────────────────────────────────────
 
 const pad2 = (n: number) => String(n).padStart(2, '0');

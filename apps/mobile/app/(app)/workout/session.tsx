@@ -259,6 +259,8 @@ export default function WorkoutSessionScreen() {
   const hasStretching = enabledPlugins.includes('stretching');
   // P18 (STRE-06) : `Passer` retire la routine par defaut pour la seance en cours (etat local, non persiste).
   const [stretchSkipped, setStretchSkipped] = useState(false);
+  // Revue B M9 : cle de la seance pour le lancement automatique de la routine par defaut (une fois par seance).
+  const stretchSessionKey = useRef(`session-${Date.now()}`).current;
   const hasHydration = enabledPlugins.includes('hydration');
 
   // ── Hydration quick-add ────────────────────────────────
@@ -954,7 +956,7 @@ export default function WorkoutSessionScreen() {
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 120 }}>
             {hasStretching && (
-              <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} />
+              <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} sessionKey={stretchSessionKey} />
             )}
             <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
               Aperçu du programme
@@ -1634,7 +1636,7 @@ export default function WorkoutSessionScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 120 }}>
         {hasStretching && (
-          <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} />
+          <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} sessionKey={stretchSessionKey} />
         )}
         {freeExercises.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>

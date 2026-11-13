@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { useThemeStore, getActionPrimary } from '@ziko/plugin-sdk';
+import { useThemeStore, getActionPrimary, getPluginPref, setPluginPref } from '@ziko/plugin-sdk';
 import { fetchDefaultRoutine } from '../data';
-import { routineSummary, shouldShowDefaultCard } from '../lib';
+import { routineSummary, shouldShowDefaultCard, shouldAutoLaunchDefault, STRETCH_AUTO_START_PREF } from '../lib';
 import { ORANGE_TEXT, CARD_SHADOW } from './ui';
 
 /**
@@ -16,10 +16,14 @@ import { ORANGE_TEXT, CARD_SHADOW } from './ui';
  * - `Passer` n'est pas persiste : l'etat `skipped` vit dans l'ecran de seance (une seance = un etat local).
  * Terminer la routine ecrit un ziko_stretching_logs ; ce n'est jamais une serie validee.
  */
+// Seances deja traitees par le lancement automatique (module : survit aux rendus, une seance = un lancement).
+const autoLaunched = new Set<string>();
+
 export function DefaultStretchingCard({
-  supabase, skipped, onSkip,
-}: { supabase: any; skipped: boolean; onSkip: () => void }) {
+  supabase, skipped, onSkip, sessionKey,
+}: { supabase: any; skipped: boolean; onSkip: () => void; sessionKey?: string }) {
   const theme = useThemeStore((s) => s.theme);
+  const [autoStart, setAutoStart] = useState<boolean>(() => getPluginPref(STRETCH_AUTO_START_PREF));
 
   const { data: authData } = useQuery({
     queryKey: ['auth_user'],
@@ -33,6 +37,15 @@ export function DefaultStretchingCard({
     enabled: !!userId,
     staleTime: 0,
   });
+
+  // STRE-06 (revue B M9) : si le reglage est actif, la routine par defaut demarre toute seule en debut de seance
+  // (une seule fois par seance ; `Passer` l'annule). Sans le reglage : la carte reste a toucher, comme avant.
+  useEffect(() => {
+    if (!isSuccess || !sessionKey) return;
+    if (!shouldAutoLaunchDefault({ enabled: autoStart, routine, skipped, alreadyLaunched: autoLaunched.has(sessionKey) })) return;
+    autoLaunched.add(sessionKey);
+    router.push({ pathname: '/(app)/(plugins)/stretching/session' as any, params: { routineId: routine!.id } });
+  }, [isSuccess, autoStart, routine, skipped, sessionKey]);
 
   if (!isSuccess) return null; // chargement ou erreur : rien (jamais de carte factice)
 
@@ -94,6 +107,15 @@ export function DefaultStretchingCard({
         >
           <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>Modifier</Text>
         </TouchableOpacity>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, minHeight: 44 }}>
+        <Text style={{ flex: 1, color: theme.text, fontSize: 14 }}>Lancer automatiquement au début de chaque séance</Text>
+        <Switch
+          value={autoStart}
+          onValueChange={(v) => { setAutoStart(v); setPluginPref(STRETCH_AUTO_START_PREF, v); }}
+          trackColor={{ false: theme.border, true: primary }}
+          accessibilityLabel="Lancer automatiquement la routine d'étirement au début de chaque séance"
+        />
       </View>
     </View>
   );

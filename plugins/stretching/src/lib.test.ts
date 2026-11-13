@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeStats, buildMonthGrid, calendarCellLabel, localDateKey, startOfWeek, lastSessionLabel,
-  moveItem, applyDefault, clearDefault, pickDefaultRoutine, shouldShowDefaultCard,
+  moveItem, applyDefault, clearDefault, pickDefaultRoutine, shouldShowDefaultCard, shouldAutoLaunchDefault,
   filterLibrary, filterCounts, normalizeRoutineExercise, normalizeRoutine, formatMeasure,
   routineSeconds, routineMinutes, routineSummary, validateExerciseDraft, exerciseFromLibrary,
   type LibraryExercise, type LogRow,
@@ -198,5 +198,17 @@ describe('creation d exercice : validation', () => {
     expect(validateExerciseDraft({ ...ok, duration_seconds: 2 })).toMatch(/durée/);
     expect(validateExerciseDraft({ ...ok, measure: 'reps', reps: 0 })).toMatch(/répétitions/);
     expect(validateExerciseDraft({ ...ok, measure: 'reps', reps: 8, duration_seconds: 0 })).toBeNull();
+  });
+});
+
+describe('shouldAutoLaunchDefault (STRE-06, revue B M9)', () => {
+  const r = { exercises: [{}] };
+  it('lance seulement si le reglage est actif, routine non vide, non passee, pas deja lance', () => {
+    expect(shouldAutoLaunchDefault({ enabled: true, routine: r, skipped: false, alreadyLaunched: false })).toBe(true);
+    expect(shouldAutoLaunchDefault({ enabled: false, routine: r, skipped: false, alreadyLaunched: false })).toBe(false);
+    expect(shouldAutoLaunchDefault({ enabled: true, routine: r, skipped: true, alreadyLaunched: false })).toBe(false);
+    expect(shouldAutoLaunchDefault({ enabled: true, routine: r, skipped: false, alreadyLaunched: true })).toBe(false);
+    expect(shouldAutoLaunchDefault({ enabled: true, routine: null, skipped: false, alreadyLaunched: false })).toBe(false);
+    expect(shouldAutoLaunchDefault({ enabled: true, routine: { exercises: [] }, skipped: false, alreadyLaunched: false })).toBe(false);
   });
 });
