@@ -50,7 +50,7 @@ describe('refreshLeague', () => {
     expect(gen).not.toHaveBeenCalled();
   });
 
-  it.each(['not_enough_weeks', 'below_threshold', 'not_habits_track', 'recent_transition', 'daily_cap', 'not_unlocked'])(
+  it.each(['not_enough_weeks', 'below_threshold', 'not_habits_track', 'recent_transition', 'daily_cap', 'cooldown', 'not_unlocked'])(
     'claim %s : 0 appel de modele, 0 ecriture, 0 cout',
     async (reason) => {
       const { db, calls, inserts } = fakeDb({
@@ -118,6 +118,23 @@ describe('refreshLeague', () => {
     expect(out).toMatchObject({ status: 'ok', ai: 'declined' });
     expect(calls.some((c) => c.fn === 'ziko_league_apply_transition')).toBe(false);
     expect(inserts).toHaveLength(1);
+  });
+
+  it('revue B M3 : un refus (modele ou base) met le modele au repos 7 jours, une acceptation non', async () => {
+    const mk = (apply?: any) => fakeDb({
+      ziko_league_sync: () => ({ data: UNLOCKED }), ziko_league_ai_claim: () => ({ data: ELIGIBLE }),
+      ziko_league_ai_decline: () => ({ data: null }),
+      ziko_league_apply_transition: () => ({ data: apply ?? { applied: true, id: 't1' } }),
+    });
+    let t = mk();
+    await refreshLeague('u1', { db: t.db, generate: async () => ({ object: { transition: false, reason: 'plus tard' } }) });
+    expect(t.calls.filter((c) => c.fn === 'ziko_league_ai_decline')).toEqual([{ fn: 'ziko_league_ai_decline', args: { p_user: 'u1', p_days: 7 } }]);
+    t = mk({ applied: false, reason: 'below_threshold' });
+    await refreshLeague('u1', { db: t.db, generate: async () => ({ object: { transition: true, reason: 'ok' } }) });
+    expect(t.calls.some((c) => c.fn === 'ziko_league_ai_decline')).toBe(true);
+    t = mk();
+    await refreshLeague('u1', { db: t.db, generate: async () => ({ object: { transition: true, reason: 'ok' } }) });
+    expect(t.calls.some((c) => c.fn === 'ziko_league_ai_decline')).toBe(false);
   });
 
   it('modele en echec : on reste en habitudes, appel quand meme journalise, aucune transition', async () => {

@@ -12,6 +12,7 @@ import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
 import { clientForUser } from '../tools/db.js';
 import {
   LEAGUE_AI_DAILY_CAP,
+  LEAGUE_AI_DECLINE_COOLDOWN_DAYS,
   LEAGUE_SYSTEM_PROMPT,
   buildTransitionPrompt,
   normalizeDecision,
@@ -59,6 +60,12 @@ async function syncLeague(db: Db, userId: string): Promise<Record<string, unknow
   return data as Record<string, unknown>;
 }
 
+/** Revue B (M3) : un refus met le modele au repos (LEAGUE_AI_DECLINE_COOLDOWN_DAYS) au lieu de le rappeler chaque jour. */
+async function markDeclined(db: Db, userId: string): Promise<void> {
+  const { error } = await db.rpc('ziko_league_ai_decline', { p_user: userId, p_days: LEAGUE_AI_DECLINE_COOLDOWN_DAYS });
+  if (error) console.error('[League] decline cooldown failed:', error.message);
+}
+
 export async function refreshLeague(userId: string, deps: RefreshDeps = {}): Promise<LeagueRefreshOutcome> {
   const db = deps.db ?? clientForUser();
   const league = await syncLeague(db, userId);
@@ -93,7 +100,10 @@ export async function refreshLeague(userId: string, deps: RefreshDeps = {}): Pro
   });
 
   const decision = normalizeDecision(object);
-  if (!decision || !decision.transition) return { status: 'ok', league, ai: 'declined' };
+  if (!decision || !decision.transition) {
+    await markDeclined(db, userId);
+    return { status: 'ok', league, ai: 'declined' };
+  }
 
   const applied = await db.rpc('ziko_league_apply_transition', { p_user: userId, p_reason: decision.reason });
   const res = (applied.data ?? {}) as { applied?: boolean; id?: string };
@@ -101,7 +111,10 @@ export async function refreshLeague(userId: string, deps: RefreshDeps = {}): Pro
     console.error('[League] apply failed:', applied.error.message);
     return { status: 'ok', league, ai: 'error', reason: 'apply_failed' };
   }
-  if (res.applied !== true) return { status: 'ok', league, ai: 'declined' };
+  if (res.applied !== true) {
+    await markDeclined(db, userId);
+    return { status: 'ok', league, ai: 'declined' };
+  }
 
   // Etat frais (piste performance + celebration en attente) pour que l'ecran reagisse sans second aller-retour.
   const fresh = (await syncLeague(db, userId)) ?? league;
