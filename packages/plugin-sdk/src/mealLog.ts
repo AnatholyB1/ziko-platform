@@ -178,6 +178,11 @@ export function dateKeyDaysAgo(days: number, from: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Date locale `YYYY-MM-DD` de `from` (maintenant par defaut), jamais UTC : a recalculer a chaque ecriture. */
+export function localDateKey(from: Date = new Date()): string {
+  return dateKeyDaysAgo(0, from);
+}
+
 export interface RecentFood extends Omit<BasketItem, 'key'> { count: number; lastAt: string }
 
 /**

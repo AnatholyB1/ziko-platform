@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image,
+  View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image, AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ import { useNutritionStore } from '../store';
 import {
   useThemeStore, useTranslation, showAlert, useCreditStore, getActionPrimary,
   MEAL_TYPES, MEAL_METHODS, mealTypeForHour, formatClock, sumMacros, scaleFood, addLabel,
-  buildInsertRows, groupByMeal, deriveRecents, dateKeyDaysAgo, RECENTS_WINDOW_DAYS, scanCostLabel,
+  buildInsertRows, groupByMeal, deriveRecents, dateKeyDaysAgo, localDateKey, RECENTS_WINDOW_DAYS, scanCostLabel,
   SCAN_CREDIT_COST, parsePending, enqueuePending, removePending, parsePrefs, saveMeal,
   type MealType, type MealMethod, type BasketItem, type PendingMeal, type MealPrefs,
 } from '@ziko/plugin-sdk';
@@ -22,11 +22,6 @@ import { getOrFetchProduct, FoodProduct } from '../utils/offApi';
 
 const PREFS_KEY = 'ziko:meal:prefs';
 const PENDING_KEY = 'ziko:meal:pending';
-
-/** Date locale de l'appareil (YYYY-MM-DD), jamais UTC (D-12). */
-function localToday(d: Date = new Date()): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 // Awaitable credit earn helper — returns { credited } for toast triggering
 async function earnCredit(supabase: any, source: string, key: string): Promise<{ credited: boolean }> {
@@ -84,7 +79,6 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
   const { t, tMeal } = useTranslation();
 
   const now = useMemo(() => new Date(), []);
-  const today = useMemo(() => localToday(now), [now]);
 
   const [prefsReady, setPrefsReady] = useState(false);
   const [prefs, setPrefs] = useState<MealPrefs>({ lastMethod: 'search', lastMealType: null });
@@ -163,11 +157,12 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
         .limit(300);
       if (!error && data) {
         setRecentRows(data);
-        setTodayLogs(data.filter((r: any) => r.date === today));
+        const todayKey = localDateKey();
+        setTodayLogs(data.filter((r: any) => r.date === todayKey));
       }
     } catch { /* hors-ligne : on garde l'etat local */ }
     setLogsLoaded(true);
-  }, [supabase, today]);
+  }, [supabase]);
 
   // ── File d'attente hors-ligne (M-5) ──
   const flushPending = useCallback(async () => {
@@ -196,6 +191,12 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Minuit franchi pendant que l'ecran reste monte : recharge les repas du jour au retour au premier plan.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') loadLogs(); });
+    return () => sub.remove();
+  }, [loadLogs]);
 
   // ── Recherche (D-05 : 3 lignes squelette pendant la requete) ──
   useEffect(() => {
@@ -252,7 +253,7 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
       try { uid = (await supabase.auth.getUser()).data?.user?.id ?? null; } catch { uid = null; }
     }
     if (!uid) { setSaving(false); showAlert(t('general.error'), t('nutrition.notAuth')); return; }
-    const rows = buildInsertRows(barItems, uid, today, mealType);
+    const rows = buildInsertRows(barItems, uid, localDateKey(), mealType);
     const res = await saveMeal(supabase, rows);
     if (res.status === 'saved') {
       res.data.forEach((d) => addLog(d as any));
@@ -432,7 +433,7 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         {/* En-tete */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
           <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel={t('general.back')} style={{ marginRight: 12, padding: 4 }}>
