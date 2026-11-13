@@ -165,7 +165,11 @@ export async function duplicateProgram(
     }
   } catch (err) {
     // No half-copied program left behind (child rows cascade).
-    await client.from('ziko_workout_programs').delete().eq('id', created.id);
+    const cleanup = await client.from('ziko_workout_programs').delete().eq('id', created.id);
+    // Rollback failed too (revue A #28): say so instead of leaving a silent half-copy.
+    if (cleanup?.error) {
+      throw new Error(`Copie incomplète : « ${name} » a été créé partiellement. Supprime-le depuis la liste des programmes.`);
+    }
     throw err;
   }
 

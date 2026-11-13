@@ -213,6 +213,11 @@ describe('P-3 scan : pre-remplissage depuis Open Food Facts', () => {
       expect(url).toContain('quantity');
       expect(url).toContain('categories_tags');
     });
+    it('timeout : une requete qui ne repond jamais est abandonnee (AbortController) -> null (revue A #20)', async () => {
+      vi.stubGlobal('fetch', vi.fn((_u: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_res, rej) => { init?.signal?.addEventListener('abort', () => rej(new Error('aborted'))); })));
+      await expect(lookupBarcode('123', 20)).resolves.toBeNull();
+    });
     it('network failure -> null, never throws', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
       await expect(lookupBarcode('123')).resolves.toBeNull();

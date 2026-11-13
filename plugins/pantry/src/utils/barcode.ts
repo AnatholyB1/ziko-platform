@@ -72,12 +72,17 @@ export function parseOffProduct(barcode: string, json: any): BarcodeProduct | nu
   };
 }
 
-export async function lookupBarcode(barcode: string): Promise<BarcodeProduct | null> {
+export async function lookupBarcode(barcode: string, timeoutMs = 8000): Promise<BarcodeProduct | null> {
+  // Timeout 8 s : hors couverture, le formulaire ne doit pas attendre indefiniment (revue A #20).
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = setTimeout(() => controller?.abort(), timeoutMs);
   try {
-    const res = await fetch(OFF_URL(barcode));
+    const res = await fetch(OFF_URL(barcode), controller ? { signal: controller.signal } : undefined);
     const json = await res.json();
     return parseOffProduct(barcode, json);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatClock } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -126,7 +126,7 @@ export default function ConversationScreen({ supabase }: { supabase: any }) {
                   fontSize: 10, color: '#B0ADA8', marginTop: 2,
                   textAlign: isMe ? 'right' : 'left', paddingHorizontal: 4,
                 }}>
-                  {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {formatClock(new Date(msg.created_at))}
                 </Text>
               </View>
             );

@@ -178,6 +178,13 @@ describe('sendFriendRequestFromSearch', () => {
     });
     expect(r).toMatchObject({ ok: false, reason: 'session' });
   });
+  it('GRANT manquant (permission denied for table, 42501) n\'est PAS presente comme une session expiree (revue A #25)', async () => {
+    const r = await sendFriendRequestFromSearch('you', {
+      ...ok,
+      insert: async () => ({ error: { code: '42501', message: 'permission denied for table ziko_friendships' } }),
+    });
+    expect(r).toMatchObject({ ok: false, reason: 'unknown' });
+  });
   it('maps expired session', async () => {
     const r = await sendFriendRequestFromSearch('you', {
       requireUser: async () => {
