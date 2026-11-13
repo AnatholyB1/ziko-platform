@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert, formatDateFr, getActionPrimary } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, getActionPrimary, localDateKey } from '@ziko/plugin-sdk';
 import GoalsTab, { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
 import { ENTRY_ORDER, getMeasure, parseDecimal, type MeasureKey } from '../lib/goals';
 import { weightCoachTip } from '../lib/coachTip';
@@ -82,12 +82,12 @@ function formatDate(dateStr: string | null | undefined): string {
 }
 
 function getWeekKey(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = new Date(`${dateStr}T12:00:00`); // midi local : evite tout decalage de jour
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d);
   monday.setDate(diff);
-  return monday.toISOString().slice(0, 10);
+  return localDateKey(monday);
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
         .from('ziko_body_measurements')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', since.toISOString().slice(0, 10))
+        .gte('date', localDateKey(since))
         .order('date', { ascending: true });
       return data ?? [];
     },
@@ -181,7 +181,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       weekMap[wk].push(m.weight_kg);
     }
     const weeks = Object.keys(weekMap).sort();
-    const currentWeek = getWeekKey(new Date().toISOString());
+    const currentWeek = getWeekKey(localDateKey());
     return weeks.slice(-6).map((wk, i) => ({
       l: `S${i + 1}`,
       v: parseFloat(
@@ -213,7 +213,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       if (weightVal == null || weightVal <= 0) throw new Error('Le poids est requis');
       const payload: Record<string, unknown> = {
         user_id: user.id,
-        date: new Date().toISOString().slice(0, 10),
+        date: localDateKey(),
       };
       for (const key of ENTRY_ORDER) {
         const v = parseDecimal(entry[key]);

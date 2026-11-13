@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, localDateKey } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
 import { scheduleHabitReminder, cancelHabitReminder, scheduleAllReminders } from '../notifications';
 import { normalizeHabits, normalizeHabitLogs } from '../normalize';
@@ -163,7 +163,7 @@ function getStreak(habitId: string, monthLogs: HabitLog[]): number {
   for (let i = 0; i < 30; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateKey(d);
     const found = monthLogs.some((l) => l.habit_id === habitId && l.date === dateStr);
     if (found) {
       streak++;
@@ -191,7 +191,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     staleTime: Infinity,
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   // ── Habits query ─────────────────────────────────────────
   const { data: habits = [], isLoading: habitsLoading, isError: habitsError, refetch: habitsRefetch } = useQuery<Habit[]>({
@@ -242,7 +242,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   const since30 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 29);
-    return d.toISOString().split('T')[0];
+    return localDateKey(d);
   }, []);
 
   const { data: monthLogs = [] } = useQuery<HabitLog[]>({
@@ -349,7 +349,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      last7Dates.push(d.toISOString().split('T')[0]);
+      last7Dates.push(localDateKey(d));
     }
     let worstHabit: Habit | null = null;
     let worstMissed = 0;
@@ -511,7 +511,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      days.push(d.toISOString().split('T')[0]);
+      days.push(localDateKey(d));
     }
 
     const totalHabits = habits.length;

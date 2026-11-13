@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useThemeStore, showAlert, useCreditStore, getActionPrimary } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, useCreditStore, getActionPrimary, localDateKey } from '@ziko/plugin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseDecimal, ENTRY_ORDER, getMeasure } from '../lib/goals';
 import { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
@@ -63,7 +63,7 @@ export default function MeasurementsLog({ supabase }: { supabase: any }) {
       return;
     }
     setSaving(true);
-    const date = new Date().toISOString().split('T')[0];
+    const date = localDateKey();
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');

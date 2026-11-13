@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { localDateKey } from './settings';
 
 export interface HydrationLog {
   id: string;
@@ -90,7 +91,7 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
   },
 
   getTodayTotal: () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateKey();
     return get().logs
       .filter((l) => l.date === today)
       .reduce((sum, l) => sum + l.amount_ml, 0);
@@ -108,7 +109,7 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data } = await supabase
         .from('ziko_hydration_logs')
         .select('*')
