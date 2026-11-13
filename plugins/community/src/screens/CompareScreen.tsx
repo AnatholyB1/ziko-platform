@@ -79,10 +79,13 @@ interface CompareRowProps {
   myVal: number;
   theirVal: number;
   unit?: string;
+  /** Forme au singulier (0 et 1) : `1 jour`, `2 jours`. */
+  unitSingular?: string;
 }
 
-function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps) {
+function CompareRow({ label, icon, myVal, theirVal, unit = '', unitSingular }: CompareRowProps) {
   const theme = useThemeStore((s) => s.theme);
+  const unitFor = (v: number) => (unitSingular && Math.abs(v) < 2 ? unitSingular : unit);
   const myWins = myVal > theirVal;
   const tied = myVal === theirVal;
 
@@ -104,7 +107,7 @@ function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps
           }}>
             {formatNumber(myVal)}
           </Text>
-          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unit}</Text> : null}
+          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unitFor(myVal)}</Text> : null}
         </View>
 
         {/* VS indicator */}
@@ -132,7 +135,7 @@ function CompareRow({ label, icon, myVal, theirVal, unit = '' }: CompareRowProps
           }}>
             {formatNumber(theirVal)}
           </Text>
-          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unit}</Text> : null}
+          {unit ? <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>{unitFor(theirVal)}</Text> : null}
         </View>
       </View>
     </View>
@@ -299,7 +302,7 @@ export default function CompareScreen({ supabase }: { supabase: any }) {
             <CompareRow label="Séances" icon="fitness" myVal={myStats.totalSessions} theirVal={friendStats.totalSessions} />
             <CompareRow label="Volume total" icon="barbell" myVal={myStats.totalVolume} theirVal={friendStats.totalVolume} unit="kg" />
             <CompareRow label="Temps d'entraînement" icon="time" myVal={myStats.totalDuration} theirVal={friendStats.totalDuration} unit="min" />
-            <CompareRow label="Série actuelle" icon="flame" myVal={myStats.streak} theirVal={friendStats.streak} unit="jours" />
+            <CompareRow label="Série actuelle" icon="flame" myVal={myStats.streak} theirVal={friendStats.streak} unit="jours" unitSingular="jour" />
             <CompareRow label="Défis gagnés" icon="trophy" myVal={myStats.challengesWon} theirVal={friendStats.challengesWon} />
             <CompareRow label="Habitudes complétées" icon="checkmark-circle" myVal={myStats.habitsCompleted} theirVal={friendStats.habitsCompleted} />
             <CompareRow label="XP total" icon="star" myVal={myStats.xpTotal} theirVal={friendStats.xpTotal} />

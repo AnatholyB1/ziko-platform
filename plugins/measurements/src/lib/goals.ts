@@ -174,6 +174,11 @@ export function formatShortDate(iso: string | null | undefined): string {
   return `${Number(m[3])} ${MONTHS_FR[Number(m[2]) - 1] ?? ''}`.trim();
 }
 
+/** Ferme une phrase apres une date abregee sans doubler le point (`13 nov.` + `.` -> `13 nov.`, pas `13 nov..`). */
+export function endSentence(text: string): string {
+  return text.endsWith('.') ? text : `${text}.`;
+}
+
 /**
  * Valeur courante d'un objectif : dernière valeur de la mesure enregistrée à partir du jour de départ
  * (une mesure antérieure au départ ne compte pas). Objectif atteint : valeur d'atteinte.

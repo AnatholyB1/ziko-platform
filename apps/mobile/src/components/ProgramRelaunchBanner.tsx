@@ -37,7 +37,7 @@ export default function ProgramRelaunchBanner() {
         setRelaunch(out.relaunch);
         setHasSequence(out.has_sequence);
         // le programme vient d'etre clos : l'onglet doit relire le programme actif
-        if (out.closed_program_id) queryClient.invalidateQueries({ queryKey: ['active-program', userId] });
+        if (out.closed_program_id) queryClient.invalidateQueries({ queryKey: ['program', 'active'] });
         if (shouldPropose(out.relaunch)) {
           setProposing(true);
           try {

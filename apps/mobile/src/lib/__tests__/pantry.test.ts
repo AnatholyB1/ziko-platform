@@ -94,6 +94,20 @@ describe('P-5 courses : Il manque (calcule, avec raison)', () => {
     const m = computeMissing([item({ id: 'q', name: 'Beurre', quantity: 0 }), item({ id: 'r', name: 'Fromage', quantity: 5, expiration_date: '2026-11-13' })], TODAY);
     expect(m.map((x) => [x.name, x.reason])).toEqual([['Beurre', 'Épuisé']]);
   });
+  it('run7 : un article tout juste range (quantite == seuil) n est PAS en stock bas (pas de boucle courses)', () => {
+    const plan = planRanger({
+      autoChecked: [],
+      rows: [{ id: 's9', name: 'Pates', quantity: null, unit: null, pantry_item_id: null, source: 'manual', recipe_name: null }],
+      pantry: [],
+    });
+    const stocked = plan.inserts.map((ins, i) => item({ id: `n${i}`, ...ins } as any));
+    expect(stocked[0].quantity).toBe(stocked[0].low_stock_threshold);
+    expect(computeMissing(stocked, TODAY)).toEqual([]);
+  });
+  it('run7 : sous le seuil reste "Stock bas"', () => {
+    const m = computeMissing([item({ id: 'z', name: 'Pates', quantity: 0.5, low_stock_threshold: 1 })], TODAY);
+    expect(m.map((x) => x.reason)).toEqual(['Stock bas']);
+  });
   it('threshold null never counts as low unless the item is empty', () => {
     expect(computeMissing([item({ id: 'n', name: 'Sel', quantity: 1, low_stock_threshold: null })], TODAY)).toHaveLength(0);
   });

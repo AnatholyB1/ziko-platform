@@ -250,7 +250,7 @@ export function useWeeklySessions() {
 // Returns null when no active program exists (row may be absent).
 // is_active is BOOLEAN — do NOT use status='active'.
 // program_data is JSONB with no enforced schema — access defensively.
-export function useActiveAIProgram() {
+export function useActiveAIProgram(opts?: { refetchOnMount?: boolean | 'always' }) {
   const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
     queryKey: ['program', 'active', userId],
@@ -260,6 +260,8 @@ export function useActiveAIProgram() {
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 min
+    retry: 2, // une lecture ratee juste apres la connexion ne doit pas devenir "aucun programme"
+    refetchOnMount: opts?.refetchOnMount ?? true,
   });
 }
 

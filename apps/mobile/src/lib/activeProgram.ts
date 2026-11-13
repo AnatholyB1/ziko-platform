@@ -1,3 +1,5 @@
+import { normalizePlanSessions } from './workoutPlan';
+
 // Programme ACTIF de l'athlete, quelle que soit sa table (run5 : l'accueil affichait "Aucun programme actif"
 // alors que le programme COACH etait actif). P7 garantit 0 ou 1 programme actif sur l'ensemble :
 //   - ziko_ai_generated_programs (IA / atelier) : seances dans `program_data` ;
@@ -128,4 +130,27 @@ export async function loadProgramForSession(
   if (coach.error) return { program: null, error: true };
   if (!coach.data) return { program: null, error: false };
   return { program: fromCoachRow(coach.data, await loadCoachWorkouts(client, programId)), error: false };
+}
+
+export type ActiveProgramView = 'loading' | 'error' | 'empty' | 'no-sessions' | 'ready';
+
+/** Vrai si le programme contient au moins une seance planifiee (meme lecture que l'ecran Seance et l'accueil). */
+export function programHasSessions(p: ActiveProgram | null | undefined): boolean {
+  return !!p && normalizePlanSessions(p.program_data).length > 0;
+}
+
+/**
+ * Etat d'affichage du programme actif, commun a l'accueil et a l'onglet Entrainement.
+ * Run 7 : l'onglet affichait "Aucun programme actif" apres reconnexion car une erreur de lecture etait avalee
+ * (resultat null mis en cache). Une erreur n'est JAMAIS un "aucun programme" ; un programme sans seance a son propre message.
+ */
+export function activeProgramView(s: {
+  isLoading: boolean;
+  isError: boolean;
+  program: ActiveProgram | null | undefined;
+}): ActiveProgramView {
+  if (s.program) return programHasSessions(s.program) ? 'ready' : 'no-sessions';
+  if (s.isLoading) return 'loading';
+  if (s.isError) return 'error';
+  return 'empty';
 }

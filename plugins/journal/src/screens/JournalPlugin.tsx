@@ -17,6 +17,7 @@ import {
   moodMeta,
   contextLabel,
   localDateKey,
+  classifySaveError,
   type TrendEntry,
 } from '../logic';
 
@@ -111,7 +112,7 @@ export default function JournalPlugin({
     retry: 2,
   });
 
-  const { data: historyEntries = [], isLoading: historyLoading } = useQuery({
+  const { data: historyEntries = [], isLoading: historyLoading, isError: historyError, error: historyErr, refetch: refetchHistory } = useQuery({
     queryKey: ['journal_history', userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -149,6 +150,33 @@ export default function JournalPlugin({
       {historyLoading ? (
         <View style={{ alignItems: 'center', paddingTop: 24 }}>
           <ActivityIndicator color={JOURNAL_TEAL} />
+        </View>
+      ) : historyError && historyEntries.length === 0 ? (
+        // Une erreur de lecture n'est pas "aucune entree" : 401 -> Session expiree + Se reconnecter, sinon connexion.
+        <View accessibilityRole="alert" style={{ ...CARD, gap: 10 }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: '#B91C1C' }}>
+            {classifySaveError(historyErr) === 'expired' ? 'Session expirée' : 'Impossible de charger'}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#7F1D1D' }}>
+            {classifySaveError(historyErr) === 'expired' ? 'Reconnecte-toi pour retrouver ton journal.' : 'Vérifie ta connexion, puis réessaie.'}
+          </Text>
+          {classifySaveError(historyErr) === 'expired' && onReauth ? (
+            <TouchableOpacity
+              onPress={onReauth}
+              accessibilityRole="button"
+              style={{ minHeight: 48, borderRadius: 14, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>Se reconnecter</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => refetchHistory()}
+              accessibilityRole="button"
+              style={{ minHeight: 48, borderRadius: 14, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>Réessayer</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : historyEntries.length === 0 ? (
         <View style={{ ...CARD, alignItems: 'center', gap: 12 }}>

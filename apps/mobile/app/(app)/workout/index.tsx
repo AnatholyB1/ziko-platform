@@ -21,7 +21,8 @@ import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner
 import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../../src/lib/neutralToast';
 import { isStaleSession } from '../../../src/lib/staleSession';
-import { getActiveProgram } from '../../../src/lib/activeProgram';
+import { activeProgramView } from '../../../src/lib/activeProgram';
+import { useActiveAIProgram } from '../../../src/hooks/useHomeData';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
@@ -447,20 +448,11 @@ export default function WorkoutIndexScreen() {
     if (currentSession) settleStaleSession();
   }, [currentSession?.id]);
 
-  // TanStack Query for ai_generated_programs
-  const { data: activeProgram, isLoading } = useQuery<AiGeneratedProgram | null>({
-    queryKey: ['active-program', userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      // P7 (D-11): the ACTIVE program (IA OR coach table), not the most recent one.
-      try {
-        return ((await getActiveProgram(supabase as any, userId)) as unknown as AiGeneratedProgram) ?? null;
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!userId,
-  });
+  // Meme lecture que l'accueil (getActiveProgram via useActiveAIProgram, cle partagee). Une erreur n'est jamais
+  // transformee en "aucun programme" (run 7 : l'onglet affichait "Aucun programme actif" apres reconnexion).
+  const { data: activeProgramRaw, isLoading, isError, refetch } = useActiveAIProgram({ refetchOnMount: 'always' });
+  const activeProgram = (activeProgramRaw ?? null) as unknown as AiGeneratedProgram | null;
+  const programView = activeProgramView({ isLoading, isError, program: activeProgramRaw as any });
 
   const programData = activeProgram?.program_data ?? null;
   const weeks = programData?.weeks ?? [];
@@ -798,8 +790,47 @@ export default function WorkoutIndexScreen() {
           </View>
         ) : null}
 
+        {/* Erreur de lecture : jamais presentee comme "aucun programme" */}
+        {programView === 'error' && (
+          <View
+            style={{
+              marginHorizontal: 16,
+              marginTop: 24,
+              borderRadius: 16,
+              padding: 24,
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.border,
+              alignItems: 'center',
+            }}
+          >
+            <Ionicons name="cloud-offline-outline" size={36} color={theme.muted} style={{ marginBottom: 12 }} />
+            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 4 }}>
+              Impossible de charger ton programme
+            </Text>
+            <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', marginBottom: 16 }}>
+              Vérifie ta connexion, puis réessaie.
+            </Text>
+            <TouchableOpacity
+              onPress={() => refetch()}
+              style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Programme actif sans aucune seance : message clair, jamais un ecran vide */}
+        {programView === 'no-sessions' && (
+          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
+            <Text style={{ fontSize: 13, color: theme.muted, textAlign: 'center' }}>
+              Ce programme n'a pas encore de séances.
+            </Text>
+          </View>
+        )}
+
         {/* Empty state — no active program */}
-        {!isLoading && !activeProgram && (
+        {programView === 'empty' && (
           <View
             style={{
               marginHorizontal: 16,

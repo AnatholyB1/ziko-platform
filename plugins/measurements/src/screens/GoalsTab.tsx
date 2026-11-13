@@ -24,6 +24,7 @@ import {
   parseDecimal,
   formatValue,
   formatShortDate,
+  endSentence,
   latestPerMeasure,
   currentForGoal,
   type MeasureKey,
@@ -236,7 +237,7 @@ function GoalCard({
       {achieved ? (
         <>
           <Text style={{ fontSize: 14, color: SUCCESS, fontWeight: '700', marginTop: 10 }}>
-            {`Objectif atteint le ${formatShortDate(goal.achieved_at)}. Bravo.`}
+            {`Objectif atteint le ${endSentence(formatShortDate(goal.achieved_at))} Bravo.`}
           </Text>
           <TouchableOpacity
             onPress={() => onDefineNext(goal)}
@@ -496,7 +497,7 @@ function GoalForm({
             <Text style={{ fontSize: 14, color: startError ? DANGER : theme.muted, marginTop: 6, marginBottom: 16 }}>
               {startError ??
                 (lastMeasure
-                  ? `Ta dernière mesure${lastMeasure.date ? `, le ${formatShortDate(lastMeasure.date)}` : ''}. Tu peux la corriger.`
+                  ? `Ta dernière mesure${lastMeasure.date ? `, le ${endSentence(formatShortDate(lastMeasure.date))}` : '.'} Tu peux la corriger.`
                   : m
                     ? 'Aucune mesure enregistrée : saisis ton point de départ.'
                     : 'Choisis une mesure pour pré-remplir ta dernière valeur.')}

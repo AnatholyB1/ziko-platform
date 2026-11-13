@@ -33,7 +33,8 @@ export function sumWaterMl(rows: { amount_ml: number | null }[] | null | undefin
 }
 
 export function formatLitres(ml: number): string {
-  return `${(Math.max(0, ml) / 1000).toFixed(2)}L`;
+  // Format FR (comme formatLitersFr du SDK) : virgule, espace avant L. Copie locale : le SDK n'est pas importable en test node.
+  return `${(Math.max(0, ml) / 1000).toFixed(2).replace('.', ',')} L`;
 }
 
 export async function logWater(

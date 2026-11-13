@@ -20,6 +20,7 @@ import {
 } from '../settings';
 import { loadNotifModule, getReminderPermission, syncHydrationReminders, resyncRemindersFromDb, type PermissionState } from '../reminders';
 import { lightImpact } from '../haptics';
+import { QUICK_TILE_OUTER_STYLE, quickTileCardStyle } from '../tileStyles';
 import {
   WATER, RemindersSheet, GlassSheet, CoffeeSheet, BonusSheet, GoalSheet, AmountSheet,
 } from './HydrationSheets';
@@ -444,10 +445,10 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             pointerEvents="none"
           >
             <Text style={{ fontSize: 14, fontWeight: '700', color: INFO_BLUE, textAlign: 'center' }}>
-              {(todayMl / 1000).toFixed(1)}L
+              {formatLitres(todayMl)}
             </Text>
             <Text style={{ fontSize: 11, color: theme.muted, textAlign: 'center' }}>
-              / {(goalMl / 1000).toFixed(1)}L
+              / {formatLitres(goalMl)}
             </Text>
           </View>
         </View>
@@ -458,11 +459,11 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             HYDRATATION
           </Text>
           <Text style={{ fontSize: 28, fontWeight: '700', color: theme.text, marginTop: 4 }}>
-            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${remainingL.toFixed(1)}L`}
+            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${formatLitres(remainingL * 1000)}`}
           </Text>
           <Text style={{ fontSize: 13, color: theme.muted, lineHeight: 20, marginTop: 4 }}>
             {todayMl >= goalMl
-              ? `Tu as bu ${(todayMl / 1000).toFixed(1)}L aujourd'hui.`
+              ? `Tu as bu ${formatLitres(todayMl)} aujourd'hui.`
               : streak > 0
               ? `Allez, c'est presque plié. ${streak} jour${streak > 1 ? 's' : ''} d'affilée à objectif`
               : "Commence bien ta journée en t'hydratant régulièrement."}
@@ -516,24 +517,18 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             disabled={tilesLocked || logMutation.isPending}
             accessibilityRole="button"
             accessibilityLabel={`Ajouter ${amount} millilitres`}
-            style={({ pressed }) => [
-              pressed ? undefined : CARD_SHADOW,
-              {
-                flex: 1,
-                height: 132,
-                backgroundColor: pressed ? '#F0EFE9' : theme.surface,
-                borderRadius: 16,
-                borderWidth: pressed ? 2 : 1,
-                borderColor: pressed ? getActionPrimary(theme) : theme.border,
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 12,
-                paddingHorizontal: 4,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
-                opacity: tilesLocked && !pressed ? 0.7 : 1,
-              },
-            ]}
+            style={QUICK_TILE_OUTER_STYLE}
           >
+            {({ pressed }) => (
+            <View
+              style={quickTileCardStyle({
+                pressed,
+                locked: tilesLocked || logMutation.isPending,
+                surface: theme.surface,
+                border: theme.border,
+                primary: getActionPrimary(theme),
+              })}
+            >
             <View style={{ height: 14, justifyContent: 'center' }}>
               {settings.glassMl === amount ? (
                 <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '800', color: '#B53D05' }}>PAR DÉFAUT</Text>
@@ -546,6 +541,8 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
               <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }}>+{amount}</Text>
               <Text style={{ fontSize: 14, color: theme.muted }}>ml</Text>
             </View>
+            </View>
+            )}
           </Pressable>
         ))}
       </View>
@@ -746,7 +743,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
               MOYENNE 7J
             </Text>
             <Text style={{ fontSize: 28, fontWeight: '700', color: INFO_BLUE, marginTop: 4 }}>
-              {(avgMl / 1000).toFixed(1)}L/j
+              {formatLitres(avgMl)}/j
             </Text>
           </View>
           <View

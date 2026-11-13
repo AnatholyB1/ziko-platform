@@ -35,6 +35,7 @@ import { useAuthStore } from '../../../../apps/mobile/src/stores/authStore';
 import CoachCard, { CoachCardSkeleton } from './CoachCard';
 import PrescribedProgramCard from './PrescribedProgramCard';
 import { resolveLinkedView } from './coachLinked';
+import { classifyLoadError, httpError, LOAD_FAILURE_COPY } from './loadError';
 import {
   resolveCoachState,
   buildHistoryRows,
@@ -97,7 +98,7 @@ function getOrCreateDeviceId(): string {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function CoachScreen({ supabase }: { supabase: any }) {
+export default function CoachScreen({ supabase, onReauth }: { supabase: any; onReauth?: () => void }) {
   const { t } = useTranslation();
   const theme = useThemeStore((s) => s.theme);
   const clearCoachTheme = useThemeStore((s) => s.clearCoachTheme);
@@ -124,6 +125,7 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
     data,
     isLoading,
     isError,
+    error: linkError,
     isFetching,
     refetch,
   } = useQuery<LinkStatusResponse>({
@@ -135,10 +137,12 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
         `${process.env.EXPO_PUBLIC_API_URL}/coach/clients/links/me`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (!res.ok) throw new Error('Failed to fetch link status');
+      if (!res.ok) throw httpError('Failed to fetch link status', res.status);
       return res.json();
     },
     staleTime: 30_000,
+    // Un 401 ne se corrige pas en reessayant : on affiche tout de suite « Session expirée ».
+    retry: (count, err) => classifyLoadError(err) !== 'expired' && count < 2,
     // Pas de garde sur user?.id : un store pas encore hydrate ne doit pas afficher l'etat A
     // (saisie de code) a un athlete deja lie (COACH-01).
   });
@@ -420,6 +424,8 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
 
   // ── Erreur complete (reseau) : jamais d'ecran vide, on ne devine pas l'etat du lien ──
   if (isError && !data) {
+    const failure = classifyLoadError(linkError);
+    const failureCopy = LOAD_FAILURE_COPY[failure];
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
         <PluginHeader title={t('coach.screen_title')} onBack={() => router.back()} />
@@ -429,18 +435,28 @@ export default function CoachScreen({ supabase }: { supabase: any }) {
             style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 16, padding: 16, gap: 12 }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="cloud-offline" size={20} color="#B91C1C" />
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#B91C1C' }}>Impossible de charger</Text>
+              <Ionicons name={failure === 'expired' ? 'lock-closed' : 'cloud-offline'} size={20} color="#B91C1C" />
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#B91C1C' }}>{failureCopy.title}</Text>
             </View>
-            <Text style={{ fontSize: 14, color: '#7F1D1D' }}>Vérifie ta connexion, puis réessaie.</Text>
-            <TouchableOpacity
-              onPress={() => refetch()}
-              disabled={isFetching}
-              accessibilityRole="button"
-              style={{ minHeight: 44, borderRadius: 12, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
-            >
-              {isFetching ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Réessayer</Text>}
-            </TouchableOpacity>
+            <Text style={{ fontSize: 14, color: '#7F1D1D' }}>{failureCopy.body}</Text>
+            {failure === 'expired' && onReauth ? (
+              <TouchableOpacity
+                onPress={onReauth}
+                accessibilityRole="button"
+                style={{ minHeight: 44, borderRadius: 12, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Se reconnecter</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => refetch()}
+                disabled={isFetching}
+                accessibilityRole="button"
+                style={{ minHeight: 44, borderRadius: 12, backgroundColor: actionColor, alignItems: 'center', justifyContent: 'center' }}
+              >
+                {isFetching ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Réessayer</Text>}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </SafeAreaView>

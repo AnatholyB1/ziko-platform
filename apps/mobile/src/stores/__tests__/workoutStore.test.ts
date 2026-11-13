@@ -95,6 +95,19 @@ describe('startPlannedSession (D-01, TRAIN-01/02)', () => {
   });
 });
 
+describe('startSession : une seule ouverture a la fois (run7 : +2 pour une seule seance)', () => {
+  it('deux appels concurrents n inserent qu une seule seance', async () => {
+    tables['ziko_workout_sessions:insert'] = { id: 'q1', name: 'Séance libre', started_at: new Date().toISOString() };
+    const st = useWorkoutStore.getState();
+    await Promise.all([st.startSession(undefined, 'Séance libre'), st.startSession(undefined, 'Séance libre')]);
+    const inserts = calls.filter((c) => c.table === 'ziko_workout_sessions' && c.op === 'insert');
+    expect(inserts).toHaveLength(1);
+    // l'appel suivant (apres la fin du premier) reste possible
+    await useWorkoutStore.getState().startSession(undefined, 'Séance libre');
+    expect(calls.filter((c) => c.table === 'ziko_workout_sessions' && c.op === 'insert')).toHaveLength(2);
+  });
+});
+
 describe('startPlannedSession : exercice inconnu ne bloque pas la seance (run4 P24)', () => {
   it('"Squat" absent du catalogue sous ce nom : resolu vers Back Squat (alias), seance demarree', async () => {
     tables['ziko_ai_generated_programs'] = fullBody;

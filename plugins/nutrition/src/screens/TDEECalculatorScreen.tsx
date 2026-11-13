@@ -14,6 +14,7 @@ import {
   onboardingSexToGender,
   onboardingFrequencyToActivity,
   getMedicalDisclaimer,
+  formatLitersFr,
 } from '@ziko/plugin-sdk';
 
 // Cross-plugin stores (optional)
@@ -196,7 +197,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
 
       showAlert(
         'Objectifs mis à jour',
-        `Calories: ${result.targetCalories} kcal\nProtéines: ${result.proteinGoal}g\nGlucides: ${result.carbsGoal}g\nLipides: ${result.fatGoal}g\nEau: ${(result.waterGoalMl / 1000).toFixed(1)}L\nSommeil: ${result.sleepGoalHours}h`,
+        `Calories: ${result.targetCalories} kcal\nProtéines: ${result.proteinGoal}g\nGlucides: ${result.carbsGoal}g\nLipides: ${result.fatGoal}g\nEau: ${formatLitersFr(result.waterGoalMl)}\nSommeil: ${result.sleepGoalHours}h`,
         [{ text: 'OK', onPress: () => router.back() }],
       );
     } catch {
@@ -280,7 +281,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
             <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#2196F3' + '33', alignItems: 'center' }}>
               <Ionicons name="water" size={24} color="#2196F3" />
               <Text style={{ color: theme.text, fontWeight: '700', fontSize: 20, marginTop: 6 }}>
-                {(result.waterGoalMl / 1000).toFixed(1)}L
+                {formatLitersFr(result.waterGoalMl)}
               </Text>
               <Text style={{ color: theme.muted, fontSize: 12 }}>Eau / jour</Text>
             </View>

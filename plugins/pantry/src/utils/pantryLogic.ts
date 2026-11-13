@@ -176,7 +176,9 @@ export function computeMissing(items: PantryRow[], todayISO: string): MissingEnt
   for (const it of items) {
     const threshold = it.low_stock_threshold;
     const empty = it.quantity <= 0;
-    const low = !empty && threshold !== null && it.quantity <= threshold;
+    // Seuil STRICT (run 7) : un article tout juste range/rachete (quantite == seuil par defaut 1) n'est pas "bas",
+    // sinon boucle courses -> ranger -> courses. Il devient bas des qu'il passe sous le seuil.
+    const low = !empty && threshold !== null && it.quantity < threshold;
     const d = daysUntil(it.expiration_date, todayISO);
     const expired = d !== null && d < 0;
     if (!empty && !low && !expired) continue;

@@ -1,7 +1,8 @@
 // Libelles francais purs (pluriels, accueil), testables sans React Native. UAT run 6 :
 // "1 series completees", "1 jours", "490 kcal" sans objectif.
 
-/** `1 série`, `2 séries` ; 0 et 1 au singulier (regle francaise). */
+/** `1 série`, `2 séries` ; 0 et 1 au singulier. Meme contrat que `frCount` de @ziko/plugin-sdk (formatFr) : l'index du
+ *  SDK tire react-native (inutilisable en test node) et un import relatif sort du projet TS mobile. */
 export function frCount(n: number, singular: string, plural?: string): string {
   const abs = Math.abs(n);
   return `${n} ${abs < 2 ? singular : (plural ?? `${singular}s`)}`;
