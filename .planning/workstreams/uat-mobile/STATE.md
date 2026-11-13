@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.20
 milestone_name: UAT Mobile — Refonte & corrections
-status: planning
-last_updated: "2026-11-12T02:00:00.000Z"
-last_activity: 2026-11-12
+status: implemented-uat-pending
+last_updated: "2026-11-13T05:00:00.000Z"
+last_activity: 2026-11-13
 progress:
   total_phases: 26
   completed_phases: 0
@@ -24,16 +24,16 @@ See: .planning/PROJECT.md
 
 ## Current Position
 
-Phase: 1 of 26 (Harness UAT Android) — not started
+Phase: 26 of 26 implemented on milestone/v1.20 (UAT pending, voir REQUIREMENTS.md Traceability)
 Plan: —
-Status: Roadmap created, ready to plan wave 0
-Last activity: 2026-11-12 — Roadmap v1.20 créé (134/134 exigences mappées)
+Status: Phases implemented ; correctifs revue B (fix/review-b) en attente de merge ; run3 emulateur a faire
+Last activity: 2026-11-13 — Revue B corrigée (voir FIX-REVIEW-B.md) ; statuts alignés sur les preuves
 
-Progress: [░░░░░░░░░░] 0%
+Progress: code livré sur les 26 phases ; vérifié émulateur : 14 exigences (voir REQUIREMENTS.md) ; le reste "Implemented (UAT pending)"
 
 ## Progress
 
-**Phases Complete:** 0
+**Phases Complete:** 0 (aucune phase n'est cloturée tant que l'UAT émulateur n'a pas confirmé ses exigences)
 **Current Plan:** N/A
 
 ## Execution Waves
@@ -64,5 +64,5 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-**Stopped At:** Roadmap créé
+**Stopped At:** Revue B corrigée ; prochaine étape : run3 émulateur (quêtes IA, atelier, relance, retrait de coach, ligue, P19)
 **Resume File:** None
