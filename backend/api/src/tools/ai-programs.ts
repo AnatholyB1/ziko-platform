@@ -75,23 +75,15 @@ Return ONLY valid JSON:
     throw new Error(`Failed to generate program: ${genErr instanceof Error ? genErr.message : String(genErr)}`);
   }
 
-  let programData: any;
-  try {
-    // Strip markdown code fences if present: ```json ... ``` or ``` ... ```
-    const jsonStr = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
-    programData = JSON.parse(jsonStr);
-  } catch {
-    // Last-resort: try to find JSON object in the text
-    const match = rawText.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { programData = JSON.parse(match[0]); } catch { programData = { raw: rawText }; }
-    } else {
-      programData = { raw: rawText };
-    }
+  const programData = parseProgramJson(rawText);
+  if (!programData) {
+    // Never store raw model text as a program (it would become an empty/unreadable "active" one).
+    throw new Error("Le programme généré est illisible (JSON invalide). Réessaie la génération.");
   }
 
   const programName = programData.name ?? `${goal} ${split_type} ${days_per_week}d`;
 
+  // Inserted inactive: activation goes through ziko_set_active_program (single active program).
   const { data, error } = await db
     .from('ziko_ai_generated_programs')
     .insert({
@@ -103,13 +95,45 @@ Return ONLY valid JSON:
       experience: experience_level,
       equipment,
       program_data: programData,
-      is_active: true,
+      is_active: false,
     })
     .select('id, name, goal, days_per_week')
     .single();
 
   if (error) throw new Error(error.message);
-  return { success: true, program: { ...data, program_data: programData } };
+
+  const { error: rpcError } = await db.rpc('ziko_set_active_program', {
+    p_kind: 'ai',
+    p_program_id: (data as { id: string }).id,
+  });
+  if (rpcError) {
+    // Do not leave an orphan, never-activated row behind.
+    await db.from('ziko_ai_generated_programs').delete().eq('id', (data as { id: string }).id);
+    throw new Error(`Impossible d'activer le programme: ${rpcError.message}`);
+  }
+  return { success: true, program: { ...data, is_active: true, program_data: programData } };
+}
+
+/** Parses the model output into a program object; returns null when no valid JSON object is found. */
+export function parseProgramJson(rawText: string): Record<string, any> | null {
+  const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
+  const jsonStr = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  try {
+    const v = JSON.parse(jsonStr);
+    if (isObj(v)) return v;
+  } catch {
+    /* fall through */
+  }
+  const match = rawText.match(/\{[\s\S]*\}/);
+  if (match) {
+    try {
+      const v = JSON.parse(match[0]);
+      if (isObj(v)) return v;
+    } catch {
+      /* fall through */
+    }
+  }
+  return null;
 }
 
 // ── Tool: ai_programs_list ─────────────────────────────────
