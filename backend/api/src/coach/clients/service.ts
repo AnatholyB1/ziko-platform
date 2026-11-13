@@ -7,6 +7,7 @@
 //   DELETE /links/:id        — athlete revokes own link (INVITE-06)
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
+import { createServiceRpcClient } from '../../lib/serviceClient.js';
 import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
 import { notificationService } from '../../services/notificationService.js';
@@ -38,6 +39,9 @@ import {
   getFormsForClient,
 } from './db.js';
 import { getWidgetData } from '../dashboards/db.js';
+
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 202612012701).
+const formsRpc = createServiceRpcClient();
 
 // Admin client for fire-and-forget RPC calls (SECURITY DEFINER functions, no JWT required)
 const adminClient = createClient(
@@ -141,7 +145,7 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
       const coachId = result.link.coach_id;
       const athleteId = userId;
       const linkId = result.link.id;
-      adminClient
+      formsRpc
         .rpc('ziko_create_form_instances_for_trigger', {
           p_trigger_type: 'first_contact',
           p_athlete_id: athleteId,
