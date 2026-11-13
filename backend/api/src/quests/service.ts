@@ -38,6 +38,7 @@ const METRIC_PLUGIN: Record<QuestMetric, string | null> = {
   hydration_ml: 'hydration',
   nutrition_logs: 'nutrition',
   habit_logs: 'habits',
+  measurement_logs: 'measurements',
 };
 
 /** Metriques proposables a cette personne : on ne lui demande pas de logger de l'eau sans le plugin Hydratation. */
@@ -260,10 +261,10 @@ export async function listQuestsForChat(userId: string, deps: { db?: Db; now?: D
 export async function createQuestFromChat(
   userId: string,
   params: Record<string, unknown>,
-  deps: { db?: Db } = {},
+  deps: { db?: Db; meta?: Record<string, unknown> } = {},
 ): Promise<unknown> {
   const db = deps.db ?? clientForUser();
-  const proposal = normalizeProposal(params, { trigger: 'chat', model: 'agent', generated_at: new Date().toISOString() });
+  const proposal = normalizeProposal(params, { trigger: 'chat', model: 'agent', generated_at: new Date().toISOString(), ...(deps.meta ?? {}) });
   if (!proposal) {
     return { success: false, error: 'invalid_quest', hint: `metric parmi ${QUEST_METRICS.join(', ')}, titre et cible > 0 requis` };
   }

@@ -29,6 +29,7 @@ import {
   type MeasureKey,
   type MeasurementGoalRow,
 } from '../lib/goals';
+import { describeRevisionChange, reasonLabel, unacknowledged, type GoalRevisionRow } from '../lib/revisions';
 
 const SUCCESS = '#2E7D4F'; // vert texte AA sur blanc
 const SUCCESS_BORDER = '#9FD3B4';
@@ -73,6 +74,52 @@ export function useMeasurementGoals(supabase: any, userId: string | null) {
       }));
     },
   });
+}
+
+/** v1.20 P16 (MEAS-08) : modifications d'objectif faites par l'IA, non encore acquittees. */
+export const REVISIONS_QUERY_KEY = 'measurement_goal_revisions';
+export function useGoalRevisions(supabase: any, userId: string | null) {
+  return useQuery({
+    queryKey: [REVISIONS_QUERY_KEY, userId],
+    enabled: !!userId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<GoalRevisionRow[]> => {
+      const { data, error } = await supabase
+        .from('ziko_goal_revisions')
+        .select('id,goal_id,measure_key,reason,reason_detail,old_target,new_target,old_target_date,new_target_date,acknowledged_at,created_at')
+        .eq('user_id', userId)
+        .is('acknowledged_at', null)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({ ...r, old_target: Number(r.old_target), new_target: Number(r.new_target) }));
+    },
+  });
+}
+
+function RevisionBanner({ revision, unit, onAck, busy }: { revision: GoalRevisionRow; unit: string; onAck: () => void; busy: boolean }) {
+  const theme = useThemeStore((s) => s.theme);
+  return (
+    <View
+      accessibilityRole="alert"
+      style={{ ...cardBase(theme), marginBottom: 12, borderColor: theme.primary, flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}
+    >
+      <Ionicons name="sparkles-outline" size={22} color="#B53D05" style={{ marginTop: 2 }} />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 16, fontWeight: '800', color: theme.text }}>Ziko a ajusté ton objectif</Text>
+        <Text style={{ fontSize: 15, color: theme.text, marginTop: 4, lineHeight: 22 }}>{describeRevisionChange(revision, unit)}</Text>
+        <Text style={{ fontSize: 14, color: theme.muted, marginTop: 4, lineHeight: 20 }}>Raison : {reasonLabel(revision.reason)}</Text>
+        <TouchableOpacity
+          onPress={onAck}
+          disabled={busy}
+          accessibilityRole="button"
+          style={{ marginTop: 8, minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}
+        >
+          <Text style={{ color: '#B53D05', fontWeight: '800', fontSize: 15 }}>Compris</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 export function useRecentMeasures(supabase: any, userId: string | null) {
@@ -544,6 +591,16 @@ export default function GoalsTab({ supabase, userId }: { supabase: any; userId: 
   const rowsQ = useRecentMeasures(supabase, userId);
   const rows = rowsQ.data ?? [];
   const goals = goalsQ.data ?? [];
+  const revQ = useGoalRevisions(supabase, userId);
+  const queryClient = useQueryClient();
+  const ackM = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('ziko_ack_goal_revision', { p_revision_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [REVISIONS_QUERY_KEY, userId] }),
+  });
+  const pendingRevision = unacknowledged(revQ.data ?? [])[0] ?? null;
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMeasure, setFormMeasure] = useState<MeasureKey | null>(null);
@@ -600,6 +657,14 @@ export default function GoalsTab({ supabase, userId }: { supabase: any; userId: 
 
   return (
     <>
+      {pendingRevision ? (
+        <RevisionBanner
+          revision={pendingRevision}
+          unit={goals.find((g) => g.id === pendingRevision.goal_id)?.unit ?? ''}
+          busy={ackM.isPending}
+          onAck={() => ackM.mutate(pendingRevision.id)}
+        />
+      ) : null}
       {goals.length === 0 ? (
         <View style={{ ...cardBase(theme), alignItems: 'center', paddingVertical: 32 }}>
           <View

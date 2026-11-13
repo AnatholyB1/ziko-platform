@@ -15,6 +15,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useThemeStore, useTranslation, useI18nStore } from '@ziko/plugin-sdk';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { addGoal, goalDirectionLabel, goalSummary, parseGoalEvent, type OnboardingGoal } from '../../../src/lib/onboardingGoals';
 
 // ── Inline Markdown Renderer ────────────────────────────────
 // Copied verbatim from apps/mobile/app/(app)/ai/index.tsx per D-05 (the
@@ -141,6 +142,37 @@ const MICRO_ACTION_MAP: Record<
     table: 'ziko_body_measurements',
   },
 };
+
+// v1.20 P16 (MEAS-02) : carte "objectif enregistre" (meme gabarit que la carte mission : rayon 16, bord 1 px).
+function GoalSavedCard({ goal, theme }: { goal: OnboardingGoal; theme: ReturnType<typeof useThemeStore.getState>['theme'] }) {
+  return (
+    <View style={{ paddingVertical: 4, paddingHorizontal: 16, alignItems: 'flex-start' }}>
+      <View
+        accessibilityLabel={`Objectif enregistré, ${goalSummary(goal)}`}
+        style={{
+          maxWidth: '92%',
+          backgroundColor: theme.surface,
+          borderWidth: 1,
+          borderColor: theme.border,
+          borderRadius: 16,
+          padding: 16,
+          flexDirection: 'row',
+          gap: 12,
+          alignItems: 'center',
+        }}
+      >
+        <Ionicons name="flag" size={22} color={theme.primary} />
+        <View style={{ flexShrink: 1 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, color: theme.primary }}>
+            Objectif enregistré
+          </Text>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text, marginTop: 4 }}>{goalSummary(goal)}</Text>
+          <Text style={{ fontSize: 13, color: theme.muted, marginTop: 2 }}>{goalDirectionLabel(goal)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function MissionCard({
   mission,
@@ -358,6 +390,7 @@ type MissionState = {
 
 type SSEEvent =
   | { type: 'meta'; conversation_id: string }
+  | { type: 'goal'; goal: unknown }
   | { type: 'chunk'; content: string }
   | { type: 'mission'; mission: MissionState }
   | { type: 'cap_reached' }
@@ -376,6 +409,8 @@ export default function ZikoChatScreen() {
   const [streamingContent, setStreamingContent] = useState('');
   const [input, setInput] = useState('');
   const [missionState, setMissionState] = useState<MissionState | null>(null);
+  // v1.20 P16 (MEAS-02) : objectifs de mesures enregistres par l'IA pendant la conversation.
+  const [goalCards, setGoalCards] = useState<OnboardingGoal[]>([]);
   const [errorState, setErrorState] = useState<'stream' | 'capReached' | null>(null);
   // Task 2 / D-14: set only from a real checkMicroActionCompleted() query
   // result inside the useFocusEffect re-poll below — never from the mission
@@ -478,6 +513,9 @@ export default function ZikoChatScreen() {
             } else if (evt.type === 'chunk') {
               assistantBuffer += evt.content;
               if (mountedRef.current) setStreamingContent(assistantBuffer);
+            } else if (evt.type === 'goal') {
+              const g = parseGoalEvent(evt.goal);
+              if (g && mountedRef.current) setGoalCards((prev) => addGoal(prev, g));
             } else if (evt.type === 'mission') {
               if (mountedRef.current) setMissionState(evt.mission);
             } else if (evt.type === 'cap_reached') {
@@ -768,15 +806,20 @@ export default function ZikoChatScreen() {
               // Renders as the content of the final assistant turn once the
               // `mission` SSE event has populated state — not a modal, not a
               // separate screen/route.
-              missionState ? (
-                <MissionCard
-                  mission={missionState}
-                  theme={theme}
-                  t={t}
-                  onPressCta={handleMissionCta}
-                  onRetry={handleRetry}
-                />
-              ) : null
+              <>
+                {goalCards.map((g) => (
+                  <GoalSavedCard key={g.id ?? g.measure_key} goal={g} theme={theme} />
+                ))}
+                {missionState ? (
+                  <MissionCard
+                    mission={missionState}
+                    theme={theme}
+                    t={t}
+                    onPressCta={handleMissionCta}
+                    onRetry={handleRetry}
+                  />
+                ) : null}
+              </>
             }
           />
 

@@ -9,7 +9,7 @@ export const MAX_ACTIVE_QUESTS = 3;
 /** Appels IA automatiques (niveau / plus de quete) absorbes par la plateforme : plafond par jour et par personne. */
 export const AUTO_GENERATION_DAILY_CAP = 2;
 
-export const QUEST_METRICS = ['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs'] as const;
+export const QUEST_METRICS = ['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs', 'measurement_logs'] as const;
 export type QuestMetric = (typeof QUEST_METRICS)[number];
 export type QuestScope = 'daily' | 'weekly';
 
@@ -26,6 +26,8 @@ export const METRIC_RULES: Record<QuestMetric, MetricRule> = {
   hydration_ml: { min: 500, max: 4000, unit: 'ml', label: 'eau bue, en millilitres' },
   nutrition_logs: { min: 1, max: 6, unit: 'repas', label: 'repas enregistrés' },
   habit_logs: { min: 1, max: 10, unit: 'habitudes', label: 'habitudes cochées' },
+  // v1.20 P16 (MEAS-09) : saisies de mesures corporelles (quête liée à un objectif de mesure).
+  measurement_logs: { min: 1, max: 7, unit: 'mesures', label: 'saisies de mesures corporelles' },
 };
 
 /** Duree limite (QUEST-06) : toujours presente, bornee selon la portee. */

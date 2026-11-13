@@ -4,7 +4,7 @@ const nutritionManifest: PluginManifest = {
   id: 'nutrition',
   /** Progressive unlock: athlete level required (1-5). */
   minLevel: 1,
-  name: 'Nutrition Tracker',
+  name: 'Suivi nutritionnel',
   version: '1.0.0',
   description:
     'Track your daily nutrition: log meals, monitor macros, and get AI-powered dietary advice tailored to your fitness goals.',
@@ -99,7 +99,7 @@ You have access to the user's daily nutrition logs. When discussing food or diet
   routes: [
     {
       path: '/(plugins)/nutrition/log',
-      title: 'Log Meal',
+      title: 'Ajouter un repas',
       icon: 'restaurant',
       showInTabBar: false,
     },

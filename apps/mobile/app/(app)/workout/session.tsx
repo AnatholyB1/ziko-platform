@@ -871,13 +871,13 @@ export default function WorkoutSessionScreen() {
   const describeExercise = (pe: ExerciseWithInfo) => {
     const mode = getExMode(pe);
     const parts: string[] = [];
-    parts.push(`${pe.sets ?? 3} sets`);
-    if (mode === 'reps') parts.push(`${pe.reps ?? '?'} reps`);
-    else if (mode === 'repRange') parts.push(`${pe.reps_min}-${pe.reps_max} reps`);
+    parts.push(`${pe.sets ?? 3} séries`);
+    if (mode === 'reps') parts.push(`${pe.reps ?? '?'} rép.`);
+    else if (mode === 'repRange') parts.push(`${pe.reps_min}-${pe.reps_max} rép.`);
     else if (mode === 'time') parts.push(`${pe.duration_seconds}s`);
     else if (mode === 'timeRange') parts.push(`${pe.duration_min}-${pe.duration_max}s`);
     if (pe.weight_kg) parts.push(`@ ${pe.weight_kg}kg`);
-    if (pe.rest_seconds) parts.push(`${pe.rest_seconds}s rest`);
+    if (pe.rest_seconds) parts.push(`${pe.rest_seconds}s de repos`);
     return parts.join(' · ');
   };
 
@@ -946,9 +946,9 @@ export default function WorkoutSessionScreen() {
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>
-                {currentSession?.name ?? 'Workout'}
+                {currentSession?.name ?? 'Séance'}
               </Text>
-              <Text style={{ color: theme.muted, fontSize: 13 }}>{totalExercises} exercises</Text>
+              <Text style={{ color: theme.muted, fontSize: 13 }}>{totalExercises} exercice{totalExercises > 1 ? 's' : ''}</Text>
             </View>
           </View>
 
@@ -957,7 +957,7 @@ export default function WorkoutSessionScreen() {
               <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} />
             )}
             <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Program Overview
+              Aperçu du programme
             </Text>
 
             {workoutExercises.map((pe, idx) => (
@@ -979,14 +979,14 @@ export default function WorkoutSessionScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>
-                      {tExercise(pe.exercises?.name ?? 'Exercise', pe.exercises?.name_fr)}
+                      {tExercise(pe.exercises?.name ?? 'Exercice', pe.exercises?.name_fr)}
                     </Text>
                     <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
                       {describeExercise(pe)}
                     </Text>
                     {(pe.exercises as any)?.instructions ? (
                       <Text style={{ color: theme.muted, fontSize: 11, marginTop: 4, fontStyle: 'italic' }} numberOfLines={2}>
-                        {(pe.exercises as any).instructions}
+                        {(pe.exercises as any).instructions_fr ?? (pe.exercises as any).instructions}
                       </Text>
                     ) : null}
                     {pe.notes ? (
@@ -1063,11 +1063,11 @@ export default function WorkoutSessionScreen() {
               transition={{ type: 'spring' }}
             >
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 24, textAlign: 'center', marginBottom: 4 }}>
-                {tExercise(currentEx.exercises?.name ?? 'Exercise', currentEx.exercises?.name_fr)}
+                {tExercise(currentEx.exercises?.name ?? 'Exercice', currentEx.exercises?.name_fr)}
               </Text>
               {(currentEx.exercises as any)?.instructions ? (
                 <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginBottom: 4, fontStyle: 'italic' }} numberOfLines={2}>
-                  {(currentEx.exercises as any).instructions}
+                  {(currentEx.exercises as any).instructions_fr ?? (currentEx.exercises as any).instructions}
                 </Text>
               ) : null}
               {currentEx.notes ? (
@@ -1153,7 +1153,7 @@ export default function WorkoutSessionScreen() {
                       style={{ backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 32, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Ionicons name="play" size={18} color="#fff" />
                       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-                        {exTimer > 0 ? 'Resume' : 'Start Timer'}
+                        {exTimer > 0 ? 'Reprendre' : 'Lancer le minuteur'}
                       </Text>
                     </TouchableOpacity>
                   ) : (
@@ -1188,19 +1188,19 @@ export default function WorkoutSessionScreen() {
                 }}>
                   {mode === 'repRange' ? (
                     <>
-                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>OBJECTIF</Text>
                       <Text style={{ fontSize: 40, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps_min}-{currentEx.reps_max}
                       </Text>
-                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>rép.</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>OBJECTIF</Text>
                       <Text style={{ fontSize: 48, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps ?? '?'}
                       </Text>
-                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>rép.</Text>
                     </>
                   )}
                 </View>
@@ -1229,7 +1229,7 @@ export default function WorkoutSessionScreen() {
               {!isTimedEx && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>
-                    {mode === 'repRange' ? `Reps done (${currentEx.reps_min}-${currentEx.reps_max})` : 'Reps done'}
+                    {mode === 'repRange' ? `Répétitions effectuées (${currentEx.reps_min}-${currentEx.reps_max})` : 'Répétitions effectuées'}
                   </Text>
                   <TextInput
                     value={editReps}
@@ -1375,8 +1375,8 @@ export default function WorkoutSessionScreen() {
       const nextSetIdx = isLastSet ? 0 : currentSetIdx + 1;
       const nextEx = workoutExercises[nextExIdx];
       const nextLabel = isLastSet
-        ? `Next: ${tExercise(nextEx?.exercises?.name ?? 'Exercise', nextEx?.exercises?.name_fr)}`
-        : `Next: Set ${nextSetIdx + 1}`;
+        ? `Suivant : ${tExercise(nextEx?.exercises?.name ?? 'Exercice', nextEx?.exercises?.name_fr)}`
+        : `Suivant : série ${nextSetIdx + 1}`;
 
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -1388,7 +1388,7 @@ export default function WorkoutSessionScreen() {
               transition={{ type: 'spring' }}
             >
               <Text style={{ color: theme.muted, fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Rest Time
+                Temps de repos
               </Text>
 
               <View style={{
@@ -1543,7 +1543,7 @@ export default function WorkoutSessionScreen() {
                   return (
                     <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                       <Ionicons name={done === sets.length ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={done === sets.length ? theme.success : theme.border} />
-                      <Text style={{ color: theme.text, fontSize: 14, flex: 1 }}>{tExercise(pe.exercises?.name ?? 'Exercise', pe.exercises?.name_fr)}</Text>
+                      <Text style={{ color: theme.text, fontSize: 14, flex: 1 }}>{tExercise(pe.exercises?.name ?? 'Exercice', pe.exercises?.name_fr)}</Text>
                       <Text style={{ color: theme.muted, fontSize: 12 }}>{done}/{sets.length} sets</Text>
                     </View>
                   );

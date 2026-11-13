@@ -4,6 +4,7 @@ import {
   coffeeCountedMl, effectiveGoalMl, validateGoalMl, validateAmountMl, remindersRowValue,
   glassRowValue, coffeeRowValue, bonusRowValue, localDayBoundsIso, localDateKey,
   rowToSettings, settingsToRow, fetchSettings, saveSettings, hasWorkoutOnDay,
+  DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchEffectiveGoalMl,
 } from './settings';
 
 describe('rappels', () => {
@@ -117,5 +118,33 @@ describe('persistance (client simule)', () => {
     });
     expect(await hasWorkoutOnDay(mk([{ id: 'x' }]), 'u1')).toBe(true);
     expect(await hasWorkoutOnDay(mk([]), 'u1')).toBe(false);
+  });
+});
+
+describe('objectif unique accueil/plugin (UAT run1 #4)', () => {
+  // Client simule route par table : profil, reglages, seances.
+  const mk = (profileSettings: any, hydrationRow: any, sessions: any[]) => ({
+    from: (table: string) => {
+      if (table === 'ziko_user_profiles') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { settings: profileSettings }, error: null }) }) }) };
+      }
+      if (table === 'ziko_hydration_settings') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: hydrationRow, error: null }) }) }) };
+      }
+      return { select: () => ({ eq: () => ({ gte: () => ({ lt: () => ({ limit: () => Promise.resolve({ data: sessions, error: null }) }) }) }) }) };
+    },
+  });
+
+  it('sans reglage profil : 2.0 L (pas 2.5 L) pour tout le monde', async () => {
+    expect(DEFAULT_GOAL_ML).toBe(2000);
+    expect(await fetchEffectiveGoalMl(mk({}, null, []), 'u1')).toBe(2000);
+  });
+  it('objectif profil + bonus du jour de seance', async () => {
+    const c = mk({ hydration_goal_ml: 3000 }, { workout_bonus_ml: 500 }, [{ id: 's' }]);
+    expect(await fetchEffectiveGoalMl(c, 'u1')).toBe(3500);
+  });
+  it('valeur profil hors bornes -> defaut', () => {
+    expect(baseGoalFromProfileSettings({ hydration_goal_ml: 99999 })).toBe(2000);
+    expect(baseGoalFromProfileSettings(null)).toBe(2000);
   });
 });

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert, getActionPrimary, useCreditStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, getActionPrimary, useCreditStore, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import { setActiveProgram } from '../../../src/lib/programsService';
@@ -513,7 +513,7 @@ export default function AtelierScreen() {
           onSelectIndex={(i) => setEdit({ ...edit, exIndex: i })}
           onAskAi={(ex) => {
             setEdit(null);
-            setInput(`À propos de ${ex.name} (S${week.w}, ${sessionTitle(week.sessions[edit.session])}) : `);
+            setInput(`À propos de ${exerciseDisplayName(ex.name, undefined, exerciseNames)} (S${week.w}, ${sessionTitle(week.sessions[edit.session])}) : `);
           }}
         />
       )}
@@ -585,7 +585,7 @@ function ExerciseSheet(props: {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {props.exercises.map((e, i) => (
                   <TouchableOpacity key={`${e.name}-${i}`} onPress={() => pick(i)} style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: i === index ? actionBg : theme.border, backgroundColor: i === index ? '#FFF1EA' : theme.surface, justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{e.name}</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: theme.text }}>{exerciseDisplayName(e.name, undefined, exerciseNames)}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>

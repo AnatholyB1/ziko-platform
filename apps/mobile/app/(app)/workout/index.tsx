@@ -57,7 +57,7 @@ function ResumeBar({ session, theme }: { session: WorkoutSession; theme: any }) 
           Séance en cours
         </Text>
         <Text style={{ color: 'rgba(255,250,246,0.7)', fontSize: 13, marginTop: 2 }}>
-          {session.name ?? 'Workout'} · {elapsed}min
+          {session.name ?? 'Séance'} · {elapsed}min
         </Text>
       </View>
       <View
