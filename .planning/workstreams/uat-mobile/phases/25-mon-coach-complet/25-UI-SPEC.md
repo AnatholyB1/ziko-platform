@@ -25,7 +25,7 @@ Pas de maquette Claude Design : ce contrat + `25-CONTEXT.md` font foi. Pas de HT
 ### M25-D : modale de retrait
 - Titre `Retirer ton coach ?`. Corps : `Tu ne seras plus lie a {nom}. Ton historique, tes programmes et tes donnees sont conserves. Tu pourras te relier a tout moment avec un nouveau code.` Champ `Tape COACH pour confirmer` (D-06). Boutons : `Garder mon coach` (bord, 48 dp, a gauche) et `Retirer` (texte/fond `#DC2626` seulement une fois `COACH` saisi, sinon gris `#E2E0DA`).
 - Succes : ferme la modale, retour a l'etat A, `showAlert('Coach retire', 'Tu n\'es plus lie a {nom}. Ton historique est conserve.')`. Echec : `showAlert('Impossible de retirer le coach.', 'Veuillez reessayer.')`, saisie conservee.
-- AC-D1 : le corps contient les mots `conserves` et `nouveau code` ; AC-D2 : `Retirer` desactive tant que la saisie != `COACH` (insensible aux espaces autour) ; AC-D3 : aucun mot punitif (`supprime`, `perdu`, `definitivement`).
+- AC-D1 : le corps contient les mots `conservés` et `nouveau code` ; AC-D2 : `Retirer` desactive tant que la saisie != `COACH` (insensible aux espaces autour) ; AC-D3 : aucun mot punitif (`supprime`, `perdu`, `definitivement`).
 
 ### M25-E : liste du store (non-desinstallable)
 - Pour un plugin `mandatory` : la corbeille/bouton `Desinstaller` est remplace par un bouton inactif icone `lock-closed-outline`, libelle `Obligatoire`, `accessibilityState={{ disabled: true }}` ; un appui affiche `showAlert('Module obligatoire', 'Mon coach fait partie de Ziko et ne peut pas etre desinstalle.')`. `uninstallPlugin('coach')` n'ecrit rien en base meme si appelee (garde dans la fonction).
