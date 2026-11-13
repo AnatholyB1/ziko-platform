@@ -19,6 +19,8 @@ export interface ActiveProgramRow {
   started_at: string | null;
   sequence_id: string | null;
   sequence_position: number | null;
+  /** Renseigne par closeProgram : un programme actif qui en porte deja un a ete REACTIVE apres sa cloture. */
+  results?: unknown;
 }
 
 const PROGRAM_COLS = 'id, name, goal, days_per_week, program_data, created_at, started_at, sequence_id, sequence_position';
@@ -26,7 +28,7 @@ const PROGRAM_COLS = 'id, name, goal, days_per_week, program_data, created_at, s
 export async function loadActiveProgram(db: WorkshopDb, userId: string): Promise<ActiveProgramRow | null> {
   const res = await db
     .from('ziko_ai_generated_programs')
-    .select(PROGRAM_COLS + ', completed_at')
+    .select(PROGRAM_COLS + ', completed_at, results')
     .eq('user_id', userId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
@@ -35,10 +37,10 @@ export async function loadActiveProgram(db: WorkshopDb, userId: string): Promise
   return r ?? null;
 }
 
-export async function loadProgram(db: WorkshopDb, userId: string, id: string): Promise<(ActiveProgramRow & { results: ProgramResults | null }) | null> {
+export async function loadProgram(db: WorkshopDb, userId: string, id: string): Promise<(ActiveProgramRow & { results: ProgramResults | null; is_active?: boolean; completed_at?: string | null }) | null> {
   const { data, error } = await db
     .from('ziko_ai_generated_programs')
-    .select(PROGRAM_COLS + ', results')
+    .select(PROGRAM_COLS + ', results, is_active, completed_at')
     .eq('id', id)
     .eq('user_id', userId)
     .maybeSingle();
