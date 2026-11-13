@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Svg, { Circle } from 'react-native-svg';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
-import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, DEFAULT_NUTRITION_TARGETS } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,10 +50,10 @@ const MEAL_TYPES = [
 ] as const;
 
 const DEFAULT_GOALS: UserGoals = {
-  calorie_goal: 2000,
-  protein_goal_g: 140,
-  carbs_goal_g: 200,
-  fat_goal_g: 60,
+  calorie_goal: DEFAULT_NUTRITION_TARGETS.calories,
+  protein_goal_g: DEFAULT_NUTRITION_TARGETS.protein_g,
+  carbs_goal_g: DEFAULT_NUTRITION_TARGETS.carbs_g,
+  fat_goal_g: DEFAULT_NUTRITION_TARGETS.fat_g,
 };
 
 const CARD_STYLE = {
@@ -150,16 +150,21 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
           .eq('id', userId)
           .single();
         if (error) throw error;
-        // Derive sensible defaults from goal field (maintenance / fat_loss / muscle_gain)
-        const goal = data?.goal ?? 'maintenance';
-        const weight = data?.weight_kg ?? 75;
-        const baseCalories = goal === 'fat_loss' ? 1800 : goal === 'muscle_gain' ? 2400 : 2000;
-        const protein = Math.round(weight * 1.8);
+        // Source unique : objectifs enregistres (ziko_user_plugins.settings), sinon repli commun.
+        const { data: stored } = await supabase
+          .from('ziko_user_plugins')
+          .select('settings')
+          .eq('user_id', userId)
+          .eq('plugin_id', 'nutrition')
+          .maybeSingle();
+        const st = (stored?.settings ?? {}) as Record<string, unknown>;
+        const pick = (v: unknown, fallback: number) => (typeof v === 'number' && v > 0 ? v : fallback);
+        // Repli commun (DEFAULT_NUTRITION_TARGETS) : memes valeurs que l'ecran repas et les recettes (P10).
         return {
-          calorie_goal: baseCalories,
-          protein_goal_g: protein,
-          carbs_goal_g: Math.round((baseCalories * 0.45) / 4),
-          fat_goal_g: Math.round((baseCalories * 0.25) / 9),
+          calorie_goal: pick(st.calorie_goal, DEFAULT_NUTRITION_TARGETS.calories),
+          protein_goal_g: pick(st.protein_goal, DEFAULT_NUTRITION_TARGETS.protein_g),
+          carbs_goal_g: pick(st.carbs_goal, DEFAULT_NUTRITION_TARGETS.carbs_g),
+          fat_goal_g: pick(st.fat_goal, DEFAULT_NUTRITION_TARGETS.fat_g),
         };
       },
       enabled: !!userId,

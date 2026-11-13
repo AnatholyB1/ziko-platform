@@ -68,7 +68,7 @@ let keySeq = 0;
 const nextKey = () => `b${Date.now()}_${keySeq++}`;
 
 export default function LogMealScreen({ supabase, onSaved }: { supabase: any; onSaved?: () => void }) {
-  const { addLog } = useNutritionStore();
+  const { addLog, loadTDEEProfile } = useNutritionStore();
   const goalKcal = useNutritionStore((s) => s.calorieGoal);
   const goalP = useNutritionStore((s) => s.proteinGoal);
   const goalC = useNutritionStore((s) => s.carbsGoal);
@@ -186,6 +186,8 @@ export default function LogMealScreen({ supabase, onSaved }: { supabase: any; on
   useEffect(() => {
     (async () => {
       await flushPending();
+      // Objectifs reels (ziko_user_plugins.settings) : meme source que les recettes (P10), sinon repli commun.
+      try { await loadTDEEProfile(supabase); } catch { /* repli sur DEFAULT_NUTRITION_TARGETS */ }
       await loadLogs();
       onSaved?.();
     })();

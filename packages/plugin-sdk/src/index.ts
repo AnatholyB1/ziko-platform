@@ -11,6 +11,7 @@ export * from './friendsApi';
 export * from './gating';
 export * from './unlockUi';
 export * from './mealLog';
+export * from './nutritionTargets';
 export * from './onboarding';
 export * from './disclaimer';
 export { useAlertStore, showAlert } from './alert';
