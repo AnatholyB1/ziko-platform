@@ -1,3 +1,15 @@
+## Run 9 (2026-11-13, UI émulateur + faux Anthropic) - atelier A, D, E (partiels)
+Route `ziko://(app)/workout/atelier`. Captures `uat-evidence/run9/a1.png`, `a4.png`, `e1.png`, `e2.png`, `e3.png`.
+| Id | Verdict | Détail |
+|---|---|---|
+| A - vue initiale | PASS | Titre `Construis ton programme, point par point`, chip `20 crédits`, `9 séances / 5 programmes / 2 records`, 3 suggestions, champ `Décris ton objectif`, `4 crédits par message`. |
+| B - conversation avec le faux | PASS | Message saisi par adb, file `workshop_set_draft` : carte `Atelier run9 · BROUILLON · 2 séances par semaine · 1 semaine` (Lundi Haut du corps, Mercredi Bas du corps), chip `Brouillon mis à jour`, résultat outil `revision:1`. Le texte du faux (« C'est fait (reponse simulee...) ») s'affiche tel quel : attendu avec le faux. |
+| C - débit du tour | BLOQUE/A CONFIRMER | Solde `20 -> 20` après le tour (`/credits/balance`), alors que l'écran annonce 4 crédits/message ; probablement quota gratuit du jour (`withinFreeQuota`, `routes/workshop.ts:67`) mais non prouvé (colonne du journal de coût non lue). Autre incohérence : `daily_earned:6` > `daily_cap:4` sur `/credits/balance`. |
+| D - édition manuelle sans débit | PASS | Crayon Lundi > Séries `+` > `Enregistrer` : carte `Developpe couche 5x6` (avant 4x6), solde inchangé (20), aucun nouvel appel au faux. |
+| E - Enregistrer = programme INACTIF, 2 clics concurrents = 1 programme | PASS | 2 taps simultanés (`input tap ... & input tap ...`) : 1 seule ligne `Atelier run9` dans `ziko_ai_generated_programs`, `is_active=false`, modale `Programme enregistré · Définir comme programme actif / Plus tard`. |
+| F - (clavier) | FAIL (mesuré) | Clavier ouvert : le champ `Décris ton objectif` (y 1892-2016) est recouvert par le clavier (début y=1580) ; la zone de saisie n'est pas remontée (pas de KeyboardAvoiding/adjustResize), le bouton Envoyer n'est plus atteignable sans fermer le clavier (touche Retour). A vérifier sur un vrai appareil. |
+| Maquette | ECART | `5 programmes` (atelier) vs `Tous 6` (liste Programmes) : compteurs divergents. |
+
 # UAT-RESULTS P23 (run2) - NON-TESTE
 
 A faire run3 : `workout/atelier` avec faux Anthropic + test "compte a 0 credit". Note : `ziko_workshop_drafts` sans GRANT authenticated/anon (privileges Dxtm seulement) : verifier que l'ecran passe par le backend.
