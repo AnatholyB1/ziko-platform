@@ -28,6 +28,8 @@ export const SOURCES = {
   questGeneration: 'quest_generation',
   // v1.20 Phase 24 : proposition automatique du programme suivant en fin de programme (absorbee, plafonnee).
   programRelaunch: 'program_relaunch',
+  // v1.20 Phase 26 : decision automatique de transition Habitudes -> Performance de la Ligue (absorbee, plafonnee 1/jour).
+  leagueTransition: 'league_transition',
 } as const;
 
 export type AutonomousCostSource = (typeof SOURCES)[keyof typeof SOURCES];
