@@ -13,3 +13,8 @@ Seed : "Bloc de volume" actif, started_at = now-30 j, 2 semaines x 2 seances ; s
 | A.6 idempotence | PASS | 2e `check` : relance deja `proposed` ; 2e `propose` : `{"already":true}` ; aucun nouvel appel au faux. |
 | C variantes | PARTIEL | 50 % : `hint=consolidate` (2 seances sur 4 ; la fenetre = duree prevue, les seances apres la fin ne comptent pas). Observation : l'exercice "Squat" du bilan a ete rapproche de "jump squat" (e1RM 140 -> 142,9) : rapprochement flou a verifier. 100 % / 0 seance NON-TESTE. |
 | B, D, E, F | NON-TESTE | |
+
+## Run 6 (2026-11-13, uat/run6)
+- Squat -> 'Squat complet barre' sans fixture : PASS (toast non observe)
+- Bandeau apres reactivation, B..F : NON-TESTE
+Detail : ../../UAT-RESULTS-run6.md
