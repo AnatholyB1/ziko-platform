@@ -8,7 +8,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, formatKgFr } from '@ziko/plugin-sdk';
 import { PluginHeader } from '@ziko/ui';
 import { calc1RM, rpeToPercent, rpeToRIR, RPE_VALUES, TRAINING_ZONES } from '../index';
 import { useRpeStore } from '../store';
@@ -420,7 +420,7 @@ export default function RPEPlugin({ supabase }: { supabase: any }) {
                 {zone.label}
               </Text>
               <Text style={{ fontSize: 11, color: theme.muted }}>
-                {(oneRM * zone.pct).toFixed(1)} kg
+                {formatKgFr(oneRM * zone.pct)}
               </Text>
             </View>
           );

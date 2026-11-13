@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../../src/lib/supabase';
+import { frCount } from '../../../../src/lib/frLabels';
 
 export default function HistoryDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
@@ -385,7 +386,7 @@ export default function HistoryDetailScreen() {
                         {exerciseName}
                       </Text>
                       <Text style={{ fontSize: 10, color: theme.muted }}>
-                        {exerciseSets.length} séries
+                        {frCount(exerciseSets.length, 'série', 'séries')}
                       </Text>
                     </View>
 

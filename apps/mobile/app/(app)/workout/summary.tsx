@@ -20,7 +20,7 @@ import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@z
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { supabase } from '../../../src/lib/supabase';
 import WSHeader from '../../../src/components/WSHeader';
-import { setsCompletedLabel } from '../../../src/lib/frLabels';
+import { setsCompletedLabel, frCount } from '../../../src/lib/frLabels';
 
 export default function WorkoutSummaryScreen() {
   const theme = useThemeStore((s) => s.theme);
@@ -462,7 +462,7 @@ export default function WorkoutSummaryScreen() {
                       ) : null}
                     </View>
                     <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>
-                      {ex.sets.length} séries · meilleure : {ex.bestSetLabel ?? '—'}
+                      {frCount(ex.sets.length, 'série', 'séries')} · meilleure : {ex.bestSetLabel ?? '—'}
                     </Text>
                   </View>
 

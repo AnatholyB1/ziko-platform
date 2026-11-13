@@ -8,8 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useWorkoutStore, type CompletedSession } from '../../../src/stores/workoutStore';
 import { shouldPersistSession } from '../../../src/lib/workoutPlan';
+import { frCount } from '../../../src/lib/frLabels';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatKgFr } from '@ziko/plugin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { localDateKey } from '../../../src/lib/localDate';
 import { writeSessionTotals, saveWithRetry } from '../../../src/lib/sessionFinish';
@@ -178,7 +179,7 @@ function RPEModal({ visible, onClose, theme }: { visible: boolean; onClose: () =
                 {zones.map(({ label, pct }) => (
                   <View key={label} style={{ backgroundColor: theme.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.border }}>
                     <Text style={{ color: theme.muted, fontSize: 10, fontWeight: '700' }}>{label}</Text>
-                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 14 }}>{(oneRM * pct).toFixed(1)} kg</Text>
+                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 14 }}>{formatKgFr(oneRM * pct)}</Text>
                   </View>
                 ))}
               </View>
@@ -888,7 +889,7 @@ export default function WorkoutSessionScreen() {
   const describeExercise = (pe: ExerciseWithInfo) => {
     const mode = getExMode(pe);
     const parts: string[] = [];
-    parts.push(`${pe.sets ?? 3} séries`);
+    parts.push(frCount(pe.sets ?? 3, 'série', 'séries'));
     if (mode === 'reps') parts.push(`${pe.reps ?? '?'} rép.`);
     else if (mode === 'repRange') parts.push(`${pe.reps_min}-${pe.reps_max} rép.`);
     else if (mode === 'time') parts.push(`${pe.duration_seconds}s`);

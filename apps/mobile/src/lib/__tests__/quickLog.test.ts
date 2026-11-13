@@ -58,9 +58,9 @@ describe('eau (QLOG-01)', () => {
     expect(sumWaterMl(Array.from({ length: 50 }, () => ({ amount_ml: 250 })))).toBe(12500);
   });
   it('formate en litres sur 2 decimales', () => {
-    expect(formatLitres(0)).toBe('0.00L');
-    expect(formatLitres(250)).toBe('0.25L');
-    expect(formatLitres(1750)).toBe('1.75L');
+    expect(formatLitres(0)).toBe('0,00 L');
+    expect(formatLitres(250)).toBe('0,25 L');
+    expect(formatLitres(1750)).toBe('1,75 L');
   });
   it('logWater insere avec la date locale fournie (pas UTC)', async () => {
     const db = fakeDb();

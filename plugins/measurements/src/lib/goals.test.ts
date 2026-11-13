@@ -13,6 +13,7 @@ import {
   goalDirection,
   currentForGoal,
   formatShortDate,
+  endSentence,
 } from './goals';
 
 describe('computeGoalProgress (ME-3)', () => {
@@ -145,6 +146,11 @@ describe('currentForGoal / dates', () => {
     expect(formatShortDate('2026-11-12')).toBe('12 nov.');
     expect(formatShortDate('2026-10-02T08:00:00Z')).toBe('2 oct.');
     expect(formatShortDate(null)).toBe('');
+  });
+  it('run7 : pas de double point apres une date abregee', () => {
+    expect(`Objectif atteint le ${endSentence(formatShortDate('2026-11-13'))} Bravo.`).toBe('Objectif atteint le 13 nov. Bravo.');
+    expect(endSentence('13 mai')).toBe('13 mai.');
+    expect(endSentence('13 nov.')).toBe('13 nov.');
   });
 });
 

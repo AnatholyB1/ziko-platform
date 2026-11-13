@@ -445,10 +445,10 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             pointerEvents="none"
           >
             <Text style={{ fontSize: 14, fontWeight: '700', color: INFO_BLUE, textAlign: 'center' }}>
-              {(todayMl / 1000).toFixed(1)}L
+              {formatLitres(todayMl)}
             </Text>
             <Text style={{ fontSize: 11, color: theme.muted, textAlign: 'center' }}>
-              / {(goalMl / 1000).toFixed(1)}L
+              / {formatLitres(goalMl)}
             </Text>
           </View>
         </View>
@@ -459,11 +459,11 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             HYDRATATION
           </Text>
           <Text style={{ fontSize: 28, fontWeight: '700', color: theme.text, marginTop: 4 }}>
-            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${remainingL.toFixed(1)}L`}
+            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${formatLitres(remainingL * 1000)}`}
           </Text>
           <Text style={{ fontSize: 13, color: theme.muted, lineHeight: 20, marginTop: 4 }}>
             {todayMl >= goalMl
-              ? `Tu as bu ${(todayMl / 1000).toFixed(1)}L aujourd'hui.`
+              ? `Tu as bu ${formatLitres(todayMl)} aujourd'hui.`
               : streak > 0
               ? `Allez, c'est presque plié. ${streak} jour${streak > 1 ? 's' : ''} d'affilée à objectif`
               : "Commence bien ta journée en t'hydratant régulièrement."}
@@ -743,7 +743,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
               MOYENNE 7J
             </Text>
             <Text style={{ fontSize: 28, fontWeight: '700', color: INFO_BLUE, marginTop: 4 }}>
-              {(avgMl / 1000).toFixed(1)}L/j
+              {formatLitres(avgMl)}/j
             </Text>
           </View>
           <View

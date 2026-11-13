@@ -6,6 +6,7 @@ export * from './types';
 export * from './theme';
 export * from './i18n';
 export * from './displayLabels';
+export * from './formatFr';
 export * from './friendRelation';
 export * from './friendsApi';
 export * from './gating';

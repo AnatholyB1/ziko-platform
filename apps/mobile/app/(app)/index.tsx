@@ -16,7 +16,7 @@ import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
-import { useTranslation, showAlert } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -530,7 +530,7 @@ export default function DashboardScreen() {
   // ── Segment rows ──────────────────────────────────────────────────────────
   const segmentParts = [
     { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepData ? `${formatDurationH(sleepH)}${sleepData.quality != null ? ` · qualité ${sleepData.quality} / 5` : ''}` : 'Aucune nuit enregistrée' },
-    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(waterGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
+    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${formatLitersFr(waterMl)} / ${formatLitersFr(waterGoalMl)}` : 'Pas de données' },
     { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: nutritionRingSub(kcal, kcalGoal) },
     { value: loadPct, max: 100, color: '#22C55E', icon: 'flash-outline' as const, label: 'Charge', sub: `${weeklyCount}/${weeklyGoal} séances` },
   ];

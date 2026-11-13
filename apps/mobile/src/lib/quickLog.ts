@@ -10,6 +10,8 @@
  * plugin Journal autorise plusieurs entrees/jour) : "select puis update/insert".
  */
 import { localDateKey } from './localDate';
+// Module pur (l'index du SDK tire react-native, inutilisable en test node).
+import { formatLitersFr } from '../../../../packages/plugin-sdk/src/formatFr';
 
 // ── Constantes ────────────────────────────────────────────────
 export const WATER_STEP_ML = 250;
@@ -33,7 +35,7 @@ export function sumWaterMl(rows: { amount_ml: number | null }[] | null | undefin
 }
 
 export function formatLitres(ml: number): string {
-  return `${(Math.max(0, ml) / 1000).toFixed(2)}L`;
+  return formatLitersFr(ml, 2);
 }
 
 export async function logWater(
