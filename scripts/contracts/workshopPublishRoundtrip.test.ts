@@ -3,14 +3,14 @@
 // Aller-retour complet : brut modele -> normalizeProgram -> toProgramRow -> JSON (JSONB) -> lecteurs.
 // Ne prouve pas : le stockage Postgres reel (JSONB conserve les tableaux tels quels).
 import { describe, it, expect } from 'vitest';
-import { normalizeProgram, toProgramRow } from '../../../../../backend/api/src/workshop/draft';
-import { weeksCountOf, sessionsPerWeekOf, evaluateProgress } from '../../../../../backend/api/src/periodization/progress';
-import { normalizePlanSessions } from '../workoutPlan';
+import { normalizeProgram, toProgramRow } from '../../backend/api/src/workshop/draft';
+import { weeksCountOf, sessionsPerWeekOf, evaluateProgress } from '../../backend/api/src/periodization/progress';
+import { normalizePlanSessions } from '../../apps/mobile/src/lib/workoutPlan';
 import {
   getProgramWeekCount,
   getProgramSessionsPerWeek,
   getProgramSessionList,
-} from '../../../../../plugins/ai-programs/src/lib/programShape';
+} from '../../plugins/ai-programs/src/lib/programShape';
 
 const raw = {
   name: 'Force 4 semaines',

@@ -57,7 +57,7 @@ describe('GET /athlete/forms/pending', () => {
   it('200 avec le formulaire en attente (relation ziko_coach_forms valide, RLS athlete via son JWT)', async () => {
     const res = await formsRouter.request('/athlete/forms/pending', { headers: { Authorization: `Bearer ${ATHLETE}` } });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as { forms: unknown[] };
     expect(body.forms).toEqual([
       expect.objectContaining({ instance_id: 'i1', form_id: 'f1', form_title: 'Bilan', question_count: 2 }),
     ]);
