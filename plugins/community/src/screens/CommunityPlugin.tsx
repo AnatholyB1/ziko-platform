@@ -9,7 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, getActionPrimary } from '@ziko/plugin-sdk';
+import { LeagueEntryCard } from '../league/cards';
+import { fetchLeagueState } from '../league/api';
 import { SubTabs, AISuggestion } from '@ziko/ui';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -128,6 +130,17 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
     },
   });
   const userId = userInfo?.id ?? null;
+
+  // ── Ligue (P26) : etat pour la carte d'entree (cloture paresseuse des semaines en base, idempotente) ──
+  const { data: leagueEntry } = useQuery({
+    queryKey: ['leagueEntry', userId],
+    enabled: !!userId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const r = await fetchLeagueState(supabase, userId as string);
+      return r.ok ? r.state : null;
+    },
+  });
 
   // ── Friendships query ─────────────────────────────────────────────────────────
   const { data: friendships = [] } = useQuery<Friendship[]>({
@@ -284,6 +297,14 @@ export default function CommunityPlugin({ supabase }: CommunityPluginProps) {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
+        <LeagueEntryCard
+          state={leagueEntry ?? null}
+          c={{
+            surface: theme.surface, border: theme.border, text: theme.text, muted: theme.muted,
+            primary: theme.primary, action: getActionPrimary(theme), success: '#2E7D32',
+          }}
+          onPress={() => router.push('/(app)/(plugins)/community/league' as any)}
+        />
         <AISuggestion
           text="Tes amis restent actifs. Consulte le fil pour rester motivé !"
           tintColor="#2E7BF6"
