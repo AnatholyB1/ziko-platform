@@ -30,11 +30,11 @@ const ACTIVITY_LEVELS = [
   { key: 'extreme', label: 'Extrêmement actif', desc: '2x par jour / physique', multiplier: 1.9 },
 ];
 
-const GOALS = [
-  { key: 'fat_loss', label: 'Perte de gras', emoji: '🔥', calorieAdjust: -500 },
-  { key: 'maintenance', label: 'Maintien', emoji: '⚖️', calorieAdjust: 0 },
-  { key: 'muscle_gain', label: 'Prise de muscle', emoji: '💪', calorieAdjust: 300 },
-  { key: 'endurance', label: 'Endurance', emoji: '🏃', calorieAdjust: 200 },
+const GOALS: { key: 'fat_loss' | 'maintenance' | 'muscle_gain' | 'endurance'; label: string; icon: keyof typeof Ionicons.glyphMap; calorieAdjust: number }[] = [
+  { key: 'fat_loss', label: 'Perte de gras', icon: 'flame-outline', calorieAdjust: -500 },
+  { key: 'maintenance', label: 'Maintien', icon: 'scale-outline', calorieAdjust: 0 },
+  { key: 'muscle_gain', label: 'Prise de muscle', icon: 'barbell-outline', calorieAdjust: 300 },
+  { key: 'endurance', label: 'Endurance', icon: 'walk-outline', calorieAdjust: 200 },
 ] as const;
 
 type GoalKey = typeof GOALS[number]['key'];
@@ -195,7 +195,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
       }
 
       showAlert(
-        'Objectifs mis à jour ✅',
+        'Objectifs mis à jour',
         `Calories: ${result.targetCalories} kcal\nProtéines: ${result.proteinGoal}g\nGlucides: ${result.carbsGoal}g\nLipides: ${result.fatGoal}g\nEau: ${(result.waterGoalMl / 1000).toFixed(1)}L\nSommeil: ${result.sleepGoalHours}h`,
         [{ text: 'OK', onPress: () => router.back() }],
       );
@@ -223,7 +223,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
             <Ionicons name="chevron-back" size={24} color="#7A7670" />
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: theme.text }}>
-            📊 Résultats
+            Résultats
           </Text>
         </View>
 
@@ -248,14 +248,14 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
             <Text style={{ color: theme.primary, fontSize: 36, fontWeight: '900' }}>{result.targetCalories}</Text>
             <Text style={{ color: theme.muted, fontSize: 13 }}>kcal / jour</Text>
             <Text style={{ color: theme.muted, fontSize: 12, marginTop: 6 }}>
-              {GOALS.find((g) => g.key === result.goal)?.emoji} {GOALS.find((g) => g.key === result.goal)?.label}
+              {GOALS.find((g) => g.key === result.goal)?.label}
               {' '}({result.tdee > result.targetCalories ? `-${result.tdee - result.targetCalories}` : `+${result.targetCalories - result.tdee}`} kcal)
             </Text>
           </View>
 
           {/* Macros */}
           <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginBottom: 10 }}>
-            🥩 Répartition des macros
+            Répartition des macros
           </Text>
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
             {[
@@ -274,7 +274,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
 
           {/* Water & Sleep */}
           <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16, marginBottom: 10 }}>
-            🎯 Autres objectifs
+            Autres objectifs
           </Text>
           <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
             <View style={{ flex: 1, backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#2196F3' + '33', alignItems: 'center' }}>
@@ -332,7 +332,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
           <Ionicons name="chevron-back" size={24} color="#7A7670" />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: theme.text }}>
-          🧮 Calculateur TDEE
+          Calculateur TDEE
         </Text>
       </View>
 
@@ -455,7 +455,7 @@ export default function TDEECalculatorScreen({ supabase }: { supabase: any }) {
                 borderColor: goal === g.key ? theme.primary : theme.border,
               }}
             >
-              <Text style={{ fontSize: 22 }}>{g.emoji}</Text>
+              <Ionicons name={g.icon} size={24} color={goal === g.key ? theme.primary : theme.muted} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: goal === g.key ? theme.primary : theme.text, fontWeight: '600', fontSize: 14 }}>
                   {g.label}

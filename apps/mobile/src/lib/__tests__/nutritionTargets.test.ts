@@ -19,6 +19,13 @@ function targets(src: string, name: string) {
 describe('objectifs nutrition : source unique', () => {
   const sdk = targets(read('packages/plugin-sdk/src/nutritionTargets.ts'), 'DEFAULT_NUTRITION_TARGETS');
 
+  it('l\'accueil (quickLog) n\'a plus d\'objectif kcal divergent : meme repli que le SDK (review A #13)', () => {
+    const ql = read('apps/mobile/src/lib/quickLog.ts');
+    expect(ql).toMatch(new RegExp(`NUTRITION_GOAL_KCAL = ${sdk.calories};`));
+    expect(ql).not.toMatch(/2200/);
+    // l'ecran d'accueil lit l'objectif reel via le hook (reglages nutrition)
+    expect(read('apps/mobile/app/(app)/index.tsx')).toMatch(/useNutritionGoal\(\)/);
+  });
   it('le repli du SDK est complet', () => {
     expect(Object.keys(sdk).sort()).toEqual(['calories', 'carbs_g', 'fat_g', 'protein_g']);
   });

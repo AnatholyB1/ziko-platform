@@ -13,6 +13,7 @@ import { showAlert } from '@ziko/plugin-sdk';
 import { supabase, sessionManager } from '../lib/supabase';
 import { queryClient } from '../lib/queryClient';
 import { triggerRetroactiveRecompute } from '../lib/onboardingRecompute';
+import { loadInitialSession, deferProfileRefresh } from '../lib/authInit';
 
 interface AuthState {
   session: Session | null;
@@ -181,23 +182,23 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       if (session) expiryNoticeShown = false;
       if (event === 'SIGNED_OUT' && !userInitiatedSignOut && get().session) {
         // auto sign-out of a previously valid session (refresh token rejected)
-        await handleExpired();
+        deferProfileRefresh(handleExpired); // clearExpiredSession touches supabase: out of the auth lock
         return;
       }
       setSessionUser(set, get, session);
       if (session?.user) {
-        await get().refreshProfile();
+        // Never await supabase calls inside this callback (auth-js lock deadlock): defer.
+        deferProfileRefresh(() => get().refreshProfile());
       } else {
         set({ profile: null });
       }
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSessionUser(set, get, session);
-      if (session?.user) {
-        await get().refreshProfile();
-      }
-      set({ isLoading: false, isInitialized: true });
+    void loadInitialSession({
+      getSession: () => supabase.auth.getSession(),
+      applySession: (session) => setSessionUser(set, get, session as Session | null),
+      refreshProfile: () => get().refreshProfile(),
+      done: () => set({ isLoading: false, isInitialized: true }),
     });
 
     // Foreground: resume token auto-refresh and refresh now if near/after expiry (D-01);

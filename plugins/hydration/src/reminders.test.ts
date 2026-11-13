@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('react-native', () => ({ Platform: { OS: 'android' } }));
 
-import { syncHydrationReminders, getReminderPermission, REMINDER_ID_PREFIX, type NotifModule } from './reminders';
+import { syncHydrationReminders, resyncRemindersFromDb, getReminderPermission, REMINDER_ID_PREFIX, type NotifModule } from './reminders';
 import { __setHapticsForTest, lightImpact } from './haptics';
 import { DEFAULT_SETTINGS } from './settings';
 
@@ -74,5 +74,59 @@ describe('haptique (HY-3)', () => {
     await lightImpact();
     expect(impactAsync).toHaveBeenCalledWith('light');
     __setHapticsForTest(null);
+  });
+});
+
+describe('resyncRemindersFromDb (review A #14)', () => {
+  // Faux client : chaque table renvoie ses lignes ; la chaine est "thenable" quelle que soit sa forme.
+  function fakeClient(tables: Record<string, any>) {
+    return {
+      from: (t: string) => {
+        const res = { data: tables[t] ?? null, error: null };
+        const chain: any = new Proxy(() => chain, {
+          get: (_x, prop) => {
+            if (prop === 'then') return (r: any) => r(res);
+            if (prop === 'maybeSingle' || prop === 'single') return async () => res;
+            return () => chain;
+          },
+          apply: () => chain,
+        });
+        return chain;
+      },
+    } as any;
+  }
+  const now = new Date(2026, 5, 10, 15, 0);
+  const remindersOn = { reminders_enabled: true };
+
+  it('objectif atteint via un log hors ecran Hydratation : DAILY remplaces par des uniques demain', async () => {
+    const { n, store } = fakeNotif();
+    await syncHydrationReminders(n, on, { now }); // etat initial : 9 DAILY
+    const client = fakeClient({
+      ziko_hydration_settings: remindersOn,
+      ziko_user_profiles: { settings: { hydration_goal_ml: 2000 } },
+      ziko_workout_sessions: [],
+      ziko_hydration_logs: [{ amount_ml: 1500 }, { amount_ml: 600 }],
+    });
+    const count = await resyncRemindersFromDb(client, 'u1', n, now);
+    expect(count).toBe(9);
+    expect([...store.values()].every((r) => r.trigger.type === 'date')).toBe(true);
+  });
+  it('objectif non atteint : DAILY', async () => {
+    const { n, store } = fakeNotif();
+    const client = fakeClient({
+      ziko_hydration_settings: remindersOn,
+      ziko_user_profiles: { settings: { hydration_goal_ml: 2000 } },
+      ziko_workout_sessions: [],
+      ziko_hydration_logs: [{ amount_ml: 250 }],
+    });
+    await resyncRemindersFromDb(client, 'u1', n, now);
+    expect([...store.values()].every((r) => r.trigger.type === 'daily')).toBe(true);
+  });
+  it('rappels eteints ou permission refusee : ne planifie rien', async () => {
+    const a = fakeNotif();
+    expect(await resyncRemindersFromDb(fakeClient({ ziko_hydration_settings: { reminders_enabled: false } }), 'u1', a.n, now)).toBeNull();
+    const b = fakeNotif(false, false);
+    expect(await resyncRemindersFromDb(fakeClient({ ziko_hydration_settings: remindersOn }), 'u1', b.n, now)).toBeNull();
+    expect(a.store.size + b.store.size).toBe(0);
   });
 });

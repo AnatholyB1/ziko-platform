@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Svg, { Circle } from 'react-native-svg';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
-import { useThemeStore, showAlert, formatDateFr, DEFAULT_NUTRITION_TARGETS } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, DEFAULT_NUTRITION_TARGETS, localDateKey } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
   const [searchText, setSearchText] = useState('');
   const [calorieSlider, setCalorieSlider] = useState(2000);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   // Get userId
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
       queryFn: async () => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+        const fromDate = localDateKey(sevenDaysAgo);
         const { data, error } = await supabase
           .from('ziko_nutrition_logs')
           .select('*')
@@ -239,7 +239,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
+    return localDateKey(d);
   });
 
   const dailyKcal = last7Days.map((date) => ({

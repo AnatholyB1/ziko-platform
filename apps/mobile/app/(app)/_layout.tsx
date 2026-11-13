@@ -21,7 +21,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
-import { useTranslation, showAlert, useI18nStore } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, useI18nStore, formatDateFr } from '@ziko/plugin-sdk';
 import { appStorage } from '../../src/lib/storage';
 import { getReloginNoticeState, reloginAckKey } from '../../src/lib/reloginNotice';
 import { supabase } from '../../src/lib/supabase';
@@ -178,12 +178,11 @@ export default function AppLayout() {
     appStorage.getString(ackKey).then((acked) => {
       if (cancelled || acked) return;
       const locale = useI18nStore.getState().locale;
-      const dateLabel = state.cutover!.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      });
+      // Deterministic French month names (Hermes can return English ones); the cutover date is a UTC day.
+      const cut = state.cutover!;
+      const dateLabel = locale === 'fr'
+        ? formatDateFr(new Date(cut.getUTCFullYear(), cut.getUTCMonth(), cut.getUTCDate()), { day: 'numeric', month: 'long', year: 'numeric' })
+        : cut.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
       showAlert(
         t('reloginNotice.title'),
         t(state.phase === 'before' ? 'reloginNotice.body_before' : 'reloginNotice.body_after', {

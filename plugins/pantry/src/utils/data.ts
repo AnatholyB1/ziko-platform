@@ -32,23 +32,60 @@ export async function fetchRemainingMacros(supabase: any, userId: string, todayI
   return remainingFromSettings(settingsRes?.data?.settings, (mealsRes?.data ?? []) as Array<Record<string, unknown>>);
 }
 
-/** Execute un RangerPlan. Leve en cas d'erreur Supabase (l'appelant affiche showAlert et recharge). */
-export async function executeRanger(supabase: any, userId: string, plan: RangerPlan): Promise<void> {
-  for (const u of plan.updates) {
-    const patch: Record<string, unknown> = { quantity: u.quantity };
-    if (u.clearExpiry) patch.expiration_date = null;
-    const { error } = await supabase.from('ziko_pantry_items').update(patch).eq('id', u.id);
-    if (error) throw error;
+/**
+ * Execute un RangerPlan avec compensation (revue A #19) : pas de transaction cote client, donc en cas d'erreur
+ * a mi-chemin on ANNULE ce qui a deja ete ecrit (quantites/dates restaurees depuis `before`, lignes inserees
+ * supprimees), puis on leve. Ordre : maj stock -> ajout stock -> suppression des courses (derniere : tant
+ * qu'elle n'a pas reussi, l'article reste a ranger, le stock n'est jamais compte deux fois apres un retry).
+ * Leve en cas d'erreur Supabase (l'appelant affiche showAlert et recharge). Limite : si l'annulation echoue
+ * elle-meme (reseau coupe), un ecart reste possible ; une vraie RPC transactionnelle reste preferable.
+ */
+export async function executeRanger(supabase: any, userId: string, plan: RangerPlan, before: PantryRow[] = []): Promise<void> {
+  const applied: Array<{ id: string; prev: PantryRow | undefined }> = [];
+  let insertedIds: string[] = [];
+  try {
+    for (const u of plan.updates) {
+      const patch: Record<string, unknown> = { quantity: u.quantity };
+      if (u.clearExpiry) patch.expiration_date = null;
+      const { error } = await supabase.from('ziko_pantry_items').update(patch).eq('id', u.id);
+      if (error) throw error;
+      applied.push({ id: u.id, prev: before.find((r) => r.id === u.id) });
+    }
+    if (plan.inserts.length) {
+      const { data, error } = await supabase
+        .from('ziko_pantry_items')
+        .insert(plan.inserts.map((i) => ({ ...i, user_id: userId })))
+        .select('id');
+      if (error) throw error;
+      insertedIds = ((data ?? []) as Array<{ id: string }>).map((r) => r.id);
+    }
+    for (const id of plan.deleteShoppingIds) {
+      const { error } = await supabase.from('ziko_shopping_list_items').delete().eq('id', id);
+      if (error) throw error;
+    }
+  } catch (err) {
+    await rollbackRanger(supabase, applied, insertedIds);
+    throw err;
   }
-  if (plan.inserts.length) {
-    const { error } = await supabase
-      .from('ziko_pantry_items')
-      .insert(plan.inserts.map((i) => ({ ...i, user_id: userId })));
-    if (error) throw error;
+}
+
+/** Annulation au mieux : ne leve jamais (l'erreur d'origine prime). */
+async function rollbackRanger(
+  supabase: any,
+  applied: Array<{ id: string; prev: PantryRow | undefined }>,
+  insertedIds: string[],
+): Promise<void> {
+  if (insertedIds.length) {
+    try { await supabase.from('ziko_pantry_items').delete().in('id', insertedIds); } catch { /* best effort */ }
   }
-  for (const id of plan.deleteShoppingIds) {
-    const { error } = await supabase.from('ziko_shopping_list_items').delete().eq('id', id);
-    if (error) throw error;
+  for (const a of applied) {
+    if (!a.prev) continue;
+    try {
+      await supabase
+        .from('ziko_pantry_items')
+        .update({ quantity: a.prev.quantity, expiration_date: a.prev.expiration_date })
+        .eq('id', a.id);
+    } catch { /* best effort */ }
   }
 }
 
@@ -58,6 +95,6 @@ export async function putAway(
   args: { autoChecked: MissingEntry[]; rows: ShoppingRow[]; pantry: PantryRow[] },
 ): Promise<RangerPlan> {
   const plan = planRanger(args);
-  await executeRanger(supabase, userId, plan);
+  await executeRanger(supabase, userId, plan, args.pantry);
   return plan;
 }

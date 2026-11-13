@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
-import { localDateKey } from '../lib/localDate';
+import { localDateKey, consecutiveDayStreak } from '../lib/localDate';
+import { COUNTABLE_SESSION_OR_FILTER } from '../lib/workoutPlan';
 import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
+import { fetchKcalGoal, DEFAULT_NUTRITION_TARGETS } from '@ziko/plugin-sdk';
 import { DEFAULT_GOAL_ML, fetchEffectiveGoalMl } from '@ziko/plugin-hydration/settings';
 
 // ── Fallback constants ────────────────────────────────────────
@@ -62,7 +64,8 @@ export function useSessionStreak() {
   return useQuery({
     queryKey: ['session_streak', userId],
     queryFn: async () => {
-      const since = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
+      // `since` = instant (UTC) ; les jours sont comptes en date LOCALE (revue A #5).
+      const since = new Date(Date.now() - 61 * 86400000).toISOString();
       const { data } = await supabase
         .from('ziko_workout_sessions')
         .select('started_at')
@@ -70,20 +73,7 @@ export function useSessionStreak() {
         .gte('started_at', since)
         .order('started_at', { ascending: false });
 
-      const uniqueDays = new Set(
-        (data ?? []).map((r: { started_at: string }) => r.started_at.split('T')[0]),
-      );
-
-      let streak = 0;
-      const cursor = new Date();
-      cursor.setHours(0, 0, 0, 0);
-
-      while (uniqueDays.has(localDateKey(cursor))) {
-        streak++;
-        cursor.setTime(cursor.getTime() - 86400000);
-      }
-
-      return streak;
+      return consecutiveDayStreak((data ?? []).map((r: { started_at: string }) => r.started_at));
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
@@ -99,7 +89,7 @@ export function useStreak() {
   return useQuery({
     queryKey: ['streak', userId],
     queryFn: async () => {
-      const since = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
+      const since = localDateKey(new Date(Date.now() - 60 * 86400000));
       const { data } = await supabase
         .from('ziko_habit_logs')
         .select('date')
@@ -209,6 +199,19 @@ export function useNutritionToday() {
   });
 }
 
+// ── useNutritionGoal ──────────────────────────────────────────
+// Objectif kcal : meme source que l'ecran Repas (ziko_user_plugins.settings), repli 2000.
+export function useNutritionGoal() {
+  const userId = useAuthStore((s) => s.user?.id);
+  return useQuery({
+    queryKey: ['nutrition', 'goal', userId],
+    queryFn: () => fetchKcalGoal(supabase, userId!),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 10,
+    placeholderData: DEFAULT_NUTRITION_TARGETS.calories,
+  });
+}
+
 // ── useWeeklySessions ─────────────────────────────────────────
 // Fetches workout_sessions for the last 7 days, ordered newest first.
 // Used for WeekStrip session dot computation.
@@ -220,10 +223,10 @@ export function useWeeklySessions() {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
       const { data, error } = await supabase
         .from('ziko_workout_sessions')
-        .select('id, started_at, name, total_volume_kg, total_sets')
+        .select('id, started_at, name, total_volume_kg, total_sets, ended_at')
         .eq('user_id', userId!)
         // TRAIN-03: a session without any validated set is not counted (see isCountableSession)
-        .or('total_sets.gt.0,total_volume_kg.gt.0')
+        .or(COUNTABLE_SESSION_OR_FILTER)
         .gte('started_at', weekAgo)
         .order('started_at', { ascending: false });
       if (error) throw error;
@@ -269,7 +272,7 @@ export function useRecentSessions() {
         .from('ziko_workout_sessions')
         .select('id, name, started_at, ended_at, total_volume_kg, total_duration_active_seconds, total_sets')
         .eq('user_id', userId!)
-        .or('total_sets.gt.0,total_volume_kg.gt.0')
+        .or(COUNTABLE_SESSION_OR_FILTER)
         .order('started_at', { ascending: false })
         .limit(3);
       if (error) throw error;

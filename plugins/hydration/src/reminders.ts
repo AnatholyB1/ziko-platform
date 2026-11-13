@@ -4,7 +4,10 @@
  * paresseux en prod (jamais au chargement du module, cf. plugins/habits/src/notifications.ts).
  */
 import { Platform } from 'react-native';
-import { computeReminderTimes, type HydrationSettings } from './settings';
+import {
+  computeReminderTimes, fetchSettings, fetchEffectiveGoalMl, localDateKey,
+  type HydrationSettings, type HydrationClient,
+} from './settings';
 
 export const REMINDER_ID_PREFIX = 'hydration-reminder-';
 
@@ -97,4 +100,32 @@ export async function syncHydrationReminders(n: NotifModule, s: HydrationSetting
     count++;
   }
   return count;
+}
+
+/**
+ * Recalcule l'etat "objectif atteint" depuis la base puis replanifie les rappels (revue A #14).
+ * A appeler apres TOUT log d'eau (Quick Log de l'accueil, seance, ecran Hydratation) et au focus de
+ * l'accueil (restaure les DAILY le lendemain). N'agit que si les rappels sont actives ET la permission
+ * deja accordee ; ne demande jamais la permission ; ne leve jamais. Retourne le nombre planifie (ou null).
+ */
+export async function resyncRemindersFromDb(
+  client: HydrationClient,
+  userId: string,
+  n: NotifModule | null = loadNotifModule(),
+  now: Date = new Date(),
+): Promise<number | null> {
+  try {
+    if (!n) return null;
+    const settings = await fetchSettings(client, userId);
+    if (!settings.remindersEnabled) return null;
+    if ((await getReminderPermission(n, false)) !== 'granted') return null;
+    const [goalMl, logs] = await Promise.all([
+      fetchEffectiveGoalMl(client, userId, now),
+      client.from('ziko_hydration_logs').select('amount_ml').eq('user_id', userId).eq('date', localDateKey(now)),
+    ]);
+    const total = ((logs?.data ?? []) as { amount_ml: number | null }[]).reduce((sum, r) => sum + (r.amount_ml ?? 0), 0);
+    return await syncHydrationReminders(n, settings, { goalReachedToday: total >= goalMl, now });
+  } catch {
+    return null;
+  }
 }

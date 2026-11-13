@@ -33,7 +33,10 @@ export async function sendFriendRequestFromSearch(addresseeId: string, deps: Dep
   // unique (requester_id, addressee_id): the request already exists -> treat as sent
   if (code === '23505') return { ok: true, alreadySent: true };
   // RLS rejection: JWT no longer maps to requester_id (expired/anon token)
-  if (code === '42501' || /row-level security|jwt|permission denied/i.test(String(error.message ?? ''))) {
+  // 'permission denied for table/function' = GRANT manquant (code 42501 aussi) : pas une session expiree (revue A #25).
+  const msg = String(error.message ?? '');
+  const missingGrant = /permission denied for/i.test(msg);
+  if (!missingGrant && (code === '42501' || /row-level security|jwt/i.test(msg))) {
     return { ok: false, reason: 'session', message: 'Ta session a expiré. Reconnecte-toi pour continuer.' };
   }
   return { ok: false, reason: 'unknown', message: 'Impossible d\'envoyer la demande. Réessaie.' };

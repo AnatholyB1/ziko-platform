@@ -4,6 +4,7 @@ import {
   type AwardedBadge, type BadgeDefinition, type BadgeProgressRow, type EarnedBadge,
 } from './rewards';
 import { parseQuestSync, type QuestSync } from './quests';
+import { computeNextStreak } from './streak';
 
 // ── Types ────────────────────────────────────────────────
 export interface LevelDef {
@@ -183,31 +184,27 @@ export async function loadGamification(supabase: any) {
 
 // ── Update streak ───────────────────────────────────────
 async function updateStreak(supabase: any, userId: string, profile: GamificationProfile) {
-  const today = new Date().toISOString().split('T')[0];
-  if (profile.last_activity_date === today) return profile;
+  const next = computeNextStreak(profile);
+  if (!next.changed) return profile;
+  const newStreak = next.current_streak;
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-  let newStreak = 1;
-  if (profile.last_activity_date === yesterdayStr) {
-    newStreak = profile.current_streak + 1;
-  }
-
-  const longestStreak = Math.max(profile.longest_streak, newStreak);
-
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('ziko_user_gamification')
     .update({
       current_streak: newStreak,
-      longest_streak: longestStreak,
-      last_activity_date: today,
+      longest_streak: next.longest_streak,
+      last_activity_date: next.today,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId)
     .select('*')
     .single();
+
+  // Never silent: if the client DML is revoked in prod, the streak would never progress (review A #17).
+  if (error) {
+    console.warn('[gamification] streak update failed:', error.message ?? error);
+    return profile;
+  }
 
   // Check streak milestones
   for (const milestone of STREAK_MILESTONES) {

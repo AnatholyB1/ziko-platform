@@ -13,7 +13,8 @@ import { localDateKey } from './localDate';
 
 // ── Constantes ────────────────────────────────────────────────
 export const WATER_STEP_ML = 250;
-export const NUTRITION_GOAL_KCAL = 2200; // repli : pas de cible kcal en base
+// Repli commun = DEFAULT_NUTRITION_TARGETS.calories (plugin-sdk) ; egalite garantie par lib/__tests__/nutritionTargets.test.ts.
+export const NUTRITION_GOAL_KCAL = 2000;
 export const WEIGHT_MIN_KG = 20;
 export const WEIGHT_MAX_KG = 400;
 
@@ -158,7 +159,7 @@ export async function saveTodayMood(
  * Formule (documentee, D-04). Moyenne des composantes QUI ONT DES DONNEES :
  *  - Sommeil   : duree / 8 h, plafonne a 100, si une nuit est enregistree (> 0 h)
  *  - Hydratation : ml du jour / 2500, si > 0 ml
- *  - Nutrition : kcal du jour / 2200, si > 0 kcal
+ *  - Nutrition : kcal du jour / objectif nutrition (reglages, repli 2000), si > 0 kcal
  *  - Charge    : 100 si seance faite aujourd'hui OU objectif hebdo atteint (jour de repos
  *                legitime) ; sinon composante ABSENTE (seance a venir != 0 %)
  * Aucune composante avec donnees => score null + etat vide (pas de "0" trompeur).
