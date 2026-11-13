@@ -18,10 +18,10 @@ export interface Container {
 }
 
 const DEFAULT_CONTAINERS: Container[] = [
-  { id: 'glass', label: 'Verre', ml: 250, icon: '🥛', isDefault: true },
-  { id: 'bottle', label: 'Bouteille', ml: 500, icon: '🧴', isDefault: true },
-  { id: 'large-bottle', label: 'Grande bouteille', ml: 750, icon: '🍶', isDefault: true },
-  { id: 'litre', label: 'Litre', ml: 1000, icon: '💧', isDefault: true },
+  { id: 'glass', label: 'Verre', ml: 250, icon: 'water-outline', isDefault: true },
+  { id: 'bottle', label: 'Bouteille', ml: 500, icon: 'water-outline', isDefault: true },
+  { id: 'large-bottle', label: 'Grande bouteille', ml: 750, icon: 'water-outline', isDefault: true },
+  { id: 'litre', label: 'Litre', ml: 1000, icon: 'water-outline', isDefault: true },
 ];
 
 interface HydrationStore {

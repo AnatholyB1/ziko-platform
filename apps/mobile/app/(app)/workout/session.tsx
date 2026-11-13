@@ -1062,7 +1062,7 @@ export default function WorkoutSessionScreen() {
             {hasHydration && favContainer && (
               <TouchableOpacity onPress={handleQuickWater}
                 style={{ backgroundColor: theme.info + '22', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+                <Ionicons name="water-outline" size={16} color={theme.primary} />
                 <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>
                   {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
                 </Text>
@@ -1121,18 +1121,18 @@ export default function WorkoutSessionScreen() {
                       )}
                       {hitMin && !hitMax && (
                         <Text style={{ color: theme.success, fontSize: 12, fontWeight: '600' }}>
-                          ✓ Min reached! Target: {formatTime(currentEx.duration_max ?? 0)}
+                          Minimum atteint. Objectif : {formatTime(currentEx.duration_max ?? 0)}
                         </Text>
                       )}
                       {hitMax && (
                         <Text style={{ color: theme.success, fontSize: 12, fontWeight: '700' }}>
-                          ✓ Target reached!
+                          Objectif atteint
                         </Text>
                       )}
                     </View>
                   ) : (
                     <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>
-                      Target: {formatTime(currentEx.duration_seconds ?? 0)}
+                      Objectif : {formatTime(currentEx.duration_seconds ?? 0)}
                     </Text>
                   )}
                 </View>
@@ -1443,7 +1443,7 @@ export default function WorkoutSessionScreen() {
                 {hasHydration && favContainer && (
                   <TouchableOpacity onPress={handleQuickWater}
                     style={{ backgroundColor: theme.info + '18', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.info + '44', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 16 }}>{favContainer.icon}</Text>
+                    <Ionicons name="water-outline" size={18} color={theme.primary} />
                     <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>{favContainer.ml}ml</Text>
                   </TouchableOpacity>
                 )}
@@ -1639,7 +1639,7 @@ export default function WorkoutSessionScreen() {
         {hasHydration && favContainer && (
           <TouchableOpacity onPress={handleQuickWater}
             style={{ backgroundColor: theme.info + '22', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+            <Ionicons name="water-outline" size={16} color={theme.primary} />
             <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>
               {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
             </Text>

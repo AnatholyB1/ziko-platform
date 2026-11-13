@@ -364,7 +364,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       }
     }
     if (worstHabit) {
-      return `Tu rates "${worstHabit.name}" ${worstMissed} fois sur 7. On baisse la cible ?`;
+      return `"${worstHabit.name}" est plus difficile en ce moment (${7 - worstMissed} jour${7 - worstMissed > 1 ? 's' : ''} sur 7). On ajuste la cible pour repartir sur de bonnes bases ?`;
     }
     // Generic streak encouragement
     const completedToday = todayLogs.length;

@@ -645,7 +645,7 @@ export default function ProgramDetailScreen() {
           if (weekday === undefined) continue;
           await ExpoNotifications.scheduleNotificationAsync({
             content: {
-              title: "Séance du jour 💪",
+              title: "Séance du jour",
               body: "C'est ton jour d'entraînement — allez !",
               data: { workoutReminder: true },
             },

@@ -52,7 +52,7 @@ export function NotificationPermissionModal({
               marginHorizontal: 20,
             }}
           >
-            {'🔔 Reste dans la zone — Ne rate plus une séance'}
+            {'Reste dans la zone : ne rate plus une séance'}
           </Text>
 
           {/* Example notification cards */}

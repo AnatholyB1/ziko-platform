@@ -799,7 +799,7 @@ export default function DashboardScreen() {
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Humeur</Text>
             {moodLogged && (
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#22C55E' }}>✓ logué</Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#22C55E' }}>Logué</Text>
             )}
           </TouchableOpacity>
           {/* Weight */}
@@ -824,7 +824,7 @@ export default function DashboardScreen() {
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Poids</Text>
             {weightLogged && (
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#F59E0B' }}>✓ logué</Text>
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#F59E0B' }}>Logué</Text>
             )}
           </TouchableOpacity>
           {/* Meal */}
