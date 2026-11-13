@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -27,10 +27,14 @@ export default function WorkoutSummaryScreen() {
   const [notes, setNotes] = useState(() => '');
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!session) {
-    router.replace('/(app)/workout/');
-    return null;
-  }
+  // Navigation hors rendu : router.replace pendant le rendu declenche
+  // "Cannot update a component (Navigator)" (UAT run 6).
+  const hasSession = !!session;
+  useEffect(() => {
+    if (!hasSession) router.replace('/(app)/workout');
+  }, [hasSession]);
+
+  if (!session) return null;
 
   // Derived values
   const durationMin = Math.round((session.durationSeconds ?? 0) / 60);
@@ -60,7 +64,7 @@ export default function WorkoutSummaryScreen() {
     } finally {
       setIsSaving(false);
     }
-    router.replace('/(app)/(tabs)/workout' as any);
+    router.replace('/(app)/workout');
   };
 
   const handleShare = async () => {
