@@ -55,7 +55,7 @@ const before: PantryRow[] = [
 ];
 const plan = {
   updates: [{ id: 'p1', quantity: 3, clearExpiry: true }, { id: 'p2', quantity: 12, clearExpiry: false }],
-  inserts: [{ name: 'Farine', quantity: 1, unit: 'kg', storage_location: 'cupboard' as const, food_category: 'other' as const, low_stock_threshold: 1 }],
+  inserts: [{ name: 'Farine', quantity: 1, unit: 'kg', storage_location: 'pantry' as const, food_category: 'other' as const, low_stock_threshold: 1 }],
   deleteShoppingIds: ['s1', 's2'],
 };
 
