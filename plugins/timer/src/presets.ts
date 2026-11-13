@@ -64,6 +64,21 @@ export function rowToPreset(row: PresetRow): TimerPresetItem {
   };
 }
 
+/**
+ * TIMR-03 (revue B M11) : l'ancien preset de test `Exemple` n'est PAS supprime en base (donnee utilisateur, aucune
+ * migration destructive) ; il n'est simplement plus affiche tant qu'il est exactement l'ancien exemple NON edite.
+ * Non edite = nom exact `Exemple` ET les trois champs ajoutes en P20 (echauffement, series, repos entre rounds) encore
+ * a leurs valeurs par defaut 0 / 1 / 0 (une ligne ouverte dans le nouvel editeur les aurait fixees). Renommee ou editee :
+ * elle redevient un preset normal et s'affiche.
+ */
+export function isLegacyExamplePreset(p: Pick<PresetFields, 'name' | 'warmup_sec' | 'sets' | 'round_rest_sec'>): boolean {
+  return p.name.trim() === 'Exemple' && p.warmup_sec === 0 && p.sets === 1 && p.round_rest_sec === 0;
+}
+
+export function visiblePresets<T extends Pick<PresetFields, 'name' | 'warmup_sec' | 'sets' | 'round_rest_sec'>>(presets: T[]): T[] {
+  return presets.filter((p) => !isLegacyExamplePreset(p));
+}
+
 type DurationFields = Pick<PresetFields, 'warmup_sec' | 'work_sec' | 'rest_sec' | 'sets' | 'rounds' | 'round_rest_sec'>;
 
 /**
