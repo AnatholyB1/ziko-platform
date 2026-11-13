@@ -177,8 +177,6 @@ export function useHydrationToday() {
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 2, // 2 min
-    retry: 2, // une lecture ratee juste apres la connexion ne doit pas devenir "aucun programme"
-    refetchOnMount: opts?.refetchOnMount ?? true,
   });
 }
 
