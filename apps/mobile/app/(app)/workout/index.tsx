@@ -20,6 +20,7 @@ import WSHeader from '../../../src/components/WSHeader';
 import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner';
 import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../../src/lib/neutralToast';
+import { isStaleSession } from '../../../src/lib/staleSession';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
@@ -30,7 +31,16 @@ function ResumeBar({ session, theme }: { session: WorkoutSession; theme: any }) 
     : 0;
   return (
     <TouchableOpacity
-      onPress={() => router.push('/(app)/workout/session')}
+      onPress={() => {
+        // "Reprendre" ne doit JAMAIS ouvrir une autre seance (vide) : on re-verifie la seance au moment du tap.
+        const live = useWorkoutStore.getState().currentSession;
+        if (!live || live.id !== session.id || isStaleSession(live.started_at)) {
+          neutralToast("Cette séance n'est plus disponible.");
+          useWorkoutStore.getState().settleStaleSession();
+          return;
+        }
+        router.push('/(app)/workout/session');
+      }}
       style={{
         marginHorizontal: 16,
         marginBottom: 12,
@@ -430,6 +440,12 @@ export default function WorkoutIndexScreen() {
     loadRecentSessions(90);
   }, [userId]);
 
+  // Seance fantome : une seance ouverte depuis trop longtemps est cloturee (sans credit ni XP), plus proposee.
+  const settleStaleSession = useWorkoutStore((s) => s.settleStaleSession);
+  useEffect(() => {
+    if (currentSession) settleStaleSession();
+  }, [currentSession?.id]);
+
   // TanStack Query for ai_generated_programs
   const { data: activeProgram, isLoading } = useQuery<AiGeneratedProgram | null>({
     queryKey: ['active-program', userId],
@@ -566,7 +582,7 @@ export default function WorkoutIndexScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ResumeBar */}
-        {currentSession && <ResumeBar session={currentSession} theme={theme} />}
+        {currentSession && !isStaleSession(currentSession.started_at) && <ResumeBar session={currentSession} theme={theme} />}
 
         {/* P24 : fin de programme -> bilan + relance de l'atelier (bandeau neutre) */}
         <ProgramRelaunchBanner />

@@ -7,6 +7,7 @@ import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
 import { normalizePlanSessions, parseReps, filterCountableSessions } from '../lib/workoutPlan';
 import { resolveExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
+import { classifyRestoredSession, classifyLiveSession } from '../lib/staleSession';
 
 const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
@@ -71,6 +72,11 @@ interface WorkoutState {
   saveSessionNotes: (id: string, notes: string) => void;
 
   restoreSession: () => Promise<void>;
+  /**
+   * Seance fantome : si la seance en cours est perimee (> STALE_SESSION_HOURS), la cloture sans credit ni XP
+   * (ou la supprime si aucune serie validee). Renvoie true si elle a ete retiree de l'etat.
+   */
+  settleStaleSession: () => Promise<boolean>;
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
   /**
    * Single entry point for "start today's planned session" (TRAIN-01/02). Loads the AI program,
@@ -104,6 +110,52 @@ interface WorkoutState {
   updateProgramExercise: (exerciseId: string, data: Partial<ProgramExerciseInput>) => Promise<void>;
   removeProgramExercise: (exerciseId: string) => Promise<void>;
   reorderProgramExercises: (workoutId: string, exerciseIds: string[]) => Promise<void>;
+}
+
+/** Series validees d'une seance (plus recentes d'abord). Vide en cas d'erreur de lecture. */
+async function fetchCompletedSets(sessionId: string): Promise<Array<{ completed_at?: string | null; created_at?: string | null }>> {
+  try {
+    const { data } = await supabase
+      .from('ziko_session_sets')
+      .select('completed_at, created_at')
+      .eq('session_id', sessionId)
+      .eq('completed', true)
+      .order('created_at', { ascending: false });
+    return (data ?? []) as Array<{ completed_at?: string | null; created_at?: string | null }>;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Retire une seance ouverte perimee : 'discard' supprime la ligne et ses enfants ; 'autoclose' la termine a
+ * l'heure de sa derniere serie. Jamais de credit, jamais d'XP (ne passe PAS par endSession).
+ */
+async function closeOpenSession(
+  session: WorkoutSession,
+  verdict: 'discard' | 'autoclose',
+  sets: Array<{ completed_at?: string | null; created_at?: string | null }>,
+  userId: string,
+): Promise<void> {
+  try {
+    if (verdict === 'discard') {
+      await supabase.from('ziko_session_sets').delete().eq('session_id', session.id);
+      await supabase.from('ziko_session_exercises').delete().eq('session_id', session.id);
+      await supabase.from('ziko_workout_sessions').delete().eq('id', session.id);
+    } else {
+      const last = sets[0];
+      const endedAt = last?.completed_at ?? last?.created_at ?? session.started_at;
+      await supabase
+        .from('ziko_workout_sessions')
+        .update({ ended_at: endedAt, total_sets: sets.length })
+        .eq('id', session.id)
+        .is('ended_at', null);
+    }
+  } catch {
+    // best effort : la seance reste de toute facon retiree de la reprise ci-dessous
+  }
+  AsyncStorage.removeItem(sessionKey(userId)).catch(() => {});
+  useWorkoutStore.setState({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
 }
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
@@ -140,13 +192,35 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .is('ended_at', null)
         .single();
       if (data) {
-        set({ currentSession: data as WorkoutSession });
+        const open = data as WorkoutSession;
+        // Seance fantome : sans serie validee, ou ouverte depuis trop longtemps, on ne la propose plus.
+        const sets = await fetchCompletedSets(open.id);
+        const verdict = classifyRestoredSession({ startedAt: open.started_at, completedSets: sets.length });
+        if (verdict === 'resume') {
+          set({ currentSession: open });
+        } else {
+          await closeOpenSession(open, verdict, sets, user.id);
+        }
       } else {
         await AsyncStorage.removeItem(sessionKey(user.id));
       }
     } catch {
       await AsyncStorage.removeItem(sessionKey(user.id));
     }
+  },
+
+  settleStaleSession: async () => {
+    const { currentSession } = get();
+    const user = useAuthStore.getState().user;
+    if (!currentSession || !user) return false;
+    // Seance deja ecoulee en memoire : l'anciennete decide (cf. classifyLiveSession).
+    const early = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: 1 });
+    if (early === 'resume') return false;
+    const sets = await fetchCompletedSets(currentSession.id);
+    const verdict = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: sets.length });
+    if (verdict === 'resume') return false;
+    await closeOpenSession(currentSession, verdict, sets, user.id);
+    return true;
   },
 
   startSession: async (programWorkoutId, name) => {
