@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getProgramWeekCount, getProgramSessionsPerWeek, getProgramSessionList } from '../lib/programShape';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,16 +38,16 @@ function getProgramName(p: AIProgram): string {
 }
 
 function getProgramWeeks(p: AIProgram): number {
-  return p.program_data?.weeks ?? 8;
+  return getProgramWeekCount(p.program_data);
 }
 
 function getProgramSessions(p: AIProgram): number {
-  return p.program_data?.sessions?.length ?? p.program_data?.sessions_per_week ?? 3;
+  return getProgramSessionsPerWeek(p.program_data);
 }
 
 function getProgramProgress(p: AIProgram): number {
   // Derive a display progress (0–100) from JSONB; default 0
-  const sessions = p.program_data?.sessions;
+  const sessions = getProgramSessionList(p.program_data);
   if (Array.isArray(sessions) && sessions.length > 0) {
     const done = sessions.filter((s: any) => s.completed).length;
     return Math.round((done / sessions.length) * 100);
