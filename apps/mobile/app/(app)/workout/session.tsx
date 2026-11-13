@@ -10,6 +10,11 @@ import { useWorkoutStore, type CompletedSession } from '../../../src/stores/work
 import { shouldPersistSession } from '../../../src/lib/workoutPlan';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { showAlert } from '@ziko/plugin-sdk';
+import { useQueryClient } from '@tanstack/react-query';
+import { localDateKey } from '../../../src/lib/localDate';
+import { writeSessionTotals, saveWithRetry } from '../../../src/lib/sessionFinish';
+import { invalidateHomeQueries } from '../../../src/lib/homeQueries';
+import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
@@ -243,6 +248,7 @@ export default function WorkoutSessionScreen() {
   const startSession = useWorkoutStore((s) => s.startSession);
   const cycleConfig = useWorkoutStore((s) => s.cycleConfig);
   const theme = useThemeStore((s) => s.theme);
+  const queryClient = useQueryClient();
 
   // ── Cycle weight helper ────────────────────────────────
   const getCycledWeight = (baseWeight: number | null): number | null => {
@@ -271,7 +277,7 @@ export default function WorkoutSessionScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data, error } = await supabase
         .from('ziko_hydration_logs')
         .insert({ user_id: user.id, amount_ml: favContainer.ml, date: today })
@@ -280,6 +286,8 @@ export default function WorkoutSessionScreen() {
       if (error) throw error;
       hydrationStore.addLog(data);
       setWaterAdded((w) => w + favContainer.ml);
+      void queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      void resyncRemindersFromDb(supabase, user.id);
     } catch {}
   };
 
@@ -769,7 +777,7 @@ export default function WorkoutSessionScreen() {
       if (pw) programId = pw.program_id;
     }
 
-    await supabase.from('ziko_workout_sessions').update({
+    await writeSessionTotals(supabase, currentSession.id, {
       ended_at: new Date().toISOString(),
       total_volume_kg: totalVolume,
       total_sets: totalSetsCount,
@@ -779,7 +787,7 @@ export default function WorkoutSessionScreen() {
       total_duration_active_seconds: totalDurationActiveSec,
       day_of_week: new Date().getDay() || 7,
       program_id: programId,
-    }).eq('id', currentSession.id);
+    });
 
     await endSession();
   };
@@ -847,24 +855,31 @@ export default function WorkoutSessionScreen() {
         {
           text: t('workout.finish'), onPress: async () => {
             if (empty) { await discardEmptySession(); return; }
-            const completed = buildCompletedSession();
-            try { await saveSessionStats(); } catch {}
-            try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
-            useWorkoutStore.getState().setLastCompletedSession(completed);
-            router.replace('/(app)/workout/summary');
+            await handleFinish();
           },
         },
       ],
     );
   };
 
-  const handleFinish = async () => {
-    if (!shouldPersistSession(countCompletedSets())) { await discardEmptySession(); return; }
+  // Returns true when the session was saved (and we navigated to the summary), false otherwise.
+  const handleFinish = async (): Promise<boolean> => {
+    if (!shouldPersistSession(countCompletedSets())) { await discardEmptySession(); return false; }
     const completed = buildCompletedSession();
-    await saveSessionStats();
+    // Never swallow a failed totals write: without totals the session is lost (TRAIN-03 filter).
+    const saved = await saveWithRetry(saveSessionStats);
+    if (!saved) {
+      showAlert(
+        'Séance non enregistrée',
+        "Impossible de sauvegarder la séance. Vérifie ta connexion puis appuie de nouveau sur Terminer : tes séries sont conservées.",
+      );
+      return false;
+    }
     try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
+    void invalidateHomeQueries(queryClient);
     useWorkoutStore.getState().setLastCompletedSession(completed);
     router.replace('/(app)/workout/summary');
+    return true;
   };
 
   // ── Exercise description ───────────────────────────────
@@ -1557,7 +1572,7 @@ export default function WorkoutSessionScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/stretching/dashboard' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/stretching/dashboard' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
                     <Ionicons name="body-outline" size={26} color={theme.primary} />
@@ -1565,7 +1580,7 @@ export default function WorkoutSessionScreen() {
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Retour au calme</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/journal/entry' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/journal/entry' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
                     <Ionicons name="create-outline" size={26} color={theme.primary} />
@@ -1573,7 +1588,7 @@ export default function WorkoutSessionScreen() {
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Humeur post-séance</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/hydration/dashboard' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/hydration/dashboard' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
                     <Ionicons name="water-outline" size={26} color={theme.primary} />
@@ -1581,7 +1596,7 @@ export default function WorkoutSessionScreen() {
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Boire de l'eau</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/nutrition/log' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/nutrition/log' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
                     <Ionicons name="nutrition-outline" size={26} color={theme.primary} />

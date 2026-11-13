@@ -65,6 +65,19 @@ export function extractRawSessions(programData: any, weekNumber = 1): RawSession
   return [];
 }
 
+/**
+ * Base of `day_index` (0 = Monday-first / 1 = ISO Monday=1). Explicit convention first:
+ * `program_data.day_index_base` (0 | 1). Without it nothing is guessed from the *shape* of the
+ * data except the one unambiguous case: a literal 0 can only exist in a 0-based program.
+ * Otherwise the repo-wide convention applies (ISO, 1 = Monday, same as `day_of_week`).
+ * Writers that emit `day_index` should set `day_index_base` (review A #9).
+ */
+export function resolveDayIndexBase(programData: any, raws: RawSession[]): 0 | 1 {
+  const declared = programData?.day_index_base;
+  if (declared === 0 || declared === 1) return declared;
+  return raws.some((r) => r?.day_index === 0) ? 0 : 1;
+}
+
 /** Reads an explicit weekday from a raw session, returns null when absent/invalid. */
 export function readExplicitDayIndex(raw: RawSession, indexBasedZero: boolean): number | null {
   if (typeof raw.day_index === 'number' && Number.isFinite(raw.day_index)) {
@@ -109,7 +122,7 @@ export function normalizePlanSessions(programData: any, weekNumber = 1): PlanSes
   const raws = extractRawSessions(programData, weekNumber);
   if (raws.length === 0) return [];
 
-  const hasZeroIndex = raws.some((r) => r?.day_index === 0);
+  const hasZeroIndex = resolveDayIndexBase(programData, raws) === 0;
   const explicit = raws.map((r) => readExplicitDayIndex(r ?? {}, hasZeroIndex));
   const allExplicit = explicit.every((d) => d !== null);
   const distinct = new Set(explicit).size === explicit.length;
@@ -188,12 +201,23 @@ export function parseReps(reps: string | number | null | undefined): {
 export interface CountableSessionLike {
   total_sets?: number | null;
   total_volume_kg?: number | null;
+  ended_at?: string | null;
 }
 
-/** A session counts only if at least one set was validated (legacy rows: volume > 0). */
+/**
+ * A session counts if at least one set was validated (total_sets > 0, or legacy volume > 0),
+ * OR it is a legacy FINISHED session that never got totals (total_sets NULL + ended_at set).
+ * An explicit total_sets = 0 (written at the end of an empty session) is not counted, and neither
+ * is a session still open / killed mid-way (total_sets NULL, no ended_at).
+ */
 export function isCountableSession(s: CountableSessionLike): boolean {
-  return (s.total_sets ?? 0) > 0 || (s.total_volume_kg ?? 0) > 0;
+  if ((s.total_sets ?? 0) > 0 || (s.total_volume_kg ?? 0) > 0) return true;
+  return s.total_sets == null && !!s.ended_at;
 }
+
+/** PostgREST `.or()` twin of isCountableSession (same predicate, evaluated server side). */
+export const COUNTABLE_SESSION_OR_FILTER =
+  'total_sets.gt.0,total_volume_kg.gt.0,and(total_sets.is.null,ended_at.not.is.null)';
 
 export function filterCountableSessions<T extends CountableSessionLike>(sessions: T[]): T[] {
   return sessions.filter(isCountableSession);

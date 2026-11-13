@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
   Modal, TextInput, useWindowDimensions, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -29,6 +29,7 @@ import {
   useSleepToday,
   useSleepSettings,
   useHydrationToday,
+  useNutritionGoal,
   useNutritionToday,
   useSessionStreak,
   HOME_DEFAULTS,
@@ -41,6 +42,9 @@ import {
   WATER_STEP_ML, formatLitres, logWater, parseWeightInput, saveTodayWeight, saveTodayMood,
   computeFormScore, NUTRITION_GOAL_KCAL,
 } from '../../src/lib/quickLog';
+import { localDateKey, localDateKeyFromISO } from '../../src/lib/localDate';
+import { invalidateHomeQueries } from '../../src/lib/homeQueries';
+import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
 async function fireAndForget(tool: string, input: Record<string, unknown>): Promise<void> {
@@ -294,8 +298,21 @@ export default function DashboardScreen() {
   const { data: sleepData, isLoading: sleepLoading } = useSleepToday();
   const { data: hydrationData, isLoading: hydrationLoading } = useHydrationToday();
   const { data: nutritionData, isLoading: nutritionLoading } = useNutritionToday();
+  const { data: kcalGoal = NUTRITION_GOAL_KCAL } = useNutritionGoal();
   const { data: todayWeight } = useTodayWeight();
   const { data: todayMood } = useTodayMood();
+
+  // ── Refetch at focus (review A #2) ────────────────────────────────────────
+  // The home tab stays mounted (staleTime 5 min): coming back from a session, Hydratation, Repas
+  // or Mesures must show fresh data. The first focus is skipped (queries are already loading).
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) { firstFocus.current = false; return; }
+      void invalidateHomeQueries(queryClient);
+      if (userId) void resyncRemindersFromDb(supabase, userId); // restaure les DAILY le lendemain
+    }, [queryClient, userId]),
+  );
 
   // ── Installed plugins from user_plugins (HOME-08) ─────────────────────────
   const { data: installedPluginIds } = useQuery({
@@ -322,24 +339,24 @@ export default function DashboardScreen() {
   const waterGoalMl = hydrationData?.goalMl ?? HOME_DEFAULTS.hydrationGoalMl;
   const waterPct = Math.min(100, Math.round((waterMl / waterGoalMl) * 100));
   const kcal = nutritionData?.totalCalories ?? 0;
-  const nutritionPct = Math.min(100, Math.round((kcal / NUTRITION_GOAL_KCAL) * 100));
+  const nutritionPct = Math.min(100, Math.round((kcal / kcalGoal) * 100));
   const weeklyGoal = parseWorkoutFrequency(profile?.workout_frequency);
   const weeklyCount = weeklySessions.length;
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const todayDone = weeklySessions.some((s: { started_at: string }) => s.started_at.startsWith(todayStr));
+  const todayStr = localDateKey();
+  const todayDone = weeklySessions.some((s: { started_at: string }) => localDateKeyFromISO(s.started_at) === todayStr);
   // Score "Forme du jour" (QLOG-05) : moyenne des composantes AVEC donnees, etat vide sinon.
   // Formule documentee dans src/lib/quickLog.ts (computeFormScore).
   const formScore = computeFormScore({
     sleepH: sleepTargetH > 0 ? sleepH : 0, sleepTargetH,
     waterMl, waterGoalMl,
-    kcal, todayDone, weeklyCount, weeklyGoal,
+    kcal, kcalGoal, todayDone, weeklyCount, weeklyGoal,
   });
   const loadPct = formScore.parts.find((p) => p.key === 'load')?.pct ?? 0;
   const score = formScore.score ?? 0;
 
   // ── Week strip dates ──────────────────────────────────────────────────────
   const weeklySessionDates = useMemo(() => {
-    return new Set(weeklySessions.map((s) => s.started_at.split('T')[0]));
+    return new Set(weeklySessions.map((s) => localDateKeyFromISO(s.started_at)));
   }, [weeklySessions]);
 
   // ── AI Tips ───────────────────────────────────────────────────────────────
@@ -411,14 +428,18 @@ export default function DashboardScreen() {
   const waterKey = ['hydration', 'today', userId];
   const handleLogWater = async () => {
     if (!userId) return;
-    const prev = queryClient.getQueryData<{ totalMl: number }>(waterKey);
-    queryClient.setQueryData(waterKey, { totalMl: (prev?.totalMl ?? 0) + WATER_STEP_ML });
+    const prev = queryClient.getQueryData<{ totalMl: number; goalMl: number }>(waterKey);
+    // keep goalMl (no flicker back to the default goal) ; rollback re-subtracts instead of restoring a snapshot
+    queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
+      ({ goalMl: HOME_DEFAULTS.hydrationGoalMl, ...cur, totalMl: (cur?.totalMl ?? prev?.totalMl ?? 0) + WATER_STEP_ML }));
     setWaterConfirmed(true);
     setTimeout(() => setWaterConfirmed(false), 2000);
     try {
       await logWater(supabase, userId, WATER_STEP_ML);
+      void resyncRemindersFromDb(supabase, userId); // rappels : stop si l'objectif est atteint
     } catch {
-      queryClient.setQueryData(waterKey, prev);
+      queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
+        cur ? { ...cur, totalMl: Math.max(0, cur.totalMl - WATER_STEP_ML) } : prev);
       setWaterConfirmed(false);
       showAlert("Eau non enregistrée", "Vérifie ta connexion et réessaie.");
     } finally {

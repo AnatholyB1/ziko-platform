@@ -168,6 +168,8 @@ describe('score Forme du jour (QLOG-05)', () => {
     const r = computeFormScore({ ...base, sleepH: 12, waterMl: 9999, kcal: 5000 });
     expect(r.parts.every((p) => p.pct <= 100)).toBe(true);
     expect(r.score).toBe(100);
-    expect(computeFormScore({ ...base, kcal: 1100 }).score).toBe(50);
+    expect(computeFormScore({ ...base, kcal: 1000 }).score).toBe(50);
+    // objectif reel des reglages nutrition (review A #13) : 1300 / 2600 = 50
+    expect(computeFormScore({ ...base, kcal: 1300, kcalGoal: 2600 }).score).toBe(50);
   });
 });

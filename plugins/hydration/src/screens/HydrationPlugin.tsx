@@ -18,7 +18,7 @@ import {
   DEFAULT_GOAL_ML, baseGoalFromProfileSettings, fetchSettings, saveSettings, hasWorkoutOnDay, effectiveGoalMl, coffeeCountedMl,
   remindersRowValue, glassRowValue, coffeeRowValue, bonusRowValue, formatLitres,
 } from '../settings';
-import { loadNotifModule, getReminderPermission, syncHydrationReminders, type PermissionState } from '../reminders';
+import { loadNotifModule, getReminderPermission, syncHydrationReminders, resyncRemindersFromDb, type PermissionState } from '../reminders';
 import { lightImpact } from '../haptics';
 import {
   WATER, RemindersSheet, GlassSheet, CoffeeSheet, BonusSheet, GoalSheet, AmountSheet,
@@ -271,6 +271,8 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       setToast(null);
       queryClient.invalidateQueries({ queryKey: ['hydration_today', userId, today] });
       queryClient.invalidateQueries({ queryKey: ['hydration_history', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      if (userId) void resyncRemindersFromDb(supabase, userId);
     },
     onError: () => setWriteError('Impossible d\'annuler. Vérifie ta connexion.'),
   });
@@ -289,7 +291,8 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(['hydration_settings', userId], saved);
-      queryClient.invalidateQueries({ queryKey: ['hydration', 'goal', userId] });
+      // L'objectif de l'accueil vit dans ['hydration','today',userId] (goalMl), pas dans une cle 'goal'.
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
       setSheet(null);
     },
     onError: (err: any) => {
@@ -315,7 +318,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hydration_goals', userId] });
-      queryClient.invalidateQueries({ queryKey: ['hydration', 'goal', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
       setSheet(null);
     },
     onError: (err: any) => {

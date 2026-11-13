@@ -6,6 +6,8 @@ import {
   pickSessionForToday,
   parseReps,
   isCountableSession,
+  COUNTABLE_SESSION_OR_FILTER,
+  resolveDayIndexBase,
   filterCountableSessions,
   shouldPersistSession,
   defaultDayLayout,
@@ -50,6 +52,18 @@ describe('normalizePlanSessions', () => {
     expect(normalizePlanSessions(data).map((s) => s.dayIndex)).toEqual([0, 3]);
   });
 
+  it('explicit day_index_base wins: 0-based program without Monday session (review A #9)', () => {
+    const pd = { day_index_base: 0, sessions: [
+      { name: 'A', day_index: 1, exercises: [ex('x')] },
+      { name: 'B', day_index: 3, exercises: [ex('y')] },
+      { name: 'C', day_index: 5, exercises: [ex('z')] },
+    ] };
+    expect(normalizePlanSessions(pd).map((s) => s.dayIndex)).toEqual([1, 3, 5]);
+    expect(resolveDayIndexBase(pd, pd.sessions)).toBe(0);
+    // same data without the declaration follows the repo convention (ISO, 1 = Monday)
+    const { day_index_base: _omit, ...legacy } = pd;
+    expect(normalizePlanSessions(legacy).map((s) => s.dayIndex)).toEqual([0, 2, 4]);
+  });
   it('treats 1-based day_index when no zero is present', () => {
     const data = { sessions: [
       { name: 'A', day_index: 1, exercises: [ex('x')] },
@@ -147,6 +161,14 @@ describe('empty sessions are ignored (TRAIN-03)', () => {
     expect(isCountableSession({ total_sets: null, total_volume_kg: null })).toBe(false);
     expect(isCountableSession({ total_sets: 3, total_volume_kg: 0 })).toBe(true);
     expect(isCountableSession({ total_sets: null, total_volume_kg: 120 })).toBe(true);
+  });
+  it('legacy finished sessions without totals are kept, open/killed ones are not (review A #8)', () => {
+    expect(isCountableSession({ total_sets: null, total_volume_kg: null, ended_at: '2026-01-01T10:00:00Z' })).toBe(true);
+    expect(isCountableSession({ total_sets: null, total_volume_kg: null, ended_at: null })).toBe(false);
+    expect(isCountableSession({ total_sets: 0, total_volume_kg: 0, ended_at: '2026-01-01T10:00:00Z' })).toBe(false);
+  });
+  it('server filter mirrors the predicate', () => {
+    expect(COUNTABLE_SESSION_OR_FILTER).toContain('and(total_sets.is.null,ended_at.not.is.null)');
   });
   it('filters a week list so the counter (2/4) ignores empty sessions', () => {
     const week = [
