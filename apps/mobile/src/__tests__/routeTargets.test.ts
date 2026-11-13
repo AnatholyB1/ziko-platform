@@ -192,8 +192,8 @@ describe('routes expo-router reelles', () => {
   it('summary.tsx ne navigue pas pendant le rendu', () => {
     const src = readFileSync(resolve(appDir, '(app)/workout/summary.tsx'), 'utf8');
     // Le early-return `if (!session)` ne doit plus appeler router.replace directement.
-    const early = src.match(/if \(!session\) \{[\s\S]*?\n  \}/);
-    expect(early?.[0] ?? '').not.toMatch(/router\./);
-    expect(src).toMatch(/useEffect\(/);
+    expect(src).not.toMatch(/if \(!session\)[^\n]*\n?[^\n]*router\./);
+    expect(src).toMatch(/useEffect\(\(\) => \{\s*if \(!hasSession\) router\.replace\(/);
+    expect(src).not.toMatch(/\(tabs\)/);
   });
 });
