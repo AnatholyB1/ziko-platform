@@ -12,3 +12,6 @@
 - 'Pas encore demarre' NON-CONFIRME (aucune etiquette de statut visible sur lignes/detail)
 - Liste : 1 actif (Force 5x5 bloc 2, 38 %), 4 autres, texte 'Un seul programme est actif a la fois' OK
 Detail : ../../UAT-RESULTS-run6.md
+
+## Run 10
+Entrainement Bloc de force + Cree par moi : PASS. Serie 5 jours identique 3 ecrans : PASS.

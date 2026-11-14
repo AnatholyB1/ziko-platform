@@ -8,3 +8,6 @@
 | R-7 | PASS | "Acheter pour 50 pieces" -> 480 -> 430, base -50 source `purchase`. Toast non capture. |
 | R-9 | PASS | Historique : "Achat : Article UAT 1 / aujourd'hui / -50", ordre antechronologique, UI sans emoji. FAIL mineur donnee : `ziko_coin_transactions.description` contient un emoji (panier) ecrit par la fonction SQL d'achat, masque par l'UI. |
 FAIL persistant : onglet Niveau "NIVEAU . DEBUTANT / 3 / 350 XP / Niveau maximum atteint" pour le niveau 3 (libelle incoherent, deja note run1 #7).
+
+## Run 10
+Quete eau en UI : PASS (progression + +15 une fois, sans ouvrir Recompenses). Voir UAT-RESULTS-run10.md.

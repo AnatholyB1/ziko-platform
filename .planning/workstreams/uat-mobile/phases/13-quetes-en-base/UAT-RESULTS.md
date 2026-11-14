@@ -17,3 +17,6 @@ Méthode : quête `Boire 1 litre (run9)` (hydration_ml, 1000, daily, 8 h) créé
 
 ## Run 8 (2026-11-13) - fenêtre de dates des quêtes (quête créée à 21 h)
 PASS (SQL `ziko_quest_metric_value`, hydration_ml, user A, 14 000 ml déjà bus aujourd'hui) : fenêtre démarrant en cours de journée (18:14:22Z) -> 500 (seule la saisie postérieure à la création compte) ; fenêtre démarrant après la dernière saisie -> 0 ; fenêtre alignée minuit Paris -> 14 500 (comportement P13 conservé). Migration 2801 effective. Création d'une quête à 21 h via l'UI NON-TESTE.
+
+## Run 10
+Quete eau en UI : PASS (progression + +15 une fois, sans ouvrir Recompenses). Voir UAT-RESULTS-run10.md.
