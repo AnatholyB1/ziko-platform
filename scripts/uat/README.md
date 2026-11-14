@@ -24,11 +24,20 @@ UAT_COACH_EMAIL / UAT_COACH_PASSWORD
 bash scripts/uat/queue.sh acquire <phase> <flow>
 bash scripts/uat/emu-start.sh [--window]
 bash scripts/uat/install-apk.sh path/app.apk
-npx expo start --dev-client --port 8281     # Metro, port reserve
+EXPO_PUBLIC_SUPABASE_URL="$UAT_SUPABASE_URL" EXPO_PUBLIC_SUPABASE_KEY="$UAT_ANON_KEY" \
+  EXPO_PUBLIC_API_URL=<url du backend UAT> npx expo start --dev-client --port 8281 --clear   # Metro, port reserve
 bash scripts/uat/evidence.sh run <phase> <flow> .maestro/<flow>.yaml UAT_EMAIL=... UAT_PASSWORD=...
 powershell -File scripts/uat/emu-stop.ps1
 bash scripts/uat/queue.sh release <phase> <flow>
 ```
+Pieges Metro (run 9) :
+- Les noms `UAT_*` ci-dessus ne servent qu'aux scripts du harnais (`lib.mjs`, `create-accounts.mjs`...). Le bundle de l'app ne lit QUE
+  `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_KEY` (cle publishable) / `EXPO_PUBLIC_API_URL` ; sans eux : `supabaseUrl is required`.
+  Les passer en variables d'environnement de la commande Metro (jamais dans un fichier commite).
+- Premier bundle apres `--clear` : environ 4 minutes. Patienter, ne pas relancer Metro.
+- Le dev-client expire pendant ce temps : il faut l'OUVRIR UNE SECONDE FOIS (double ouverture) une fois le bundle pret.
+- Un lien profond vers un ecran deja monte ne le recharge pas : pour tester un refetch, quitter puis rouvrir l'ecran.
+
 Preuves : `uat-evidence/<phase>/<flow>/` (PNG, `logcat.txt`, `maestro-result.xml`, `RESULT.txt`), gitignore. Citer les chemins dans le VERIFICATION/UAT de la phase.
 
 ## Simulations (`sim.sh`)

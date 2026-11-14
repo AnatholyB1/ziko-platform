@@ -73,18 +73,27 @@ function nameOf(row: Row, fallback: string): string {
   return raw || fallback;
 }
 
+/**
+ * UNE seule progression de programme pour tous les ecrans (liste Programmes, onglet Entrainement) : semaine courante du
+ * cycle / nombre de semaines, uniquement quand la donnee existe vraiment (UAT run 9, defaut 4 : `Semaine 3 sur 8 · 38 %`
+ * dans Programmes contre `1 SEMAINE / 0 TOTAL` dans Entrainement, qui inventait la semaine 1 et lisait un total vide).
+ */
+export function programProgress(row: Row | null | undefined): { week: number; total: number; percent: number } | null {
+  if (!row) return null;
+  const total = Number(row.weeks_count ?? row.cycle_weeks);
+  const week = Number(row.current_cycle_week);
+  if (!(Number.isFinite(total) && total > 0 && Number.isFinite(week) && week >= 1)) return null;
+  const w = Math.min(week, total);
+  return { week: w, total, percent: Math.round((w / total) * 100) };
+}
+
 export function normalizeWorkoutRow(row: Row, userId: string): ProgramItem {
   const isCoach =
     (row.assigned_to_user_id != null && row.assigned_to_user_id === userId) ||
     (row.created_by_coach_id != null && row.created_by_coach_id !== userId);
   const source: ProgramSource = isCoach ? 'coach' : 'created';
   const days = Number.isFinite(Number(row.days_per_week)) ? Number(row.days_per_week) : null;
-  const total = Number(row.weeks_count ?? row.cycle_weeks);
-  const week = Number(row.current_cycle_week);
-  const progress =
-    Number.isFinite(total) && total > 0 && Number.isFinite(week) && week >= 1
-      ? { week: Math.min(week, total), total, percent: Math.round((Math.min(week, total) / total) * 100) }
-      : null;
+  const progress = programProgress(row);
   const parts = [isCoach ? 'Créé par ton coach' : 'Créé par moi', sessionsPerWeekLabel(days)].filter(Boolean);
   return {
     id: String(row.id),
@@ -97,6 +106,43 @@ export function normalizeWorkoutRow(row: Row, userId: string): ProgramItem {
     createdAt: String(row.created_at ?? row.updated_at ?? ''),
     daysPerWeek: days,
     progress,
+  };
+}
+
+/**
+ * En-tete du programme ACTIF (onglet Entrainement, accueil) : nom reel + provenance reelle (UAT run 9, defaut 3).
+ * Avant : titre = objectif (`Force`) pour un programme IA/atelier et sous-titre code en dur `Coach Ziko · Intermediaire`
+ * meme pour un programme cree par l'utilisateur. Memes regles de provenance que les listes (`normalizeWorkoutRow` /
+ * `normalizeAiRow`) : coach (assigne ou cree par un coach), atelier IA, ou cree par l'utilisateur.
+ */
+export type ProgramProvenance = 'coach' | 'ai' | 'me';
+export const PROVENANCE_LABEL: Record<ProgramProvenance, string> = {
+  coach: 'Créé par ton coach',
+  ai: 'Atelier IA',
+  me: 'Créé par moi',
+};
+
+export function programProvenance(program: Row | null | undefined, userId: string | null | undefined): ProgramProvenance {
+  if (!program) return 'me';
+  if (program.kind === 'ai') return program.program_data?.generated === true ? 'me' : 'ai';
+  const byCoach =
+    (program.assigned_to_user_id != null && program.assigned_to_user_id === userId) ||
+    (program.created_by_coach_id != null && program.created_by_coach_id !== userId);
+  return byCoach ? 'coach' : 'me';
+}
+
+export function programHeader(
+  program: Row | null | undefined,
+  userId: string | null | undefined,
+  goalToLabel: (goal: string | null | undefined, fallback: string) => string,
+  fallback = 'Programme',
+): { title: string; provenance: ProgramProvenance; sub: string } {
+  const name = typeof program?.name === 'string' ? program.name.trim() : '';
+  const provenance = programProvenance(program, userId);
+  return {
+    title: name || goalToLabel(program?.goal, fallback),
+    provenance,
+    sub: PROVENANCE_LABEL[provenance],
   };
 }
 

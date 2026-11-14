@@ -13,10 +13,11 @@ import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
 import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
 import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
+import { programHeader } from '../../src/lib/programs';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
-import { useTranslation, showAlert, formatLitersFr } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -34,7 +35,7 @@ import {
   useHydrationToday,
   useNutritionGoal,
   useNutritionToday,
-  useSessionStreak,
+  useGamificationStreak,
   HOME_DEFAULTS,
 } from '../../src/hooks/useHomeData';
 import { formatDurationH } from '@ziko/plugin-sleep/lib/sleep';
@@ -134,8 +135,7 @@ function MissionCardContent({
   const todaySession: any = todayPick?.session ?? null;
   const exercises: any[] = todaySession?.exercises ?? [];
   const sessionName: string = todaySession?.name ?? goalLabel(activeProgram?.goal, 'Séance du jour');
-  const programName: string =
-    activeProgram?.kind === 'coach' && activeProgram?.name ? activeProgram.name : goalLabel(activeProgram?.goal, 'Programme IA');
+  const programName: string = programHeader(activeProgram as any, null, goalLabel, 'Programme').title; // titre seul : provenance non affichee ici
   const duration: number = Math.max(30, exercises.length * 6);
 
   return (
@@ -300,7 +300,7 @@ export default function DashboardScreen() {
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
-  const { data: streak = 0 } = useSessionStreak();
+  const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
@@ -447,6 +447,7 @@ export default function DashboardScreen() {
     setTimeout(() => setWaterConfirmed(false), 2000);
     try {
       await logWater(supabase, userId, WATER_STEP_ML);
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       void resyncRemindersFromDb(supabase, userId); // rappels : stop si l'objectif est atteint
     } catch {
       queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
@@ -463,6 +464,7 @@ export default function DashboardScreen() {
     setShowMoodSheet(false);
     try {
       await saveTodayMood(supabase, userId, value);
+      requestQuestRefresh();
       setMoodConfirmed(true);
       setTimeout(() => setMoodConfirmed(false), 2000);
     } catch {
@@ -482,6 +484,7 @@ export default function DashboardScreen() {
     setWeightInput('');
     try {
       await saveTodayWeight(supabase, userId, value);
+      requestQuestRefresh();
       setWeightConfirmed(true);
       setTimeout(() => setWeightConfirmed(false), 2000);
     } catch {
@@ -505,7 +508,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
-      queryClient.invalidateQueries({ queryKey: ['session_streak'] }),
+      queryClient.invalidateQueries({ queryKey: ['streak'] }),
     ]).catch(() => setLoadError(true));
     setRefreshing(false);
   };

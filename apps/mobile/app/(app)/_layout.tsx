@@ -32,6 +32,10 @@ import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 import { WeeklyReviewRevealOverlay } from '../../src/components/WeeklyReviewRevealOverlay';
 import { UnlockToast } from '../../src/components/UnlockToast';
 import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
+import { installQuestRefresh } from '../../src/lib/questRefreshHandler';
+
+// Les ecritures qui alimentent les metriques de quetes rafraichissent la progression (UAT run 9, defaut 2).
+installQuestRefresh();
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
 // requiring expo-notifications at module load time (crashes when

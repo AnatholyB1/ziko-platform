@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useThemeStore, showAlert, getActionPrimary, useCreditStore, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
+import { keyboardAvoidBehavior } from '../../../src/lib/keyboardAvoid';
 import { setActiveProgram } from '../../../src/lib/programsService';
 import {
   ATELIER_COPY,
@@ -385,7 +386,7 @@ export default function AtelierScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top']}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={keyboardAvoidBehavior(Platform.OS)} style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 8 }}>
           <TouchableOpacity accessibilityLabel="Retour" onPress={() => router.back()} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="chevron-back" size={24} color={theme.text} />
@@ -569,7 +570,7 @@ function ExerciseSheet(props: {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={props.onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={keyboardAvoidBehavior(Platform.OS)} style={{ flex: 1 }}>
         <Pressable accessibilityLabel="Fermer" onPress={props.onClose} style={{ flex: 1, backgroundColor: SCRIM, justifyContent: 'flex-end' }}>
           <Pressable onPress={() => {}} style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32, gap: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>

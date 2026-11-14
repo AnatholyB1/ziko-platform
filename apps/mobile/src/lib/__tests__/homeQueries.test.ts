@@ -10,7 +10,7 @@ import { HOME_QUERY_KEYS, invalidateHomeQueries } from '../homeQueries';
 describe('HOME_QUERY_KEYS', () => {
   it('couvre toutes les cles de useHomeData (meme prefixe)', () => {
     const flat = HOME_QUERY_KEYS.map((k) => k.join('/'));
-    for (const k of ['workouts/weekly', 'workouts/recent', 'session_streak', 'hydration/today', 'nutrition/today', 'program/active', 'streak', 'sleep', 'nutrition/goal']) {
+    for (const k of ['workouts/weekly', 'workouts/recent', 'hydration/today', 'nutrition/today', 'program/active', 'streak', 'sleep', 'nutrition/goal']) {
       expect(flat).toContain(k);
     }
   });
@@ -19,14 +19,14 @@ describe('HOME_QUERY_KEYS', () => {
 describe('invalidateHomeQueries', () => {
   it('marque obsolete les requetes de l\'accueil (hydration today, workouts, streak) et pas les autres', async () => {
     const qc = new QueryClient();
-    for (const key of [['hydration', 'today', 'u1'], ['workouts', 'recent', 'u1'], ['session_streak', 'u1'], ['profile', 'u1']]) {
+    for (const key of [['hydration', 'today', 'u1'], ['workouts', 'recent', 'u1'], ['streak', 'gamification', 'u1'], ['profile', 'u1']]) {
       await qc.fetchQuery({ queryKey: key, queryFn: async () => 1 });
     }
     expect(qc.getQueryState(['hydration', 'today', 'u1'])?.isInvalidated).toBe(false);
     await invalidateHomeQueries(qc);
     expect(qc.getQueryState(['hydration', 'today', 'u1'])?.isInvalidated).toBe(true);
     expect(qc.getQueryState(['workouts', 'recent', 'u1'])?.isInvalidated).toBe(true);
-    expect(qc.getQueryState(['session_streak', 'u1'])?.isInvalidated).toBe(true);
+    expect(qc.getQueryState(['streak', 'gamification', 'u1'])?.isInvalidated).toBe(true);
     expect(qc.getQueryState(['profile', 'u1'])?.isInvalidated).toBe(false);
   });
   it('l\'ancienne cle fantome [hydration, goal] ne touchait PAS la requete de l\'accueil', async () => {

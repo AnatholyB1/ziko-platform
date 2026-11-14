@@ -33,8 +33,10 @@ export function sumWaterMl(rows: { amount_ml: number | null }[] | null | undefin
 }
 
 export function formatLitres(ml: number): string {
-  // Format FR (comme formatLitersFr du SDK) : virgule, espace avant L. Copie locale : le SDK n'est pas importable en test node.
-  return `${(Math.max(0, ml) / 1000).toFixed(2).replace('.', ',')} L`;
+  // Format FR unique (= formatLitersFr du SDK, 1 decimale) : `14,75 L` s'affichait ici alors que la carte Forme du jour
+  // disait `14,8 L` (UAT run 9, defaut 4). Copie locale : le SDK n'est pas importable en test node ; l'egalite des trois
+  // formateurs est verifiee par packages/plugin-sdk/src/litersConsistency.test.ts.
+  return `${(Math.max(0, ml) / 1000).toFixed(1).replace('.', ',')} L`;
 }
 
 export async function logWater(

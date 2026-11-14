@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
-import { useThemeStore, showAlert, localDateKey } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, localDateKey, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
 import { scheduleHabitReminder, cancelHabitReminder, scheduleAllReminders } from '../notifications';
 import { normalizeHabits, normalizeHabitLogs } from '../normalize';
@@ -306,6 +306,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       showAlert('Erreur de sauvegarde', 'Impossible de mettre à jour votre habitude.');
     },
     onSuccess: () => {
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       queryClient.invalidateQueries({ queryKey: ['habit_logs_today', userId, today] });
     },
   });

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert, formatDateFr, getActionPrimary, localDateKey } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, getActionPrimary, localDateKey, requestQuestRefresh } from '@ziko/plugin-sdk';
 import GoalsTab, { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
 import { ENTRY_ORDER, getMeasure, parseDecimal, type MeasureKey } from '../lib/goals';
 import { weightCoachTip } from '../lib/coachTip';
@@ -223,6 +223,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       if (error) throw error;
     },
     onSuccess: () => {
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       queryClient.invalidateQueries({ queryKey: ['latest_measurement'] });
       queryClient.invalidateQueries({ queryKey: ['measurements_6weeks'] });
       // P15 : une nouvelle mesure peut atteindre un objectif (trigger SQL) et change le % affiché.

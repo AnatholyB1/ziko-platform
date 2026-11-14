@@ -13,6 +13,25 @@ export function localDay(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * SERIE AFFICHEE : une seule regle pour l'accueil, Recompenses et le Profil (UAT run 9, defaut 4 : `1 jour` / `5 jours` /
+ * `0` selon l'ecran, trois sources differentes). Source = `ziko_user_gamification` ; une serie dont la derniere activite
+ * est plus ancienne qu'hier est rompue (0), sinon `current_streak`.
+ */
+export function displayStreak(
+  profile: { current_streak?: number | null; last_activity_date?: string | null } | null | undefined,
+  now: Date = new Date(),
+): number {
+  const cur = Number(profile?.current_streak ?? 0);
+  if (!(cur > 0)) return 0;
+  // Date inconnue (donnee ancienne) : on ne devine pas une rupture, on garde la serie enregistree.
+  if (!profile?.last_activity_date) return Math.floor(cur);
+  const y = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  y.setDate(y.getDate() - 1);
+  const last = String(profile.last_activity_date).slice(0, 10);
+  return last === localDay(now) || last === localDay(y) ? Math.floor(cur) : 0;
+}
+
 export interface NextStreak {
   /** false : deja compte aujourd'hui, rien a ecrire. */
   changed: boolean;

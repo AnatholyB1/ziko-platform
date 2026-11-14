@@ -7,7 +7,6 @@ export const HOME_QUERY_KEYS: ReadonlyArray<readonly string[]> = [
   ['program', 'active'],
   ['workouts', 'weekly'],
   ['workouts', 'recent'],
-  ['session_streak'],
   ['streak'],
   ['sleep'],
   ['hydration', 'today'],

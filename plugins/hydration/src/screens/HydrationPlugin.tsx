@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Svg, { Path, Rect, Defs, ClipPath } from 'react-native-svg';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, getActionPrimary, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
 import {
   type HydrationSettings, DEFAULT_SETTINGS, QUICK_AMOUNTS, MAX_LOG_ML, localDateKey,
@@ -248,6 +248,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: (res) => {
       setWriteError(null);
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       setToast(res);
       if (toastTimeout.current) clearTimeout(toastTimeout.current);
       toastTimeout.current = setTimeout(() => setToast(null), 5000);
@@ -265,6 +266,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       if (error) throw error;
     },
     onSuccess: () => {
+      requestQuestRefresh();
       setToast(null);
       queryClient.invalidateQueries({ queryKey: ['hydration_today', userId, today] });
       queryClient.invalidateQueries({ queryKey: ['hydration_history', userId] });

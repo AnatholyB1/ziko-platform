@@ -57,10 +57,10 @@ describe('eau (QLOG-01)', () => {
     expect(sumWaterMl(null)).toBe(0);
     expect(sumWaterMl(Array.from({ length: 50 }, () => ({ amount_ml: 250 })))).toBe(12500);
   });
-  it('formate en litres sur 2 decimales', () => {
-    expect(formatLitres(0)).toBe('0,00 L');
-    expect(formatLitres(250)).toBe('0,25 L');
-    expect(formatLitres(1750)).toBe('1,75 L');
+  it('formate en litres sur 1 decimale FR (meme arrondi que la carte Forme du jour)', () => {
+    expect(formatLitres(0)).toBe('0,0 L');
+    expect(formatLitres(250)).toBe('0,3 L');
+    expect(formatLitres(14750)).toBe('14,8 L');
   });
   it('logWater insere avec la date locale fournie (pas UTC)', async () => {
     const db = fakeDb();

@@ -12,6 +12,7 @@ export * from './friendsApi';
 export * from './gating';
 export * from './unlockUi';
 export * from './mealLog';
+export * from './questRefresh';
 export * from './nutritionTargets';
 export * from './onboarding';
 export * from './disclaimer';

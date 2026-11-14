@@ -53,7 +53,7 @@ describe('LeagueEntryCard (E1..E4)', () => {
   });
   it('verrouille : Se debloque au niveau 3', async () => {
     const c = await mount(<LeagueEntryCard state={parseLeagueState({ unlocked: false, required_tier: 3, tier: 1 })} c={C} onPress={noop} />);
-    expect(c.textContent).toContain('Se débloque au niveau 3');
+    expect(c.textContent).toContain('Se débloque au palier 3');
   });
   it('celebration en attente : puce Nouveau', async () => {
     const c = await mount(<LeagueEntryCard state={state({ pending_celebration: { id: 't', to_track: 'performance', reason: 'x', created_at: '' } })} c={C} onPress={noop} />);
@@ -65,7 +65,7 @@ describe('etats (S2)', () => {
   it('verrouillee : message neutre, aucune barre ni compteur', async () => {
     const c = await mount(<LockedCard c={C} />);
     expect(c.textContent).toContain('Ligue verrouillée');
-    expect(c.textContent).toContain("Elle s'ouvre au niveau 3. Continue à ton rythme.");
+    expect(c.textContent).toContain("Elle s'ouvre au palier 3. Continue à ton rythme.");
     expect(c.textContent).not.toMatch(/\d+\s*(%|\/|sur)/);
   });
   it('erreur : Reessayer appelle onRetry', async () => {

@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, takeQuestCompletions } from '@ziko/plugin-sdk';
 import {
   HISTORY_PAGE_SIZE, awardBadges, computeLevelProgress, ensureProfile, equipItem, fetchAchievements,
   fetchCoinHistory, purchaseItem, requestAiQuests, syncQuests, type LevelDef, type ShopItem,
@@ -17,6 +17,7 @@ import { ShopTab } from './rewards/ShopTab';
 import { HistoryView, LevelTab, type LevelData } from './rewards/LevelTab';
 import { QuestsTab } from './rewards/QuestsTab';
 import { hasFreeQuestSlot, questToastText } from '../quests';
+import { displayStreak } from '../streak';
 
 // Onglet Quetes : `./rewards/QuestsTab` (P13, D-01). Lecture base via `syncQuests`, aucune quete factice.
 
@@ -70,7 +71,7 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
         nextXp: nextLevel?.xp_required ?? null,
         xpToNext,
         xpProgress,
-        streak: profile.current_streak ?? 0,
+        streak: displayStreak(profile),
         isMax: isMaxLevel(profile.level ?? 1, levels, nextLevel?.level ?? null),
       };
       return { coins: profile.coins ?? 0, playerLevel: profile.level ?? 1, level };
@@ -114,6 +115,9 @@ export default function GamificationPlugin({ supabase, initialTab = 'Niveau', on
         const again = await syncQuests(supabase);
         res = { quests: again.quests, newlyCompleted: [...res.newlyCompleted, ...again.newlyCompleted] };
       }
+      // Quetes terminees par une synchro en arriere-plan (apres un log) : annoncees ici, une seule fois.
+      const background = takeQuestCompletions().filter((c) => !res.newlyCompleted.some((n) => n.id === c.id));
+      res = { quests: res.quests, newlyCompleted: [...res.newlyCompleted, ...background] };
       if (res.newlyCompleted.length > 0) {
         setToast(questToastText(res.newlyCompleted));
         // Les pieces gagnees changent le solde, l'historique et le niveau.

@@ -120,7 +120,7 @@ export interface EntryView {
 /** Sous-titre de la carte d'entree. Jamais de score chiffre, de rang ni de nom d'une autre personne (E4). */
 export function entryView(state: LeagueState | null): EntryView {
   if (!state) return { subtitle: 'Ta régularité, à ton rythme', badge: null };
-  if (!state.unlocked) return { subtitle: `Se débloque au niveau ${state.required_tier ?? LEAGUE_UNLOCK_TIER}`, badge: null };
+  if (!state.unlocked) return { subtitle: `Se débloque au palier ${state.required_tier ?? LEAGUE_UNLOCK_TIER}`, badge: null };
   const badge = state.pending_celebration ? 'Nouveau' : null;
   const f = factionByKey(state.faction);
   if (!f) return { subtitle: 'Choisis ta faction', badge };
@@ -251,7 +251,7 @@ export const COPY = {
   title: 'Ligue',
   subtitle: 'Ta régularité, à ton rythme',
   lockedTitle: 'Ligue verrouillée',
-  lockedBody: "Elle s'ouvre au niveau 3. Continue à ton rythme.",
+  lockedBody: "Elle s'ouvre au palier 3. Continue à ton rythme.",
   errorTitle: 'Impossible de charger la Ligue',
   retry: 'Réessayer',
   pickFaction: 'Choisis une faction pour commencer',

@@ -115,10 +115,11 @@ export function shouldPropose(relaunch: RelaunchView | null): boolean {
   return !!relaunch && relaunch.status === 'pending' && !!relaunch.draft_id;
 }
 
-export function itemSubtitle(i: SequenceItem): string {
+/** `goalToLabel` traduit l'objectif brut (`strength` -> `Force`, UAT run 9 defaut 3) ; l'ecran passe `goalLabel` du SDK. */
+export function itemSubtitle(i: SequenceItem, goalToLabel: (goal: string) => string = (g) => g): string {
   const parts: string[] = [];
   if (i.weeks) parts.push(`${i.weeks} semaine${i.weeks > 1 ? 's' : ''}`);
-  if (i.goal) parts.push(i.goal);
+  if (i.goal) parts.push(goalToLabel(i.goal));
   return parts.join(' · ');
 }
 

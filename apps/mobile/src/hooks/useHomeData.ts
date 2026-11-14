@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { getActiveProgram } from '../lib/activeProgram';
-import { localDateKey, consecutiveDayStreak } from '../lib/localDate';
+import { localDateKey } from '../lib/localDate';
+import { displayStreak } from '@ziko/plugin-gamification/streak';
 import { COUNTABLE_SESSION_OR_FILTER } from '../lib/workoutPlan';
 import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
 import { fetchKcalGoal, DEFAULT_NUTRITION_TARGETS } from '@ziko/plugin-sdk';
@@ -58,63 +59,25 @@ export function useProfile() {
   });
 }
 
-// ── useSessionStreak ─────────────────────────────────────────
-// Computes consecutive workout days (descending from today) where at least
-// one workout_sessions row exists for that user.
-export function useSessionStreak() {
+// ── useGamificationStreak ────────────────────────────────────
+// UNE seule serie pour l'accueil, Recompenses et le Profil (UAT run 9, defaut 4) : `ziko_user_gamification`
+// (current_streak / last_activity_date), rendue par `displayStreak`. Remplace les anciens calculs locaux (jours de
+// seance, jours d'habitude), qui donnaient 1 / 5 / 0 pour la meme personne.
+export function useGamificationStreak() {
   const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['session_streak', userId],
+    queryKey: ['streak', 'gamification', userId],
     queryFn: async () => {
-      // `since` = instant (UTC) ; les jours sont comptes en date LOCALE (revue A #5).
-      const since = new Date(Date.now() - 61 * 86400000).toISOString();
-      const { data } = await supabase
-        .from('ziko_workout_sessions')
-        .select('started_at')
+      const { data, error } = await supabase
+        .from('ziko_user_gamification')
+        .select('current_streak, last_activity_date')
         .eq('user_id', userId!)
-        .gte('started_at', since)
-        .order('started_at', { ascending: false });
-
-      return consecutiveDayStreak((data ?? []).map((r: { started_at: string }) => r.started_at));
+        .maybeSingle();
+      if (error) throw error;
+      return displayStreak(data);
     },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5,
-  });
-}
-
-// ── useStreak ─────────────────────────────────────────────────
-// Computes consecutive habit days (descending from today) where at least
-// one habit_log row exists with completed=true.
-// habit_logs unique constraint is (habit_id, date) — NOT (user_id, date).
-export function useStreak() {
-  const userId = useAuthStore((s) => s.user?.id);
-  return useQuery({
-    queryKey: ['streak', userId],
-    queryFn: async () => {
-      const since = localDateKey(new Date(Date.now() - 60 * 86400000));
-      const { data } = await supabase
-        .from('ziko_habit_logs')
-        .select('date')
-        .eq('user_id', userId!)
-        .gt('value', 0)
-        .gte('date', since)
-        .order('date', { ascending: false });
-
-      const uniqueDays = new Set((data ?? []).map((r: { date: string }) => r.date));
-
-      let streak = 0;
-      let cursor = new Date();
-      cursor.setHours(0, 0, 0, 0);
-
-      while (uniqueDays.has(localDateKey(cursor))) {
-        streak++;
-        cursor = new Date(cursor.getTime() - 86400000);
-      }
-
-      return streak;
-    },
-    enabled: !!userId,
-    staleTime: 1000 * 60 * 5, // 5 min
   });
 }
 

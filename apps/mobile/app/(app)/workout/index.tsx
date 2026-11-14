@@ -22,6 +22,7 @@ import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback
 import { neutralToast } from '../../../src/lib/neutralToast';
 import { isStaleSession } from '../../../src/lib/staleSession';
 import { activeProgramView } from '../../../src/lib/activeProgram';
+import { programHeader, programProgress } from '../../../src/lib/programs';
 import { useActiveAIProgram } from '../../../src/hooks/useHomeData';
 import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
@@ -456,9 +457,13 @@ export default function WorkoutIndexScreen() {
 
   const programData = activeProgram?.program_data ?? null;
   const weeks = programData?.weeks ?? [];
-  const totalWeeks = weeks.length;
-  const currentWeek = 1; // Most recent program starts at week 1
-  const progressPct = totalWeeks > 0 ? (currentWeek / totalWeeks) * 100 : 0;
+  // Une seule progression pour Programmes et Entrainement (programProgress) : la semaine n'est plus inventee a 1 et le
+  // total vient du cycle (un programme coach n'a pas de `program_data.weeks`). Sans donnee reelle : compteur masque.
+  const progress = programProgress(activeProgram as any);
+  const totalWeeks = progress?.total ?? weeks.length;
+  const currentWeek = progress?.week ?? 0;
+  const progressPct = progress?.percent ?? 0;
+  const header = programHeader(activeProgram as any, userId, goalLabel);
   // TRAIN-04: weekday-resolved layout (Mon..Sun), `null` = real rest day
   const planSessions = React.useMemo(() => normalizePlanSessions(programData), [programData]);
   const weekSlots = React.useMemo(() => buildWeekLayout(planSessions), [planSessions]);
@@ -496,8 +501,8 @@ export default function WorkoutIndexScreen() {
       {/* WSHeader — only when active program */}
       {activeProgram ? (
         <WSHeader
-          title={(activeProgram as any).kind === 'coach' && (activeProgram as any).name ? (activeProgram as any).name : goalLabel(activeProgram.goal, 'Programme')}
-          sub="Coach Ziko · Intermédiaire"
+          title={header.title}
+          sub={header.sub}
           right={
             <TouchableOpacity
               onPress={handleProgramActions}
@@ -652,6 +657,7 @@ export default function WorkoutIndexScreen() {
               {/* Week progress row */}
               <View
                 style={{
+                  display: progress ? 'flex' : 'none',
                   flexDirection: 'row',
                   alignItems: 'baseline',
                   gap: 16,
@@ -720,6 +726,7 @@ export default function WorkoutIndexScreen() {
               {/* Progress bar */}
               <View
                 style={{
+                  display: progress ? 'flex' : 'none',
                   marginTop: 16,
                   height: 6,
                   borderRadius: 999,
