@@ -1,7 +1,7 @@
 # Phase 16 - IA des mesures et onboarding objectifs : CONTEXT
 
 Exigences : MEAS-02, MEAS-03, MEAS-07, MEAS-08, MEAS-09 (le ROADMAP ne cite que ces 5 ; MEAS-10/11 n'existent pas dans REQUIREMENTS.md, voir G-8).
-Base : `milestone/v1.20` (P14 + P15 mergees). Migrations : bloc `202612011601..1609`, fichiers seuls.
+Base : `milestone/v1.20` (P14 + P15 mergees). Migrations : bloc `20261201160100..1609`, fichiers seuls.
 
 ## Decisions verrouillees (heritees)
 - D-01 (P15) : objectifs de mesures = `ziko_athlete_goals` etendue (`measure_key` non nul). Verrou D-04 : un objectif actif ne change pas, sauf `set_config('ziko.allow_goal_edit','on',true)` dans une RPC SECURITY DEFINER.

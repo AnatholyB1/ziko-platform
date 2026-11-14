@@ -1,6 +1,6 @@
 # UAT-PLAN Phase 11 : Hydratation (emulateur Android 1080x2400 / 420 dpi, apres P1)
 
-Prerequis : migration `202612011101_ziko_hydration_settings.sql` appliquee sur la base de TEST (jamais prod par l'agent), compte test sans ligne de reglages, build dev (expo-notifications natif requis : pas Expo Go). Reperage : `uiautomator dump`.
+Prerequis : migration `20261201110100_ziko_hydration_settings.sql` appliquee sur la base de TEST (jamais prod par l'agent), compte test sans ligne de reglages, build dev (expo-notifications natif requis : pas Expo Go). Reperage : `uiautomator dump`.
 
 | Id | Flow | Attendu | Preuve |
 |---|---|---|---|

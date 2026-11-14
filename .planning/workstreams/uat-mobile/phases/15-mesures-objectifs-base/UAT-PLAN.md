@@ -1,6 +1,6 @@
 # Phase 15 - Plan UAT emulateur (en file apres P1)
 
-Pre-requis : migrations `202612011501` et `202612011502` appliquees sur la base cible PAR L'ORCHESTRATEUR (jamais par l'agent de phase) ; compte de test neuf (0 objectif, 0 mesure) ; build dev-client de la branche. Reperes visuels : `phases/04-maquettes-reference/lot-E/` (E10 a E16), 1080x2400 / dpi 420. Resultat attendu consigne dans `15-VERIFICATION.md` par l'auditeur UAT.
+Pre-requis : migrations `20261201150100` et `20261201150200` appliquees sur la base cible PAR L'ORCHESTRATEUR (jamais par l'agent de phase) ; compte de test neuf (0 objectif, 0 mesure) ; build dev-client de la branche. Reperes visuels : `phases/04-maquettes-reference/lot-E/` (E10 a E16), 1080x2400 / dpi 420. Resultat attendu consigne dans `15-VERIFICATION.md` par l'auditeur UAT.
 
 | Id | Flow (ecran) | Actions | Attendu | Preuve |
 |---|---|---|---|---|

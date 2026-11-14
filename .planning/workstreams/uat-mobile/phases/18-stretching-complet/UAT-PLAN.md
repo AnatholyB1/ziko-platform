@@ -1,6 +1,6 @@
-# Phase 18 : plan UAT émulateur (en file, après P1 et application des migrations 202612011801/02 sur la base de test)
+# Phase 18 : plan UAT émulateur (en file, après P1 et application des migrations 20261201180100/02 sur la base de test)
 
-Prérequis : migrations `202612011801_stretching_exercises.sql` et `202612011802_stretching_default_routine.sql` appliquées à la base de TEST (jamais prod sans accord), compte athlète du harnais P1 avec le plugin `stretching` activé, 0 routine, 0 exercice perso. Vérification base = requêtes en lecture seule sur la base de test.
+Prérequis : migrations `20261201180100_stretching_exercises.sql` et `20261201180200_stretching_default_routine.sql` appliquées à la base de TEST (jamais prod sans accord), compte athlète du harnais P1 avec le plugin `stretching` activé, 0 routine, 0 exercice perso. Vérification base = requêtes en lecture seule sur la base de test.
 
 | Id | Scénario | Pas | Mesure / preuve attendue |
 |---|---|---|---|

@@ -41,10 +41,10 @@ const sync = (uid) => rpc(uid, 'ziko_league_sync', [uid]);
 
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(here, 'stub-schema.sql'), 'utf8'));
-const MIGS = ['202612012601_factions_leagues_schema', '202612012602_faction_rpc', '202612012603_league_sync', '202612012604_league_ai_gate', '202612012605_collective_challenges', '202612012803_league_neutral_absence', '202612012804_league_ai_decline_cooldown'];
-for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
+const MIGS = ['20261201260100_factions_leagues_schema', '20261201260200_faction_rpc', '20261201260300_league_sync', '20261201260400_league_ai_gate', '20261201260500_collective_challenges', '20261201280300_league_neutral_absence', '20261201280400_league_ai_decline_cooldown'];
+for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8'));
 // Rejouabilite (idempotence) : tout est rejoue une 2e fois sans erreur.
-for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
+for (const f of MIGS) await q(readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8'));
 console.log('Migrations 2601..2605 appliquees 2 fois (idempotence) sur la base locale jetable.');
 
 // UUID deterministe : 00000000-0000-0000-0000-00000026NNNN.
@@ -222,7 +222,7 @@ console.log('\n[4] Score de regularite relative + anti-triche');
   ok('focus d un autre type : cible par defaut 3', s.asked === 3, JSON.stringify(s));
   await expectErr('piste inconnue refusee', async () => { await q(`SELECT public.ziko_league_week_score($1, 'cohort', $2::date)`, [p, w1]); }, /invalid_track/);
   await reset();
-  ok('le score ne lit aucun poids/charge (fonction sans reference)', !/weight_kg|total_volume|total_reps|distance|heart|sleep/i.test(readFileSync(resolve(root, 'supabase/migrations/202612012603_league_sync.sql'), 'utf8').replace(/--[^\n]*/g, '')));
+  ok('le score ne lit aucun poids/charge (fonction sans reference)', !/weight_kg|total_volume|total_reps|distance|heart|sleep/i.test(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201260300_league_sync.sql'), 'utf8').replace(/--[^\n]*/g, '')));
 }
 
 console.log('\n[5] Paliers amortis (LEAG-04)');
@@ -313,7 +313,7 @@ console.log('\n[6] Non punitif : aucune ecriture vers XP / pieces / serie / tier
   ok('une descente de palier a bien eu lieu', st.division === 2, JSON.stringify(st));
   const s1 = await snap();
   ok('XP, pieces, serie, tier, readiness, journal : strictement identiques', JSON.stringify(s0) === JSON.stringify(s1), JSON.stringify([s0, s1]));
-  const src = MIGS.map((f) => readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8').replace(/--[^\n]*/g, '')).join('\n');
+  const src = MIGS.map((f) => readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8').replace(/--[^\n]*/g, '')).join('\n');
   ok('aucune migration P26 n ecrit dans les tables protegees', !/(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+public\.ziko_(user_gamification|coin_transactions|athlete_state|athlete_decisions)\b/i.test(src));
   ok('aucune FK vers ces tables', !/REFERENCES\s+public\.ziko_(user_gamification|coin_transactions|athlete_state|athlete_decisions)/i.test(src));
   ok('libelles : aucun mot punitif dans les fichiers SQL', !/relegat|punish|punit|penalt/i.test(src));
@@ -455,7 +455,7 @@ console.log('\n[8] Defis collectifs coach + athletes (LEAG-05)');
 
 console.log('\n[9] Surface de lecture : jamais de donnee de sante, jamais de classement');
 {
-  const srcAll = MIGS.map((f) => readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8').replace(/--[^\n]*/g, '')).join('\n');
+  const srcAll = MIGS.map((f) => readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8').replace(/--[^\n]*/g, '')).join('\n');
   ok('aucune table de sante lue (mesures, sommeil, wearables, nutrition, poids)', !/ziko_(body_measurements|measurement|sleep|wearable|health|nutrition|athlete_goals)/i.test(srcAll));
   ok('aucun ORDER BY sur un score entre personnes (pas de classement)', !/ORDER BY[^;]*score[^;]*DESC[^;]*LIMIT\s+\d+\s*\)\s*x\s*\)/i.test('') && !/RANK\(|ROW_NUMBER\(|PERCENT_RANK|NTILE/i.test(srcAll));
   const fns = (await q(`SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND proname LIKE 'ziko_%' AND prokind = 'f'`)).rows.map((x) => x.proname);

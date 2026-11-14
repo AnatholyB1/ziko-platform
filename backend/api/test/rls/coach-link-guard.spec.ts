@@ -1,6 +1,6 @@
 // P25 (MCOA-02/03) : garde du lien coach et du plugin obligatoire. BASE DE TEST REELLE requise
 // (exclu automatiquement sans SUPABASE_URL/KEY ; jamais la production). Prerequis : migrations
-// 202612012501 et 202612012503 appliquees sur la base de test. NON EXECUTE par l'agent P25.
+// 20261201250100 et 20261201250300 appliquees sur la base de test. NON EXECUTE par l'agent P25.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cleanupTestUsers, createTestUser, getAdminClient, type TestUser } from './fixtures';
 
@@ -29,7 +29,7 @@ afterAll(async () => {
   await cleanupTestUsers([coach.id, athlete.id, stranger.id]);
 });
 
-describe('ziko_coach_client_links : garde (202612012501)', () => {
+describe('ziko_coach_client_links : garde (20261201250100)', () => {
   it('un tiers ne voit ni ne modifie le lien', async () => {
     const read = await stranger.client.from('ziko_coach_client_links').select('id').eq('id', linkId);
     expect(read.data ?? []).toHaveLength(0);
@@ -69,7 +69,7 @@ describe('ziko_coach_client_links : garde (202612012501)', () => {
   });
 });
 
-describe('ziko_user_plugins : plugin obligatoire (202612012503)', () => {
+describe('ziko_user_plugins : plugin obligatoire (20261201250300)', () => {
   it("l'athlete ne peut pas supprimer ni desactiver `coach`, mais peut desinstaller un plugin normal", async () => {
     await admin.from('ziko_user_plugins').upsert({ user_id: athlete.id, plugin_id: 'coach', is_enabled: true }, { onConflict: 'user_id,plugin_id' });
     const del = await athlete.client.from('ziko_user_plugins').delete().eq('user_id', athlete.id).eq('plugin_id', 'coach');

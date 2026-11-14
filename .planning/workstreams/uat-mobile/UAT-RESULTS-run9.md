@@ -13,7 +13,7 @@ Branche `uat/run9` (depuis `milestone/v1.20`), base `uat-v1-20`, backend local +
 
 ## Défauts / écarts mesurables nouveaux (cause probable fichier:ligne)
 1. FAIL - Onglet Entraînement : titre `Force` + sous-titre `Coach Ziko · Intermédiaire` pour le programme actif `Bloc de force` (créé par l'utilisateur) : `apps/mobile/app/(app)/workout/index.tsx:499-500`.
-2. FAIL - Récompense de quête non versée en silence : `ziko_award_coins` RETURN si cumul 24 h > 10 000 alors que `ziko_sync_quests` pose `rewarded_at` avant (`supabase/migrations/202612011302_quest_functions.sql:119-124`). Déclenché ici par le seed (+500 000), peu probable en production, mais la carte affiche `+15 pièces récupérées` sans ligne de ledger ; l'en-tête reste à 500 446.
+2. FAIL - Récompense de quête non versée en silence : `ziko_award_coins` RETURN si cumul 24 h > 10 000 alors que `ziko_sync_quests` pose `rewarded_at` avant (`supabase/portfolio-migrations/20261201130200_quest_functions.sql:119-124`). Déclenché ici par le seed (+500 000), peu probable en production, mais la carte affiche `+15 pièces récupérées` sans ligne de ledger ; l'en-tête reste à 500 446.
 3. FAIL - Libellé anglais `strength` dans `Ma suite de programmes` (frise).
 4. FAIL (à valider sur appareil) - Atelier : clavier recouvre le champ de saisie (`workout/atelier.tsx`, pas de KeyboardAvoidingView).
 5. CONSTAT - Accueil, carte `Forme du jour` : hydratation `14,8 L` vs tuile Quick Log `14,75 L` (arrondis différents) ; `Sommeil 7 h 45 · qualité 4 / 5` avec score `0`.

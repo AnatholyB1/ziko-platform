@@ -1,6 +1,6 @@
 // P25 (MCOA-02) : plugins obligatoires (non desinstallables). Source unique cote mobile :
 // PluginLoader (chargement inconditionnel) ET le store (garde de desinstallation) l'utilisent.
-// Garde serveur correspondante : migration 202612012503 (lit `manifest.mandatory` du registre).
+// Garde serveur correspondante : migration 20261201250300 (lit `manifest.mandatory` du registre).
 
 export const MANDATORY_PLUGIN_IDS: string[] = ['coach'];
 

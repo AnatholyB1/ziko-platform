@@ -9,7 +9,7 @@ Branche `phase/10-pantry` (base `milestone/v1.20`, merge de milestone refait, ga
 - **Recettes IA** : rappel `Il te reste aujourd'hui` (objectifs du plugin nutrition - repas du jour, date locale) ; bouton `Generer des recettes · N credit(s)` (cout lu de `CREDIT_COSTS.recipes` via la route, defaut 1) ; chaque proposition : `n sur N ingredients`, `Manque : ...`, `rentre dans tes macros` ; carte `Credits epuises` sur 402.
 - **Courses** : `Il manque dans ton frigo` (calcule : stock bas / epuise / perime, raison affichee + lignes de recettes) et `Ajoutes par moi` ; cases a cocher ; barre `Ranger N article(s) dans le garde-manger` (additionne en stock, remplace un article perime, cree les inconnus, supprime la ligne).
 - **Backend** (`backend/api`) : `POST /pantry/recipes/suggest` derriere `creditCheck('recipes')` + `creditDeduct('recipes')` ; `CREDIT_COSTS.recipes = 1`, `DAILY_QUOTAS.recipes = {1, 0}` (config additive, `creditGate.ts` non modifie) ; objectifs utilisateur (`ziko_user_plugins.settings` nutrition, repli constantes) ; date locale du client dans le corps. Helpers purs `routes/pantry-recipes-macros.ts`.
-- **Migration** (fichier) `supabase/migrations/202612011001_shopping_manual_items.sql` : valeur d'enum `manual`, colonnes `reason`, `checked`. Verifiee par `scripts/uat/check-migration-names.mjs` (OK).
+- **Migration** (fichier) `supabase/portfolio-migrations/20261201100100_shopping_manual_items.sql` : valeur d'enum `manual`, colonnes `reason`, `checked`. Verifiee par `scripts/uat/check-migration-names.mjs` (OK).
 - Mobile : `apps/mobile/src/lib/creditCosts.ts` (+ `recipes: 1`), routes `dashboard|recipes|shopping|add` (cout credit, param `scan`), stub de test `expo-router` (+ `useFocusEffect`, `useLocalSearchParams`).
 - `UAT-PLAN.md` : 17 scenarios S1..S17 ; aucun mot de plus dans `i18n.ts` central (les nouveaux libelles vivent dans `plugins/pantry/src/utils/copy.ts`).
 
@@ -41,7 +41,7 @@ D-01..D-12 (maquette lot B), Q5 = nouvelle action `recipes` (1 credit, 1 generat
 Rendu natif (tailles, cibles 44 dp, ombres), camera et permission, couverture reelle Open Food Facts, appel Sonnet reel, RPC SQL de debit (`ziko_deduct_ai_credits` avec `p_action_type = 'recipes'` non execute), comportement sous un autre fuseau, persistence de `checked` en base.
 
 ## Besoins humains / orchestrateur
-1. Verifier (lecture seule) puis appliquer `20261108000000_ziko_shopping_list.sql` si la table n'existe pas en prod, ensuite `202612011001_shopping_manual_items.sql`.
+1. Verifier (lecture seule) puis appliquer `20261108000000_ziko_shopping_list.sql` si la table n'existe pas en prod, ensuite `20261201100100_shopping_manual_items.sql`.
 2. Valider la politique de credit `recipes` (1 gratuite/jour puis 1 credit).
 3. UAT emulateur S1..S17 apres P1.
 

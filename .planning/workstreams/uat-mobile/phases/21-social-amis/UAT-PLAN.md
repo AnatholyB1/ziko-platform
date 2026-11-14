@@ -5,8 +5,8 @@ Emulateur Android `ziko-uat-1`, file unique, apres P1. Deux comptes obligatoires
 ## Pre-requis (orchestrateur)
 1. **Athlete B** : le seed de P1 ne crée qu'un athlete + un coach (HARN-03). L'orchestrateur AJOUTE un second athlete de test "B" au seed (email + mot de passe hors repo, reinitialisable), avec un nom distinctif (ex. `Marco Delmas`, handle `marcod`) et un niveau/XP/serie/badges/séances/records connus (pour PR-4). Athlete A = le compte existant. Lier au minimum un défi en commun (A et B participants) pour PR-2.
 2. **Migrations** (fichiers seulement, jamais appliquees par l'agent), dans l'ordre, sur la **branche de test** :
-   `202612012101_friendships_integrity.sql`, `202612012102_friend_rpc.sql`, `202612012103_public_profile_rpc.sql`.
-   Production : seulement apres accord utilisateur ET comptage en lecture seule des doublons (requete en tête de `202612012101`, résultat à montrer à l'utilisateur).
+   `20261201210100_friendships_integrity.sql`, `20261201210200_friend_rpc.sql`, `20261201210300_public_profile_rpc.sql`.
+   Production : seulement apres accord utilisateur ET comptage en lecture seule des doublons (requete en tête de `20261201210100`, résultat à montrer à l'utilisateur).
 3. `npm run test:rls` (backend/api) avec `friendships.spec.ts` sur la base de test migrée.
 4. Build dev-client avec les variables de la base de test (pas de prod).
 

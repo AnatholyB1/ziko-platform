@@ -52,7 +52,7 @@ Seed UAT : 12 articles repartis sur les 3 lieux dont un expire demain et un sous
 `registry.ts` NON touche (outils pantry existants etendus seulement si besoin). `i18n.ts` du plugin-sdk non requis (le plugin a ses propres cles). Nouvelle action de credit = fichier `config/credits.ts` (additif).
 ### Migrations (bloc `20261201 1001-1009`, fichiers seulement)
 - **Prerequis a verifier par l'orchestrateur (lecture seule)** : `ziko_shopping_list_items` et le type `ziko_shopping_item_source` existent-ils en prod ? (le fichier `20261108000000` se declare non applique). Si non : l'appliquer d'abord ; sinon `1001` echoue.
-- `202612011001_shopping_manual_items.sql` : `ALTER TYPE ... ADD VALUE IF NOT EXISTS 'manual'` (fichier isole, la valeur n'est pas utilisee dans la meme transaction), `ADD COLUMN reason`, `ADD COLUMN checked`.
+- `20261201100100_shopping_manual_items.sql` : `ALTER TYPE ... ADD VALUE IF NOT EXISTS 'manual'` (fichier isole, la valeur n'est pas utilisee dans la meme transaction), `ADD COLUMN reason`, `ADD COLUMN checked`.
 - Aucune table de credits : l'action `recipes` est dans la config TypeScript.
 </code_context>
 

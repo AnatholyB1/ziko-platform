@@ -1,4 +1,4 @@
--- Schema MINIMAL (colonnes utiles) pour rejouer 202612012701/2702/2703 sur un Postgres LOCAL jetable.
+-- Schema MINIMAL (colonnes utiles) pour rejouer 20261201270100/2702/2703 sur un Postgres LOCAL jetable.
 -- Jamais applique au projet portfolio ni a la branche de test.
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS extensions;

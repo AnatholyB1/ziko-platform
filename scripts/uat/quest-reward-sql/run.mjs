@@ -1,6 +1,6 @@
 // UAT run 9 defaut 1 : une recompense de quete ne doit jamais etre perdue en silence (plafond 24 h de ziko_award_coins).
 // Postgres LOCAL jetable : QR_PG_URL=postgres://postgres@127.0.0.1:8215/qr node scripts/uat/quest-reward-sql/run.mjs
-// Garde-fou : refuse toute URL non locale. Ne touche JAMAIS le projet portfolio. Migration testee : 202612012904.
+// Garde-fou : refuse toute URL non locale. Ne touche JAMAIS le projet portfolio. Migration testee : 20261201290400.
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,10 +29,10 @@ const coins = async (uid) => Number((await q(`SELECT COALESCE((SELECT coins FROM
 const ledger = async (uid) => Number((await q(`SELECT COUNT(*) n FROM public.ziko_coin_transactions WHERE user_id=$1 AND source='quest'`, [uid])).rows[0].n);
 const questRow = async (uid, slug) => (await q(`SELECT rewarded_at, status FROM public.ziko_user_quests WHERE user_id=$1 AND slug=$2`, [uid, slug])).rows[0];
 const today = `(now() AT TIME ZONE 'Europe/Paris')::date`;
-const mig = (f) => readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8');
+const mig = (f) => readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8');
 // Copie fidele d'une fonction de 2701 (du CREATE au `$function$;` suivant).
 const fn2701 = (name) => {
-  const s = mig('202612012701_security_hardening');
+  const s = mig('20261201270100_security_hardening');
   const i = s.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`);
   const j = s.indexOf('\n$function$;', i);
   if (i < 0 || j < 0) throw new Error(`fonction ${name} introuvable dans 2701`);
@@ -42,7 +42,7 @@ const fn2701 = (name) => {
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(root, 'scripts/uat/p12-rewards-sql/stub-schema.sql'), 'utf8'));
 await q(readFileSync(resolve(root, 'scripts/uat/p13-quests-sql/stub-extra.sql'), 'utf8'));
-for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state', '202612011402_quest_sync_ai_handover']) await q(mig(f));
+for (const f of ['20261201120100_badge_award_and_progress', '20261201130100_quest_tables', '20261201130200_quest_functions', '20261201140100_quest_ai_state', '20261201140200_quest_sync_ai_handover']) await q(mig(f));
 // Etat de prod : helpers + ziko_award_coins DURCI (plafond 10 000 / 24 h pour un appelant non fiable, retour silencieux).
 for (const n of ['ziko_sec_jwt_role', 'ziko_sec_is_trusted', 'ziko_sec_ensure_gamification_profile', 'ziko_award_coins']) await q(fn2701(n));
 await q('GRANT EXECUTE ON FUNCTION public.ziko_sec_jwt_role(), public.ziko_sec_is_trusted() TO anon, authenticated, service_role');
@@ -70,9 +70,9 @@ ok('defaut reproduit : AUCUNE ligne de ledger quest et solde inchange (perte sil
 ok('defaut reproduit : la carte annonce pourtant la recompense (newly_completed)', before.newly_completed.length === 1 && before.newly_completed[0].coins === REWARD);
 
 console.log('\n[B] Application de la migration 2904 (deux fois : idempotence)');
-await q(mig('202612012904_quest_reward_system_award'));
+await q(mig('20261201290400_quest_reward_system_award'));
 ok('reparation : la perte historique de A est versee une fois', await ledger(A) === 1 && await coins(A) === 20000 + REWARD, `ledger=${await ledger(A)} coins=${await coins(A)}`);
-await q(mig('202612012904_quest_reward_system_award'));
+await q(mig('20261201290400_quest_reward_system_award'));
 ok('re-application : aucune double attribution (idempotent)', await ledger(A) === 1 && await coins(A) === 20000 + REWARD);
 
 console.log('\n[C] Cas normal inchange : une seule attribution');

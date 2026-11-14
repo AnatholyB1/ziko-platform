@@ -6,7 +6,7 @@ Branche `phase/11-hydratation`. Mobile + 1 migration (fichier) + outil IA.
 - `plugins/hydration/src/settings.ts` : logique pure (rappels n = floor((fin-debut)/intervalle)+1, cafe/the, bonus, validation objectif 1500-4000, dates locales, lecture/ecriture `ziko_hydration_settings`, detection jour de seance = seance dont `started_at` tombe dans le jour local).
 - `reminders.ts` : planification (DAILY par horaire ; objectif atteint = 0 rappel aujourd'hui, uniques demain ; DAILY restaures a la prochaine ouverture de l'ecran), permission (granted/denied/undetermined). `haptics.ts` : impulsion legere.
 - `screens/HydrationPlugin.tsx` : tuiles 132 dp (goutte 24/30/36, `PAR DEFAUT`, etat presse `#F0EFE9` + bord 2 dp `getActionPrimary`, haptique, verrou 300 ms, toast `+N ml ajoutes` + Annuler 5 s, bandeau d'erreur), actions `Autre quantite` / `Ajouter un cafe ou un the`, 4 lignes de reglage cliquables (valeur en `#B53D05`) ouvrant des feuilles basses. `screens/HydrationSheets.tsx` : feuilles Rappels, Verre, Cafe/the, Bonus, Objectif, Quantite, toutes via `KeyboardAvoidingView` + scroll (HYDR-06).
-- Migration `supabase/migrations/202612011101_ziko_hydration_settings.sql` (RLS `auth.uid() = user_id`, CHECK sur chaque valeur). NON appliquee.
+- Migration `supabase/portfolio-migrations/20261201110100_ziko_hydration_settings.sql` (RLS `auth.uid() = user_id`, CHECK sur chaque valeur). NON appliquee.
 - Backend : `hydration_log` sans `amount_ml` utilise la taille de verre du reglage (schema `registry.ts` : `amount_ml` devient optionnel, 2 lignes hors perimetre D-06, additif).
 - `vitest.config.ts` racine : ajout de `plugins/hydration/src/**/*.test.ts`.
 

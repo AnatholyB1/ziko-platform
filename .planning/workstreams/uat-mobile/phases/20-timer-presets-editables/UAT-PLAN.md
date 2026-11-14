@@ -1,6 +1,6 @@
 # Phase 20 : plan UAT emulateur (TIMR-01..03)
 
-Prerequis humain/orchestrateur : appliquer `supabase/migrations/202612012001_timer_preset_fields.sql` sur la base cible AVANT le premier test d'ecriture (sinon insert/update echouent : colonnes `warmup_sec`, `sets`, `round_rest_sec` absentes). Compte de test remis a zero (P1) pour TI-2.
+Prerequis humain/orchestrateur : appliquer `supabase/portfolio-migrations/20261201200100_timer_preset_fields.sql` sur la base cible AVANT le premier test d'ecriture (sinon insert/update echouent : colonnes `warmup_sec`, `sets`, `round_rest_sec` absentes). Compte de test remis a zero (P1) pour TI-2.
 
 | Id | Scenario | Attendu | Mesure |
 |---|---|---|---|

@@ -7,7 +7,7 @@ Branche `phase/20-timer` (base `milestone/v1.20`). Mobile only + 1 fichier migra
 - `TimerPlugin.tsx` reecrit : 3 onglets Séance/Tabata/Intervalle, liste `Mes presets` filtree par onglet, ligne = nom + resume + duree, menu `...` (Modifier/Dupliquer/Supprimer avec confirmation ecrite dans la feuille, maquette C23), etat vide C21, FAB `Nouveau preset`, bouton plein `getActionPrimary` (#CF4509). `builtinPresets` et tout repli supprimes (TIMR-03, Q-P20a). Erreur reseau = `ErrorScreen` (la requete leve desormais l'erreur au lieu de l'avaler).
 - `TimerEditor.tsx` reecrit (creation + edition via `presetId`) : nom + 6 steppers 44 dp (appui long acceleree x1/x5/x10, tap valeur = saisie numerique en feuille, `adjustable` + actions a11y), duree totale en direct, Séance = repos + séries uniquement.
 - Moteur de decompte (G-06) : echauffement, effort, repos, séries, rounds, repos entre rounds ; base sur l'horloge murale (robuste arriere-plan), +/-15 s, sons/vibration par phase, sauvegarde comme séance conservee.
-- Migration (fichier, NON appliquee) `202612012001_timer_preset_fields.sql` : 3 colonnes (0/1/0) + CHECK. Aucune suppression de donnee.
+- Migration (fichier, NON appliquee) `20261201200100_timer_preset_fields.sql` : 3 colonnes (0/1/0) + CHECK. Aucune suppression de donnee.
 - Backend `timer_create_preset` : `warmup_seconds`, `sets`, `round_rest_seconds` optionnels (+ manifest). `registry.ts` inchange.
 - Retire : `TimerManager.tsx`, `store.ts` (BUILTIN_PRESETS), entree manifest `Gérer les chronos`. La route `timer/manager` redirige vers le dashboard (deep link IA `timer_manager`).
 - Q-P20b : Séance=`custom`, Tabata=`tabata`, Intervalle=autres types ; nouveaux presets : custom / tabata / hiit.
@@ -38,4 +38,4 @@ Branche `phase/20-timer` (base `milestone/v1.20`). Mobile only + 1 fichier migra
 `vitest.config.ts` (include), `plugins/timer/*`, `apps/mobile/app/(app)/(plugins)/timer/manager.tsx`.
 
 ## Humain / orchestrateur
-Appliquer la migration 202612012001 ; compter (lecture seule) les lignes `Exemple` ; reset compte UAT (P1) pour TI-2.
+Appliquer la migration 20261201200100 ; compter (lecture seule) les lignes `Exemple` ; reset compte UAT (P1) pour TI-2.

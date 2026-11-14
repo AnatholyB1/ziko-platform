@@ -40,7 +40,7 @@ import {
 } from './db.js';
 import { getWidgetData } from '../dashboards/db.js';
 
-// ziko_create_form_instances_for_trigger est reservee a service_role (migration 202612012701).
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 20261201270100).
 const formsRpc = createServiceRpcClient();
 
 // Admin client for fire-and-forget RPC calls (SECURITY DEFINER functions, no JWT required)

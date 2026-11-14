@@ -1,6 +1,6 @@
 # Phase 26 : Plan d'UAT émulateur (Factions & Ligues)
 
-En file (après P1). Préalable : migrations **`202612012601` -> `202612012605`** appliquées par l'orchestrateur, après approbation, sur la branche jetable `uat-v1-20` UNIQUEMENT (jamais portfolio). Avant l'UAT, rejouer le harnais SQL local : `P26_PG_URL=postgres://postgres@127.0.0.1:<port>/p26 node scripts/uat/p26-league-sql/run.mjs` (114 PASS attendus). Backend UAT : `bash scripts/uat/backend-start.sh` (faux Upstash 8210, faux Anthropic 8211, backend 8200 ; émulateur : `EXPO_PUBLIC_API_URL=http://10.0.2.2:8200`). Détail : `UAT-BACKEND.md`. **Aucun appel Anthropic réel** (faux local).
+En file (après P1). Préalable : migrations **`20261201260100` -> `20261201260500`** appliquées par l'orchestrateur, après approbation, sur la branche jetable `uat-v1-20` UNIQUEMENT (jamais portfolio). Avant l'UAT, rejouer le harnais SQL local : `P26_PG_URL=postgres://postgres@127.0.0.1:<port>/p26 node scripts/uat/p26-league-sql/run.mjs` (114 PASS attendus). Backend UAT : `bash scripts/uat/backend-start.sh` (faux Upstash 8210, faux Anthropic 8211, backend 8200 ; émulateur : `EXPO_PUBLIC_API_URL=http://10.0.2.2:8200`). Détail : `UAT-BACKEND.md`. **Aucun appel Anthropic réel** (faux local).
 
 Comptes : `uat-athlete` (A, `a0a0a0a0-...a1`, tier à régler par étape), `uat-athlete-b` (B, `b0b0b0b0-...b1`), coach `c0c0c0c0-...c1` (lié à A). Captures d'écran + `uiautomator dump` + SQL lecture seule. L'UAT n'écrit en base (service_role, branche jetable) que pour armer les seeds indiqués.
 

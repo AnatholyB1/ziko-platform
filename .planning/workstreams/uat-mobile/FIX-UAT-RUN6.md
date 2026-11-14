@@ -28,7 +28,7 @@ Branche `fix/uat-run6` (base `milestone/v1.20`, deja a jour). Aucun push, aucune
    - Au passage : 3 tests `workoutStore` deja rouges sur la base (champ `replaced` ajoute au retour) mis a jour.
 5. **Plafond de gain de credits (daily_earned 6 > cap 4)** : cause probable = course dans `ziko_earn_ai_credits` (comptage puis insertion sans verrou,
    appels `earnCredits` des outils du chat en fire-and-forget). Le plafond est correct en sequentiel (fonction et service passent tous par la RPC, aucun autre insert `earn`).
-   Migration `supabase/migrations/202612012903_earn_credits_daily_cap_lock.sql` (verrou consultatif par utilisateur, signature inchangee, service_role seul), NON appliquee.
+   Migration `supabase/portfolio-migrations/20261201290300_earn_credits_daily_cap_lock.sql` (verrou consultatif par utilisateur, signature inchangee, service_role seul), NON appliquee.
    `ziko_deduct_ai_credits` / facturation : non touches.
 
 ## Non corrige / reserves

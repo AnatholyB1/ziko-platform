@@ -1,12 +1,17 @@
 # Convention de migrations v1.20 (HARN-07)
 
-Nom : `supabase/migrations/20261201PPSS_description.sql`
+Nom : `supabase/portfolio-migrations/20261201PPSS00_description.sql` (14 chiffres, `YYYYMMDDHHMMSS`)
 
-- `PP` = numero de la phase du milestone v1.20 sur 2 chiffres (01-26)
+- `PP` = numero de la phase du milestone v1.20 sur 2 chiffres (01-29)
 - `SS` = sequence dans la phase, 01 a 09
+- `00` = suffixe fixe (secondes) qui complete le format 14 chiffres du dossier portfolio
 - `description` = snake_case minuscule, `[a-z0-9_]`
 
-Exemple : phase 12, 1ere migration = `20261201` + `12` + `01` = `202612011201_rewards_achievements.sql`.
+Exemple : phase 12, 1ere migration = `20261201` + `12` + `01` + `00` = `20261201120100_badge_award_and_progress.sql`.
+
+Historique : ces fichiers ont d'abord ete ecrits dans `supabase/migrations/` (12 chiffres) puis deplaces ici
+(`supabase/migrations/` est gele par le garde CI `migration-guard --check-legacy`). Mapping complet ancien -> nouveau :
+`.planning/workstreams/uat-mobile/MOVE-MIGRATIONS.md`.
 
 Raisons : la version max hebergee est `20261111135505`, donc tout `20261201*` est strictement posterieur (ordre d'application garanti) ; chaque phase a son bloc de 9 -> aucune collision entre worktrees paralleles.
 

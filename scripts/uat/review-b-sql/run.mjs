@@ -29,7 +29,7 @@ const as = async (uid, role = 'authenticated') => {
   await q(`SET ROLE ${role}`);
 };
 const reset = async () => { await q('RESET ROLE'); };
-const mig = (f) => q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
+const mig = (f) => q(readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8'));
 const rpc = async (who, fn, args = [], role = 'authenticated') => {
   await as(who, role);
   const ph = args.map((_, i) => `$${i + 1}`).join(', ');
@@ -45,9 +45,9 @@ await q(readFileSync(resolve(root, 'scripts/uat/p12-rewards-sql/stub-schema.sql'
 await q(readFileSync(resolve(root, 'scripts/uat/p13-quests-sql/stub-extra.sql'), 'utf8'));
 await q(`CREATE TABLE public.ziko_body_measurements (id uuid DEFAULT gen_random_uuid() PRIMARY KEY, user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   weight_kg numeric, date date DEFAULT CURRENT_DATE NOT NULL, created_at timestamptz DEFAULT now() NOT NULL)`);
-for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state',
-  '202612011402_quest_sync_ai_handover', '202612011602_quest_measurement_metric', '202612012801_quest_metric_window']) await mig(f);
-await mig('202612012801_quest_metric_window'); // rejouabilite
+for (const f of ['20261201120100_badge_award_and_progress', '20261201130100_quest_tables', '20261201130200_quest_functions', '20261201140100_quest_ai_state',
+  '20261201140200_quest_sync_ai_handover', '20261201160200_quest_measurement_metric', '20261201280100_quest_metric_window']) await mig(f);
+await mig('20261201280100_quest_metric_window'); // rejouabilite
 console.log('Migrations 1201..1602 + 2801 appliquees (2801 deux fois).');
 
 const U = (n) => `00000000-0000-0000-0000-0000000b${String(n).padStart(4, '0')}`;
@@ -104,8 +104,8 @@ ok('apres 2,1 L bus APRES la creation : terminee, pieces creditees', sy.newly_co
 console.log('\n[B] M2 : semaine sans activite = neutre (ligue)');
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(root, 'scripts/uat/p26-league-sql/stub-schema.sql'), 'utf8'));
-const MIGS = ['202612012601_factions_leagues_schema', '202612012602_faction_rpc', '202612012603_league_sync', '202612012604_league_ai_gate', '202612012605_collective_challenges',
-  '202612012803_league_neutral_absence', '202612012804_league_ai_decline_cooldown'];
+const MIGS = ['20261201260100_factions_leagues_schema', '20261201260200_faction_rpc', '20261201260300_league_sync', '20261201260400_league_ai_gate', '20261201260500_collective_challenges',
+  '20261201280300_league_neutral_absence', '20261201280400_league_ai_decline_cooldown'];
 for (const f of MIGS) await mig(f);
 for (const f of MIGS.slice(5)) await mig(f); // rejouabilite
 console.log('Migrations 2601..2605 + 2803 + 2804 appliquees (2803/2804 deux fois).');

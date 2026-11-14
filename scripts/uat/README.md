@@ -44,7 +44,7 @@ Preuves : `uat-evidence/<phase>/<flow>/` (PNG, `logcat.txt`, `maestro-result.xml
 `background [s]`, `gps <lat> <lon>`, `network off|on`, `session-expiry [s]` (ban admin court => refresh echoue), `camera-barcode <png>` (poster VirtualScene, non verifie).
 
 ## Migrations
-Voir `supabase/migrations/README-v1.20.md` ; check : `node scripts/uat/check-migration-names.mjs`.
+Voir `supabase/portfolio-migrations/README-v1.20.md` ; check : `node scripts/uat/check-migration-names.mjs`.
 
 ## Arret emulateur
 Toujours par PID du port 5554 (`emu-stop.ps1`), jamais `taskkill /IM`.

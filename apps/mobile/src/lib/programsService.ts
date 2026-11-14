@@ -1,6 +1,6 @@
 // Supabase access for the Programmes screen (phase 7). The client is injected so the module is
 // unit-testable with a mock. All writes of `is_active` go through the ziko_set_active_program RPC
-// (migration 202612010703) : no client-side "deactivate all then activate one" any more.
+// (migration 20261201070300) : no client-side "deactivate all then activate one" any more.
 
 import {
   buildProgramList,

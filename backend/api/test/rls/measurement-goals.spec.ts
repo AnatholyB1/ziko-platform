@@ -1,7 +1,7 @@
 // v1.20 Phase 15 (MEAS-01, MEAS-05, MEAS-06) -- objectifs de mesures dans ziko_athlete_goals.
 // Migrations sous test :
-//   supabase/migrations/202612011501_measurement_goals_extend.sql
-//   supabase/migrations/202612011502_measurement_goals_achieved_trigger.sql
+//   supabase/portfolio-migrations/20261201150100_measurement_goals_extend.sql
+//   supabase/portfolio-migrations/20261201150200_measurement_goals_achieved_trigger.sql
 // Meme garde RUN_DB que athlete-goals.spec.ts : ne tourne que contre une base de test
 // (SUPABASE_TEST_URL === SUPABASE_URL), jamais en CI "verify" ni contre la production.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

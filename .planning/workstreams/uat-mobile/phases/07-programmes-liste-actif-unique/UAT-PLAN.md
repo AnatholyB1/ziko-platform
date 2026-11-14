@@ -1,6 +1,6 @@
 # Phase 7 - Plan d'UAT (Maestro / adb) - Programmes : liste, actif unique, menu
 
-Cible : émulateur `ziko-uat-1`, base = branche jetable (jamais la prod) AVEC les migrations `202612010701..0704` appliquées par l'orchestrateur. File : `queue.sh acquire 07 <flow>`. Preuves : `uat-evidence/07/<flow>/` (PNG 390x844, `uiautomator dump`, logcat, RESULT.txt). Contrat : `04-maquettes-reference/lot-A/DESIGN-CONTRACT.md` (la maquette gagne). Bouton plein = token `getActionPrimary(theme)` = `#CF4509` (blanc dessus 4,66:1).
+Cible : émulateur `ziko-uat-1`, base = branche jetable (jamais la prod) AVEC les migrations `20261201070100..0704` appliquées par l'orchestrateur. File : `queue.sh acquire 07 <flow>`. Preuves : `uat-evidence/07/<flow>/` (PNG 390x844, `uiautomator dump`, logcat, RESULT.txt). Contrat : `04-maquettes-reference/lot-A/DESIGN-CONTRACT.md` (la maquette gagne). Bouton plein = token `getActionPrimary(theme)` = `#CF4509` (blanc dessus 4,66:1).
 
 ## Données de départ (branche jetable uniquement)
 Athlète UAT `athlete-p7` lié à un coach `coach-p7` :

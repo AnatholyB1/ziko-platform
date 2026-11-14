@@ -57,9 +57,9 @@ ALTER TABLE public.ziko_body_measurements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY m_own ON public.ziko_body_measurements FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.ziko_body_measurements TO authenticated;
 `);
-for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state', '202612011402_quest_sync_ai_handover',
-  '202612011501_measurement_goals_extend', '202612011502_measurement_goals_achieved_trigger', '202612011601_ai_measurement_goals', '202612011602_quest_measurement_metric']) {
-  await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
+for (const f of ['20261201120100_badge_award_and_progress', '20261201130100_quest_tables', '20261201130200_quest_functions', '20261201140100_quest_ai_state', '20261201140200_quest_sync_ai_handover',
+  '20261201150100_measurement_goals_extend', '20261201150200_measurement_goals_achieved_trigger', '20261201160100_ai_measurement_goals', '20261201160200_quest_measurement_metric']) {
+  await q(readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8'));
 }
 console.log('Migrations 1201, 1301, 1302, 1401, 1402, 1501, 1502, 1601, 1602 appliquees sur la base locale jetable.');
 

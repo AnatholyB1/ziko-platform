@@ -1,4 +1,4 @@
-// Harnais de non-regression SQL du durcissement securite v1.20 (migrations 202612012701/2702/2703).
+// Harnais de non-regression SQL du durcissement securite v1.20 (migrations 20261201270100/2702/2703).
 // Sur un Postgres LOCAL jetable : (A) etat AVANT = corps historiques + attaques de l'audit qui REUSSISSENT ;
 // (B) application des migrations (deux fois : idempotence) ; (C) memes attaques qui ECHOUENT + flux legitimes qui PASSENT.
 // Usage : SEC_PG_URL=postgres://postgres@127.0.0.1:<port>/sec node scripts/uat/sec-sql/run.mjs
@@ -26,7 +26,7 @@ const as = async (uid, role = 'authenticated') => {
   if (role) await q(`SET ROLE ${role}`);
 };
 const reset = async () => { await q('RESET ROLE'); await q(`SELECT set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claim.role', '', false)`); };
-const mig = (f) => readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8');
+const mig = (f) => readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8');
 // Execute fn et renvoie { r } ou { e } (message d'erreur), puis remet le role admin.
 const run = async (uid, role, sql, params) => {
   try { await as(uid, role); const r = await q(sql, params); await reset(); return { r }; }
@@ -49,9 +49,9 @@ await q(`
 `);
 // Etat de prod : pas d'INSERT client sur l'inventaire (migration 20260822120000), UPDATE de toutes les colonnes.
 await q('REVOKE INSERT ON public.ziko_user_inventory FROM authenticated');
-await q(mig('202612012102_friend_rpc'));
-await q(mig('202612012103_public_profile_rpc'));
-await q(mig('202612012605_collective_challenges'));
+await q(mig('20261201210200_friend_rpc'));
+await q(mig('20261201210300_public_profile_rpc'));
+await q(mig('20261201260500_collective_challenges'));
 
 const U = (n) => `00000000-0000-0000-0000-0000000050${String(n).padStart(2, '0')}`;
 const [A, B, C, D, E, F, COACH] = [1, 2, 3, 4, 5, 6, 7].map(U);
@@ -109,7 +109,7 @@ const priv0 = (await run(E, 'authenticated', `SELECT public.ziko_get_public_prof
 ok('profil PRIVE lisible en entier par un non-ami (goal, badges...)', priv0.goal === 'fat_loss' && Array.isArray(priv0.recent_workouts), JSON.stringify(priv0).slice(0, 120));
 
 console.log('\n[B] Application des migrations 2701, 2702, 2703 (puis 2701 une 2e fois : idempotence)');
-for (const f of ['202612012701_security_hardening', '202612012702_public_profile_privacy', '202612012703_collective_progress_privacy', '202612012701_security_hardening']) {
+for (const f of ['20261201270100_security_hardening', '20261201270200_public_profile_privacy', '20261201270300_collective_progress_privacy', '20261201270100_security_hardening']) {
   try { await q(mig(f)); ok(`${f} appliquee`, true); } catch (e) { ok(`${f} appliquee`, false, e.message); }
 }
 

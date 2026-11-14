@@ -28,8 +28,8 @@ const expectErr = async (name, fn, re) => {
 
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(here, 'stub-schema.sql'), 'utf8'));
-await q(readFileSync(resolve(root, 'supabase/migrations/202612011201_badge_award_and_progress.sql'), 'utf8'));
-await q(readFileSync(resolve(root, 'supabase/migrations/202612011202_equip_item_rpc.sql'), 'utf8'));
+await q(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201120100_badge_award_and_progress.sql'), 'utf8'));
+await q(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201120200_equip_item_rpc.sql'), 'utf8'));
 console.log('Migrations appliquees sur la base locale jetable.');
 
 const U1 = '00000000-0000-0000-0000-000000000001', U2 = '00000000-0000-0000-0000-000000000002', U3 = '00000000-0000-0000-0000-000000000003';

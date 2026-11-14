@@ -4,11 +4,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const dir = join(__dirname, '../../../supabase/migrations');
-const ex = readFileSync(join(dir, '202612011801_stretching_exercises.sql'), 'utf8');
-const def = readFileSync(join(dir, '202612011802_stretching_default_routine.sql'), 'utf8');
+const dir = join(__dirname, '../../../supabase/portfolio-migrations');
+const ex = readFileSync(join(dir, '20261201180100_stretching_exercises.sql'), 'utf8');
+const def = readFileSync(join(dir, '20261201180200_stretching_default_routine.sql'), 'utf8');
 
-describe('202612011801_stretching_exercises', () => {
+describe('20261201180100_stretching_exercises', () => {
   it('RLS activee, lecture catalogue + propres lignes', () => {
     expect(ex).toMatch(/ENABLE ROW LEVEL SECURITY/);
     expect(ex).toMatch(/FOR SELECT TO authenticated\s+USING \(user_id IS NULL OR \(SELECT auth\.uid\(\)\) = user_id\)/);
@@ -44,7 +44,7 @@ describe('202612011801_stretching_exercises', () => {
   });
 });
 
-describe('202612011802_stretching_default_routine', () => {
+describe('20261201180200_stretching_default_routine', () => {
   it('is_default + index unique partiel (1 defaut par user) + routine_id sur les logs', () => {
     expect(def).toMatch(/ADD COLUMN IF NOT EXISTS is_default boolean NOT NULL DEFAULT false/);
     expect(def).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS ziko_uq_stretching_routines_one_default\s+ON public\.ziko_stretching_routines \(user_id\) WHERE is_default/);

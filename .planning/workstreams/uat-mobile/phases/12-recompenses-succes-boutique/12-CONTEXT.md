@@ -55,8 +55,8 @@ Seed UAT : compte neuf (0 succes), compte avec 12+ objets dans une categorie (R-
 ### Integration Points
 `i18n.ts` du plugin-sdk : namespace `rewards.*` ajoute a la fin. P21 (profil public) lit `ziko_user_badges` en lecture seule : ne pas renommer/changer de forme la table. `registry.ts` non touche.
 ### Migrations (bloc `20261201 1201-1209`, fichiers seulement)
-- `202612011201_badge_award_and_progress.sql` : reecriture `ziko_check_and_award_badges` (retour jsonb des slugs, serie alignee D-10, coins par tier D-11) + `ziko_get_badge_progress` ; `ALTER` du CHECK `source` de `ziko_coin_transactions` (+ `achievement`).
-- `202612011202_equip_item_rpc.sql` : `ziko_equip_item`.
+- `20261201120100_badge_award_and_progress.sql` : reecriture `ziko_check_and_award_badges` (retour jsonb des slugs, serie alignee D-10, coins par tier D-11) + `ziko_get_badge_progress` ; `ALTER` du CHECK `source` de `ziko_coin_transactions` (+ `achievement`).
+- `20261201120200_equip_item_rpc.sql` : `ziko_equip_item`.
 - Toute fonction : `SECURITY DEFINER`, `SET search_path = public, pg_temp`, `REVOKE ALL ... FROM PUBLIC, anon`, `GRANT EXECUTE ... TO authenticated`, verification `auth.uid()` (la fonction existante prend `p_user_id` en parametre : la nouvelle version DOIT verifier `p_user_id = auth.uid()`).
 </code_context>
 

@@ -16,7 +16,7 @@ Branche d'intégration : `milestone/v1.20` (worktree `.claude/worktrees/integrat
 - Incohérence non résolue : le résumé de l'agent du run 8 évoque un FAIL « saisie d'eau après création d'une quête non comptée », mais ses tableaux et `phases/13-*/UAT-RESULTS.md` donnent PASS (SQL). À rejouer par l'UI.
 
 ## Actions PRODUCTION réalisées (accord explicite de l'utilisateur)
-1. `202612012501_coach_link_guard` appliquée en prod (faille RLS `ziko_coach_client_links`).
+1. `20261201250100_coach_link_guard` appliquée en prod (faille RLS `ziko_coach_client_links`).
 2. REVOKE EXECUTE de `ziko_earn_ai_credits` / `ziko_deduct_ai_credits` (PUBLIC/anon/authenticated) et de `ziko_search_users_fuzzy` (anon). Détail : `DEPLOY-CHECKLIST-v1.20.md` sections H et J.
 Rien d'autre n'a été écrit en prod.
 

@@ -1,6 +1,6 @@
 # Phase 13 : Plan d'UAT émulateur (Quêtes en base)
 
-Les UAT émulateur sont en file (après P1). Préalable : les migrations `202612011201` (P12, source de pièces `achievement`), `202612011301` puis `202612011302` appliquées par l'orchestrateur après approbation. Sans elles, l'onglet Quêtes affiche la carte d'erreur `Quêtes indisponibles` (la RPC `ziko_sync_quests` n'existe pas).
+Les UAT émulateur sont en file (après P1). Préalable : les migrations `20261201120100` (P12, source de pièces `achievement`), `20261201130100` puis `20261201130200` appliquées par l'orchestrateur après approbation. Sans elles, l'onglet Quêtes affiche la carte d'erreur `Quêtes indisponibles` (la RPC `ziko_sync_quests` n'existe pas).
 
 Capture = captures d'écran émulateur + arbre d'accessibilité (`uiautomator dump`). Seeds = lignes dans les tables source (`ziko_hydration_logs`, séances réelles), jamais dans `ziko_user_quests` (progression calculée, pas saisie).
 

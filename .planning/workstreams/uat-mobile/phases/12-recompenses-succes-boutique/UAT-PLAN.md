@@ -1,6 +1,6 @@
 # Phase 12 : Plan d'UAT emulateur (Recompenses : Succes & Boutique)
 
-Les UAT emulateur sont en file (apres P1). Ce plan donne des criteres mesurables, les seeds et la verification base. Prealable : les migrations `202612011201` et `202612011202` doivent etre appliquees (par l'orchestrateur, apres approbation) sur la base cible de l'UAT ; sans elles l'ecran Succes affichera la carte d'erreur B05 (la RPC `ziko_get_badge_progress` n'existe pas encore).
+Les UAT emulateur sont en file (apres P1). Ce plan donne des criteres mesurables, les seeds et la verification base. Prealable : les migrations `20261201120100` et `20261201120200` doivent etre appliquees (par l'orchestrateur, apres approbation) sur la base cible de l'UAT ; sans elles l'ecran Succes affichera la carte d'erreur B05 (la RPC `ziko_get_badge_progress` n'existe pas encore).
 
 Compte de test : chaque scenario precise son seed. Capture = captures d'ecran emulateur + arbre d'accessibilite (`uiautomator dump`).
 

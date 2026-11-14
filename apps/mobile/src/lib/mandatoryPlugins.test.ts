@@ -52,8 +52,8 @@ describe('plugins obligatoires (MCOA-02)', () => {
 });
 
 describe('migrations P25 (statique : le SQL n est PAS execute ici)', () => {
-  const guard = read('supabase/migrations/202612012501_coach_link_guard.sql');
-  const plugins = read('supabase/migrations/202612012503_mandatory_plugin_guard.sql');
+  const guard = read('supabase/portfolio-migrations/20261201250100_coach_link_guard.sql');
+  const plugins = read('supabase/portfolio-migrations/20261201250300_mandatory_plugin_guard.sql');
 
   it('garde du lien : identite immuable, athlete = revoked_at seulement, retire = fige, revoked_by non falsifiable', () => {
     expect(guard).toMatch(/coach_id IS DISTINCT FROM OLD\.coach_id/);

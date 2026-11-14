@@ -1,7 +1,7 @@
 // v1.20 Phase 18 (STRE-02, STRE-05) -- catalogue d'exercices de stretching + routine par defaut unique.
 // Migrations sous test :
-//   supabase/migrations/202612011801_stretching_exercises.sql
-//   supabase/migrations/202612011802_stretching_default_routine.sql
+//   supabase/portfolio-migrations/20261201180100_stretching_exercises.sql
+//   supabase/portfolio-migrations/20261201180200_stretching_default_routine.sql
 // Meme garde RUN_DB que measurement-goals.spec.ts : ne tourne que contre une base de test
 // (SUPABASE_TEST_URL === SUPABASE_URL), jamais en CI "verify" ni contre la production.
 import { afterAll, describe, expect, it } from 'vitest';

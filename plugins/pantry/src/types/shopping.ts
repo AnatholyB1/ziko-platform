@@ -1,6 +1,6 @@
 // Shopping list types (Phase 9 + v1.20 Phase 10)
 
-/** `manual` = ligne ajoutee par l'utilisateur (migration 202612011001 : valeur d'enum + colonnes reason/checked). */
+/** `manual` = ligne ajoutee par l'utilisateur (migration 20261201100100 : valeur d'enum + colonnes reason/checked). */
 export type ShoppingItemSource = 'low_stock' | 'recipe' | 'manual';
 
 export interface ShoppingListItem {

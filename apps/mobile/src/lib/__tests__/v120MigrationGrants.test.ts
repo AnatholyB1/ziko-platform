@@ -1,11 +1,11 @@
 // Non-regression UAT run2 (defaut 3): the portfolio schema has no default privileges, so a table created
 // without an explicit GRANT answers "permission denied". Every table created by a v1.20 migration
-// (supabase/migrations/2026120*) must be the target of a GRANT in the v1.20 migrations.
+// (supabase/portfolio-migrations/2026120*) must be the target of a GRANT in the v1.20 migrations.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DIR = path.resolve(__dirname, '../../../../../supabase/migrations');
+const DIR = path.resolve(__dirname, '../../../../../supabase/portfolio-migrations');
 const files = fs.readdirSync(DIR).filter((f) => /^2026120\d+_.*\.sql$/.test(f)).sort();
 const sqlByFile = new Map(files.map((f) => [f, fs.readFileSync(path.join(DIR, f), 'utf8')]));
 const allSql = [...sqlByFile.values()].join('\n');

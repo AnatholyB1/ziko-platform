@@ -3,7 +3,7 @@
 Comptes : athlete de test HARN-03 lie a un coach de test qui a assigne un programme (`ziko_workout_programs.assigned_to_user_id = athlete`, `created_by_coach_id = coach`) ; un 2e athlete sans lien (HARN-04) ; un 2e code d'invitation valide du coach. Emulateur Android 1080x2400 / dpi 420, verrou machine `.planning/.machine-lock`. **Base de test/harnais uniquement, jamais la prod.** Aucun appel externe (pas d'IA, pas de mail).
 
 ## Preparation (orchestrateur, base jetable)
-1. Appliquer dans l'ordre `202612012501`, `202612012502`, `202612012503` (apres 0701-0704 de P7). Rejouer chaque fichier une 2e fois : doit etre sans erreur (idempotence).
+1. Appliquer dans l'ordre `20261201250100`, `20261201250200`, `20261201250300` (apres 0701-0704 de P7). Rejouer chaque fichier une 2e fois : doit etre sans erreur (idempotence).
 2. Lancer `backend/api` : `npx vitest run test/rls/coach-link-guard.spec.ts` avec `SUPABASE_*` de la base de test (spec exclu sans credentials). Attendu : 7 verts. **Cette etape est la seule preuve SQL/RLS : elle n'a PAS ete executee par l'agent P25.**
 3. Verif manuelle SQL (psql, role authenticated simule) : `update ziko_coach_client_links set revoked_at = null where id = <lien retire>` -> 0 ligne ; `update ... set coach_id = <autre>` -> erreur `42501` ; `delete from ziko_user_plugins where plugin_id = 'coach'` en tant que proprietaire -> erreur `42501`, en `service_role` -> OK.
 
