@@ -101,3 +101,5 @@ Gate : `npx vitest run` racine 83 fichiers / 1246 tests OK ; `backend/api` 50 fi
 | 52 | 202612012903_earn_credits_daily_cap_lock.sql | 20261201290300_earn_credits_daily_cap_lock.sql |
 | 53 | 202612012904_quest_reward_system_award.sql | 20261201290400_quest_reward_system_award.sql |
 | 54 | (nouveau) | 20261201290500_ziko_deduct_ai_credits_fix.sql |
+
+Gate final (2026-11-14) : racine vitest 83 fichiers / 1246 tests OK ; backend/api vitest 50 fichiers / 572 tests OK ; tsc --noEmit backend/api OK ; v120MigrationGrants (test statique GRANT) vert ; check-migration-names, --check-legacy et --check-portfolio PASS ; milestone/v1.20 deja integre (merge = Already up to date).
