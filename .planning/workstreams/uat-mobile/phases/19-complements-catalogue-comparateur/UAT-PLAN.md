@@ -1,6 +1,6 @@
 # Phase 19 : plan UAT émulateur (SU-1 à SU-6)
 
-Prérequis (humain/orchestrateur) : les 3 migrations `202612011901` à `202612011903` appliquées sur la base de test/portfolio (jamais par l'agent) ; athlète de test du harnais P1 (compte neuf = stack vide) ; build dev-client ; plugin Compléments installé (niveau >= 4). Réseau actif (catalogue = Supabase direct). Verrou machine `.planning/.machine-lock` pris pour la session émulateur.
+Prérequis (humain/orchestrateur) : les 3 migrations `20261201190100` à `20261201190300` appliquées sur la base de test/portfolio (jamais par l'agent) ; athlète de test du harnais P1 (compte neuf = stack vide) ; build dev-client ; plugin Compléments installé (niveau >= 4). Réseau actif (catalogue = Supabase direct). Verrou machine `.planning/.machine-lock` pris pour la session émulateur.
 
 Les `testID` ci-dessous existent dans le code : `supp-search`, `supp-result-count`, `supp-product-<id>`, `supp-price-<id>`, `supp-filter-pill-marque|catégorie`, `supp-filter-brand-<id>`, `supp-filter-cat-<id>`, `supp-filter-apply`, `supp-filter-clear`, `supp-load-more`, `supp-offer-<i>`, `supp-offer-link-<i>`, `supp-scrape-date`, `supp-add-to-stack`, `supp-dose-stepper`, `supp-moment-morning|noon|evening`, `supp-stack-save`, `supp-stack-row-<id>`, `supp-stack-edit-<id>`, `supp-stack-count`, `supp-progress`, `supp-intake-<id>-<moment>`, `supp-reminder-switch-<moment>`, `supp-reminder-time-<moment>`.
 

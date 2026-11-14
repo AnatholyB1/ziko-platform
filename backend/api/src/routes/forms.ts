@@ -19,7 +19,7 @@ function athleteDb(c: { req: { header: (n: string) => string | undefined } }) {
   });
 }
 
-// ziko_create_form_instances_for_trigger est reservee a service_role (migration 202612012701).
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 20261201270100).
 const formsRpc = createServiceRpcClient();
 
 const router = new Hono();

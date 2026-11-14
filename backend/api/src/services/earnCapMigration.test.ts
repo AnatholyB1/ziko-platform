@@ -1,5 +1,5 @@
 /**
- * UAT run 6 : daily_earned (6) > daily_cap (4). Garde STATIQUE de la migration 202612012903 : le comptage du
+ * UAT run 6 : daily_earned (6) > daily_cap (4). Garde STATIQUE de la migration 20261201290300 : le comptage du
  * plafond journalier doit se faire SOUS un verrou consultatif par utilisateur, sinon deux earnCredits()
  * concurrents (outils du chat en fire-and-forget) depassent le plafond. Ce test lit le SQL : il ne prouve pas le
  * comportement concurrent reel sur Postgres (a re-verifier sur la branche uat).
@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const sql = readFileSync(
-  resolve(__dirname, '../../../../supabase/migrations/202612012903_earn_credits_daily_cap_lock.sql'),
+  resolve(__dirname, '../../../../supabase/portfolio-migrations/20261201290300_earn_credits_daily_cap_lock.sql'),
   'utf8',
 );
 

@@ -53,8 +53,8 @@ Criteres A-1 a A-5 du contrat (arbre d'accessibilite, 2 captures pour A-2, titre
 ### Integration Points
 Fichiers partages (carte de propriete) : `workout/*` apres P6 ; `packages/plugin-sdk/src/i18n.ts` (ajouter un namespace `programs.*` a la fin, pas de reecriture) ; pas de toucher `registry.ts`.
 ### Migrations (bloc `supabase/migrations/20261201 0701-0709`, fichiers seulement)
-- `202612010701_active_program_rpc.sql` : `ziko_set_active_program` (SECURITY DEFINER, `SET search_path = public`, `REVOKE ALL ... FROM PUBLIC, anon` puis `GRANT EXECUTE ... TO authenticated`) + index uniques partiels D-06.
-- `202612010702_dedupe_active_programs.sql` (seulement si la prod a deja des doublons actifs : verification lecture seule a faire par l'orchestrateur avant application ; sinon omis).
+- `20261201070100_active_program_rpc.sql` : `ziko_set_active_program` (SECURITY DEFINER, `SET search_path = public`, `REVOKE ALL ... FROM PUBLIC, anon` puis `GRANT EXECUTE ... TO authenticated`) + index uniques partiels D-06.
+- `20261201070200_dedupe_active_programs.sql` (seulement si la prod a deja des doublons actifs : verification lecture seule a faire par l'orchestrateur avant application ; sinon omis).
 - Tout nouvel objet `ziko_*` suit la regle du README `supabase/migrations/README-v1.20.md` et la note de `20261107170000_ziko_revoke_client_dml.sql` (REVOKE explicites).
 </code_context>
 

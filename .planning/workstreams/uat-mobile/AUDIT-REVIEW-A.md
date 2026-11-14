@@ -46,7 +46,7 @@ Ne figure pas ici ce que FIX-UAT-RUN1/2 ont deja corrige.
 
 17. MOYENNE | `plugins/gamification/src/store.ts:~190-210` (`updateStreak`, `ensureProfile`) | Ecriture cliente directe sur `ziko_user_gamification` (UPDATE) et `rpc('ziko_award_xp'|'ziko_award_coins')` avec `p_amount` fourni par le client, erreurs non verifiees. Le diagnostic P2 mentionne une migration prod `ziko_revoke_client_dml` absente du depot (aucune trace dans `supabase/migrations`, ni sur `main`). | Si le REVOKE DML est actif en prod, la serie ne progresse jamais (echec silencieux) ; sinon le client peut s'attribuer des pieces/XP. A verifier avec l'audit securite. | Passer la serie et les gains en RPC SECURITY DEFINER qui calculent le montant ; verifier les erreurs.
 
-18. MOYENNE | `supabase/migrations/202612011203_badge_definitions_select_policy.sql` (et `1204/1205/1803/2504`) | Fichiers non appliques. Sans la policy, `fetchAchievements` renvoie `0 sur 0` (REWD-02/03) ; sans `level_definitions`, "niveau maximum" a tort. Le gate vitest ne le voit pas. | REWD-02 depend d'un pas manuel hors code. | Garder dans la check-list de deploiement ; ajouter un test integration RLS.
+18. MOYENNE | `supabase/portfolio-migrations/20261201120300_badge_definitions_select_policy.sql` (et `1204/1205/1803/2504`) | Fichiers non appliques. Sans la policy, `fetchAchievements` renvoie `0 sur 0` (REWD-02/03) ; sans `level_definitions`, "niveau maximum" a tort. Le gate vitest ne le voit pas. | REWD-02 depend d'un pas manuel hors code. | Garder dans la check-list de deploiement ; ajouter un test integration RLS.
 
 19. MOYENNE | `plugins/pantry/src/utils/data.ts:36-52` (`executeRanger`) | Mises a jour/insert/suppressions sequentielles non transactionnelles (boucles N+1). Un echec a mi-chemin laisse du stock insere sans retrait des courses. | PANT-06 incoherent apres echec ; doublons au retry. | RPC unique ou, a defaut, ordre idempotent.
 
@@ -61,7 +61,7 @@ Ne figure pas ici ce que FIX-UAT-RUN1/2 ont deja corrige.
 26. BASSE | `apps/mobile/app/(app)/_layout.tsx:181`, `plugins/coach/src/screens/coachLinked.ts:35`, `coachState.ts:45`, `ConversationScreen.tsx:129` | `toLocaleDateString/TimeString` encore utilises malgre XCUT-02 ("tous remplaces"), risque "May" sur Hermes. | XCUT-02 non complet. | `formatDateFr`.
 27. BASSE | `plugins/nutrition/src/screens/TDEECalculatorScreen.tsx:34-37,198,226,258,277,335` | Emojis dans l'UI (calculateur TDEE). | Charte. | Ionicons.
 28. BASSE | `apps/mobile/src/lib/programsService.ts:~166-170` | Rollback de `duplicateProgram` : resultat du `delete` ignore ; copie sequentielle (N+1 par seance). | Programme demi-copie possible. | Verifier l'erreur / RPC.
-29. BASSE | `ziko_set_active_program` (`202612010703`) | La RPC met `is_active=false` sur la ligne du programme COACH assigne : la meme ligne sert au CRM coach. Aucun index unique partiel n'impose un seul actif. | Le coach voit son programme desactive par le choix de l'athlete ; les chemins hors RPC (constat 1) peuvent encore creer 2 actifs. | Etat "actif" cote athlete dans une table dediee ; index unique partiel.
+29. BASSE | `ziko_set_active_program` (`20261201070300`) | La RPC met `is_active=false` sur la ligne du programme COACH assigne : la meme ligne sert au CRM coach. Aucun index unique partiel n'impose un seul actif. | Le coach voit son programme desactive par le choix de l'athlete ; les chemins hors RPC (constat 1) peuvent encore creer 2 actifs. | Etat "actif" cote athlete dans une table dediee ; index unique partiel.
 30. BASSE | `apps/mobile/src/__tests__/uatRun1Guards.test.ts` ; `mealLog.test.ts` ; `nativeDepsAlignment.test.ts` | Tests par `readFileSync` + regex : `if (/<TextInput/.test(body))` rend le test KAV conditionnel ; ils ne prouvent ni clavier ni rendu. Annonce comme tel dans FIX-UAT-RUN1, mais comptes dans le gate. | Faux sentiment de couverture. | Garder, mais ne pas les compter comme preuve.
 31. BASSE | `plugins/habits/src/store.ts:122-158`, `HabitLogScreen.tsx:19` | Emojis par defaut/pickers d'habitudes. | Charte (donnee utilisateur, tolerable). | Ionicons par defaut.
 
@@ -119,7 +119,7 @@ LIVRE = visible dans le code ET preuve (emulateur ou test). PARTIEL = code prese
 | Exigence | Etat | Preuve |
 |---|---|---|
 | TRAIN-06 liste de tous les programmes | LIVRE | run1 flow A PASS (filtres 3/1/1/1) ; `programsService.loadAllPrograms` |
-| TRAIN-07 un seul actif | PARTIEL | RPC `202612010703` solide ; contournee par `backend/.../ai-programs.ts:106` (constat 1) ; run2 B, C PASS |
+| TRAIN-07 un seul actif | PARTIEL | RPC `20261201070300` solide ; contournee par `backend/.../ai-programs.ts:106` (constat 1) ; run2 B, C PASS |
 | TRAIN-08 menu | PARTIEL | run2 PASS liste ; D NON-TESTE |
 | TRAIN-09 assistant 4 etapes -> actif | PARTIEL | `program-builder.tsx` ; NON-TESTE ; `ai-programs/dashboard` crash corrige run2 #2 (non rejoue) |
 | TRAIN-10 seance rapide Ionicons FR | PARTIEL | non teste |
@@ -175,7 +175,7 @@ LIVRE = visible dans le code ET preuve (emulateur ou test). PARTIEL = code prese
 ### P15 Mesures
 | Exigence | Etat | Preuve |
 |---|---|---|
-| MEAS-01 objectifs en base | LIVRE | `202612011501` + RPC ; run2 PASS ME-1, ME-2 |
+| MEAS-01 objectifs en base | LIVRE | `20261201150100` + RPC ; run2 PASS ME-1, ME-2 |
 | MEAS-04 7 mesures | LIVRE | `goals.ts:MEASURES` |
 | MEAS-05 % de completion | LIVRE | `computeGoalProgress` (tests) ; run2 ME-5 PASS |
 | MEAS-06 objectif non modifiable | PARTIEL | index unique `idx_athlete_goals_one_active_per_measure` ; UI NON-TESTE |

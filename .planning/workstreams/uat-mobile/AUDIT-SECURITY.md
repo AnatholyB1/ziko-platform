@@ -27,7 +27,7 @@ Resultat global des migrations 2026120* : RLS activee sur les 20 tables creees ;
 **4. MOYENNE | PROD `ziko_friendships` : migration 2101 NON appliquee**
 - Etat prod lu : `friendships_insert WITH CHECK (auth.uid()=requester_id)` (pas de `status='pending'`), `friendships_update` autorise le demandeur ET le destinataire, pas de trigger d'immutabilite des parties.
 - Exploitation : INSERT direct avec `status='accepted'` (auto-acceptation), ou UPDATE `requester_id` pour se fabriquer une amitie avec un tiers ; doublons croises possibles. La branche contient bien les policies corrigees (verifie).
-- Correctif : appliquer `202612012101` (verifier d'abord le comptage de doublons en lecture seule, prevu dans l'en-tete du fichier).
+- Correctif : appliquer `20261201210100` (verifier d'abord le comptage de doublons en lecture seule, prevu dans l'en-tete du fichier).
 
 **5. MOYENNE | `ziko_ai_cost_log` (policy `ai_cost_log_own` ALL, GRANT INSERT/UPDATE/DELETE authenticated, aussi en PROD)**
 - Probleme : les plafonds d'appels IA "absorbes" de v1.20 se comptent dans cette table : web search atelier (20/jour, `workshop/webSearch.ts` `countWebSearchesToday`), relance de programme (1/jour, `periodization/store.ts:233`). L'utilisateur peut supprimer ou falsifier ses lignes. Reproduit : INSERT puis DELETE de sa propre ligne (201 puis 204).
@@ -38,11 +38,11 @@ Resultat global des migrations 2026120* : RLS activee sur les 20 tables creees ;
 - Appel direct d'un outil par nom : `ai_programs_generate` et `ai_programs_adjust` (`tools/ai-programs.ts:67,168`) font un `generateText` Sonnet (jusqu'a 4000 tokens) sans credit ni quota ; aucun rateLimiter sur le routeur ai (grep). Le message d'erreur interne est renvoye au client (`err.message`).
 - Correctif : `creditCheck('program')`/`creditDeduct` sur ces outils (ou interdire les outils LLM dans `/tools/execute`, comme `INTERNAL_ONLY_TOOLS`) + rate limiter Upstash par userId.
 
-**7. MOYENNE | `202612012103_public_profile_rpc.sql:23` (`ziko_get_public_profile`) et `202612012102_friend_rpc.sql:67` (`ziko_search_users_with_status`)**
+**7. MOYENNE | `20261201210300_public_profile_rpc.sql:23` (`ziko_get_public_profile`) et `20261201210200_friend_rpc.sql:67` (`ziko_search_users_with_status`)**
 - Probleme : aucune relation requise ni lecture de `ziko_user_profiles.is_public` (le reglage "profil public" de `profile/security.tsx` est donc sans effet). Reproduit : un athlete non ami lit le profil d'un autre (`relation:"none"`) : nom, handle, objectif (`goal`, ex. weight_loss), niveau/XP, serie, 3 derniers entrainements (noms+dates), 3 records de charge, badges ; la recherche ignore aussi `is_public`. Pas de poids/mesures corporelles (OK), mais objectif et historique d'entrainement exposes a tout compte connecte via UUID (UUID enumerables par la recherche).
 - Correctif : si `is_public = false` et relation hors `self/friend` : retourner seulement `{id,name,handle,relation}` ; exclure les profils prives de la recherche ; ne pas exposer `goal` aux non-amis.
 
-**8. MOYENNE | `202612012605_collective_challenges.sql:164` (`ziko_collective_progress`) et `:87`**
+**8. MOYENNE | `20261201260500_collective_challenges.sql:164` (`ziko_collective_progress`) et `:87`**
 - Probleme : la progression (donnees de seances/habitudes/hydratation des participants) continue d'etre agregee pour le coach apres que l'athlete a revoque son lien (`ziko_coach_client_links.revoked_at`) : aucune verification du lien dans `progress`, la ligne participant reste `joined`. Avec 1 seul participant joint, le total = donnee individuelle ; avec 2, l'athlete deduit la contribution de l'autre (`total - my_contribution`).
 - Correctif : dans `ziko_collective_progress`, joindre `ziko_is_coach_of(c.coach_id, p.user_id)` pour ne compter que les liens actifs ; trigger/cascade qui passe les participants a `declined` a la revocation du lien ; masquer `total` sous un seuil (ex. < 3 participants joints).
 
@@ -83,10 +83,10 @@ Resultat global des migrations 2026120* : RLS activee sur les 20 tables creees ;
 ## D. MIGRATIONS A APPLIQUER EN PRIORITE EN PROD
 
 1. **Nouvelle migration de durcissement (a creer, hors milestone)** : constats 1, 2, 3, 5, 9 (REVOKE EXECUTE anon/authenticated sur les fonctions listees, reecriture `purchase_shop_item`/`send_*_gift` avec `auth.uid()`, REVOKE UPDATE colonnes sensibles de `ziko_user_profiles`, REVOKE ecriture `ziko_ai_cost_log`). A passer avant toute autre chose ; rejouer sur la branche de test (verifier que mobile/backend n'appellent plus ces fonctions en anon).
-2. `202612012101_friendships_integrity.sql` puis `202612012102_friend_rpc.sql` (corriger d'abord le constat 7 dans `2103` avant de l'appliquer).
-3. `202612011201` (badges, verification `auth.uid()` OK), `202612011301/1302/1401/1402/1602` (quetes, sans ecriture client), `202612012601..2604` (factions/ligue), `202612012504_v1_20_grants_late.sql` : sans danger, a appliquer dans l'ordre.
-4. `202612012605_collective_challenges.sql` APRES correction du constat 8.
-5. `202612012503_mandatory_plugin_guard.sql` (garde cote DB, utile) ; `2501` deja en prod.
+2. `20261201210100_friendships_integrity.sql` puis `20261201210200_friend_rpc.sql` (corriger d'abord le constat 7 dans `2103` avant de l'appliquer).
+3. `20261201120100` (badges, verification `auth.uid()` OK), `20261201130100/1302/1401/1402/1602` (quetes, sans ecriture client), `20261201260100..2604` (factions/ligue), `20261201250400_v1_20_grants_late.sql` : sans danger, a appliquer dans l'ordre.
+4. `20261201260500_collective_challenges.sql` APRES correction du constat 8.
+5. `20261201250300_mandatory_plugin_guard.sql` (garde cote DB, utile) ; `2501` deja en prod.
 6. Reste (programmes actifs 0701-0704, hydratation, stretching, complements, mesures, atelier, sequences) : revue sans constat, ordre libre.
 
 Aucune ecriture prod, aucun push/merge. Seul fichier ajoute : ce rapport.

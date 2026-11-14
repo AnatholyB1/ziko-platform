@@ -32,8 +32,8 @@ INSERT INTO auth.users VALUES ('11111111-1111-1111-1111-111111111111'), ('222222
 INSERT INTO public.ziko_athlete_goals (user_id, goal_text, target_metric, target_value, status)
   VALUES ('11111111-1111-1111-1111-111111111111', 'Lose 5kg', 'weight_kg', 5, 'active');
 
-\ir '../../../supabase/migrations/202612011501_measurement_goals_extend.sql'
-\ir '../../../supabase/migrations/202612011502_measurement_goals_achieved_trigger.sql'
+\ir '../../../supabase/portfolio-migrations/20261201150100_measurement_goals_extend.sql'
+\ir '../../../supabase/portfolio-migrations/20261201150200_measurement_goals_achieved_trigger.sql'
 
 -- ===== assertions =====
 CREATE FUNCTION public.expect(label text, cond boolean) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF NOT cond THEN RAISE EXCEPTION 'FAIL: %', label; END IF; RAISE NOTICE 'PASS: %', label; END $$;

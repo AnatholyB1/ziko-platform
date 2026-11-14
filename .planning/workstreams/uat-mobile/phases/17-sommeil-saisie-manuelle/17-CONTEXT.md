@@ -54,7 +54,7 @@ Seed UAT : compte sans nuit (SL-1), compte avec 1 nuit manuelle `7 h 45` / quali
 ### Integration Points
 Fichier partage `useHomeData.ts` / `index.tsx` (propriete P8, deja livre) : edits localises sur le hook sommeil et la sous-etiquette de la tuile. `i18n.ts` : namespace `sleep.*` a la fin. `registry.ts` non touche.
 ### Migrations (bloc `20261201 1701-1709`, fichiers seulement)
-- `202612011701_sleep_manual_entry.sql` : colonnes D-07 (`ADD COLUMN IF NOT EXISTS` ; defaut `source='manual'` pour les lignes existantes) ; aucune nouvelle table ; grants inchanges (les colonnes heritent de ceux de la table).
+- `20261201170100_sleep_manual_entry.sql` : colonnes D-07 (`ADD COLUMN IF NOT EXISTS` ; defaut `source='manual'` pour les lignes existantes) ; aucune nouvelle table ; grants inchanges (les colonnes heritent de ceux de la table).
 </code_context>
 
 <deferred>

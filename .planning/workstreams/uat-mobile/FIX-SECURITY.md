@@ -3,9 +3,9 @@
 Branche `fix/security` (depuis `milestone/v1.20`, merge `milestone/v1.20` fait). Aucun push, aucune ecriture prod (une seule lecture SELECT du catalogue d'index prod). Migrations appliquees sur la BRANCHE de test `oloobswzsziidjwycthm` uniquement.
 
 ## Migrations (a appliquer en prod dans cet ordre, apres 2102/2103/2605)
-- `202612012701_security_hardening.sql` : constats 1, 2, 3, 5, 9 + inventaire (idempotente, rejouee 2 fois).
-- `202612012702_public_profile_privacy.sql` : constat 7 (corps de 2103 / 2102 a l'identique + ajouts marques).
-- `202612012703_collective_progress_privacy.sql` : constat 8.
+- `20261201270100_security_hardening.sql` : constats 1, 2, 3, 5, 9 + inventaire (idempotente, rejouee 2 fois).
+- `20261201270200_public_profile_privacy.sql` : constat 7 (corps de 2103 / 2102 a l'identique + ajouts marques).
+- `20261201270300_collective_progress_privacy.sql` : constat 8.
 - `scripts/uat/check-migration-names.mjs` accepte desormais PP = 27 (durcissement).
 
 ## Constats

@@ -1,6 +1,6 @@
 // ============================================================
 // friendsApi (v1.20 P21) : acces donnees Amis / profil public via les RPC de la migration
-// 202612012102 / 202612012103. Client supabase injecte (any) : testable sans reseau.
+// 20261201210200 / 20261201210300. Client supabase injecte (any) : testable sans reseau.
 // L'identite de l'appelant est TOUJOURS auth.uid() cote serveur (aucun id appelant en parametre).
 // ============================================================
 
@@ -57,7 +57,7 @@ export interface PublicProfile {
   recent_workouts: PublicProfileWorkout[];
   records: PublicProfileRecord[];
   common_challenges: PublicProfileChallenge[];
-  /** Migration 202612012702 : profil prive vu par un non-ami = contrat vide (seuls nom / handle / avatar / relation). */
+  /** Migration 20261201270200 : profil prive vu par un non-ami = contrat vide (seuls nom / handle / avatar / relation). */
   avatar_url?: string | null;
   is_private?: boolean;
 }

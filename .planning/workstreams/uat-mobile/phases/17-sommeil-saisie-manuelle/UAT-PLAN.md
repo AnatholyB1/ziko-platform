@@ -1,6 +1,6 @@
 # UAT-PLAN Phase 17 : Sommeil (saisie manuelle et donnees reelles)
 
-Prerequis : migration `supabase/migrations/202612011701_sleep_manual_entry.sql` appliquee sur la base de test (jamais en prod par l'agent). Harnais : P1. Rien n'a ete execute sur emulateur par l'agent de build.
+Prerequis : migration `supabase/portfolio-migrations/20261201170100_sleep_manual_entry.sql` appliquee sur la base de test (jamais en prod par l'agent). Harnais : P1. Rien n'a ete execute sur emulateur par l'agent de build.
 
 ## Seeds (base de test, comptes distincts)
 | Compte | Contenu |

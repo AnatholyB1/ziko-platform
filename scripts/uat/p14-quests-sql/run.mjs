@@ -38,8 +38,8 @@ const Q = (metric, target = 1, extra = {}) => ({ title: `Quete ${metric}`, metri
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(root, 'scripts/uat/p12-rewards-sql/stub-schema.sql'), 'utf8'));
 await q(readFileSync(resolve(root, 'scripts/uat/p13-quests-sql/stub-extra.sql'), 'utf8'));
-for (const f of ['202612011201_badge_award_and_progress', '202612011301_quest_tables', '202612011302_quest_functions', '202612011401_quest_ai_state', '202612011402_quest_sync_ai_handover', '202612012802_quest_ai_relay']) {
-  await q(readFileSync(resolve(root, `supabase/migrations/${f}.sql`), 'utf8'));
+for (const f of ['20261201120100_badge_award_and_progress', '20261201130100_quest_tables', '20261201130200_quest_functions', '20261201140100_quest_ai_state', '20261201140200_quest_sync_ai_handover', '20261201280200_quest_ai_relay']) {
+  await q(readFileSync(resolve(root, `supabase/portfolio-migrations/${f}.sql`), 'utf8'));
 }
 console.log('Migrations 1201, 1301, 1302, 1401, 1402, 2802 appliquees sur la base locale jetable.');
 

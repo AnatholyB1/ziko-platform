@@ -5,7 +5,7 @@ Branche `phase/23-atelier` (merge `milestone/v1.20` fait ; 1 conflit trivial dan
 ## Livre
 - Backend `backend/api/src/workshop/` : `draft.ts` (modele + operations typees partagees IA/manuel), `skills.ts` (8 skills), `context.ts` (contexte athlete, e1RM Epley), `store.ts` (brouillons, revision optimiste, publication), `tools.ts` (6 outils), `webSearch.ts`, `prompt.ts`, `limits.ts`, `usage.ts`.
 - Route `backend/api/src/routes/workshop.ts` montee `/ai/workshop` : `GET /info`, `POST /stream` (SSE, `creditCheck('chat')`/`creditDeduct('chat')`), `GET|PATCH /drafts/:id`, `POST /drafts/:id/publish`. Panne du modele avant le 1er signal utile : 502, donc rien n'est debite.
-- Migration (fichier seulement, NON appliquee) `202612012301_ziko_workshop_drafts.sql` (RLS lecture seule client, ecriture backend).
+- Migration (fichier seulement, NON appliquee) `20261201230100_ziko_workshop_drafts.sql` (RLS lecture seule client, ecriture backend).
 - Mobile : `src/lib/atelier.ts` (logique pure), `atelierService.ts` (client XHR/SSE), `app/(app)/workout/atelier.tsx` (A10-A15), entree depuis `programs.tsx` (ex `ai-generate`). Bouton plein = `getActionPrimary`.
 - `UAT-PLAN.md` (flows A-G avec faux Anthropic + section Z pour le 1 appel reel), `23-CONTEXT.md`.
 

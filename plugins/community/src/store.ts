@@ -378,7 +378,7 @@ export async function sendFriendRequest(supabase: any, addresseeId: string): Pro
   return sendFriendRequestRpc(supabase, addresseeId);
 }
 
-/** Seul le destinataire peut accepter (RLS 202612012101). */
+/** Seul le destinataire peut accepter (RLS 20261201210100). */
 export type { FriendActionResult };
 
 export async function acceptFriendRequest(supabase: any, friendshipId: string): Promise<FriendActionResult> {

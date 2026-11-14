@@ -4,7 +4,7 @@ Branche `phase/15-mesures` (base `milestone/v1.20`, merge de `milestone/v1.20` f
 
 ## Livre
 - Decision D-01 : etendre `ziko_athlete_goals` (detail : `15-RESEARCH.md`). Colonnes nullables `measure_key, start_value, unit, start_date, achieved_at, achieved_value` ; les lignes de l'outil IA `create_goal` restent valides.
-- Migrations (fichiers) : `supabase/migrations/202612011501_measurement_goals_extend.sql` (colonnes, CHECK, index unique 1 objectif actif par mesure, trigger verrou D-04, RPC `ziko_create_measurement_goal` SECURITY DEFINER) ; `202612011502_measurement_goals_achieved_trigger.sql` (passage auto a `achieved`).
+- Migrations (fichiers) : `supabase/portfolio-migrations/20261201150100_measurement_goals_extend.sql` (colonnes, CHECK, index unique 1 objectif actif par mesure, trigger verrou D-04, RPC `ziko_create_measurement_goal` SECURITY DEFINER) ; `20261201150200_measurement_goals_achieved_trigger.sql` (passage auto a `achieved`).
 - Logique pure `plugins/measurements/src/lib/goals.ts` (+ `goals.test.ts`, 25 tests) : formule du %, sens baisse/hausse, validation, 7 mesures, dernieres valeurs.
 - UI `screens/GoalsTab.tsx` (E10 vide, E11 cartes, E12 atteint + `Definir le suivant`, E13/E14 creation, E16 feuille verrou, squelettes, erreur) ; `MeasurementsPlugin.tsx` (76/78/40 supprimes, saisie 7 mesures ordre E15, poids seul obligatoire) ; `MeasurementsLog.tsx` idem ; boutons pleins = `getActionPrimary(theme)` (#CF4509).
 - Backend : `measurements_get_progress` renvoie aussi les objectifs en base (lecture seule, additif). L'outil de gestion IA = P16.

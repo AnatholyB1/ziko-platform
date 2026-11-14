@@ -36,9 +36,9 @@ const today = `(now() AT TIME ZONE 'Europe/Paris')::date`;
 await q('DROP SCHEMA IF EXISTS public CASCADE; DROP SCHEMA IF EXISTS auth CASCADE; CREATE SCHEMA public;');
 await q(readFileSync(resolve(root, 'scripts/uat/p12-rewards-sql/stub-schema.sql'), 'utf8'));
 await q(readFileSync(resolve(here, 'stub-extra.sql'), 'utf8'));
-await q(readFileSync(resolve(root, 'supabase/migrations/202612011201_badge_award_and_progress.sql'), 'utf8'));
-await q(readFileSync(resolve(root, 'supabase/migrations/202612011301_quest_tables.sql'), 'utf8'));
-await q(readFileSync(resolve(root, 'supabase/migrations/202612011302_quest_functions.sql'), 'utf8'));
+await q(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201120100_badge_award_and_progress.sql'), 'utf8'));
+await q(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201130100_quest_tables.sql'), 'utf8'));
+await q(readFileSync(resolve(root, 'supabase/portfolio-migrations/20261201130200_quest_functions.sql'), 'utf8'));
 console.log('Migrations appliquees sur la base locale jetable.');
 
 const U = (n) => `00000000-0000-0000-0000-00000000010${n}`;

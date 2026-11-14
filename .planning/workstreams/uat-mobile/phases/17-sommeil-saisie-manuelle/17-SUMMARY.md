@@ -3,7 +3,7 @@
 Branche `phase/17-sommeil` (base `milestone/v1.20`, merge de `milestone/v1.20` fait). Slot 1. Aucun push, aucune ecriture prod, migration = fichier seulement.
 
 ## Commits
-1. `5dacbf89` migration `202612011701_sleep_manual_entry.sql`
+1. `5dacbf89` migration `20261201170100_sleep_manual_entry.sql`
 2. `4aced0a8` logique pure + acces donnees + rappel + 27 tests
 3. `076d917a` ecrans Sommeil/Saisie/Reglages + controles + store + manifest
 4. `1533198b` accueil, mapping Health Connect, outil IA `sleep_log`, package-lock

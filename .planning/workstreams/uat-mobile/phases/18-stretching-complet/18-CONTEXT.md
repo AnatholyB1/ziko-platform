@@ -27,9 +27,9 @@ Convention : `[A CONFIRMER]` = recommandation du discuss, à valider par l'utili
 - Backend : `backend/api/src/tools/stretching.ts` (outils `stretching_get_routines` basé sur les logs ; adapter si colonnes ajoutées, ne pas toucher `registry.ts`).
 - Notification/AI : le manifest/aiSkills de `stretching` reste inchangé.
 
-## Migrations (bloc `202612011801`-`202612011809`, fichiers seulement)
-- `202612011801_stretching_exercises.sql` : `ziko_stretching_exercises` (id uuid, user_id uuid null = catalogue, name, muscle_group, measure `duration|reps`, duration_seconds, reps, sides 1|2, instructions, created_at) ; RLS : SELECT `user_id IS NULL OR auth.uid() = user_id` ; INSERT/UPDATE/DELETE seulement `auth.uid() = user_id` ; seed du catalogue (user_id NULL, aucun accès client en écriture) ; **REVOKE explicite** TRUNCATE/REFERENCES/TRIGGER/MAINTAIN de anon/authenticated (règle imposée à toute nouvelle table `ziko_*`, cf. en-tête de `20261107170000`).
-- `202612011802_stretching_default_routine.sql` : `ziko_stretching_routines.is_default boolean NOT NULL DEFAULT false` + index unique partiel `(user_id) WHERE is_default` (garantit ST-3) ; `ziko_stretching_logs.routine_id text null`.
+## Migrations (bloc `20261201180100`-`202612011809`, fichiers seulement)
+- `20261201180100_stretching_exercises.sql` : `ziko_stretching_exercises` (id uuid, user_id uuid null = catalogue, name, muscle_group, measure `duration|reps`, duration_seconds, reps, sides 1|2, instructions, created_at) ; RLS : SELECT `user_id IS NULL OR auth.uid() = user_id` ; INSERT/UPDATE/DELETE seulement `auth.uid() = user_id` ; seed du catalogue (user_id NULL, aucun accès client en écriture) ; **REVOKE explicite** TRUNCATE/REFERENCES/TRIGGER/MAINTAIN de anon/authenticated (règle imposée à toute nouvelle table `ziko_*`, cf. en-tête de `20261107170000`).
+- `20261201180200_stretching_default_routine.sql` : `ziko_stretching_routines.is_default boolean NOT NULL DEFAULT false` + index unique partiel `(user_id) WHERE is_default` (garantit ST-3) ; `ziko_stretching_logs.routine_id text null`.
 - Aucune migration ne modifie une migration existante.
 
 ## Références canoniques

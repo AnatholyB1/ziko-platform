@@ -1,6 +1,6 @@
 // Etat explicite d'un profil prive vu par un non-ami (run5 P21 : aucune mention "Profil prive", l'ecran
 // affichait 0 ami / 0 abonne / "Pas encore de niveau"). Le serveur (ziko_get_public_profile, migration
-// 202612012702) renvoie le contrat vide avec is_private = true : on n'affiche JAMAIS de faux zeros.
+// 20261201270200) renvoie le contrat vide avec is_private = true : on n'affiche JAMAIS de faux zeros.
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

@@ -25,8 +25,8 @@ Branche `phase/24-periodisation` (base `milestone/v1.20`, P23 deja merge). Exige
 - G-7 Appel IA automatique sans outil de recherche web : `propose` ne passe PAS `workshop_web_search` (cout/latence, pas d'interaction utilisateur pour arbitrer) ; skills et contexte restent disponibles.
 
 ## Migrations (fichiers seulement, bloc 2401-2409, JAMAIS appliquees ici)
-- `202612012401_program_sequences.sql` : table `ziko_program_sequences` (RLS lecture own, ecriture backend), colonnes de suite/resultats sur `ziko_ai_generated_programs`, index unique partiel `(sequence_id, sequence_position)`, trigger `started_at`.
-- `202612012402_program_relaunches.sql` : table `ziko_program_relaunches` (`program_id` UNIQUE, `draft_id`, `status`, `results`, `proposed_at`), RLS lecture own, ecriture backend ; colonnes `sequence_id`, `previous_program_id` sur `ziko_workshop_drafts`.
+- `20261201240100_program_sequences.sql` : table `ziko_program_sequences` (RLS lecture own, ecriture backend), colonnes de suite/resultats sur `ziko_ai_generated_programs`, index unique partiel `(sequence_id, sequence_position)`, trigger `started_at`.
+- `20261201240200_program_relaunches.sql` : table `ziko_program_relaunches` (`program_id` UNIQUE, `draft_id`, `status`, `results`, `proposed_at`), RLS lecture own, ecriture backend ; colonnes `sequence_id`, `previous_program_id` sur `ziko_workshop_drafts`.
 
 ## Hors scope
 Programmes coach/crees dans la suite (G-5), cron de relance (G-1), edition manuelle de l'ordre de la suite, notification push de fin de programme.

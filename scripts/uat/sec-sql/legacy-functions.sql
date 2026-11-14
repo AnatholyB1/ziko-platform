@@ -1,4 +1,4 @@
--- Corps HISTORIQUES (avant 202612012701) des fonctions durcies, copies de la branche de test (pg_get_functiondef).
+-- Corps HISTORIQUES (avant 20261201270100) des fonctions durcies, copies de la branche de test (pg_get_functiondef).
 -- Prouve que les attaques de l'audit REUSSISSENT avant la migration. Jamais applique hors du PG local jetable.
 
 CREATE OR REPLACE FUNCTION public.ziko_award_coins(p_user_id uuid, p_amount integer, p_source text, p_source_id uuid, p_description text)

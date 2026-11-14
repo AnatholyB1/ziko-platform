@@ -25,8 +25,8 @@
 - Backend : `backend/api/src/tools/timer.ts` (`timer_get_presets`, `timer_create_preset` : ajouter les nouveaux champs en option, sans casser les appels existants ; pas de modification de `registry.ts`).
 - Persistance de l'exécution/notification fin de timer : hors périmètre (inchangé).
 
-## Migrations (bloc `202612012001`-`202612012009`, fichiers seulement)
-- `202612012001_timer_preset_fields.sql` : `ALTER TABLE ziko_timer_presets ADD COLUMN warmup_sec int NOT NULL DEFAULT 0, ADD COLUMN sets int NOT NULL DEFAULT 1, ADD COLUMN round_rest_sec int NOT NULL DEFAULT 0` + CHECK de bornes (>= 0, `sets >= 1`, `rounds >= 1`). Aucune suppression de ligne, aucune modification de migration existante, pas de nouvelle table (donc pas de REVOKE à ajouter).
+## Migrations (bloc `20261201200100`-`202612012009`, fichiers seulement)
+- `20261201200100_timer_preset_fields.sql` : `ALTER TABLE ziko_timer_presets ADD COLUMN warmup_sec int NOT NULL DEFAULT 0, ADD COLUMN sets int NOT NULL DEFAULT 1, ADD COLUMN round_rest_sec int NOT NULL DEFAULT 0` + CHECK de bornes (>= 0, `sets >= 1`, `rounds >= 1`). Aucune suppression de ligne, aucune modification de migration existante, pas de nouvelle table (donc pas de REVOKE à ajouter).
 
 ## Références canoniques
 `lot-C/DESIGN-CONTRACT.md` (§1 Timer, §2 C19-C23, §3, §4 steppers, §5 TI-1..TI-3) ; `lot-C/03-timer.html` (valeurs de C22) ; `lot-C/CRITIQUE.md` (mineur 1) ; `.planning/MILESTONE-RECAP-2026-11-12.md` §12.

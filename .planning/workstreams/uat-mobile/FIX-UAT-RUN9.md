@@ -3,8 +3,8 @@
 Un commit par defaut, avec test. Aucune migration appliquee, aucun push, aucune ecriture prod.
 
 ## Corrige
-1. **Quetes : recompense perdue en silence** (`202612012904_quest_reward_system_award.sql`, NON appliquee).
-   Cause : `ziko_sync_quests` (derniere definition = 202612011402 ; 1602 et 2801 ne redefinissent que `ziko_quest_metric_value`, 2802
+1. **Quetes : recompense perdue en silence** (`20261201290400_quest_reward_system_award.sql`, NON appliquee).
+   Cause : `ziko_sync_quests` (derniere definition = 20261201140200 ; 1602 et 2801 ne redefinissent que `ziko_quest_metric_value`, 2802
    que le relais IA) posait `rewarded_at` puis appelait `ziko_award_coins`, qui borne tout appelant non fiable a 10 000 pieces / 24 h
    et RETOURNE SANS ERREUR (2701). Choix : chemin interne `ziko_award_coins_system` (sans plafond, montant issu de la quete serveur,
    executable par personne : REVOKE PUBLIC/anon/authenticated/service_role, seules les fonctions definer l'appellent) ; l'attribution

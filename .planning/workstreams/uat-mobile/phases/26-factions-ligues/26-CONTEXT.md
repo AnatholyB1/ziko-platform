@@ -50,11 +50,11 @@ SEED-001 est `scope: large` (milestone entier : saisons, loot, mascotte, classem
 - **G-07** Cooldown de changement de faction 30 j (D-02) : reco OUI ; contraire a l'autonomie ? mineur car la faction n'a aucun enjeu competitif dans la tranche.
 
 ## Migrations (fichiers seulement, jamais appliquees ; bloc 2601-2609)
-- `202612012601_factions_leagues_schema.sql` : tables, RLS SELECT-seul, seeds des 6 factions, droits.
-- `202612012602_faction_rpc.sql` : `ziko_join_faction`, `ziko_get_faction_overview`.
-- `202612012603_league_sync.sql` : score, cloture des semaines, paliers, `ziko_league_sync`, `ziko_league_ack_transition`.
-- `202612012604_league_ai_gate.sql` : `ziko_league_eligibility`, `ziko_league_ai_claim`, `ziko_league_apply_transition` (service_role).
-- `202612012605_collective_challenges.sql` : tables + RPC de defi collectif.
+- `20261201260100_factions_leagues_schema.sql` : tables, RLS SELECT-seul, seeds des 6 factions, droits.
+- `20261201260200_faction_rpc.sql` : `ziko_join_faction`, `ziko_get_faction_overview`.
+- `20261201260300_league_sync.sql` : score, cloture des semaines, paliers, `ziko_league_sync`, `ziko_league_ack_transition`.
+- `20261201260400_league_ai_gate.sql` : `ziko_league_eligibility`, `ziko_league_ai_claim`, `ziko_league_apply_transition` (service_role).
+- `20261201260500_collective_challenges.sql` : tables + RPC de defi collectif.
 Ordre 2601 -> 2605. Dependances : `ziko_athlete_state`, `ziko_user_profiles`, `ziko_workout_sessions`, `ziko_habits`, `ziko_habit_logs`, `ziko_hydration_logs`, `ziko_coach_client_links`. Harnais : `scripts/uat/p26-league-sql/run.mjs` (Postgres LOCAL jetable, port 8206).
 
 ## Code context

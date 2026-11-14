@@ -23,7 +23,7 @@ Branche `phase/23-atelier` (base `milestone/v1.20`). Exigences ATEL-01..06 et AT
 - G-5 Pas d'ajout a `registry.ts` (l'atelier a ses propres outils, D-01). Seule modification partagee : `lib/autonomousCost.ts` (+1 source) et `app.ts` (+1 route).
 
 ## Migrations (fichiers seulement, bloc 2301-2309)
-- `202612012301_ziko_workshop_drafts.sql` : table `ziko_workshop_drafts` (id, user_id, conversation_id, name, goal, program_data jsonb, revision int, status 'draft'|'saved', saved_program_id, created_at, updated_at), index, RLS own, trigger `updated_at`.
+- `20261201230100_ziko_workshop_drafts.sql` : table `ziko_workshop_drafts` (id, user_id, conversation_id, name, goal, program_data jsonb, revision int, status 'draft'|'saved', saved_program_id, created_at, updated_at), index, RLS own, trigger `updated_at`.
 - (pas de 2302 : `ziko_ai_cost_log.source` n'a aucun CHECK, verifie dans `20260902100100_ai_cost_log_source.sql`.) RLS : lecture seule client, ecriture backend (service key).
 
 ## Hors scope

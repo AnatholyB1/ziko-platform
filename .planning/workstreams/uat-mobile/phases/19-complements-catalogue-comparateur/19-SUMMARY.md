@@ -21,7 +21,7 @@ Branche `phase/19-complements` (base `milestone/v1.20`, mergé en fin de travail
 - Un faux client Supabase (`__tests__/fakeSupabase.ts`) prouve la construction des requêtes, pas leur exécution PostgREST/RLS.
 
 ## Livrables
-Migrations (non appliquées) : `202612011901_supplement_stack.sql`, `202612011902_supplement_intakes.sql`, `202612011903_supplement_reminder_prefs.sql` (RLS own, `REVOKE ALL FROM PUBLIC, anon`, `REVOKE TRUNCATE, REFERENCES, TRIGGER, MAINTAIN FROM authenticated, service_role`).
+Migrations (non appliquées) : `20261201190100_supplement_stack.sql`, `20261201190200_supplement_intakes.sql`, `20261201190300_supplement_reminder_prefs.sql` (RLS own, `REVOKE ALL FROM PUBLIC, anon`, `REVOKE TRUNCATE, REFERENCES, TRIGGER, MAINTAIN FROM authenticated, service_role`).
 Code : `plugins/supplements/src/{lib,components,screens/tabs,hooks.ts}`, `SupplementsPlugin.tsx` (réécrit), `SupplementDetailScreen.tsx` (réécrit : coeur favori remplacé par `Ajouter à mon stack`), `SupplementCompareScreen.tsx` (formatage via helpers). Routes `list`/`detail`/`compare` inchangées.
 
 ## Décisions et déviations

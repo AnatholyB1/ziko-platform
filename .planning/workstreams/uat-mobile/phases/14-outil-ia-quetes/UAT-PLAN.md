@@ -1,6 +1,6 @@
 # Phase 14 : Plan d'UAT émulateur (Outil IA de quêtes)
 
-En file (après P1). Préalable : migrations `202612011201`, `1301`, `1302`, **`1401`, `1402`** appliquées par l'orchestrateur après approbation, sur la branche jetable `uat-v1-20` uniquement. Backend UAT : `bash scripts/uat/backend-start.sh` (faux Upstash 8210, faux Anthropic 8211, backend 8200 ; émulateur : `EXPO_PUBLIC_API_URL=http://10.0.2.2:8200`). Détail : `.planning/workstreams/uat-mobile/UAT-BACKEND.md`.
+En file (après P1). Préalable : migrations `20261201120100`, `1301`, `1302`, **`1401`, `1402`** appliquées par l'orchestrateur après approbation, sur la branche jetable `uat-v1-20` uniquement. Backend UAT : `bash scripts/uat/backend-start.sh` (faux Upstash 8210, faux Anthropic 8211, backend 8200 ; émulateur : `EXPO_PUBLIC_API_URL=http://10.0.2.2:8200`). Détail : `.planning/workstreams/uat-mobile/UAT-BACKEND.md`.
 
 Capture = captures d'écran émulateur + `uiautomator dump` + requêtes SQL lecture seule (ci-dessous). Compte de test : `uat-athlete` (+ un 2e compte B pour l'isolation).
 

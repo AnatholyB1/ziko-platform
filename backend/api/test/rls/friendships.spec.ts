@@ -1,5 +1,5 @@
 // P21 (SOC-01..07, G-03, G-04) : integrite des amities + RPC d'amitie + profil public.
-// Exige la base de test avec les migrations 202612012101/02/03 appliquees (voir DEPLOY-CHECKLIST-v1.20).
+// Exige la base de test avec les migrations 20261201210100/02/03 appliquees (voir DEPLOY-CHECKLIST-v1.20).
 // Le profil du compte de test est cree par le trigger d'auth (user_metadata.app = 'ziko').
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cleanupTestUsers, createTestUser, getAdminClient, getAnonClient, type TestUser } from './fixtures';

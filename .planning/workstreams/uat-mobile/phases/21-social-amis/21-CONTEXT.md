@@ -29,10 +29,10 @@
 - Schéma prod : `ziko_friendships(id, requester_id, addressee_id, status, created_at, updated_at)`, UNIQUE (requester_id, addressee_id), CHECK `requester_id <> addressee_id`, policies `friendships_{select,insert,update,delete}` ; `ziko_user_gamification(user_id, xp, level)`, `ziko_level_definitions`, `ziko_challenge_participants`, `ziko_community_user_stats`.
 - Backend : aucune route à créer (Supabase direct + RPC), cohérent avec le diagnostic P2 (RLS, pas la route Hono).
 
-## Migrations (bloc `202612012101`-`202612012109`, fichiers seulement ; `CREATE OR REPLACE`/nouvelles policies, jamais d'édition d'une migration existante)
-- `202612012101_friendships_integrity.sql` : (sous réserve Q-P21b) dédoublonnage des paires croisées + index unique sur `(LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id))` ; policy UPDATE restreinte à l'addressee (G-04).
-- `202612012102_friend_rpc.sql` : `ziko_send_friend_request`, `ziko_search_users_with_status` (SECURITY DEFINER, `SET search_path`, `REVOKE ... FROM PUBLIC, anon`, `GRANT EXECUTE ... TO authenticated`).
-- `202612012103_public_profile_rpc.sql` : `ziko_get_public_profile` (même hygiène de privilèges) ; lit gamification, badges, séances/PR, défis, compteurs, relation.
+## Migrations (bloc `20261201210100`-`202612012109`, fichiers seulement ; `CREATE OR REPLACE`/nouvelles policies, jamais d'édition d'une migration existante)
+- `20261201210100_friendships_integrity.sql` : (sous réserve Q-P21b) dédoublonnage des paires croisées + index unique sur `(LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id))` ; policy UPDATE restreinte à l'addressee (G-04).
+- `20261201210200_friend_rpc.sql` : `ziko_send_friend_request`, `ziko_search_users_with_status` (SECURITY DEFINER, `SET search_path`, `REVOKE ... FROM PUBLIC, anon`, `GRANT EXECUTE ... TO authenticated`).
+- `20261201210300_public_profile_rpc.sql` : `ziko_get_public_profile` (même hygiène de privilèges) ; lit gamification, badges, séances/PR, défis, compteurs, relation.
 - Pas de nouvelle table (donc pas de REVOKE de table à ajouter).
 
 ## Références canoniques

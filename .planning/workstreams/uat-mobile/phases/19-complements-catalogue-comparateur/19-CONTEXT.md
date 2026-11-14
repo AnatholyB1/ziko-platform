@@ -28,10 +28,10 @@
 - Schéma prod : `ziko_supplements` (brand_id, category_id, name, serving_size, servings_per_container, image_url…), `ziko_supplement_prices` (price, price_per_serving, source, source_url, in_stock, scraped_at), `ziko_supplement_brands`, `ziko_supplement_categories`.
 - Backend : `backend/api/src/routes/supplements.ts` (catalogue côté scraper/cron) ; pas d'outil IA supplements à modifier.
 
-## Migrations (bloc `202612011901`-`202612011909`, fichiers seulement, REVOKE explicite TRUNCATE/REFERENCES/TRIGGER/MAINTAIN sur chaque nouvelle table)
-- `202612011901_supplement_stack.sql` : `ziko_user_supplement_stack` (id, user_id, supplement_id FK, dose numeric > 0, dose_unit text, moments text[] CHECK sous-ensemble {morning,noon,evening} non vide, created_at, UNIQUE(user_id, supplement_id)) ; RLS `auth.uid() = user_id`.
-- `202612011902_supplement_intakes.sql` : `ziko_supplement_intakes` (user_id, supplement_id, moment, date local, taken_at, UNIQUE(user_id, supplement_id, moment, date)) ; RLS own.
-- `202612011903_supplement_reminder_prefs.sql` : `ziko_supplement_reminder_prefs` (PK user_id+moment, enabled, remind_time time) ; RLS own ; lignes par défaut créées côté client à la première ouverture (pas de seed).
+## Migrations (bloc `20261201190100`-`202612011909`, fichiers seulement, REVOKE explicite TRUNCATE/REFERENCES/TRIGGER/MAINTAIN sur chaque nouvelle table)
+- `20261201190100_supplement_stack.sql` : `ziko_user_supplement_stack` (id, user_id, supplement_id FK, dose numeric > 0, dose_unit text, moments text[] CHECK sous-ensemble {morning,noon,evening} non vide, created_at, UNIQUE(user_id, supplement_id)) ; RLS `auth.uid() = user_id`.
+- `20261201190200_supplement_intakes.sql` : `ziko_supplement_intakes` (user_id, supplement_id, moment, date local, taken_at, UNIQUE(user_id, supplement_id, moment, date)) ; RLS own.
+- `20261201190300_supplement_reminder_prefs.sql` : `ziko_supplement_reminder_prefs` (PK user_id+moment, enabled, remind_time time) ; RLS own ; lignes par défaut créées côté client à la première ouverture (pas de seed).
 
 ## Références canoniques
 `lot-C/DESIGN-CONTRACT.md` (§1, §2 C10-C18, §3, §4, §5 SU-1..SU-6, §6) ; `lot-C/02-complements.html` ; `lot-C/CRITIQUE.md` (Q3 et Q5) ; `shared/DESIGN-SYSTEM.md` ; `supabase/migrations/README-v1.20.md` ; `.planning/MILESTONE-RECAP-2026-11-12.md` §11.
