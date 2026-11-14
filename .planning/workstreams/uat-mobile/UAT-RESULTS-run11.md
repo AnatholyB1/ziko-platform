@@ -17,6 +17,7 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 | P16 IM-4 | Chat `[[tool:measurements_goals {"action":"list"}]]` : objectifs + % | PASS | `chat.mjs` : `Tour de taille 90->84 progress_pct 0`, `Poids achieved` ; journal du faux `decision tool:measurements_goals` puis `text` ; solde 20 inchange |
 | P16 IM-12 | Couplage `quest` : quete hebdo cible 2, 168 h ; 2 mesures saisies par l'UI -> terminee + pieces ; 3 quetes actives -> refus | PASS (avec reserve) | creation `Mets a jour : tour de taille` (hebdo, cible 2, 168 h, 40 pieces, `free_slots_left 0`) ; refus `max_active_quests` (3/3). 2 mesures saisies par l'UI (poids 70,4/waist 89 puis 70,3/88,5) : la quete `Mets a jour : poids` (metric `measurement_logs`) passe `completed`, +40 pieces `source=quest` UNE seule fois. RESERVE : la quete `tour de taille` reste a 0 (voir constats) |
 | P16 IM-13 | UPDATE/INSERT/DELETE direct de `ziko_athlete_goals` avec le jeton athlete | PASS | PATCH/POST/DELETE -> 403 `42501`, cible 84 inchangee |
+| P24 F | Programme en cours : aucun bandeau, aucune ecriture, aucun appel au faux | PASS (partiel) | `p24f-seance.png` : `Bloc de force` / `Cree par moi` / `ACTIF`, pas de bandeau ; compteurs `ziko_program_relaunches` 1, `ziko_workshop_drafts` 3, `ziko_ai_cost_log program_relaunch` 1 identiques avant/apres ; aucun nouvel appel de relance au faux. NON couvert : programme IA en cours (variante B), compte sans programme actif, liste P7 |
 | Notification | `Activer / Plus tard` apres `Continuer` sur la modale de ligue | NON REPRODUIT | ni apres `Continuer`, ni apres redemarrage a froid (run 8 l'avait vu) |
 
 ## Constats
@@ -27,7 +28,7 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 - Piege harnais : `ziko://community` seul = Unmatched Route ; utiliser `(app)/(plugins)/community/dashboard` (Fil) ou `.../league`.
 
 ## NON TESTE (suite)
-P26 LG-8, 9, 13-16 non rejoues ; P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C..F ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
+P26 LG-8, 9, 13-16 non rejoues ; P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C, D, E (seeds programme echu) ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
 
 ## Etat de la branche de test apres run 11
 A : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, 5 semaines de logs d'habitudes (12 oct -> 8 nov), solde credits 20. Comptes `uat-lg23-*` crees puis supprimes.
