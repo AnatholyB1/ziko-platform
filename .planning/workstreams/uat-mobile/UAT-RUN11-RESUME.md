@@ -1,0 +1,15 @@
+# UAT-RUN11 RESUME
+Resultats : `UAT-RESULTS-run11.md`. Branche `uat/run11`, worktree `C:\ziko-platform\.claude\worktrees\uat-run11`.
+
+## Reprise (comme `UAT-RUN10-RESUME.md`)
+- `.uat/env`, `.uat/apk`, `apps/mobile/google-services.json`, `uat-evidence/*.mjs|sh` copies depuis `integration-v1.20` / `agent-a6eadaee128c96dfe` ; UN SEUL `npm install --no-save` (fait, ~963 paquets) ; `node scripts/uat/make-backend-env.mjs`.
+- `bash scripts/uat/queue.sh acquire 99 run11` ; `bash scripts/uat/emu-start.sh --wait 400` ; `bash uat-evidence/metro.sh` (premier bundle ~130 s apres `--clear`) ; `bash scripts/uat/backend-start.sh` ; `bash scripts/uat/dev-open.sh 8281 25` (2 fois) ; `Wait` sur `System UI isn't responding` (tap 220,1362).
+- SQL : `supabase db query --linked --project-ref oloobswzsziidjwycthm "<sql>"` (une seule requete par appel : seule la derniere est renvoyee). Helper jetable `../q.sh` a recreer.
+- Pieges nouveaux : `ziko://community` = Unmatched ; utiliser `(app)/(plugins)/community/dashboard|league` ; `ui.mjs link '(app)/...'` AVEC apostrophes sous Git Bash ; `adb input keyevent 111` (Echap) ferme la feuille de saisie ; fermer l'alerte `Mesure enregistree` (`OK`) avant la saisie suivante ; `curl` Git Bash corrompt les accents dans `/__script` (utiliser `\u00e9`) ; la ligne bandeau `Hors ligne`/`Action non enregistree` est en haut du defilement.
+- Heure : emulateur en GMT, la base raisonne en Europe/Paris (voir constat DATES dans les resultats).
+
+## Etat branche apres run 11
+A (`a0a0a0a0-...a1`) : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, solde credits 20, 0 quete libre (3 actives : `4 seances`, `taille`, + ...). Programme `Bloc de force` actif. Faux Anthropic : file vide.
+
+## A faire (non joue)
+P26 LG-8, 9, 13-16 ; P16 carte d'onboarding (IM-1..3, nouvel utilisateur) ; P24 C..F (seeds : `UAT-PLAN.md` de la phase) ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses ; contraste numerique des boutons pleins ; DECISION LG-23 (compteur de faction visible par un mineur).
