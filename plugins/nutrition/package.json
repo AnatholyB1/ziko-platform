@@ -18,7 +18,7 @@
   "dependencies": {
     "@ziko/plugin-sdk": "*",
     "@supabase/supabase-js": "^2.47.0",
-    "expo-image-manipulator": "~13.1.7",
+    "expo-image-manipulator": "~14.0.8",
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
