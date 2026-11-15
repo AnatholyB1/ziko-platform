@@ -31,6 +31,8 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 | P15 ME-8 | Mode avion, onglet Objectifs : squelettes gris (pas d'orange) puis `Impossible de charger tes objectifs` + `Reessayer` | PASS | `me8-loading.png` (2 blocs gris), `me8-error.png` |
 | P11 HY-5 | Rappels 08:00-21:00 / 90 min : 9 planifiees (08:00 puis 20:00) ; interrupteur eteint = 0 | PASS (partiel) | `dumpsys alarm` : 9 `RTC_WAKEUP` `com.ziko.mobile` : 08:00, 09:30, 11:00, 12:30, 14:00, 15:30, 17:00, 18:30, 20:00 ; apres extinction + Enregistrer : 0. NON joue : objectif atteint = 0 aujourd'hui (9 uniques demain) |
 | P11 HY-6 | Permission refusee : bandeau `Notifications desactivees`, `Enregistrer` desactive, bouton vers les reglages Android | PASS | `hy6-denied.png` (bandeau, `En attente d'autorisation`, `Enregistrer` grise) ; le lien ouvre `com.android.settings` (App info de Ziko) ; apres `pm grant` + reouverture de la feuille le bandeau disparait (la feuille ouverte ne se rafraichit pas toute seule : a rouvrir) |
+| P17 SL-3 | Sans source : 0 phase hors bandeau, bandeau `Les phases ne s'affichent qu'avec une montre ou une app connectee` | PASS | compte A (saisie manuelle seule, pas de compte B) : dump sans `Profond/Leger/REM`, bandeau present (`sl3.png`) |
+| P17 SL-5 | Reglages conserves apres relance (cible +1 appui puis +30 min, rappel + heure, reveil intelligent, source, 2 elements de routine) | PASS | cible 8 h puis 8 h 30, rappel 22:30, reveil on, source `health`, routine [screens, stretch] ; `ziko_user_plugins.settings` (plugin `sleep`) : `sleep_goal_hours 8.5`, `bedtime_reminder {enabled,time}`, `smart_wake`, `source`, `pre_sleep_routine` ; apres `force-stop` + relance : memes valeurs (`sl5-set.png`, `sl5-after.png`). Source remise sur `manual` ensuite |
 | Notification | `Activer / Plus tard` apres `Continuer` sur la modale de ligue | NON REPRODUIT | ni apres `Continuer`, ni apres redemarrage a froid (run 8 l'avait vu) |
 
 ## Constats
@@ -43,7 +45,7 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 - Piege harnais : `ziko://community` seul = Unmatched Route ; utiliser `(app)/(plugins)/community/dashboard` (Fil) ou `.../league`.
 
 ## NON TESTE (suite)
- P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5 (objectif atteint) ; P15 ME-1 (compte neuf) ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
+ P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5 (objectif atteint) ; P15 ME-1 (compte neuf) ; P17 SL-4 (compte C avec source connectee) ; P22 JR-6 ; solde de pieces hors Recompenses.
 
 ## Etat de la branche de test apres run 11
 A : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, 5 semaines de logs d'habitudes (12 oct -> 8 nov), solde credits 20. Comptes `uat-lg23-*` crees puis supprimes.
