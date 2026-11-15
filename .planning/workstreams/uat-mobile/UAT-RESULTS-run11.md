@@ -28,6 +28,9 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 | P26 LG-14 | 3 semaines seulement : 0 appel, 0 ligne `cost_log` | PASS | 3 reouvertures : journal 10 -> 10, `cost_log` 4 -> 4, file du faux inchangee (`not_enough_weeks`) |
 | P26 LG-15 | Faux arrete (8211) avec A eligible : ecran normal, piste Habitudes, pas de modale ; tentative journalisee | PASS | `lg15.png` ; `cost_log` 4 -> 5 ; 0 transition. NON verifie : `0 token` de la ligne |
 | P26 LG-16 | Le prompt ne contient que scores hebdo, moyenne, tier, readiness, experience | PASS | requete capturee par un faux espion jetable : `semaines_recentes`, `moyenne: 100`, `palier_de_confiance (tier): 3`, `disposition (readiness): building`, `experience_declaree: beginner` ; aucun poids/taille/age/sommeil/email |
+| P15 ME-8 | Mode avion, onglet Objectifs : squelettes gris (pas d'orange) puis `Impossible de charger tes objectifs` + `Reessayer` | PASS | `me8-loading.png` (2 blocs gris), `me8-error.png` |
+| P11 HY-5 | Rappels 08:00-21:00 / 90 min : 9 planifiees (08:00 puis 20:00) ; interrupteur eteint = 0 | PASS (partiel) | `dumpsys alarm` : 9 `RTC_WAKEUP` `com.ziko.mobile` : 08:00, 09:30, 11:00, 12:30, 14:00, 15:30, 17:00, 18:30, 20:00 ; apres extinction + Enregistrer : 0. NON joue : objectif atteint = 0 aujourd'hui (9 uniques demain) |
+| P11 HY-6 | Permission refusee : bandeau `Notifications desactivees`, `Enregistrer` desactive, bouton vers les reglages Android | PASS | `hy6-denied.png` (bandeau, `En attente d'autorisation`, `Enregistrer` grise) ; le lien ouvre `com.android.settings` (App info de Ziko) ; apres `pm grant` + reouverture de la feuille le bandeau disparait (la feuille ouverte ne se rafraichit pas toute seule : a rouvrir) |
 | Notification | `Activer / Plus tard` apres `Continuer` sur la modale de ligue | NON REPRODUIT | ni apres `Continuer`, ni apres redemarrage a froid (run 8 l'avait vu) |
 
 ## Constats
@@ -40,7 +43,7 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 - Piege harnais : `ziko://community` seul = Unmatched Route ; utiliser `(app)/(plugins)/community/dashboard` (Fil) ou `.../league`.
 
 ## NON TESTE (suite)
- P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
+ P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5 (objectif atteint) ; P15 ME-1 (compte neuf) ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
 
 ## Etat de la branche de test apres run 11
 A : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, 5 semaines de logs d'habitudes (12 oct -> 8 nov), solde credits 20. Comptes `uat-lg23-*` crees puis supprimes.
