@@ -8,12 +8,13 @@ export async function sleep_log(
   userId: string,
   userToken?: string,
 ): Promise<unknown> {
-  const { date, bedtime, wake_time, quality, notes } = params as {
-    date?: string;
+  const { date, bedtime, wake_time, quality, notes, awakenings } = params as {
+    date?: string; // jour du reveil (date locale du client, YYYY-MM-DD) ; defaut UTC = dette connue
     bedtime: string;
     wake_time: string;
     quality: number;
     notes?: string;
+    awakenings?: number;
   };
 
   if (!bedtime) throw new Error('bedtime is required (HH:MM)');
@@ -24,8 +25,11 @@ export async function sleep_log(
   const [bH, bM] = bedtime.split(':').map(Number);
   const [wH, wM] = wake_time.split(':').map(Number);
   let durationMin = (wH * 60 + wM) - (bH * 60 + bM);
-  if (durationMin < 0) durationMin += 24 * 60; // overnight
+  if (durationMin <= 0) durationMin += 24 * 60; // overnight
+  // Meme borne que la saisie mobile (SL-6) : une nuit de plus de 16 h est refusee.
+  if (durationMin > 16 * 60) throw new Error('Sleep duration cannot exceed 16 hours (check bedtime and wake_time)');
   const durationHours = parseFloat((durationMin / 60).toFixed(2));
+  const awake = Math.min(20, Math.max(0, Math.round(Number(awakenings ?? 0)) || 0));
 
   const db = clientForUser(userToken);
   const { data, error } = await db
@@ -39,6 +43,8 @@ export async function sleep_log(
         duration_hours: durationHours,
         quality,
         notes: notes ?? null,
+        awakenings: awake,
+        source: 'manual',
       },
       { onConflict: 'user_id,date' },
     )

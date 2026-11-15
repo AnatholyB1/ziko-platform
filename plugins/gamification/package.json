@@ -7,9 +7,11 @@
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
     "./store": "./src/store.ts",
+    "./rewards": "./src/rewards.ts",
+    "./quests": "./src/quests.ts",
+    "./streak": "./src/streak.ts",
     "./screens/GamificationPlugin": "./src/screens/GamificationPlugin.tsx",
-    "./screens/GamificationDashboard": "./src/screens/GamificationDashboard.tsx",
-    "./screens/ShopScreen": "./src/screens/ShopScreen.tsx"
+    "./screens/GamificationDashboard": "./src/screens/GamificationDashboard.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
@@ -22,7 +24,7 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0"
+    "react-native": "^0.81.5"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

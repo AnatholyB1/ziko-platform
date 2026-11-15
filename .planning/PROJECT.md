@@ -81,6 +81,24 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 </details>
 
+## Current Milestone: v1.20 UAT Mobile — Refonte & corrections (`uat-mobile`)
+
+**Goal:** Corriger et compléter l'app mobile suite à la revue UAT du 2026-11-12 (~35 captures, discussion écran par écran), avec des UAT faits par Claude sur émulateur Android.
+
+**Source of truth:** `.planning/MILESTONE-RECAP-2026-11-12.md` (17 chantiers décidés avec l'utilisateur).
+
+**Target features:**
+- Harness UAT émulateur Android (AVD avec services Google, Maestro, compte de test dédié, captures comme preuves) — vague 0 ; session/auth (rafraîchissement de token, expiration) ; crash bloquant du module Habitudes
+- Entraînement : séance de départ cassée (mission/programme -> séance rapide vide), séances vides non enregistrées, détail de séance, liste de tous les programmes (IA/coach), atelier de création de programme en conversation (IA + recherche + skills + contexte utilisateur), périodisation séquentielle avec relance automatique de l'atelier
+- Accueil & Quick Log (eau cumulée, poids/humeur 1 par jour, statut persistant), nutrition (ajout de repas unifié, Pantry : inventaire, scan/saisie, recettes selon macros restantes, shopping), hydratation (boutons, réglages éditables)
+- Récompenses : onglets Succès / Boutique (thèmes, bannières, titres, solde, historique, aperçu) / Quêtes (table en base, outil de gestion pour l'agent IA, 3 actives max, durée limite, renouvellement par l'IA) ; mesures & objectifs (posés à l'onboarding IA, complétion %, modifiables par l'IA seulement)
+- Sommeil (saisie manuelle), Stretching (bibliothèque, routines, suivi, routine par défaut auto), Compléments (catalogue + comparateur de prix restaurés), Timer (presets créables), Social/Amis (ajout, En attente, recherche, profil public complet), Journal, Mon coach (profil du coach, UI), corrections transverses
+- SEED-002 (Mon coach complet) et SEED-001 (Factions & Ligues) : phases finales du milestone
+
+**Key constraints:** exécution via `/orchestrate-milestone` avec parallélisation maximale ; UAT par Claude (émulateur seul, 1-2 instances) ; maquettes via skills `impeccable` + design (`/gsd-ui-phase` avant plan/exécution des phases visuelles) ; jamais d'édition d'une migration existante (numéroter les nouvelles à l'avance pour éviter les collisions entre worktrees).
+
+**Overlap note:** v1.18 (`milestone-mobile`, phases 45/46 récompenses non punitives et déblocage progressif) touche les quêtes/récompenses — chantiers gardés dans v1.20 ; réconcilier la philosophie "non punitive" avec les quêtes "échouées" visibles.
+
 ## Active Parallel Workstreams
 
 **Parallel workstream:** v1.18 AI Coach Core (`milestone-mobile`) — l'IA devient pilote central de l'expérience athlète : onboarding conversationnel qui profile, moteur qui décide des objectifs hebdo adaptés au niveau réel, tools IA (objectif/récompense/programme), review hebdo et récompenses par palier, déblocage progressif de fonctionnalités.
@@ -416,7 +434,9 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-06 after v1.19 milestone (Migration Supabase ziko → portfolio, `supabase-portfolio-migration`) — SHIPPED: backend and web on `portfolio`, `ziko` project deleted; DECOM-01 and the mobile flip waived; credential revocations and other carry-over items listed under "Active — v1.19 carry-over".*
+*Last updated: 2026-11-12 — v1.20 UAT Mobile — Refonte & corrections (`uat-mobile`) STARTED (récap : `.planning/MILESTONE-RECAP-2026-11-12.md`).*
+
+*Previous update: 2026-10-06 after v1.19 milestone (Migration Supabase ziko → portfolio, `supabase-portfolio-migration`) — SHIPPED: backend and web on `portfolio`, `ziko` project deleted; DECOM-01 and the mobile flip waived; credential revocations and other carry-over items listed under "Active — v1.19 carry-over".*
 
 *Previous update: 2026-08-30 — v1.18 AI Coach Core (`milestone-mobile`) STARTED: onboarding conversationnel, moteur de décision adaptatif hebdo, tools IA, review/récompenses par palier, déblocage progressif par niveau. Scope cadré en discussion; SEED-001 planté pour la couche RPG/social (factions/ligues) reportée à un milestone suivant.*
 

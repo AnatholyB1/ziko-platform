@@ -1,440 +1,199 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Modal,
-} from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { useTimerStore } from '../store';
-import type { TimerExercise } from '../store';
+import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { PluginHeader, ErrorScreen } from '@ziko/ui';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Stepper, NumberSheet } from './Stepper';
+import {
+  type EditorField, type PresetFields, type TimerTab,
+  defaultsForTab, fieldsForTab, formatDurationShort, formatTotal, limitsFor, normalizeForTab,
+  rowToPreset, stepField, clampField, tabForType, toDbPayload, totalDuration, validatePreset, LIMITS,
+} from '../presets';
 
-const TYPES = [
-  { key: 'hiit', label: 'HIIT', color: '#FF9800', icon: 'flash' as const },
-  { key: 'tabata', label: 'Tabata', color: '#F44336', icon: 'flame' as const },
-  { key: 'emom', label: 'EMOM', color: '#2196F3', icon: 'repeat' as const },
-  { key: 'hyrox', label: 'Hyrox', color: '#FF5C1A', icon: 'trophy' as const },
-  { key: 'functional', label: 'Fonctionnel', color: '#4CAF50', icon: 'barbell' as const },
-  { key: 'custom', label: 'Custom', color: '#9C27B0', icon: 'settings' as const },
-];
+const TAB_PARAM: Record<string, TimerTab> = { seance: 'Séance', tabata: 'Tabata', intervalle: 'Intervalle' };
 
-const EMPTY_EXERCISE: TimerExercise = { name: '', reps: undefined, distance_m: undefined, weight_kg: undefined, notes: '' };
+const FIELD_META: Record<EditorField, { label: string; hint?: string; time: boolean }> = {
+  warmup_sec: { label: 'Échauffement', hint: 'Avant le premier effort', time: true },
+  work_sec: { label: 'Effort', time: true },
+  rest_sec: { label: 'Repos', time: true },
+  sets: { label: 'Séries par round', time: false },
+  rounds: { label: 'Rounds', time: false },
+  round_rest_sec: { label: 'Repos entre rounds', time: true },
+};
 
-function formatExerciseLabel(ex: TimerExercise): string {
-  const parts: string[] = [];
-  if (ex.reps) parts.push(`${ex.reps} reps`);
-  if (ex.distance_m) parts.push(`${ex.distance_m}m`);
-  if (ex.weight_kg) parts.push(`${ex.weight_kg}kg`);
-  if (ex.notes) parts.push(ex.notes);
-  return parts.length > 0 ? parts.join(' · ') : 'Détails à préciser';
-}
+const fieldValueText = (field: EditorField, v: number) =>
+  FIELD_META[field].time ? (v === 0 ? 'Aucun' : formatDurationShort(v)) : String(v);
 
 export default function TimerEditor({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
-  const params = useLocalSearchParams<{ presetId?: string }>();
-  const { customPresets, addCustomPreset, updateCustomPreset } = useTimerStore();
+  const queryClient = useQueryClient();
+  const params = useLocalSearchParams<{ presetId?: string; tab?: string }>();
+  const presetId = params.presetId ?? null;
+  const action = getActionPrimary(theme);
 
-  const existing = params.presetId
-    ? customPresets.find((p) => p.id === params.presetId)
-    : null;
+  const { data: row, isLoading, isError, refetch } = useQuery({
+    queryKey: ['timer_preset', presetId],
+    enabled: !!presetId,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('ziko_timer_presets').select('*').eq('id', presetId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const [name, setName] = useState(existing?.name ?? '');
-  const [type, setType] = useState<string>(existing?.type ?? 'hiit');
-  const [workSec, setWorkSec] = useState(existing ? String(existing.work_seconds) : '30');
-  const [restSec, setRestSec] = useState(existing ? String(existing.rest_seconds) : '15');
-  const [rounds, setRounds] = useState(existing ? String(existing.rounds) : '8');
-  const [exercises, setExercises] = useState<TimerExercise[]>(existing?.exercises ?? []);
+  const initialTab: TimerTab = TAB_PARAM[params.tab ?? ''] ?? 'Intervalle';
+  const [tab, setTab] = useState<TimerTab>(initialTab);
+  const [values, setValues] = useState<PresetFields>(() => defaultsForTab(initialTab));
+  const [loaded, setLoaded] = useState(!presetId);
   const [saving, setSaving] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [editing, setEditing] = useState<EditorField | null>(null);
 
-  // Exercise modal state
-  const [showExModal, setShowExModal] = useState(false);
-  const [editingExIdx, setEditingExIdx] = useState<number | null>(null);
-  const [draftEx, setDraftEx] = useState<TimerExercise>(EMPTY_EXERCISE);
-
-  const isValid = name.trim().length > 0
-    && parseInt(rounds) > 0
-    && (parseInt(workSec) > 0 || parseInt(restSec) > 0);
-
-  const totalSeconds = (parseInt(workSec || '0') + parseInt(restSec || '0')) * parseInt(rounds || '1');
-  const totalMin = Math.ceil(totalSeconds / 60);
-
-  const openAddExercise = () => {
-    setEditingExIdx(null);
-    setDraftEx(EMPTY_EXERCISE);
-    setShowExModal(true);
-  };
-
-  const openEditExercise = (idx: number) => {
-    setEditingExIdx(idx);
-    setDraftEx({ ...exercises[idx] });
-    setShowExModal(true);
-  };
-
-  const saveExercise = () => {
-    if (!draftEx.name.trim()) {
-      showAlert('Erreur', 'Le nom de l\'exercice est requis');
-      return;
+  useEffect(() => {
+    if (row && !loaded) {
+      const p = rowToPreset(row);
+      setTab(tabForType(p.type));
+      setValues(p);
+      setLoaded(true);
     }
-    const cleaned: TimerExercise = {
-      name: draftEx.name.trim(),
-      ...(draftEx.reps ? { reps: draftEx.reps } : {}),
-      ...(draftEx.distance_m ? { distance_m: draftEx.distance_m } : {}),
-      ...(draftEx.weight_kg ? { weight_kg: draftEx.weight_kg } : {}),
-      ...(draftEx.notes?.trim() ? { notes: draftEx.notes.trim() } : {}),
-    };
-    if (editingExIdx !== null) {
-      setExercises((prev) => prev.map((e, i) => (i === editingExIdx ? cleaned : e)));
-    } else {
-      setExercises((prev) => [...prev, cleaned]);
-    }
-    setShowExModal(false);
-  };
+  }, [row, loaded]);
 
-  const removeExercise = (idx: number) => {
-    setExercises((prev) => prev.filter((_, i) => i !== idx));
-  };
+  const fields = fieldsForTab(tab);
+  const check = useMemo(() => validatePreset(values, tab), [values, tab]);
+  const total = useMemo(() => totalDuration(normalizeForTab(values, tab)), [values, tab]);
+
+  const setField = (field: EditorField, updater: (prev: number) => number) =>
+    setValues((v) => ({ ...v, [field]: updater(v[field]) }));
 
   const handleSave = async () => {
-    if (!isValid) return;
+    setTouched(true);
+    if (!check.ok || saving) return;
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const preset = {
-        name: name.trim(),
-        type: type as 'hiit' | 'tabata' | 'emom' | 'custom' | 'hyrox' | 'functional',
-        work_sec: parseInt(workSec) || 0,
-        rest_sec: parseInt(restSec) || 0,
-        rounds: parseInt(rounds) || 1,
-        exercises: exercises.length > 0 ? exercises : undefined,
-      };
-
-      if (existing) {
-        const { error } = await supabase
-          .from('ziko_timer_presets')
-          .update(preset)
-          .eq('id', existing.id);
+      if (!user) throw new Error('Non authentifié');
+      const payload = toDbPayload(normalizeForTab(values, tab));
+      if (presetId) {
+        // `exercises` n'est jamais touche : il est conserve tel quel pour les presets existants.
+        const { error } = await supabase.from('ziko_timer_presets').update(payload).eq('id', presetId).eq('user_id', user.id);
         if (error) throw error;
-        updateCustomPreset(existing.id, {
-          name: preset.name,
-          type: preset.type,
-          work_seconds: preset.work_sec,
-          rest_seconds: preset.rest_sec,
-          rounds: preset.rounds,
-          exercises: exercises.length > 0 ? exercises : undefined,
-        });
       } else {
-        const { data, error } = await supabase
-          .from('ziko_timer_presets')
-          .insert({ ...preset, user_id: user.id })
-          .select('*')
-          .single();
+        const { error } = await supabase.from('ziko_timer_presets').insert({ ...payload, user_id: user.id });
         if (error) throw error;
-        addCustomPreset({
-          id: data.id,
-          name: data.name,
-          type: data.type,
-          work_seconds: data.work_sec,
-          rest_seconds: data.rest_sec,
-          rounds: data.rounds,
-          is_builtin: false,
-          exercises: data.exercises ?? undefined,
-        });
       }
+      await queryClient.invalidateQueries({ queryKey: ['timer_presets'] });
+      await queryClient.invalidateQueries({ queryKey: ['timer_preset', presetId] });
       router.back();
     } catch (err: any) {
-      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
+      showAlert('Erreur', err?.message ?? 'Impossible de sauvegarder le preset');
     } finally {
       setSaving(false);
     }
   };
 
-  const inputStyle = {
-    backgroundColor: theme.surface,
-    borderRadius: 14,
-    padding: 16,
-    color: theme.text,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-    marginBottom: 16,
-  };
+  if (presetId && isError) return <ErrorScreen variant="network" onRetry={refetch} onGoBack={() => router.back()} />;
+  if (presetId && (isLoading || !loaded)) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+        <ActivityIndicator size="large" color={action} />
+      </View>
+    );
+  }
+
+  const title = presetId ? 'Modifier le preset' : 'Nouveau preset';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
-      <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="arrow-back" size={24} color={theme.primary} />
-          </TouchableOpacity>
-          <Text style={{ color: theme.text, fontWeight: '800', fontSize: 22 }}>
-            {existing ? 'Modifier le chrono' : 'Nouveau chrono'}
-          </Text>
-        </View>
-
-        {/* Name */}
-        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>Nom *</Text>
+      <PluginHeader title={title} onBack={() => router.back()} />
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+        <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 6 }}>Nom</Text>
         <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Mon chrono HIIT"
+          value={values.name}
+          onChangeText={(t) => setValues((v) => ({ ...v, name: t }))}
+          placeholder="Ex. Côtes 400 m"
           placeholderTextColor={theme.muted}
-          style={inputStyle}
+          maxLength={LIMITS.nameMax}
+          accessibilityLabel="Nom du preset"
+          style={{
+            minHeight: 48, borderRadius: 12, borderWidth: 1.5,
+            borderColor: touched && check.errors.name ? '#B3261E' : theme.border,
+            backgroundColor: theme.surface, paddingHorizontal: 14, fontSize: 16, color: theme.text,
+          }}
         />
+        {touched && check.errors.name ? (
+          <Text style={{ fontSize: 13, color: '#B3261E', marginTop: 4 }}>{check.errors.name}</Text>
+        ) : null}
 
-        {/* Type selector */}
-        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>Type</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-          {TYPES.map((t) => {
-            const selected = type === t.key;
+        <View style={{ marginTop: 12 }}>
+          {fields.map((f) => {
+            const l = limitsFor(f);
+            const v = values[f];
             return (
-              <TouchableOpacity
-                key={t.key}
-                onPress={() => setType(t.key)}
-                style={{
-                  width: '30%', alignItems: 'center', padding: 12, borderRadius: 12,
-                  backgroundColor: selected ? t.color + '22' : theme.surface,
-                  borderWidth: 2, borderColor: selected ? t.color : theme.border,
-                }}
-              >
-                <Ionicons name={t.icon} size={20} color={selected ? t.color : theme.muted} />
-                <Text style={{
-                  color: selected ? t.color : theme.muted, fontWeight: '700',
-                  fontSize: 11, marginTop: 4,
-                }}>{t.label}</Text>
-              </TouchableOpacity>
+              <View key={f}>
+                <Stepper
+                  label={FIELD_META[f].label}
+                  hint={FIELD_META[f].hint}
+                  valueText={fieldValueText(f, v)}
+                  theme={theme}
+                  atMin={v <= l.min}
+                  atMax={v >= l.max}
+                  onStep={(dir, mult) => setField(f, (prev) => stepField(f, prev, dir, mult))}
+                  onEditValue={() => setEditing(f)}
+                />
+                {check.errors[f] ? <Text style={{ fontSize: 13, color: '#B3261E' }}>{check.errors[f]}</Text> : null}
+              </View>
             );
           })}
         </View>
 
-        {/* Work seconds */}
-        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>
-          Travail (secondes)
-        </Text>
-        <TextInput
-          value={workSec}
-          onChangeText={setWorkSec}
-          placeholder="30"
-          placeholderTextColor={theme.muted}
-          keyboardType="numeric"
-          style={inputStyle}
-        />
-
-        {/* Rest seconds */}
-        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>
-          Repos (secondes)
-        </Text>
-        <TextInput
-          value={restSec}
-          onChangeText={setRestSec}
-          placeholder="15"
-          placeholderTextColor={theme.muted}
-          keyboardType="numeric"
-          style={inputStyle}
-        />
-
-        {/* Rounds */}
-        <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14, marginBottom: 8 }}>
-          Nombre de rounds *
-        </Text>
-        <TextInput
-          value={rounds}
-          onChangeText={setRounds}
-          placeholder="8"
-          placeholderTextColor={theme.muted}
-          keyboardType="numeric"
-          style={inputStyle}
-        />
-
-        {/* Exercises */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>
-            Exercices par round
-          </Text>
-          <TouchableOpacity onPress={openAddExercise} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name="add-circle" size={20} color={theme.primary} />
-            <Text style={{ color: theme.primary, fontWeight: '600', fontSize: 13 }}>Ajouter</Text>
-          </TouchableOpacity>
-        </View>
-        {exercises.length === 0 ? (
-          <TouchableOpacity
-            onPress={openAddExercise}
-            style={{
-              backgroundColor: theme.surface, borderRadius: 12, padding: 16,
-              borderWidth: 1, borderColor: theme.border, borderStyle: 'dashed',
-              alignItems: 'center', marginBottom: 20,
-            }}
-          >
-            <Ionicons name="barbell-outline" size={24} color={theme.muted} />
-            <Text style={{ color: theme.muted, fontSize: 13, marginTop: 6 }}>
-              Aucun exercice — optionnel
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={{ marginBottom: 20, gap: 8 }}>
-            {exercises.map((ex, idx) => (
-              <View
-                key={idx}
-                style={{
-                  backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                  borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center',
-                }}
-              >
-                <View style={{
-                  width: 28, height: 28, borderRadius: 14, backgroundColor: theme.primary + '20',
-                  justifyContent: 'center', alignItems: 'center', marginRight: 12,
-                }}>
-                  <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 12 }}>{idx + 1}</Text>
-                </View>
-                <TouchableOpacity style={{ flex: 1 }} onPress={() => openEditExercise(idx)}>
-                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>{ex.name}</Text>
-                  <Text style={{ color: theme.muted, fontSize: 12, marginTop: 2 }}>
-                    {formatExerciseLabel(ex)}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => removeExercise(idx)} style={{ padding: 4 }}>
-                  <Ionicons name="close-circle" size={20} color="#F44336" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Preview */}
-        {isValid && (
-          <View style={{
-            backgroundColor: theme.surface, borderRadius: 14, padding: 16,
-            borderWidth: 1, borderColor: theme.border, marginBottom: 20,
-          }}>
-            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 6 }}>
-              Aperçu
-            </Text>
-            <Text style={{ color: theme.muted, fontSize: 13 }}>
-              {parseInt(workSec) > 0 ? `${workSec}s travail` : ''}
-              {parseInt(restSec) > 0 ? ` / ${restSec}s repos` : ''}
-              {' · '}{rounds} rounds · ~{totalMin} min
-              {exercises.length > 0 ? ` · ${exercises.length} exercice${exercises.length > 1 ? 's' : ''}` : ''}
-            </Text>
-          </View>
-        )}
-
-        {/* Save */}
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={!isValid || saving}
+        <View
+          accessibilityRole="summary"
           style={{
-            backgroundColor: isValid ? theme.primary : theme.border,
-            borderRadius: 14, padding: 18, alignItems: 'center',
-            opacity: saving ? 0.6 : 1,
+            marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14,
+            backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border,
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-            {saving ? 'Enregistrement...' : existing ? 'Modifier' : 'Créer le chrono'}
+          <Ionicons name="timer-outline" size={22} color={theme.text} />
+          <Text style={{ flex: 1, fontSize: 15, color: theme.text }}>
+            Durée totale : <Text style={{ fontWeight: '800' }}>{formatTotal(total)}</Text>
+            {fields.includes('warmup_sec') ? ' (échauffement compris).' : '.'}
           </Text>
-        </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* Exercise Modal */}
-      <Modal visible={showExModal} transparent animationType="slide" onRequestClose={() => setShowExModal(false)}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-          <View style={{ backgroundColor: theme.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
-            <Text style={{ color: theme.text, fontWeight: '800', fontSize: 18, marginBottom: 20 }}>
-              {editingExIdx !== null ? 'Modifier l\'exercice' : 'Ajouter un exercice'}
-            </Text>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, paddingBottom: 24, backgroundColor: theme.background, borderTopWidth: 1, borderTopColor: theme.border }}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: saving }}
+          style={{ minHeight: 52, borderRadius: 14, backgroundColor: action, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : 1 }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{saving ? 'Enregistrement…' : 'Enregistrer le preset'}</Text>
+        </TouchableOpacity>
+      </View>
 
-            <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>Nom *</Text>
-            <TextInput
-              value={draftEx.name}
-              onChangeText={(v) => setDraftEx((d) => ({ ...d, name: v }))}
-              placeholder="ex: Wall Balls, Ski Erg..."
-              placeholderTextColor={theme.muted}
-              style={{
-                backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                color: theme.text, fontSize: 15, borderWidth: 1, borderColor: theme.border, marginBottom: 12,
-              }}
-            />
-
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>Reps</Text>
-                <TextInput
-                  value={draftEx.reps ? String(draftEx.reps) : ''}
-                  onChangeText={(v) => setDraftEx((d) => ({ ...d, reps: v ? parseInt(v) || undefined : undefined }))}
-                  placeholder="20"
-                  placeholderTextColor={theme.muted}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                    color: theme.text, fontSize: 15, borderWidth: 1, borderColor: theme.border,
-                  }}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>Distance (m)</Text>
-                <TextInput
-                  value={draftEx.distance_m ? String(draftEx.distance_m) : ''}
-                  onChangeText={(v) => setDraftEx((d) => ({ ...d, distance_m: v ? parseInt(v) || undefined : undefined }))}
-                  placeholder="1000"
-                  placeholderTextColor={theme.muted}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                    color: theme.text, fontSize: 15, borderWidth: 1, borderColor: theme.border,
-                  }}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>Poids (kg)</Text>
-                <TextInput
-                  value={draftEx.weight_kg ? String(draftEx.weight_kg) : ''}
-                  onChangeText={(v) => setDraftEx((d) => ({ ...d, weight_kg: v ? parseFloat(v) || undefined : undefined }))}
-                  placeholder="16"
-                  placeholderTextColor={theme.muted}
-                  keyboardType="numeric"
-                  style={{
-                    backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                    color: theme.text, fontSize: 15, borderWidth: 1, borderColor: theme.border,
-                  }}
-                />
-              </View>
-            </View>
-
-            <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginBottom: 6 }}>Notes</Text>
-            <TextInput
-              value={draftEx.notes ?? ''}
-              onChangeText={(v) => setDraftEx((d) => ({ ...d, notes: v }))}
-              placeholder="ex: 6kg ball, tempo contrôlé..."
-              placeholderTextColor={theme.muted}
-              style={{
-                backgroundColor: theme.surface, borderRadius: 12, padding: 14,
-                color: theme.text, fontSize: 15, borderWidth: 1, borderColor: theme.border, marginBottom: 20,
-              }}
-            />
-
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity
-                onPress={() => setShowExModal(false)}
-                style={{
-                  flex: 1, padding: 16, borderRadius: 14, alignItems: 'center',
-                  borderWidth: 1, borderColor: theme.border,
-                }}
-              >
-                <Text style={{ color: theme.text, fontWeight: '600' }}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={saveExercise}
-                style={{ flex: 2, padding: 16, borderRadius: 14, alignItems: 'center', backgroundColor: theme.primary }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  {editingExIdx !== null ? 'Modifier' : 'Ajouter'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {editing ? (
+        <NumberSheet
+          visible
+          title={FIELD_META[editing].label}
+          unit={FIELD_META[editing].time ? 'secondes' : ''}
+          initial={values[editing]}
+          min={limitsFor(editing).min}
+          max={limitsFor(editing).max}
+          theme={theme}
+          onClose={() => setEditing(null)}
+          onConfirm={(n) => {
+            const f = editing;
+            setField(f, () => clampField(f, n));
+            setEditing(null);
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

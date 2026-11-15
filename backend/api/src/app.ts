@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { handle } from 'hono/vercel';
 import { aiRouter } from './routes/ai.js';
 import { onboardingRouter } from './routes/onboarding.js';
+import { workshopRouter } from './routes/workshop.js';
 import { pluginsRouter } from './routes/plugins.js';
 import { webhooksRouter } from './routes/webhooks.js';
 import { pushEventsRouter } from './routes/push-events.js';
@@ -29,6 +30,8 @@ import { dashboardsRouter } from './coach/dashboards/service.js';
 import { videosRouter } from './coach/videos/service.js';
 import { coachingEngineRouter } from './coaching-engine/routes.js';
 import { formsRouter, formsCronRouter } from './routes/forms.js';
+import { questsRouter } from './routes/quests.js';
+import { leagueRouter } from './routes/league.js';
 import { createAuthEmailRouter } from './routes/auth-email.js';
 const app = new Hono();
 
@@ -64,6 +67,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 // Routes
 // Cron routers are mounted BEFORE their authenticated siblings: those apply authMiddleware to '*'
 // and would 401 Vercel cron calls (which carry only the CRON_SECRET bearer, no user JWT).
+app.route('/ai/workshop', workshopRouter); // v1.20 Phase 23 : atelier IA de programme
 app.route('/ai', aiRouter);
 app.route('/ai', onboardingRouter);
 app.route('/plugins', pluginsRouter);
@@ -95,6 +99,8 @@ app.route('/coaching-engine', coachingEngineRouter);
 app.route('/forms', formsCronRouter);
 app.route('/forms', formsRouter);
 app.route('/auth', createAuthEmailRouter());
+app.route('/quests', questsRouter);
+app.route('/league', leagueRouter);
 
 // 404 fallback
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

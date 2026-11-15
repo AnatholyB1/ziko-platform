@@ -9,14 +9,26 @@ import {
   FIRST_LEVEL_READ_TIMEOUT_MS,
 } from '@ziko/plugin-sdk';
 import type { UserProfile, PluginLevelInfo } from '@ziko/plugin-sdk';
-import { supabase } from '../lib/supabase';
+import { showAlert } from '@ziko/plugin-sdk';
+import { supabase, sessionManager } from '../lib/supabase';
 import { queryClient } from '../lib/queryClient';
 import { triggerRetroactiveRecompute } from '../lib/onboardingRecompute';
+import { loadInitialSession, deferProfileRefresh, readPersistedSession } from '../lib/authInit';
+import {
+  classifyProfileRead,
+  parseCachedProfile,
+  profileCacheKey,
+  type ProfileReadStatus,
+} from '../lib/profileGate';
+import { isPermanentAuthError } from '../lib/sessionManager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthState {
   session: Session | null;
   user: User | null;
   profile: UserProfile | null;
+  /** Resultat de la derniere lecture du profil (decision onboarding, cf. decideAppGate). */
+  profileStatus: ProfileReadStatus;
   // D-02: athlete_state.status === 'active' is the authoritative mandatory-flow
   // completion signal, written only by the assess_profile tool via
   // record_athlete_decision(). profile.onboarding_done alone is set by the old
@@ -46,6 +58,9 @@ interface AuthState {
 }
 
 let authListenerStarted = false;
+// true while signOut() runs, so a SIGNED_OUT event is not reported as an expiry
+let userInitiatedSignOut = false;
+let expiryNoticeShown = false;
 
 type AuthSet = (partial: Partial<AuthState>) => void;
 
@@ -73,7 +88,13 @@ function levelResetPatch(): Partial<AuthState> {
   levelAppliedSeq = levelSeq;
   levelFallback = false;
   clearFirstReadTimer();
-  return { effectiveLevel: 1, levelLoaded: false, levelUp: null, athleteOnboardingComplete: false };
+  return {
+    effectiveLevel: 1,
+    levelLoaded: false,
+    levelUp: null,
+    athleteOnboardingComplete: false,
+    profileStatus: 'unknown',
+  };
 }
 
 // Sets session/user; resets level state if the user id changed. Starts the
@@ -128,6 +149,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   session: null,
   user: null,
   profile: null,
+  profileStatus: 'unknown',
   // false is the fail-safe posture: an unknown/unread athlete stays inside
   // the (auth) stack rather than escaping the mandatory flow.
   athleteOnboardingComplete: false,
@@ -162,28 +184,57 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
     authListenerStarted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // Called when the session is dead and unrecoverable (D-02): drop local state so the
+    // (app) layout redirects to /(auth)/login, tell the user once, never loop.
+    const handleExpired = async () => {
+      if (expiryNoticeShown || !get().session) return;
+      expiryNoticeShown = true;
+      await sessionManager.clearExpiredSession();
+      set({ session: null, user: null, profile: null, ...levelResetPatch() });
+      queryClient.clear();
+      showAlert('Session expirée', 'Ta session a expiré. Reconnecte-toi pour continuer.');
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) expiryNoticeShown = false;
+      if (event === 'SIGNED_OUT' && !userInitiatedSignOut && get().session) {
+        // auto sign-out of a previously valid session (refresh token rejected)
+        deferProfileRefresh(handleExpired); // clearExpiredSession touches supabase: out of the auth lock
+        return;
+      }
       setSessionUser(set, get, session);
       if (session?.user) {
-        await get().refreshProfile();
+        // Never await supabase calls inside this callback (auth-js lock deadlock): defer.
+        deferProfileRefresh(() => get().refreshProfile());
       } else {
-        set({ profile: null });
+        set({ profile: null, profileStatus: 'unknown' });
       }
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSessionUser(set, get, session);
-      if (session?.user) {
-        await get().refreshProfile();
-      }
-      set({ isLoading: false, isInitialized: true });
+    void loadInitialSession({
+      getSession: () => supabase.auth.getSession(),
+      // hors ligne au demarrage a froid : session persistee (mode degrade), pas l'ecran Bienvenue
+      readPersistedSession: () => readPersistedSession(AsyncStorage, process.env.EXPO_PUBLIC_SUPABASE_URL ?? ''),
+      isPermanentError: isPermanentAuthError,
+      applySession: (session) => setSessionUser(set, get, session as Session | null),
+      refreshProfile: () => get().refreshProfile(),
+      done: () => set({ isLoading: false, isInitialized: true }),
     });
 
-    // Foreground refetch: a weekly review may have raised the tier while the app
-    // was backgrounded (D-06).
+    // Foreground: resume token auto-refresh and refresh now if near/after expiry (D-01);
+    // background: stop the refresh timer. A weekly review may also have raised the tier
+    // while backgrounded (D-06).
     const appStateSub = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && get().user) {
-        get().refreshLevel().catch(() => {});
+      if (state === 'active') {
+        sessionManager
+          .handleForeground()
+          .then((r) => {
+            if (r.status === 'expired') return handleExpired();
+            if (r.status === 'ok' && get().user) return get().refreshLevel();
+          })
+          .catch(() => {});
+      } else {
+        sessionManager.handleBackground().catch(() => {});
       }
     });
 
@@ -196,10 +247,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   setSession: (session) => setSessionUser(set, get, session),
 
-  setProfile: (profile) => set({ profile }),
+  setProfile: (profile) => set({ profile, profileStatus: profile ? 'loaded' : 'unknown' }),
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    userInitiatedSignOut = true;
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      userInitiatedSignOut = false;
+    }
     set({
       session: null,
       user: null,
@@ -215,20 +271,47 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const uid = user.id;
     const seq = ++levelSeq;
 
-    const [{ data: profileData }, { data: stateData, error: stateError }] = await Promise.all([
-      supabase.from('ziko_user_profiles').select('*').eq('id', uid).single(),
-      // maybeSingle(): a brand-new athlete has no athlete_state row yet, and
-      // single() would surface that as an error.
-      supabase.from('ziko_athlete_state').select('status, tier, level').eq('user_id', uid).maybeSingle(),
-    ]);
+    let profileRes: { data: any; error: any };
+    let stateRes: { data: any; error: any };
+    try {
+      [profileRes, stateRes] = await Promise.all([
+        supabase.from('ziko_user_profiles').select('*').eq('id', uid).single(),
+        // maybeSingle(): a brand-new athlete has no athlete_state row yet, and
+        // single() would surface that as an error.
+        supabase.from('ziko_athlete_state').select('status, tier, level').eq('user_id', uid).maybeSingle(),
+      ]);
+    } catch (e) {
+      // Network down: a thrown fetch is a failed read, not "no profile".
+      profileRes = { data: null, error: e ?? { message: 'network' } };
+      stateRes = { data: null, error: e ?? { message: 'network' } };
+    }
+    const { data: profileData } = profileRes;
+    const { data: stateData, error: stateError } = stateRes;
 
     // Account changed / signed out while the reads were in flight: drop everything.
     if (get().user?.id !== uid) return;
 
+    const status = classifyProfileRead(profileRes);
     if (profileData) {
-      set({ profile: profileData as UserProfile });
+      set({ profile: profileData as UserProfile, profileStatus: 'loaded' });
+      AsyncStorage.setItem(profileCacheKey(uid), JSON.stringify(profileData)).catch(() => {});
+    } else if (status === 'error') {
+      // Offline / transient failure: degraded mode. Reuse the cached profile if any, and never
+      // send the athlete back to onboarding because of a failed read (UAT run 6).
+      let cached: UserProfile | null = null;
+      if (!get().profile) {
+        try {
+          cached = parseCachedProfile<UserProfile>(await AsyncStorage.getItem(profileCacheKey(uid)), uid);
+        } catch {
+          cached = null;
+        }
+        if (get().user?.id !== uid) return;
+      }
+      set(cached ? { profile: cached, profileStatus: 'error' } : { profileStatus: 'error' });
+    } else {
+      set({ profileStatus: status });
     }
-    set({ athleteOnboardingComplete: stateData?.status === 'active' });
+    if (!stateError) set({ athleteOnboardingComplete: stateData?.status === 'active' });
     // On a read error keep the last known level rather than re-locking plugins.
     if (!stateError) commitLevelRead(set, get, uid, seq, getEffectiveLevel(stateData));
     else unblockLevelOnError(set, get, uid);

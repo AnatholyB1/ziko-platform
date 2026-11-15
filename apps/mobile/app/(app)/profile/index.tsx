@@ -5,12 +5,13 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, STORAGE_BUCKETS, formatDateFr, goalLabel } from '@ziko/plugin-sdk';
 import * as ImagePicker from 'expo-image-picker';
 import { ProfileHero, PRStatCard } from '@ziko/ui';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useUnits } from '../../../src/hooks/useUnits';
+import { displayStreak } from '@ziko/plugin-gamification/streak';
 
 // ── Badge type ───────────────────────────────────────────────────
 type BadgeItem = {
@@ -456,7 +457,7 @@ function PRBadgesTab({ badges }: { badges: BadgeItem[] }) {
                 }}
               >
                 {b.earned_at
-                  ? new Date(b.earned_at).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).toUpperCase()
+                  ? formatDateFr(new Date(b.earned_at), { month: 'short', year: '2-digit' }).toUpperCase()
                   : ''}
               </Text>
             </View>
@@ -597,23 +598,14 @@ export default function ProfileScreen() {
         return weekStrs.size;
       })();
 
-      // Streak: consecutive days backward from today using habit_logs
-      const streak = (() => {
-        const logDates = (habitLogsRes.data ?? []).map((l: any) => l.date as string);
-        const uniqueDates = [...new Set(logDates)].sort().reverse();
-        let count = 0;
-        let current = today;
-        for (const d of uniqueDates) {
-          if (d === current) {
-            count++;
-            const prev = new Date(current);
-            prev.setDate(prev.getDate() - 1);
-            current = prev.toISOString().split('T')[0];
-          } else {
-            break;
-          }
-        }
-        return count;
+      // Serie : meme source que l'accueil et Recompenses (ziko_user_gamification, displayStreak) - UAT run 9, defaut 4
+      const streak = await (async () => {
+        const { data: g } = await supabase
+          .from('ziko_user_gamification')
+          .select('current_streak, last_activity_date')
+          .eq('user_id', userId!)
+          .maybeSingle();
+        return displayStreak(g);
       })();
 
       // PRs: number of exercises with a recorded best weight (no stored is_pr flag in the schema)
@@ -632,7 +624,7 @@ export default function ProfileScreen() {
           const weight = row.weight_kg ?? 0;
           const performedAt = row.completed_at ?? row.created_at;
           const date = performedAt
-            ? new Date(performedAt).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+            ? formatDateFr(new Date(performedAt), { month: 'short', day: 'numeric' })
             : '';
           if (!exerciseMap.has(exerciseId) || exerciseMap.get(exerciseId)!.weight < weight) {
             exerciseMap.set(exerciseId, { exercise: exerciseName, weight, date });
@@ -938,7 +930,7 @@ export default function ProfileScreen() {
               <Text
                 style={{ fontSize: 12, fontWeight: '700', color: colors.text, marginTop: 1 }}
               >
-                {data?.profile?.goal ?? 'Ajoute ton objectif'}
+                {goalLabel(data?.profile?.goal, 'Ajoute ton objectif')}
               </Text>
             </View>
           </View>
@@ -1102,7 +1094,7 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={() => {
                   try {
-                    router.push('/(app)/(workout)/session' as any);
+                    router.push('/(app)/workout');
                   } catch {
                     showAlert('Navigation', 'Lance une séance depuis le menu principal.');
                   }

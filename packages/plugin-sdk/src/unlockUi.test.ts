@@ -53,7 +53,26 @@ describe('buildLockedSection (B-08, B-12)', () => {
 describe('locked tap alert (B-09)', () => {
   it('is a title-only key with the required level', () => {
     expect(lockedTapAlertArgs(3)).toEqual({ key: 'plugins.locked.required', params: { n: 3 } });
-    expect(translations.fr['plugins.locked.required'].replace('{n}', '3')).toBe('Niveau 3 requis');
+    expect(translations.fr['plugins.locked.required'].replace('{n}', '3')).toBe('Palier 3 requis');
+  });
+});
+
+// UAT run 9, defaut 8 : le deverrouillage lit `ziko_athlete_state.tier` (D-02), pas le niveau de gamification (Recompenses).
+// Le meme mot "niveau" pour deux notions donnait "niveau 1" en Communaute et "niveau 3" en Recompenses.
+describe('copie de deverrouillage : "palier", jamais "niveau"', () => {
+  const keys = Object.keys(translations.fr).filter((k) => k.startsWith('plugins.locked.') || k.startsWith('plugins.unlocked.'));
+  it('couvre bien les cles de modules verrouilles', () => {
+    expect(keys.length).toBeGreaterThanOrEqual(10);
+  });
+  it.each(keys)('%s (fr) ne dit pas "niveau" / "Niv."', (k) => {
+    expect(translations.fr[k].replace(/\{[a-z]+\}/g, '')).not.toMatch(/niveau|\bniv\./i);
+  });
+  it.each(keys)('%s (en) ne dit pas "level" / "lvl"', (k) => {
+    expect(translations.en[k].replace(/\{[a-z]+\}/g, '')).not.toMatch(/\blevel\b|\blvl\b/i);
+  });
+  it('les parametres de message restent {level} / {current} / {n}', () => {
+    expect(translations.fr['plugins.locked.message']).toContain('palier {level}');
+    expect(translations.fr['plugins.locked.message']).toContain('palier {current}');
   });
 });
 

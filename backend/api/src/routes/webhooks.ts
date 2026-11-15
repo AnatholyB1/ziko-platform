@@ -1,11 +1,15 @@
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
+import { createServiceRpcClient } from '../lib/serviceClient.js';
 
 const adminClient = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_PUBLISHABLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
+
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 20261201270100).
+const formsRpc = createServiceRpcClient();
 
 const router = new Hono();
 
@@ -66,7 +70,7 @@ router.post('/supabase', async (c) => {
       const sessionCount = count ?? 1
 
       // Fire after_n_sessions trigger
-      const { data, error: rpcErr } = await adminClient.rpc(
+      const { data, error: rpcErr } = await formsRpc.rpc(
         'ziko_create_form_instances_for_trigger',
         {
           p_trigger_type: 'after_n_sessions',

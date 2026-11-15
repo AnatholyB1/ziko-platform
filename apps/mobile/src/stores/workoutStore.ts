@@ -4,6 +4,11 @@ import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramE
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
+import { normalizePlanSessions, parseReps, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
+import { loadProgramForSession } from '../lib/activeProgram';
+import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
+import { exerciseNames } from '@ziko/plugin-sdk';
+import { classifyRestoredSession, classifyLiveSession } from '../lib/staleSession';
 
 const sessionKey = (userId: string) => `workout:activeSession:${userId}`;
 
@@ -68,8 +73,28 @@ interface WorkoutState {
   saveSessionNotes: (id: string, notes: string) => void;
 
   restoreSession: () => Promise<void>;
+  /**
+   * Seance fantome : si la seance en cours est perimee (> STALE_SESSION_HOURS), la cloture sans credit ni XP
+   * (ou la supprime si aucune serie validee). Renvoie true si elle a ete retiree de l'etat.
+   */
+  settleStaleSession: () => Promise<boolean>;
   startSession: (programWorkoutId?: string, name?: string) => Promise<void>;
+  /**
+   * Single entry point for "start today's planned session" (TRAIN-01/02). Loads the AI program,
+   * resolves the session for `dayIndex` (0 = Monday ... 6 = Sunday, or the next planned day when
+   * that day is a rest day), pre-loads its exercises and opens a session. Returns the started
+   * session name, or null (with `reason`) when nothing could be started.
+   */
+  startPlannedSession: (
+    programId: string,
+    dayIndex: number,
+  ) => Promise<
+    | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[]; /** exercices du programme remplaces par la ligne catalogue la plus proche */ replaced?: Array<{ from: string; to: string }> }
+    | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error'; unresolved?: string[] }
+  >;
   endSession: () => Promise<void>;
+  /** Drops an in-progress session that has no validated set (TRAIN-03): nothing is kept in DB. */
+  discardSession: () => Promise<void>;
   addSet: (set: Omit<ActiveSet, 'completed'>) => void;
   completeSet: (exerciseId: string, setNumber: number) => Promise<void>;
   startRestTimer: (seconds: number) => void;
@@ -87,6 +112,75 @@ interface WorkoutState {
   removeProgramExercise: (exerciseId: string) => Promise<void>;
   reorderProgramExercises: (workoutId: string, exerciseIds: string[]) => Promise<void>;
 }
+
+/** Series validees d'une seance (plus recentes d'abord). Vide en cas d'erreur de lecture. */
+async function fetchCompletedSets(sessionId: string): Promise<Array<{ completed_at?: string | null; created_at?: string | null }>> {
+  try {
+    const { data } = await supabase
+      .from('ziko_session_sets')
+      .select('completed_at, created_at')
+      .eq('session_id', sessionId)
+      .eq('completed', true)
+      .order('created_at', { ascending: false });
+    return (data ?? []) as Array<{ completed_at?: string | null; created_at?: string | null }>;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Retire une seance ouverte perimee : 'discard' supprime la ligne et ses enfants ; 'autoclose' la termine a
+ * l'heure de sa derniere serie. Jamais de credit, jamais d'XP (ne passe PAS par endSession).
+ */
+async function closeOpenSession(
+  session: WorkoutSession,
+  verdict: 'discard' | 'autoclose',
+  sets: Array<{ completed_at?: string | null; created_at?: string | null }>,
+  userId: string,
+): Promise<void> {
+  try {
+    if (verdict === 'discard') {
+      await supabase.from('ziko_session_sets').delete().eq('session_id', session.id);
+      await supabase.from('ziko_session_exercises').delete().eq('session_id', session.id);
+      await supabase.from('ziko_workout_sessions').delete().eq('id', session.id);
+    } else {
+      const last = sets[0];
+      const endedAt = last?.completed_at ?? last?.created_at ?? session.started_at;
+      await supabase
+        .from('ziko_workout_sessions')
+        .update({ ended_at: endedAt, total_sets: sets.length })
+        .eq('id', session.id)
+        .is('ended_at', null);
+    }
+  } catch {
+    // best effort : la seance reste de toute facon retiree de la reprise ci-dessous
+  }
+  AsyncStorage.removeItem(sessionKey(userId)).catch(() => {});
+  useWorkoutStore.setState({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
+}
+
+/**
+ * Une seule seance ouverte a la fois (UAT run 6 : un 2e demarrage laissait la 1re ouverte). Avant d'en
+ * creer une nouvelle on ferme les precedentes : sans serie validee => supprimee, sinon terminee a l'heure
+ * de sa derniere serie. Best effort : un echec ici ne bloque jamais le demarrage.
+ */
+async function closeStaleOpenSessions(userId: string): Promise<void> {
+  try {
+    const { data } = await supabase
+      .from('ziko_workout_sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .is('ended_at', null);
+    for (const open of (data ?? []) as WorkoutSession[]) {
+      const sets = await fetchCompletedSets(open.id);
+      await closeOpenSession(open, sets.length === 0 ? 'discard' : 'autoclose', sets, userId);
+    }
+  } catch {
+    // best effort
+  }
+}
+
+let startSessionInFlight: Promise<void> | null = null;
 
 export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
   currentSession: null,
@@ -122,7 +216,15 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         .is('ended_at', null)
         .single();
       if (data) {
-        set({ currentSession: data as WorkoutSession });
+        const open = data as WorkoutSession;
+        // Seance fantome : sans serie validee, ou ouverte depuis trop longtemps, on ne la propose plus.
+        const sets = await fetchCompletedSets(open.id);
+        const verdict = classifyRestoredSession({ startedAt: open.started_at, completedSets: sets.length });
+        if (verdict === 'resume') {
+          set({ currentSession: open });
+        } else {
+          await closeOpenSession(open, verdict, sets, user.id);
+        }
       } else {
         await AsyncStorage.removeItem(sessionKey(user.id));
       }
@@ -131,7 +233,25 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     }
   },
 
-  startSession: async (programWorkoutId, name) => {
+  settleStaleSession: async () => {
+    const { currentSession } = get();
+    const user = useAuthStore.getState().user;
+    if (!currentSession || !user) return false;
+    // Seance deja ecoulee en memoire : l'anciennete decide (cf. classifyLiveSession).
+    const early = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: 1 });
+    if (early === 'resume') return false;
+    const sets = await fetchCompletedSets(currentSession.id);
+    const verdict = classifyLiveSession({ startedAt: currentSession.started_at, completedSets: sets.length });
+    if (verdict === 'resume') return false;
+    await closeOpenSession(currentSession, verdict, sets, user.id);
+    return true;
+  },
+
+  // Une seule ouverture a la fois : deux appels concurrents (double montage de l'ecran) inseraient deux
+  // seances ouvertes (closeStaleOpenSessions de chacun s'execute avant l'insert de l'autre) -> doublon compte.
+  startSession: (programWorkoutId, name) => {
+    if (startSessionInFlight) return startSessionInFlight;
+    const run = (async () => {
     const user = useAuthStore.getState().user;
     if (!user) return;
 
@@ -173,13 +293,14 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       }
     }
 
+    await closeStaleOpenSessions(user.id);
     const { data, error } = await supabase
       .from('ziko_workout_sessions')
       .insert({
         user_id: user.id,
         program_workout_id: programWorkoutId ?? null,
         program_id: programId,
-        name: name ?? 'Quick Workout',
+        name: resolveSessionName(name),
         started_at: new Date().toISOString(),
         day_of_week: new Date().getDay() || 7,
       })
@@ -191,6 +312,131 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig });
       AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
     }
+    })().finally(() => {
+      startSessionInFlight = null;
+    });
+    startSessionInFlight = run;
+    return run;
+  },
+
+  startPlannedSession: async (programId, dayIndex) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return { ok: false, reason: 'no_user' };
+
+    // Le programme actif peut venir de l'une des deux tables (IA ou coach) : lecture unifiee.
+    const { program, error: progErr } = await loadProgramForSession(supabase as any, user.id, programId);
+    if (progErr) return { ok: false, reason: 'db_error' };
+    if (!program) return { ok: false, reason: 'no_program' };
+
+    const plan = normalizePlanSessions(program.program_data);
+    if (plan.length === 0) return { ok: false, reason: 'no_session' };
+    // Same resolution as the week layout: the planned session for that weekday, else the next one.
+    let picked = plan.find((p) => p.dayIndex === dayIndex);
+    if (!picked) {
+      for (let k = 1; k < 7 && !picked; k++) {
+        picked = plan.find((p) => p.dayIndex === (dayIndex + k) % 7);
+      }
+    }
+    if (!picked) picked = plan[0];
+    if (picked.exercises.length === 0) return { ok: false, reason: 'no_exercises' };
+
+    // Resolve exercise rows : par id d'abord, puis par nom (exact normalise casse/accents, alias, unique plus
+    // proche, anglais <-> francais via exerciseNames). Un exercice non resolu NE bloque PAS la seance.
+    const ids = picked.exercises.map((e) => e.exercise_id).filter(Boolean) as string[];
+    const byId = new Map<string, Exercise>();
+    if (ids.length > 0) {
+      const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
+      (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
+    }
+    const missing = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id));
+    let candidates: CatalogRow[] = [];
+    if (missing.length > 0) {
+      const patterns = [...new Set(missing.flatMap((e) => searchPatternsFor(e.name, exerciseNames)))];
+      if (patterns.length > 0) {
+        const { data } = await supabase
+          .from('ziko_exercises')
+          .select('*')
+          .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
+          .limit(300);
+        candidates = (data ?? []) as CatalogRow[];
+      }
+    }
+    const unresolved: string[] = [];
+
+    const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
+    const replaced: Array<{ from: string; to: string }> = [];
+    picked.exercises.forEach((pe) => {
+      let ex: any = (pe.exercise_id && byId.get(pe.exercise_id)) || null;
+      if (!ex) {
+        const m = matchExercise(pe.name, candidates, exerciseNames);
+        if (m) {
+          ex = m.row;
+          if (m.kind === 'approx') replaced.push({ from: pe.name, to: String(m.row.name ?? m.row.name_fr ?? '') });
+        }
+      }
+      if (!ex) {
+        unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
+        return;
+      }
+      const r = parseReps(pe.reps);
+      workoutExercises.push({
+        id: `planned-${picked!.sourceIndex}-${workoutExercises.length}`,
+        workout_id: '',
+        exercise_id: (ex as any).id,
+        sets: pe.sets,
+        reps: r.reps,
+        reps_min: r.reps_min,
+        reps_max: r.reps_max,
+        duration_seconds: null,
+        duration_min: null,
+        duration_max: null,
+        rest_seconds: pe.rest_seconds ?? null,
+        weight_kg: null,
+        notes: null,
+        order_index: workoutExercises.length,
+        exercises: ex,
+        isPlanned: true,
+      } as any);
+    });
+    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
+
+    await closeStaleOpenSessions(user.id);
+    const sessionName = resolveSessionName(picked.name, (program as any).name);
+    const { data, error } = await supabase
+      .from('ziko_workout_sessions')
+      .insert({
+        user_id: user.id,
+        // programme coach : la seance reste rattachee a son programme / sa journee ; IA : pas de FK.
+        program_workout_id: program.kind === 'coach' ? (program.program_data?.sessions?.[picked.sourceIndex]?.workout_id ?? null) : null,
+        program_id: program.kind === 'coach' ? program.id : null,
+        name: sessionName,
+        started_at: new Date().toISOString(),
+        day_of_week: new Date().getDay() || 7,
+      })
+      .select()
+      .single();
+    if (error || !data) return { ok: false, reason: 'db_error' };
+
+    const session = data as WorkoutSession;
+    set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
+    AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
+    return { ok: true, name: sessionName, exerciseCount: workoutExercises.length, unresolved, replaced };
+  },
+
+  discardSession: async () => {
+    const { currentSession } = get();
+    const user = useAuthStore.getState().user;
+    if (currentSession) {
+      try {
+        await supabase.from('ziko_session_sets').delete().eq('session_id', currentSession.id);
+        await supabase.from('ziko_session_exercises').delete().eq('session_id', currentSession.id);
+        await supabase.from('ziko_workout_sessions').delete().eq('id', currentSession.id);
+      } catch {
+        // best effort: orphan rows without sets are excluded from every counter anyway
+      }
+    }
+    if (user) AsyncStorage.removeItem(sessionKey(user.id)).catch(() => {});
+    set({ currentSession: null, activeSets: [], currentWorkoutExercises: [], cycleConfig: null });
   },
 
   endSession: async () => {
@@ -282,7 +528,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .gte('started_at', since.toISOString())
       .order('started_at', { ascending: false });
 
-    if (data) set({ recentSessions: data as WorkoutSession[] });
+    // TRAIN-03: sessions without any validated set are not shown nor counted
+    if (data) set({ recentSessions: filterCountableSessions(data as WorkoutSession[]) });
   },
 
   loadExercises: async () => {
@@ -306,15 +553,8 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
 
     if (data) {
       const programs = data as WorkoutProgram[];
-      let active = programs.find((p) => p.is_active) ?? null;
-
-      // Auto-activate if there are programs but none is active
-      if (!active && programs.length > 0) {
-        const first = programs[0];
-        await supabase.from('ziko_workout_programs').update({ is_active: true }).eq('id', first.id);
-        first.is_active = true;
-        active = first;
-      }
+      // P7 (D-09): no auto-activation. 0 active program is a valid state; activation is explicit.
+      const active = programs.find((p) => p.is_active) ?? null;
 
       set({ programs, activeProgram: active });
     }
@@ -334,17 +574,13 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
-    // Deactivate all first
-    await supabase
-      .from('ziko_workout_programs')
-      .update({ is_active: false })
-      .eq('user_id', user.id);
-
-    // Activate selected
-    await supabase
-      .from('ziko_workout_programs')
-      .update({ is_active: true })
-      .eq('id', programId);
+    // P7 (TRAIN-07): single atomic path (deactivates every program of the user, both tables,
+    // then activates this one). Replaces the old non-atomic "update all false / update one true".
+    const { error } = await supabase.rpc('ziko_set_active_program', {
+      p_kind: 'workout',
+      p_program_id: programId,
+    });
+    if (error) throw new Error(error.message);
 
     // Reload
     await get().loadPrograms();

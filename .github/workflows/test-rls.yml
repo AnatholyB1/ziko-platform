@@ -120,8 +120,10 @@ jobs:
           # Exclude whole-line comments — this guard should only catch actual
           # code usage, not documentation like "no service-role key is used
           # in this module" (backend/api/src/coach/imports/db.ts:13), which
-          # was a false positive.
-          MATCHES=$(grep -rnE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]role' backend/api/src/ | grep -vE ':[0-9]+:\s*//' || true)
+          # was a false positive. v1.20 : les commentaires JSDoc (` * ...`) et les fichiers
+          # *.test.ts (qui citent le role dans leurs assertions) sont aussi de la documentation/test ;
+          # le client service de lib/serviceClient.ts utilise SUPABASE_SERVICE_KEY (revue securite v1.20).
+          MATCHES=$(grep -rnE 'SUPABASE_SERVICE_ROLE_KEY|service[_-]role' backend/api/src/ --exclude='*.test.ts' | grep -vE ':[0-9]+:\s*(//|/\*|\*)' || true)
           if [ -n "$MATCHES" ]; then
             echo "$MATCHES"
             echo "::error::service-role reference detected under backend/api/src/. ARCH-03 violation."

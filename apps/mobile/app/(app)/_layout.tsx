@@ -1,6 +1,7 @@
 import '../../src/tasks/notificationTask';
 import React, { useEffect } from 'react';
 import { AppState } from 'react-native';
+import { decideAppGate } from '../../src/lib/profileGate';
 import { Tabs, Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
-import { useTranslation, showAlert, useI18nStore } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, useI18nStore, formatDateFr } from '@ziko/plugin-sdk';
 import { appStorage } from '../../src/lib/storage';
 import { getReloginNoticeState, reloginAckKey } from '../../src/lib/reloginNotice';
 import { supabase } from '../../src/lib/supabase';
@@ -31,6 +32,10 @@ import { PendingFormsOverlay } from '../../src/components/PendingFormsOverlay';
 import { WeeklyReviewRevealOverlay } from '../../src/components/WeeklyReviewRevealOverlay';
 import { UnlockToast } from '../../src/components/UnlockToast';
 import { isAllowedNotificationRoute } from '../../src/lib/notificationRoutes';
+import { installQuestRefresh } from '../../src/lib/questRefreshHandler';
+
+// Les ecritures qui alimentent les metriques de quetes rafraichissent la progression (UAT run 9, defaut 2).
+installQuestRefresh();
 
 // setNotificationHandler is called inside AppLayout's useEffect to avoid
 // requiring expo-notifications at module load time (crashes when
@@ -129,6 +134,7 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const profile = useAuthStore((s) => s.profile);
+  const profileStatus = useAuthStore((s) => s.profileStatus);
   const insets = useSafeAreaInsets();
   const theme = useThemeStore((s) => s.theme);
   const userId = useAuthStore((s) => s.user?.id);
@@ -178,12 +184,11 @@ export default function AppLayout() {
     appStorage.getString(ackKey).then((acked) => {
       if (cancelled || acked) return;
       const locale = useI18nStore.getState().locale;
-      const dateLabel = state.cutover!.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      });
+      // Deterministic French month names (Hermes can return English ones); the cutover date is a UTC day.
+      const cut = state.cutover!;
+      const dateLabel = locale === 'fr'
+        ? formatDateFr(new Date(cut.getUTCFullYear(), cut.getUTCMonth(), cut.getUTCDate()), { day: 'numeric', month: 'long', year: 'numeric' })
+        : cut.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
       showAlert(
         t('reloginNotice.title'),
         t(state.phase === 'before' ? 'reloginNotice.body_before' : 'reloginNotice.body_after', {
@@ -249,8 +254,10 @@ export default function AppLayout() {
     };
   }, [userId, queryClient]);
 
-  if (!session) return <Redirect href="/(auth)/login" />;
-  if (!profile?.onboarding_done) return <Redirect href="/(auth)/onboarding/step-1" />;
+  const gate = decideAppGate({ hasSession: !!session, profile, profileStatus });
+  if (gate === 'login') return <Redirect href="/(auth)/login" />;
+  if (gate === 'onboarding') return <Redirect href="/(auth)/onboarding/step-1" />;
+  if (gate === 'wait') return null;
 
   return (
     <>

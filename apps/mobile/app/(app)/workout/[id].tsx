@@ -10,8 +10,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useClipboardStore } from '../../../src/stores/clipboardStore';
+import { useAuthStore } from '../../../src/stores/authStore';
+import { coachProgramReplacedBy } from '../../../src/lib/programsService';
 import { useTranslation } from '@ziko/plugin-sdk';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 
@@ -508,10 +510,30 @@ export default function ProgramDetailScreen() {
 
   const handleSetActive = async () => {
     if (!id) return;
-    const store = useWorkoutStore.getState();
-    await store.setActiveProgram(id);
-    showAlert(t('workout.programActive'), t('workout.programActiveDesc'));
-    loadProgram();
+    const doActivate = async () => {
+      try {
+        await useWorkoutStore.getState().setActiveProgram(id);
+        showAlert(t('workout.programActive'), t('workout.programActiveDesc'));
+        loadProgram();
+      } catch (e: unknown) {
+        showAlert('Erreur', e instanceof Error ? e.message : "Impossible d'activer ce programme");
+      }
+    };
+    // A08: replacing the coach's active program needs a written confirmation.
+    const uid = useAuthStore.getState().user?.id;
+    const coachName = uid ? await coachProgramReplacedBy(supabase as any, uid, 'workout', id) : null;
+    if (coachName) {
+      showAlert(
+        'Remplacer le programme de ton coach ?',
+        `« ${coachName} » passe en pause, ta progression est conservée. Un seul programme est actif à la fois. Ton coach garde la main sur ses programmes et pourra te le rappeler.`,
+        [
+          { text: 'Garder le programme du coach', style: 'cancel' },
+          { text: 'Activer', onPress: doActivate },
+        ],
+      );
+      return;
+    }
+    await doActivate();
   };
 
   // ── Cycle helpers ──────────────────────────────────────
@@ -623,7 +645,7 @@ export default function ProgramDetailScreen() {
           if (weekday === undefined) continue;
           await ExpoNotifications.scheduleNotificationAsync({
             content: {
-              title: "Séance du jour 💪",
+              title: "Séance du jour",
               body: "C'est ton jour d'entraînement — allez !",
               data: { workoutReminder: true },
             },
@@ -790,6 +812,13 @@ export default function ProgramDetailScreen() {
         )}
 
         {/* Workout days */}
+        {workouts.length === 0 && (
+          <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center' }}>
+            <Ionicons name="calendar-outline" size={28} color={theme.muted} style={{ marginBottom: 8 }} />
+            <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>Ce programme n'a pas encore de séances</Text>
+            <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4, textAlign: 'center' }}>Ajoute une séance pour le commencer.</Text>
+          </View>
+        )}
         {workouts.map((workout) => (
           <View key={workout.id} style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
             {/* Day header */}
@@ -1172,7 +1201,7 @@ export default function ProgramDetailScreen() {
                   <Ionicons name="barbell-outline" size={16} color={theme.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14 }}>{ex.name}</Text>
+                  <Text style={{ color: theme.text, fontWeight: '500', fontSize: 14 }}>{exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}</Text>
                   <Text style={{ color: theme.muted, fontSize: 11, marginTop: 2 }}>
                     {[(ex as any).body_part, (ex as any).target_muscle].filter(Boolean).join(' · ') || ex.muscle_groups.join(', ')}
                   </Text>
@@ -1197,7 +1226,7 @@ export default function ProgramDetailScreen() {
 
             {/* Exercise name */}
             <View style={{ backgroundColor: theme.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 20 }}>
-              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{configExercise?.name}</Text>
+              <Text style={{ color: theme.text, fontWeight: '700', fontSize: 16 }}>{configExercise ? exerciseDisplayName(configExercise.name, (configExercise as any).name_fr, exerciseNames) : ''}</Text>
               <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>
                 {[(configExercise as any)?.body_part, (configExercise as any)?.target_muscle].filter(Boolean).join(' · ') || configExercise?.muscle_groups.join(', ')}
               </Text>

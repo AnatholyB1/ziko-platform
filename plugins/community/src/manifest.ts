@@ -69,6 +69,12 @@ You have access to the user's community data. When they ask about friends, chall
       showInTabBar: false,
     },
     {
+      path: '/(plugins)/community/league',
+      title: 'Ligue',
+      icon: 'trophy',
+      showInTabBar: false,
+    },
+    {
       path: '/(plugins)/community/challenges',
       title: 'Défis',
       icon: 'trophy',

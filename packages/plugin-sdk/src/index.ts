@@ -5,8 +5,15 @@
 export * from './types';
 export * from './theme';
 export * from './i18n';
+export * from './displayLabels';
+export * from './formatFr';
+export * from './friendRelation';
+export * from './friendsApi';
 export * from './gating';
 export * from './unlockUi';
+export * from './mealLog';
+export * from './questRefresh';
+export * from './nutritionTargets';
 export * from './onboarding';
 export * from './disclaimer';
 export { useAlertStore, showAlert } from './alert';
@@ -24,5 +31,6 @@ export type {
 } from './hooks';
 export { useCreditStore } from './creditStore';
 export type { CreditExhaustionData } from './creditStore';
+export { getPluginPref, setPluginPref } from './prefs';
 export { STORAGE_BUCKETS } from './buckets';
 export type { StorageBucket } from './buckets';

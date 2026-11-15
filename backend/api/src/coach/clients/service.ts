@@ -3,13 +3,16 @@
 //   GET    /links/me         — current active link + coach preview (always 200)
 //   POST   /links/preview    — peek a code; constant-time envelope; rate-limited
 //   POST   /links/redeem     — redeem a code; constant-time envelope; rate-limited
-//   DELETE /links/:id        — athlete revokes own link (INVITE-06)
+//   GET    /links/history    — athlete's past (revoked) coaches, read-only (P25 MCOA-03)
+//   DELETE /links/:id        — athlete (link id) OR coach (client id) revokes; 404 if 0 row
 import { Hono } from 'hono';
 import { createClient } from '@supabase/supabase-js';
+import { createServiceRpcClient } from '../../lib/serviceClient.js';
 import { waitUntil } from '@vercel/functions';
 import { authMiddleware } from '../../middleware/auth.js';
 import { notificationService } from '../../services/notificationService.js';
 import { redemptionRateLimit } from './ratelimit.js';
+import { getLinkHistory } from './history.js';
 import {
   getActiveLink,
   peekInvitation,
@@ -36,6 +39,9 @@ import {
   getFormsForClient,
 } from './db.js';
 import { getWidgetData } from '../dashboards/db.js';
+
+// ziko_create_form_instances_for_trigger est reservee a service_role (migration 20261201270100).
+const formsRpc = createServiceRpcClient();
 
 // Admin client for fire-and-forget RPC calls (SECURITY DEFINER functions, no JWT required)
 const adminClient = createClient(
@@ -72,7 +78,21 @@ clientsRouter.get('/links/me', async (c) => {
     const result = await getActiveLink(jwt, userId);
     return c.json(result);
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
+  }
+});
+
+// GET /coach/clients/links/history — athlete's own past coaches (revoked links, MCOA-03). Read-only.
+clientsRouter.get('/links/history', async (c) => {
+  const { userId } = c.get('auth');
+  const jwt = c.req.header('Authorization')!.slice(7);
+  try {
+    const history = await getLinkHistory(jwt, userId);
+    return c.json({ history });
+  } catch (err: any) {
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -127,7 +147,7 @@ clientsRouter.post('/links/redeem', redemptionRateLimit, async (c) => {
       const coachId = result.link.coach_id;
       const athleteId = userId;
       const linkId = result.link.id;
-      adminClient
+      formsRpc
         .rpc('ziko_create_form_instances_for_trigger', {
           p_trigger_type: 'first_contact',
           p_athlete_id: athleteId,
@@ -189,7 +209,8 @@ clientsRouter.get('/', async (c) => {
     return c.json({ clients: rows });
   } catch (err: any) {
     console.error('[coach/clients] GET / error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -204,7 +225,8 @@ clientsRouter.get('/:id/tags', async (c) => {
     return c.json({ tags });
   } catch (err: any) {
     console.error('[coach/clients] GET /:id/tags error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -223,7 +245,8 @@ clientsRouter.post('/:id/tags', async (c) => {
     return c.json({ tag: created }, 201);
   } catch (err: any) {
     console.error('[coach/clients] POST /:id/tags error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -240,7 +263,8 @@ clientsRouter.delete('/:id/tags/:tagId', async (c) => {
     return c.json({ ok: true });
   } catch (err: any) {
     console.error('[coach/clients] DELETE /:id/tags/:tagId error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -255,7 +279,8 @@ clientsRouter.get('/:id/notes', async (c) => {
     return c.json({ note });
   } catch (err: any) {
     console.error('[coach/clients] GET /:id/notes error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -273,39 +298,35 @@ clientsRouter.put('/:id/notes', async (c) => {
     return c.json({ note });
   } catch (err: any) {
     console.error('[coach/clients] PUT /:id/notes error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
-// DELETE /links/:clientId — COACH-side revoke (CLIENT-08, D-20)
-// NOTE: registered BEFORE DELETE /links/:id (athlete-side) — Hono matches in registration order.
-// coach handler checks coach_id = userId; athlete handler checks client_id = userId.
-// Both are safe independently due to their WHERE clause authorization.
-clientsRouter.delete('/links/:clientId', async (c) => {
-  const { userId } = c.get('auth');
-  const jwt = c.req.header('Authorization')!.slice(7);
-  const clientId = c.req.param('clientId');
-  if (!UUID_REGEX.test(clientId)) return c.json({ error: 'Invalid client id' }, 400);
-  try {
-    const result = await revokeClientLinkByCoach(jwt, userId, clientId);
-    return c.json({ ok: true, revoked_at: result.revoked_at });
-  } catch (err: any) {
-    console.error('[coach/clients] DELETE /links/:clientId error:', err.message);
-    return c.json({ error: err.message }, 500);
-  }
-});
-
-// DELETE /coach/clients/links/:id — athlete revoke (INVITE-06)
+// DELETE /coach/clients/links/:id — UN SEUL handler pour les deux roles (INVITE-06 + CLIENT-08).
+// Avant run3 : deux routes `/links/:x` de meme forme ; Hono prenait la premiere (coach) qui ne
+// modifiait aucune ligne pour un athlete et repondait 200 (retrait jamais effectif, MC-8).
+// Resolution du parametre :
+//   1. athlete : `id` = id d'un lien ACTIF dont l'appelant est client_id (mobile : link.id)
+//   2. coach   : `id` = client_id d'un lien ACTIF dont l'appelant est coach_id (web)
+// Les deux passent par le JWT utilisateur : RLS + trigger ziko_coach_link_guard posent `revoked_by`
+// ('client' / 'coach') sans que l'appelant puisse le falsifier. 0 ligne modifiee -> 404, jamais 200.
 clientsRouter.delete('/links/:id', async (c) => {
   const { userId } = c.get('auth');
   const jwt = c.req.header('Authorization')!.slice(7);
   const id = c.req.param('id');
   if (!UUID_REGEX.test(id)) return c.json({ error: 'Invalid id format' }, 400);
   try {
-    await revokeLink(jwt, userId, id);
-    return c.json({ ok: true });
+    const own = await revokeLink(jwt, userId, id);
+    if (own.revoked_at) return c.json({ ok: true, revoked_at: own.revoked_at, revoked_by: 'client' });
+    const asCoach = await revokeClientLinkByCoach(jwt, userId, id);
+    if (asCoach.count > 0) {
+      return c.json({ ok: true, revoked_at: asCoach.revoked_at, revoked_by: 'coach' });
+    }
+    return c.json({ error: 'Link not found or already revoked' }, 404);
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] DELETE /links/:id error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -330,7 +351,8 @@ clientsRouter.get('/compare', async (c) => {
     return c.json({ data });
   } catch (err: any) {
     console.error('[coach/clients] GET /compare error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -345,7 +367,8 @@ clientsRouter.get('/:id/summary', async (c) => {
     return c.json({ summary });
   } catch (err: any) {
     console.error('[coach/clients] GET /:id/summary error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -359,7 +382,8 @@ clientsRouter.get('/:id/sessions', async (c) => {
     const sessions = await getClientSessions(jwt, clientId);
     return c.json({ sessions });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -373,7 +397,8 @@ clientsRouter.get('/:id/measurements', async (c) => {
     const measurements = await getClientMeasurements(jwt, clientId);
     return c.json({ measurements });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -387,7 +412,8 @@ clientsRouter.get('/:id/habits', async (c) => {
     const result = await getClientHabits(jwt, clientId);
     return c.json(result);
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -401,7 +427,8 @@ clientsRouter.get('/:id/nutrition', async (c) => {
     const nutrition = await getClientNutrition(jwt, clientId);
     return c.json({ nutrition });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -415,7 +442,8 @@ clientsRouter.get('/:id/sleep', async (c) => {
     const sleep = await getClientSleep(jwt, clientId);
     return c.json({ sleep });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -429,7 +457,8 @@ clientsRouter.get('/:id/cardio', async (c) => {
     const cardio = await getClientCardio(jwt, clientId);
     return c.json({ cardio });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -443,7 +472,8 @@ clientsRouter.get('/:id/journal', async (c) => {
     const journal = await getClientJournal(jwt, clientId);
     return c.json({ journal });
   } catch (err: any) {
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -473,7 +503,8 @@ clientsRouter.get('/:clientId/forms', async (c) => {
     return c.json(result);
   } catch (err: any) {
     console.error('[coach/clients] GET /:clientId/forms error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 
@@ -492,7 +523,8 @@ clientsRouter.put('/:clientId/shared-note', async (c) => {
     return c.json(result);
   } catch (err: any) {
     console.error('[coach/clients] PUT /:clientId/shared-note error:', err.message);
-    return c.json({ error: err.message }, 500);
+    console.error('[coach/clients] unexpected error:', err?.message);
+    return c.json({ error: 'Internal error' }, 500);
   }
 });
 

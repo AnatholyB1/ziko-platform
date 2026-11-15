@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { fetchSleepSettings, saveSleepSettings } from './lib/data';
 
 export interface SleepLog {
   id: string;
@@ -9,13 +10,16 @@ export interface SleepLog {
   duration_hours: number;
   quality: number; // 1-5
   notes: string | null;
+  awakenings?: number;
+  source?: 'manual' | 'health';
 }
 
 interface SleepState {
   logs: SleepLog[];
   isLoading: boolean;
   _loaded: boolean;
-  sleepGoalHours: number;
+  /** null = aucune cible definie (aucune valeur par defaut). */
+  sleepGoalHours: number | null;
 
   setLogs: (l: SleepLog[]) => void;
   setIsLoading: (b: boolean) => void;
@@ -33,7 +37,7 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
   logs: [],
   isLoading: false,
   _loaded: false,
-  sleepGoalHours: 8,
+  sleepGoalHours: null,
 
   setLogs: (logs) => set({ logs }),
   setIsLoading: (isLoading) => set({ isLoading }),
@@ -44,11 +48,9 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
     const { sleepGoalHours } = get();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('ziko_user_plugins').upsert({
-      user_id: user.id,
-      plugin_id: 'sleep',
-      settings: { sleep_goal_hours: sleepGoalHours },
-    }, { onConflict: 'user_id,plugin_id' });
+    // Fusionne dans settings : les autres reglages (rappel, source, routine...) sont preserves.
+    const current = await fetchSleepSettings(supabase, user.id);
+    await saveSleepSettings(supabase, user.id, { ...current, goalHours: sleepGoalHours });
   },
 
   getAverageDuration: (days = 7) => {
@@ -69,7 +71,7 @@ export const useSleepStore = create<SleepState>()((set, get) => ({
     const avgDuration = recent.reduce((s, l) => s + l.duration_hours, 0) / recent.length;
     const avgQuality = recent.reduce((s, l) => s + l.quality, 0) / recent.length;
     // Score: 0-100 based on 8h target and quality
-    const durationScore = Math.min(avgDuration / 8, 1) * 60;
+    const durationScore = Math.min(avgDuration / (get().sleepGoalHours ?? 8), 1) * 60;
     const qualityScore = (avgQuality / 5) * 40;
     return Math.round(durationScore + qualityScore);
   },

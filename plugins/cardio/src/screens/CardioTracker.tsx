@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
-import { useThemeStore, showAlert, useCreditStore } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, useCreditStore, formatDateFr } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS } from '../store';
 import type { RoutePoint } from '../store';
 
@@ -227,7 +227,7 @@ export default function CardioTracker({ supabase }: { supabase: any }) {
       const today = new Date().toISOString();
 
       const actLabel = ACTIVITY_LABELS[activityType]?.label ?? activityType;
-      const title = `${actLabel} · ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}`;
+      const title = `${actLabel} · ${formatDateFr(new Date(), { weekday: 'long', day: 'numeric', month: 'short' })}`;
 
       const { data, error } = await supabase
         .from('ziko_cardio_sessions')

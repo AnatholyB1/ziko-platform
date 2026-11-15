@@ -8,9 +8,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { uninstallDecision } from '../../../src/lib/mandatoryPlugins';
+import { showAlert, formatDateFr } from '@ziko/plugin-sdk';
 
 import { usePluginRegistry, useTranslation, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
+import { storeDescription } from '../../../src/lib/pluginCopy';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 
 // ── Design tokens ──────────────────────────────────────────
@@ -153,6 +155,11 @@ export default function PluginDetailScreen() {
 
   const uninstall = async () => {
     if (!user || !id) return;
+    const decision = uninstallDecision(String(id), manifest as any);
+    if (!decision.allowed) {
+      showAlert(decision.title, decision.message);
+      return;
+    }
     showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
@@ -275,7 +282,7 @@ export default function PluginDetailScreen() {
 
             {/* Short description */}
             <Text style={{ fontSize: 13, color: 'rgba(255,250,246,0.7)', marginTop: 10, lineHeight: 20 }}>
-              {manifest.description}
+              {storeDescription(String(id), manifest.description)}
             </Text>
 
             {/* Full-width CTA */}
@@ -331,7 +338,7 @@ export default function PluginDetailScreen() {
           {/* ── À propos ────────────────────── */}
           <Card>
             <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT, marginBottom: 10 }}>À propos</Text>
-            <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22 }}>{manifest.description}</Text>
+            <Text style={{ color: MUTED, fontSize: 14, lineHeight: 22 }}>{storeDescription(String(id), manifest.description)}</Text>
             {/* Screenshots */}
             {screenshots && screenshots.length > 0 && (
               <ScrollView
@@ -556,7 +563,7 @@ export default function PluginDetailScreen() {
                     <Text style={{ color: MUTED, fontSize: 13, marginTop: 4, lineHeight: 19 }}>{review.body}</Text>
                   )}
                   <Text style={{ color: MUTED, fontSize: 11, marginTop: 8 }}>
-                    {new Date(review.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {formatDateFr(new Date(review.created_at), { day: 'numeric', month: 'long', year: 'numeric' })}
                   </Text>
                 </View>
               ))}

@@ -11,6 +11,17 @@
         "simulator": false
       }
     },
+    "uat-dev": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oloobswzsziidjwycthm.supabase.co"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "environment": "preview",

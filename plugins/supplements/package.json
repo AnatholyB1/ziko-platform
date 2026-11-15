@@ -12,7 +12,8 @@
     "./screens/SupplementCompare": "./src/screens/SupplementCompareScreen.tsx"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
@@ -21,7 +22,8 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0"
+    "react-native": "^0.81.5",
+    "expo-notifications": "~0.32.16"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

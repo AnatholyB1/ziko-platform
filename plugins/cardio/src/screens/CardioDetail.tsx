@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { useCardioStore, ACTIVITY_LABELS, formatPace } from '../store';
 import type { CardioSession, RoutePoint } from '../store';
 
@@ -264,7 +264,7 @@ export default function CardioDetail({ supabase }: { supabase: any }) {
               <Ionicons name="arrow-back" size={24} color={activity.color} />
             </TouchableOpacity>
             <Text style={{ color: activity.color, fontWeight: '700', fontSize: 14, flex: 1 }}>
-              {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              {formatDateFr(date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </Text>
             <TouchableOpacity onPress={handleDelete}>
               <Ionicons name="trash-outline" size={20} color="#F44336" />

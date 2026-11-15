@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
 
 // ─── Data constants ───────────────────────────────────────────────────────────
@@ -340,7 +340,7 @@ export default function AIGenerateScreen() {
                 <Text style={{ fontSize: 12, fontWeight: '700', color: '#FF5C1A' }}>{i + 1}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{ex.name}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}</Text>
                 <Text style={{ fontSize: 10, color: theme.muted, marginTop: 1 }}>
                   {ex.sets}
                   {ex.note ? ` · ${ex.note}` : ''}

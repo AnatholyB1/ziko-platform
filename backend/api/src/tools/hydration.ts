@@ -8,10 +8,17 @@ export async function hydration_log(
   userId: string,
   userToken?: string,
 ): Promise<unknown> {
-  const { amount_ml } = params as { amount_ml: number };
-  if (!amount_ml) throw new Error('amount_ml is required');
-
   const db = clientForUser(userToken);
+  let { amount_ml } = params as { amount_ml?: number };
+  if (!amount_ml) {
+    // Quantite non precisee : taille de verre par defaut du joueur (reglage P11), sinon 250 ml.
+    const { data: s } = await db
+      .from('ziko_hydration_settings')
+      .select('glass_ml')
+      .eq('user_id', userId)
+      .maybeSingle();
+    amount_ml = (s?.glass_ml as number | undefined) ?? 250;
+  }
   const { data, error } = await db
     .from('ziko_hydration_logs')
     .insert({

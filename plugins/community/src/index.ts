@@ -7,6 +7,7 @@ export {
   sendFriendRequest,
   acceptFriendRequest,
   declineFriendRequest,
+  cancelFriendRequest,
   removeFriend,
   getOrCreateDMConversation,
   loadMessages,
@@ -32,3 +33,4 @@ export { default as ChallengeDetailScreen } from './screens/ChallengeDetailScree
 export { default as CreateChallengeScreen } from './screens/CreateChallengeScreen';
 export { default as CompareScreen } from './screens/CompareScreen';
 export { default as InviteScreen } from './screens/InviteScreen';
+export { default as LeagueScreen } from './screens/LeagueScreen';

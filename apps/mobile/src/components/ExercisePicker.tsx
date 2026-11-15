@@ -12,7 +12,7 @@ import { MotiView } from 'moti';
 import { useQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import { useThemeStore, STORAGE_BUCKETS } from '@ziko/plugin-sdk';
+import { useThemeStore, STORAGE_BUCKETS, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import WSHeader from '../components/WSHeader';
@@ -328,7 +328,7 @@ export default function ExercisePicker({ visible, onClose, onAdd }: ExercisePick
                         style={{ fontSize: 12, fontWeight: '700', color: theme.text }}
                         numberOfLines={1}
                       >
-                        {ex.name}
+                        {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}
                       </Text>
                       <Text
                         style={{ fontSize: 10, color: theme.muted, marginTop: 2 }}

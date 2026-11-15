@@ -12,7 +12,7 @@ const personaManifest: PluginManifest = {
   minLevel: 2,
   name: 'AI Persona & Habits',
   version: '1.0.0',
-  description: "Customize your AI coach's personality, name, and coaching style. Build daily habit streaks and get personalised motivational support.",
+  description: "Personnalise la personnalité, le nom et le style de ton coach IA. Construis des séries d'habitudes et reçois un soutien motivant sur mesure.",
   icon: 'person-circle-outline',
   category: 'persona',
   price: 'free',
@@ -23,7 +23,7 @@ const personaManifest: PluginManifest = {
   routes: [
     {
       path: '/(plugins)/persona/customize',
-      title: 'My AI Coach',
+      title: 'Mon coach IA',
       icon: 'person-circle-outline',
       showInTabBar: true,
     },

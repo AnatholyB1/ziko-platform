@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { localDateKey } from '@ziko/plugin-sdk';
 
 export interface Habit {
   id: string;
@@ -63,7 +64,7 @@ export const useHabitsStore = create<HabitsState>()((set, get) => ({
           ),
         };
       }
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const newLog: HabitLog = {
         id: `local-${Date.now()}`,
         habit_id: habitId,
@@ -104,7 +105,7 @@ export const useHabitsStore = create<HabitsState>()((set, get) => ({
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = localDateKey(d);
       if (completedDates.has(dateStr)) {
         streak++;
       } else if (i > 0) {

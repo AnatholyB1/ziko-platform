@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { daysLabel, nutritionRingSub } from '../../src/lib/frLabels';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
-  Modal, TextInput, useWindowDimensions,
+  Modal, TextInput, useWindowDimensions, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '../../src/stores/authStore';
 import { EmailVerifyBanner } from '../../src/components/EmailVerifyBanner';
 import { useWorkoutStore } from '../../src/stores/workoutStore';
+import { normalizePlanSessions, pickSessionForToday, jsDayToIndex } from '../../src/lib/workoutPlan';
+import { applyPlannedStartFeedback } from '../../src/lib/plannedStartFeedback';
+import { programHeader } from '../../src/lib/programs';
+import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
-import { usePluginRegistry, buildLockedSection } from '@ziko/plugin-sdk';
-import { useTranslation } from '@ziko/plugin-sdk';
+import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -26,13 +31,24 @@ import {
   useProfile,
   parseWorkoutFrequency,
   useSleepToday,
+  useSleepSettings,
   useHydrationToday,
+  useNutritionGoal,
   useNutritionToday,
-  useSessionStreak,
+  useGamificationStreak,
   HOME_DEFAULTS,
 } from '../../src/hooks/useHomeData';
+import { formatDurationH } from '@ziko/plugin-sleep/lib/sleep';
 import { useAITips, dismissTip } from '../../src/hooks/useAITips';
 import { useSmartActions } from '../../src/hooks/useSmartActions';
+import { useTodayWeight, useTodayMood } from '../../src/hooks/useQuickLog';
+import {
+  WATER_STEP_ML, formatLitres, logWater, parseWeightInput, saveTodayWeight, saveTodayMood,
+  computeFormScore, NUTRITION_GOAL_KCAL,
+} from '../../src/lib/quickLog';
+import { localDateKey, localDateKeyFromISO } from '../../src/lib/localDate';
+import { invalidateHomeQueries } from '../../src/lib/homeQueries';
+import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
 async function fireAndForget(tool: string, input: Record<string, unknown>): Promise<void> {
@@ -114,12 +130,13 @@ function MissionCardContent({
   }
 
   // Populated state — parse program_data defensively
-  const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
-  const todaySession = sessions[0] ?? null;
-  const exercises: any[] = todaySession?.exercises ?? todaySession?.sets ?? [];
-  const sessionName: string = todaySession?.name ?? todaySession?.title ?? activeProgram?.goal ?? 'Séance du jour';
-  const programName: string = activeProgram?.goal ?? 'Programme IA';
-  const duration: number = todaySession?.duration_minutes ?? todaySession?.duration ?? 45;
+  // TRAIN-01: show (and later start) the session planned for today, same resolver as the button
+  const todayPick = pickSessionForToday(normalizePlanSessions(activeProgram?.program_data), jsDayToIndex(new Date().getDay()));
+  const todaySession: any = todayPick?.session ?? null;
+  const exercises: any[] = todaySession?.exercises ?? [];
+  const sessionName: string = todaySession?.name ?? goalLabel(activeProgram?.goal, 'Séance du jour');
+  const programName: string = programHeader(activeProgram as any, null, goalLabel, 'Programme').title; // titre seul : provenance non affichee ici
+  const duration: number = Math.max(30, exercises.length * 6);
 
   return (
     <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, overflow: 'hidden', position: 'relative' }}>
@@ -153,7 +170,7 @@ function MissionCardContent({
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFB287' }}>{i + 1}</Text>
               </View>
               <Text style={{ flex: 1, color: 'rgba(255,250,246,0.92)', fontSize: 12 }}>
-                {e.name ?? e.exercise_name ?? 'Exercice'}
+                {exerciseDisplayName(e.name ?? e.exercise_name, e.name_fr ?? e.exercises?.name_fr, exerciseNames) || 'Exercice'}
               </Text>
               <Text style={{ color: 'rgba(255,250,246,0.55)', fontSize: 11 }}>
                 {e.scheme ?? e.sets != null ? `${e.sets ?? ''}×${e.reps ?? ''}` : ''}
@@ -180,7 +197,13 @@ function MissionCardContent({
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push(`/(app)/(plugins)/ai-programs/${activeProgram?.id}` as any)}
+            onPress={() =>
+              router.push(
+                (activeProgram?.kind === 'coach'
+                  ? `/(app)/workout/${activeProgram?.id}`
+                  : `/(app)/(plugins)/ai-programs/${activeProgram?.id}`) as any,
+              )
+            }
             style={{
               width: 48, height: 48, backgroundColor: 'rgba(255,250,246,0.10)',
               borderRadius: 10, alignItems: 'center', justifyContent: 'center',
@@ -258,7 +281,7 @@ export default function DashboardScreen() {
   const theme = useThemeStore((s) => s.theme);
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const startSession = useWorkoutStore((s) => s.startSession);
+  const startPlannedSession = useWorkoutStore((s) => s.startPlannedSession);
   const { width: screenWidth } = useWindowDimensions();
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -277,13 +300,29 @@ export default function DashboardScreen() {
 
   // ── TanStack Query hooks ──────────────────────────────────────────────────
   const { data: profile } = useProfile();
-  const { data: streak = 0 } = useSessionStreak();
+  const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
+  const { data: sleepSettings } = useSleepSettings();
   const { data: sleepData, isLoading: sleepLoading } = useSleepToday();
   const { data: hydrationData, isLoading: hydrationLoading } = useHydrationToday();
   const { data: nutritionData, isLoading: nutritionLoading } = useNutritionToday();
+  const { data: kcalGoal = NUTRITION_GOAL_KCAL } = useNutritionGoal();
+  const { data: todayWeight } = useTodayWeight();
+  const { data: todayMood } = useTodayMood();
+
+  // ── Refetch at focus (review A #2) ────────────────────────────────────────
+  // The home tab stays mounted (staleTime 5 min): coming back from a session, Hydratation, Repas
+  // or Mesures must show fresh data. The first focus is skipped (queries are already loading).
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) { firstFocus.current = false; return; }
+      void invalidateHomeQueries(queryClient);
+      if (userId) void resyncRemindersFromDb(supabase, userId); // restaure les DAILY le lendemain
+    }, [queryClient, userId]),
+  );
 
   // ── Installed plugins from user_plugins (HOME-08) ─────────────────────────
   const { data: installedPluginIds } = useQuery({
@@ -302,32 +341,39 @@ export default function DashboardScreen() {
   });
 
   // ── Derived wellness values ───────────────────────────────────────────────
-  const sleepH = sleepData?.duration_hours ?? 0;
-  const sleepPct = Math.min(100, Math.round((sleepH / HOME_DEFAULTS.sleepTargetH) * 100));
+  // P17 (SLP-06) : meme nuit que l'ecran Sommeil ; cible = reglage (aucune cible -> jauge a 0, pas de 8 h en dur).
+  const sleepH = sleepData?.durationH ?? 0;
+  const sleepTargetH = sleepSettings?.goalHours ?? 0;
+  const sleepPct = sleepTargetH > 0 ? Math.min(100, Math.round((sleepH / sleepTargetH) * 100)) : 0;
   const waterMl = hydrationData?.totalMl ?? 0;
-  const waterPct = Math.min(100, Math.round((waterMl / HOME_DEFAULTS.hydrationGoalMl) * 100));
+  const waterGoalMl = hydrationData?.goalMl ?? HOME_DEFAULTS.hydrationGoalMl;
+  const waterPct = Math.min(100, Math.round((waterMl / waterGoalMl) * 100));
   const kcal = nutritionData?.totalCalories ?? 0;
-  const nutritionPct = Math.min(100, Math.round((kcal / 2200) * 100));
+  const nutritionPct = Math.min(100, Math.round((kcal / kcalGoal) * 100));
   const weeklyGoal = parseWorkoutFrequency(profile?.workout_frequency);
   const weeklyCount = weeklySessions.length;
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const todayDone = weeklySessions.some((s: { started_at: string }) => s.started_at.startsWith(todayStr));
-  // Rest day = no workout goal OR weekly target already reached
-  const isRestDay = weeklyGoal === 0 || weeklyCount >= weeklyGoal;
-  const loadPct = (todayDone || isRestDay) ? 100 : 0;
-  const trackerPcts = [sleepPct, waterPct, nutritionPct, loadPct];
-  const score = Math.round(trackerPcts.reduce((a, b) => a + b, 0) / trackerPcts.length);
+  const todayStr = localDateKey();
+  const todayDone = weeklySessions.some((s: { started_at: string }) => localDateKeyFromISO(s.started_at) === todayStr);
+  // Score "Forme du jour" (QLOG-05) : moyenne des composantes AVEC donnees, etat vide sinon.
+  // Formule documentee dans src/lib/quickLog.ts (computeFormScore).
+  const formScore = computeFormScore({
+    sleepH: sleepTargetH > 0 ? sleepH : 0, sleepTargetH,
+    waterMl, waterGoalMl,
+    kcal, kcalGoal, todayDone, weeklyCount, weeklyGoal,
+  });
+  const loadPct = formScore.parts.find((p) => p.key === 'load')?.pct ?? 0;
+  const score = formScore.score ?? 0;
 
   // ── Week strip dates ──────────────────────────────────────────────────────
   const weeklySessionDates = useMemo(() => {
-    return new Set(weeklySessions.map((s) => s.started_at.split('T')[0]));
+    return new Set(weeklySessions.map((s) => localDateKeyFromISO(s.started_at)));
   }, [weeklySessions]);
 
   // ── AI Tips ───────────────────────────────────────────────────────────────
   const { tips } = useAITips({
     sleepDurationH: sleepH,
     hydrationMl: waterMl,
-    hydrationGoalMl: HOME_DEFAULTS.hydrationGoalMl,
+    hydrationGoalMl: waterGoalMl,
     unmetHabitName: undefined, // DEFERRED: habit tip requires useHabitsToday (Phase 37)
   });
   const [tipIndex, setTipIndex] = useState(0);
@@ -340,10 +386,15 @@ export default function DashboardScreen() {
 
   // ── Start Mission handler ─────────────────────────────────────────────────
   const handleStartMission = async () => {
-    const sessions: any[] = activeProgram?.program_data?.sessions ?? activeProgram?.program_data?.workouts ?? activeProgram?.program_data?.days ?? [];
-    const sessionName: string = sessions[0]?.name ?? sessions[0]?.title ?? activeProgram?.goal ?? 'Séance du jour';
-    await startSession(undefined, sessionName);
-    router.push('/(app)/workout/session' as any);
+    // TRAIN-01 (D-01): single start path -> the planned session with its exercises, never an empty quick session
+    if (!activeProgram?.id) return;
+    const res = await startPlannedSession(activeProgram.id, jsDayToIndex(new Date().getDay()));
+    applyPlannedStartFeedback(res, {
+      toast: neutralToast,
+      alert: showAlert,
+      openEdit: () => router.push('/(app)/workout/programs' as any),
+      openSession: () => router.push('/(app)/workout/session' as any),
+    });
   };
 
   // ── Smart Actions ─────────────────────────────────────────────────────────
@@ -383,30 +434,64 @@ export default function DashboardScreen() {
     : 'Athlete';
 
   // ── QuickLog handlers ─────────────────────────────────────────────────────
-  const handleLogWater = () => {
-    fireAndForget('hydration_log', { amount_ml: 250 });
-    queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+  // Ecritures directes en base avec la date LOCALE (QLOG-01..03) ; le total affiche
+  // vient de la base apres invalidation, avec mise a jour optimiste immediate pour l'eau.
+  const waterKey = ['hydration', 'today', userId];
+  const handleLogWater = async () => {
+    if (!userId) return;
+    const prev = queryClient.getQueryData<{ totalMl: number; goalMl: number }>(waterKey);
+    // keep goalMl (no flicker back to the default goal) ; rollback re-subtracts instead of restoring a snapshot
+    queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
+      ({ goalMl: HOME_DEFAULTS.hydrationGoalMl, ...cur, totalMl: (cur?.totalMl ?? prev?.totalMl ?? 0) + WATER_STEP_ML }));
     setWaterConfirmed(true);
     setTimeout(() => setWaterConfirmed(false), 2000);
+    try {
+      await logWater(supabase, userId, WATER_STEP_ML);
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
+      void resyncRemindersFromDb(supabase, userId); // rappels : stop si l'objectif est atteint
+    } catch {
+      queryClient.setQueryData(waterKey, (cur: { totalMl: number; goalMl: number } | undefined) =>
+        cur ? { ...cur, totalMl: Math.max(0, cur.totalMl - WATER_STEP_ML) } : prev);
+      setWaterConfirmed(false);
+      showAlert("Eau non enregistrée", "Vérifie ta connexion et réessaie.");
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+    }
   };
 
-  const handleLogMood = (score: number) => {
-    const h = new Date().getHours();
-    const context = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
-    fireAndForget('journal_log_mood', { mood: score, context });
-    setMoodConfirmed(true);
+  const handleLogMood = async (value: number) => {
+    if (!userId) return;
     setShowMoodSheet(false);
-    setTimeout(() => setMoodConfirmed(false), 2000);
+    try {
+      await saveTodayMood(supabase, userId, value);
+      requestQuestRefresh();
+      setMoodConfirmed(true);
+      setTimeout(() => setMoodConfirmed(false), 2000);
+    } catch {
+      showAlert("Humeur non enregistrée", "Vérifie ta connexion et réessaie.");
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ['quicklog', 'mood'] });
+    }
   };
 
-  const handleLogWeight = () => {
-    const value = parseFloat(weightInput);
-    if (!Number.isFinite(value)) return;
-    fireAndForget('measurements_log', { weight_kg: value });
-    setWeightConfirmed(true);
+  const handleLogWeight = async () => {
+    const value = parseWeightInput(weightInput);
+    if (value == null || !userId) {
+      showAlert('Poids invalide', 'Entre un poids entre 20 et 400 kg.');
+      return;
+    }
     setShowWeightSheet(false);
     setWeightInput('');
-    setTimeout(() => setWeightConfirmed(false), 2000);
+    try {
+      await saveTodayWeight(supabase, userId, value);
+      requestQuestRefresh();
+      setWeightConfirmed(true);
+      setTimeout(() => setWeightConfirmed(false), 2000);
+    } catch {
+      showAlert('Poids non enregistré', 'Vérifie ta connexion et réessaie.');
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ['quicklog', 'weight'] });
+    }
   };
 
   const handleLogMeal = () => {
@@ -420,10 +505,10 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['program', 'active'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'weekly'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'recent'] }),
-      queryClient.invalidateQueries({ queryKey: ['sleep', 'today'] }),
+      queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
-      queryClient.invalidateQueries({ queryKey: ['session_streak'] }),
+      queryClient.invalidateQueries({ queryKey: ['streak'] }),
     ]).catch(() => setLoadError(true));
     setRefreshing(false);
   };
@@ -435,21 +520,27 @@ export default function DashboardScreen() {
   }
 
   // ── Score headline copy ───────────────────────────────────────────────────
-  const scoreHeadline = score >= 70
-    ? "Tu es en forme aujourd'hui"
-    : score >= 40
-      ? 'Journée correcte — pousse un peu'
-      : 'Corps en récupération — écoute-toi';
+  const scoreHeadline = formScore.isEmpty
+    ? "Pas encore de données aujourd'hui"
+    : score >= 70
+      ? "Tu es en forme aujourd'hui"
+      : score >= 40
+        ? 'Journée correcte — pousse un peu'
+        : 'Corps en récupération — écoute-toi';
 
   const isWellnessLoading = sleepLoading || hydrationLoading || nutritionLoading;
 
   // ── Segment rows ──────────────────────────────────────────────────────────
   const segmentParts = [
-    { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepH > 0 ? `${Math.floor(sleepH)}h${Math.round((sleepH % 1) * 60) > 0 ? Math.round((sleepH % 1) * 60) + 'min' : ''}` : 'Pas de données' },
-    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${(waterMl / 1000).toFixed(1)}L / ${(HOME_DEFAULTS.hydrationGoalMl / 1000).toFixed(1)}L` : 'Pas de données' },
-    { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: kcal > 0 ? `${kcal} kcal` : 'Loggue ton repas' },
+    { value: sleepPct, max: 100, color: '#8B5CF6', icon: 'moon-outline' as const, label: 'Sommeil', sub: sleepData ? `${formatDurationH(sleepH)}${sleepData.quality != null ? ` · qualité ${sleepData.quality} / 5` : ''}` : 'Aucune nuit enregistrée' },
+    { value: waterPct, max: 100, color: '#3B82F6', icon: 'water-outline' as const, label: 'Hydratation', sub: waterMl > 0 ? `${formatLitersFr(waterMl)} / ${formatLitersFr(waterGoalMl)}` : 'Pas de données' },
+    { value: nutritionPct, max: 100, color: '#FF5C1A', icon: 'restaurant-outline' as const, label: 'Nutrition', sub: nutritionRingSub(kcal, kcalGoal) },
     { value: loadPct, max: 100, color: '#22C55E', icon: 'flash-outline' as const, label: 'Charge', sub: `${weeklyCount}/${weeklyGoal} séances` },
   ];
+
+  // Statut "logue" persistant = base (todayWeight/todayMood), + confirmation transitoire.
+  const moodLogged = !!todayMood || moodConfirmed;
+  const weightLogged = !!todayWeight || weightConfirmed;
 
   // ── QuickLog cell width ───────────────────────────────────────────────────
   const cellWidth = (screenWidth - 32 - 24) / 4;
@@ -481,7 +572,7 @@ export default function DashboardScreen() {
               }}>
                 <Ionicons name="flame" size={13} color="#FF5C1A" />
                 <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#FF5C1A' }}>
-                  {streak} jours
+                  {daysLabel(streak)}
                 </Text>
               </View>
             )}
@@ -539,6 +630,31 @@ export default function DashboardScreen() {
                   {[0, 1, 2, 3].map((i) => <Skeleton key={i} width="100%" height={26} borderRadius={8} />)}
                 </View>
               </>
+            ) : formScore.isEmpty ? (
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <View style={{
+                  width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'rgba(255,92,26,0.10)',
+                }}>
+                  <Ionicons name="pulse-outline" size={26} color="#FF5C1A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, lineHeight: 18, color: theme.muted }}>
+                    Ta forme se calcule à partir de ton sommeil, ton hydratation, ta nutrition et ta charge d'entraînement. Loggue un repas ou de l'eau pour la voir apparaître.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleLogMeal}
+                    activeOpacity={0.8}
+                    style={{
+                      alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
+                      backgroundColor: '#FF5C1A', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8,
+                    }}
+                  >
+                    <Ionicons name="restaurant-outline" size={13} color="#fff" />
+                    <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Loguer un repas</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             ) : (
               <>
                 <View style={{ width: 160, height: 160, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
@@ -601,7 +717,9 @@ export default function DashboardScreen() {
                   <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF5C1A', letterSpacing: 0.8, textTransform: 'uppercase' }}>
                     Coach Ziko
                   </Text>
-                  <Text style={{ fontSize: 10, color: theme.muted }}>· {currentTip.tag}</Text>
+                  {currentTip.tag && currentTip.tag.trim().toLowerCase() !== 'coach ziko' ? (
+                    <Text style={{ fontSize: 10, color: theme.muted }}>· {currentTip.tag}</Text>
+                  ) : null}
                 </View>
                 <Text key={tipIndex} style={{ fontSize: 13.5, lineHeight: 19, color: theme.text }}>{currentTip.text}</Text>
                 <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
@@ -612,8 +730,7 @@ export default function DashboardScreen() {
                         setTipIndex((i) => (i + 1) % tips.length),
                       );
                       if (currentTip.key === 'hydration') {
-                        fireAndForget('hydration_log', { amount_ml: 250 });
-                        queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+                        handleLogWater();
                       } else if (currentTip.key === 'habit') {
                         router.push('/(app)/(plugins)/habits/dashboard' as any);
                       }
@@ -664,14 +781,14 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(59,130,246,0.14)' }}>
               <Ionicons name="water-outline" size={15} color="#3B82F6" />
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>
-              {waterConfirmed ? `${(waterMl / 1000).toFixed(2)}L` : '+250ml'}
+              {formatLitres(waterMl)}
             </Text>
             {waterConfirmed && (
               <Text style={{ fontSize: 9, fontWeight: '700', color: '#3B82F6' }}>+250ml</Text>
@@ -683,42 +800,45 @@ export default function DashboardScreen() {
             activeOpacity={0.7}
             style={{
               width: cellWidth, backgroundColor: '#FFFFFF',
-              borderRadius: 12, borderWidth: moodConfirmed ? 1.5 : 1,
-              borderColor: moodConfirmed ? '#22C55E' : '#E2E0DA',
+              borderRadius: 12, borderWidth: moodLogged ? 1.5 : 1,
+              borderColor: moodLogged ? '#22C55E' : '#E2E0DA',
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(34,197,94,0.14)' }}>
               <Ionicons name="happy-outline" size={15} color="#22C55E" />
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Humeur</Text>
-            {moodConfirmed && (
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#22C55E' }}>✓ logué</Text>
+            {moodLogged && (
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#22C55E' }}>Logué</Text>
             )}
           </TouchableOpacity>
           {/* Weight */}
           <TouchableOpacity
-            onPress={() => setShowWeightSheet(true)}
+            onPress={() => {
+              if (todayWeight) setWeightInput(String(todayWeight.weight_kg));
+              setShowWeightSheet(true);
+            }}
             activeOpacity={0.7}
             style={{
               width: cellWidth, backgroundColor: '#FFFFFF',
-              borderRadius: 12, borderWidth: weightConfirmed ? 1.5 : 1,
-              borderColor: weightConfirmed ? '#F59E0B' : '#E2E0DA',
+              borderRadius: 12, borderWidth: weightLogged ? 1.5 : 1,
+              borderColor: weightLogged ? '#F59E0B' : '#E2E0DA',
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(245,158,11,0.14)' }}>
               <Ionicons name="scale-outline" size={15} color="#F59E0B" />
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Poids</Text>
-            {weightConfirmed && (
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#F59E0B' }}>✓ logué</Text>
+            {weightLogged && (
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#F59E0B' }}>Logué</Text>
             )}
           </TouchableOpacity>
           {/* Meal */}
@@ -732,13 +852,16 @@ export default function DashboardScreen() {
               shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
               paddingVertical: 10, paddingHorizontal: 8,
-              alignItems: 'center', gap: 4,
+              alignItems: 'center', justifyContent: 'flex-start', gap: 4, minHeight: 88,
             }}
           >
             <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,92,26,0.14)' }}>
               <Ionicons name="restaurant-outline" size={15} color="#FF5C1A" />
             </View>
             <Text style={{ fontSize: 11, fontWeight: '700', color: '#1C1A17' }}>Repas</Text>
+            {kcal > 0 && (
+              <Text style={{ fontSize: 9, fontWeight: '700', color: '#FF5C1A' }}>{nutritionRingSub(kcal, kcalGoal)}</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -864,7 +987,9 @@ export default function DashboardScreen() {
             </View>
           ) : (
             recentSessions.map((session) => (
-              <View key={session.id} style={{
+              <TouchableOpacity key={session.id} activeOpacity={0.8}
+                onPress={() => router.push(`/(app)/workout/session/${session.id}` as any)}
+                style={{
                 backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12,
                 borderWidth: 1, borderColor: '#E2E0DA',
                 shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 2 },
@@ -879,7 +1004,7 @@ export default function DashboardScreen() {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: '#1C1A17', fontWeight: '700', fontSize: 13 }}>
-                    {session.name ?? 'Workout'}
+                    {session.name ?? 'Séance'}
                   </Text>
                   <Text style={{ color: '#6B6963', fontSize: 11 }}>
                     {format(new Date(session.started_at), 'd MMM')} · {Math.round((session.total_duration_active_seconds ?? (session.ended_at ? (new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / 1000 : 0)) / 60)} min
@@ -890,7 +1015,7 @@ export default function DashboardScreen() {
                     ? session.total_volume_kg.toLocaleString('fr-FR') + ' kg'
                     : '—'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -930,6 +1055,7 @@ export default function DashboardScreen() {
 
       {/* ── Mood Bottom Sheet ───────────────────────────── */}
       <Modal visible={showMoodSheet} transparent animationType="slide" onRequestClose={() => setShowMoodSheet(false)}>
+        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
           activeOpacity={1}
@@ -942,22 +1068,30 @@ export default function DashboardScreen() {
           <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: theme.border, alignSelf: 'center', marginBottom: 4 }} />
           <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text }}>Comment tu te sens ?</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            {(['\uD83D\uDE2B', '\uD83D\uDE15', '\uD83D\uDE10', '\uD83D\uDE42', '\uD83D\uDE01'] as string[]).map((emoji, idx) => (
+            {([
+              { icon: 'sad-outline', color: '#EF4444' },
+              { icon: 'sad', color: '#F97316' },
+              { icon: 'remove-circle-outline', color: '#F59E0B' },
+              { icon: 'happy-outline', color: '#84CC16' },
+              { icon: 'happy', color: '#22C55E' },
+            ] as const).map((m, idx) => (
               <TouchableOpacity
                 key={idx}
                 onPress={() => handleLogMood(idx + 1)}
-                style={{ alignItems: 'center', gap: 4 }}
+                style={{ alignItems: 'center', gap: 4, opacity: todayMood && todayMood.mood !== idx + 1 ? 0.45 : 1 }}
               >
-                <Text style={{ fontSize: 28 }}>{emoji}</Text>
+                <Ionicons name={m.icon} size={32} color={m.color} />
                 <Text style={{ fontSize: 11, color: theme.muted }}>{idx + 1}/5</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Weight Bottom Sheet ─────────────────────────── */}
       <Modal visible={showWeightSheet} transparent animationType="slide" onRequestClose={() => setShowWeightSheet(false)}>
+        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
           activeOpacity={1}
@@ -991,6 +1125,7 @@ export default function DashboardScreen() {
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Confirmer</Text>
           </TouchableOpacity>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import { useThemeStore, goalLabel } from '@ziko/plugin-sdk';
 import { supabase } from '../../../../src/lib/supabase';
 
 export default function AIProgramDetailRoute() {
@@ -80,7 +80,7 @@ export default function AIProgramDetailRoute() {
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
           {goal ? (
             <View style={{ backgroundColor: 'rgba(255,92,26,0.20)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF8E5A', textTransform: 'capitalize' }}>{goal.replace('_', ' ')}</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF8E5A', textTransform: 'capitalize' }}>{goalLabel(goal)}</Text>
             </View>
           ) : null}
           {splitType ? (

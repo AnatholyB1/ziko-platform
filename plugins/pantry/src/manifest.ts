@@ -4,7 +4,7 @@ const pantryManifest: PluginManifest = {
   id: 'pantry',
   /** Progressive unlock: athlete level required (1-5). */
   minLevel: 2,
-  name: 'Garde-Manger',
+  name: 'Garde-manger',
   version: '1.0.0',
   description:
     'Inventaire intelligent de votre cuisine : suivez vos stocks, dates d\'expiration, et recevez des suggestions de recettes IA basées sur ce que vous avez.',

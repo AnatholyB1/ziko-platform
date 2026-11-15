@@ -8,6 +8,7 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { supabase } from '../../src/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { EmptyState } from '@ziko/ui';
+import { formatDateFr } from '@ziko/plugin-sdk';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
@@ -29,7 +30,7 @@ export default function CalendarScreen() {
   const startOfMonth = new Date(year, month, 1).toISOString();
   const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
 
-  const monthLabel = new Date(year, month, 1).toLocaleDateString('fr-FR', {
+  const monthLabel = formatDateFr(new Date(year, month, 1), {
     month: 'long',
     year: 'numeric',
   });
@@ -247,7 +248,7 @@ export default function CalendarScreen() {
                 }}
               >
                 {Object.keys(sessionsByDate).length} séances en{' '}
-                {new Date(year, month, 1).toLocaleDateString('fr-FR', { month: 'long' })}
+                {formatDateFr(new Date(year, month, 1), { month: 'long' })}
               </Text>
             )}
           </>

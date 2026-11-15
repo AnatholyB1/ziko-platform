@@ -1,5 +1,6 @@
 import { clientForUser } from './db.js';
 import { earnCredits } from '../services/creditService.js';
+import { manageMeasurementGoals } from '../measurements/service.js';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -106,6 +107,27 @@ export async function measurements_get_progress(
 
   if (!latest) return { message: 'No measurements found' };
 
+  // P15 (MEAS-01/05) : objectifs de mesures stockes dans ziko_athlete_goals (measure_key non nul).
+  // Lecture seule ici ; l'outil de gestion (creation/modification par l'IA) est P16.
+  const { data: goalRows } = await db
+    .from('ziko_athlete_goals')
+    .select('measure_key, start_value, target_value, unit, status, start_date, achieved_at')
+    .eq('user_id', userId)
+    .not('measure_key', 'is', null)
+    .order('created_at', { ascending: false });
+  const goals = (goalRows ?? []).map((g: any) => {
+    const start = Number(g.start_value);
+    const target = Number(g.target_value);
+    const cur = (latest as any)[g.measure_key] == null ? null : Number((latest as any)[g.measure_key]);
+    let progress_pct = 0;
+    if (g.status === 'achieved') progress_pct = 100;
+    else if (cur != null && start !== target) {
+      const reached = target < start ? cur <= target : cur >= target;
+      progress_pct = reached ? 100 : Math.min(99, Math.max(0, Math.round((100 * (start - cur)) / (start - target))));
+    }
+    return { ...g, start_value: start, target_value: target, current_value: cur, progress_pct };
+  });
+
   const diff = (curr: number | null, prev: number | null) => {
     if (curr == null || prev == null) return null;
     return parseFloat((curr - prev).toFixed(1));
@@ -113,6 +135,7 @@ export async function measurements_get_progress(
 
   return {
     current: latest,
+    goals,
     compare_date: past?.date ?? null,
     changes: past
       ? {
@@ -126,4 +149,10 @@ export async function measurements_get_progress(
         }
       : null,
   };
+}
+
+// ── Tool: measurements_goals (v1.20 Phase 16, MEAS-03/07/08/09) ──
+// Gestion des objectifs de mesures par l'agent. Logique et garde-fous dans ../measurements/service.ts.
+export async function measurements_goals(params: Record<string, unknown>, userId: string): Promise<unknown> {
+  return manageMeasurementGoals(params, userId);
 }
