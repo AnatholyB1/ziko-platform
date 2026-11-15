@@ -68,7 +68,7 @@ Complete `DEPLOY-RUNBOOK-v1.20.md` (etat prod, rollback, comportement visible) a
 - 20261201260500_collective_challenges.sql
 
 ### Bloc G : securite et correctifs (2701 APRES 1204, 2102, 2103, 2605 ; backend v1.20 deja en prod)
-2902 n'existe pas (trou normal). 2905 = correctif facturation inactive (derniere).
+2902 n'existe pas (trou normal). 2905 = correctif facturation inactive ; 2906 et 2907 (run 11) viennent apres dans l'ordre des noms.
 - 20261201270100_security_hardening.sql
 - 20261201270200_public_profile_privacy.sql
 - 20261201270300_collective_progress_privacy.sql
@@ -80,9 +80,11 @@ Complete `DEPLOY-RUNBOOK-v1.20.md` (etat prod, rollback, comportement visible) a
 - 20261201290100_active_program_clear_completed.sql
 - 20261201290300_earn_credits_daily_cap_lock.sql
 - 20261201290400_quest_reward_system_award.sql
+- 20261201290600_quest_metric_created_at_window.sql (run 11 : fenetre created_at des quetes non alignees ; appliquee sur la branche de test)
+- 20261201290700_faction_count_hidden_for_minors.sql (run 11 LG-23 : compteur de faction masque aux mineurs ; appliquee sur la branche de test)
 
 
-Total : 54 fichiers dont 1 a sauter (2501) = 53 a appliquer.
+Total : 56 fichiers dont 1 a sauter (2501) = 55 a appliquer. 2905 (facturation) reste a appliquer APRES 2906 et 2907 si on suit l'ordre des noms ; 2906/2907 sont independantes de la facturation.
 
 ## 3. Dependances / blocs (d'apres le runbook)
 
@@ -91,7 +93,7 @@ Total : 54 fichiers dont 1 a sauter (2501) = 53 a appliquer.
 - 1301 -> 1302 -> 1401 -> 1402 -> 1501 -> 1502 -> 1601 -> 1602 ; puis 2801 / 2802.
 - 1801 -> 1802 -> 1803 (grants) ; 2101 -> 2102 -> 2103 (profil public).
 - 2601 -> 2602 -> 2603 -> 2604 -> 2605 ; 2803 et 2804 redefinissent 2603 et 2604.
-- 2701 (securite) apres 1204, 2102/2103, 2605 ; puis 2702, 2703, 2801..2804, 2805 (grants service_role), 2901, 2903 (earn_credits), 2904 (recompense systeme de quete), 2905 (facturation).
+- 2701 (securite) apres 1204, 2102/2103, 2605 ; puis 2702, 2703, 2801..2804, 2805 (grants service_role), 2901, 2903 (earn_credits), 2904 (recompense systeme de quete), 2905 (facturation), 2906 (fenetre created_at des quetes), 2907 (compteur de faction mineurs).
 - 2701 revoque earn/deduct_ai_credits et create_form_instances aux clients : prerequis = backend v1.20 (serviceClient) en production.
 
 ## 4. Decoupage de deploiement recommande (backend d'abord, sans declencher migrate-portfolio)
@@ -102,7 +104,7 @@ Contexte : le merge de milestone/v1.20 vers main ajoute les 54 fichiers dans `HE
 2. **PR 1 "code" (sans migration)** : milestone/v1.20 -> main avec `supabase/portfolio-migrations/*20261201*` EXCLUS (ex. branche `release/v1.20-code` = milestone/v1.20 moins les 54 fichiers + README ; les tests statiques qui lisent ces fichiers doivent etre exclus ou le diff garde les fichiers hors du dossier surveille). Alternative equivalente et plus simple : laisser la variable a false pendant tout le merge unique et appliquer a la main (etape 4), la variable n'est alors jamais evaluee a true.
 3. Le push sur main deploie backend + web par Vercel (integration GitHub). Smoke : `/health`, flux forms/webhooks/credits avec la cle publiable (les anciens grants sont encore en place).
 4. **Migrations a la main**, dans l'ordre de la section 2, en mettant 2701 APRES la verification du backend v1.20 en prod (`SUPABASE_SERVICE_KEY` presente). Verifs du runbook section 4 apres chaque bloc. 2501 sautee. 2905 en dernier.
-5. **PR 2 "migrations" (si on veut la CI)** : seulement apres l'etape 4, ajouter les fichiers deplaces par une PR separee ; elle n'est sure que si la variable reste false. Si on veut reactiver la CI : AVANT d'activer la variable, remonter le filigrane (`scripts/portfolio-migration/portfolio-migrations.watermark`) a `20261201290500` dans un commit separe et verifier `--pending --base HEAD~1` = vide ; puis seulement mettre la variable a true pour les migrations futures.
+5. **PR 2 "migrations" (si on veut la CI)** : seulement apres l'etape 4, ajouter les fichiers deplaces par une PR separee ; elle n'est sure que si la variable reste false. Si on veut reactiver la CI : AVANT d'activer la variable, remonter le filigrane (`scripts/portfolio-migration/portfolio-migrations.watermark`) a `20261201290700` dans un commit separe et verifier `--pending --base HEAD~1` = vide ; puis seulement mettre la variable a true pour les migrations futures.
 6. Build EAS/stores v1.20 apres l'etape 4. Facturation : activer `billing_enabled` (UPDATE) a la date choisie, apres credit de bienvenue/communication (runbook 5b).
 
 Variante 1 seul merge (si la variable est deja false) : merger, laisser Vercel deployer, verifier le backend, appliquer les migrations a la main (etape 4). C'est equivalent a 2-4 sans exclure de fichiers ; le seul risque est d'oublier que la variable est a true.
