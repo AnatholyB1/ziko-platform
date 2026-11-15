@@ -9,7 +9,7 @@ Resultats : `UAT-RESULTS-run11.md`. Branche `uat/run11`, worktree `C:\ziko-platf
 - Heure : emulateur en GMT, la base raisonne en Europe/Paris (voir constat DATES dans les resultats).
 
 ## Etat branche apres run 11
-A (`a0a0a0a0-...a1`) : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, solde credits 20, 0 quete libre (3 actives : `4 seances`, `taille`, + ...). Programme `Bloc de force` actif. Faux Anthropic : file vide.
+A (`a0a0a0a0-...a1`) : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, solde credits 20, 0 quete libre (3 actives : `4 seances`, `taille`, + ...). Programme `Bloc echu C` (id d6240000-...-c1) CLOS ; `Bloc de force` inactif (le reactiver : `update ziko_ai_generated_programs set is_active=true where name='Bloc de force'`) ; relance `pending`, plafond du jour atteint ; file du faux : `workshop_set_draft` restant. Migrations 2906/2907 appliquees sur la branche de test. Faux Anthropic : file vide.
 
 ## A faire (non joue)
-P26 LG-8, 9, 13-16 ; P16 carte d'onboarding (IM-1..3, nouvel utilisateur) ; P24 C..F (seeds : `UAT-PLAN.md` de la phase) ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses ; contraste numerique des boutons pleins ; DECISION LG-23 (compteur de faction visible par un mineur).
+P26 LG-8, 9, 13-16 ; P16 carte d'onboarding (IM-1..3, nouvel utilisateur) ; P24 C 100 %/50 %, D2, E1 message paye, E3 (`UAT-PLAN.md` de la phase) ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses ; contraste numerique des boutons pleins.
