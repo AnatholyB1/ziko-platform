@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -13,6 +14,7 @@ import { frCount } from '../../../../src/lib/frLabels';
 export default function HistoryDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const theme = useThemeStore((s) => s.theme);
+  const insets = useSafeAreaInsets();
 
   const {
     data: session,
@@ -93,7 +95,8 @@ export default function HistoryDetailScreen() {
             alignItems: 'center',
             gap: 10,
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingTop: insets.top + 12,
+            paddingBottom: 12,
             backgroundColor: theme.background + 'F0',
             borderBottomWidth: 1,
             borderBottomColor: theme.border,
@@ -132,7 +135,8 @@ export default function HistoryDetailScreen() {
             alignItems: 'center',
             gap: 10,
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingTop: insets.top + 12,
+            paddingBottom: 12,
             backgroundColor: theme.background + 'F0',
             borderBottomWidth: 1,
             borderBottomColor: theme.border,
@@ -184,7 +188,8 @@ export default function HistoryDetailScreen() {
           alignItems: 'center',
           gap: 10,
           paddingHorizontal: 16,
-          paddingVertical: 12,
+          paddingTop: insets.top + 12,
+          paddingBottom: 12,
           backgroundColor: theme.background + 'F0',
           borderBottomWidth: 1,
           borderBottomColor: theme.border,

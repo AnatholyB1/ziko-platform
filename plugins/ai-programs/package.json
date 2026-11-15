@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
+    "expo-document-picker": "~14.0.8",
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
