@@ -54,3 +54,11 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 
 ## Etat de la branche de test apres run 11
 A : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, 5 semaines de logs d'habitudes (12 oct -> 8 nov), solde credits 20. Comptes `uat-lg23-*` crees puis supprimes.
+
+## Decisions prises (recommandations appliquees, 2026-11-15)
+- LG-23 : compteur masque aux mineurs (migration 2907). LG-8 : plan UAT corrige (LEAG-04 prevaut).
+- Quetes `measurement_logs` : comptage global conserve (pas de distinction par `measure_key`) ; a revoir si un besoin produit apparait.
+- Plafond de relance P24 : conserve tel quel (une tentative automatique ratee consomme le plafond du jour) ; pas de changement de logique de credits/IA la veille du deploiement. A reprendre apres la mise en prod.
+- Installation : pas de `.npmrc` (`npm install` simple passe avec le lockfile commite ; verifie par `npm install --dry-run`).
+- `PORTFOLIO_MIGRATIONS_ENABLED` passee de `true` a `false` le 2026-11-15 (recommandation de DEPLOY-ORDER section 4) : aucune migration ne part en prod au merge ; application manuelle.
+- `plugins/coach/tsconfig.json` : ajout de `sessionManager`, `authInit`, `profileGate` (TS6307 qui aurait fait echouer le type-check CI).
