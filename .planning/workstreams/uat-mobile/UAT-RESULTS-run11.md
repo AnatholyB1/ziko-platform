@@ -22,6 +22,12 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 | P24 D1 | Non punitif : credits, XP, pieces, serie identiques avant/apres | PASS | avant/apres : credits 20, transactions 13, pieces 500556, XP 453, serie 5 ; accueil `Aucun programme actif` (programme simplement termine) ; aucun mot `echec/rate/manque/retard/penalite` dans le dump du bandeau. D2 (`Plus tard` + dismiss 409) NON joue |
 | P24 E1 (plafond) | Apres l'appel automatique du jour : bandeau `Preparer la suite` sans spinner infini, faux non rappele ; `Preparer la suite` ouvre l'atelier | PASS (partiel) | `ziko_ai_cost_log program_relaunch` 2 lignes, file du faux inchangee, solde 20 ; l'atelier s'ouvre sur `BILAN DU PROGRAMME` + `Bloc echu C` + message de base douce. NON joue : envoi d'un message paye (un debit `chat`), E3 (course) |
 | P24 E2 (panne) | Proposition non generee : relance `pending`, aucun debit | PASS (partiel) | statut `pending`, brouillon vide, solde 20/13 transactions. La regeneration apres relance du faux n'a pas abouti dans cette session (voir constats) |
+| P26 LG-8 | A palier 3 (pic 3), 3 semaines closes sans habitude : `Argent`, libelle non punitif, pastilles grises, gamification identique | ECART plan / PASS vs LEAG-04 | `lg8.png` : A reste `Or` ; semaines `hold`/`neutral`/`hold`, `low_streak` 2. La migration `20261201280300` (LEAG-04) rend NEUTRE une semaine sans aucune activite (`done=0` sur les deux pistes) ; 2 des 3 semaines avaient des seances (piste performance) donc comptees basses (score < 30, `hold`). Aucun mot `chute/descente/perdu/echec` dans le dump, pastilles grises (jamais rouges), XP 453 / pieces 500556 / serie 5 / niveau 3 identiques. LIBELLE DU PLAN A CORRIGER (3 semaines vides -> reste au meme palier). Second palier (3 autres semaines) non rejoue |
+| P26 LG-9 | A palier 1 ; 6 semaines vides : reste `Bronze` | PASS | `lg9.png`, `division_after=1` sur les 6 semaines (neutral/hold) |
+| P26 LG-13 | Eligible + faux `transition:false` : aucune transition, 1 appel, 1 ligne `cost_log` ; reouvertures le meme jour : 0 appel | PASS | journal 9 -> 10 (`tool:json`), `cost_log league_transition` 3 -> 4, 0 transition, `auto_count=1` ; apres 2 redemarrages + reouvertures : journal 10, `cost_log` 4 |
+| P26 LG-14 | 3 semaines seulement : 0 appel, 0 ligne `cost_log` | PASS | 3 reouvertures : journal 10 -> 10, `cost_log` 4 -> 4, file du faux inchangee (`not_enough_weeks`) |
+| P26 LG-15 | Faux arrete (8211) avec A eligible : ecran normal, piste Habitudes, pas de modale ; tentative journalisee | PASS | `lg15.png` ; `cost_log` 4 -> 5 ; 0 transition. NON verifie : `0 token` de la ligne |
+| P26 LG-16 | Le prompt ne contient que scores hebdo, moyenne, tier, readiness, experience | PASS | requete capturee par un faux espion jetable : `semaines_recentes`, `moyenne: 100`, `palier_de_confiance (tier): 3`, `disposition (readiness): building`, `experience_declaree: beginner` ; aucun poids/taille/age/sommeil/email |
 | Notification | `Activer / Plus tard` apres `Continuer` sur la modale de ligue | NON REPRODUIT | ni apres `Continuer`, ni apres redemarrage a froid (run 8 l'avait vu) |
 
 ## Constats
@@ -34,7 +40,7 @@ Note : "System UI isn't responding" au premier lancement -> Wait, app OK (comme 
 - Piege harnais : `ziko://community` seul = Unmatched Route ; utiliser `(app)/(plugins)/community/dashboard` (Fil) ou `.../league`.
 
 ## NON TESTE (suite)
-P26 LG-8, 9, 13-16 non rejoues ; P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
+ P16 carte d'onboarding (IM-1 a 3, nouvel utilisateur) ; P24 C variantes 100 %/50 %, D2, E1 message paye, E3 ; P6 D/E ; P11 HY-5/6 ; P15 ME-1/8 ; P17 SL-3..5 ; P22 JR-6 ; solde de pieces hors Recompenses.
 
 ## Etat de la branche de test apres run 11
 A : tier 3, piste Performance Bronze (transition acquittee), faction Hyrox, age 30, 5 semaines de logs d'habitudes (12 oct -> 8 nov), solde credits 20. Comptes `uat-lg23-*` crees puis supprimes.
