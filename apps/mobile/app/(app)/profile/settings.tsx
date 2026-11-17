@@ -617,7 +617,6 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const role = profile?.role ?? 'client';
   const userId = user?.id ?? '';
-  const tier = (profile as any)?.subscription_tier ?? 'free';
 
   const { data: connectedCount = 0 } = useQuery({
     queryKey: ['integrations-count', userId],
@@ -723,14 +722,6 @@ export default function SettingsScreen() {
             <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text }} numberOfLines={1}>{displayName}</Text>
             <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2 }} numberOfLines={1}>{email}</Text>
           </View>
-          <View style={{
-            paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999,
-            backgroundColor: tier === 'premium' ? '#FF5C1A' : 'rgba(28,26,23,0.12)',
-          }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: tier === 'premium' ? '#fff' : theme.text, letterSpacing: 0.6, textTransform: 'uppercase' }}>
-              {tier === 'premium' ? 'PREMIUM' : 'FREE'}
-            </Text>
-          </View>
         </View>
 
         <STGroup title="Compte">
@@ -740,11 +731,8 @@ export default function SettingsScreen() {
           <STRow icon="trash-outline" tint="#E94B3C" label="Supprimer le compte" danger onPress={handleDeleteAccount} />
         </STGroup>
 
-        <STGroup title="Abonnement">
-          <STRow icon="sparkles-outline" tint="#FF5C1A" label="Plan actuel" right="Premium · 9,99€/mois" onPress={() => router.push('/(app)/paywall' as any)} />
-          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right={credits ? `${credits.ai_credits} / ${credits.daily_cap}` : '—'} onPress={() => router.push('/(app)/ai')} />
-          <STRow icon="card-outline" tint="#1C1A17" label="Moyen de paiement" sub="Visa •• 4242" onPress={() => showAlert('Paiement', 'Gestion des paiements bientôt disponible.')} />
-          <STRow icon="receipt-outline" tint="#6B6963" label="Historique facturation" onPress={() => showAlert('Facturation', 'Historique bientôt disponible.')} />
+        <STGroup title="Coach IA">
+          <STRow icon="flash-outline" tint="#E8A33A" label="Crédits IA" right={credits && typeof credits.ai_credits === 'number' ? `${credits.ai_credits}${typeof credits.daily_cap === 'number' ? ` / ${credits.daily_cap}` : ''}` : '—'} onPress={() => router.push('/(app)/ai')} />
         </STGroup>
 
         <STGroup title="Préférences">

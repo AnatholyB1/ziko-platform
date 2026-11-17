@@ -468,6 +468,8 @@ function PromoTab() {
 }
 
 // ── Main ReferralScreen ────────────────────────────────────────
+const SHOW_PROMO = false; // codes promo lies a l'abonnement : masques (pas de paiement in-app)
+
 export default function ReferralScreen() {
   const theme = useThemeStore((s) => s.theme);
   const user = useAuthStore((s) => s.user);
@@ -514,7 +516,7 @@ export default function ReferralScreen() {
       </View>
 
       {/* Tab bar */}
-      <View style={{
+      {SHOW_PROMO && (<View style={{
         flexDirection: 'row', marginHorizontal: 16, marginBottom: 8,
         backgroundColor: 'rgba(28,26,23,0.07)', borderRadius: 12, padding: 4,
       }}>
@@ -549,10 +551,10 @@ export default function ReferralScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </View>)}
 
       {/* Tab content */}
-      {activeTab === 'invite' ? (
+      {!SHOW_PROMO || activeTab === 'invite' ? (
         <InviteTab data={data} isLoading={isLoading} />
       ) : (
         <PromoTab />

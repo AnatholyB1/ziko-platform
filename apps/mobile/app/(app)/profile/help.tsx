@@ -71,26 +71,6 @@ const FAQ_GROUPS = [
     ],
   },
   {
-    title: 'ABONNEMENT',
-    items: [
-      {
-        id: 'sub_1',
-        q: 'Gérer mon abonnement',
-        a: "Ton abonnement est géré directement par l'App Store (iOS) ou le Play Store (Android). Pour modifier ou annuler, ouvre les Réglages de ton téléphone > [Ton nom] > Abonnements (iOS) ou Play Store > Abonnements (Android).",
-      },
-      {
-        id: 'sub_2',
-        q: 'Annuler mon abonnement',
-        a: "Pour annuler, va dans les Réglages de ton iPhone > [Ton nom] > Abonnements > Ziko > Annuler l'abonnement. Sur Android : Play Store > Menu > Abonnements > Ziko > Annuler. L'accès Premium reste actif jusqu'à la fin de la période payée.",
-      },
-      {
-        id: 'sub_3',
-        q: 'Politique de remboursement',
-        a: "Les remboursements sont traités par Apple ou Google selon leurs politiques respectives. Pour iOS, contacte le support Apple via reportaproblem.apple.com. Pour Android, contacte le support Google Play dans les 48h suivant l'achat.",
-      },
-    ],
-  },
-  {
     title: 'COMPTE',
     items: [
       {
