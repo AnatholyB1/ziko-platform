@@ -313,7 +313,6 @@ export default function AppLayout() {
         <Tabs.Screen name="ai" options={{ href: null }} />
         <Tabs.Screen name="(plugins)" options={{ href: null }} />
         <Tabs.Screen name="calendar" options={{ href: null }} />
-        <Tabs.Screen name="paywall" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="help" options={{ href: null }} />
         <Tabs.Screen name="legal" options={{ href: null }} />

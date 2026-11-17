@@ -26,7 +26,8 @@
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
