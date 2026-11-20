@@ -11,6 +11,7 @@ export const HOME_QUERY_KEYS: ReadonlyArray<readonly string[]> = [
   ['credits', 'info'], // v1.21 P2 : cout / solde des chemins IA de la carte
   ['streak'],
   ['sleep'],
+  ['onboarding-mission'], // v1.21 UAT P3 : "Mission du jour" doit disparaitre une fois le log du jour fait
   ['hydration', 'today'],
   ['nutrition', 'today'],
   ['quicklog', 'weight'],
