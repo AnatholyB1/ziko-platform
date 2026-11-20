@@ -309,7 +309,19 @@ export function buildWizardProgramRow(userId: string, input: WizardInput) {
 }
 
 /** UATN-03 : un programme sans exercice donnerait des seances vides (impossibles a demarrer) : creation bloquee. */
-export function validateWizardExercises(exercises: string[]): { ok: true } | { ok: false; title: string; message: string } {
+export function validateWizardExercises(
+  exercises: string[],
+  /** Texte saisi mais non reconnu dans le catalogue (UAT rerun : un nom libre donnait un programme impossible a demarrer). */
+  unresolvedEntry?: string | null,
+): { ok: true } | { ok: false; title: string; message: string } {
+  const pending = unresolvedEntry?.trim();
+  if (pending) {
+    return {
+      ok: false,
+      title: 'Exercice non reconnu',
+      message: `« ${pending} » n'est pas dans le catalogue. Choisis un exercice dans les suggestions, ou efface la saisie.`,
+    };
+  }
   if (exercises.some((e) => e.trim() !== '')) return { ok: true };
   return {
     ok: false,
