@@ -80,3 +80,25 @@ export function applyPlannedStartFeedback(res: PlannedStartResult, deps: Feedbac
   if (fb.navigate) deps.openSession();
   if (fb.toast) deps.toast(fb.toast);
 }
+
+/**
+ * Retour apres `startGeneratedSession` (seance IA simple, UATN-03) : meme regle que la seance planifiee pour les
+ * exercices ignores/remplaces ; sans exercice charge, aucune navigation (jamais de "Seance rapide" vide) et un
+ * message qui propose de regenerer plutot que d'editer un programme.
+ */
+export function generatedStartFeedback(res: PlannedStartResult): PlannedStartFeedback {
+  if (res.ok) return plannedStartFeedback(res);
+  const un = res.unresolved ?? [];
+  const detail = un.length > 0 ? ` (${un.slice(0, MAX_LISTED).join(', ')})` : '';
+  return {
+    navigate: false,
+    alert: {
+      title: 'Séance indisponible',
+      message:
+        res.reason === 'no_exercises'
+          ? `Aucun exercice de cette séance n'a été trouvé dans le catalogue${detail}. Régénère la séance.`
+          : 'Impossible de démarrer la séance. Vérifie ta connexion puis réessaie.',
+      editLabel: 'Régénérer',
+    },
+  };
+}

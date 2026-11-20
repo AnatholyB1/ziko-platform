@@ -5,6 +5,7 @@ import {
   buildWeekLayout,
   pickSessionForToday,
   parseReps,
+  parseSetsSpec,
   isCountableSession,
   COUNTABLE_SESSION_OR_FILTER,
   resolveDayIndexBase,
@@ -182,5 +183,17 @@ describe('empty sessions are ignored (TRAIN-03)', () => {
   it('write guard', () => {
     expect(shouldPersistSession(0)).toBe(false);
     expect(shouldPersistSession(1)).toBe(true);
+  });
+});
+
+describe('parseSetsSpec (libelle de series de la seance IA simple)', () => {
+  it('lit "3 × 8-10", "4x12", "3 séries de 10"', () => {
+    expect(parseSetsSpec('3 × 8-10')).toEqual({ sets: 3, reps: '8-10' });
+    expect(parseSetsSpec('4x12')).toEqual({ sets: 4, reps: 12 });
+    expect(parseSetsSpec('3 séries de 10')).toEqual({ sets: 3, reps: 10 });
+  });
+  it('defaut 3 series sans nombre lisible', () => {
+    expect(parseSetsSpec('45 s')).toEqual({ sets: 3, reps: null });
+    expect(parseSetsSpec(undefined)).toEqual({ sets: 3, reps: null });
   });
 });

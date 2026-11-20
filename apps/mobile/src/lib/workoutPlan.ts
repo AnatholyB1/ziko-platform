@@ -196,6 +196,25 @@ export function parseReps(reps: string | number | null | undefined): {
   return { reps: null, reps_min: null, reps_max: null };
 }
 
+/**
+ * Libelle de series d'une seance IA simple ("3 × 8-10", "4x10", "3 séries de 12", "45 s") -> series + repetitions.
+ * Sans nombre de series lisible : 3 series (meme defaut que normalizePlanSessions).
+ */
+export function parseSetsSpec(spec: string | number | null | undefined): {
+  sets: number;
+  reps: string | number | null;
+} {
+  const raw = typeof spec === 'number' ? String(spec) : String(spec ?? '').trim();
+  const m = raw.match(/^(\d{1,2})\s*(?:[x×*]|séries?|series?|sets?)\s*(?:de\s+)?(.*)$/i);
+  if (m) {
+    const sets = Math.max(1, parseInt(m[1], 10));
+    const rest = m[2].trim();
+    const r = parseReps(rest);
+    return { sets, reps: r.reps ?? (r.reps_min != null && r.reps_max != null ? `${r.reps_min}-${r.reps_max}` : null) };
+  }
+  return { sets: 3, reps: null };
+}
+
 // ── TRAIN-03: empty sessions are neither stored nor counted ──────────────────────
 
 export interface CountableSessionLike {

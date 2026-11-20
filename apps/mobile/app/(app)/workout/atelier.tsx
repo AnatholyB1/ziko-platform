@@ -9,6 +9,9 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { supabase } from '../../../src/lib/supabase';
 import { keyboardAvoidBehavior } from '../../../src/lib/keyboardAvoid';
 import { setActiveProgram } from '../../../src/lib/programsService';
+import { activationToast } from '../../../src/lib/programs';
+import { goToTrainingDashboard, refreshProgramQueries } from '../../../src/lib/workoutNav';
+import { neutralToast } from '../../../src/lib/neutralToast';
 import {
   ATELIER_COPY,
   QUICK_REQUESTS,
@@ -234,7 +237,7 @@ export default function AtelierScreen() {
     setSaving(true);
     try {
       const { program_id } = await client.publishDraft(state.draftId);
-      queryClient.invalidateQueries({ queryKey: ['programs', userId] });
+      void refreshProgramQueries(queryClient);
       showAlert('Programme enregistré', `« ${program?.name ?? 'Programme'} » est dans ta liste.`, [
         { text: 'Plus tard', style: 'cancel', onPress: () => router.replace('/(app)/workout/programs' as any) },
         {
@@ -242,11 +245,15 @@ export default function AtelierScreen() {
           onPress: async () => {
             try {
               await setActiveProgram(supabase as any, 'ai', program_id);
-              queryClient.invalidateQueries({ queryKey: ['programs', userId] });
+              await refreshProgramQueries(queryClient);
             } catch {
               showAlert('Activation impossible', "Active-le depuis la liste de tes programmes.");
+              router.replace('/(app)/workout/programs' as any);
+              return;
             }
-            router.replace('/(app)/workout/programs' as any);
+            // UATN-03 : le tableau de l'onglet Entrainement (« Démarrer la séance d'aujourd'hui »), pas la liste.
+            neutralToast(activationToast(program?.name ?? 'Programme'));
+            goToTrainingDashboard(router);
           },
         },
       ]);
