@@ -2,11 +2,12 @@ import React from 'react';
 
 // Minimal DOM stand-ins for React Native host components (render tests only).
 const box = (tag: string) =>
-  function Host({ children, testID, onPress, accessibilityLabel, accessibilityRole }: any) {
+  function Host({ children, testID, onPress, accessibilityLabel, accessibilityRole, style }: any) {
     const props: any = { 'data-testid': testID };
     if (accessibilityLabel) props['aria-label'] = accessibilityLabel;
     if (accessibilityRole) props['data-role'] = accessibilityRole;
     if (onPress) props.onClick = onPress;
+    if (style !== undefined) props['data-style-type'] = typeof style === 'function' ? 'function' : Array.isArray(style) ? 'array' : typeof style;
     return React.createElement(tag, props, typeof children === 'function' ? null : children);
   };
 

@@ -51,6 +51,7 @@ export function PathRow({
   const exhaustedAI = path.isAI && view.exhausted;
   const highlightManual = view.exhausted && path.id === 'manual';
   // Garde de double tap : un second appui rapproche n'empile pas un deuxieme ecran (audit phase 2).
+  const [pressed, setPressed] = useState(false);
   const lastPressRef = useRef(0);
   const guardedPress = () => {
     const now = Date.now();
@@ -64,11 +65,14 @@ export function PathRow({
       onPress={guardedPress}
       accessibilityRole="button"
       accessibilityLabel={pathA11yLabel(path, view, badge)}
-      style={({ pressed }: { pressed: boolean }) => ({
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      // Style objet (jamais une fonction) : la forme fonction est ignoree au rendu Android (UAT v1.21 P3).
+      style={{
         minHeight: 88, paddingVertical: 14, paddingHorizontal: 16,
         flexDirection: 'row', alignItems: 'center', gap: 12,
         backgroundColor: pressed ? PRESSED_BG : highlightManual ? ICON_BG : 'transparent',
-      })}
+      }}
     >
       <View style={{
         width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
