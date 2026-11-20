@@ -39,7 +39,7 @@ Une seule carte standard (rayon 16, bord 1 px `#E2E0DA`, ombre `#1C1A17` @ 0.08 
 | IA simple | nom `IA simple` · livrable `Séance` · phrase `L'IA prépare une séance unique en quelques secondes.` · coût `{n} crédits` (ex. `4 crédits`) |
 | Atelier IA | nom `Atelier IA` · livrable `Programme` · phrase `Tu discutes, l'IA construit un programme complet.` · coût `{n} crédits par message` |
 | Pastille de solde | `{n} crédits` / `1 crédit` / `0 crédit` ; indisponible : `—` |
-| Quota gratuit (serveur `free_left > 0`) | IA simple `1 gratuite ce mois-ci` ; Atelier `1 message gratuit aujourd'hui` (au pluriel : `{k} messages gratuits aujourd'hui`) |
+| Quota gratuit (serveur `free_left > 0`) | IA simple `1 gratuite aujourd'hui` ; Atelier `1 message gratuit aujourd'hui` (au pluriel : `{k} messages gratuits aujourd'hui`) |
 | Coût inconnu | `Consomme des crédits IA` (repli existant) |
 | Épuisé, ligne de coût | `Crédits épuisés` (icône verrou) |
 | Épuisé, bandeau | `Tes crédits IA sont épuisés. Le parcours manuel reste gratuit.` |
@@ -65,7 +65,7 @@ Les apostrophes sont typographiques (`'` U+2019) dans l'app. Aucun emoji, aucun 
 | H05 | Appui / focus | appui : fond `#F0EFE9` sans changer les bornes, 100 ms ; focus : anneau 3 dp `#FF5C1A` à 33 % | |
 | H06 | Texte 130 % | libellés replient, aucune coupure, titre sur 2 lignes | |
 | H07 | Solde / coût indisponible | pastille `—`, coût `Consomme des crédits IA` | jamais un chiffre inventé ; ne bloque pas l'ouverture |
-| H08 | Quota gratuit restant | coût remplacé par `1 gratuite ce mois-ci` / `1 message gratuit aujourd'hui` en vert | nouveau compte probable |
+| H08 | Quota gratuit restant | coût remplacé par `1 gratuite aujourd'hui` / `1 message gratuit aujourd'hui` en vert | nouveau compte probable |
 Erreur de lecture du programme ou des séances : voir R4 (carte masquée, pas d'écran d'erreur dédié : l'accueil gère déjà ses erreurs).
 
 ## 3. Mouvement
@@ -161,3 +161,5 @@ Mesures sur l'émulateur Android (capture 1080x2400 / dpi 420 ≈ 390x857 dp), a
 2. Coût et quota gratuit de la génération « programme » : l'atelier les lit déjà (`info`), pas encore ce chemin. Confirmer qu'une source client existe (ou en ajouter une, sans migration) pour la carte ; à défaut, repli `Consomme des crédits IA`.
 3. La carte et la phase 1 modifient toutes deux `(app)/index.tsx` ; la maquette de la phase 1 (bloc Quêtes) doit rester compatible avec l'espacement 12 dp entre blocs.
 4. Corriger le texte de `programs.tsx` (« Objectif, niveau, jours, matériel »), qui diffère des 4 étapes réelles.
+
+> Correction (audit phase 2) : la maquette H08 disait « ce mois-ci » ; c'est faux. Le quota gratuit de l'IA simple est QUOTIDIEN (`creditCheck('chat')`, `/ai/session/generate`), le libelle correct est « aujourd'hui ». Le quota mensuel ne concerne que `/programs/generate`, hors carte.

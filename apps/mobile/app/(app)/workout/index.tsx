@@ -460,8 +460,9 @@ export default function WorkoutIndexScreen() {
   const { data: activeProgramRaw, isLoading, isError, refetch } = useActiveAIProgram({ refetchOnMount: 'always' });
   const activeProgram = (activeProgramRaw ?? null) as unknown as AiGeneratedProgram | null;
   const programView = activeProgramView({ isLoading, isError, program: activeProgramRaw as any });
-  // Cout / solde serveur (meme source que la carte d'accueil), lus seulement pour l'etat vide ; en erreur : repli neutre.
-  const creditInfo = useCreditInfo(programView === 'empty' || !activeProgramRaw);
+  // Cout / solde serveur (meme source que la carte d'accueil). Lu des que la feuille "+" / "Créer un programme" peut
+  // s'ouvrir, y compris avec un programme actif (staleTime 60 s) ; en erreur : repli neutre.
+  const creditInfo = useCreditInfo(true);
   const credit = React.useMemo(() => computeCreditView(creditInfo.isError ? null : creditInfo.data), [creditInfo.data, creditInfo.isError]);
 
   const programData = activeProgram?.program_data ?? null;
