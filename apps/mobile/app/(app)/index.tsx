@@ -54,7 +54,7 @@ import { invalidateHomeQueries } from '../../src/lib/homeQueries';
 import { AnimatePresence } from 'moti';
 import FirstWorkoutCard from '../../src/components/home/FirstWorkoutCard';
 import { useFirstWorkoutCard } from '../../src/hooks/useFirstWorkout';
-import { hideEmptyMissionVariant, formeDuJourPlacement } from '../../src/lib/firstWorkout';
+import { hideEmptyMissionVariant } from '../../src/lib/firstWorkout';
 import { QuestsBlock } from '../../src/components/home/QuestsBlock';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
@@ -764,8 +764,6 @@ export default function DashboardScreen() {
           )}
         </AnimatePresence>
 
-        {formeDuJourPlacement(firstWorkout.visibility) === 'above-mission' && formeDuJourBlock}
-
         {/* ── MissionCard ────────────────────────────────── */}
         {!(hideEmptyMission && isEmptyMissionVariant(programLoading || missionLoading, activeProgram ?? null, onboardingMission ?? null, effectiveLevel)) && (
           <View style={{ marginBottom: 12 }}>
@@ -777,7 +775,8 @@ export default function DashboardScreen() {
         {/* ── Quêtes du jour (v1.21 phase 1) ─────────────── */}
         <QuestsBlock />
 
-        {formeDuJourPlacement(firstWorkout.visibility) === 'below-quests' && formeDuJourBlock}
+        {/* Ordre unique (HOME_BLOCK_ORDER) : Forme du jour toujours apres les Quetes. */}
+        {formeDuJourBlock}
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (
