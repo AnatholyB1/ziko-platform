@@ -2,8 +2,10 @@ import React from 'react';
 
 // Minimal DOM stand-ins for React Native host components (render tests only).
 const box = (tag: string) =>
-  function Host({ children, testID, onPress }: any) {
+  function Host({ children, testID, onPress, accessibilityLabel, accessibilityRole }: any) {
     const props: any = { 'data-testid': testID };
+    if (accessibilityLabel) props['aria-label'] = accessibilityLabel;
+    if (accessibilityRole) props['data-role'] = accessibilityRole;
     if (onPress) props.onClick = onPress;
     return React.createElement(tag, props, typeof children === 'function' ? null : children);
   };
@@ -32,4 +34,20 @@ export const FlatList = ({ data = [], renderItem }: any) =>
 export const Image = () => null;
 export const KeyboardAvoidingView = box('div');
 export const Switch = () => null;
+export const AccessibilityInfo = {
+  isReduceMotionEnabled: async () => false,
+  announceForAccessibility: (_msg: string) => undefined,
+};
+// Animated minimal : les valeurs ne s'animent pas (rendu final immediat).
+class AnimatedValue {
+  v: number;
+  constructor(v: number) { this.v = v; }
+  interpolate(cfg: { outputRange: number[] }) { return cfg.outputRange[cfg.outputRange.length - 1]; }
+  setValue(v: number) { this.v = v; }
+}
+export const Animated = {
+  Value: AnimatedValue,
+  View: box('div'),
+  timing: () => ({ start: (cb?: (r: { finished: boolean }) => void) => cb?.({ finished: true }) }),
+};
 export default { View, Text };

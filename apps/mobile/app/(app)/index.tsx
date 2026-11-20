@@ -51,6 +51,7 @@ import {
 } from '../../src/lib/quickLog';
 import { localDateKey, localDateKeyFromISO } from '../../src/lib/localDate';
 import { invalidateHomeQueries } from '../../src/lib/homeQueries';
+import { QuestsBlock } from '../../src/components/home/QuestsBlock';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
@@ -735,6 +736,9 @@ export default function DashboardScreen() {
         <View style={{ marginBottom: 12 }}>
           <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} />
         </View>
+
+        {/* ── Quêtes du jour (v1.21 phase 1) ─────────────── */}
+        <QuestsBlock />
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (
