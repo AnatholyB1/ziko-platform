@@ -29,7 +29,7 @@ export function loadEnv() {
 
 /** Returns {url, key, anon}. Exits 2 if target is not the throwaway branch. */
 export function resolveTarget(env, { requireKey = true } = {}) {
-  const url = env.UAT_SUPABASE_URL;
+  const url = env.UAT_SUPABASE_URL || env.SUPABASE_URL;
   const key = env.UAT_SERVICE_ROLE_KEY;
   const expectedRef = env.UAT_EXPECTED_REF || BRANCH_REF;
   const fail = (m) => { console.error('[uat] REFUSED: ' + m); process.exit(2); };

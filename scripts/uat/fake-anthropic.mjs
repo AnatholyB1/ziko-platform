@@ -59,9 +59,17 @@ function decide(req) {
   const m = userText.match(/\[\[tool:([A-Za-z0-9_\-]+)(?:\s+(\{[\s\S]*?\}))?\s*(::force)?\]\]/);
   let pick = null;
   if (m) pick = { tool: m[1], input: m[2] ? JSON.parse(m[2]) : {}, force: !!m[3] };
-  else if (queue.length && !queue[0].afterResult) {
+  else if (queue.length && queue[0].text !== undefined && !queue[0].afterResult) {
+    // Text script (e.g. a JSON body for routes that parse model text): consumed by the next non-tool-result request.
     const q = queue[0];
-    if (toolNames.includes(q.tool) || q.force) {
+    if (--q.count <= 0) queue.shift();
+    return { kind: 'text', text: String(q.text) };
+  } else if (queue.length && !queue[0].afterResult) {
+    const q = queue[0];
+    if (q.skip > 0) {
+      // `skip`: let the next N requests that offer this tool get the default text first.
+      if (toolNames.includes(q.tool)) q.skip--;
+    } else if (toolNames.includes(q.tool) || q.force) {
       pick = { tool: q.tool, input: q.input ?? {}, force: q.force };
       if (--q.count <= 0) queue.shift();
     }
@@ -121,7 +129,7 @@ const server = http.createServer((req, res) => {
       if (req.method === 'GET') return json(200, { queue, log: log.slice(-20) });
       if (req.method === 'DELETE') { queue.length = 0; return json(200, { ok: true }); }
       const s = JSON.parse(body || '{}');
-      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force, afterResult: !!s.afterResult });
+      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force, afterResult: !!s.afterResult, skip: s.skip ?? 0, ...(s.text !== undefined ? { text: s.text } : {}) });
       return json(200, { ok: true, queued: queue.length });
     }
     if (path === '/v1/messages' && req.method === 'POST') {

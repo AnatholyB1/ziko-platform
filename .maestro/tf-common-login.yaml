@@ -1,0 +1,29 @@
+# Sous-flow: connexion email/mot de passe (dev-client deja ouvert sur Metro, session vide).
+# Les champs sont vides avant saisie (eraseText) : le clavier de l'emulateur sous charge peut dupliquer des caracteres.
+appId: com.ziko.mobile
+---
+- tapOn:
+    text: "Continue"
+    optional: true
+- runFlow:
+    when:
+      visible: "Connected to:.*"
+    commands:
+      - pressKey: back
+- extendedWaitUntil:
+    visible: "Connecte-toi"
+    timeout: 90000
+- tapOn:
+    point: "50%,40%"
+- eraseText: 80
+- inputText: ${UAT_EMAIL}
+- tapOn:
+    point: "50%,49%"
+- eraseText: 80
+- inputText: ${UAT_PASSWORD}
+- hideKeyboard
+- takeScreenshot: login-filled
+- tapOn: "Se connecter"
+- extendedWaitUntil:
+    notVisible: "Connecte-toi"
+    timeout: 60000
