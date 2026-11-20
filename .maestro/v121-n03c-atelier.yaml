@@ -50,5 +50,10 @@ env:
     visible: "Démarrer la séance"
     timeout: 30000
 - takeScreenshot: n03c-08-session-preview
+- assertNotVisible: "Ajoute ton premier exercice"
 - tapOn: "Démarrer la séance"
+- extendedWaitUntil:
+    notVisible: "APERÇU DU PROGRAMME"
+    timeout: 30000
 - takeScreenshot: n03c-09-session-started
+- assertNotVisible: "Ajoute ton premier exercice"
