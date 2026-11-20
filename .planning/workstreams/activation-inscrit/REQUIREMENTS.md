@@ -11,36 +11,36 @@ Règles transverses : maquette Claude Design / `/gsd-ui-phase` avant plan et ex�
 
 ### Quêtes dès l'inscription (QNEW)
 
-- [ ] **QNEW-01**: Un compte neuf a ses quêtes actives dès son arrivée sur l'accueil, sans avoir ouvert l'écran Récompenses
-- [ ] **QNEW-02**: La création des quêtes ne dépend plus du déblocage de l'écran Récompenses (niveau 3) et ne crée pas de doublons
-- [ ] **QNEW-03**: L'accueil affiche un bloc Quêtes (3 actives max) avec titre, progression et état de complétion
-- [ ] **QNEW-04**: Chaque quête indique l'action à faire pour la compléter et y mène en un tap
-- [ ] **QNEW-05**: Au niveau 1, aucune quête ne renvoie vers un écran verrouillé
-- [ ] **QNEW-06**: Une quête complétée se met à jour sur l'accueil sans relancer l'app
-- [ ] **QNEW-07**: Aucune quête « échouée » n'est affichée (philosophie non punitive)
+- [x] **QNEW-01**: Un compte neuf a ses quêtes actives dès son arrivée sur l'accueil, sans avoir ouvert l'écran Récompenses
+- [x] **QNEW-02**: La création des quêtes ne dépend plus du déblocage de l'écran Récompenses (niveau 3) et ne crée pas de doublons
+- [x] **QNEW-03**: L'accueil affiche un bloc Quêtes (3 actives max) avec titre, progression et état de complétion
+- [x] **QNEW-04**: Chaque quête indique l'action à faire pour la compléter et y mène en un tap
+- [x] **QNEW-05**: Au niveau 1, aucune quête ne renvoie vers un écran verrouillé
+- [x] **QNEW-06**: Une quête complétée se met à jour sur l'accueil sans relancer l'app
+- [x] **QNEW-07**: Aucune quête « échouée » n'est affichée (philosophie non punitive)
 
 ### Premier entraînement (FWKO)
 
-- [ ] **FWKO-01**: Un compte sans programme ni séance voit « Crée ton premier entraînement » en toute première carte de l'accueil
-- [ ] **FWKO-02**: La carte propose 3 chemins (Manuel, IA simple, Atelier IA), chacun avec une phrase d'explication et le coût en crédits pour les deux IA
-- [ ] **FWKO-03**: Manuel ouvre l'assistant en 4 étapes (`program-builder`)
-- [ ] **FWKO-04**: IA simple ouvre l'assistant de séance unique (`ai-generate`)
-- [ ] **FWKO-05**: Atelier IA ouvre l'atelier conversationnel
-- [ ] **FWKO-06**: La carte disparaît dès qu'un programme est actif ou qu'une séance est terminée, et cohabite avec la carte Mission du jour
-- [ ] **FWKO-07**: Crédits épuisés : les chemins IA le disent avant l'ouverture et Manuel reste proposé
+- [x] **FWKO-01**: Un compte sans programme ni séance voit « Crée ton premier entraînement » en toute première carte de l'accueil
+- [x] **FWKO-02**: La carte propose 3 chemins (Manuel, IA simple, Atelier IA), chacun avec une phrase d'explication et le coût en crédits pour les deux IA
+- [x] **FWKO-03**: Manuel ouvre l'assistant en 4 étapes (`program-builder`)
+- [x] **FWKO-04**: IA simple ouvre l'assistant de séance unique (`ai-generate`)
+- [x] **FWKO-05**: Atelier IA ouvre l'atelier conversationnel
+- [x] **FWKO-06**: La carte disparaît dès qu'un programme est actif ou qu'une séance est terminée, et cohabite avec la carte Mission du jour
+- [x] **FWKO-07**: Crédits épuisés : les chemins IA le disent avant l'ouverture et Manuel reste proposé
 
 ### Clarifications du parcours (CLAR)
 
-- [ ] **CLAR-01**: Le bouton de l'onglet Entraînement dit ce qu'il fait (séance unique ou programme) et mène au bon écran
-- [ ] **CLAR-02**: La fin de l'onboarding ne promet plus un programme ou une « première séance demain matin » qui n'existent pas
-- [ ] **CLAR-03**: Le backend n'assigne comme première mission que l'hydratation à un compte de niveau 1
-- [ ] **CLAR-04**: Le bouton de la première mission n'est jamais renvoyé à l'accueil par le garde de route
+- [x] **CLAR-01**: Le bouton de l'onglet Entraînement dit ce qu'il fait (séance unique ou programme) et mène au bon écran
+- [x] **CLAR-02**: La fin de l'onboarding ne promet plus un programme ou une « première séance demain matin » qui n'existent pas
+- [x] **CLAR-03**: Le backend n'assigne comme première mission que l'hydratation à un compte de niveau 1
+- [x] **CLAR-04**: Le bouton de la première mission n'est jamais renvoyé à l'accueil par le garde de route
 
 ### UAT compte neuf (UATN)
 
-- [ ] **UATN-01**: Claude vérifie, avec captures sur émulateur, le parcours inscription → onboarding → 1re conversation → accueil
-- [ ] **UATN-02**: Claude vérifie que les quêtes sont visibles sur l'accueil et complétables
-- [ ] **UATN-03**: Claude vérifie que chacun des 3 chemins mène à une séance lancée (IA avec faux Anthropic)
+- [x] **UATN-01**: Claude vérifie, avec captures sur émulateur, le parcours inscription → onboarding → 1re conversation → accueil
+- [x] **UATN-02**: Claude vérifie que les quêtes sont visibles sur l'accueil et complétables
+- [ ] **UATN-03**: Claude vérifie que chacun des 3 chemins mène à une séance lancée (IA avec faux Anthropic) — PARTIEL (UAT 2026-11-20) : Atelier IA et IA simple lancent une séance ; Manuel non prouvé (clavier émulateur) ; voir 03-UAT.md
 
 ## Future Requirements (reporté)
 
@@ -59,26 +59,26 @@ Règles transverses : maquette Claude Design / `/gsd-ui-phase` avant plan et ex�
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QNEW-01 | Phase 1 | Pending |
-| QNEW-02 | Phase 1 | Pending |
-| QNEW-03 | Phase 1 | Pending |
-| QNEW-04 | Phase 1 | Pending |
-| QNEW-05 | Phase 1 | Pending |
-| QNEW-06 | Phase 1 | Pending |
-| QNEW-07 | Phase 1 | Pending |
-| CLAR-03 | Phase 1 | Pending |
-| CLAR-04 | Phase 1 | Pending |
-| FWKO-01 | Phase 2 | Pending |
-| FWKO-02 | Phase 2 | Pending |
-| FWKO-03 | Phase 2 | Pending |
-| FWKO-04 | Phase 2 | Pending |
-| FWKO-05 | Phase 2 | Pending |
-| FWKO-06 | Phase 2 | Pending |
-| FWKO-07 | Phase 2 | Pending |
-| CLAR-01 | Phase 2 | Pending |
-| CLAR-02 | Phase 2 | Pending |
-| UATN-01 | Phase 3 | Pending |
-| UATN-02 | Phase 3 | Pending |
-| UATN-03 | Phase 3 | Pending |
+| QNEW-01 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-02 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-03 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-04 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-05 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-06 | Phase 1 | Verified (code+tests+UAT) |
+| QNEW-07 | Phase 1 | Verified (code+tests+UAT) |
+| CLAR-03 | Phase 1 | Verified (code+tests+UAT) |
+| CLAR-04 | Phase 1 | Verified (code+tests+UAT) |
+| FWKO-01 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-02 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-03 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-04 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-05 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-06 | Phase 2 | Verified (code+tests+UAT) |
+| FWKO-07 | Phase 2 | Verified (code+tests+UAT) |
+| CLAR-01 | Phase 2 | Verified (code+tests+UAT) |
+| CLAR-02 | Phase 2 | Verified (code+tests+UAT) |
+| UATN-01 | Phase 3 | Verified (UAT émulateur) |
+| UATN-02 | Phase 3 | Verified (UAT émulateur) |
+| UATN-03 | Phase 3 | Partial (2 chemins sur 3 prouvés ; Manuel non prouvé) |
 
 **Coverage:** 21/21 mapped, 0 orphans.
