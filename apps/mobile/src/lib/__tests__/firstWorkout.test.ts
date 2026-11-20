@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  firstWorkoutVisibility, hideEmptyMissionVariant, formeDuJourPlacement, computeCreditView, pathAction, pathCostView, pathA11yLabel,
+  firstWorkoutVisibility, hideEmptyMissionVariant, HOME_BLOCK_ORDER, computeCreditView, pathAction, pathCostView, pathA11yLabel,
   sessionButtonBadge, FIRST_WORKOUT_PATHS, FIRST_WORKOUT_COPY,
 } from '../firstWorkout';
 
@@ -47,13 +47,17 @@ describe('firstWorkoutVisibility (FWKO-01, FWKO-06, R1/R3/R4)', () => {
   });
 });
 
-describe('formeDuJourPlacement (D-08 / R2)', () => {
-  it('carte visible ou en chargement -> Forme du jour SOUS le bloc Quetes', () => {
-    expect(formeDuJourPlacement('show')).toBe('below-quests');
-    expect(formeDuJourPlacement('loading')).toBe('below-quests');
+describe('HOME_BLOCK_ORDER (ordre unique de l accueil)', () => {
+  it('carte > Mission > Quetes > Forme du jour, dans tous les etats', () => {
+    expect([...HOME_BLOCK_ORDER]).toEqual(['first-workout-card', 'mission', 'quests', 'forme-du-jour']);
   });
-  it('carte masquee -> ordre historique inchange (Forme du jour avant Mission)', () => {
-    expect(formeDuJourPlacement('hide')).toBe('above-mission');
+  it('index.tsx rend Forme du jour apres le bloc Quetes, sans placement conditionnel', () => {
+    const src = readFileSync(resolve(__dirname, '../../../app/(app)/index.tsx'), 'utf8');
+    expect(src).not.toContain('formeDuJourPlacement');
+    expect(src.indexOf('<QuestsBlock />')).toBeGreaterThan(0);
+    expect(src.indexOf('{formeDuJourBlock}')).toBeGreaterThan(src.indexOf('<QuestsBlock />'));
+    expect(src.indexOf('<QuestsBlock />')).toBeGreaterThan(src.indexOf('<MissionCardContent'));
+    expect(src.match(/{formeDuJourBlock}/g)).toHaveLength(1);
   });
 });
 

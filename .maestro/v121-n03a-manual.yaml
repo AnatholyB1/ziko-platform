@@ -40,9 +40,13 @@ env:
     timeout: 10000
 - tapOn: "Nom de l'exercice..."
 - inputText: "Squat"
-- hideKeyboard
+# Le texte libre n'est plus accepte : on choisit une suggestion du catalogue (testID exercise-suggestion-0).
+- extendedWaitUntil:
+    visible:
+      id: "exercise-suggestion-0"
+    timeout: 15000
 - tapOn:
-    point: "90%,27%"
+    id: "exercise-suggestion-0"
 - assertVisible: "1 exercice"
 - takeScreenshot: n03a-04-step4
 - tapOn: "Creer mon programme"
@@ -64,9 +68,9 @@ env:
     timeout: 30000
 - takeScreenshot: n03a-07-training-tab
 - tapOn: "Démarrer la séance d'aujourd'hui.*"
-# Limite d'emulateur : le clavier ne laisse passer que le 1er caractere du nom ("S"), absent du catalogue -> alerte "Séance indisponible".
-# Une seance demarree avec exercices est prouvee par le chemin Atelier (meme startPlannedSession) ; ici on capture le resultat.
+# L'exercice vient du catalogue : la seance doit s'ouvrir (plus de "Séance indisponible").
 - extendedWaitUntil:
-    visible: "(Séance indisponible|Démarrer la séance)"
+    visible: "Démarrer la séance"
     timeout: 30000
+- assertNotVisible: "Séance indisponible"
 - takeScreenshot: n03a-08-after-start-tap

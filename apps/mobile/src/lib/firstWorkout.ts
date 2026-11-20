@@ -35,12 +35,11 @@ export function hideEmptyMissionVariant(v: CardVisibility): boolean {
 }
 
 /**
- * D-08 / R2 : carte > Mission > Quetes > reste. Quand la carte est visible (ou en chargement), "Forme du jour" passe
- * SOUS le bloc Quetes ; sinon l'ordre historique est conserve (Forme du jour avant Mission).
+ * Ordre vertical UNIQUE de l'accueil, dans tous les etats (UAT phase 3 : l'ordre variait selon la carte) :
+ * [carte "Crée ton premier entraînement" quand visible] > Mission du jour > Quetes du jour > Forme du jour.
+ * Decision produit : "Forme du jour" passe aussi sous les Quetes pour un compte avec programme actif.
  */
-export function formeDuJourPlacement(v: CardVisibility): 'above-mission' | 'below-quests' {
-  return v === 'hide' ? 'above-mission' : 'below-quests';
-}
+export const HOME_BLOCK_ORDER = ['first-workout-card', 'mission', 'quests', 'forme-du-jour'] as const;
 
 // ── Etats de credit ───────────────────────────────────────────────────────────────────
 

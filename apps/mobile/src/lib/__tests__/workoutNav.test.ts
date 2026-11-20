@@ -44,6 +44,27 @@ describe('validateWizardExercises (bug 3)', () => {
   it('accepte au moins un exercice', () => {
     expect(validateWizardExercises(['Squat']).ok).toBe(true);
   });
+  it('texte libre non reconnu dans le catalogue : bloque meme avec des exercices valides', () => {
+    const r = validateWizardExercises(['Squat'], 'Zercher carry');
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.title).toBe('Exercice non reconnu');
+      expect(r.message).toContain('Zercher carry');
+    }
+    expect(validateWizardExercises(['Squat'], null).ok).toBe(true);
+    expect(validateWizardExercises(['Squat'], '  ').ok).toBe(true);
+  });
+  it('program-builder : suggestions, erreur inline, texte libre bloque, aucun composant defini dans le rendu', () => {
+    const src = readFileSync(resolve(__dirname, '../../../app/(app)/workout/program-builder.tsx'), 'utf8');
+    expect(src).toContain('suggestExercises(');
+    expect(src).toContain('testID="exercise-entry-error"');
+    expect(src).toContain('testID={`exercise-suggestion-${i}`}');
+    expect(src).toContain('disabled={!canContinue() || isSaving}');
+    // le texte libre n'est jamais ajoute tel quel : seul un libelle du catalogue entre dans la liste
+    expect(src).not.toMatch(/setExercises\(\(prev\) => \[\.\.\.prev, trimmed\]\)/);
+    // StepN() et non <StepN /> : un composant inline remonte le TextInput a chaque frappe (perte de focus)
+    expect(src).not.toMatch(/<Step[1-4] \/>/);
+  });
 });
 
 describe('wizardActivationPlan (bug 2, decision : 1er programme auto-actif)', () => {
@@ -67,7 +88,7 @@ describe('ecrans : creation / activation -> tableau Entrainement', () => {
     const src = read('workout/program-builder.tsx');
     expect(src).toContain("setActiveProgram(supabase as any, 'ai', programId)");
     expect(src).toContain('goToTrainingDashboard(router)');
-    expect(src).toContain('validateWizardExercises(exercises)');
+    expect(src).toContain('validateWizardExercises(finalExercises, blockedEntry)');
     expect(src).toContain('refreshProgramQueries(queryClient)');
   });
   it('atelier : apres activation, retour au tableau (pas la liste Programmes)', () => {

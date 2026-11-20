@@ -12,6 +12,13 @@ describe('generatedStartFeedback (UATN-03)', () => {
     expect(fb.navigate).toBe(true);
     expect(fb.toast).toContain('Xyz');
   });
+  it('exercices non reconnus : jamais ignores en silence, message "N exercice(s) non reconnu(s) ignore(s) : ..."', () => {
+    const one = generatedStartFeedback({ ok: true, unresolved: ['Gainage planche'] });
+    expect(one.toast).toBe('1 exercice non reconnu ignoré : Gainage planche');
+    const many = generatedStartFeedback({ ok: true, unresolved: ['A b', 'C d', 'E f', 'G h'] });
+    expect(many.toast).toBe('4 exercices non reconnus ignorés : A b, C d, E f +1');
+    expect(many.navigate).toBe(true);
+  });
   it('rien charge -> aucune navigation, message de regeneration', () => {
     const fb = generatedStartFeedback({ ok: false, reason: 'no_exercises', unresolved: ['Xyz'] });
     expect(fb.navigate).toBe(false);
