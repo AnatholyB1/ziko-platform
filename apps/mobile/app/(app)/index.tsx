@@ -610,7 +610,6 @@ export default function DashboardScreen() {
 
   // v1.21 P2 : bloc extrait pour pouvoir le placer avant Mission (ordre historique) ou apres Quetes (carte visible).
   const formeDuJourBlock = (
-    {/* ── FormeDuJour ────────────────────────────────── */}
     <View style={{
       backgroundColor: theme.surface, borderRadius: 20, padding: 16,
       shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
