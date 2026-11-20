@@ -3,7 +3,7 @@
 Branche `phase/01-quetes` (depuis `milestone/v1.21`, fusionnée avant le gate). Aucune base touchée, aucun push.
 
 ## Livré
-- Migration (fichier seul) `supabase/portfolio-migrations/20261215010100_welcome_quests_meal_template.sql` : template starter `starter_daily_meal` (nutrition_logs, 15 pièces), ordre eau/repas/séance, libellés de bienvenue, `starter_weekly_train` n'est plus starter (plafond 3, A1). Aucune fonction modifiée : `ziko_sync_quests` (20261201290400) crée déjà un starter par modèle `is_starter AND is_active` avec `ON CONFLICT (user_id, slug, period_start) DO NOTHING`.
+- Migration (fichier seul) `supabase/portfolio-migrations/20261215010100_welcome_quests_meal_template.sql` : template starter `starter_daily_meal` (nutrition_logs, 15 pièces), ordre eau/repas/séance, libellés de bienvenue, `starter_weekly_train` est CONSERVÉ (D-11 : l'accueil plafonne à 3 en préférant les quotidiennes). Aucune fonction modifiée : `ziko_sync_quests` (20261201290400) crée déjà un starter par modèle `is_starter AND is_active` avec `ON CONFLICT (user_id, slug, period_start) DO NOTHING`.
 - Mobile : `src/lib/homeQuests.ts` (pur), `src/hooks/useHomeQuests.ts` (lecture = RPC, erreur remontée), `src/components/home/QuestsBlock.tsx`, une insertion (+4 lignes) dans `app/(app)/index.tsx` sous Mission du jour. Stub de test `react-native.tsx` étendu (Animated, AccessibilityInfo, aria-label/role).
 - Backend CLAR-03 : prompt + `coerceFirstMission` (niveau 1 -> `hydration_log`, titre réécrit fr/en) ; la route passe la locale à `assess_profile`.
 - CLAR-04 : table métrique->route validée par `isPluginRouteLocked` ; aucun changement de `_layout.tsx` / `gating.ts` nécessaire (preuve par test).
@@ -21,7 +21,7 @@ Voir `01-01-PLAN.md` (table exigence -> test). Tout est couvert par tests automa
 - Haptique : `expo-haptics` déjà dépendance du mobile, utilisé tel quel.
 
 ## À faire par un humain
-- Appliquer la migration `20261215010100` (d'abord sur `uat-v1-20`). Décision à confirmer : le quête hebdo « S'entraîner 3 fois » cesse d'être générée pour tous les comptes sans quête IA (comptes existants compris) ; sinon retirer l'étape 4 de la migration (le bloc tronque alors à 3 en préférant les quotidiennes).
+- Appliquer la migration `20261215010100` (d'abord sur `uat-v1-20`). Décision prise (D-11) : la quête hebdo « S'entraîner 3 fois » est gardée ; la migration ne la modifie pas.
 - Comptes existants : ils recevront aussi la quête « Ajoute un repas » à la prochaine synchro.
 
 ## Non prouvé

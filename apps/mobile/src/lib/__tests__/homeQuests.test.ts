@@ -175,11 +175,11 @@ describe('QNEW-02: starter set is idempotent and welcome-shaped (static check of
     expect(s).toMatch(/ON CONFLICT \(user_id, slug, period_start\) DO NOTHING/);
     expect(sql('20261201130100_quest_tables.sql')).toMatch(/UNIQUE \(user_id, slug, period_start\)/);
   });
-  it('the v1.21 migration adds the meal template (nutrition_logs), keeps water/workout starters, drops the weekly starter', () => {
+  it('the v1.21 migration adds the meal template (nutrition_logs), keeps water/workout starters, keeps the weekly starter (D-11)', () => {
     const s = sql('20261215010100_welcome_quests_meal_template.sql');
     expect(s).toMatch(/starter_daily_meal'.*'nutrition_logs'/s);
     expect(s).toMatch(/ON CONFLICT \(slug\) DO NOTHING/);
-    expect(s).toMatch(/is_starter = false WHERE slug = 'starter_weekly_train'/);
+    expect(s).not.toMatch(/is_starter\s*=\s*false/i);
     expect(s).not.toMatch(/\b(DELETE|DROP|TRUNCATE)\b/i);
     expect(s).not.toMatch(/\p{Extended_Pictographic}/u);
   });
