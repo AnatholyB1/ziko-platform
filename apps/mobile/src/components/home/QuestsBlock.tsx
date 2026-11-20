@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { progressText, questRatio, type Quest } from '@ziko/plugin-gamification/quests';
 import { useAuthStore } from '../../stores/authStore';
 import { useHomeQuests } from '../../hooks/useHomeQuests';
+import { useQuestRefreshTriggers } from '../../hooks/useQuestRefreshTriggers';
 import {
   CREATING_RETRY_MS, activeRowLabel, coinsVisible, detectCompletions, doneRowLabel, homeCompletedNote,
   homeQuestsHeaderCount, homeQuestsState, homeToastText, totalCoins, visibleHomeQuests,
@@ -33,12 +34,12 @@ const surtitre = { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.8,
 
 /** Apparition : fondu + decalage Y (200 ms) ; reduced motion = rendu fixe. */
 function FadeIn({ children, delay, reduceMotion }: { children: React.ReactNode; delay: number; reduceMotion: boolean }) {
+  // Toujours un Animated.View (pas de remontage si la preference change) ; valeur deja a 1 en reduced motion.
   const v = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion) { v.setValue(1); return; }
     Animated.timing(v, { toValue: 1, duration: 200, delay, useNativeDriver: true }).start();
   }, [reduceMotion]);
-  if (reduceMotion) return <>{children}</>;
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
       {children}
@@ -206,7 +207,8 @@ export function QuestsBlockView(p: QuestsBlockViewProps) {
         {showCount ? <Text style={{ fontSize: 14, color: C.muted }}>{homeQuestsHeaderCount(p.visible)}</Text> : null}
       </View>
       {p.toast ? (
-        <View accessibilityLiveRegion="polite" style={{ marginBottom: 8, borderRadius: 12, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.okBorder, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        // Pas de live region : l'annonce passe par announceForAccessibility (une seule annonce, iOS et Android).
+        <View style={{ marginBottom: 8, borderRadius: 12, backgroundColor: C.okTint, borderWidth: 1, borderColor: C.okBorder, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name="checkmark-circle" size={18} color={C.ok} />
           <Text style={{ flex: 1, fontSize: 14, color: C.ok }}>{p.toast}</Text>
         </View>
@@ -218,11 +220,14 @@ export function QuestsBlockView(p: QuestsBlockViewProps) {
 
 const TOAST_MS = 3000;
 
+// Preference « reduire les animations » : lue une fois pour la session (lecture synchrone aux montages suivants).
+let cachedReduceMotion: boolean | null = null;
+
 /** Bloc connecte : lecture/synchro, completion sans relance, haptique, annonce d'accessibilite. */
 export function QuestsBlock({ creatingRetryMs = CREATING_RETRY_MS }: { creatingRetryMs?: number }) {
   const level = useAuthStore((s) => s.effectiveLevel);
   const { data, isLoading, isError, refetch } = useHomeQuests();
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState<boolean | null>(cachedReduceMotion);
   const [toast, setToast] = useState('');
   const [justDone, setJustDone] = useState<ReadonlySet<string>>(new Set());
   const [canRetryCreating, setCanRetryCreating] = useState(false);
@@ -233,9 +238,15 @@ export function QuestsBlock({ creatingRetryMs = CREATING_RETRY_MS }: { creatingR
 
   useEffect(() => {
     let alive = true;
-    AccessibilityInfo.isReduceMotionEnabled?.().then((v: boolean) => { if (alive) setReduceMotion(!!v); }).catch(() => {});
-    return () => { alive = false; };
+    const apply = (v: boolean) => { cachedReduceMotion = !!v; if (alive) setReduceMotion(!!v); };
+    // La liste (donc toute animation) n'est affichee qu'une fois la preference connue.
+    try { AccessibilityInfo.isReduceMotionEnabled?.().then(apply).catch(() => apply(false)); } catch { apply(false); }
+    const sub = (AccessibilityInfo as any).addEventListener?.('reduceMotionChanged', apply);
+    return () => { alive = false; sub?.remove?.(); };
   }, []);
+
+  // D-07 : relecture au retour au premier plan et au passage de minuit.
+  useQuestRefreshTriggers();
 
   // A l'ouverture / au retour sur l'accueil : relecture (la RPC est idempotente).
   useFocusEffect(useCallback(() => { void refetch({ cancelRefetch: false }); }, [refetch]));
@@ -261,7 +272,7 @@ export function QuestsBlock({ creatingRetryMs = CREATING_RETRY_MS }: { creatingR
   }, [data]);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
-  const state = homeQuestsState({ loading: isLoading, error: isError && !data, visible });
+  const state = homeQuestsState({ loading: isLoading || (reduceMotion === null && !isError), error: isError && !data, visible });
   useEffect(() => {
     setCanRetryCreating(false);
     if (state !== 'creating') return;
@@ -274,7 +285,7 @@ export function QuestsBlock({ creatingRetryMs = CREATING_RETRY_MS }: { creatingR
       state={state}
       visible={visible}
       level={level}
-      reduceMotion={reduceMotion}
+      reduceMotion={reduceMotion !== false}
       toast={toast}
       justDone={justDone}
       canRetryCreating={canRetryCreating}

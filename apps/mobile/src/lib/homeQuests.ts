@@ -57,6 +57,12 @@ export interface HomeQuest {
   done: boolean;
 }
 
+/** Millisecondes jusqu'au prochain minuit LOCAL (toujours > 0). */
+export function msUntilNextLocalMidnight(now: Date): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+  return Math.max(1, next.getTime() - now.getTime());
+}
+
 export function questAction(q: Pick<Quest, 'metric'>, level: number): QuestAction | null {
   const a = QUEST_ACTIONS[q.metric];
   if (!a) return null;
