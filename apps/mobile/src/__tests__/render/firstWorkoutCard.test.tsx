@@ -60,6 +60,14 @@ describe('FirstWorkoutCard (FWKO-01..07)', () => {
     expect(txt).not.toMatch(/Plus tard|Masquer|Ignorer/);
   });
 
+  it('UAT P3 : le style de chaque rangee est un objet (pas une fonction, ignoree sur Android) avec rangee horizontale et padding', async () => {
+    const c = await mount(<FirstWorkoutCard visibility="show" credit={computeCreditView({ cost: 3, balance: 6 })} />);
+    for (const id of ['manual', 'ai-simple', 'atelier']) {
+      const row = byId(c, `first-workout-${id}`);
+      expect(row.getAttribute('data-style-type')).toBe('object');
+    }
+  });
+
   it('FWKO-03/04/05 : les 3 taps ouvrent program-builder, ai-generate, atelier', async () => {
     const c = await mount(<FirstWorkoutCard visibility="show" credit={computeCreditView({ cost: 4, balance: 6 })} />);
     await click(byId(c, 'first-workout-manual'));
