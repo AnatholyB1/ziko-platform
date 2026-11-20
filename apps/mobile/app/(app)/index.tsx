@@ -17,7 +17,7 @@ import { programHeader } from '../../src/lib/programs';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
-import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh, isPluginRouteLocked } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -26,6 +26,9 @@ import { Skeleton, FormRing, PluginsDrawer } from '@ziko/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   useActiveAIProgram,
+  useOnboardingMission,
+  ONBOARDING_MISSION_ROUTES,
+  type OnboardingMission,
   useWeeklySessions,
   useRecentSessions,
   useProfile,
@@ -69,13 +72,16 @@ async function fireAndForget(tool: string, input: Record<string, unknown>): Prom
 function MissionCardContent({
   isLoading,
   activeProgram,
+  onboardingMission,
   onStart,
 }: {
   isLoading: boolean;
   activeProgram: any | null;
+  onboardingMission?: OnboardingMission | null;
   onStart: () => void;
 }) {
   const theme = useThemeStore((s) => s.theme);
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
 
   // Loading state
   if (isLoading) {
@@ -84,6 +90,39 @@ function MissionCardContent({
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '40%', marginBottom: 10 }} />
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '75%', marginBottom: 8 }} />
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '55%' }} />
+      </View>
+    );
+  }
+
+  // First mission from Ziko's onboarding chat (no program yet)
+  const missionRoute = onboardingMission ? ONBOARDING_MISSION_ROUTES[onboardingMission.micro_action] : undefined;
+  // Never offer a CTA that the plugin route guard would bounce back home (journal/measurements unlock at level 2).
+  const missionLocked = missionRoute ? isPluginRouteLocked(missionRoute.split('/'), effectiveLevel) : true;
+  if (!activeProgram && onboardingMission && missionRoute && !missionLocked) {
+    return (
+      <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, padding: 18, overflow: 'hidden', position: 'relative' }}>
+        <Svg width="100%" height={180} style={{ position: 'absolute', top: 0, left: 0 }}>
+          <Circle cx={300} cy={-20} r={160} fill="#FF5C1A" opacity={0.14} />
+        </Svg>
+        <Text style={{
+          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 0.10 * 11, color: 'rgba(255,250,246,0.65)',
+        }}>
+          Mission du jour
+        </Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFAF6', marginTop: 6, maxWidth: '85%' }}>
+          {onboardingMission.mission_title}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push(missionRoute as any)}
+          activeOpacity={0.8}
+          style={{
+            marginTop: 16, paddingVertical: 12, borderRadius: 9999,
+            backgroundColor: '#FF5C1A', alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' }}>C'est parti</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -302,6 +341,7 @@ export default function DashboardScreen() {
   const { data: profile } = useProfile();
   const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
+  const { data: onboardingMission, isLoading: missionLoading } = useOnboardingMission();
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
   const { data: sleepSettings } = useSleepSettings();
@@ -693,7 +733,7 @@ export default function DashboardScreen() {
 
         {/* ── MissionCard ────────────────────────────────── */}
         <View style={{ marginBottom: 12 }}>
-          <MissionCardContent isLoading={programLoading} activeProgram={activeProgram ?? null} onStart={handleStartMission} />
+          <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} />
         </View>
 
         {/* ── AICoachInline ──────────────────────────────── */}
