@@ -1,0 +1,54 @@
+# v1.21 UATN-03 (chemin Atelier IA) : carte -> Atelier IA -> message (chip de demarrage) -> brouillon (fake Anthropic,
+# outil workshop_set_draft empile par scripts/v121-queue-atelier.js) -> Enregistrer -> programme actif -> accueil (carte disparue)
+# -> onglet Entraînement -> démarrer la séance.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- takeScreenshot: n03c-01-home-card
+- tapOn: "Atelier IA"
+- extendedWaitUntil:
+    visible: "Construis ton programme, point par point"
+    timeout: 30000
+- takeScreenshot: n03c-02-atelier-initial
+- runScript: scripts/v121-queue-atelier.js
+- tapOn: "Prise de masse en 4 jours par semaine"
+- extendedWaitUntil:
+    visible: "BROUILLON"
+    timeout: 90000
+- takeScreenshot: n03c-03-draft
+- assertVisible: "Programme UAT Atelier"
+- scrollUntilVisible:
+    element: "Enregistrer le programme"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "Enregistrer le programme"
+- extendedWaitUntil:
+    visible: "Programme enregistré"
+    timeout: 30000
+- takeScreenshot: n03c-04-saved-alert
+- tapOn: "Définir comme programme actif"
+- extendedWaitUntil:
+    visible: "Accueil"
+    timeout: 30000
+- takeScreenshot: n03c-05-after-activate
+- tapOn: "Accueil"
+- extendedWaitUntil:
+    notVisible: "Crée ton premier entraînement"
+    timeout: 20000
+- takeScreenshot: n03c-06-home-card-gone
+- assertNotVisible: "Crée ton premier entraînement"
+- tapOn: "Entraînement"
+- takeScreenshot: n03c-07-training-tab
+- extendedWaitUntil:
+    visible: "Démarrer la séance d'aujourd'hui.*"
+    timeout: 30000
+- tapOn: "Démarrer la séance d'aujourd'hui.*"
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
+- takeScreenshot: n03c-08-session-preview
+- tapOn: "Démarrer la séance"
+- takeScreenshot: n03c-09-session-started

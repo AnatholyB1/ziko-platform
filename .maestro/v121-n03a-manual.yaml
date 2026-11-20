@@ -1,0 +1,72 @@
+# v1.21 UATN-03 (chemin Manuel) : carte "Crée ton premier entraînement" -> Manuel (program-builder 4 étapes) ->
+# "Creer mon programme" -> accueil (la carte doit disparaitre) -> onglet Entraînement -> démarrer la séance du jour.
+# Les 7 jours sont coches pour que la séance tombe aujourd'hui quel que soit le jour d'execution.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- takeScreenshot: n03a-01-home-card
+- tapOn: "Manuel"
+- extendedWaitUntil:
+    visible: "Etape 1/4"
+    timeout: 30000
+- takeScreenshot: n03a-02-step1
+- tapOn: "Force"
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 2/4"
+    timeout: 10000
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 3/4"
+    timeout: 10000
+- tapOn: "L"
+- tapOn:
+    text: "M"
+    index: 0
+- tapOn:
+    text: "M"
+    index: 1
+- tapOn: "J"
+- tapOn: "V"
+- tapOn: "S"
+- tapOn: "D"
+- takeScreenshot: n03a-03-days
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 4/4"
+    timeout: 10000
+- tapOn: "Nom de l'exercice..."
+- inputText: "Squat"
+- hideKeyboard
+- tapOn:
+    point: "90%,27%"
+- assertVisible: "1 exercice"
+- takeScreenshot: n03a-04-step4
+- tapOn: "Creer mon programme"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 6000
+- takeScreenshot: n03a-05-after-create
+# Retour accueil : la carte doit avoir disparu (programme actif), sans relancer l'app.
+- tapOn: "Accueil"
+- extendedWaitUntil:
+    notVisible: "Crée ton premier entraînement"
+    timeout: 20000
+- takeScreenshot: n03a-06-home-card-gone
+- assertNotVisible: "Crée ton premier entraînement"
+# Onglet Entrainement : le programme est actif, la séance du jour peut démarrer.
+- tapOn: "Entraînement"
+- extendedWaitUntil:
+    visible: "Démarrer la séance d'aujourd'hui.*"
+    timeout: 30000
+- takeScreenshot: n03a-07-training-tab
+- tapOn: "Démarrer la séance d'aujourd'hui.*"
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
+- takeScreenshot: n03a-08-session-preview
+- tapOn: "Démarrer la séance"
+- takeScreenshot: n03a-09-session-started

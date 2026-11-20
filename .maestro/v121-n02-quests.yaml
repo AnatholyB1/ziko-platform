@@ -1,0 +1,83 @@
+# v1.21 UATN-02 : bloc Quetes de l'accueil d'un compte neuf : 3 actives, CTA jamais renvoyes a l'accueil au niveau 1,
+# completion (eau 2 L) visible sans relancer l'app, aucune quete echouee, aucune piece au niveau 1.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+- takeScreenshot: n02-01-quests-initial
+- assertVisible: "3 en cours"
+- assertVisible: "Bois 2 litres d'eau"
+- assertVisible: "Ajoute chaque verre dans Hydratation."
+- assertVisible: "Ajoute un repas"
+- assertVisible: "Termine une séance"
+- assertVisible: "0 / 2 L"
+- assertNotVisible: ".*[Ee]chou.*"
+- assertNotVisible: ".*[Ee]xpir.*"
+- assertNotVisible: ".*[Mm]anqu.*"
+- assertNotVisible: ".*pièces.*"
+# CTA repas : ouvre Nutrition (pas l'accueil).
+- tapOn: "Ajouter"
+- extendedWaitUntil:
+    notVisible: "Quêtes du jour"
+    timeout: 20000
+- takeScreenshot: n02-02-cta-meal
+- assertNotVisible: "Crée ton premier entraînement"
+- tapOn: "Accueil"
+- extendedWaitUntil:
+    visible: "Crée ton premier entraînement"
+    timeout: 30000
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+# CTA seance : ouvre l'onglet Entrainement.
+- tapOn: "Séance"
+- extendedWaitUntil:
+    notVisible: "Quêtes du jour"
+    timeout: 20000
+- takeScreenshot: n02-03-cta-workout
+- assertNotVisible: "Crée ton premier entraînement"
+- tapOn: "Accueil"
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+# CTA eau : ouvre Hydratation.
+- tapOn: "Boire"
+- extendedWaitUntil:
+    visible: "Logger rapide"
+    timeout: 30000
+- takeScreenshot: n02-04-cta-water
+- assertNotVisible: "Quêtes du jour"
+# 2 L = 750 + 750 + 500
+- tapOn: "Ajouter 750 millilitres"
+- extendedWaitUntil:
+    visible: "Ajouter 750 millilitres"
+    timeout: 10000
+- tapOn: "Ajouter 750 millilitres"
+- extendedWaitUntil:
+    visible: "Ajouter 500 millilitres"
+    timeout: 10000
+- tapOn: "Ajouter 500 millilitres"
+- takeScreenshot: n02-05-water-logged
+# Retour a l'accueil SANS relancer l'app : la quete eau doit passer en Terminé.
+- tapOn: "Accueil"
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+- extendedWaitUntil:
+    visible: "Terminé.*"
+    timeout: 20000
+- takeScreenshot: n02-06-water-quest-done
+- assertVisible: "Bois 2 litres d'eau"
+- assertVisible: "2 en cours"
+- assertNotVisible: ".*[Ee]chou.*"
+- assertNotVisible: ".*[Ee]xpir.*"
+- assertNotVisible: ".*pièces.*"

@@ -1,0 +1,30 @@
+# v1.21 UATN: les etapes d'onboarding (compte frais, apres login) jusqu'a l'ecran de fin (step-7) puis le chat Ziko.
+# Remplace tf-common-onboarding-steps.yaml dont le dernier bouton ("C'est parti, demarrer ma journee") n'existe plus (CLAR-02).
+appId: com.ziko.mobile
+---
+- extendedWaitUntil:
+    visible: "Allez, on y va"
+    timeout: 90000
+- tapOn: "Allez, on y va"
+- tapOn: "Gagner en force"
+- tapOn: "Continuer"
+- tapOn: "Débutant"
+- tapOn: "Continuer"
+- tapOn: "Continuer"
+- tapOn: "Salle complète"
+- tapOn: "Continuer"
+- tapOn: "Homme"
+- tapOn: "Continuer"
+# Ecran de fin (CLAR-02) : variante B "C'est note", "La suite", bouton "Continuer".
+- extendedWaitUntil:
+    visible: "La suite"
+    timeout: 60000
+- takeScreenshot: 05-step7-end
+- assertVisible: "C.est noté.*"
+- assertVisible: "Une courte discussion avec Ziko"
+- assertNotVisible: "Ton programme.*"
+- assertNotVisible: "Première séance demain matin.*"
+- assertNotVisible: "Ton plan est prêt.*"
+- assertNotVisible: ".*Push.*Pull.*Legs.*"
+- assertNotVisible: "Construction de ton programme.*"
+- tapOn: "Continuer"
