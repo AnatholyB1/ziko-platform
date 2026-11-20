@@ -11,11 +11,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../src/lib/supabase';
 import {
   buildWizardProgramRow,
-  wizardSessionSummaries,
-  DAY_NAMES_FR,
   activationToast,
+  validateWizardExercises,
+  wizardActivationPlan,
   type ProgramItem,
 } from '../../../src/lib/programs';
+import { goToTrainingDashboard, refreshProgramQueries } from '../../../src/lib/workoutNav';
+import { neutralToast } from '../../../src/lib/neutralToast';
 import { loadAllPrograms, setActiveProgram } from '../../../src/lib/programsService';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -46,11 +48,6 @@ export default function ProgramBuilderScreen() {
   const theme = useThemeStore((s) => s.theme);
   const actionBg = getActionPrimary(theme);
   const queryClient = useQueryClient();
-
-  // End-of-wizard state (A09): the program row once saved + the program it would replace.
-  const [created, setCreated] = useState<{ id: string; name: string; programData: unknown } | null>(null);
-  const [replaced, setReplaced] = useState<ProgramItem | null>(null);
-  const [activating, setActivating] = useState(false);
 
   // Step state (1-4)
   const [step, setStep] = useState(1);
@@ -98,6 +95,13 @@ export default function ProgramBuilderScreen() {
   // ── Submit ───────────────────────────────────────────────────
 
   const handleFinish = async () => {
+    if (isSaving) return;
+    // UATN-03 : jamais de programme sans exercice (seances vides, impossibles a demarrer).
+    const check = validateWizardExercises(exercises);
+    if (!check.ok) {
+      showAlert(check.title, check.message);
+      return;
+    }
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -112,19 +116,61 @@ export default function ProgramBuilderScreen() {
 
       if (error || !row) throw error ?? new Error('Programme non enregistre');
 
-      let current: ProgramItem | null = null;
+      // Lu AVANT toute activation : decide si le programme devient actif d'office (aucun programme actif) ou non.
+      let current: ProgramItem | null | 'error' = null;
       try {
-        current = (await loadAllPrograms(supabase as any, user.id)).find((i) => i.isActive) ?? null;
+        current = (await loadAllPrograms(supabase as any, user.id)).find((i) => i.isActive && i.id !== String(row.id)) ?? null;
       } catch {
-        current = null;
+        current = 'error';
       }
-      await Promise.all(
-        [['programs'], ['program', 'active'], ['active-program'], ['ai_programs'], ['ai_program_active']].map((k) =>
-          queryClient.invalidateQueries({ queryKey: k }),
-        ),
-      );
-      setReplaced(current);
-      setCreated({ id: String(row.id), name: String(row.name), programData: row.program_data });
+      const programId = String(row.id);
+      const programName = String(row.name);
+      const plan = wizardActivationPlan(current);
+
+      if (plan.kind === 'auto') {
+        try {
+          await setActiveProgram(supabase as any, 'ai', programId);
+        } catch {
+          await refreshProgramQueries(queryClient);
+          showAlert('Programme créé', `« ${programName} » est enregistré, mais son activation a échoué. Active-le depuis la liste de tes programmes.`, [
+            { text: 'Mes programmes', onPress: () => router.replace('/(app)/workout/programs' as any) },
+          ]);
+          return;
+        }
+        await refreshProgramQueries(queryClient);
+        neutralToast(activationToast(programName));
+        goToTrainingDashboard(router);
+        return;
+      }
+
+      await refreshProgramQueries(queryClient);
+      const toPrograms = () => router.replace('/(app)/workout/programs' as any);
+      const keep =
+        plan.kind === 'offer'
+          ? `« ${plan.currentName} » reste ton programme actif.`
+          : 'Ton programme actif n’a pas été modifié.';
+      const buttons: Array<{ text: string; style?: 'cancel' | 'default' | 'destructive'; onPress?: () => void }> = [
+        { text: 'Plus tard', style: 'cancel', onPress: toPrograms },
+      ];
+      if (plan.kind === 'offer' && plan.canActivate) {
+        buttons.push({
+          text: 'Définir comme programme actif',
+          onPress: async () => {
+            try {
+              await setActiveProgram(supabase as any, 'ai', programId);
+              await refreshProgramQueries(queryClient);
+              neutralToast(activationToast(programName));
+              goToTrainingDashboard(router);
+            } catch {
+              showAlert('Activation impossible', "Active-le depuis la liste de tes programmes.");
+              toPrograms();
+            }
+          },
+        });
+      } else {
+        buttons.push({ text: 'Voir mes programmes', onPress: toPrograms });
+      }
+      showAlert('Programme créé', `« ${programName} » est dans ta liste. ${keep}`, buttons);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Erreur lors de la creation';
       showAlert('Erreur', msg);
