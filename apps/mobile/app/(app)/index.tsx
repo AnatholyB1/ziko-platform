@@ -55,6 +55,7 @@ import { AnimatePresence } from 'moti';
 import FirstWorkoutCard from '../../src/components/home/FirstWorkoutCard';
 import { useFirstWorkoutCard } from '../../src/hooks/useFirstWorkout';
 import { hideEmptyMissionVariant } from '../../src/lib/firstWorkout';
+import { QuestsBlock } from '../../src/components/home/QuestsBlock';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
@@ -772,6 +773,9 @@ export default function DashboardScreen() {
           </View>
         )}
         {/* ── Quetes (phase 1) : bloc insere ici au merge, juste apres Mission du jour ── */}
+
+        {/* ── Quêtes du jour (v1.21 phase 1) ─────────────── */}
+        <QuestsBlock />
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (

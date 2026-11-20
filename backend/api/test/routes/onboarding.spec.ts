@@ -51,6 +51,12 @@ vi.mock('ai', () => ({
   hasToolCall: vi.fn((name: string) => ({ __marker: 'hasToolCall', name })),
 }));
 
+// v1.21 CLAR-03 : l'executeur assess_profile passe par le vrai code ; seul le client Supabase est remplace.
+const mockToolRpc = vi.fn();
+vi.mock('../../src/tools/db.js', () => ({
+  clientForUser: vi.fn(() => ({ rpc: mockToolRpc })),
+}));
+
 // Never hit a real Supabase project from the onFinish token-cost logger.
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
@@ -335,5 +341,49 @@ describe('POST /ai/onboarding/stream', () => {
     expect(lines[0]).toContain('"type":"meta"');
     expect(lines[0]).toContain(OWNED_ZIKO_CONVO.conversationId);
     expect(text.trim().endsWith('data: [DONE]')).toBe(true);
+  });
+});
+
+// ── v1.21 CLAR-03 : premiere mission d'un compte de niveau 1 = hydration_log uniquement ──────────────────
+describe('CLAR-03 first mission for a level-1 account', () => {
+  beforeEach(() => {
+    mockGetOrCreateConversation.mockReset();
+    mockAppendMessages.mockReset();
+    mockToolRpc.mockReset();
+    scriptedParts = [];
+    capturedStreamTextArgs = null;
+  });
+
+  it.each(['fr', 'en'] as const)('system prompt (%s) restricts the micro_action to hydration_log and forbids the level-2 modules', (locale) => {
+    const prompt = buildOnboardingSystemPrompt(locale);
+    expect(prompt).toMatch(/exactly hydration_log/);
+    expect(prompt).toMatch(/never journal_mood, never measurements_weight/);
+    expect(prompt).not.toMatch(/exactly one of: hydration_log, journal_mood/);
+  });
+
+  it('the assess_profile tool the route hands to streamText coerces a journal_mood / measurements_weight pick to hydration_log', async () => {
+    mockGetOrCreateConversation.mockResolvedValue({ ...OWNED_ZIKO_CONVO, pluginContext: { type: 'ziko_onboarding', locale: 'en' } });
+    mockToolRpc.mockResolvedValue({ data: { success: true, decision_id: 'dec-1' }, error: null });
+    await makeRequest({ body: { messages: [{ role: 'user', content: 'hi' }] } });
+    const execute = capturedStreamTextArgs.tools.assess_profile.execute as (i: Record<string, unknown>) => Promise<any>;
+
+    for (const picked of ['journal_mood', 'measurements_weight']) {
+      mockToolRpc.mockClear();
+      const out = await execute({
+        experience_level: 'advanced', experience_confidence: 5, adherence_risk: 'low', adherence_confidence: 5,
+        readiness: 'ready', readiness_confidence: 5, profile_summary: 'Ready.', micro_action: picked, mission_title: 'Something else',
+      });
+      expect(out).toMatchObject({ success: true, micro_action: 'hydration_log', mission_title: 'Drink a glass of water' });
+      expect(mockToolRpc.mock.calls[0][1].p_outcome.micro_action).toBe('hydration_log');
+    }
+  });
+
+  it('the mission SSE event carries hydration_log end to end', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [{ type: 'tool-result', toolName: 'assess_profile', output: { success: true, decision_id: 'd', micro_action: 'hydration_log', mission_title: "Bois un verre d'eau" } }];
+    const res = await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } });
+    const text = await res.text();
+    expect(text).toContain('"micro_action":"hydration_log"');
+    expect(text).not.toContain('journal_mood');
   });
 });
