@@ -1,7 +1,7 @@
 // v1.21 Phase 2 - carte "Crée ton premier entraînement" (accueil). Contrat : design/02-DESIGN-CONTRACT.md section 2.
 // Presentationnelle : la visibilite et les credits viennent de useFirstWorkoutCard (props). Aucun montant en dur.
 // Carte standard (rayon 16, bord 1 px, ombre), jamais repoussable, 3 rangees equivalentes (aucun CTA plein).
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, AccessibilityInfo } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ import {
   type PathDef,
 } from '../../lib/firstWorkout';
 
+const DOUBLE_TAP_MS = 600;
 const ICON_BG = '#FFF0E8';
 const PRESSED_BG = '#F0EFE9';
 const COST_COLOR: Record<CostTone, string> = {
@@ -49,12 +50,20 @@ export function PathRow({
   const cost = pathCostView(path, view);
   const exhaustedAI = path.isAI && view.exhausted;
   const highlightManual = view.exhausted && path.id === 'manual';
+  // Garde de double tap : un second appui rapproche n'empile pas un deuxieme ecran (audit phase 2).
+  const lastPressRef = useRef(0);
+  const guardedPress = () => {
+    const now = Date.now();
+    if (now - lastPressRef.current < DOUBLE_TAP_MS) return;
+    lastPressRef.current = now;
+    onPress();
+  };
   return (
     <Pressable
       testID={testID}
-      onPress={onPress}
+      onPress={guardedPress}
       accessibilityRole="button"
-      accessibilityLabel={pathA11yLabel(path, view)}
+      accessibilityLabel={pathA11yLabel(path, view, badge)}
       style={({ pressed }: { pressed: boolean }) => ({
         minHeight: 88, paddingVertical: 14, paddingHorizontal: 16,
         flexDirection: 'row', alignItems: 'center', gap: 12,
