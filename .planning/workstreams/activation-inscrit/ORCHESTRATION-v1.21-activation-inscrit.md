@@ -51,4 +51,5 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 ## Ouvert / actions humaines
 - Envoi TestFlight des 4 correctifs (push, Vercel prod, build iOS) : en attente d'accord utilisateur.
 - Migration quêtes de bienvenue : à appliquer sur `uat-v1-20` après accord, puis prod seulement sur demande explicite.
-| 2026-11-20 | Vague D : agent uat-p3-compte-neuf lancé (isolé, branche uat/phase-3) | uat/phase-3 | — | en cours ; à la fin : merger la branche, gate, rapport 03-UAT |
+| 2026-11-20 | UAT P3 terminé : UATN-01 PASS, UATN-02 PASS, UATN-03 FAIL (Manuel, IA simple) / PARTIAL (Atelier) ; mergé | uat/phase-3 | 45a4bee7 | bugs : carte (lignes empilées sur Android), IA simple = séance vide, Manuel = programme inactif sans retour, onglet Entraînement bloqué sur Programmes, Mission du jour inchangée après 2 L |
+| 2026-11-20 | Vague D2 : 2 correctifs lancés en parallèle (home ; workout) puis relance UAT UATN-03 | fix/uat-home, fix/uat-workout | — | agents fix-uat-home, fix-uat-workout |
