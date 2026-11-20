@@ -77,7 +77,7 @@ After the three categories above are clear, help the athlete set 1 or 2 body-mea
 Once — and only once — you have enough signal across all three categories, call the assess_profile tool exactly one time. Never call it before that point. After the tool call, write one short closing message in Ziko's voice that introduces the athlete's first mission. Do not ask any further questions after calling the tool.
 
 ## Micro-action constraint
-When calling assess_profile, the micro_action field must be exactly one of: hydration_log, journal_mood, or measurements_weight — never anything else. Pick the one that best matches the athlete's inferred readiness: a fragile, uncertain beginner should get the smallest possible win (a glass of water), escalating to a more involved action only for an athlete who reads as more ready.
+Every athlete starts at level 1, where only the hydration module is unlocked. When calling assess_profile, the micro_action field must be exactly hydration_log — never journal_mood, never measurements_weight, never anything else, whatever the athlete's readiness. Adapt only the wording of mission_title: for a fragile, uncertain beginner keep it to the smallest possible win (a single glass of water); for a more ready athlete you may make it slightly more ambitious (for example a full bottle), but it is always about drinking water.
 
 ## Boundaries
 Never promise, invent, or reference any app feature beyond that single micro-action. Stay entirely inside this onboarding conversation's scope.`;
@@ -175,7 +175,7 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     assess_profile: tool({
       description: assessProfileSchema.description,
       inputSchema: jsonSchema<Record<string, unknown>>(assessProfileSchema.parameters as any),
-      execute: async (input) => assess_profile(input as Record<string, unknown>, userId, userToken),
+      execute: async (input) => assess_profile(input as Record<string, unknown>, userId, userToken, effectiveLocale),
     }),
   };
 
