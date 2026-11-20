@@ -10,6 +10,7 @@ import Animated, {
   withRepeat,
   withSequence,
   FadeInUp,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
@@ -26,6 +27,7 @@ const LOAD_PHASES = ONBOARDING_LOAD_PHASES;
 // ─── OBReady dark screen ──────────────────────────────────────────────────────
 
 function OBReady() {
+  const reduceMotion = useReducedMotion();
   const { obState } = useContext(OBContext);
   const user = useAuthStore((s) => s.user);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
@@ -96,7 +98,7 @@ function OBReady() {
         <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 40, justifyContent: 'center' }}>
           {/* Check icon with spring entrance */}
           <Animated.View
-            entering={FadeInUp.springify().damping(12)}
+            entering={reduceMotion ? undefined : FadeInUp.springify().damping(12)}
             style={{
               width: 76, height: 76, borderRadius: 22,
               backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
@@ -199,8 +201,10 @@ export default function OnboardingStep7() {
   }, [loadIdx, screenPhase]);
 
   // Icon pulse animation
+  const reduceMotion = useReducedMotion();
   const iconScale = useSharedValue(1);
   useEffect(() => {
+    if (reduceMotion) { iconScale.value = 1; return; }
     iconScale.value = withRepeat(
       withSequence(
         withTiming(1.06, { duration: 800 }),
@@ -209,12 +213,13 @@ export default function OnboardingStep7() {
       -1,
       false,
     );
-  }, []);
+  }, [reduceMotion]);
   const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
 
   // Current step blink animation
   const blinkOpacity = useSharedValue(1);
   useEffect(() => {
+    if (reduceMotion) { blinkOpacity.value = 1; return; }
     blinkOpacity.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 500 }),
@@ -223,7 +228,7 @@ export default function OnboardingStep7() {
       -1,
       false,
     );
-  }, []);
+  }, [reduceMotion]);
   const blinkStyle = useAnimatedStyle(() => ({ opacity: blinkOpacity.value }));
 
   if (screenPhase === 'ready') {

@@ -60,7 +60,6 @@ describe('useFirstWorkoutCard (FWKO-01, FWKO-02, FWKO-07, R4)', () => {
     expect(last.visibility).toBe('show');
     expect(last.credit.aiSimple.label).toBe('3 crédits');
     expect(last.credit.balanceLabel).toBe('5 crédits');
-    expect(last.creditFailed).toBe(false);
   });
 
   it('une seance terminee -> hide, et aucun appel cout/solde (un compte existant ne coute rien de plus)', async () => {
@@ -84,17 +83,16 @@ describe('useFirstWorkoutCard (FWKO-01, FWKO-02, FWKO-07, R4)', () => {
     await run();
     await act(async () => { await new Promise((r) => setTimeout(r, 1300)); }); // 1 nouvel essai (delai par defaut 1 s)
     expect(last.visibility).toBe('show');
-    expect(last.creditFailed).toBe(true);
     expect(last.credit.aiSimple.label).toBe('Consomme des crédits IA');
     expect(last.credit.balanceLabel).toBe('—');
     expect(last.credit.exhausted).toBe(false);
   });
 
-  it('echec de la requete des seances : la carte reste affichee (programme connu vide), Manuel offert', async () => {
+  it('echec de la requete des seances : carte masquee (R4, un veteran ne voit jamais la carte sur un incident reseau)', async () => {
     h.sessionsResult = { count: null, error: { message: 'boom' } };
     h.getInfo.mockResolvedValue({ cost: 4, balance: 5 });
     await run();
-    expect(last.visibility).toBe('show');
+    expect(last.visibility).toBe('hide');
   });
 
   it('R4 : erreur de lecture du programme -> hide', async () => {

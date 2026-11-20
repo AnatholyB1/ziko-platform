@@ -13,25 +13,33 @@ export interface ReadState {
 /**
  * R1 : aucun programme actif ET zero seance terminee.
  * R4 : une lecture du PROGRAMME en erreur ne montre jamais la carte comme si le compte etait vide.
- * Une lecture des SEANCES en erreur n'empeche pas la carte (programme connu vide) : un compte neuf ne perd pas son
- * chemin d'activation sur un incident reseau ; la carte ne detruit rien et Manuel reste propose.
+ * Idem pour une lecture des SEANCES en erreur (audit phase 2) : un veteran dont le programme est en pause ou archive ne
+ * doit jamais voir "premier entrainement" sur un incident reseau. Le compte neuf retrouve la carte au retry.
  */
 export function firstWorkoutVisibility(args: {
   program: ReadState & { hasActive: boolean };
   sessions: ReadState & { finishedCount: number | null | undefined };
 }): CardVisibility {
   const { program, sessions } = args;
-  if (program.isError) return 'hide';
+  if (program.isError || sessions.isError) return 'hide';
   if (program.hasActive) return 'hide';
-  if (!sessions.isError && !sessions.isLoading && (sessions.finishedCount ?? 0) > 0) return 'hide';
+  if (!sessions.isLoading && (sessions.finishedCount ?? 0) > 0) return 'hide';
   if (program.isLoading) return 'loading';
-  if (sessions.isLoading && !sessions.isError) return 'loading';
+  if (sessions.isLoading) return 'loading';
   return 'show';
 }
 
 /** R5 : la variante vide de Mission du jour est masquee tant que la carte occupe la place (affichee ou en chargement). */
 export function hideEmptyMissionVariant(v: CardVisibility): boolean {
   return v !== 'hide';
+}
+
+/**
+ * D-08 / R2 : carte > Mission > Quetes > reste. Quand la carte est visible (ou en chargement), "Forme du jour" passe
+ * SOUS le bloc Quetes ; sinon l'ordre historique est conserve (Forme du jour avant Mission).
+ */
+export function formeDuJourPlacement(v: CardVisibility): 'above-mission' | 'below-quests' {
+  return v === 'hide' ? 'above-mission' : 'below-quests';
 }
 
 // ── Etats de credit ───────────────────────────────────────────────────────────────────
@@ -153,9 +161,9 @@ export function pathCostView(path: PathDef, view: CreditView): { label: string; 
   return path.id === 'ai-simple' ? view.aiSimple : view.atelier;
 }
 
-export function pathA11yLabel(path: PathDef, view: CreditView): string {
+export function pathA11yLabel(path: PathDef, view: CreditView, badge?: string): string {
   const cost = pathCostView(path, view);
-  const base = `${path.name}, ${path.deliverable.toLowerCase()}. ${path.sentence}`;
+  const base = `${path.name}, ${path.deliverable.toLowerCase()}.${badge ? ` ${badge}.` : ''} ${path.sentence}`;
   if (path.isAI && view.exhausted) return `${base} ${FIRST_WORKOUT_COPY.exhausted}. Ouvre l’explication.`;
   return `${base} ${cost.label}.`;
 }

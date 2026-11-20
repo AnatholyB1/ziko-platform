@@ -27,7 +27,10 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 | 2026-11-20 | Audit P1 lancé | audit/phase-1 | — | agent audit-p1-quetes ; focus migration (quête hebdo supprimée = contredit D-01 ? décision produit à remonter) |
 | 2026-11-20 | Correctif P2 lancé | fix/phase-2-audit | — | agent fix-p2-entrainement ; Forme du jour déplacée SOUS le bloc Quêtes seulement quand la carte est visible |
 
-## À faire ensuite
+| 2026-11-20 | Audit P1 : 1 haut (décision produit), 3 moyens, 11 faibles | audit/phase-1 | 4cfa49a5 | décision utilisateur D-11 : garder la quête hebdo, l'accueil plafonne à 3 |
+| 2026-11-20 | Correctif P1 lancé | fix/phase-1-audit | — | agent fix-p1-quetes (migration sans désactivation de l'hebdo, classement, refetch AppState, test instable) |
+
+## À faire ensuite (mis à jour : P1 audité, décision D-11 prise ; attendre fix-p2-entrainement et fix-p1-quetes, puis merger un par un + gate, puis vague D UAT)
 1. Récupérer l'audit P1 -> remonter à l'utilisateur la décision produit sur la quête hebdomadaire -> lancer le correctif P1 (inclure le test instable `rewards.test.tsx`).
 2. Merger correctifs P2 et P1 (un à la fois) + gate ; re-vérifier l'ordre de l'accueil (carte > Mission > Quêtes > Forme du jour quand carte visible).
 3. Vague D : P3 UAT compte neuf sur émulateur (verrou machine, `scripts/uat`), migration `20261215010100` à appliquer d'abord sur `uat-v1-20` avec accord utilisateur.
