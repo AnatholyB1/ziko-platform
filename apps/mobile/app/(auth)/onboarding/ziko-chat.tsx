@@ -425,6 +425,11 @@ export default function ZikoChatScreen() {
   const conversationIdRef = useRef<string | null>(null);
   const lastSentRef = useRef<OutgoingMessage[]>([]);
   const mountedRef = useRef(true);
+  const inFlightRef = useRef(false);
+
+  useEffect(() => {
+    if (!isStreaming) inFlightRef.current = false;
+  }, [isStreaming]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -440,6 +445,11 @@ export default function ZikoChatScreen() {
   // readable stream here, and AIBridge itself is not extended (it
   // hardcodes /chat/stream, the credited general-chat endpoint).
   const runSend = (newMessages: OutgoingMessage[]) => {
+    // Synchronous re-entrancy guard: a fast double tap fires the handler twice
+    // before `isStreaming` state has re-rendered, which duplicated the user
+    // message and fired two concurrent requests.
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     lastSentRef.current = newMessages;
     setErrorState(null);
     setIsStreaming(true);
@@ -647,7 +657,7 @@ export default function ZikoChatScreen() {
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text || isStreaming) return;
+    if (!text || isStreaming || inFlightRef.current) return;
     setInput('');
     const userMsg: LocalMessage = { id: `user-${Date.now()}`, role: 'user', content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -655,12 +665,12 @@ export default function ZikoChatScreen() {
   };
 
   const handleRetry = () => {
-    if (isStreaming) return;
+    if (isStreaming || inFlightRef.current) return;
     runSend(lastSentRef.current);
   };
 
   const handleForceFinish = () => {
-    if (isStreaming) return;
+    if (isStreaming || inFlightRef.current) return;
     const locale = useI18nStore.getState().locale === 'en' ? 'en' : 'fr';
     const instruction = locale === 'en'
       ? 'Please wrap up now and give me my mission.'

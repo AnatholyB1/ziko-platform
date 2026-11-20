@@ -218,8 +218,9 @@ describe('POST /ai/onboarding/stream', () => {
     expect(text).toContain('"id":"g-1"');
     expect(text).toContain('"target_value":76');
     expect(text).not.toContain('target_equals_start');
-    // un objectif seul ne termine pas l'onboarding : sans assess_profile, cap_reached reste emis
-    expect(text).toContain('"type":"cap_reached"');
+    // un objectif seul ne termine pas l'onboarding, mais un tour normal n'est pas un cap atteint
+    expect(text).not.toContain('"type":"cap_reached"');
+    expect(text).not.toContain('"type":"mission"');
   });
 
   it('system prompt asks for measurement goals before the terminal action and forbids invented numbers', () => {
@@ -273,7 +274,7 @@ describe('POST /ai/onboarding/stream', () => {
     expect(text).not.toContain('"type":"cap_reached"');
   });
 
-  it('emits a cap_reached SSE event when the stream ends with no assess_profile tool-result', async () => {
+  it('does not emit cap_reached for a normal question-only turn early in the conversation', async () => {
     mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
     scriptedParts = [{ type: 'text-delta', textDelta: 'Salut, prêt à commencer ?' }];
 
@@ -281,8 +282,46 @@ describe('POST /ai/onboarding/stream', () => {
     const text = await res.text();
 
     expect(text).toContain('"type":"chunk"');
+    expect(text).not.toContain('"type":"cap_reached"');
+  });
+
+  it('emits a cap_reached SSE event when many user turns pass with no assess_profile tool-result', async () => {
+    const history = Array.from({ length: 12 }, (_, i) => ({
+      role: i % 2 === 0 ? 'user' : 'assistant',
+      content: `m${i}`,
+    }));
+    mockGetOrCreateConversation.mockResolvedValue({ ...OWNED_ZIKO_CONVO, history });
+    scriptedParts = [{ type: 'text-delta', textDelta: 'Encore une question ?' }];
+
+    const res = await makeRequest({
+      body: { conversation_id: 'convo-owned', messages: [{ role: 'user', content: 'ok' }] },
+    });
+    const text = await res.text();
+
     expect(text).toContain('"type":"cap_reached"');
     expect(text).not.toContain('"type":"mission"');
+  });
+
+  it('emits an error (not cap_reached) and persists nothing when the model stream yields an error part', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [{ type: 'error', error: new Error('boom') }];
+
+    const res = await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } });
+    const text = await res.text();
+
+    expect(text).toContain('"type":"error"');
+    expect(text).not.toContain('"type":"cap_reached"');
+    expect(mockAppendMessages).not.toHaveBeenCalled();
+  });
+
+  it('seeds a synthetic user message when the opening turn sends no messages', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [];
+
+    await makeRequest({ body: {} });
+
+    expect(capturedStreamTextArgs.messages.length).toBeGreaterThan(0);
+    expect(capturedStreamTextArgs.messages[0].role).toBe('user');
   });
 
   it('emits meta with the conversation id first and terminates with [DONE]', async () => {

@@ -24,6 +24,9 @@ import { createGoal } from '../measurements/service.js';
 // the gating pair from routes/ai.ts.
 // ============================================================
 
+// 4 planned questions + the synthetic/opening turn + margin.
+const ONBOARDING_MAX_USER_TURNS = 6;
+
 const onboardingRouter = new Hono();
 onboardingRouter.use('*', authMiddleware);
 
@@ -124,10 +127,28 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 
   const systemPrompt = buildOnboardingSystemPrompt(effectiveLocale);
 
-  const allMessages = [
-    ...convo.history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+  const allMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    ...convo.history
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     ...messages,
   ];
+
+  // The opening turn sends no messages, and Ziko's own opening reply is
+  // persisted without a preceding user row. Anthropic rejects an empty
+  // conversation and one that starts with an assistant turn, so seed a
+  // synthetic (never persisted) user kick-off message in both cases.
+  if (allMessages.length === 0 || allMessages[0].role !== 'user') {
+    allMessages.unshift({
+      role: 'user',
+      content:
+        effectiveLocale === 'en'
+          ? 'Hi Ziko, I just finished signing up. Start the conversation.'
+          : "Salut Ziko, je viens de finir mon inscription. Lance la conversation.",
+    });
+  }
+
+  const userTurnCount = allMessages.filter((m) => m.role === 'user').length;
 
   const userMsgs = messages.filter((m) => m.role === 'user');
   const lastUserMsg = userMsgs.length > 0 ? userMsgs[userMsgs.length - 1] : undefined;
@@ -186,6 +207,7 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     // athlete answered questions but has no athlete_state row, and must
     // never be silently treated as onboarded.
     let assessProfileObserved = false;
+    let streamErrored = false;
 
     try {
       // Send the conversation id first so the client can track/resume it.
@@ -211,6 +233,14 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 
 `);
           }
+        } else if (part.type === 'error') {
+          // streamText surfaces provider failures as an `error` part rather
+          // than throwing — never mistake that for "cap reached".
+          streamErrored = true;
+          console.error('[Onboarding Stream Error part]', (part as any).error);
+          await s.write(
+            `data: ${JSON.stringify({ type: 'error', error: 'model_error' })}\n\n`,
+          );
         } else if (part.type === 'tool-result' && (part as any).toolName === 'assess_profile') {
           assessProfileObserved = true;
           const output = ((part as any).output ?? (part as any).result) as
@@ -237,12 +267,16 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
         }
       }
 
-      if (!assessProfileObserved) {
+      // A turn that ends in a plain question is the normal case. Only flag
+      // cap_reached once the athlete has answered more than the 4 planned
+      // questions (plus margin) without the model concluding.
+      if (!assessProfileObserved && !streamErrored && userTurnCount > ONBOARDING_MAX_USER_TURNS) {
         await s.write('data: {"type":"cap_reached"}\n\n');
       }
 
       await s.write('data: [DONE]\n\n');
     } catch (err: unknown) {
+      streamErrored = true;
       const msg = err instanceof Error ? err.message : 'Stream error';
       console.error('[Onboarding Stream Error]', err);
       await s.write(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`);
@@ -251,6 +285,9 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 
     // Persistence tail — this is what makes D-04's mid-flow resume work
     // after an app kill.
+    // A failed turn is not persisted: the client retries the same payload,
+    // and saving it would duplicate the user message in history.
+    if (streamErrored) return;
     const toSave: Array<{ role: 'user' | 'assistant'; content: string }> = [];
     if (lastUserMsg) toSave.push({ role: 'user', content: lastUserMsg.content });
     const fullResponse = chunks.join('');
