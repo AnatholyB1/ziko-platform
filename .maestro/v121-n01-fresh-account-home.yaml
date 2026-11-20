@@ -59,6 +59,10 @@ env:
     element: "Quêtes du jour"
     direction: DOWN
     timeout: 20000
+- scrollUntilVisible:
+    element: "Termine une séance"
+    direction: DOWN
+    timeout: 20000
 - takeScreenshot: 12-home-quests
 - assertVisible: "Bois 2 litres d'eau"
 - assertVisible: "Ajoute un repas"

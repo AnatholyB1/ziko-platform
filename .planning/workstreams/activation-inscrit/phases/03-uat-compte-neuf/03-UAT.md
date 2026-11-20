@@ -70,3 +70,28 @@ Flow `.maestro/v121-n03c-atelier.yaml` (5 min 41, atteint l'onglet Entrainement)
 - `adb reverse tcp:8200` perdu quand adb a redemarre : ajoute a `v121-reset-run.sh`.
 - Flows : regex sur titres avec point final ("C.est note.*"), `back` ramenait a Hydratation (pile), perte de caracteres du clavier.
 - Nouveaux outils : `scripts/uat/v121-reset-run.sh`, `ui-find.mjs` (bounds uiautomator), `v121-peek.mjs` (lecture service role), `v121-exhaust-credits.mjs`, `fake-script.sh atelier`.
+
+
+---
+
+# Re-run 2026-11-20 (branche `uat/phase-3-rerun`, apres corrections `fix/uat-home` et `fix/uat-workout`)
+
+Verdicts a jour (remplacent ceux de la premiere passe ci-dessus) ; synthese dans `03-VERIFICATION.md`. Preuves : `uat-evidence/v121/<flow>/` (gitignore).
+
+| Exigence | Verdict | Notes |
+|----------|---------|-------|
+| UATN-01 | PASS | Rangees de la carte horizontales (`n01.../10-home-top.png`) : icone 44 px a gauche, titre + pastilles, phrase, cout vert, chevron a droite, separateurs 1 px. Ordre carte > Mission du jour > Quetes > Forme du jour confirme. Bug SEV 2 resolu. |
+| UATN-02 | PASS | 3 quetes, completion de l'eau, aucune piece/echec/"Voir tout". Apres 2 L, la Mission "Bois un premier verre d'eau" a disparu (`n02-07`, `n02-08`) : bug SEV 4 resolu. |
+| UATN-03 Manuel | PASS partiel | Creation -> actif + toast "Programme actif : Force..." -> tableau "Demarrer la seance d'aujourd'hui" -> carte absente de l'accueil. 0 exercice : alerte "Ajoute au moins un exercice" (`n03d`). Demarrage avec exercices non prouve (saisie clavier, voir Incidents). |
+| UATN-03 IA simple | PASS (reserve catalogue) | Ouvre `Seance IA` avec exercices, seance guidee demarree (`n03b-05`). 1/4 exercices apparie. |
+| UATN-03 Atelier | PASS | Seance demarree avec exercices (apercu "Full body A, 2 exercices", `n03c-08`/`n03c-09`), carte disparue (`n03c-06`). |
+| Credits epuises | PASS | `n03e-02-card-exhausted.png`. |
+
+Bugs initiaux : les 6 bugs de la premiere passe sont resolus sur Android (SEV 2 mise en page, SEV 2 IA simple vide, SEV 2 Manuel sans retour/inactif, SEV 3 0 exercice, SEV 3 onglet Entrainement, SEV 4 Mission). Restants : voir `03-VERIFICATION.md` (SEV 3 appariement catalogue IA, SEV 3 exercice texte libre, SEV 4 ordre de l'accueil).
+
+## Incidents de harnais (re-run)
+- Premier bundle Metro apres `--clear` : environ 80 s une fois la requete declenchee ; le dev-client a expire (IOException) la 1re fois : rouvrir apres "Android Bundled".
+- Flows corriges : `scrollUntilVisible` s'arretait sur l'en-tete "Quetes du jour" sans montrer les lignes (carte horizontale plus courte) -> ajout d'un scroll vers "Termine une seance" (n01, n02). n03b/n03c : l'ouverture passe par l'apercu "APERCU DU PROGRAMME" puis "Demarrer la seance". n03a : fin adaptee a l'alerte "Seance indisponible".
+- Saisie du nom d'exercice (program-builder) : l'emulateur (2 Go, swap) ne conserve que le 1er caractere, y compris par touches adb espacees de 1,5 s ; `retry` + `assertVisible "Squat"` donnait un faux positif (le mot de la barre de suggestions Gboard). Non resolu ; n'affecte pas les autres champs (login, chat).
+- Nouveaux flows : `v121-n03d-zero-exercise.yaml`, `v121-n03e-prep.yaml`, `v121-n03e-exhausted.yaml`.
+- `uat-evidence/runflow.sh` (local, non commite) : reset + Maestro + preuves par flow.

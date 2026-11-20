@@ -27,4 +27,20 @@ env:
 - assertVisible: "Squat goblet"
 - assertVisible: "Démarrer cette séance"
 - tapOn: "Démarrer cette séance"
+# Apercu de la seance generee : le demarrage ouvre desormais une seance AVEC exercices (plus de Seance rapide vide).
+# Constat : seul "Rowing unilateral" est resolu dans le catalogue ("Squat goblet" -> "goblet squat haltere" non apparie).
+- extendedWaitUntil:
+    visible: "Séance IA"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
 - takeScreenshot: n03b-04-session-opened
+- assertNotVisible: "Ajoute ton premier exercice"
+- assertVisible: "Rowing unilatéral machine"
+- tapOn: "Démarrer la séance"
+- extendedWaitUntil:
+    notVisible: "APERÇU DU PROGRAMME"
+    timeout: 30000
+- takeScreenshot: n03b-05-session-started
+- assertNotVisible: "Ajoute ton premier exercice"

@@ -1,0 +1,9 @@
+# v1.21 UATN-03 (Credits epuises), etape 1 : compte frais amene a l'accueil (carte visible, credits normaux).
+# Etape 2 (hors Maestro) : node scripts/uat/v121-exhaust-credits.mjs ; etape 3 : v121-n03e-exhausted.yaml apres reouverture de l'app.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- takeScreenshot: n03e-01-before-exhaust
