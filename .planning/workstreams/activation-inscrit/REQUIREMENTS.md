@@ -57,4 +57,28 @@ R√®gles transverses : maquette Claude Design / `/gsd-ui-phase` avant plan et ex√
 
 ## Traceability
 
-(Remplie par le roadmapper.)
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| QNEW-01 | Phase 1 | Pending |
+| QNEW-02 | Phase 1 | Pending |
+| QNEW-03 | Phase 1 | Pending |
+| QNEW-04 | Phase 1 | Pending |
+| QNEW-05 | Phase 1 | Pending |
+| QNEW-06 | Phase 1 | Pending |
+| QNEW-07 | Phase 1 | Pending |
+| CLAR-03 | Phase 1 | Pending |
+| CLAR-04 | Phase 1 | Pending |
+| FWKO-01 | Phase 2 | Pending |
+| FWKO-02 | Phase 2 | Pending |
+| FWKO-03 | Phase 2 | Pending |
+| FWKO-04 | Phase 2 | Pending |
+| FWKO-05 | Phase 2 | Pending |
+| FWKO-06 | Phase 2 | Pending |
+| FWKO-07 | Phase 2 | Pending |
+| CLAR-01 | Phase 2 | Pending |
+| CLAR-02 | Phase 2 | Pending |
+| UATN-01 | Phase 3 | Pending |
+| UATN-02 | Phase 3 | Pending |
+| UATN-03 | Phase 3 | Pending |
+
+**Coverage:** 21/21 mapped, 0 orphans.
