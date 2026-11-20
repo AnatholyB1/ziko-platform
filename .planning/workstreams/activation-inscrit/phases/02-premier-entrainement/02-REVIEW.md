@@ -1,0 +1,27 @@
+# Phase 2 : revue de code (audit/phase-2, base `fix/testflight-4-bugs`, tete = merge phase/02)
+
+Portee : FirstWorkoutCard, CreateProgramSheet, useFirstWorkout, firstWorkout, onboardingEnd, homeQueries, `(app)/index.tsx`, `workout/index.tsx`, `programs.tsx`, `step-7.tsx` + tests. Porte rejouee : type-check 24/24, lint 5/5 (mobile sans config eslint, saute), `turbo run test` 7/7 (mobile 611 + 108 rendu, api 581, web 333). Resultats servis par le cache turbo (entrees identiques, `npm install --no-save` execute avant).
+
+## Constats
+| Sev | Lieu | Probleme | Correctif |
+|---|---|---|---|
+| MEDIUM | `lib/firstWorkout.ts:26-29` | Erreur de lecture des seances seule : la carte reste affichee. Un athlete confirme sans programme actif (programme termine, en pause, archive) voit « Crée ton premier entraînement » sur un incident reseau. Contredit R4 / P2-9 (carte masquee sur erreur de lecture) | Masquer aussi quand `sessions.isError` (symetrique a R4). Le compte neuf perd la carte le temps d'un retry, c'est acceptable |
+| MEDIUM | `(app)/index.tsx:686-766` | « Forme du jour » entre la carte et Mission du jour. La carte EST la premiere carte (l.678 < l.686 ; seuls EmailVerifyBanner et l'en-tete la precedent), donc ROADMAP SC1 tient. R2/maquette H01 demandent carte > Mission > Quetes > reste | Deplacer le bloc Forme du jour (l.686-766) apres le slot Quetes (l.774), ou le masquer tant que la carte est visible. A faire avant fusion phase 1 pour que l'ordre D-08 soit total |
+| MEDIUM | `step-7.tsx:201-227` | Pulsation de l'icone (infinie) et clignotement de la pastille « en cours » sans variante reduced motion. Le contrat 5.1 l'exige (pastille fixe). `FadeInUp.springify` de l'ecran final non plus | `useReducedMotion()` de reanimated : pas de `withRepeat`, valeur fixe, `entering` omis |
+| LOW | `FirstWorkoutCard.tsx:32-41`, `CreateProgramSheet.tsx:28` | Pas de garde de double tap : `router.push` deux fois empile deux ecrans | Verrou `useRef` 600 ms ou `router.navigate` |
+| LOW | `workout/index.tsx:464` | `useCreditInfo(programView==='empty' \|\| !activeProgramRaw)` : appel pendant le chargement pour les comptes avec programme, puis coupe. La feuille « + » d'un athlete avec programme n'a alors ni cout ni etat epuise fiables (repli « Consomme des crédits IA », pas de verrou) | Activer la requete a l'ouverture de la feuille, pas selon l'etat du programme |
+| LOW | `CreateProgramSheet.tsx` | Pas de ScrollView ni d'inset bas (`paddingBottom: 24` fixe) : a 130 % de police + groupe « Séance seule », la feuille peut depasser les petits ecrans. Pas de role `modal` Android, pas de piege de focus | ScrollView `maxHeight`, `useSafeAreaInsets`, `accessibilityRole` |
+| LOW | `CreateProgramSheet.tsx:24-27` | `onClose()` puis `showExhaustionSheet` dans le meme tick : deux modales en sequence (course possible sur iOS) | Differer l'ouverture (`InteractionManager`/`onDismiss`) |
+| LOW | `FirstWorkoutCard.tsx:163-166` | `accessibilityLabel` sur une `View` non `accessible` : ignore sur iOS ; le badge « Conseillé » absent de l'etiquette de rangee | Ajouter `accessible` + `accessibilityRole="summary"` ou etiquette sur l'en-tete ; ajouter « Conseillé » a `pathA11yLabel` |
+| LOW | `homeQueries.ts` | `['credits','info']` invalide a chaque focus quand la carte est visible : `GET /ai/workshop/info` execute `fetchWorkshopContext` (plusieurs requetes) a chaque retour accueil | Garder staleTime 60 s et retirer la cle de l'invalidation de focus, invalider apres une generation |
+| LOW | `index.tsx` `isEmptyMissionVariant` + `hideEmpty` | Double mecanisme pour R5 (conteneur masque ET prop `hideEmpty`) : la branche `hideEmpty` de MissionCardContent est morte dans le cas nominal | Garder un seul |
+| LOW | `useFirstWorkout.ts:63` | `creditFailed` exporte, jamais lu | Supprimer |
+
+## Verifie sans reserve
+- Cout/solde/quota : uniquement `GET /ai/workshop/info` (`cost: CREDIT_COSTS.chat`, `free_left = dailyQuota - dailyUsed`). `/ai/session/generate` passe bien par `creditCheck('chat')` (ai.ts:580), donc IA simple et atelier partagent cout et quota. Aucun chiffre en dur (`validCost`, repli « Consomme des crédits IA »). Echec reseau -> `computeCreditView(null)` : solde « — », jamais bloquant.
+- Quota gratuit : le serveur applique un quota QUOTIDIEN pour `chat` (base 1 + bonus 2) ; le mensuel (`MONTHLY_QUOTAS.program`) ne concerne que `/programs/generate`, hors carte. Le libelle « aujourd'hui » est donc exact ; la maquette H08 (« ce mois-ci ») est fausse. Ecart 5 : accepte, mettre la maquette a jour.
+- Epuise = `balance < cost && free_left == 0`, solde ou cout inconnus -> non epuise. Tap IA epuise -> `showExhaustionSheet` (meme appel que l'atelier) ; Manuel navigue toujours.
+- Visibilite : programme coach assigne et IA lus (`getActiveProgram`, deux tables) ; erreur des deux tables -> throw -> carte masquee ; une seule table en erreur et rien trouve -> throw. Seance commencee non terminee (`ended_at` null) : ne compte pas, carte visible (conforme R1). Seance terminee a 0 serie : non comptable (TRAIN-03), carte reste.
+- Disparition : `['program','active']` et `['workouts','finished']` dans `HOME_QUERY_KEYS`, `program-builder` invalide ces cles.
+- Step-7 : `handleFinish` identique a la base (aucune ligne modifiee), chaines interdites absentes, fond sombre `#1C1A17` conserve (D-06), destination `ziko-chat`. Le chargement reste clair (`#F7F6F3`), comme avant.
+- Aucun `Alert`, aucun emoji, apostrophes typographiques, `paddingBottom: 100` intact.
