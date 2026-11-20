@@ -16,6 +16,25 @@ describe('HOME_QUERY_KEYS', () => {
   });
 });
 
+describe('Mission du jour (UAT v1.21 P3)', () => {
+  it('invalidateHomeQueries rafraichit la mission : apres un log d eau elle passe a null', async () => {
+    expect(HOME_QUERY_KEYS.map((k) => k.join('/'))).toContain('onboarding-mission');
+    const qc = new QueryClient();
+    let logged = false;
+    const key = ['onboarding-mission', 'u1'];
+    const queryFn = async () => (logged ? null : { micro_action: 'hydration_log', mission_title: 'Bois un premier verre d eau' });
+    await qc.fetchQuery({ queryKey: key, queryFn, staleTime: 60_000 });
+    expect(qc.getQueryData(key)).not.toBeNull();
+    logged = true; // l'athlete logue de l'eau (ziko_hydration_logs a une ligne du jour)
+    await qc.fetchQuery({ queryKey: key, queryFn, staleTime: 60_000 });
+    expect(qc.getQueryData(key)).not.toBeNull(); // sans invalidation : reste perime (le bug)
+    await invalidateHomeQueries(qc);
+    expect(qc.getQueryState(key)?.isInvalidated).toBe(true);
+    await qc.fetchQuery({ queryKey: key, queryFn, staleTime: 60_000 });
+    expect(qc.getQueryData(key)).toBeNull();
+  });
+});
+
 describe('invalidateHomeQueries', () => {
   it('marque obsolete les requetes de l\'accueil (hydration today, workouts, streak) et pas les autres', async () => {
     const qc = new QueryClient();
