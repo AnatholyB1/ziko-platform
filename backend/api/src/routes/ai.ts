@@ -560,4 +560,79 @@ router.post('/programs/generate', creditCheck('program'), creditDeduct('program'
   }
 });
 
+// ─── Single-session generation (mobile Coach IA wizard) ───────
+// Body: { energy: 1-10, duration: minutes, zone: haut|bas|full|cardio, equipment: salle|maison|outdoor|hotel }
+// Returns: { result: { exercises: [{ name, sets, note? }], adaptation_note } }
+
+const SESSION_ZONES: Record<string, string> = {
+  haut: 'upper body (chest, back, shoulders, arms)',
+  bas: 'lower body (quads, hamstrings, glutes, calves)',
+  full: 'full body, balanced',
+  cardio: 'light cardio and core, active recovery',
+};
+const SESSION_EQUIPMENT: Record<string, string> = {
+  salle: 'full commercial gym',
+  maison: 'home with dumbbells only',
+  outdoor: 'outdoors, bodyweight only',
+  hotel: 'hotel room, minimal equipment / bodyweight',
+};
+
+router.post('/session/generate', creditCheck('chat'), creditDeduct('chat'), async (c) => {
+  const body = await c.req
+    .json<{ energy?: number; duration?: number; zone?: string; equipment?: string }>()
+    .catch(() => ({}) as { energy?: number; duration?: number; zone?: string; equipment?: string });
+
+  const energy = Math.min(10, Math.max(1, Math.round(Number(body.energy) || 7)));
+  const duration = Math.min(120, Math.max(10, Math.round(Number(body.duration) || 45)));
+  const zone = SESSION_ZONES[body.zone ?? ''] ?? SESSION_ZONES.full;
+  const equipment = SESSION_EQUIPMENT[body.equipment ?? ''] ?? SESSION_EQUIPMENT.salle;
+  const exerciseCount = Math.max(3, Math.min(8, Math.round(duration / 9)));
+
+  const prompt = `Generate ONE workout session in French.
+Energy level today: ${energy}/10 (lower energy = lighter loads / fewer sets)
+Duration: ${duration} minutes (about ${exerciseCount} exercises)
+Target: ${zone}
+Equipment: ${equipment}
+
+Return ONLY valid JSON, no markdown:
+{
+  "adaptation_note": "one short sentence explaining how the session was adapted to the energy level",
+  "exercises": [
+    { "name": "Exercise name", "sets": "3 × 8-10", "note": "optional short tip" }
+  ]
+}`;
+
+  try {
+    const { text } = await generateText({
+      model: AGENT_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      maxOutputTokens: 1500,
+    });
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Model returned no JSON');
+    const parsed = JSON.parse(match[0]) as {
+      adaptation_note?: unknown;
+      exercises?: Array<{ name?: unknown; sets?: unknown; note?: unknown }>;
+    };
+    const exercises = (Array.isArray(parsed.exercises) ? parsed.exercises : [])
+      .filter((e) => typeof e?.name === 'string' && e.name.length > 0)
+      .map((e) => ({
+        name: String(e.name),
+        sets: String(e.sets ?? '3 × 10'),
+        ...(typeof e.note === 'string' && e.note ? { note: e.note } : {}),
+      }));
+    if (exercises.length === 0) throw new Error('Model returned no exercises');
+    return c.json({
+      result: {
+        exercises,
+        adaptation_note: typeof parsed.adaptation_note === 'string' ? parsed.adaptation_note : undefined,
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Session Generate Error]', msg);
+    return c.json({ error: 'Failed to generate session' }, 500);
+  }
+});
+
 export { router as aiRouter };

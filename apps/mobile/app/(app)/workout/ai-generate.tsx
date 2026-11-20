@@ -76,19 +76,26 @@ export default function AIGenerateScreen() {
 
     try {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-      const fetchPromise = fetch(`${apiUrl}/ai/tools/execute`, {
+      const fetchPromise = fetch(`${apiUrl}/ai/session/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token ?? ''}`,
         },
-        body: JSON.stringify({
-          tool: 'ai_programs_generate',
-          input: { energy, duration, zone, equipment },
-        }),
+        body: JSON.stringify({ energy, duration, zone, equipment }),
       });
 
       const [response] = await Promise.all([fetchPromise, minDelay]);
+
+      if (response.status === 402) {
+        await minDelay;
+        showAlert(
+          'Crédits épuisés',
+          "Tu as utilisé tes générations IA gratuites du jour. Reviens demain ou gagne des crédits en restant actif.",
+        );
+        setStep(3);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -96,18 +103,11 @@ export default function AIGenerateScreen() {
 
       const data = await response.json();
 
-      // Normalise la réponse — le backend peut renvoyer différentes structures
-      const exercises: GeneratedExercise[] = Array.isArray(data?.result?.exercises)
-        ? data.result.exercises
-        : Array.isArray(data?.exercises)
-        ? data.exercises
-        : [
-            { name: 'Développé incliné haltères', sets: `3 × 8-10`, note: `charge légère vu énergie ${energy}/10` },
-            { name: 'Développé couché barre', sets: '4 × 6-8' },
-            { name: 'Écarté machine', sets: '3 × 12' },
-            { name: 'Dips lestés', sets: '3 × 8' },
-            { name: 'Extensions triceps poulie', sets: '3 × 12' },
-          ];
+      // Le backend renvoie { result: { exercises, adaptation_note } }
+      if (!Array.isArray(data?.result?.exercises) || data.result.exercises.length === 0) {
+        throw new Error('Empty session');
+      }
+      const exercises: GeneratedExercise[] = data.result.exercises;
 
       const adaptationNote: string =
         data?.result?.adaptation_note ??
