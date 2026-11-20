@@ -54,7 +54,7 @@ import { invalidateHomeQueries } from '../../src/lib/homeQueries';
 import { AnimatePresence } from 'moti';
 import FirstWorkoutCard from '../../src/components/home/FirstWorkoutCard';
 import { useFirstWorkoutCard } from '../../src/hooks/useFirstWorkout';
-import { hideEmptyMissionVariant } from '../../src/lib/firstWorkout';
+import { hideEmptyMissionVariant, formeDuJourPlacement } from '../../src/lib/firstWorkout';
 import { QuestsBlock } from '../../src/components/home/QuestsBlock';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
@@ -93,14 +93,11 @@ function MissionCardContent({
   activeProgram,
   onboardingMission,
   onStart,
-  hideEmpty = false,
 }: {
   isLoading: boolean;
   activeProgram: any | null;
   onboardingMission?: OnboardingMission | null;
   onStart: () => void;
-  /** R5 : la carte "premier entrainement" occupe la place, la variante vide (4e chemin) n'est pas rendue. */
-  hideEmpty?: boolean;
 }) {
   const theme = useThemeStore((s) => s.theme);
   const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
@@ -151,7 +148,6 @@ function MissionCardContent({
 
   // Empty state
   if (!activeProgram) {
-    if (hideEmpty) return null;
     return (
       <View style={{
         backgroundColor: '#1C1A17', borderRadius: 12, padding: 18,
@@ -612,6 +608,91 @@ export default function DashboardScreen() {
   // ── QuickLog cell width ───────────────────────────────────────────────────
   const cellWidth = (screenWidth - 32 - 24) / 4;
 
+  // v1.21 P2 : bloc extrait pour pouvoir le placer avant Mission (ordre historique) ou apres Quetes (carte visible).
+  const formeDuJourBlock = (
+    {/* ── FormeDuJour ────────────────────────────────── */}
+    <View style={{
+      backgroundColor: theme.surface, borderRadius: 20, padding: 16,
+      shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
+      marginBottom: 12,
+    }}>
+      <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: theme.muted }}>
+        Forme du jour
+      </Text>
+      <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginTop: 2 }}>
+        {scoreHeadline}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 }}>
+        {isWellnessLoading ? (
+          <>
+            <Skeleton width={160} height={160} borderRadius={80} />
+            <View style={{ flex: 1, gap: 10 }}>
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} width="100%" height={26} borderRadius={8} />)}
+            </View>
+          </>
+        ) : formScore.isEmpty ? (
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{
+              width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,92,26,0.10)',
+            }}>
+              <Ionicons name="pulse-outline" size={26} color="#FF5C1A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, lineHeight: 18, color: theme.muted }}>
+                Ta forme se calcule à partir de ton sommeil, ton hydratation, ta nutrition et ta charge d'entraînement. Loggue un repas ou de l'eau pour la voir apparaître.
+              </Text>
+              <TouchableOpacity
+                onPress={handleLogMeal}
+                activeOpacity={0.8}
+                style={{
+                  alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
+                  backgroundColor: '#FF5C1A', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8,
+                }}
+              >
+                <Ionicons name="restaurant-outline" size={13} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Loguer un repas</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View style={{ width: 160, height: 160, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+              <FormRing
+                score={score}
+                size={160}
+                parts={[
+                  { value: sleepPct, max: 100, color: '#8B5CF6' },
+                  { value: waterPct, max: 100, color: '#3B82F6' },
+                  { value: nutritionPct, max: 100, color: '#FF5C1A' },
+                  { value: loadPct, max: 100, color: '#22C55E' },
+                ]}
+              />
+            </View>
+            <View style={{ flex: 1, gap: 10 }}>
+              {segmentParts.map((p) => (
+                <View key={p.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{
+                    width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: p.color + '22',
+                  }}>
+                    <Ionicons name={p.icon} size={13} color={p.color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{p.label}</Text>
+                    <Text style={{ fontSize: 10, color: theme.muted }}>{p.sub}</Text>
+                  </View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: p.color }}>{p.value}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    </View>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <SearchOverlay visible={showSearch} onClose={() => setShowSearch(false)} />
@@ -684,98 +765,20 @@ export default function DashboardScreen() {
           )}
         </AnimatePresence>
 
-        {/* ── FormeDuJour ────────────────────────────────── */}
-        <View style={{
-          backgroundColor: theme.surface, borderRadius: 20, padding: 16,
-          shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
-          marginBottom: 12,
-        }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: theme.muted }}>
-            Forme du jour
-          </Text>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginTop: 2 }}>
-            {scoreHeadline}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 }}>
-            {isWellnessLoading ? (
-              <>
-                <Skeleton width={160} height={160} borderRadius={80} />
-                <View style={{ flex: 1, gap: 10 }}>
-                  {[0, 1, 2, 3].map((i) => <Skeleton key={i} width="100%" height={26} borderRadius={8} />)}
-                </View>
-              </>
-            ) : formScore.isEmpty ? (
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                <View style={{
-                  width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: 'rgba(255,92,26,0.10)',
-                }}>
-                  <Ionicons name="pulse-outline" size={26} color="#FF5C1A" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, lineHeight: 18, color: theme.muted }}>
-                    Ta forme se calcule à partir de ton sommeil, ton hydratation, ta nutrition et ta charge d'entraînement. Loggue un repas ou de l'eau pour la voir apparaître.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleLogMeal}
-                    activeOpacity={0.8}
-                    style={{
-                      alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
-                      backgroundColor: '#FF5C1A', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8,
-                    }}
-                  >
-                    <Ionicons name="restaurant-outline" size={13} color="#fff" />
-                    <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Loguer un repas</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                <View style={{ width: 160, height: 160, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                  <FormRing
-                    score={score}
-                    size={160}
-                    parts={[
-                      { value: sleepPct, max: 100, color: '#8B5CF6' },
-                      { value: waterPct, max: 100, color: '#3B82F6' },
-                      { value: nutritionPct, max: 100, color: '#FF5C1A' },
-                      { value: loadPct, max: 100, color: '#22C55E' },
-                    ]}
-                  />
-                </View>
-                <View style={{ flex: 1, gap: 10 }}>
-                  {segmentParts.map((p) => (
-                    <View key={p.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{
-                        width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: p.color + '22',
-                      }}>
-                        <Ionicons name={p.icon} size={13} color={p.color} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{p.label}</Text>
-                        <Text style={{ fontSize: 10, color: theme.muted }}>{p.sub}</Text>
-                      </View>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: p.color }}>{p.value}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        </View>
+        {formeDuJourPlacement(firstWorkout.visibility) === 'above-mission' && formeDuJourBlock}
 
         {/* ── MissionCard ────────────────────────────────── */}
         {!(hideEmptyMission && isEmptyMissionVariant(programLoading || missionLoading, activeProgram ?? null, onboardingMission ?? null, effectiveLevel)) && (
           <View style={{ marginBottom: 12 }}>
-            <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} hideEmpty={hideEmptyMission} />
+            <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} />
           </View>
         )}
         {/* ── Quetes (phase 1) : bloc insere ici au merge, juste apres Mission du jour ── */}
 
         {/* ── Quêtes du jour (v1.21 phase 1) ─────────────── */}
         <QuestsBlock />
+
+        {formeDuJourPlacement(firstWorkout.visibility) === 'below-quests' && formeDuJourBlock}
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (
