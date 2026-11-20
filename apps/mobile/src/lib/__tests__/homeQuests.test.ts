@@ -1,10 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { isPluginRouteLocked, getPluginIdFromSegments, PLUGIN_LEVEL_MAP } from '../../../../../packages/plugin-sdk/src/gating';
+import { isPluginRouteLocked, getPluginIdFromSegments, PLUGIN_LEVEL_MAP } from '@ziko/plugin-sdk';
 
 // L'index du SDK charge du code natif : on le remplace par le vrai module de gating (pur), seule partie utilisee ici.
-vi.mock('@ziko/plugin-sdk', async () => await import('../../../../../packages/plugin-sdk/src/gating'));
+// (chemin en variable : tsc ne doit pas inclure le fichier source du SDK dans le projet mobile)
+vi.mock('@ziko/plugin-sdk', async () => {
+  const path = ['../../../../..', 'packages/plugin-sdk/src/gating'].join('/');
+  return await import(/* @vite-ignore */ path);
+});
 import { parseQuestSync, type Quest } from '@ziko/plugin-gamification/quests';
 import {
   QUEST_ACTIONS, visibleHomeQuests, homeQuestsState, homeQuestsHeaderCount, homeCompletedNote, homeToastText,
