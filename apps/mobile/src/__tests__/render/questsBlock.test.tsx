@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -84,11 +84,19 @@ vi.mock('../../lib/supabase', () => ({ supabase: new Proxy({}, { get: (_t, k) =>
 
 import { QuestsBlock } from '../../components/home/QuestsBlock';
 import { router, routerCalls } from './stubs/expo-router';
-import { AccessibilityInfo } from './stubs/react-native';
+import { AccessibilityInfo, emitAppState } from './stubs/react-native';
+import { setQuestRefreshHandler } from '@ziko/plugin-sdk';
 
 async function settle() {
   for (let i = 0; i < 6; i++) await act(async () => { await new Promise((r) => setTimeout(r, 8)); });
 }
+
+// Demonte tous les arbres a la fin de chaque test (minuteurs du toast / du bouton Reessayer nettoyes).
+const mountedRoots: Root[] = [];
+afterEach(async () => {
+  const roots = mountedRoots.splice(0);
+  await act(async () => { roots.forEach((r) => r.unmount()); });
+});
 
 async function mount(w: World, level = 1, creatingRetryMs = 15) {
   currentWorld = w;
@@ -97,6 +105,7 @@ async function mount(w: World, level = 1, creatingRetryMs = 15) {
   document.body.appendChild(container);
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRoot(container);
+  mountedRoots.push(root);
   await act(async () => {
     root.render(
       <QueryClientProvider client={qc}>
@@ -279,5 +288,42 @@ describe('failure path and creating state (contract 5, states 6-7)', () => {
   it('no emoji anywhere in the rendered block', async () => {
     const { text } = await mount(world({ waterMl: 2000 }), 3);
     expect(text()).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+});
+
+describe('D-07 / M3: refresh when the app returns to the foreground', () => {
+  afterEach(() => setQuestRefreshHandler(null));
+
+  it('AppState "active" asks for a quest refresh ; "background" / "inactive" do not', async () => {
+    let calls = 0;
+    setQuestRefreshHandler(() => { calls++; });
+    await mount(world());
+    emitAppState('background');
+    emitAppState('inactive');
+    expect(calls).toBe(0);
+    emitAppState('active');
+    expect(calls).toBe(1);
+  });
+
+  it('yesterday\'s "Bravo" is replaced by today\'s quests after foreground (new day = new period)', async () => {
+    const w = world({ waterMl: 2000, meals: 1, sessions: 1 });
+    const { qc, text } = await mount(w);
+    expect(text()).toContain('Bravo, tout est fait');
+    // lendemain : la base a de nouvelles quetes (autre periode), rien de fait
+    w.rows.clear(); w.rewarded.clear(); w.waterMl = 0; w.meals = 0; w.sessions = 0;
+    setQuestRefreshHandler(() => { void qc.invalidateQueries({ queryKey: ['rewards-quests'] }); }); // ce que fait le vrai gestionnaire apres le debounce
+    await act(async () => { emitAppState('active'); });
+    await settle();
+    expect(text()).not.toContain('Bravo, tout est fait');
+    expect(text()).toContain('3 en cours');
+  });
+
+  it('unsubscribes from AppState on unmount', async () => {
+    let calls = 0;
+    setQuestRefreshHandler(() => { calls++; });
+    const { root } = await mount(world());
+    await act(async () => { root.unmount(); });
+    emitAppState('active');
+    expect(calls).toBe(0);
   });
 });

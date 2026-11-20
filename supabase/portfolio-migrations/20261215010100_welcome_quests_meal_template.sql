@@ -27,7 +27,6 @@ UPDATE public.ziko_quest_templates
    SET title = 'Termine une séance', description = 'Lance une séance depuis l''onglet Séance.'
  WHERE slug = 'starter_daily_workout';
 
--- 4. Plafond de 3 quetes actives pour un compte neuf (A1) : la quete hebdomadaire « S'entraîner 3 fois » reste en base
---    (is_active) mais n'est plus une quete de DEPART. Decision a confirmer : elle cesse d'etre generee pour tous les
---    comptes sans quete IA ; les instances deja creees se terminent normalement.
-UPDATE public.ziko_quest_templates SET is_starter = false WHERE slug = 'starter_weekly_train';
+-- 4. D-11 : la quete hebdomadaire « S'entrainer 3 fois » (`starter_weekly_train`) est CONSERVEE telle quelle
+--    (is_starter reste true) : l'accueil plafonne l'affichage a 3 quetes en preferant les quotidiennes (UI, homeQuests.ts).
+--    Les comptes existants ne changent pas ; aucune ligne `expired` orpheline n'est creee.

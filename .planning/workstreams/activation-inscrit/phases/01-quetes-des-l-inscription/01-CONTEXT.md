@@ -12,6 +12,7 @@
 - **D-07** Quête terminée : le bloc affiche « Bravo, tout est fait » jusqu'au lendemain, pas de remplacement dans la journée. Retour haptique à la complétion : actif.
 - **D-08** Non punitif : aucune quête « échouée » ni « expirée » visible.
 - **D-09** CLAR-03 : le backend n'assigne comme première mission que `hydration_log` à un compte de niveau 1 (`backend/api/src/routes/onboarding.ts`, prompt + validation de sortie). CLAR-04 : le tap sur une quête ou sur le CTA de la première mission n'est jamais renvoyé à l'accueil par le garde de `app/(app)/(plugins)/_layout.tsx` / `gating.ts`.
+- **D-11** (décision utilisateur, post-audit) La quête hebdomadaire de départ « S'entraîner 3 fois » est GARDÉE (`is_starter` inchangé, comptes existants inchangés). Le bloc d'accueil plafonne à 3 quêtes en préférant les quotidiennes (rang `weekly*2 + done`). La migration n'ajoute que le modèle « repas ».
 - **D-10** Placement : la phase 2 ajoutera la carte « Crée ton premier entraînement » AU-DESSUS de Mission du jour (propriétaire de la composition de `app/(app)/index.tsx`). Cette phase n'insère son bloc que par édition localisée.
 
 ## Références code

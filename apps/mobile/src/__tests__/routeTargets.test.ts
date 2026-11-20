@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+
+// Scans de fichiers : le defaut de 5 s depasse sous charge parallele (turbo run test) ; verts en isolation.
+vi.setConfig({ testTimeout: 20_000 });
 
 // UAT run 6 : `router.replace('/(app)/(tabs)/workout')` pointait vers un groupe `(tabs)` qui n'existe
 // pas -> "Unmatched Route". Ce test statique liste les routes expo-router reelles (fichiers de

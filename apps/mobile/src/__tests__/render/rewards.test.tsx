@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import GamificationPlugin from '../../../../../plugins/gamification/src/screens/GamificationPlugin';
@@ -118,12 +118,21 @@ async function settle() {
   for (let i = 0; i < 8; i++) await act(async () => { await new Promise((r) => setTimeout(r, 8)); });
 }
 
+// Demonte tous les arbres a la fin de chaque test : les minuteurs en attente (toast 3,2 s, etc.) sont nettoyes avant la
+// fin de l'environnement (sinon « window is not defined » en tache de fond, flake observe sous charge).
+const mountedRoots: Root[] = [];
+afterEach(async () => {
+  const roots = mountedRoots.splice(0);
+  await act(async () => { roots.forEach((r) => r.unmount()); });
+});
+
 async function mount(w: World, props: Record<string, unknown> = {}) {
   const slow = w.failNetwork; // l'ecran retente une fois (300 ms) avant la carte d'erreur
   const container = document.createElement('div');
   document.body.appendChild(container);
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRoot(container);
+  mountedRoots.push(root);
   await act(async () => {
     root.render(
       <QueryClientProvider client={qc}>

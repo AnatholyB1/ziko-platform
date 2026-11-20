@@ -28,7 +28,13 @@ export const Alert = { alert: () => undefined };
 export const Linking = { openURL: async () => undefined };
 export const Keyboard = { dismiss: () => undefined, addListener: () => ({ remove() {} }) };
 export const useColorScheme = () => 'light';
-export const AppState = { addEventListener: () => ({ remove() {} }), currentState: 'active' };
+const appStateListeners = new Set<(s: string) => void>();
+export const AppState = {
+  addEventListener: (_type: string, fn: (s: string) => void) => { appStateListeners.add(fn); return { remove() { appStateListeners.delete(fn); } }; },
+  currentState: 'active',
+};
+/** Test : simule un changement d'etat de l'app (background / active). */
+export const emitAppState = (s: string) => { appStateListeners.forEach((f) => f(s)); };
 export const FlatList = ({ data = [], renderItem }: any) =>
   React.createElement('div', null, data.map((item: any, index: number) => renderItem({ item, index })));
 export const Image = () => null;

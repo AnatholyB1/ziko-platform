@@ -1,6 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
+
+// Scans de fichiers : le defaut de 5 s depasse sous charge parallele (turbo run test) ; verts en isolation.
+vi.setConfig({ testTimeout: 20_000 });
 
 // Revue A #11 #12 #27 : garde de langue/charte sur TOUS les fichiers visibles (remplace les 7 aiguilles de
 // uatRun1Guards, qui laissaient passer "Target reached!"). Chaque .tsx visible (ecrans, composants, plugins)
