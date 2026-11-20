@@ -70,8 +70,9 @@ export function orderQuests(quests: Quest[], previousOrder: string[] = []): Ques
   const rank = (q: Quest, i: number): [number, number, number, number] => {
     const k = known.get(q.id);
     if (k !== undefined) return [0, k, 0, 0];
+    // Quotidiennes d'abord (terminees ou non), l'hebdo ensuite : « 3 sur 3 » reste atteignable (audit M2).
     const done = q.status === 'completed' ? 1 : 0;
-    return [1, done * 2 + (q.scope === 'weekly' ? 1 : 0), QUEST_ACTIONS[q.metric]?.rank ?? 9, i];
+    return [1, (q.scope === 'weekly' ? 2 : 0) + done, QUEST_ACTIONS[q.metric]?.rank ?? 9, i];
   };
   return quests
     .map((q, i) => ({ q, r: rank(q, i) }))

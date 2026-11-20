@@ -37,6 +37,29 @@ describe('QNEW-03/04: welcome set order and copy (contract 4 and 6)', () => {
       'Ajoute chaque verre dans Hydratation.', 'Note ton premier repas dans Nutrition.', "Lance une séance depuis l'onglet Séance.",
     ]);
   });
+  it('remount: 1 completed daily + active weekly + 2 active dailies shows the 3 dailies, weekly dropped (M2)', () => {
+    const all = qs(
+      { id: 'wk', slug: 'starter_daily_workout_wk', scope: 'weekly', metric: 'workout_sessions', target: 3 },
+      { id: 'h', status: 'completed', progress: 2000 },
+      { id: 'm', slug: 'starter_daily_meal', metric: 'nutrition_logs', target: 1 },
+      { id: 'w', slug: 'starter_daily_workout', metric: 'workout_sessions', target: 1 },
+    );
+    const v = visibleHomeQuests(all, 1);
+    expect(v).toHaveLength(3);
+    expect(v.map((x) => x.quest.id)).toEqual(['m', 'w', 'h']);
+    expect(v.some((x) => x.quest.id === 'wk')).toBe(false);
+  });
+  it('3 sur 3 is reachable with an active weekly present (all dailies done)', () => {
+    const all = qs(
+      { id: 'wk', slug: 'starter_weekly_train', scope: 'weekly', metric: 'workout_sessions', target: 3 },
+      { id: 'h', status: 'completed' },
+      { id: 'm', slug: 'starter_daily_meal', metric: 'nutrition_logs', target: 1, status: 'completed' },
+      { id: 'w', slug: 'starter_daily_workout', metric: 'workout_sessions', target: 1, status: 'completed' },
+    );
+    const v = visibleHomeQuests(all, 1);
+    expect(homeQuestsState({ loading: false, error: false, visible: v })).toBe('allDone');
+    expect(homeQuestsHeaderCount(v)).toBe('3 sur 3');
+  });
   it('never shows more than 3 (weekly starter of an existing account is dropped behind the dailies)', () => {
     const all = qs(
       { id: 'wk', slug: 'starter_weekly_train', scope: 'weekly', metric: 'workout_sessions', target: 3 },
