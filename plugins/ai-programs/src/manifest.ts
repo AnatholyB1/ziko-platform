@@ -3,7 +3,7 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 const aiProgramsManifest: PluginManifest = {
   id: 'ai-programs',
   /** Progressive unlock: athlete level required (1-5). */
-  minLevel: 4,
+  minLevel: 1,
   name: 'Programmes IA',
   version: '1.0.0',
   description:

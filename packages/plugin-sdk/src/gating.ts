@@ -134,7 +134,7 @@ export const PLUGIN_LEVEL_MAP: Readonly<Record<string, PluginLevelInfo>> = {
   cardio:       { id: 'cardio',       name: 'Cardio & Running',        icon: 'fitness-outline',        minLevel: 3 },
   community:    { id: 'community',    name: 'Communauté',         icon: 'people',                 minLevel: 3 },
   wearables:    { id: 'wearables',    name: 'Wearables & Santé',  icon: 'watch-outline',          minLevel: 3 },
-  'ai-programs': { id: 'ai-programs', name: 'Programmes IA',           icon: 'sparkles-outline',       minLevel: 4 },
+  'ai-programs': { id: 'ai-programs', name: 'Programmes IA',           icon: 'sparkles-outline',       minLevel: 1 },
   supplements:  { id: 'supplements',  name: 'Compléments Alimentaires', icon: 'flask',            minLevel: 4 },
 };
 

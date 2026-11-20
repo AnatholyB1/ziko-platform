@@ -17,9 +17,9 @@ import { PLUGIN_LEVEL_MAP } from './gating';
 import { translations } from './i18n';
 
 describe('buildLockedSection (B-08, B-12)', () => {
-  it('level 1 lists all 12 locked plugins, minLevel ascending', () => {
+  it('level 1 lists all 11 locked plugins, minLevel ascending', () => {
     const m = buildLockedSection(1);
-    expect(m.tiles).toHaveLength(12);
+    expect(m.tiles).toHaveLength(11);
     const levels = m.tiles.map((t) => t.minLevel);
     expect([...levels].sort((a, b) => a - b)).toEqual(levels);
     expect(m.tiles[0].id).toBe('journal');
@@ -32,15 +32,15 @@ describe('buildLockedSection (B-08, B-12)', () => {
     expect(m.showLockedSection).toBe(false);
     expect(m.showAllUnlocked).toBe(true);
   });
-  it('level 3 leaves the two level-4 plugins', () => {
-    expect(buildLockedSection(3).tiles.map((t) => t.id)).toEqual(['ai-programs', 'supplements']);
+  it('level 3 leaves the level-4 plugin', () => {
+    expect(buildLockedSection(3).tiles.map((t) => t.id)).toEqual(['supplements']);
   });
   it('only next-level tiles get the primary pill tone', () => {
     const m = buildLockedSection(1);
     for (const t of m.tiles) expect(t.pillTone).toBe(t.minLevel === 2 ? 'next' : 'later');
   });
   it('clamps garbage levels to 1', () => {
-    expect(buildLockedSection(NaN).tiles).toHaveLength(12);
+    expect(buildLockedSection(NaN).tiles).toHaveLength(11);
     expect(buildLockedSection(99).tiles).toHaveLength(0);
   });
   it('every locked plugin has a short name', () => {
