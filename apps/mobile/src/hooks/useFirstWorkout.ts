@@ -59,8 +59,6 @@ export function useCreditInfo(enabled: boolean) {
 export interface FirstWorkoutState {
   visibility: CardVisibility;
   credit: CreditView;
-  /** La lecture cout/solde a echoue : la carte reste utilisable (repli "Consomme des crédits IA", solde "—"). */
-  creditFailed: boolean;
 }
 
 export function useFirstWorkoutCard(): FirstWorkoutState {
@@ -72,5 +70,5 @@ export function useFirstWorkoutCard(): FirstWorkoutState {
   });
   const info = useCreditInfo(visibility === 'show');
   const credit = useMemo(() => computeCreditView(info.isError ? null : info.data), [info.data, info.isError]);
-  return { visibility, credit, creditFailed: info.isError };
+  return { visibility, credit };
 }

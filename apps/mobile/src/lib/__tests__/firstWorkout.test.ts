@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  firstWorkoutVisibility, hideEmptyMissionVariant, computeCreditView, pathAction, pathCostView, pathA11yLabel,
+  firstWorkoutVisibility, hideEmptyMissionVariant, formeDuJourPlacement, computeCreditView, pathAction, pathCostView, pathA11yLabel,
   sessionButtonBadge, FIRST_WORKOUT_PATHS, FIRST_WORKOUT_COPY,
 } from '../firstWorkout';
 
@@ -37,13 +37,31 @@ describe('firstWorkoutVisibility (FWKO-01, FWKO-06, R1/R3/R4)', () => {
   it('R4 : lecture du PROGRAMME en erreur -> hide (jamais une carte comme si le compte etait vide)', () => {
     expect(firstWorkoutVisibility({ program: { isLoading: false, isError: true, hasActive: false }, sessions: noSessions })).toBe('hide');
   });
-  it('lecture des SEANCES en erreur, programme connu vide -> la carte reste offerte (Manuel disponible)', () => {
-    expect(firstWorkoutVisibility({ program: noProgram, sessions: { isLoading: false, isError: true, finishedCount: undefined } })).toBe('show');
+  it('lecture des SEANCES en erreur -> hide (R4 : un veteran sans programme actif ne voit jamais la carte)', () => {
+    expect(firstWorkoutVisibility({ program: noProgram, sessions: { isLoading: false, isError: true, finishedCount: undefined } })).toBe('hide');
   });
   it('R3 : des que le programme devient actif ou une seance terminee, la carte disparait', () => {
     expect(firstWorkoutVisibility({ program: noProgram, sessions: noSessions })).toBe('show');
     expect(firstWorkoutVisibility({ program: { ...ok, hasActive: true }, sessions: noSessions })).toBe('hide');
     expect(firstWorkoutVisibility({ program: noProgram, sessions: { ...ok, finishedCount: 1 } })).toBe('hide');
+  });
+});
+
+describe('formeDuJourPlacement (D-08 / R2)', () => {
+  it('carte visible ou en chargement -> Forme du jour SOUS le bloc Quetes', () => {
+    expect(formeDuJourPlacement('show')).toBe('below-quests');
+    expect(formeDuJourPlacement('loading')).toBe('below-quests');
+  });
+  it('carte masquee -> ordre historique inchange (Forme du jour avant Mission)', () => {
+    expect(formeDuJourPlacement('hide')).toBe('above-mission');
+  });
+});
+
+describe('pathA11yLabel : badge Conseillé', () => {
+  it('inclut le badge quand fourni, rien sinon', () => {
+    const v = computeCreditView({ cost: 3, balance: 5, free_left: 0 });
+    expect(pathA11yLabel(FIRST_WORKOUT_PATHS[1], v, FIRST_WORKOUT_COPY.recommended)).toContain('Conseillé');
+    expect(pathA11yLabel(FIRST_WORKOUT_PATHS[1], v)).not.toContain('Conseillé');
   });
 });
 
