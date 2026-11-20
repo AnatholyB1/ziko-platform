@@ -33,6 +33,9 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 | 2026-11-20 | Correctifs P2 (f7cb4ff1) puis P1 (c39788db) mergés ; gate complet vert | milestone/v1.21 | c39788db | type-check 24/24, lint 5/5, tests 7/7 (mobile 45+16 fichiers), build api OK |
 | 2026-11-20 | ÉTAT : vagues A-C terminées pour P1 et P2. Reste vague D (P3 UAT) | — | — | prérequis : accord utilisateur pour appliquer la migration 20261215010100 sur la branche jetable uat-v1-20 ; verrou machine ; émulateur ziko-uat-1 |
 
+| 2026-11-20 | Migration 20261215010100 APPLIQUÉE sur la branche jetable uat-v1-20 (oloobswzsziidjwycthm) uniquement, après accord ; vérifiée : 4 modèles (eau 10, repas 20, séance 30, hebdo 30) | — | — | PROD NON TOUCHÉE ; à appliquer en prod seulement sur demande explicite (DEPLOY-CHECKLIST) |
+| 2026-11-20 | Harnais UAT (flows tf-*, create-fresh-athlete, fake-script) commité sur la branche d'intégration | milestone/v1.21 | voir git log | l'agent UAT P3 tourne depuis le worktree d'intégration |
+
 ## À faire ensuite (OBSOLETE, voir ÉTAT ci-dessus ; mis à jour : P1 audité, décision D-11 prise ; attendre fix-p2-entrainement et fix-p1-quetes, puis merger un par un + gate, puis vague D UAT)
 1. Récupérer l'audit P1 -> remonter à l'utilisateur la décision produit sur la quête hebdomadaire -> lancer le correctif P1 (inclure le test instable `rewards.test.tsx`).
 2. Merger correctifs P2 et P1 (un à la fois) + gate ; re-vérifier l'ordre de l'accueil (carte > Mission > Quêtes > Forme du jour quand carte visible).
@@ -48,3 +51,4 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 ## Ouvert / actions humaines
 - Envoi TestFlight des 4 correctifs (push, Vercel prod, build iOS) : en attente d'accord utilisateur.
 - Migration quêtes de bienvenue : à appliquer sur `uat-v1-20` après accord, puis prod seulement sur demande explicite.
+| 2026-11-20 | Vague D : agent uat-p3-compte-neuf lancé (isolé, branche uat/phase-3) | uat/phase-3 | — | en cours ; à la fin : merger la branche, gate, rapport 03-UAT |
