@@ -51,6 +51,10 @@ import {
 } from '../../src/lib/quickLog';
 import { localDateKey, localDateKeyFromISO } from '../../src/lib/localDate';
 import { invalidateHomeQueries } from '../../src/lib/homeQueries';
+import { AnimatePresence } from 'moti';
+import FirstWorkoutCard from '../../src/components/home/FirstWorkoutCard';
+import { useFirstWorkoutCard } from '../../src/hooks/useFirstWorkout';
+import { hideEmptyMissionVariant } from '../../src/lib/firstWorkout';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
@@ -67,6 +71,20 @@ async function fireAndForget(tool: string, input: Record<string, unknown>): Prom
   }).catch(() => {}); // silent fire-and-forget
 }
 
+// v1.21 P2 (R5) : vrai quand Mission du jour tomberait sur sa variante VIDE ("Aucun programme actif"), c'est-a-dire ni
+// chargement, ni programme, ni mission d'onboarding atteignable. Source unique pour le rendu et pour le conteneur.
+function isEmptyMissionVariant(
+  isLoading: boolean,
+  activeProgram: any | null,
+  onboardingMission: OnboardingMission | null | undefined,
+  effectiveLevel: number,
+): boolean {
+  if (isLoading || activeProgram) return false;
+  const missionRoute = onboardingMission ? ONBOARDING_MISSION_ROUTES[onboardingMission.micro_action] : undefined;
+  const missionLocked = missionRoute ? isPluginRouteLocked(missionRoute.split('/'), effectiveLevel) : true;
+  return !(onboardingMission && missionRoute && !missionLocked);
+}
+
 // ── MissionCardContent ────────────────────────────────────────────────────────
 // Renders loading/empty/populated states — receives pre-computed data
 function MissionCardContent({
@@ -74,11 +92,14 @@ function MissionCardContent({
   activeProgram,
   onboardingMission,
   onStart,
+  hideEmpty = false,
 }: {
   isLoading: boolean;
   activeProgram: any | null;
   onboardingMission?: OnboardingMission | null;
   onStart: () => void;
+  /** R5 : la carte "premier entrainement" occupe la place, la variante vide (4e chemin) n'est pas rendue. */
+  hideEmpty?: boolean;
 }) {
   const theme = useThemeStore((s) => s.theme);
   const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
@@ -129,6 +150,7 @@ function MissionCardContent({
 
   // Empty state
   if (!activeProgram) {
+    if (hideEmpty) return null;
     return (
       <View style={{
         backgroundColor: '#1C1A17', borderRadius: 12, padding: 18,
@@ -342,6 +364,9 @@ export default function DashboardScreen() {
   const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
   const { data: onboardingMission, isLoading: missionLoading } = useOnboardingMission();
+  // v1.21 P2 : carte "Crée ton premier entraînement" (aucun programme actif ET zero seance terminee)
+  const firstWorkout = useFirstWorkoutCard();
+  const hideEmptyMission = hideEmptyMissionVariant(firstWorkout.visibility);
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
   const { data: sleepSettings } = useSleepSettings();
@@ -545,6 +570,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['program', 'active'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'weekly'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'recent'] }),
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'finished'] }),
       queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
@@ -649,6 +675,14 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* ── v1.21 P2 : Crée ton premier entraînement (1re carte, jamais repoussable) ──
+            Ordre cible (D-08) : cette carte > Mission du jour > bloc Quetes (phase 1). */}
+        <AnimatePresence>
+          {firstWorkout.visibility !== 'hide' && (
+            <FirstWorkoutCard key="first-workout" visibility={firstWorkout.visibility} credit={firstWorkout.credit} />
+          )}
+        </AnimatePresence>
+
         {/* ── FormeDuJour ────────────────────────────────── */}
         <View style={{
           backgroundColor: theme.surface, borderRadius: 20, padding: 16,
@@ -732,9 +766,12 @@ export default function DashboardScreen() {
         </View>
 
         {/* ── MissionCard ────────────────────────────────── */}
-        <View style={{ marginBottom: 12 }}>
-          <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} />
-        </View>
+        {!(hideEmptyMission && isEmptyMissionVariant(programLoading || missionLoading, activeProgram ?? null, onboardingMission ?? null, effectiveLevel)) && (
+          <View style={{ marginBottom: 12 }}>
+            <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} hideEmpty={hideEmptyMission} />
+          </View>
+        )}
+        {/* ── Quetes (phase 1) : bloc insere ici au merge, juste apres Mission du jour ── */}
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (

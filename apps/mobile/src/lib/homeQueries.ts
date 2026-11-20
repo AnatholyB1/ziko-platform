@@ -7,6 +7,8 @@ export const HOME_QUERY_KEYS: ReadonlyArray<readonly string[]> = [
   ['program', 'active'],
   ['workouts', 'weekly'],
   ['workouts', 'recent'],
+  ['workouts', 'finished'], // v1.21 P2 : carte "premier entrainement" (seances terminees)
+  ['credits', 'info'], // v1.21 P2 : cout / solde des chemins IA de la carte
   ['streak'],
   ['sleep'],
   ['hydration', 'today'],
