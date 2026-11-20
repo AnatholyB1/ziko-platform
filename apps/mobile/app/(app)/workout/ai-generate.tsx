@@ -7,6 +7,9 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { generatedStartFeedback } from '../../../src/lib/plannedStartFeedback';
+import { neutralToast } from '../../../src/lib/neutralToast';
 
 // ─── Data constants ───────────────────────────────────────────────────────────
 
@@ -65,6 +68,27 @@ export default function AIGenerateScreen() {
   const [equipment, setEquipment] = useState<string | null>(null);
   const [generatedSession, setGeneratedSession] = useState<GeneratedSession | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // UATN-03 : "Démarrer cette séance" charge les exercices générés dans le store (comme startPlannedSession)
+  // AVANT d'ouvrir l'écran de séance, qui sinon démarrait une "Séance rapide" vide.
+  const startGeneratedSession = useWorkoutStore((s) => s.startGeneratedSession);
+  const [isStarting, setIsStarting] = useState(false);
+  const handleStartGenerated = async () => {
+    if (!generatedSession || isStarting) return;
+    setIsStarting(true);
+    try {
+      const res = await startGeneratedSession(generatedSession.exercises, 'Séance IA');
+      const fb = generatedStartFeedback(res);
+      if (fb.alert) {
+        showAlert(fb.alert.title, fb.alert.message);
+        return;
+      }
+      router.push('/(app)/workout/session');
+      if (fb.toast) neutralToast(fb.toast);
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   // ─── API call ────────────────────────────────────────────────────────────────
 
@@ -387,8 +411,11 @@ export default function AIGenerateScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout/session')}
+            testID="ai-generate-start"
+            onPress={handleStartGenerated}
+            disabled={isStarting}
             style={{
+              opacity: isStarting ? 0.6 : 1,
               backgroundColor: '#FF5C1A',
               borderRadius: 14,
               paddingVertical: 12,
