@@ -30,7 +30,10 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 | 2026-11-20 | Audit P1 : 1 haut (décision produit), 3 moyens, 11 faibles | audit/phase-1 | 4cfa49a5 | décision utilisateur D-11 : garder la quête hebdo, l'accueil plafonne à 3 |
 | 2026-11-20 | Correctif P1 lancé | fix/phase-1-audit | — | agent fix-p1-quetes (migration sans désactivation de l'hebdo, classement, refetch AppState, test instable) |
 
-## À faire ensuite (mis à jour : P1 audité, décision D-11 prise ; attendre fix-p2-entrainement et fix-p1-quetes, puis merger un par un + gate, puis vague D UAT)
+| 2026-11-20 | Correctifs P2 (f7cb4ff1) puis P1 (c39788db) mergés ; gate complet vert | milestone/v1.21 | c39788db | type-check 24/24, lint 5/5, tests 7/7 (mobile 45+16 fichiers), build api OK |
+| 2026-11-20 | ÉTAT : vagues A-C terminées pour P1 et P2. Reste vague D (P3 UAT) | — | — | prérequis : accord utilisateur pour appliquer la migration 20261215010100 sur la branche jetable uat-v1-20 ; verrou machine ; émulateur ziko-uat-1 |
+
+## À faire ensuite (OBSOLETE, voir ÉTAT ci-dessus ; mis à jour : P1 audité, décision D-11 prise ; attendre fix-p2-entrainement et fix-p1-quetes, puis merger un par un + gate, puis vague D UAT)
 1. Récupérer l'audit P1 -> remonter à l'utilisateur la décision produit sur la quête hebdomadaire -> lancer le correctif P1 (inclure le test instable `rewards.test.tsx`).
 2. Merger correctifs P2 et P1 (un à la fois) + gate ; re-vérifier l'ordre de l'accueil (carte > Mission > Quêtes > Forme du jour quand carte visible).
 3. Vague D : P3 UAT compte neuf sur émulateur (verrou machine, `scripts/uat`), migration `20261215010100` à appliquer d'abord sur `uat-v1-20` avec accord utilisateur.
