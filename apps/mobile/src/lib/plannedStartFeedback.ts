@@ -29,7 +29,7 @@ export function plannedStartFeedback(res: PlannedStartResult): PlannedStartFeedb
     if (un.length > 0) {
       const shown = un.slice(0, MAX_LISTED).join(', ');
       const more = un.length > MAX_LISTED ? ` +${un.length - MAX_LISTED}` : '';
-      parts.push(`${un.length === 1 ? 'Exercice absent du catalogue, ignoré' : 'Exercices absents du catalogue, ignorés'} : ${shown}${more}`);
+      parts.push(`${un.length} exercice${un.length > 1 ? 's' : ''} non reconnu${un.length > 1 ? 's' : ''} ignoré${un.length > 1 ? 's' : ''} : ${shown}${more}`);
     }
     if (parts.length === 0) return { navigate: true };
     return { navigate: true, toast: parts.join(' · ') };

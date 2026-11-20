@@ -219,7 +219,7 @@ async function resolvePlanExercises(
         .from('ziko_exercises')
         .select('*')
         .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
-        .limit(300);
+        .limit(600);
       candidates = (data ?? []) as CatalogRow[];
     }
   }

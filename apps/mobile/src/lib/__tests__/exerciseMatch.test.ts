@@ -37,7 +37,7 @@ describe('resolveExercise sur le catalogue reel (P24 run5)', () => {
   });
   it('variante demandee -> la variante la plus proche du mouvement de base', () => {
     expect(idOf('front squat')).toBe('barbell front squat');
-    expect(idOf('goblet squat')).toBeNull(); // dumbbell et kettlebell a egalite : ambigu
+    expect(idOf('goblet squat')).toBe('dumbbell goblet squat'); // egalite haltere / kettlebell : preference de materiel
     expect(idOf('jump squat')).toBe('jump squat');
   });
   it('anglais <-> francais via exerciseNames', () => {
@@ -46,7 +46,7 @@ describe('resolveExercise sur le catalogue reel (P24 run5)', () => {
   it('ambigu sans meilleur candidat clair -> null (ne bloque pas la seance)', () => {
     const rows = [
       { id: 'x1', name: 'dumbbell squat' },
-      { id: 'x2', name: 'smith squat' },
+      { id: 'x2', name: 'dumbbell squat' },
     ];
     expect(resolveExercise('squat', rows, {})).toBeNull();
   });
