@@ -1,4 +1,4 @@
-# Resume file — v1.21 (lire en premier à la reprise ; voir MILESTONE-RUN.md pour le détail)
+# Resume file — v1.21 (lire en premier à la reprise)
 
 Orchestration via `/orchestrate-milestone`. Branche d'intégration : `milestone/v1.21` (worktree `C:\ziko-platform\.claude\worktrees\integration-v1.21`), base `fix/testflight-4-bugs` (4 correctifs TestFlight) + docs du milestone.
 Règles : jamais de push, jamais de déploiement, jamais d'écriture en base réelle ; migrations = fichiers, appliquées par l'orchestrateur après accord (d'abord sur la branche jetable `uat-v1-20`).
@@ -17,7 +17,9 @@ A design + discuss (parallèle) → B build P1 et P2 en parallèle (propriétair
 |------|-------|---------|--------|-------|
 | 2026-11-20 | Intégration créée | milestone/v1.21 | 312c4cb9 | base fix/testflight-4-bugs + docs |
 | 2026-11-20 | Design contrat P1 livré | design/p1-contract | 0ccf9161 | 5 questions ouvertes, PNG commités (1,3 Mo) |
-| 2026-11-20 | Design contrat P2 | design/p2-contract | en cours | |
+| 2026-11-20 | Design contrat P2 livré | design/p2-contract | fc26481b | questions tranchées |
+| 2026-11-20 | Designs mergés + CONTEXT P1/P2, maquettes validées | milestone/v1.21 | 13c389cc | — |
+| 2026-11-20 | Builders P1 et P2 lancés en parallèle | phase/01-quetes, phase/02-premier-entrainement | — | agents build-p1-quetes, build-p2-entrainement ; en cours |
 
 ## Décisions utilisateur (discuss P1)
 - D-01 Quêtes de bienvenue AJOUTÉES (migration) en plus/à la place des starters : eau, repas, séance (à confirmer avec la critique du design).
