@@ -65,6 +65,23 @@ describe('validateWizardExercises (bug 3)', () => {
     // StepN() et non <StepN /> : un composant inline remonte le TextInput a chaque frappe (perte de focus)
     expect(src).not.toMatch(/<Step[1-4] \/>/);
   });
+  it('program-builder : clavier ouvert, le pied reste atteignable (KeyboardAvoidingView + ScrollView handled)', () => {
+    const src = readFileSync(resolve(__dirname, '../../../app/(app)/workout/program-builder.tsx'), 'utf8');
+    const kav = src.indexOf('<KeyboardAvoidingView');
+    const scroll = src.indexOf('<ScrollView');
+    const cta = src.indexOf("'Creer mon programme'");
+    const kavEnd = src.indexOf('</KeyboardAvoidingView>');
+    // le ScrollView ET le bouton principal sont DANS le KeyboardAvoidingView
+    expect(kav).toBeGreaterThan(-1);
+    expect(kav).toBeLessThan(scroll);
+    expect(scroll).toBeLessThan(kavEnd);
+    expect(cta).toBeLessThan(kavEnd);
+    expect(src).toMatch(/behavior=\{Platform\.OS === 'ios' \? 'padding' : 'height'\}/);
+    expect(src).toContain('keyboardShouldPersistTaps="handled"');
+    // le pied n'est pas DANS le ScrollView (sinon il defile hors ecran)
+    const scrollEnd = src.indexOf('</ScrollView>');
+    expect(cta).toBeGreaterThan(scrollEnd);
+  });
 });
 
 describe('wizardActivationPlan (bug 2, decision : 1er programme auto-actif)', () => {

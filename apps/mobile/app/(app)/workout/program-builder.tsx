@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, FlatList,
+  View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -524,6 +524,14 @@ export default function ProgramBuilderScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Clavier ouvert : le pied (Continuer / Creer mon programme) remonte au-dessus du clavier, le contenu est
+          un ScrollView (keyboardShouldPersistTaps="handled") donc les suggestions restent touchables. */}
+      <KeyboardAvoidingView
+        testID="program-builder-keyboard-avoiding"
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
       {/* Header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center',
@@ -593,6 +601,7 @@ export default function ProgramBuilderScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
