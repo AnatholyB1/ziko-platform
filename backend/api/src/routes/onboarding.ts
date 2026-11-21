@@ -305,6 +305,11 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 // exclusively from c.get('auth'); the request body carries no user
 // identifier and is never read here — an athlete may only ever trigger a
 // recompute for themselves (T-43-16).
+/** AI SDK NoObjectGeneratedError, reconnue par son nom (le module 'ai' est mocke dans les specs de ce routeur). */
+function isNoObjectError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AI_NoObjectGeneratedError';
+}
+
 onboardingRouter.post('/onboarding/retroactive', async (c) => {
   const auth = c.get('auth');
   const userId = auth.userId;
@@ -316,6 +321,13 @@ onboardingRouter.post('/onboarding/retroactive', async (c) => {
     // fire-and-forget mobile client must never see a 4xx for either one.
     return c.json(result, 200);
   } catch (err: unknown) {
+    // v1.21 SEV4 : un modele qui ne renvoie pas d'objet structure (AI_NoObjectGeneratedError) n'est pas une panne
+    // serveur : le declencheur mobile est un fire-and-forget qui se redeclenche a la prochaine ouverture
+    // (aucune ligne athlete_state ecrite). Reponse propre 200 { skipped: 'model_no_object' }, jamais un 500.
+    if (isNoObjectError(err)) {
+      console.warn('[Onboarding Retroactive] model returned no structured object — skipped');
+      return c.json({ success: false, skipped: 'model_no_object' }, 200);
+    }
     const msg = err instanceof Error ? err.message : 'Retroactive recompute failed';
     console.error('[Onboarding Retroactive Error]', err);
     return c.json({ error: msg }, 500);
