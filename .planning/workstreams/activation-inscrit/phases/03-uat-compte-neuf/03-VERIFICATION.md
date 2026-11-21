@@ -30,3 +30,7 @@ Inchanges par rapport au rejeu 1 : carte conforme (rangees horizontales), badge 
 - "Bravo, tout est fait" : repas et seance inseres par le harnais, completion UI de ces deux quetes (ajout d'un repas, fin d'une vraie seance) non rejouee.
 - Demarrage de la seance (bouton "Demarrer la seance") jusqu'a la fin d'une seance reelle non rejoue sur le chemin Manuel ; l'apercu avec l'exercice du catalogue est prouve.
 - Emulateur 2 Go : lenteur ; une defaillance Maestro (JVM figee) a ete relancee a la main.
+
+
+## SEV4 verification
+Voir `03-UAT.md`, section "SEV4 verification - 2026-11-21" : controles 1 a 5 PASS sur Android (apercu 40 s + chrono, toast complet, builder clavier ouvert, retroactive 200 sans 5xx, regression n01/n02/n03b/n03e-exhausted). Aucun nouveau bug ; 1 observation SEV 4 (toast en anglais vs apercu en francais).
