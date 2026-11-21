@@ -2,9 +2,12 @@ import React from 'react';
 
 // Minimal DOM stand-ins for React Native host components (render tests only).
 const box = (tag: string) =>
-  function Host({ children, testID, onPress }: any) {
+  function Host({ children, testID, onPress, accessibilityLabel, accessibilityRole, style }: any) {
     const props: any = { 'data-testid': testID };
+    if (accessibilityLabel) props['aria-label'] = accessibilityLabel;
+    if (accessibilityRole) props['data-role'] = accessibilityRole;
     if (onPress) props.onClick = onPress;
+    if (style !== undefined) props['data-style-type'] = typeof style === 'function' ? 'function' : Array.isArray(style) ? 'array' : typeof style;
     return React.createElement(tag, props, typeof children === 'function' ? null : children);
   };
 
@@ -26,10 +29,32 @@ export const Alert = { alert: () => undefined };
 export const Linking = { openURL: async () => undefined };
 export const Keyboard = { dismiss: () => undefined, addListener: () => ({ remove() {} }) };
 export const useColorScheme = () => 'light';
-export const AppState = { addEventListener: () => ({ remove() {} }), currentState: 'active' };
+const appStateListeners = new Set<(s: string) => void>();
+export const AppState = {
+  addEventListener: (_type: string, fn: (s: string) => void) => { appStateListeners.add(fn); return { remove() { appStateListeners.delete(fn); } }; },
+  currentState: 'active',
+};
+/** Test : simule un changement d'etat de l'app (background / active). */
+export const emitAppState = (s: string) => { appStateListeners.forEach((f) => f(s)); };
 export const FlatList = ({ data = [], renderItem }: any) =>
   React.createElement('div', null, data.map((item: any, index: number) => renderItem({ item, index })));
 export const Image = () => null;
 export const KeyboardAvoidingView = box('div');
 export const Switch = () => null;
+export const AccessibilityInfo = {
+  isReduceMotionEnabled: async () => false,
+  announceForAccessibility: (_msg: string) => undefined,
+};
+// Animated minimal : les valeurs ne s'animent pas (rendu final immediat).
+class AnimatedValue {
+  v: number;
+  constructor(v: number) { this.v = v; }
+  interpolate(cfg: { outputRange: number[] }) { return cfg.outputRange[cfg.outputRange.length - 1]; }
+  setValue(v: number) { this.v = v; }
+}
+export const Animated = {
+  Value: AnimatedValue,
+  View: box('div'),
+  timing: () => ({ start: (cb?: (r: { finished: boolean }) => void) => cb?.({ finished: true }) }),
+};
 export default { View, Text };

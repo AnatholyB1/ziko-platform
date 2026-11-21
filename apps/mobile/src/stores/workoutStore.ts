@@ -4,7 +4,7 @@ import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramE
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
-import { normalizePlanSessions, parseReps, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
+import { normalizePlanSessions, parseReps, parseDuration, parseSetsSpec, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
 import { loadProgramForSession } from '../lib/activeProgram';
 import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
@@ -92,6 +92,17 @@ interface WorkoutState {
     | { ok: true; name: string; exerciseCount: number; /** noms du programme sans equivalent catalogue (non bloquant) */ unresolved: string[]; /** exercices du programme remplaces par la ligne catalogue la plus proche */ replaced?: Array<{ from: string; to: string }> }
     | { ok: false; reason: 'no_user' | 'no_program' | 'no_session' | 'no_exercises' | 'db_error'; unresolved?: string[] }
   >;
+  /**
+   * Seance IA simple (ecran ai-generate, UATN-03) : ouvre une seance AVEC les exercices generes (nom, series x reps,
+   * note), exactement comme `startPlannedSession`, au lieu d'une "Seance rapide" vide.
+   */
+  startGeneratedSession: (
+    exercises: Array<{ name: string; sets: string; note?: string }>,
+    name?: string,
+  ) => Promise<
+    | { ok: true; name: string; exerciseCount: number; unresolved: string[]; replaced?: Array<{ from: string; to: string }> }
+    | { ok: false; reason: 'no_user' | 'no_exercises' | 'db_error'; unresolved?: string[] }
+  >;
   endSession: () => Promise<void>;
   /** Drops an in-progress session that has no validated set (TRAIN-03): nothing is kept in DB. */
   discardSession: () => Promise<void>;
@@ -178,6 +189,81 @@ async function closeStaleOpenSessions(userId: string): Promise<void> {
   } catch {
     // best effort
   }
+}
+
+/**
+ * Resolution commune "exercices d'un plan -> lignes du catalogue" (seance planifiee ET seance IA generee).
+ * Par id d'abord, puis par nom (exact normalise casse/accents, alias, unique plus proche, anglais <-> francais via
+ * exerciseNames). Un exercice non resolu NE bloque PAS la seance (il est liste dans `unresolved`).
+ */
+async function resolvePlanExercises(
+  planExercises: Array<{ name: string; sets: number; reps: string | number | null; duration?: { min: number; max: number } | null; exercise_id?: string | null; rest_seconds?: number | null; notes?: string | null }>,
+  idPrefix: string,
+): Promise<{
+  workoutExercises: WorkoutState['currentWorkoutExercises'];
+  unresolved: string[];
+  replaced: Array<{ from: string; to: string }>;
+}> {
+  const ids = planExercises.map((e) => e.exercise_id).filter(Boolean) as string[];
+  const byId = new Map<string, Exercise>();
+  if (ids.length > 0) {
+    const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
+    (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
+  }
+  const missing = planExercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id));
+  let candidates: CatalogRow[] = [];
+  if (missing.length > 0) {
+    const patterns = [...new Set(missing.flatMap((e) => searchPatternsFor(e.name, exerciseNames)))];
+    if (patterns.length > 0) {
+      const { data } = await supabase
+        .from('ziko_exercises')
+        .select('*')
+        .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
+        .limit(600);
+      candidates = (data ?? []) as CatalogRow[];
+    }
+  }
+  const unresolved: string[] = [];
+  const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
+  const replaced: Array<{ from: string; to: string }> = [];
+  planExercises.forEach((pe) => {
+    let ex: any = (pe.exercise_id && byId.get(pe.exercise_id)) || null;
+    if (!ex) {
+      const m = matchExercise(pe.name, candidates, exerciseNames);
+      if (m) {
+        ex = m.row;
+        if (m.kind === 'approx') replaced.push({ from: pe.name, to: String(m.row.name ?? m.row.name_fr ?? '') });
+      }
+    }
+    if (!ex) {
+      unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
+      return;
+    }
+    // Prescription en temps ("40 s", "30-45 s", "1 min") : champs duree (le mode 'time' / 'timeRange' de la seance
+    // affiche "40s" et lance le chrono), jamais des repetitions.
+    const dur = pe.duration ?? parseDuration(pe.reps);
+    const r = dur ? { reps: null, reps_min: null, reps_max: null } : parseReps(pe.reps);
+    const fixed = dur != null && dur.min === dur.max;
+    workoutExercises.push({
+      id: `${idPrefix}-${workoutExercises.length}`,
+      workout_id: '',
+      exercise_id: (ex as any).id,
+      sets: pe.sets,
+      reps: r.reps,
+      reps_min: r.reps_min,
+      reps_max: r.reps_max,
+      duration_seconds: fixed ? dur!.min : null,
+      duration_min: dur && !fixed ? dur.min : null,
+      duration_max: dur && !fixed ? dur.max : null,
+      rest_seconds: pe.rest_seconds ?? null,
+      weight_kg: null,
+      notes: pe.notes ?? null,
+      order_index: workoutExercises.length,
+      exercises: ex,
+      isPlanned: true,
+    } as any);
+  });
+  return { workoutExercises, unresolved, replaced };
 }
 
 let startSessionInFlight: Promise<void> | null = null;
@@ -340,64 +426,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
     if (!picked) picked = plan[0];
     if (picked.exercises.length === 0) return { ok: false, reason: 'no_exercises' };
 
-    // Resolve exercise rows : par id d'abord, puis par nom (exact normalise casse/accents, alias, unique plus
-    // proche, anglais <-> francais via exerciseNames). Un exercice non resolu NE bloque PAS la seance.
-    const ids = picked.exercises.map((e) => e.exercise_id).filter(Boolean) as string[];
-    const byId = new Map<string, Exercise>();
-    if (ids.length > 0) {
-      const { data } = await supabase.from('ziko_exercises').select('*').in('id', ids);
-      (data ?? []).forEach((e: any) => byId.set(e.id, e as Exercise));
-    }
-    const missing = picked.exercises.filter((e) => !e.exercise_id || !byId.has(e.exercise_id));
-    let candidates: CatalogRow[] = [];
-    if (missing.length > 0) {
-      const patterns = [...new Set(missing.flatMap((e) => searchPatternsFor(e.name, exerciseNames)))];
-      if (patterns.length > 0) {
-        const { data } = await supabase
-          .from('ziko_exercises')
-          .select('*')
-          .or(patterns.flatMap((p) => [`name.ilike.${p}`, `name_fr.ilike.${p}`]).join(','))
-          .limit(300);
-        candidates = (data ?? []) as CatalogRow[];
-      }
-    }
-    const unresolved: string[] = [];
-
-    const workoutExercises: WorkoutState['currentWorkoutExercises'] = [];
-    const replaced: Array<{ from: string; to: string }> = [];
-    picked.exercises.forEach((pe) => {
-      let ex: any = (pe.exercise_id && byId.get(pe.exercise_id)) || null;
-      if (!ex) {
-        const m = matchExercise(pe.name, candidates, exerciseNames);
-        if (m) {
-          ex = m.row;
-          if (m.kind === 'approx') replaced.push({ from: pe.name, to: String(m.row.name ?? m.row.name_fr ?? '') });
-        }
-      }
-      if (!ex) {
-        unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
-        return;
-      }
-      const r = parseReps(pe.reps);
-      workoutExercises.push({
-        id: `planned-${picked!.sourceIndex}-${workoutExercises.length}`,
-        workout_id: '',
-        exercise_id: (ex as any).id,
-        sets: pe.sets,
-        reps: r.reps,
-        reps_min: r.reps_min,
-        reps_max: r.reps_max,
-        duration_seconds: null,
-        duration_min: null,
-        duration_max: null,
-        rest_seconds: pe.rest_seconds ?? null,
-        weight_kg: null,
-        notes: null,
-        order_index: workoutExercises.length,
-        exercises: ex,
-        isPlanned: true,
-      } as any);
-    });
+    const { workoutExercises, unresolved, replaced } = await resolvePlanExercises(picked.exercises, `planned-${picked.sourceIndex}`);
     if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
 
     await closeStaleOpenSessions(user.id);
@@ -409,6 +438,42 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
         // programme coach : la seance reste rattachee a son programme / sa journee ; IA : pas de FK.
         program_workout_id: program.kind === 'coach' ? (program.program_data?.sessions?.[picked.sourceIndex]?.workout_id ?? null) : null,
         program_id: program.kind === 'coach' ? program.id : null,
+        name: sessionName,
+        started_at: new Date().toISOString(),
+        day_of_week: new Date().getDay() || 7,
+      })
+      .select()
+      .single();
+    if (error || !data) return { ok: false, reason: 'db_error' };
+
+    const session = data as WorkoutSession;
+    set({ currentSession: session, activeSets: [], currentWorkoutExercises: workoutExercises, cycleConfig: null });
+    AsyncStorage.setItem(sessionKey(user.id), JSON.stringify(session)).catch(() => {});
+    return { ok: true, name: sessionName, exerciseCount: workoutExercises.length, unresolved, replaced };
+  },
+
+  startGeneratedSession: async (generated, name) => {
+    const user = useAuthStore.getState().user;
+    if (!user) return { ok: false, reason: 'no_user' };
+    const plan = generated
+      .filter((e) => e && typeof e.name === 'string' && e.name.trim() !== '')
+      .map((e) => {
+        const s = parseSetsSpec(e.sets);
+        return { name: e.name.trim(), sets: s.sets, reps: s.reps, duration: s.duration ?? null, notes: e.note?.trim() ? e.note.trim() : null };
+      });
+    if (plan.length === 0) return { ok: false, reason: 'no_exercises' };
+
+    const { workoutExercises, unresolved, replaced } = await resolvePlanExercises(plan, 'generated');
+    if (workoutExercises.length === 0) return { ok: false, reason: 'no_exercises', unresolved };
+
+    await closeStaleOpenSessions(user.id);
+    const sessionName = resolveSessionName(name ?? 'Séance IA');
+    const { data, error } = await supabase
+      .from('ziko_workout_sessions')
+      .insert({
+        user_id: user.id,
+        program_workout_id: null,
+        program_id: null,
         name: sessionName,
         started_at: new Date().toISOString(),
         day_of_week: new Date().getDay() || 7,

@@ -212,3 +212,64 @@ describe('une seule seance ouverte a la fois (UAT run 6)', () => {
     expect(sessionCall('insert')?.payload.name).toBe('Force 5x5 · A');
   });
 });
+
+describe('startGeneratedSession (UATN-03 : IA simple, jamais de seance vide)', () => {
+  const generated = [
+    { name: 'Squat', sets: '3 × 8-10', note: 'Dos droit' },
+    { name: 'Row', sets: '4x12' },
+  ];
+
+  it('charge les exercices generes (series, reps, note) dans le store ET ouvre la seance', async () => {
+    tables['ziko_exercises'] = [
+      { id: 'e1', name: 'Squat', name_fr: 'Squat' },
+      { id: 'e3', name: 'Row', name_fr: null },
+    ];
+    tables['ziko_workout_sessions:insert'] = { id: 'g1', name: 'Séance IA', started_at: new Date().toISOString() };
+
+    const res: any = await useWorkoutStore.getState().startGeneratedSession(generated, 'Séance IA');
+    expect(res).toMatchObject({ ok: true, name: 'Séance IA', exerciseCount: 2, unresolved: [] });
+    const st = useWorkoutStore.getState();
+    expect(st.currentSession?.id).toBe('g1');
+    expect(st.currentWorkoutExercises.map((e) => e.exercise_id)).toEqual(['e1', 'e3']);
+    expect(st.currentWorkoutExercises[0]).toMatchObject({ sets: 3, reps: null, reps_min: 8, reps_max: 10, notes: 'Dos droit' });
+    expect(st.currentWorkoutExercises[1]).toMatchObject({ sets: 4, reps: 12, notes: null });
+    // l'ecran de seance lit `currentWorkoutExercises.length > 0` pour passer en mode guide (isGuided)
+    expect(st.currentWorkoutExercises.length).toBeGreaterThan(0);
+  });
+
+  it('prescription en temps ("3 x 40 s", "3 x 30-45 s") : champs duree, jamais des repetitions', async () => {
+    tables['ziko_exercises'] = [
+      { id: 'e1', name: 'Plank', name_fr: 'Planche' },
+      { id: 'e2', name: 'Wall sit', name_fr: 'Chaise' },
+      { id: 'e3', name: 'Squat', name_fr: 'Squat' },
+    ];
+    tables['ziko_workout_sessions:insert'] = { id: 'g2', name: 'Séance IA', started_at: new Date().toISOString() };
+    await useWorkoutStore.getState().startGeneratedSession(
+      [
+        { name: 'Plank', sets: '3 x 40 s' },
+        { name: 'Wall sit', sets: '3 x 30-45 s' },
+        { name: 'Squat', sets: '4 x 12' },
+      ],
+      'Séance IA',
+    );
+    const ex = useWorkoutStore.getState().currentWorkoutExercises;
+    expect(ex[0]).toMatchObject({ sets: 3, reps: null, reps_min: null, reps_max: null, duration_seconds: 40, duration_min: null, duration_max: null });
+    expect(ex[1]).toMatchObject({ sets: 3, reps: null, duration_seconds: null, duration_min: 30, duration_max: 45 });
+    expect(ex[2]).toMatchObject({ sets: 4, reps: 12, duration_seconds: null });
+  });
+
+  it('aucun exercice du catalogue -> pas de seance, pas de seance vide', async () => {
+    tables['ziko_exercises'] = [];
+    const res: any = await useWorkoutStore.getState().startGeneratedSession([{ name: 'Xyzzy inconnu', sets: '3 × 10' }]);
+    expect(res.ok).toBe(false);
+    expect(res.reason).toBe('no_exercises');
+    expect(res.unresolved).toEqual(['Xyzzy inconnu']);
+    expect(useWorkoutStore.getState().currentSession).toBeNull();
+    expect(calls.find((c) => c.table === 'ziko_workout_sessions' && c.op === 'insert')).toBeUndefined();
+  });
+
+  it('liste vide -> no_exercises', async () => {
+    const res: any = await useWorkoutStore.getState().startGeneratedSession([]);
+    expect(res).toEqual({ ok: false, reason: 'no_exercises' });
+  });
+});

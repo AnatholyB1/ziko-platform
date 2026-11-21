@@ -51,6 +51,12 @@ vi.mock('ai', () => ({
   hasToolCall: vi.fn((name: string) => ({ __marker: 'hasToolCall', name })),
 }));
 
+// v1.21 CLAR-03 : l'executeur assess_profile passe par le vrai code ; seul le client Supabase est remplace.
+const mockToolRpc = vi.fn();
+vi.mock('../../src/tools/db.js', () => ({
+  clientForUser: vi.fn(() => ({ rpc: mockToolRpc })),
+}));
+
 // Never hit a real Supabase project from the onFinish token-cost logger.
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
@@ -218,8 +224,9 @@ describe('POST /ai/onboarding/stream', () => {
     expect(text).toContain('"id":"g-1"');
     expect(text).toContain('"target_value":76');
     expect(text).not.toContain('target_equals_start');
-    // un objectif seul ne termine pas l'onboarding : sans assess_profile, cap_reached reste emis
-    expect(text).toContain('"type":"cap_reached"');
+    // un objectif seul ne termine pas l'onboarding, mais un tour normal n'est pas un cap atteint
+    expect(text).not.toContain('"type":"cap_reached"');
+    expect(text).not.toContain('"type":"mission"');
   });
 
   it('system prompt asks for measurement goals before the terminal action and forbids invented numbers', () => {
@@ -273,7 +280,7 @@ describe('POST /ai/onboarding/stream', () => {
     expect(text).not.toContain('"type":"cap_reached"');
   });
 
-  it('emits a cap_reached SSE event when the stream ends with no assess_profile tool-result', async () => {
+  it('does not emit cap_reached for a normal question-only turn early in the conversation', async () => {
     mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
     scriptedParts = [{ type: 'text-delta', textDelta: 'Salut, prêt à commencer ?' }];
 
@@ -281,8 +288,46 @@ describe('POST /ai/onboarding/stream', () => {
     const text = await res.text();
 
     expect(text).toContain('"type":"chunk"');
+    expect(text).not.toContain('"type":"cap_reached"');
+  });
+
+  it('emits a cap_reached SSE event when many user turns pass with no assess_profile tool-result', async () => {
+    const history = Array.from({ length: 12 }, (_, i) => ({
+      role: i % 2 === 0 ? 'user' : 'assistant',
+      content: `m${i}`,
+    }));
+    mockGetOrCreateConversation.mockResolvedValue({ ...OWNED_ZIKO_CONVO, history });
+    scriptedParts = [{ type: 'text-delta', textDelta: 'Encore une question ?' }];
+
+    const res = await makeRequest({
+      body: { conversation_id: 'convo-owned', messages: [{ role: 'user', content: 'ok' }] },
+    });
+    const text = await res.text();
+
     expect(text).toContain('"type":"cap_reached"');
     expect(text).not.toContain('"type":"mission"');
+  });
+
+  it('emits an error (not cap_reached) and persists nothing when the model stream yields an error part', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [{ type: 'error', error: new Error('boom') }];
+
+    const res = await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } });
+    const text = await res.text();
+
+    expect(text).toContain('"type":"error"');
+    expect(text).not.toContain('"type":"cap_reached"');
+    expect(mockAppendMessages).not.toHaveBeenCalled();
+  });
+
+  it('seeds a synthetic user message when the opening turn sends no messages', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [];
+
+    await makeRequest({ body: {} });
+
+    expect(capturedStreamTextArgs.messages.length).toBeGreaterThan(0);
+    expect(capturedStreamTextArgs.messages[0].role).toBe('user');
   });
 
   it('emits meta with the conversation id first and terminates with [DONE]', async () => {
@@ -296,5 +341,49 @@ describe('POST /ai/onboarding/stream', () => {
     expect(lines[0]).toContain('"type":"meta"');
     expect(lines[0]).toContain(OWNED_ZIKO_CONVO.conversationId);
     expect(text.trim().endsWith('data: [DONE]')).toBe(true);
+  });
+});
+
+// ── v1.21 CLAR-03 : premiere mission d'un compte de niveau 1 = hydration_log uniquement ──────────────────
+describe('CLAR-03 first mission for a level-1 account', () => {
+  beforeEach(() => {
+    mockGetOrCreateConversation.mockReset();
+    mockAppendMessages.mockReset();
+    mockToolRpc.mockReset();
+    scriptedParts = [];
+    capturedStreamTextArgs = null;
+  });
+
+  it.each(['fr', 'en'] as const)('system prompt (%s) restricts the micro_action to hydration_log and forbids the level-2 modules', (locale) => {
+    const prompt = buildOnboardingSystemPrompt(locale);
+    expect(prompt).toMatch(/exactly hydration_log/);
+    expect(prompt).toMatch(/never journal_mood, never measurements_weight/);
+    expect(prompt).not.toMatch(/exactly one of: hydration_log, journal_mood/);
+  });
+
+  it('the assess_profile tool the route hands to streamText coerces a journal_mood / measurements_weight pick to hydration_log', async () => {
+    mockGetOrCreateConversation.mockResolvedValue({ ...OWNED_ZIKO_CONVO, pluginContext: { type: 'ziko_onboarding', locale: 'en' } });
+    mockToolRpc.mockResolvedValue({ data: { success: true, decision_id: 'dec-1' }, error: null });
+    await makeRequest({ body: { messages: [{ role: 'user', content: 'hi' }] } });
+    const execute = capturedStreamTextArgs.tools.assess_profile.execute as (i: Record<string, unknown>) => Promise<any>;
+
+    for (const picked of ['journal_mood', 'measurements_weight']) {
+      mockToolRpc.mockClear();
+      const out = await execute({
+        experience_level: 'advanced', experience_confidence: 5, adherence_risk: 'low', adherence_confidence: 5,
+        readiness: 'ready', readiness_confidence: 5, profile_summary: 'Ready.', micro_action: picked, mission_title: 'Something else',
+      });
+      expect(out).toMatchObject({ success: true, micro_action: 'hydration_log', mission_title: 'Drink a glass of water' });
+      expect(mockToolRpc.mock.calls[0][1].p_outcome.micro_action).toBe('hydration_log');
+    }
+  });
+
+  it('the mission SSE event carries hydration_log end to end', async () => {
+    mockGetOrCreateConversation.mockResolvedValue(OWNED_ZIKO_CONVO);
+    scriptedParts = [{ type: 'tool-result', toolName: 'assess_profile', output: { success: true, decision_id: 'd', micro_action: 'hydration_log', mission_title: "Bois un verre d'eau" } }];
+    const res = await makeRequest({ body: { messages: [{ role: 'user', content: 'salut' }] } });
+    const text = await res.text();
+    expect(text).toContain('"micro_action":"hydration_log"');
+    expect(text).not.toContain('journal_mood');
   });
 });

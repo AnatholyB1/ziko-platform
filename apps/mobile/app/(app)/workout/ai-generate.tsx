@@ -7,6 +7,10 @@ import { MotiView } from 'moti';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useAuthStore } from '../../../src/stores/authStore';
+import { useWorkoutStore } from '../../../src/stores/workoutStore';
+import { generatedStartFeedback } from '../../../src/lib/plannedStartFeedback';
+import { neutralToast } from '../../../src/lib/neutralToast';
+import { describeSetsSpec } from '../../../src/lib/workoutPlan';
 
 // ─── Data constants ───────────────────────────────────────────────────────────
 
@@ -66,6 +70,27 @@ export default function AIGenerateScreen() {
   const [generatedSession, setGeneratedSession] = useState<GeneratedSession | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // UATN-03 : "Démarrer cette séance" charge les exercices générés dans le store (comme startPlannedSession)
+  // AVANT d'ouvrir l'écran de séance, qui sinon démarrait une "Séance rapide" vide.
+  const startGeneratedSession = useWorkoutStore((s) => s.startGeneratedSession);
+  const [isStarting, setIsStarting] = useState(false);
+  const handleStartGenerated = async () => {
+    if (!generatedSession || isStarting) return;
+    setIsStarting(true);
+    try {
+      const res = await startGeneratedSession(generatedSession.exercises, 'Séance IA');
+      const fb = generatedStartFeedback(res);
+      if (fb.alert) {
+        showAlert(fb.alert.title, fb.alert.message);
+        return;
+      }
+      router.push('/(app)/workout/session');
+      if (fb.toast) neutralToast(fb.toast, fb.toastDetail);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   // ─── API call ────────────────────────────────────────────────────────────────
 
   const generateSession = async () => {
@@ -76,19 +101,26 @@ export default function AIGenerateScreen() {
 
     try {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
-      const fetchPromise = fetch(`${apiUrl}/ai/tools/execute`, {
+      const fetchPromise = fetch(`${apiUrl}/ai/session/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token ?? ''}`,
         },
-        body: JSON.stringify({
-          tool: 'ai_programs_generate',
-          input: { energy, duration, zone, equipment },
-        }),
+        body: JSON.stringify({ energy, duration, zone, equipment }),
       });
 
       const [response] = await Promise.all([fetchPromise, minDelay]);
+
+      if (response.status === 402) {
+        await minDelay;
+        showAlert(
+          'Crédits épuisés',
+          "Tu as utilisé tes générations IA gratuites du jour. Reviens demain ou gagne des crédits en restant actif.",
+        );
+        setStep(3);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -96,18 +128,11 @@ export default function AIGenerateScreen() {
 
       const data = await response.json();
 
-      // Normalise la réponse — le backend peut renvoyer différentes structures
-      const exercises: GeneratedExercise[] = Array.isArray(data?.result?.exercises)
-        ? data.result.exercises
-        : Array.isArray(data?.exercises)
-        ? data.exercises
-        : [
-            { name: 'Développé incliné haltères', sets: `3 × 8-10`, note: `charge légère vu énergie ${energy}/10` },
-            { name: 'Développé couché barre', sets: '4 × 6-8' },
-            { name: 'Écarté machine', sets: '3 × 12' },
-            { name: 'Dips lestés', sets: '3 × 8' },
-            { name: 'Extensions triceps poulie', sets: '3 × 12' },
-          ];
+      // Le backend renvoie { result: { exercises, adaptation_note } }
+      if (!Array.isArray(data?.result?.exercises) || data.result.exercises.length === 0) {
+        throw new Error('Empty session');
+      }
+      const exercises: GeneratedExercise[] = data.result.exercises;
 
       const adaptationNote: string =
         data?.result?.adaptation_note ??
@@ -342,7 +367,7 @@ export default function AIGenerateScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}</Text>
                 <Text style={{ fontSize: 10, color: theme.muted, marginTop: 1 }}>
-                  {ex.sets}
+                  {describeSetsSpec(ex.sets)}
                   {ex.note ? ` · ${ex.note}` : ''}
                 </Text>
               </View>
@@ -387,8 +412,11 @@ export default function AIGenerateScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout/session')}
+            testID="ai-generate-start"
+            onPress={handleStartGenerated}
+            disabled={isStarting}
             style={{
+              opacity: isStarting ? 0.6 : 1,
               backgroundColor: '#FF5C1A',
               borderRadius: 14,
               paddingVertical: 12,

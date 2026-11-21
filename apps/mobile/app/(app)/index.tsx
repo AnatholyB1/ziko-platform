@@ -17,7 +17,7 @@ import { programHeader } from '../../src/lib/programs';
 import { neutralToast } from '../../src/lib/neutralToast';
 import { supabase } from '../../src/lib/supabase';
 import { usePluginRegistry, buildLockedSection, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
-import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh } from '@ziko/plugin-sdk';
+import { useTranslation, showAlert, formatLitersFr, requestQuestRefresh, isPluginRouteLocked } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../src/stores/themeStore';
 import { format, startOfDay, differenceInCalendarDays, addDays, getDay } from 'date-fns';
 import { SearchOverlay } from '../../src/components/SearchOverlay';
@@ -26,6 +26,9 @@ import { Skeleton, FormRing, PluginsDrawer } from '@ziko/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   useActiveAIProgram,
+  useOnboardingMission,
+  ONBOARDING_MISSION_ROUTES,
+  type OnboardingMission,
   useWeeklySessions,
   useRecentSessions,
   useProfile,
@@ -48,6 +51,11 @@ import {
 } from '../../src/lib/quickLog';
 import { localDateKey, localDateKeyFromISO } from '../../src/lib/localDate';
 import { invalidateHomeQueries } from '../../src/lib/homeQueries';
+import { AnimatePresence } from 'moti';
+import FirstWorkoutCard from '../../src/components/home/FirstWorkoutCard';
+import { useFirstWorkoutCard } from '../../src/hooks/useFirstWorkout';
+import { hideEmptyMissionVariant } from '../../src/lib/firstWorkout';
+import { QuestsBlock } from '../../src/components/home/QuestsBlock';
 import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 
 // ── fireAndForget ─────────────────────────────────────────────────────────────
@@ -64,18 +72,35 @@ async function fireAndForget(tool: string, input: Record<string, unknown>): Prom
   }).catch(() => {}); // silent fire-and-forget
 }
 
+// v1.21 P2 (R5) : vrai quand Mission du jour tomberait sur sa variante VIDE ("Aucun programme actif"), c'est-a-dire ni
+// chargement, ni programme, ni mission d'onboarding atteignable. Source unique pour le rendu et pour le conteneur.
+function isEmptyMissionVariant(
+  isLoading: boolean,
+  activeProgram: any | null,
+  onboardingMission: OnboardingMission | null | undefined,
+  effectiveLevel: number,
+): boolean {
+  if (isLoading || activeProgram) return false;
+  const missionRoute = onboardingMission ? ONBOARDING_MISSION_ROUTES[onboardingMission.micro_action] : undefined;
+  const missionLocked = missionRoute ? isPluginRouteLocked(missionRoute.split('/'), effectiveLevel) : true;
+  return !(onboardingMission && missionRoute && !missionLocked);
+}
+
 // ── MissionCardContent ────────────────────────────────────────────────────────
 // Renders loading/empty/populated states — receives pre-computed data
 function MissionCardContent({
   isLoading,
   activeProgram,
+  onboardingMission,
   onStart,
 }: {
   isLoading: boolean;
   activeProgram: any | null;
+  onboardingMission?: OnboardingMission | null;
   onStart: () => void;
 }) {
   const theme = useThemeStore((s) => s.theme);
+  const effectiveLevel = useAuthStore((s) => s.effectiveLevel);
 
   // Loading state
   if (isLoading) {
@@ -84,6 +109,39 @@ function MissionCardContent({
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '40%', marginBottom: 10 }} />
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '75%', marginBottom: 8 }} />
         <View style={{ backgroundColor: 'rgba(255,250,246,0.12)', height: 14, borderRadius: 6, width: '55%' }} />
+      </View>
+    );
+  }
+
+  // First mission from Ziko's onboarding chat (no program yet)
+  const missionRoute = onboardingMission ? ONBOARDING_MISSION_ROUTES[onboardingMission.micro_action] : undefined;
+  // Never offer a CTA that the plugin route guard would bounce back home (journal/measurements unlock at level 2).
+  const missionLocked = missionRoute ? isPluginRouteLocked(missionRoute.split('/'), effectiveLevel) : true;
+  if (!activeProgram && onboardingMission && missionRoute && !missionLocked) {
+    return (
+      <View style={{ backgroundColor: '#1C1A17', borderRadius: 12, padding: 18, overflow: 'hidden', position: 'relative' }}>
+        <Svg width="100%" height={180} style={{ position: 'absolute', top: 0, left: 0 }}>
+          <Circle cx={300} cy={-20} r={160} fill="#FF5C1A" opacity={0.14} />
+        </Svg>
+        <Text style={{
+          fontSize: 11, fontWeight: '700', textTransform: 'uppercase',
+          letterSpacing: 0.10 * 11, color: 'rgba(255,250,246,0.65)',
+        }}>
+          Mission du jour
+        </Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFAF6', marginTop: 6, maxWidth: '85%' }}>
+          {onboardingMission.mission_title}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push(missionRoute as any)}
+          activeOpacity={0.8}
+          style={{
+            marginTop: 16, paddingVertical: 12, borderRadius: 9999,
+            backgroundColor: '#FF5C1A', alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' }}>C'est parti</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -302,6 +360,10 @@ export default function DashboardScreen() {
   const { data: profile } = useProfile();
   const { data: streak = 0 } = useGamificationStreak();
   const { data: activeProgram, isLoading: programLoading } = useActiveAIProgram();
+  const { data: onboardingMission, isLoading: missionLoading } = useOnboardingMission();
+  // v1.21 P2 : carte "Crée ton premier entraînement" (aucun programme actif ET zero seance terminee)
+  const firstWorkout = useFirstWorkoutCard();
+  const hideEmptyMission = hideEmptyMissionVariant(firstWorkout.visibility);
   const { data: weeklySessions = [], isLoading: weekLoading } = useWeeklySessions();
   const { data: recentSessions = [], isLoading: recentLoading } = useRecentSessions();
   const { data: sleepSettings } = useSleepSettings();
@@ -505,6 +567,7 @@ export default function DashboardScreen() {
       queryClient.invalidateQueries({ queryKey: ['program', 'active'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'weekly'] }),
       queryClient.invalidateQueries({ queryKey: ['workouts', 'recent'] }),
+      queryClient.invalidateQueries({ queryKey: ['workouts', 'finished'] }),
       queryClient.invalidateQueries({ queryKey: ['sleep'] }),
       queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] }),
       queryClient.invalidateQueries({ queryKey: ['nutrition', 'today'] }),
@@ -544,6 +607,90 @@ export default function DashboardScreen() {
 
   // ── QuickLog cell width ───────────────────────────────────────────────────
   const cellWidth = (screenWidth - 32 - 24) / 4;
+
+  // v1.21 P2 : bloc extrait pour pouvoir le placer avant Mission (ordre historique) ou apres Quetes (carte visible).
+  const formeDuJourBlock = (
+    <View style={{
+      backgroundColor: theme.surface, borderRadius: 20, padding: 16,
+      shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
+      marginBottom: 12,
+    }}>
+      <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: theme.muted }}>
+        Forme du jour
+      </Text>
+      <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginTop: 2 }}>
+        {scoreHeadline}
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 }}>
+        {isWellnessLoading ? (
+          <>
+            <Skeleton width={160} height={160} borderRadius={80} />
+            <View style={{ flex: 1, gap: 10 }}>
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} width="100%" height={26} borderRadius={8} />)}
+            </View>
+          </>
+        ) : formScore.isEmpty ? (
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{
+              width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: 'rgba(255,92,26,0.10)',
+            }}>
+              <Ionicons name="pulse-outline" size={26} color="#FF5C1A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, lineHeight: 18, color: theme.muted }}>
+                Ta forme se calcule à partir de ton sommeil, ton hydratation, ta nutrition et ta charge d'entraînement. Loggue un repas ou de l'eau pour la voir apparaître.
+              </Text>
+              <TouchableOpacity
+                onPress={handleLogMeal}
+                activeOpacity={0.8}
+                style={{
+                  alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
+                  backgroundColor: '#FF5C1A', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8,
+                }}
+              >
+                <Ionicons name="restaurant-outline" size={13} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Loguer un repas</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View style={{ width: 160, height: 160, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+              <FormRing
+                score={score}
+                size={160}
+                parts={[
+                  { value: sleepPct, max: 100, color: '#8B5CF6' },
+                  { value: waterPct, max: 100, color: '#3B82F6' },
+                  { value: nutritionPct, max: 100, color: '#FF5C1A' },
+                  { value: loadPct, max: 100, color: '#22C55E' },
+                ]}
+              />
+            </View>
+            <View style={{ flex: 1, gap: 10 }}>
+              {segmentParts.map((p) => (
+                <View key={p.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{
+                    width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: p.color + '22',
+                  }}>
+                    <Ionicons name={p.icon} size={13} color={p.color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{p.label}</Text>
+                    <Text style={{ fontSize: 10, color: theme.muted }}>{p.sub}</Text>
+                  </View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: p.color }}>{p.value}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    </View>
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
@@ -609,92 +756,27 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* ── FormeDuJour ────────────────────────────────── */}
-        <View style={{
-          backgroundColor: theme.surface, borderRadius: 20, padding: 16,
-          shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
-          marginBottom: 12,
-        }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: theme.muted }}>
-            Forme du jour
-          </Text>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginTop: 2 }}>
-            {scoreHeadline}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 }}>
-            {isWellnessLoading ? (
-              <>
-                <Skeleton width={160} height={160} borderRadius={80} />
-                <View style={{ flex: 1, gap: 10 }}>
-                  {[0, 1, 2, 3].map((i) => <Skeleton key={i} width="100%" height={26} borderRadius={8} />)}
-                </View>
-              </>
-            ) : formScore.isEmpty ? (
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                <View style={{
-                  width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: 'rgba(255,92,26,0.10)',
-                }}>
-                  <Ionicons name="pulse-outline" size={26} color="#FF5C1A" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, lineHeight: 18, color: theme.muted }}>
-                    Ta forme se calcule à partir de ton sommeil, ton hydratation, ta nutrition et ta charge d'entraînement. Loggue un repas ou de l'eau pour la voir apparaître.
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleLogMeal}
-                    activeOpacity={0.8}
-                    style={{
-                      alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6,
-                      backgroundColor: '#FF5C1A', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8,
-                    }}
-                  >
-                    <Ionicons name="restaurant-outline" size={13} color="#fff" />
-                    <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Loguer un repas</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <>
-                <View style={{ width: 160, height: 160, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                  <FormRing
-                    score={score}
-                    size={160}
-                    parts={[
-                      { value: sleepPct, max: 100, color: '#8B5CF6' },
-                      { value: waterPct, max: 100, color: '#3B82F6' },
-                      { value: nutritionPct, max: 100, color: '#FF5C1A' },
-                      { value: loadPct, max: 100, color: '#22C55E' },
-                    ]}
-                  />
-                </View>
-                <View style={{ flex: 1, gap: 10 }}>
-                  {segmentParts.map((p) => (
-                    <View key={p.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <View style={{
-                        width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: p.color + '22',
-                      }}>
-                        <Ionicons name={p.icon} size={13} color={p.color} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{p.label}</Text>
-                        <Text style={{ fontSize: 10, color: theme.muted }}>{p.sub}</Text>
-                      </View>
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: p.color }}>{p.value}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        </View>
+        {/* ── v1.21 P2 : Crée ton premier entraînement (1re carte, jamais repoussable) ──
+            Ordre cible (D-08) : cette carte > Mission du jour > bloc Quetes (phase 1). */}
+        <AnimatePresence>
+          {firstWorkout.visibility !== 'hide' && (
+            <FirstWorkoutCard key="first-workout" visibility={firstWorkout.visibility} credit={firstWorkout.credit} />
+          )}
+        </AnimatePresence>
 
         {/* ── MissionCard ────────────────────────────────── */}
-        <View style={{ marginBottom: 12 }}>
-          <MissionCardContent isLoading={programLoading} activeProgram={activeProgram ?? null} onStart={handleStartMission} />
-        </View>
+        {!(hideEmptyMission && isEmptyMissionVariant(programLoading || missionLoading, activeProgram ?? null, onboardingMission ?? null, effectiveLevel)) && (
+          <View style={{ marginBottom: 12 }}>
+            <MissionCardContent isLoading={programLoading || missionLoading} activeProgram={activeProgram ?? null} onboardingMission={onboardingMission ?? null} onStart={handleStartMission} />
+          </View>
+        )}
+        {/* ── Quetes (phase 1) : bloc insere ici au merge, juste apres Mission du jour ── */}
+
+        {/* ── Quêtes du jour (v1.21 phase 1) ─────────────── */}
+        <QuestsBlock />
+
+        {/* Ordre unique (HOME_BLOCK_ORDER) : Forme du jour toujours apres les Quetes. */}
+        {formeDuJourBlock}
 
         {/* ── AICoachInline ──────────────────────────────── */}
         {currentTip && (

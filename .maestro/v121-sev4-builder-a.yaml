@@ -1,0 +1,44 @@
+# SEV4 verification (check 3, part A): program-builder etape 4, saisie au clavier OUVERT (pas de hideKeyboard).
+# S'arrete clavier ouvert avec les suggestions visibles ; les bornes du bouton sont mesurees par uiautomator apres le flow.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- tapOn: "Manuel"
+- extendedWaitUntil:
+    visible: "Etape 1/4"
+    timeout: 30000
+- tapOn: "Force"
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 2/4"
+    timeout: 10000
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 3/4"
+    timeout: 10000
+- tapOn: "L"
+- tapOn:
+    text: "M"
+    index: 0
+- tapOn:
+    text: "M"
+    index: 1
+- tapOn: "J"
+- tapOn: "V"
+- tapOn: "S"
+- tapOn: "D"
+- tapOn: "Continuer"
+- extendedWaitUntil:
+    visible: "Etape 4/4"
+    timeout: 10000
+- takeScreenshot: sev4b-01-step4-before-typing
+- tapOn: "Nom de l'exercice..."
+- inputText: "Squat"
+- extendedWaitUntil:
+    visible:
+      id: "exercise-suggestion-0"
+    timeout: 15000
+- takeScreenshot: sev4b-02-typed-keyboard-open

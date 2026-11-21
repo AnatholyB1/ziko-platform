@@ -19,6 +19,8 @@ function N(): typeof NotificationsType | null {
 }
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/stores/authStore';
+import { useWorkoutStore } from '../../src/stores/workoutStore';
+import { goToTrainingDashboard } from '../../src/lib/workoutNav';
 import { useNotificationStore } from '../../src/stores/notificationStore';
 import { useThemeStore, coachStorage } from '../../src/stores/themeStore';
 import { useUserPrefsStore } from '../../src/stores/userPrefsStore';
@@ -292,6 +294,13 @@ export default function AppLayout() {
         />
         <Tabs.Screen
           name="workout"
+          listeners={{
+            // UATN-03 : un tap sur l'onglet Entrainement ramene toujours au tableau (la pile imbriquee gardait
+            // l'assistant / la liste Programmes). Sans effet pendant une seance en cours (on ne la quitte pas).
+            tabPress: () => {
+              if (!useWorkoutStore.getState().currentSession) goToTrainingDashboard(router);
+            },
+          }}
           options={{
             title: t('tab.workout'),
             tabBarIcon: ({ color, size }) => (

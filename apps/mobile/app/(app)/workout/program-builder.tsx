@@ -1,22 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, FlatList,
+  View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { showAlert, getActionPrimary, exerciseNames } from '@ziko/plugin-sdk';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../src/lib/supabase';
 import {
   buildWizardProgramRow,
-  wizardSessionSummaries,
-  DAY_NAMES_FR,
   activationToast,
+  validateWizardExercises,
+  wizardActivationPlan,
   type ProgramItem,
 } from '../../../src/lib/programs';
+import { goToTrainingDashboard, refreshProgramQueries } from '../../../src/lib/workoutNav';
+import { neutralToast } from '../../../src/lib/neutralToast';
 import { loadAllPrograms, setActiveProgram } from '../../../src/lib/programsService';
+import { suggestExercises, checkWizardExerciseEntry, exerciseRowLabel, type CatalogRow } from '../../../src/lib/exerciseMatch';
+import { fetchCatalogCandidates } from '../../../src/lib/exerciseCatalog';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -47,11 +51,6 @@ export default function ProgramBuilderScreen() {
   const actionBg = getActionPrimary(theme);
   const queryClient = useQueryClient();
 
-  // End-of-wizard state (A09): the program row once saved + the program it would replace.
-  const [created, setCreated] = useState<{ id: string; name: string; programData: unknown } | null>(null);
-  const [replaced, setReplaced] = useState<ProgramItem | null>(null);
-  const [activating, setActivating] = useState(false);
-
   // Step state (1-4)
   const [step, setStep] = useState(1);
 
@@ -77,11 +76,76 @@ export default function ProgramBuilderScreen() {
     );
   };
 
-  const addExercise = () => {
-    const trimmed = exerciseInput.trim();
-    if (!trimmed) return;
-    setExercises((prev) => [...prev, trimmed]);
+  // Un exercice doit exister dans le catalogue (meme appariement que le demarrage de seance) : sinon le programme
+  // serait actif mais "Séance indisponible". Suggestions pendant la frappe ; texte libre non reconnu = erreur inline.
+  const [candidates, setCandidates] = useState<CatalogRow[]>([]);
+  const [searchedFor, setSearchedFor] = useState('');
+  const [searchFailed, setSearchFailed] = useState(false);
+  const entryText = exerciseInput.trim();
+
+  useEffect(() => {
+    if (entryText.length < 2) {
+      setCandidates([]);
+      setSearchedFor(entryText);
+      setSearchFailed(false);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const rows = await fetchCatalogCandidates(supabase as any, entryText, exerciseNames);
+        if (cancelled) return;
+        setCandidates(rows);
+        setSearchFailed(false);
+      } catch {
+        if (cancelled) return;
+        setCandidates([]);
+        setSearchFailed(true);
+      }
+      setSearchedFor(entryText);
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [entryText]);
+
+  const settled = searchedFor === entryText;
+  const entryCheck = settled && !searchFailed ? checkWizardExerciseEntry(entryText, candidates, exerciseNames) : null;
+  const suggestions = settled && !searchFailed ? suggestExercises(entryText, candidates, exerciseNames, 5) : [];
+  // Saisie en cours qui ne peut pas (encore) etre ajoutee : bloque "Creer mon programme".
+  const entryBlocked = entryText !== '' && (!settled || searchFailed || entryCheck?.status !== 'resolved');
+  const entryError =
+    entryText.length >= 2 && settled
+      ? searchFailed
+        ? 'Catalogue indisponible. Vérifie ta connexion puis réessaie.'
+        : entryCheck?.status === 'unresolved'
+          ? entryCheck.message
+          : null
+      : null;
+
+  const addResolved = (label: string) => {
+    setExercises((prev) => (prev.includes(label) ? prev : [...prev, label]));
     setExerciseInput('');
+  };
+
+  const addExercise = async () => {
+    if (!entryText) return;
+    let check = entryCheck;
+    if (!check) {
+      try {
+        const rows = await fetchCatalogCandidates(supabase as any, entryText, exerciseNames);
+        setCandidates(rows);
+        setSearchFailed(false);
+        setSearchedFor(entryText);
+        check = checkWizardExerciseEntry(entryText, rows, exerciseNames);
+      } catch {
+        setSearchFailed(true);
+        setSearchedFor(entryText);
+        return;
+      }
+    }
+    if (check.status === 'resolved') addResolved(check.label);
   };
 
   const removeExercise = (idx: number) => {
@@ -92,12 +156,29 @@ export default function ProgramBuilderScreen() {
     if (step === 1) return !!goal;
     if (step === 2) return true;
     if (step === 3) return selectedDays.length > 0;
-    return true;
+    return !entryBlocked;
   };
 
   // ── Submit ───────────────────────────────────────────────────
 
   const handleFinish = async () => {
+    if (isSaving) return;
+    // UATN-03 : jamais de programme sans exercice (seances vides, impossibles a demarrer).
+    // Texte saisi mais pas encore ajoute : reconnu -> ajoute d'office ; sinon bloque avec le message d'erreur.
+    let finalExercises = exercises;
+    let blockedEntry: string | null = null;
+    if (entryText) {
+      if (entryCheck?.status === 'resolved') {
+        finalExercises = exercises.includes(entryCheck.label) ? exercises : [...exercises, entryCheck.label];
+      } else {
+        blockedEntry = entryText;
+      }
+    }
+    const check = validateWizardExercises(finalExercises, blockedEntry);
+    if (!check.ok) {
+      showAlert(check.title, check.message);
+      return;
+    }
     setIsSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -106,25 +187,67 @@ export default function ProgramBuilderScreen() {
       // D-10: name / split_type / days_per_week are NOT NULL; the previous insert omitted them.
       const { data: row, error } = await supabase
         .from('ziko_ai_generated_programs')
-        .insert(buildWizardProgramRow(user.id, { goal, weeks, selectedDays, exercises }))
+        .insert(buildWizardProgramRow(user.id, { goal, weeks, selectedDays, exercises: finalExercises }))
         .select('id,name,program_data')
         .single();
 
       if (error || !row) throw error ?? new Error('Programme non enregistre');
 
-      let current: ProgramItem | null = null;
+      // Lu AVANT toute activation : decide si le programme devient actif d'office (aucun programme actif) ou non.
+      let current: ProgramItem | null | 'error' = null;
       try {
-        current = (await loadAllPrograms(supabase as any, user.id)).find((i) => i.isActive) ?? null;
+        current = (await loadAllPrograms(supabase as any, user.id)).find((i) => i.isActive && i.id !== String(row.id)) ?? null;
       } catch {
-        current = null;
+        current = 'error';
       }
-      await Promise.all(
-        [['programs'], ['program', 'active'], ['active-program'], ['ai_programs'], ['ai_program_active']].map((k) =>
-          queryClient.invalidateQueries({ queryKey: k }),
-        ),
-      );
-      setReplaced(current);
-      setCreated({ id: String(row.id), name: String(row.name), programData: row.program_data });
+      const programId = String(row.id);
+      const programName = String(row.name);
+      const plan = wizardActivationPlan(current);
+
+      if (plan.kind === 'auto') {
+        try {
+          await setActiveProgram(supabase as any, 'ai', programId);
+        } catch {
+          await refreshProgramQueries(queryClient);
+          showAlert('Programme créé', `« ${programName} » est enregistré, mais son activation a échoué. Active-le depuis la liste de tes programmes.`, [
+            { text: 'Mes programmes', onPress: () => router.replace('/(app)/workout/programs' as any) },
+          ]);
+          return;
+        }
+        await refreshProgramQueries(queryClient);
+        neutralToast(activationToast(programName));
+        goToTrainingDashboard(router);
+        return;
+      }
+
+      await refreshProgramQueries(queryClient);
+      const toPrograms = () => router.replace('/(app)/workout/programs' as any);
+      const keep =
+        plan.kind === 'offer'
+          ? `« ${plan.currentName} » reste ton programme actif.`
+          : 'Ton programme actif n’a pas été modifié.';
+      const buttons: Array<{ text: string; style?: 'cancel' | 'default' | 'destructive'; onPress?: () => void }> = [
+        { text: 'Plus tard', style: 'cancel', onPress: toPrograms },
+      ];
+      if (plan.kind === 'offer' && plan.canActivate) {
+        buttons.push({
+          text: 'Définir comme programme actif',
+          onPress: async () => {
+            try {
+              await setActiveProgram(supabase as any, 'ai', programId);
+              await refreshProgramQueries(queryClient);
+              neutralToast(activationToast(programName));
+              goToTrainingDashboard(router);
+            } catch {
+              showAlert('Activation impossible', "Active-le depuis la liste de tes programmes.");
+              toPrograms();
+            }
+          },
+        });
+      } else {
+        buttons.push({ text: 'Voir mes programmes', onPress: toPrograms });
+      }
+      showAlert('Programme créé', `« ${programName} » est dans ta liste. ${keep}`, buttons);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Erreur lors de la creation';
       showAlert('Erreur', msg);
@@ -280,7 +403,7 @@ export default function ProgramBuilderScreen() {
       </Text>
 
       {/* Input row */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: entryError || suggestions.length > 0 ? 8 : 16 }}>
         <TextInput
           value={exerciseInput}
           onChangeText={setExerciseInput}
@@ -288,14 +411,16 @@ export default function ProgramBuilderScreen() {
           placeholderTextColor={theme.muted}
           onSubmitEditing={addExercise}
           returnKeyType="done"
+          autoCorrect={false}
           style={{
             flex: 1, fontSize: 14, fontWeight: '600', color: theme.text,
             backgroundColor: theme.surface, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-            borderWidth: 1.5, borderColor: '#E2E0DA',
+            borderWidth: 1.5, borderColor: entryError ? theme.danger : '#E2E0DA',
           }}
         />
         <TouchableOpacity
           onPress={addExercise}
+          accessibilityLabel="Ajouter l'exercice"
           style={{
             width: 46, height: 46, borderRadius: 12,
             backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
@@ -304,6 +429,34 @@ export default function ProgramBuilderScreen() {
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Erreur inline : texte libre hors catalogue (bloque "Creer mon programme") */}
+      {entryError && (
+        <Text testID="exercise-entry-error" style={{ fontSize: 12, fontWeight: '600', color: theme.danger, marginBottom: 10, lineHeight: 17 }}>
+          {entryError}
+        </Text>
+      )}
+
+      {/* Suggestions du catalogue pendant la frappe */}
+      {suggestions.length > 0 && (
+        <View style={{ marginBottom: 16, backgroundColor: theme.surface, borderRadius: 12, borderWidth: 1, borderColor: '#E2E0DA', overflow: 'hidden' }}>
+          {suggestions.map((row, i) => (
+            <TouchableOpacity
+              key={row.id}
+              testID={`exercise-suggestion-${i}`}
+              onPress={() => addResolved(exerciseRowLabel(row))}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12,
+                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: '#E2E0DA',
+              }}
+            >
+              <Ionicons name="barbell-outline" size={16} color={theme.muted} />
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: theme.text }}>{exerciseRowLabel(row)}</Text>
+              <Ionicons name="add-circle-outline" size={18} color="#FF5C1A" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Exercise list */}
       {exercises.length === 0 ? (
@@ -371,6 +524,14 @@ export default function ProgramBuilderScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      {/* Clavier ouvert : le pied (Continuer / Creer mon programme) remonte au-dessus du clavier, le contenu est
+          un ScrollView (keyboardShouldPersistTaps="handled") donc les suggestions restent touchables. */}
+      <KeyboardAvoidingView
+        testID="program-builder-keyboard-avoiding"
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
       {/* Header */}
       <View style={{
         flexDirection: 'row', alignItems: 'center',
@@ -399,10 +560,12 @@ export default function ProgramBuilderScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
       >
-        {step === 1 && <Step1 />}
-        {step === 2 && <Step2 />}
-        {step === 3 && <Step3 />}
-        {step === 4 && <Step4 />}
+        {/* Appeles comme des fonctions (pas <StepN />) : un composant defini dans le rendu change de type a chaque
+            frappe, ce qui remontait le TextInput et lui faisait perdre le focus apres 1 caractere. */}
+        {step === 1 && Step1()}
+        {step === 2 && Step2()}
+        {step === 3 && Step3()}
+        {step === 4 && Step4()}
       </ScrollView>
 
       {/* Bottom CTA */}
@@ -438,6 +601,7 @@ export default function ProgramBuilderScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

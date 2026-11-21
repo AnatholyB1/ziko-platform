@@ -10,6 +10,8 @@
 // Apres un tool_result, le faux repond un texte de confirmation (pas de boucle).
 import http from 'node:http';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PORT = parseInt(process.env.FAKE_ANTHROPIC_PORT ?? '8211', 10);
 const queue = [];
@@ -20,6 +22,35 @@ const textOf = (content) =>
   typeof content === 'string'
     ? content
     : (content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+
+// Sortie structuree (generateObject) : objet minimal VALIDE pour un JSON schema (enum -> 1re valeur, nombres -> 3,
+// chaines -> libelle simule, objets -> proprietes requises, tableaux -> []). Evite un AI_NoObjectGeneratedError
+// (500 sur /ai/onboarding/retroactive) dans le journal UAT quand aucun texte n'est scripte.
+export function sampleFromSchema(schema, depth = 0) {
+  if (!schema || typeof schema !== 'object' || depth > 6) return null;
+  if (Array.isArray(schema.enum) && schema.enum.length) return schema.enum[0];
+  if (schema.const !== undefined) return schema.const;
+  const alt = schema.anyOf ?? schema.oneOf;
+  if (Array.isArray(alt) && alt.length) return sampleFromSchema(alt[0], depth + 1);
+  const type = Array.isArray(schema.type) ? schema.type.find((t) => t !== 'null') : schema.type;
+  switch (type) {
+    case 'object': {
+      const out = {};
+      for (const [k, v] of Object.entries(schema.properties ?? {})) out[k] = sampleFromSchema(v, depth + 1);
+      return out;
+    }
+    case 'array': return [];
+    case 'integer': return 3;
+    case 'number': return 3;
+    case 'boolean': return true;
+    case 'string': return 'Profil simule (faux Anthropic UAT).';
+    default: return null;
+  }
+}
+
+function structuredSchemaOf(req) {
+  return req.output_format?.schema ?? req.output_config?.format?.schema ?? null;
+}
 
 function decide(req) {
   const msgs = req.messages ?? [];
@@ -59,9 +90,17 @@ function decide(req) {
   const m = userText.match(/\[\[tool:([A-Za-z0-9_\-]+)(?:\s+(\{[\s\S]*?\}))?\s*(::force)?\]\]/);
   let pick = null;
   if (m) pick = { tool: m[1], input: m[2] ? JSON.parse(m[2]) : {}, force: !!m[3] };
-  else if (queue.length && !queue[0].afterResult) {
+  else if (queue.length && queue[0].text !== undefined && !queue[0].afterResult) {
+    // Text script (e.g. a JSON body for routes that parse model text): consumed by the next non-tool-result request.
     const q = queue[0];
-    if (toolNames.includes(q.tool) || q.force) {
+    if (--q.count <= 0) queue.shift();
+    return { kind: 'text', text: String(q.text) };
+  } else if (queue.length && !queue[0].afterResult) {
+    const q = queue[0];
+    if (q.skip > 0) {
+      // `skip`: let the next N requests that offer this tool get the default text first.
+      if (toolNames.includes(q.tool)) q.skip--;
+    } else if (toolNames.includes(q.tool) || q.force) {
       pick = { tool: q.tool, input: q.input ?? {}, force: q.force };
       if (--q.count <= 0) queue.shift();
     }
@@ -71,10 +110,15 @@ function decide(req) {
   if (pick && (toolNames.includes(pick.tool) || pick.force)) {
     return { kind: 'tool', tool: pick.tool, input: pick.input };
   }
-  // sortie structuree forcee (tool_choice tool) sans script: appelle l'outil impose avec {}
+  // sortie structuree forcee (tool_choice tool) sans script: appelle l'outil impose avec un objet valide pour son schema
   if (req.tool_choice?.type === 'tool' && req.tool_choice.name) {
-    return { kind: 'tool', tool: req.tool_choice.name, input: {} };
+    const t = (req.tools ?? []).find((x) => x.name === req.tool_choice.name);
+    const input = sampleFromSchema(t?.input_schema);
+    return { kind: 'tool', tool: req.tool_choice.name, input: input && typeof input === 'object' ? input : {} };
   }
+  // sortie structuree native (output_format / output_config json_schema) sans script: texte JSON valide
+  const structured = structuredSchemaOf(req);
+  if (structured) return { kind: 'text', text: JSON.stringify(sampleFromSchema(structured)) };
   const note = pick ? ` (outil "${pick.tool}" demande mais non propose dans cette requete)` : '';
   return { kind: 'text', text: `Reponse simulee du coach IA (faux Anthropic UAT)${note}. Tu as ecrit: "${userText.slice(0, 120)}".` };
 }
@@ -121,7 +165,7 @@ const server = http.createServer((req, res) => {
       if (req.method === 'GET') return json(200, { queue, log: log.slice(-20) });
       if (req.method === 'DELETE') { queue.length = 0; return json(200, { ok: true }); }
       const s = JSON.parse(body || '{}');
-      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force, afterResult: !!s.afterResult });
+      queue.push({ tool: s.tool, input: s.input ?? {}, count: s.count ?? 1, force: !!s.force, afterResult: !!s.afterResult, skip: s.skip ?? 0, ...(s.text !== undefined ? { text: s.text } : {}) });
       return json(200, { ok: true, queued: queue.length });
     }
     if (path === '/v1/messages' && req.method === 'POST') {
@@ -135,4 +179,6 @@ const server = http.createServer((req, res) => {
     json(404, { type: 'error', error: { type: 'not_found_error', message: `fake-anthropic: ${req.method} ${path}` } });
   });
 });
-server.listen(PORT, '127.0.0.1', () => console.log(`[fake-anthropic] http://127.0.0.1:${PORT}`));
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  server.listen(PORT, '127.0.0.1', () => console.log(`[fake-anthropic] http://127.0.0.1:${PORT}`));
+}

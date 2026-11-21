@@ -10,46 +10,24 @@ import Animated, {
   withRepeat,
   withSequence,
   FadeInUp,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { showAlert } from '@ziko/plugin-sdk';
 import { OBContext } from './_layout';
 import { PluginLoader } from '../../../src/lib/PluginLoader';
+import {
+  ONBOARDING_LOAD_PHASES, ONBOARDING_READY_COPY, goalName, readySubtitle,
+} from '../../../src/lib/onboardingEnd';
 
-const LOAD_PHASES = [
-  'Analyse de ton profil',
-  'Calcul de tes besoins caloriques',
-  'Sélection des exercices adaptés',
-  'Construction de ton programme',
-  'Calibration du coach IA',
-];
-
-function goalName(g: string | null): string {
-  const map: Record<string, string> = {
-    strength: 'force',
-    muscle_gain: 'muscle',
-    fat_loss: 'sèche',
-    endurance: 'cardio',
-    health: 'forme',
-  };
-  return g ? (map[g] ?? 'champion') : 'champion';
-}
-
-function goalLabel(g: string | null): string {
-  const map: Record<string, string> = {
-    strength: 'gagner en force',
-    muscle_gain: 'prendre du muscle',
-    fat_loss: 'perdre du gras',
-    endurance: "l'endurance",
-    health: 'la forme générale',
-  };
-  return g ? (map[g] ?? 'tes objectifs') : 'tes objectifs';
-}
+// CLAR-02 : textes et libelles dans src/lib/onboardingEnd.ts (n'annoncer que ce qui existe).
+const LOAD_PHASES = ONBOARDING_LOAD_PHASES;
 
 // ─── OBReady dark screen ──────────────────────────────────────────────────────
 
 function OBReady() {
+  const reduceMotion = useReducedMotion();
   const { obState } = useContext(OBContext);
   const user = useAuthStore((s) => s.user);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
@@ -120,7 +98,7 @@ function OBReady() {
         <View style={{ flex: 1, paddingHorizontal: 22, paddingTop: 40, justifyContent: 'center' }}>
           {/* Check icon with spring entrance */}
           <Animated.View
-            entering={FadeInUp.springify().damping(12)}
+            entering={reduceMotion ? undefined : FadeInUp.springify().damping(12)}
             style={{
               width: 76, height: 76, borderRadius: 22,
               backgroundColor: '#FF5C1A', alignItems: 'center', justifyContent: 'center',
@@ -133,36 +111,50 @@ function OBReady() {
           </Animated.View>
 
           {/* Heading */}
-          <Text style={{ fontSize: 36, fontWeight: '800', lineHeight: 37, letterSpacing: -0.7, color: '#FFFAF6' }}>
-            {'Ton plan\nest prêt'}
+          <Text accessibilityRole="header" style={{ fontSize: 36, fontWeight: '800', lineHeight: 40, letterSpacing: -0.7, color: '#FFFAF6' }}>
+            {ONBOARDING_READY_COPY.title}
             <Text style={{ color: '#FF5C1A' }}>.</Text>
           </Text>
 
-          {/* Sub */}
+          {/* Sub : objectif et rythme reellement saisis, rien de date ni de cree */}
           <Text style={{
-            fontSize: 14.5, color: 'rgba(255,250,246,0.70)', marginTop: 12,
-            lineHeight: 21.5, maxWidth: 320,
+            fontSize: 15, color: 'rgba(255,250,246,0.70)', marginTop: 12,
+            lineHeight: 22, maxWidth: 320,
           }}>
-            {`On a calibré tout ça pour ${goalLabel(obState.goal)}, ${obState.frequency}× / semaine. Première séance demain matin.`}
+            {readySubtitle(obState.goal, obState.frequency)}
           </Text>
 
-          {/* Program summary card */}
+          {/* La suite : 3 etapes qui menent a la carte "premier entrainement" de l'accueil */}
           <View style={{
-            marginTop: 28, padding: 16, backgroundColor: 'rgba(255,250,246,0.06)',
-            borderWidth: 1, borderColor: 'rgba(255,250,246,0.12)', borderRadius: 16,
+            marginTop: 28, backgroundColor: 'rgba(255,250,246,0.06)',
+            borderWidth: 1, borderColor: 'rgba(255,250,246,0.12)', borderRadius: 16, overflow: 'hidden',
           }}>
             <Text style={{
-              fontSize: 10, fontWeight: '800', color: '#FF5C1A',
-              textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
+              fontSize: 12, fontWeight: '800', color: '#FF8E5A',
+              textTransform: 'uppercase', letterSpacing: 1, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 4,
             }}>
-              Ton programme
+              {ONBOARDING_READY_COPY.stepsLabel}
             </Text>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#FFFAF6' }}>
-              {obState.frequency >= 4 ? 'Push / Pull / Legs' : 'Full Body Progressif'}
-            </Text>
-            <Text style={{ fontSize: 12, color: 'rgba(255,250,246,0.55)', marginTop: 4 }}>
-              {`8 semaines · ${obState.frequency} séances/sem · ~50 min`}
-            </Text>
+            {ONBOARDING_READY_COPY.steps.map((step, i) => (
+              <View
+                key={step.title}
+                style={{
+                  flexDirection: 'row', gap: 12, paddingVertical: 12, paddingHorizontal: 16,
+                  borderTopWidth: i === 0 ? 0 : 1, borderTopColor: 'rgba(255,250,246,0.12)',
+                }}
+              >
+                <View style={{
+                  width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: 'rgba(255,92,26,0.18)',
+                }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFB287' }}>{i + 1}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFAF6' }}>{step.title}</Text>
+                  <Text style={{ fontSize: 14, color: 'rgba(255,250,246,0.65)', marginTop: 2 }}>{step.sub}</Text>
+                </View>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -171,14 +163,18 @@ function OBReady() {
           <TouchableOpacity
             onPress={handleFinish}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? ONBOARDING_READY_COPY.ctaBusy : ONBOARDING_READY_COPY.cta}
             style={{
-              paddingVertical: 16, borderRadius: 16, backgroundColor: '#FF5C1A',
-              alignItems: 'center', opacity: isLoading ? 0.7 : 1,
+              minHeight: 52, borderRadius: 16, backgroundColor: '#FF5C1A',
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              opacity: isLoading ? 0.7 : 1,
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>
-              {isLoading ? 'Chargement…' : "C'est parti, démarrer ma journée →"}
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>
+              {isLoading ? ONBOARDING_READY_COPY.ctaBusy : ONBOARDING_READY_COPY.cta}
             </Text>
+            {!isLoading && <Ionicons name="arrow-forward" size={18} color="#fff" />}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -205,8 +201,10 @@ export default function OnboardingStep7() {
   }, [loadIdx, screenPhase]);
 
   // Icon pulse animation
+  const reduceMotion = useReducedMotion();
   const iconScale = useSharedValue(1);
   useEffect(() => {
+    if (reduceMotion) { iconScale.value = 1; return; }
     iconScale.value = withRepeat(
       withSequence(
         withTiming(1.06, { duration: 800 }),
@@ -215,12 +213,13 @@ export default function OnboardingStep7() {
       -1,
       false,
     );
-  }, []);
+  }, [reduceMotion]);
   const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: iconScale.value }] }));
 
   // Current step blink animation
   const blinkOpacity = useSharedValue(1);
   useEffect(() => {
+    if (reduceMotion) { blinkOpacity.value = 1; return; }
     blinkOpacity.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 500 }),
@@ -229,7 +228,7 @@ export default function OnboardingStep7() {
       -1,
       false,
     );
-  }, []);
+  }, [reduceMotion]);
   const blinkStyle = useAnimatedStyle(() => ({ opacity: blinkOpacity.value }));
 
   if (screenPhase === 'ready') {
@@ -252,7 +251,7 @@ export default function OnboardingStep7() {
 
         {/* Heading */}
         <Text style={{ fontSize: 26, fontWeight: '800', lineHeight: 30, color: '#1C1A17', marginBottom: 24 }}>
-          {'On prépare ton\nplan, '}
+          {'On prépare ton\nprofil, '}
           <Text style={{ color: '#FF5C1A' }}>
             {goalName(obState.goal)}
           </Text>

@@ -5,6 +5,10 @@ import {
   buildWeekLayout,
   pickSessionForToday,
   parseReps,
+  parseSetsSpec,
+  parseDuration,
+  formatDuration,
+  describeSetsSpec,
   isCountableSession,
   COUNTABLE_SESSION_OR_FILTER,
   resolveDayIndexBase,
@@ -182,5 +186,57 @@ describe('empty sessions are ignored (TRAIN-03)', () => {
   it('write guard', () => {
     expect(shouldPersistSession(0)).toBe(false);
     expect(shouldPersistSession(1)).toBe(true);
+  });
+});
+
+describe('parseSetsSpec (libelle de series de la seance IA simple)', () => {
+  it('lit "3 × 8-10", "4x12", "3 séries de 10"', () => {
+    expect(parseSetsSpec('3 × 8-10')).toEqual({ sets: 3, reps: '8-10' });
+    expect(parseSetsSpec('4x12')).toEqual({ sets: 4, reps: 12 });
+    expect(parseSetsSpec('3 séries de 10')).toEqual({ sets: 3, reps: 10 });
+  });
+  it('defaut 3 series sans nombre lisible', () => {
+    expect(parseSetsSpec(undefined)).toEqual({ sets: 3, reps: null });
+    expect(parseSetsSpec('3 séries')).toEqual({ sets: 3, reps: null });
+  });
+  it('prescription en temps : "3 x 40 s" -> duree 40 s, jamais 40 repetitions', () => {
+    expect(parseSetsSpec('3 x 40 s')).toEqual({ sets: 3, reps: null, duration: { min: 40, max: 40 } });
+    expect(parseSetsSpec('3×40s')).toEqual({ sets: 3, reps: null, duration: { min: 40, max: 40 } });
+    expect(parseSetsSpec('3 x 30-45 s')).toEqual({ sets: 3, reps: null, duration: { min: 30, max: 45 } });
+    expect(parseSetsSpec('2 x 1 min')).toEqual({ sets: 2, reps: null, duration: { min: 60, max: 60 } });
+  });
+  it('duree seule : "1 min", "45 s" -> 3 series par defaut', () => {
+    expect(parseSetsSpec('1 min')).toEqual({ sets: 3, reps: null, duration: { min: 60, max: 60 } });
+    expect(parseSetsSpec('45 s')).toEqual({ sets: 3, reps: null, duration: { min: 45, max: 45 } });
+  });
+  it('repetitions inchangees : "4 x 12", "3 x 8-10" (pas de duree)', () => {
+    expect(parseSetsSpec('4 x 12')).toEqual({ sets: 4, reps: 12 });
+    expect(parseSetsSpec('3 x 8-10')).toEqual({ sets: 3, reps: '8-10' });
+    expect(parseSetsSpec('3 séries de 10')).toEqual({ sets: 3, reps: 10 });
+  });
+});
+
+describe('parseDuration / formatDuration / describeSetsSpec', () => {
+  it('unite obligatoire : un nombre nu reste des repetitions ; "10 séries" n est pas une duree', () => {
+    expect(parseDuration('10')).toBeNull();
+    expect(parseDuration('10 séries')).toBeNull();
+    expect(parseDuration(40)).toBeNull();
+    expect(parseDuration('40 secondes')).toEqual({ min: 40, max: 40 });
+    expect(parseDuration('1-2 min')).toEqual({ min: 60, max: 120 });
+  });
+  it('formatDuration', () => {
+    expect(formatDuration({ min: 40, max: 40 })).toBe('40 s');
+    expect(formatDuration({ min: 60, max: 60 })).toBe('1 min');
+    expect(formatDuration({ min: 30, max: 45 })).toBe('30-45 s');
+    expect(formatDuration({ min: 60, max: 120 })).toBe('1-2 min');
+    expect(formatDuration({ min: 90, max: 90 })).toBe('90 s');
+  });
+  it('describeSetsSpec : l unite reste visible (apercu de la seance IA)', () => {
+    expect(describeSetsSpec('3 x 40 s')).toBe('3 séries · 40 s');
+    expect(describeSetsSpec('3 x 30-45 s')).toBe('3 séries · 30-45 s');
+    expect(describeSetsSpec('4 x 12')).toBe('4 séries · 12 rép.');
+    expect(describeSetsSpec('3 x 8-10')).toBe('3 séries · 8-10 rép.');
+    expect(describeSetsSpec('1 min')).toBe('1 min');
+    expect(describeSetsSpec('au feeling')).toBe('au feeling');
   });
 });

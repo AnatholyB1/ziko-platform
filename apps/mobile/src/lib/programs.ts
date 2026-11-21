@@ -308,6 +308,45 @@ export function buildWizardProgramRow(userId: string, input: WizardInput) {
   };
 }
 
+/** UATN-03 : un programme sans exercice donnerait des seances vides (impossibles a demarrer) : creation bloquee. */
+export function validateWizardExercises(
+  exercises: string[],
+  /** Texte saisi mais non reconnu dans le catalogue (UAT rerun : un nom libre donnait un programme impossible a demarrer). */
+  unresolvedEntry?: string | null,
+): { ok: true } | { ok: false; title: string; message: string } {
+  const pending = unresolvedEntry?.trim();
+  if (pending) {
+    return {
+      ok: false,
+      title: 'Exercice non reconnu',
+      message: `« ${pending} » n'est pas dans le catalogue. Choisis un exercice dans les suggestions, ou efface la saisie.`,
+    };
+  }
+  if (exercises.some((e) => e.trim() !== '')) return { ok: true };
+  return {
+    ok: false,
+    title: 'Ajoute au moins un exercice',
+    message: "Ton programme n'a aucun exercice : ses séances seraient vides. Ajoute au moins un exercice avant de le créer.",
+  };
+}
+
+/**
+ * Apres creation par l'assistant (UATN-03, decision produit) : le PREMIER programme de l'athlete est active
+ * automatiquement ; s'il en a deja un d'actif on le conserve et on propose "Définir comme programme actif"
+ * (TRAIN-09). Si la lecture des programmes a echoue on ne devine pas : aucun remplacement silencieux.
+ */
+export type WizardActivationPlan =
+  | { kind: 'auto' }
+  | { kind: 'offer'; currentName: string; canActivate: boolean }
+  | { kind: 'unknown' };
+
+export function wizardActivationPlan(current: ProgramItem | null | 'error'): WizardActivationPlan {
+  if (current === 'error') return { kind: 'unknown' };
+  if (!current) return { kind: 'auto' };
+  // Un programme coach actif ne se remplace qu'apres la confirmation A08 de l'ecran Programmes.
+  return { kind: 'offer', currentName: current.name, canActivate: current.source !== 'coach' };
+}
+
 export interface WizardSessionSummary {
   name: string;
   exerciseCount: number;

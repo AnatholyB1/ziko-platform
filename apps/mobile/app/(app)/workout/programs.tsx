@@ -402,7 +402,7 @@ export default function ProgramsScreen() {
           <Ionicons name="list-outline" size={24} color={theme.primary} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>Assistant en 4 étapes</Text>
-            <Text style={{ fontSize: 14, color: theme.muted }}>Objectif, niveau, jours, matériel. Gratuit, 2 minutes.</Text>
+            <Text style={{ fontSize: 14, color: theme.muted }}>Objectif, durée, jours, exercices. Gratuit, 2 minutes.</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={goAtelier} accessibilityRole="button" accessibilityLabel="Atelier IA" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: theme.border }}>

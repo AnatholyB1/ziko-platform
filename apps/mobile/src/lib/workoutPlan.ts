@@ -196,6 +196,76 @@ export function parseReps(reps: string | number | null | undefined): {
   return { reps: null, reps_min: null, reps_max: null };
 }
 
+/** Duree prescrite en secondes : min === max pour une duree fixe. */
+export interface PrescribedDuration {
+  min: number;
+  max: number;
+}
+
+const DURATION_RE =
+  /(\d+)(?:\s*[-–]\s*(\d+))?\s*(secondes?|secs?|s|minutes?|mins?|mn)(?![a-zà-ÿ])/i;
+
+/**
+ * "40 s", "30-45 s", "45s", "1 min", "1-2 min" -> secondes. Une unite de temps est OBLIGATOIRE (un "10" nu reste des
+ * repetitions). null si le texte ne decrit pas une duree.
+ */
+export function parseDuration(value: string | number | null | undefined): PrescribedDuration | null {
+  if (typeof value !== 'string') return null;
+  const m = value.match(DURATION_RE);
+  if (!m) return null;
+  const factor = /^m/i.test(m[3]) ? 60 : 1;
+  const a = parseInt(m[1], 10) * factor;
+  const b = m[2] != null ? parseInt(m[2], 10) * factor : a;
+  if (a <= 0 || b <= 0) return null;
+  return { min: Math.min(a, b), max: Math.max(a, b) };
+}
+
+/** 40 -> "40 s", 60 -> "1 min", {30,45} -> "30-45 s", {60,120} -> "1-2 min", 90 -> "90 s". */
+export function formatDuration(d: PrescribedDuration): string {
+  const whole = d.min % 60 === 0 && d.max % 60 === 0;
+  const unit = whole ? 'min' : 's';
+  const f = (v: number) => (whole ? v / 60 : v);
+  return d.min === d.max ? `${f(d.min)} ${unit}` : `${f(d.min)}-${f(d.max)} ${unit}`;
+}
+
+/**
+ * Libelle de series d'une seance IA simple ("3 × 8-10", "4x10", "3 séries de 12", "45 s") -> series + repetitions.
+ * Sans nombre de series lisible : 3 series (meme defaut que normalizePlanSessions).
+ */
+export function parseSetsSpec(spec: string | number | null | undefined): {
+  sets: number;
+  reps: string | number | null;
+  /** Present uniquement pour une prescription en TEMPS ("3 x 40 s", "30-45 s", "1 min") : reps vaut alors null. */
+  duration?: PrescribedDuration;
+} {
+  const raw = typeof spec === 'number' ? String(spec) : String(spec ?? '').trim();
+  const m = raw.match(/^(\d{1,2})\s*(?:[x×*]|séries?|series?|sets?)\s*(?:de\s+)?(.*)$/i);
+  if (m) {
+    const sets = Math.max(1, parseInt(m[1], 10));
+    const rest = m[2].trim();
+    const duration = parseDuration(rest);
+    if (duration) return { sets, reps: null, duration };
+    const r = parseReps(rest);
+    return { sets, reps: r.reps ?? (r.reps_min != null && r.reps_max != null ? `${r.reps_min}-${r.reps_max}` : null) };
+  }
+  const duration = parseDuration(raw);
+  if (duration) return { sets: 3, reps: null, duration };
+  return { sets: 3, reps: null };
+}
+
+/**
+ * Libelle lisible d'une prescription ("3 x 40 s" -> "3 séries · 40 s", "4x12" -> "4 séries · 12 rép."). Texte non
+ * interpretable : renvoye tel quel (jamais d'invention).
+ */
+export function describeSetsSpec(spec: string | number | null | undefined): string {
+  const raw = typeof spec === 'number' ? String(spec) : String(spec ?? '').trim();
+  const p = parseSetsSpec(raw);
+  const hasSets = /^\d{1,2}\s*(?:[x×*]|séries?|series?|sets?)/i.test(raw);
+  const target = p.duration ? formatDuration(p.duration) : p.reps != null ? `${p.reps} rép.` : null;
+  if (!target) return raw;
+  return hasSets ? `${p.sets} série${p.sets > 1 ? 's' : ''} · ${target}` : target;
+}
+
 // ── TRAIN-03: empty sessions are neither stored nor counted ──────────────────────
 
 export interface CountableSessionLike {

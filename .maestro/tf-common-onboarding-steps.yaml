@@ -1,0 +1,17 @@
+# Sous-flow: les 7 etapes structurees de l'onboarding (compte frais, apres login) jusqu'a l'ouverture du chat Ziko.
+appId: com.ziko.mobile
+---
+- extendedWaitUntil:
+    visible: "Allez, on y va"
+    timeout: 60000
+- tapOn: "Allez, on y va"
+- tapOn: "Gagner en force"
+- tapOn: "Continuer"
+- tapOn: "Débutant"
+- tapOn: "Continuer"
+- tapOn: "Continuer"
+- tapOn: "Salle complète"
+- tapOn: "Continuer"
+- tapOn: "Homme"
+- tapOn: "Continuer"
+- tapOn: "C'est parti, démarrer ma journée →"

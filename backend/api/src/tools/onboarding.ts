@@ -28,6 +28,32 @@ export type MicroAction = (typeof MICRO_ACTION_POOL)[number];
 export const ONBOARDING_LEVEL = 1;
 export const ONBOARDING_TIER = 1;
 
+// ── v1.21 CLAR-03 : un compte de niveau 1 ne recoit que `hydration_log` comme premiere mission. journal_mood
+// (journal) et measurements_weight (mesures) sont des modules de niveau 2 : leur CTA serait renvoye a l'accueil par le
+// garde de route. L'onboarding ecrit toujours le niveau 1 (ONBOARDING_LEVEL) : tout autre choix du modele est ramene
+// a l'hydratation (validation de sortie), avec un titre coherent. ─────────────────────────────────────────────────
+export function allowedFirstMissions(level: number): readonly MicroAction[] {
+  return level <= 1 ? (['hydration_log'] as const) : MICRO_ACTION_POOL;
+}
+
+const HYDRATION_TITLE: Record<'fr' | 'en', string> = {
+  fr: "Bois un verre d'eau",
+  en: 'Drink a glass of water',
+};
+
+/** Ramene le choix du modele a une premiere mission accessible au niveau donne ; le titre suit si l'action change. */
+export function coerceFirstMission(
+  level: number,
+  microAction: MicroAction,
+  missionTitle: string,
+  locale: 'fr' | 'en' = 'fr',
+): { micro_action: MicroAction; mission_title: string; coerced: boolean } {
+  if (allowedFirstMissions(level).includes(microAction)) {
+    return { micro_action: microAction, mission_title: missionTitle, coerced: false };
+  }
+  return { micro_action: 'hydration_log', mission_title: HYDRATION_TITLE[locale], coerced: true };
+}
+
 const READINESS_VALUES = ['fragile', 'building', 'ready'] as const;
 
 // ── Tool schema ─────────────────────────────────────────────────────────
@@ -106,6 +132,7 @@ export async function assess_profile(
   params: Record<string, unknown>,
   userId: string,
   userToken?: string,
+  locale: 'fr' | 'en' = 'fr',
 ): Promise<unknown> {
   const {
     experience_level,
@@ -115,8 +142,8 @@ export async function assess_profile(
     readiness,
     readiness_confidence,
     profile_summary,
-    micro_action,
-    mission_title,
+    micro_action: requestedMicroAction,
+    mission_title: requestedMissionTitle,
   } = params as {
     experience_level: string;
     experience_confidence: number;
@@ -131,9 +158,17 @@ export async function assess_profile(
 
   // (a) Runtime membership check against MICRO_ACTION_POOL before the RPC
   // call — the schema enum alone is not an enforcement boundary (T-43-02).
-  if (!(MICRO_ACTION_POOL as readonly string[]).includes(micro_action)) {
+  if (!(MICRO_ACTION_POOL as readonly string[]).includes(requestedMicroAction)) {
     return { success: false, error: 'invalid_micro_action' };
   }
+
+  // (a2) CLAR-03 : premiere mission accessible au niveau ecrit (1) -> hydratation uniquement.
+  const { micro_action, mission_title } = coerceFirstMission(
+    ONBOARDING_LEVEL,
+    requestedMicroAction as MicroAction,
+    requestedMissionTitle,
+    locale,
+  );
 
   // (b) Runtime membership check against the readiness enum before the RPC
   // call, mirroring the micro_action guard above.

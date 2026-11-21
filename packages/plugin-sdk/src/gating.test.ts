@@ -74,12 +74,12 @@ describe('filterUnlockedPlugins floor guarantee', () => {
   it('empty input stays empty', () => {
     expect(filterUnlockedPlugins([], 1)).toEqual([]);
   });
-  it('per-level counts follow D-03 (7/13/17/19 unlocked at 1/2/3/4)', () => {
+  it('per-level counts follow (8/14/18/19 unlocked at 1/2/3/4; ai-programs from level 1)', () => {
     const all = Object.values(PLUGIN_LEVEL_MAP);
     expect(all).toHaveLength(19);
-    expect(filterUnlockedPlugins(all, 1)).toHaveLength(7);
-    expect(filterUnlockedPlugins(all, 2)).toHaveLength(13);
-    expect(filterUnlockedPlugins(all, 3)).toHaveLength(17);
+    expect(filterUnlockedPlugins(all, 1)).toHaveLength(8);
+    expect(filterUnlockedPlugins(all, 2)).toHaveLength(14);
+    expect(filterUnlockedPlugins(all, 3)).toHaveLength(18);
     expect(filterUnlockedPlugins(all, 4)).toHaveLength(19);
     expect(filterUnlockedPlugins(all, 5)).toHaveLength(19);
   });
@@ -90,15 +90,15 @@ describe('level-up', () => {
     expect(getNewlyUnlockedPlugins(1, 2).map((p) => p.id).sort()).toEqual(
       ['journal', 'measurements', 'pantry', 'persona', 'sleep', 'stats'],
     );
-    expect(getNewlyUnlockedPlugins(3, 4).map((p) => p.id).sort()).toEqual(['ai-programs', 'supplements']);
-    expect(getNewlyUnlockedPlugins(1, 4)).toHaveLength(12);
+    expect(getNewlyUnlockedPlugins(3, 4).map((p) => p.id).sort()).toEqual(['supplements']);
+    expect(getNewlyUnlockedPlugins(1, 4)).toHaveLength(11);
   });
   it('no level-up (same or lower) => nothing', () => {
     expect(getNewlyUnlockedPlugins(3, 3)).toEqual([]);
     expect(getNewlyUnlockedPlugins(4, 2)).toEqual([]);
   });
   it('getLockedPlugins shrinks as level rises and is sorted', () => {
-    expect(getLockedPlugins(1)).toHaveLength(12);
+    expect(getLockedPlugins(1)).toHaveLength(11);
     expect(getLockedPlugins(4)).toHaveLength(0);
     const l = getLockedPlugins(1).map((p) => p.minLevel);
     expect(l).toEqual([...l].sort((a, b) => a - b));

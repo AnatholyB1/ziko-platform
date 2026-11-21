@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 import { getActiveProgram } from '../lib/activeProgram';
-import { localDateKey } from '../lib/localDate';
+import { localDateKey, localDateKeyFromISO } from '../lib/localDate';
 import { displayStreak } from '@ziko/plugin-gamification/streak';
 import { COUNTABLE_SESSION_OR_FILTER } from '../lib/workoutPlan';
 import { fetchSleepNight, fetchSleepSettings } from '@ziko/plugin-sleep/lib/data';
@@ -225,6 +225,63 @@ export function useActiveAIProgram(opts?: { refetchOnMount?: boolean | 'always' 
     staleTime: 1000 * 60 * 2, // 2 min
     retry: 2, // une lecture ratee juste apres la connexion ne doit pas devenir "aucun programme"
     refetchOnMount: opts?.refetchOnMount ?? true,
+  });
+}
+
+// ── useOnboardingMission ──────────────────────────────────────
+// The first mission assigned by Ziko's onboarding chat is stored only in
+// ziko_athlete_decisions.outcome (decision_type 'onboarding_profile'). The
+// home Mission card used to read ziko_ai_generated_programs exclusively, so a
+// fresh athlete saw "no mission" on arrival. The mission is "du jour": it is
+// returned only when assigned today (local date) and not yet fulfilled (no
+// log for its target table today); otherwise null.
+export interface OnboardingMission {
+  micro_action: string;
+  mission_title: string;
+}
+export const ONBOARDING_MISSION_ROUTES: Record<string, string> = {
+  hydration_log: '/(plugins)/hydration/dashboard',
+  journal_mood: '/(plugins)/journal/entry',
+  measurements_weight: '/(plugins)/measurements/log',
+};
+const ONBOARDING_MISSION_TABLES: Record<string, string> = {
+  hydration_log: 'ziko_hydration_logs',
+  journal_mood: 'ziko_journal_entries',
+  measurements_weight: 'ziko_body_measurements',
+};
+export function useOnboardingMission() {
+  const userId = useAuthStore((s) => s.user?.id);
+  return useQuery({
+    queryKey: ['onboarding-mission', userId],
+    queryFn: async (): Promise<OnboardingMission | null> => {
+      const { data, error } = await supabase
+        .from('ziko_athlete_decisions')
+        .select('outcome, created_at')
+        .eq('user_id', userId!)
+        .eq('decision_type', 'onboarding_profile')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const row = data as { outcome?: Record<string, unknown>; created_at?: string } | null;
+      const o = row?.outcome;
+      if (!o || typeof o.mission_title !== 'string' || typeof o.micro_action !== 'string') return null;
+      const table = ONBOARDING_MISSION_TABLES[o.micro_action];
+      if (!table || !row?.created_at) return null;
+      const today = localDateKey();
+      if (localDateKeyFromISO(row.created_at) !== today) return null;
+      // Already fulfilled today (the onboarding celebration path): nothing left to show.
+      const { data: logs } = await supabase
+        .from(table)
+        .select('id')
+        .eq('user_id', userId!)
+        .eq('date', today)
+        .limit(1);
+      if (logs && logs.length > 0) return null;
+      return { micro_action: o.micro_action, mission_title: o.mission_title };
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60,
   });
 }
 
