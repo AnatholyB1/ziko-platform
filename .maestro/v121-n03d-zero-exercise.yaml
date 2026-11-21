@@ -31,3 +31,12 @@ env:
 - takeScreenshot: n03d-zero-exercise-blocked
 # Rien n'a ete cree : la carte reste sur l'accueil.
 - tapOn: "OK"
+# Texte libre hors catalogue : erreur inline, creation bloquee (bouton desactive / alerte), rien n'est cree.
+- tapOn: "Nom de l'exercice..."
+- inputText: "zzqxv"
+- takeScreenshot: n03d-unknown-text
+- hideKeyboard
+- assertVisible: ".*(reconnu|catalogue).*"
+- tapOn: "Creer mon programme"
+- takeScreenshot: n03d-unknown-blocked
+- assertNotVisible: "Programme actif.*"

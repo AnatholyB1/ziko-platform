@@ -2,6 +2,9 @@
 # AVANT l'ouverture, Manuel reste disponible (Gratuit) et ouvre le program-builder.
 appId: com.ziko.mobile
 ---
+- tapOn:
+    text: "Plus tard"
+    optional: true
 - extendedWaitUntil:
     visible: "Crée ton premier entraînement"
     timeout: 90000

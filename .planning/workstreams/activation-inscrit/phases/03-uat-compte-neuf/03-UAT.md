@@ -95,3 +95,26 @@ Bugs initiaux : les 6 bugs de la premiere passe sont resolus sur Android (SEV 2 
 - Saisie du nom d'exercice (program-builder) : l'emulateur (2 Go, swap) ne conserve que le 1er caractere, y compris par touches adb espacees de 1,5 s ; `retry` + `assertVisible "Squat"` donnait un faux positif (le mot de la barre de suggestions Gboard). Non resolu ; n'affecte pas les autres champs (login, chat).
 - Nouveaux flows : `v121-n03d-zero-exercise.yaml`, `v121-n03e-prep.yaml`, `v121-n03e-exhausted.yaml`.
 - `uat-evidence/runflow.sh` (local, non commite) : reset + Maestro + preuves par flow.
+
+
+---
+
+# Rejeu 2 - 2026-11-21 (branche `uat/phase-3-replay2`, apres `fix/uat-remaining`)
+
+Verdicts a jour (remplacent ceux du re-run) ; synthese dans `03-VERIFICATION.md`. Preuves : `uat-evidence/v121/<flow>/` (gitignore).
+
+| Exigence | Verdict | Notes |
+|----------|---------|-------|
+| UATN-01 | PASS | Ordre carte, Mission du jour, Quetes, Forme du jour ; identique avec programme actif apres creation Manuel (`n03a-manual/home-active-top.png`). |
+| UATN-02 | PASS | 3 quetes, eau terminee apres 2 L, Mission disparue ensuite, ni pieces/echec/"Voir tout" (`n02-after-top.png`, `n02-after-mid.png`). |
+| UATN-03 Manuel | PASS | Saisie complete au clavier, suggestion catalogue, creation auto-activee, apercu de seance avec "Squat complet barre" (`n03a-08`). Texte inconnu : erreur inline + bouton desactive (`n03d-unknown-*`). 0 exercice : alerte. |
+| UATN-03 IA simple | PASS | 4 exercices sur 4 resolus (goblet squat haltere, developpe couche halteres, rowing unilateral machine, planche complete) + toast "Exercices remplaces" (`n03b-04`). |
+| UATN-03 Atelier | PASS | Regression OK. |
+| Credits epuises | PASS | Regression OK. |
+| Bravo, tout est fait | PASS (reserve) | 3/3 atteint, repas et seance inseres par `v121-complete-quests.mjs` (`n02b-03-bravo`). |
+
+## Incidents de harnais (rejeu 2)
+- Premier bundle Metro (cache vide) 115 s ; le dev-client a expire (IOException + ANR SystemUI : "Wait" via tap) puis rouvert apres "Android Bundled".
+- `google-services.json` copie localement depuis un worktree frere (gitignore).
+- Une JVM Maestro s'est figee (run n03a) ; arretee par PID, flow relance (Passed). Flows modifies : `v121-n03a-manual.yaml` (`hideKeyboard` avant "Creer mon programme", clavier masquant le bouton), `v121-n03e-exhausted.yaml` (ecran notifications "Plus tard" optionnel), `v121-n03d-zero-exercise.yaml` (cas texte inconnu). Nouveaux : `v121-n02b-part1.yaml`, `v121-n02b-part2.yaml`, `scripts/uat/v121-complete-quests.mjs`.
+- Le clavier garde desormais tout le texte saisi ("Squat") : le remontage par frappe est corrige.

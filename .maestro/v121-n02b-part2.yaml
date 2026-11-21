@@ -1,0 +1,19 @@
+# v1.21 bonus "Bravo, tout est fait", partie 2 : app rouverte apres insertion repas + seance -> 3/3 -> etat "Bravo".
+appId: com.ziko.mobile
+---
+- tapOn:
+    text: "Plus tard"
+    optional: true
+- extendedWaitUntil:
+    visible: "Accueil"
+    timeout: 90000
+- tapOn: "Accueil"
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+- takeScreenshot: n02b-02-quests-after
+- extendedWaitUntil:
+    visible: ".*Bravo.*"
+    timeout: 30000
+- takeScreenshot: n02b-03-bravo

@@ -49,6 +49,7 @@ env:
     id: "exercise-suggestion-0"
 - assertVisible: "1 exercice"
 - takeScreenshot: n03a-04-step4
+- hideKeyboard
 - tapOn: "Creer mon programme"
 - extendedWaitUntil:
     visible: ".*"
