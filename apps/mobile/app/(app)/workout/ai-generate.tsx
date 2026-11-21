@@ -85,7 +85,7 @@ export default function AIGenerateScreen() {
         return;
       }
       router.push('/(app)/workout/session');
-      if (fb.toast) neutralToast(fb.toast);
+      if (fb.toast) neutralToast(fb.toast, fb.toastDetail);
     } finally {
       setIsStarting(false);
     }
