@@ -1,0 +1,26 @@
+# SEV4 verification (check 3, part B): apres creation du programme (bouton tape clavier ouvert), carte disparue, seance demarree.
+# Sans reset : enchaine sur v121-sev4-builder-a + tap adb du bouton "Creer mon programme".
+appId: com.ziko.mobile
+---
+- tapOn: "Accueil"
+- extendedWaitUntil:
+    notVisible: "Crée ton premier entraînement"
+    timeout: 20000
+- takeScreenshot: sev4b-06-home-card-gone
+- tapOn: "Entraînement"
+- extendedWaitUntil:
+    visible: "Démarrer la séance d'aujourd'hui.*"
+    timeout: 30000
+- takeScreenshot: sev4b-07-training-tab
+- tapOn: "Démarrer la séance d'aujourd'hui.*"
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
+- assertNotVisible: "Séance indisponible"
+- takeScreenshot: sev4b-08-preview
+- tapOn: "Démarrer la séance"
+- extendedWaitUntil:
+    notVisible: "APERÇU DU PROGRAMME"
+    timeout: 30000
+- takeScreenshot: sev4b-09-session-started
+- assertVisible: "(?i).*(squat complet|exercice 1/1).*"

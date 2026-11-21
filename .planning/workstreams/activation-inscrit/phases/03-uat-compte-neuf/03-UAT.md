@@ -118,3 +118,28 @@ Verdicts a jour (remplacent ceux du re-run) ; synthese dans `03-VERIFICATION.md`
 - `google-services.json` copie localement depuis un worktree frere (gitignore).
 - Une JVM Maestro s'est figee (run n03a) ; arretee par PID, flow relance (Passed). Flows modifies : `v121-n03a-manual.yaml` (`hideKeyboard` avant "Creer mon programme", clavier masquant le bouton), `v121-n03e-exhausted.yaml` (ecran notifications "Plus tard" optionnel), `v121-n03d-zero-exercise.yaml` (cas texte inconnu). Nouveaux : `v121-n02b-part1.yaml`, `v121-n02b-part2.yaml`, `scripts/uat/v121-complete-quests.mjs`.
 - Le clavier garde desormais tout le texte saisi ("Squat") : le remontage par frappe est corrige.
+
+
+---
+
+# SEV4 verification - 2026-11-21 (branche `uat/sev4-verify`, depuis `milestone/v1.21` apres "Merge fix/uat-sev4")
+
+Emulateur `ziko-uat-1`, dev-client + Metro 8281 (cache vide, bundle 143 s), backend local 8200 + faux Anthropic 8211 + faux Upstash 8210, base `uat-v1-20`. Preuves (gitignorees) : `uat-evidence/sev4/` (copies) et `uat-evidence/v121/<flow>/`. Flows ajoutes : `.maestro/v121-sev4-ai-session.yaml`, `v121-sev4-builder-a.yaml`, `v121-sev4-builder-b.yaml`.
+
+| # | Controle | Verdict | Preuve |
+|---|----------|---------|--------|
+| 1 | Seance IA scriptee (`fake-script.sh session`, "Gainage planche" "3 x 40 s") : "40 s" et non "40 rep." ; seance demarree avec duree/chrono | PASS | Ecran "Ta seance generee" : "Gainage planche / 3 series . 40 s" (`sev4-02-toast-immediate.png`). Apercu : "Planche complete / 3 series . 40s" + icone chrono (`sev4-04-preview-plank.png`), assertions Maestro `40 ?s` visible et `40 ?rep` absent OK. Seance reelle (adb, 3 exercices valides) : "Exercice 4/4 . Serie 1/3", "Planche complete", cercle "00:00 / Objectif : 00:40", bouton "Lancer le minuteur" (`sev4-07-session-plank-timer.png`) |
+| 2 | Toast de remplacement non tronque | PASS | Capture du toast natif (`sev4-03-preview.png`) : "3 exercices remplaces : Squat goblet par dumbbell goblet squat +2", 2 lignes completes, pas de coupure. Le detail complet n'est pas visible a l'ecran sur Android (annonce accessibilite seulement, non verifiee TalkBack). |
+| 3 | program-builder, clavier OUVERT | PASS | Texte "Squat" saisi, clavier Gboard ouvert (`ime frame=[0,1580][1080,2400]`, `mInputShown=true`). Bouton "Creer mon programme" bornes uiautomator `[276,1392][1038,1516]`, soit 64 px AU-DESSUS du haut du clavier (y=1580), meme apres choix d'une suggestion (`sev4b-03`, `sev4b-04`). Tap adb sur le bouton clavier ouvert : programme cree, toast "Programme actif : Force . 7 seances/sem" (`sev4b-05`). Flow B : carte absente de l'accueil, onglet Entrainement -> "Demarrer la seance d'aujourd'hui" -> apercu -> seance demarree avec l'exercice (`sev4b-06` a `09`, Passed). |
+| 4 | `triggerRetroactiveRecompute` : plus de 500 | PASS | `uat-evidence/backend/backend.log` : 7 appels `POST /ai/onboarding/retroactive`, tous `200` ; aucune reponse 5xx dans tout le log backend ; 0 occurrence dans le log Metro. Le corps (skipped vs objet) n'est pas journalise : non distingue. |
+| 5 | Regression | PASS x4 | `v121-n01-fresh-account-home` Passed (2 m 42), `v121-n02-quests` Passed (3 m 18), `v121-n03b-ai-simple` Passed (3 m 55), `v121-n03e-exhausted` Passed (21 s, apres `v121-n03e-prep` + `v121-exhaust-credits.mjs`). |
+
+## Bugs
+Aucun nouveau bug produit.
+- Observation (SEV 4, cosmetique) : le toast dit "Squat goblet par dumbbell goblet squat" (nom catalogue anglais) alors que l'apercu affiche "Goblet squat haltere" (FR) : incoherence de langue entre le toast et l'apercu. Preuve : `sev4-03-preview.png`.
+
+## Incidents de harnais (a ne pas confondre avec des bugs)
+- Premier lancement du dev-client : `SocketTimeoutException` + ANR SystemUI pendant le bundle froid ; rouvert apres "Android Bundled". Apres le `pm clear` la premiere fois, le menu developpeur d'Expo s'est affiche (ferme a la main).
+- Un premier essai de la regression a ete pollue par DEUX lots lances en parallele (erreur de ma part : `&` dans un shell en arriere-plan) : `v121-exhaust-credits.mjs` d'un lot a mis le solde a 0 pendant n01 ("0 credit", "Conseille" absent). n01 et n02 relances seuls : PASS. Les PASS ci-dessus sont tous des runs sequentiels propres.
+- `google-services.json` copie depuis un worktree frere (gitignore). `npm install --no-save` : scripts post-install ignores (avertissement allow-scripts), sans impact.
+- Non prouve : annonce TalkBack du detail du toast ; corps de la reponse `/ai/onboarding/retroactive` ; rendu iOS.
