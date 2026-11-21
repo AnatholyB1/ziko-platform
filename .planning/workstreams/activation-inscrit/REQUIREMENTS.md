@@ -40,7 +40,7 @@ Règles transverses : maquette Claude Design / `/gsd-ui-phase` avant plan et ex�
 
 - [x] **UATN-01**: Claude vérifie, avec captures sur émulateur, le parcours inscription → onboarding → 1re conversation → accueil
 - [x] **UATN-02**: Claude vérifie que les quêtes sont visibles sur l'accueil et complétables
-- [ ] **UATN-03**: Claude vérifie que chacun des 3 chemins mène à une séance lancée (IA avec faux Anthropic) — PARTIEL (UAT 2026-11-20) : Atelier IA et IA simple lancent une séance ; Manuel non prouvé (clavier émulateur) ; voir 03-UAT.md
+- [x] **UATN-03**: Claude vérifie que chacun des 3 chemins mène à une séance lancée (IA avec faux Anthropic)
 
 ## Future Requirements (reporté)
 
@@ -79,6 +79,6 @@ Règles transverses : maquette Claude Design / `/gsd-ui-phase` avant plan et ex�
 | CLAR-02 | Phase 2 | Verified (code+tests+UAT) |
 | UATN-01 | Phase 3 | Verified (UAT émulateur) |
 | UATN-02 | Phase 3 | Verified (UAT émulateur) |
-| UATN-03 | Phase 3 | Partial (2 chemins sur 3 prouvés ; Manuel non prouvé) |
+| UATN-03 | Phase 3 | Verified (UAT émulateur, rejoué 2026-11-21) |
 
 **Coverage:** 21/21 mapped, 0 orphans.
