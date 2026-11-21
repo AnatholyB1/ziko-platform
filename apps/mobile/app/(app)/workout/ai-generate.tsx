@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { generatedStartFeedback } from '../../../src/lib/plannedStartFeedback';
 import { neutralToast } from '../../../src/lib/neutralToast';
+import { describeSetsSpec } from '../../../src/lib/workoutPlan';
 
 // ─── Data constants ───────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ export default function AIGenerateScreen() {
         return;
       }
       router.push('/(app)/workout/session');
-      if (fb.toast) neutralToast(fb.toast);
+      if (fb.toast) neutralToast(fb.toast, fb.toastDetail);
     } finally {
       setIsStarting(false);
     }
@@ -366,7 +367,7 @@ export default function AIGenerateScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>{exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}</Text>
                 <Text style={{ fontSize: 10, color: theme.muted, marginTop: 1 }}>
-                  {ex.sets}
+                  {describeSetsSpec(ex.sets)}
                   {ex.note ? ` · ${ex.note}` : ''}
                 </Text>
               </View>

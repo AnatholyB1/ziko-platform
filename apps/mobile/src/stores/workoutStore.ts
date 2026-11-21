@@ -4,7 +4,7 @@ import type { WorkoutSession, Exercise, WorkoutProgram, ProgramWorkout, ProgramE
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from './authStore';
 import { callCreditsEarn, callCreditsEarnWithResult } from '../lib/earnCredits';
-import { normalizePlanSessions, parseReps, parseSetsSpec, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
+import { normalizePlanSessions, parseReps, parseDuration, parseSetsSpec, filterCountableSessions, resolveSessionName } from '../lib/workoutPlan';
 import { loadProgramForSession } from '../lib/activeProgram';
 import { matchExercise, searchPatternsFor, type CatalogRow } from '../lib/exerciseMatch';
 import { exerciseNames } from '@ziko/plugin-sdk';
@@ -197,7 +197,7 @@ async function closeStaleOpenSessions(userId: string): Promise<void> {
  * exerciseNames). Un exercice non resolu NE bloque PAS la seance (il est liste dans `unresolved`).
  */
 async function resolvePlanExercises(
-  planExercises: Array<{ name: string; sets: number; reps: string | number | null; exercise_id?: string | null; rest_seconds?: number | null; notes?: string | null }>,
+  planExercises: Array<{ name: string; sets: number; reps: string | number | null; duration?: { min: number; max: number } | null; exercise_id?: string | null; rest_seconds?: number | null; notes?: string | null }>,
   idPrefix: string,
 ): Promise<{
   workoutExercises: WorkoutState['currentWorkoutExercises'];
@@ -239,7 +239,11 @@ async function resolvePlanExercises(
       unresolved.push(pe.name); // cannot log sets without a real exercise row (FK)
       return;
     }
-    const r = parseReps(pe.reps);
+    // Prescription en temps ("40 s", "30-45 s", "1 min") : champs duree (le mode 'time' / 'timeRange' de la seance
+    // affiche "40s" et lance le chrono), jamais des repetitions.
+    const dur = pe.duration ?? parseDuration(pe.reps);
+    const r = dur ? { reps: null, reps_min: null, reps_max: null } : parseReps(pe.reps);
+    const fixed = dur != null && dur.min === dur.max;
     workoutExercises.push({
       id: `${idPrefix}-${workoutExercises.length}`,
       workout_id: '',
@@ -248,9 +252,9 @@ async function resolvePlanExercises(
       reps: r.reps,
       reps_min: r.reps_min,
       reps_max: r.reps_max,
-      duration_seconds: null,
-      duration_min: null,
-      duration_max: null,
+      duration_seconds: fixed ? dur!.min : null,
+      duration_min: dur && !fixed ? dur.min : null,
+      duration_max: dur && !fixed ? dur.max : null,
       rest_seconds: pe.rest_seconds ?? null,
       weight_kg: null,
       notes: pe.notes ?? null,
@@ -455,7 +459,7 @@ export const useWorkoutStore = create<WorkoutState>()((set, get) => ({
       .filter((e) => e && typeof e.name === 'string' && e.name.trim() !== '')
       .map((e) => {
         const s = parseSetsSpec(e.sets);
-        return { name: e.name.trim(), sets: s.sets, reps: s.reps, notes: e.note?.trim() ? e.note.trim() : null };
+        return { name: e.name.trim(), sets: s.sets, reps: s.reps, duration: s.duration ?? null, notes: e.note?.trim() ? e.note.trim() : null };
       });
     if (plan.length === 0) return { ok: false, reason: 'no_exercises' };
 
