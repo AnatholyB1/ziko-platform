@@ -262,7 +262,7 @@ router.post('/chat/stream', creditCheck('chat'), creditDeduct('chat'), async (c)
     tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
     onFinish: ({ totalUsage }) => {
-      logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+      logTokenUsage(userId, 'claude-sonnet-5-5', totalUsage);
     },
   });
 
@@ -355,7 +355,7 @@ router.post('/chat', creditCheck('chat'), creditDeduct('chat'), async (c) => {
     tools: buildSDKTools(userId, userToken),
     stopWhen: stepCountIs(5),
     onFinish: ({ totalUsage }) => {
-      logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+      logTokenUsage(userId, 'claude-sonnet-5-5', totalUsage);
     },
   });
 
@@ -512,7 +512,7 @@ Rules:
         },
       ],
       onFinish: ({ totalUsage }) => {
-        logTokenUsage(userId, 'claude-sonnet-4-20250514', totalUsage);
+        logTokenUsage(userId, 'claude-sonnet-5-5', totalUsage);
       },
     });
 

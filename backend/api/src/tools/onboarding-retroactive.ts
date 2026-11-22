@@ -261,7 +261,7 @@ export async function computeRetroactiveProfile(
   // after the model call so the spend is recorded even if the RPC fails.
   logAutonomousCost(db, {
     userId,
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-5-5',
     usage,
     source: SOURCES.onboardingRetroactive,
   });
