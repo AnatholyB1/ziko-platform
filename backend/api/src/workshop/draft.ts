@@ -15,6 +15,8 @@ export const LIMITS = {
 
 export interface DraftExercise {
   name: string;
+  /** Ligne du catalogue ziko_exercises (via workshop_find_exercises, ou rattachee a la publication). */
+  exercise_id?: string;
   sets: number;
   reps: string | number;
   rest_seconds?: number;
@@ -69,6 +71,7 @@ export function normalizeExercise(raw: unknown): DraftExercise {
   if (typeof r.reps === 'number' && Number.isFinite(r.reps)) reps = Math.round(Math.min(100, Math.max(1, r.reps)));
   else if (typeof r.reps === 'string' && r.reps.trim()) reps = str(r.reps, 16);
   const out: DraftExercise = { name, sets, reps };
+  if (typeof r.exercise_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.exercise_id)) out.exercise_id = r.exercise_id;
   const rest = num(r.rest_seconds ?? r.rest_sec ?? r.rest, 0, LIMITS.maxRestSeconds);
   if (rest !== undefined) out.rest_seconds = Math.round(rest);
   const pct = num(r.pct_1rm, 1, 120);

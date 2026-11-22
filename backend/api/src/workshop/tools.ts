@@ -10,6 +10,7 @@ import { matchExerciseNames } from '../lib/exerciseMatch.js';
 import { loadDraft, saveDraftProgram, type DraftRecord } from './store.js';
 import { renderContext, type WorkshopContext, type WorkshopDb } from './context.js';
 import { WORKSHOP_WEB_SEARCH_PER_MESSAGE } from './limits.js';
+import { findCatalogExercises, MAX_FIND_QUERIES } from './catalogSearch.js';
 
 export interface WorkshopToolDeps {
   db: WorkshopDb;
@@ -47,7 +48,8 @@ const PROGRAM_SCHEMA = {
                   items: {
                     type: 'object',
                     properties: {
-                      name: { type: 'string' },
+                      name: { type: 'string', description: 'catalogue name returned by workshop_find_exercises, verbatim' },
+                      exercise_id: { type: 'string', description: 'id returned by workshop_find_exercises for this exercise' },
                       sets: { type: 'integer' },
                       reps: { type: 'string', description: 'e.g. "5" or "8-12"' },
                       rest_seconds: { type: 'integer' },
@@ -109,6 +111,8 @@ export function toolLabel(name: string, input?: Record<string, unknown>): string
       return 'Bibliothèque de skills';
     case 'workshop_get_context':
       return 'Contexte athlète';
+    case 'workshop_find_exercises':
+      return 'Recherche dans le catalogue d\'exercices';
     case 'workshop_set_draft':
       return 'Brouillon mis à jour';
     case 'workshop_edit_draft':
@@ -167,6 +171,16 @@ export function createWorkshopTools(deps: WorkshopToolDeps) {
             .filter((s) => s.top_sets.length > 0),
         };
       },
+    }),
+    workshop_find_exercises: tool({
+      description:
+        'Look up exercises in the app exercise catalogue. Pass ALL the exercises you plan to use in ONE call (queries, max 40, simple names like "squat barre" or "leg curl couché"). Returns up to 5 catalogue matches per query (id + name). In workshop_set_draft use the returned name VERBATIM and its id as exercise_id. If a query returns nothing, pick a close standard exercise and query again, or use the plain name without id.',
+      inputSchema: jsonSchema<{ queries: string[] }>({
+        type: 'object',
+        properties: { queries: { type: 'array', items: { type: 'string' }, maxItems: MAX_FIND_QUERIES } },
+        required: ['queries'],
+      }),
+      execute: async ({ queries }) => ({ results: await findCatalogExercises(deps.db, Array.isArray(queries) ? queries : []) }),
     }),
     workshop_list_skills: tool({
       description: 'List the training-skill library (ids and one-line summaries).',
