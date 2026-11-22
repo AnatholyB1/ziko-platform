@@ -1,0 +1,30 @@
+# Phase 5 (XCUT) : verifications transverses. Run :
+# bash scripts/uat/evidence.sh run 05 xcut .maestro/p05-xcut.yaml UAT_EMAIL=... UAT_PASSWORD=...
+# Selecteurs a confirmer sur le vrai dev-client (non executes a ce jour).
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "(?i)(accueil|séance|conseil)"
+    timeout: 60000
+- takeScreenshot: 05-home
+# XCUT-01/07 : aucun slug brut, pas de doublon "Coach Ziko"
+- assertNotVisible: ".*(muscle_gain|fat_loss|weight_loss|general_fitness).*"
+- assertNotVisible: "(?i)coach ziko.*coach ziko"
+# XCUT-02 : fin de seance en francais
+- tapOn: "(?i)(entra|séance)"
+- takeScreenshot: 05-workout
+- assertNotVisible: "End"
+# XCUT-04 : le dernier bouton d'action reste cliquable malgre le FAB
+- scrollUntilVisible:
+    element: "(?i)(repas|ajouter)"
+- tapOn: "(?i)(repas|ajouter)"
+- takeScreenshot: 05-action-tappable
+- back
+# XCUT-03 : profil (titre sous la barre de statut)
+- tapOn: "(?i)profil"
+- takeScreenshot: 05-profile
+- assertNotVisible: "(?i)\b(May|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Dec)\b"

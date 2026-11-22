@@ -8,6 +8,7 @@ import { AGENT_MODEL, ONBOARDING_MAX_STEPS } from '../config/models.js';
 import { assessProfileSchema, assess_profile } from '../tools/onboarding.js';
 import { computeRetroactiveProfile } from '../tools/onboarding-retroactive.js';
 import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
+import { createGoal } from '../measurements/service.js';
 
 // ============================================================
 // Phase 43 plan 03 — POST /ai/onboarding/stream (ONBOARD-01, ONBOARD-02,
@@ -22,6 +23,9 @@ import { logAutonomousCost, SOURCES } from '../lib/autonomousCost.js';
 // omission is load-bearing, not an oversight — do not "fix" it by copying
 // the gating pair from routes/ai.ts.
 // ============================================================
+
+// 4 planned questions + the synthetic/opening turn + margin.
+const ONBOARDING_MAX_USER_TURNS = 6;
 
 const onboardingRouter = new Hono();
 onboardingRouter.use('*', authMiddleware);
@@ -66,11 +70,14 @@ Across your questions you must gather clear signal on exactly these three catego
 3. Adherence risk and constraints — what could make this athlete drop off (time, past injuries, motivation blockers, schedule, etc.).
 The exact wording of each question, and how you sequence them from one turn to the next adapting to the athlete's prior answer, is entirely your discretion. The three categories above are not optional and are not negotiable.
 
+## Measurement goals (v1.20, before the terminal action)
+After the three categories above are clear, help the athlete set 1 or 2 body-measurement goals in this same conversation. Ask what they want to change (weight, waist, arms, chest, thighs, hips, body fat %), their current value and the value they aim for, and optionally a target date. Propose a realistic target, wait for the athlete to agree, then call set_measure_goal once per agreed goal (measure_key + target_value, plus start_value only if the athlete gave their current value). Never invent a number the athlete did not give or accept. If the athlete does not want a measurement goal, skip this step. These goals are fixed once created and the athlete cannot edit them later: say so in one short sentence. This step does not count toward the 4 questions limit of the signal categories but keep it to at most 3 more turns.
+
 ## Terminal action
 Once — and only once — you have enough signal across all three categories, call the assess_profile tool exactly one time. Never call it before that point. After the tool call, write one short closing message in Ziko's voice that introduces the athlete's first mission. Do not ask any further questions after calling the tool.
 
 ## Micro-action constraint
-When calling assess_profile, the micro_action field must be exactly one of: hydration_log, journal_mood, or measurements_weight — never anything else. Pick the one that best matches the athlete's inferred readiness: a fragile, uncertain beginner should get the smallest possible win (a glass of water), escalating to a more involved action only for an athlete who reads as more ready.
+Every athlete starts at level 1, where only the hydration module is unlocked. When calling assess_profile, the micro_action field must be exactly hydration_log — never journal_mood, never measurements_weight, never anything else, whatever the athlete's readiness. Adapt only the wording of mission_title: for a fragile, uncertain beginner keep it to the smallest possible win (a single glass of water); for a more ready athlete you may make it slightly more ambitious (for example a full bottle), but it is always about drinking water.
 
 ## Boundaries
 Never promise, invent, or reference any app feature beyond that single micro-action. Stay entirely inside this onboarding conversation's scope.`;
@@ -120,10 +127,28 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 
   const systemPrompt = buildOnboardingSystemPrompt(effectiveLocale);
 
-  const allMessages = [
-    ...convo.history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+  const allMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+    ...convo.history
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     ...messages,
   ];
+
+  // The opening turn sends no messages, and Ziko's own opening reply is
+  // persisted without a preceding user row. Anthropic rejects an empty
+  // conversation and one that starts with an assistant turn, so seed a
+  // synthetic (never persisted) user kick-off message in both cases.
+  if (allMessages.length === 0 || allMessages[0].role !== 'user') {
+    allMessages.unshift({
+      role: 'user',
+      content:
+        effectiveLocale === 'en'
+          ? 'Hi Ziko, I just finished signing up. Start the conversation.'
+          : "Salut Ziko, je viens de finir mon inscription. Lance la conversation.",
+    });
+  }
+
+  const userTurnCount = allMessages.filter((m) => m.role === 'user').length;
 
   const userMsgs = messages.filter((m) => m.role === 'user');
   const lastUserMsg = userMsgs.length > 0 ? userMsgs[userMsgs.length - 1] : undefined;
@@ -132,10 +157,25 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
   // registry. A wider surface would let the model burn steps on off-task
   // tools inside the tight ONBOARDING_MAX_STEPS budget.
   const tools = {
+    set_measure_goal: tool({
+      description:
+        "Save ONE body-measurement goal the athlete explicitly agreed on. measure_key: weight_kg, waist_cm, arm_cm, chest_cm, thigh_cm, hip_cm or body_fat_pct. target_value in kg, cm or %. start_value only if the athlete stated their current value. target_date optional (YYYY-MM-DD, future).",
+      inputSchema: jsonSchema<Record<string, unknown>>({
+        type: 'object',
+        properties: {
+          measure_key: { type: 'string', enum: ['weight_kg', 'waist_cm', 'arm_cm', 'chest_cm', 'thigh_cm', 'hip_cm', 'body_fat_pct'] },
+          target_value: { type: 'number' },
+          start_value: { type: 'number' },
+          target_date: { type: 'string' },
+        },
+        required: ['measure_key', 'target_value'],
+      } as any),
+      execute: async (input) => createGoal(userId, input as Record<string, unknown>),
+    }),
     assess_profile: tool({
       description: assessProfileSchema.description,
       inputSchema: jsonSchema<Record<string, unknown>>(assessProfileSchema.parameters as any),
-      execute: async (input) => assess_profile(input as Record<string, unknown>, userId, userToken),
+      execute: async (input) => assess_profile(input as Record<string, unknown>, userId, userToken, effectiveLocale),
     }),
   };
 
@@ -167,6 +207,7 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     // athlete answered questions but has no athlete_state row, and must
     // never be silently treated as onboarded.
     let assessProfileObserved = false;
+    let streamErrored = false;
 
     try {
       // Send the conversation id first so the client can track/resume it.
@@ -182,6 +223,24 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
             chunks.push(text);
             await s.write(`data: ${JSON.stringify({ type: 'chunk', content: text })}\n\n`);
           }
+        } else if (part.type === 'tool-result' && (part as any).toolName === 'set_measure_goal') {
+          // MEAS-02 : la carte d'objectif n'apparait que pour une ecriture reussie en base.
+          const out = ((part as any).output ?? (part as any).result) as
+            | { success?: boolean; goal?: Record<string, unknown>; goal_id?: string }
+            | undefined;
+          if (out?.success === true && out.goal) {
+            await s.write(`data: ${JSON.stringify({ type: 'goal', goal: { id: out.goal_id, ...out.goal } })}
+
+`);
+          }
+        } else if (part.type === 'error') {
+          // streamText surfaces provider failures as an `error` part rather
+          // than throwing — never mistake that for "cap reached".
+          streamErrored = true;
+          console.error('[Onboarding Stream Error part]', (part as any).error);
+          await s.write(
+            `data: ${JSON.stringify({ type: 'error', error: 'model_error' })}\n\n`,
+          );
         } else if (part.type === 'tool-result' && (part as any).toolName === 'assess_profile') {
           assessProfileObserved = true;
           const output = ((part as any).output ?? (part as any).result) as
@@ -208,12 +267,16 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
         }
       }
 
-      if (!assessProfileObserved) {
+      // A turn that ends in a plain question is the normal case. Only flag
+      // cap_reached once the athlete has answered more than the 4 planned
+      // questions (plus margin) without the model concluding.
+      if (!assessProfileObserved && !streamErrored && userTurnCount > ONBOARDING_MAX_USER_TURNS) {
         await s.write('data: {"type":"cap_reached"}\n\n');
       }
 
       await s.write('data: [DONE]\n\n');
     } catch (err: unknown) {
+      streamErrored = true;
       const msg = err instanceof Error ? err.message : 'Stream error';
       console.error('[Onboarding Stream Error]', err);
       await s.write(`data: ${JSON.stringify({ type: 'error', error: msg })}\n\n`);
@@ -222,6 +285,9 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 
     // Persistence tail — this is what makes D-04's mid-flow resume work
     // after an app kill.
+    // A failed turn is not persisted: the client retries the same payload,
+    // and saving it would duplicate the user message in history.
+    if (streamErrored) return;
     const toSave: Array<{ role: 'user' | 'assistant'; content: string }> = [];
     if (lastUserMsg) toSave.push({ role: 'user', content: lastUserMsg.content });
     const fullResponse = chunks.join('');
@@ -239,6 +305,11 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
 // exclusively from c.get('auth'); the request body carries no user
 // identifier and is never read here — an athlete may only ever trigger a
 // recompute for themselves (T-43-16).
+/** AI SDK NoObjectGeneratedError, reconnue par son nom (le module 'ai' est mocke dans les specs de ce routeur). */
+function isNoObjectError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AI_NoObjectGeneratedError';
+}
+
 onboardingRouter.post('/onboarding/retroactive', async (c) => {
   const auth = c.get('auth');
   const userId = auth.userId;
@@ -250,6 +321,13 @@ onboardingRouter.post('/onboarding/retroactive', async (c) => {
     // fire-and-forget mobile client must never see a 4xx for either one.
     return c.json(result, 200);
   } catch (err: unknown) {
+    // v1.21 SEV4 : un modele qui ne renvoie pas d'objet structure (AI_NoObjectGeneratedError) n'est pas une panne
+    // serveur : le declencheur mobile est un fire-and-forget qui se redeclenche a la prochaine ouverture
+    // (aucune ligne athlete_state ecrite). Reponse propre 200 { skipped: 'model_no_object' }, jamais un 500.
+    if (isNoObjectError(err)) {
+      console.warn('[Onboarding Retroactive] model returned no structured object — skipped');
+      return c.json({ success: false, skipped: 'model_no_object' }, 200);
+    }
     const msg = err instanceof Error ? err.message : 'Retroactive recompute failed';
     console.error('[Onboarding Retroactive Error]', err);
     return c.json({ error: msg }, 500);

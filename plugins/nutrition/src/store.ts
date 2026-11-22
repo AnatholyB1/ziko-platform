@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DEFAULT_NUTRITION_TARGETS, localDateKey } from '@ziko/plugin-sdk';
 
 interface NutritionEntry {
   id: string;
@@ -57,11 +58,11 @@ export interface TDEEProfile {
 
 export const useNutritionStore = create<NutritionState>()((set, get) => ({
   todayLogs: [],
-  selectedDate: new Date().toISOString().split('T')[0],
-  calorieGoal: 2400,
-  proteinGoal: 150,
-  carbsGoal: 300,
-  fatGoal: 67,
+  selectedDate: localDateKey(),
+  calorieGoal: DEFAULT_NUTRITION_TARGETS.calories,
+  proteinGoal: DEFAULT_NUTRITION_TARGETS.protein_g,
+  carbsGoal: DEFAULT_NUTRITION_TARGETS.carbs_g,
+  fatGoal: DEFAULT_NUTRITION_TARGETS.fat_g,
   isLoading: false,
   tdeeProfile: null,
 

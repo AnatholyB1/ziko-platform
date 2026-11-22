@@ -3,15 +3,18 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
 import { supabase } from '../../../../src/lib/supabase';
+import { frCount } from '../../../../src/lib/frLabels';
 
 export default function HistoryDetailScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const theme = useThemeStore((s) => s.theme);
+  const insets = useSafeAreaInsets();
 
   const {
     data: session,
@@ -92,7 +95,8 @@ export default function HistoryDetailScreen() {
             alignItems: 'center',
             gap: 10,
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingTop: insets.top + 12,
+            paddingBottom: 12,
             backgroundColor: theme.background + 'F0',
             borderBottomWidth: 1,
             borderBottomColor: theme.border,
@@ -131,7 +135,8 @@ export default function HistoryDetailScreen() {
             alignItems: 'center',
             gap: 10,
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingTop: insets.top + 12,
+            paddingBottom: 12,
             backgroundColor: theme.background + 'F0',
             borderBottomWidth: 1,
             borderBottomColor: theme.border,
@@ -183,7 +188,8 @@ export default function HistoryDetailScreen() {
           alignItems: 'center',
           gap: 10,
           paddingHorizontal: 16,
-          paddingVertical: 12,
+          paddingTop: insets.top + 12,
+          paddingBottom: 12,
           backgroundColor: theme.background + 'F0',
           borderBottomWidth: 1,
           borderBottomColor: theme.border,
@@ -265,10 +271,13 @@ export default function HistoryDetailScreen() {
                   label: 'SÉRIES',
                 },
                 {
-                  value: session.avg_heart_rate != null ? `${session.avg_heart_rate}` : '—',
-                  unit: session.avg_heart_rate != null ? 'bpm' : '',
-                  label: 'FC MOY.',
+                  value: `${Object.keys(exerciseGroups).length}`,
+                  unit: '',
+                  label: 'EXOS',
                 },
+                ...(session.avg_heart_rate != null
+                  ? [{ value: `${session.avg_heart_rate}`, unit: 'bpm', label: 'FC MOY.' }]
+                  : []),
               ].map((stat) => (
                 <View key={stat.label} style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 1 }}>
@@ -382,7 +391,7 @@ export default function HistoryDetailScreen() {
                         {exerciseName}
                       </Text>
                       <Text style={{ fontSize: 10, color: theme.muted }}>
-                        {exerciseSets.length} séries
+                        {frCount(exerciseSets.length, 'série', 'séries')}
                       </Text>
                     </View>
 

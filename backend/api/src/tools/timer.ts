@@ -35,18 +35,23 @@ export async function timer_create_preset(
   userId: string,
   userToken?: string,
 ): Promise<unknown> {
-  const { name, type, work_seconds, rest_seconds = 0, rounds } = params as {
+  const { name, type, work_seconds, rest_seconds = 0, rounds, warmup_seconds = 0, sets = 1, round_rest_seconds = 0 } = params as {
     name: string;
     type: string;
     work_seconds: number;
     rest_seconds?: number;
     rounds: number;
+    warmup_seconds?: number;
+    sets?: number;
+    round_rest_seconds?: number;
   };
 
   if (!name) throw new Error('name is required');
   if (!type) throw new Error('type is required');
   if (!work_seconds) throw new Error('work_seconds is required');
   if (!rounds) throw new Error('rounds is required');
+  if (warmup_seconds < 0 || round_rest_seconds < 0) throw new Error('warmup_seconds and round_rest_seconds must be >= 0');
+  if (sets < 1 || rounds < 1) throw new Error('sets and rounds must be >= 1');
 
   const db = clientForUser(userToken);
   const { data, error } = await db
@@ -58,8 +63,11 @@ export async function timer_create_preset(
       work_sec: work_seconds,
       rest_sec: rest_seconds,
       rounds,
+      warmup_sec: warmup_seconds,
+      sets,
+      round_rest_sec: round_rest_seconds,
     })
-    .select('id, name, type, work_sec, rest_sec, rounds')
+    .select('id, name, type, work_sec, rest_sec, rounds, warmup_sec, sets, round_rest_sec')
     .single();
 
   if (error) throw new Error(error.message);

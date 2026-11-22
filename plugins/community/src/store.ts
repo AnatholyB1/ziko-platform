@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import {
+  listFriendships, searchUsersWithStatus, sendFriendRequestRpc, runFriendWrite,
+  type FriendshipEntry, type FriendSearchResult, type SendOutcome, type FriendActionResult,
+} from '@ziko/plugin-sdk';
 
 // ── Types ────────────────────────────────────────────────
 
@@ -15,6 +19,10 @@ export interface FriendProfile {
   name: string | null;
   avatar_url: string | null;
   goal: string | null;
+  handle?: string | null;
+  level?: number | null;
+  /** id de la ligne ziko_friendships (retrait d'ami) quand connu */
+  friendship_id?: string | null;
 }
 
 export interface AppInvite {
@@ -209,6 +217,11 @@ export interface CommunityStats {
 interface CommunityState {
   friends: FriendProfile[];
   pendingRequests: Friendship[];
+  /** P21 : demandes recues / envoyees avec le profil minimal de l'autre partie (RPC ziko_list_friendships) */
+  receivedRequests: FriendshipEntry[];
+  sentRequests: FriendshipEntry[];
+  /** true quand la liste d'amis n'a pas pu etre chargee (affiche une erreur, pas un faux "aucun ami") */
+  friendsLoadFailed: boolean;
   conversations: Conversation[];
   activeMessages: Message[];
   activeConversationId: string | null;
@@ -230,6 +243,9 @@ interface CommunityState {
 export const useCommunityStore = create<CommunityState>()((set) => ({
   friends: [],
   pendingRequests: [],
+  receivedRequests: [],
+  sentRequests: [],
+  friendsLoadFailed: false,
   conversations: [],
   activeMessages: [],
   activeConversationId: null,
@@ -282,22 +298,36 @@ export async function loadCommunity(supabase: any) {
         supabase.from('ziko_habit_encouragements').select('*').eq('receiver_id', userId).order('created_at', { ascending: false }).limit(20),
       ]);
 
-    // Parse friends
-    const friendships: Friendship[] = friendshipsRes.data ?? [];
-    const accepted = friendships.filter((f) => f.status === 'accepted');
-    const pending = friendships.filter((f) => f.status === 'pending' && f.addressee_id === userId);
-
-    const friendIds = accepted.map((f) =>
-      f.requester_id === userId ? f.addressee_id : f.requester_id
-    );
-
+    // Parse friends : RPC d'abord (le profil d'un autre utilisateur n'est pas lisible via RLS)
     let friends: FriendProfile[] = [];
-    if (friendIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('ziko_user_profiles')
-        .select('id, name, avatar_url, goal')
-        .in('id', friendIds);
-      friends = profiles ?? [];
+    let pending: Friendship[] = [];
+    let receivedRequests: FriendshipEntry[] = [];
+    let sentRequests: FriendshipEntry[] = [];
+    let friendsLoadFailed = false;
+    try {
+      const entries = await listFriendships(supabase);
+      friends = entries
+        .filter((e) => e.status === 'accepted')
+        .map((e) => ({ id: e.other_id, name: e.name, avatar_url: e.avatar_url, goal: e.goal, handle: e.handle, level: e.level, friendship_id: e.friendship_id }));
+      receivedRequests = entries.filter((e) => e.status === 'pending' && e.direction === 'received');
+      sentRequests = entries.filter((e) => e.status === 'pending' && e.direction === 'sent');
+      pending = receivedRequests.map((e) => ({
+        id: e.friendship_id, requester_id: e.other_id, addressee_id: userId, status: 'pending' as const, created_at: e.created_at,
+      }));
+    } catch {
+      // Repli (RPC non deploye) : lecture directe, comme avant
+      const friendships: Friendship[] = friendshipsRes.data ?? [];
+      if (friendshipsRes.error) friendsLoadFailed = true;
+      const accepted = friendships.filter((f) => f.status === 'accepted');
+      pending = friendships.filter((f) => f.status === 'pending' && f.addressee_id === userId);
+      const friendIds = accepted.map((f) => (f.requester_id === userId ? f.addressee_id : f.requester_id));
+      if (friendIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('ziko_user_profiles')
+          .select('id, name, avatar_url, goal')
+          .in('id', friendIds);
+        friends = profiles ?? [];
+      }
     }
 
     // Load conversations with last message
@@ -321,6 +351,9 @@ export async function loadCommunity(supabase: any) {
     store.setData({
       friends,
       pendingRequests: pending,
+      receivedRequests,
+      sentRequests,
+      friendsLoadFailed,
       conversations,
       challenges: allChallenges,
       activeChallenges,
@@ -336,25 +369,36 @@ export async function loadCommunity(supabase: any) {
 
 // ── Friends ─────────────────────────────────────────────
 
-export async function sendFriendRequest(supabase: any, addresseeId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from('ziko_friendships').insert({
-    requester_id: user.id,
-    addressee_id: addresseeId,
-  });
+/**
+ * Envoie une demande d'ami (RPC atomique `ziko_send_friend_request`).
+ * Renvoie toujours un resultat : l'echec n'est plus avale (SOC-01/08), l'appelant affiche l'erreur
+ * et rollback l'etat optimiste.
+ */
+export async function sendFriendRequest(supabase: any, addresseeId: string): Promise<SendOutcome> {
+  return sendFriendRequestRpc(supabase, addresseeId);
 }
 
-export async function acceptFriendRequest(supabase: any, friendshipId: string) {
-  await supabase.from('ziko_friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+/** Seul le destinataire peut accepter (RLS 20261201210100). */
+export type { FriendActionResult };
+
+export async function acceptFriendRequest(supabase: any, friendshipId: string): Promise<FriendActionResult> {
+  return runFriendWrite(
+    supabase.from('ziko_friendships').update({ status: 'accepted' }).eq('id', friendshipId).select('id'),
+    true,
+  );
 }
 
-export async function declineFriendRequest(supabase: any, friendshipId: string) {
-  await supabase.from('ziko_friendships').delete().eq('id', friendshipId);
+/** Refuser (destinataire), annuler (demandeur) : DELETE ouvert aux deux parties. */
+export async function declineFriendRequest(supabase: any, friendshipId: string): Promise<FriendActionResult> {
+  return runFriendWrite(supabase.from('ziko_friendships').delete().eq('id', friendshipId).select('id'), false);
 }
 
-export async function removeFriend(supabase: any, friendshipId: string) {
-  await supabase.from('ziko_friendships').delete().eq('id', friendshipId);
+export async function cancelFriendRequest(supabase: any, friendshipId: string): Promise<FriendActionResult> {
+  return declineFriendRequest(supabase, friendshipId);
+}
+
+export async function removeFriend(supabase: any, friendshipId: string): Promise<FriendActionResult> {
+  return runFriendWrite(supabase.from('ziko_friendships').delete().eq('id', friendshipId).select('id'), false);
 }
 
 // ── Chat ────────────────────────────────────────────────
@@ -741,45 +785,11 @@ async function incrementStat(supabase: any, userId: string, field: string, amoun
 // ── Search users (for adding friends) ───────
 
 /**
- * Normalises a string for accent-insensitive client-side comparison.
- * Fallback when the unaccent RPC is unavailable.
+ * Recherche d'utilisateurs avec l'etat de relation calcule cote serveur (RPC
+ * `ziko_search_users_with_status`, accent-insensible, 2 caracteres minimum). Lance en cas d'erreur.
  */
-function normaliseForSearch(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-export async function searchUsers(supabase: any, query: string): Promise<FriendProfile[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  // Primary: accent-insensitive RPC (migration 064_unaccent_user_search)
-  const { data: rpcData, error: rpcError } = await supabase.rpc('ziko_search_users_fuzzy', {
-    search_query: query.trim(),
-    calling_user_id: user.id,
-    result_limit: 20,
-  });
-
-  if (!rpcError && rpcData) {
-    return rpcData as FriendProfile[];
-  }
-
-  // Fallback: ilike (case-insensitive) + client-side accent normalisation
-  const { data } = await supabase
-    .from('ziko_user_profiles')
-    .select('id, name, avatar_url, goal')
-    .neq('id', user.id)
-    .ilike('name', `%${query}%`)
-    .limit(60);
-
-  if (!data) return [];
-
-  const normQuery = normaliseForSearch(query.trim());
-  return (data as FriendProfile[])
-    .filter((u) => u.name && normaliseForSearch(u.name).includes(normQuery))
-    .slice(0, 20);
+export async function searchUsers(supabase: any, query: string): Promise<FriendSearchResult[]> {
+  return searchUsersWithStatus(supabase, query, 20);
 }
 
 // ── Feed ─────────────────────────────────────────────────────

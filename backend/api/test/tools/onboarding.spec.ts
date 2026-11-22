@@ -24,6 +24,8 @@ import {
   MICRO_ACTION_POOL,
   ONBOARDING_LEVEL,
   ONBOARDING_TIER,
+  allowedFirstMissions,
+  coerceFirstMission,
 } from '../../src/tools/onboarding.js';
 
 const validParams = {
@@ -147,5 +149,53 @@ describe('assess_profile executor', () => {
     await expect(assess_profile(validParams, 'user-1', 'token-1')).rejects.toThrow(
       /record_athlete_decision failed:/,
     );
+  });
+});
+
+// ── v1.21 CLAR-03 : un compte de niveau 1 ne recoit que hydration_log comme premiere mission ───────────
+describe('CLAR-03 first mission is hydration_log at level 1', () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+  });
+
+  it('allowedFirstMissions(1) is [hydration_log]; higher levels keep the full pool', () => {
+    expect(allowedFirstMissions(1)).toEqual(['hydration_log']);
+    expect(allowedFirstMissions(ONBOARDING_LEVEL)).toEqual(['hydration_log']);
+    expect(allowedFirstMissions(2)).toEqual([...MICRO_ACTION_POOL]);
+  });
+
+  it('coerceFirstMission keeps hydration_log and its title, rewrites anything else with a matching title', () => {
+    expect(coerceFirstMission(1, 'hydration_log', 'Mon titre')).toEqual({ micro_action: 'hydration_log', mission_title: 'Mon titre', coerced: false });
+    expect(coerceFirstMission(1, 'journal_mood', 'Note ton humeur', 'fr')).toEqual({ micro_action: 'hydration_log', mission_title: "Bois un verre d'eau", coerced: true });
+    expect(coerceFirstMission(1, 'measurements_weight', 'Pese-toi', 'en')).toEqual({ micro_action: 'hydration_log', mission_title: 'Drink a glass of water', coerced: true });
+    expect(coerceFirstMission(2, 'journal_mood', 'Note ton humeur').coerced).toBe(false);
+  });
+
+  it.each(['journal_mood', 'measurements_weight'])('model picks %s -> persisted outcome and returned mission are hydration_log', async (picked) => {
+    mockRpc.mockResolvedValue({ data: { success: true, decision_id: 'abc-123' }, error: null });
+
+    const result = await assess_profile({ ...validParams, micro_action: picked, mission_title: 'Autre mission' }, 'user-1', 'token-1', 'fr');
+
+    const [, rpcArgs] = mockRpc.mock.calls[0];
+    expect(rpcArgs.p_outcome).toEqual({ level: 1, tier: 1, micro_action: 'hydration_log', mission_title: "Bois un verre d'eau" });
+    expect(result).toEqual({ success: true, decision_id: 'abc-123', micro_action: 'hydration_log', mission_title: "Bois un verre d'eau" });
+  });
+
+  it('english conversation: coerced title is english', async () => {
+    mockRpc.mockResolvedValue({ data: { success: true, decision_id: 'd' }, error: null });
+    const result = await assess_profile({ ...validParams, micro_action: 'journal_mood' }, 'user-1', 'token-1', 'en');
+    expect(result).toMatchObject({ micro_action: 'hydration_log', mission_title: 'Drink a glass of water' });
+  });
+
+  it('a hydration_log pick keeps the model title untouched', async () => {
+    mockRpc.mockResolvedValue({ data: { success: true, decision_id: 'd' }, error: null });
+    const result = await assess_profile(validParams, 'user-1', 'token-1', 'fr');
+    expect(result).toMatchObject({ micro_action: 'hydration_log', mission_title: validParams.mission_title });
+  });
+
+  it('an out-of-pool action is still rejected before any coercion or RPC', async () => {
+    const result = await assess_profile({ ...validParams, micro_action: 'sleep_log' }, 'user-1', 'token-1');
+    expect(result).toEqual({ success: false, error: 'invalid_micro_action' });
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 });

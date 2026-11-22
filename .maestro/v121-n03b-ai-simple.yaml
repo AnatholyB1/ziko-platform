@@ -1,0 +1,49 @@
+# v1.21 UATN-03 (chemin IA simple) : carte "Crée ton premier entraînement" -> IA simple (ai-generate, 4 etapes) ->
+# "Démarrer cette séance" -> séance lancée. Le faux Anthropic est empile par .maestro/scripts/v121-queue-session.js.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- takeScreenshot: n03b-01-home-card
+- tapOn: "IA simple"
+- extendedWaitUntil:
+    visible: "Étape 1/4"
+    timeout: 30000
+- takeScreenshot: n03b-02-ai-generate-step1
+- tapOn: "Continuer"
+- tapOn: "45 min"
+- tapOn: "Continuer"
+- tapOn: "Full body"
+- tapOn: "Continuer"
+- tapOn: "Salle complète"
+- runScript: scripts/v121-queue-session.js
+- tapOn: "Générer ma séance"
+- extendedWaitUntil:
+    visible: "Ta séance générée"
+    timeout: 60000
+- takeScreenshot: n03b-03-generated
+- assertVisible: "Squat goblet"
+- assertVisible: "Démarrer cette séance"
+- tapOn: "Démarrer cette séance"
+# Apercu de la seance generee : le demarrage ouvre desormais une seance AVEC exercices (plus de Seance rapide vide).
+# Appariement robuste (FR/EN, accents, ordre) : "Squat goblet", "Développé couché haltères" et "Rowing unilatéral"
+# sont resolus ; "Gainage planche" -> "weighted front plank" (remplacement signale par un toast).
+- extendedWaitUntil:
+    visible: "Séance IA"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
+- takeScreenshot: n03b-04-session-opened
+- assertNotVisible: "Ajoute ton premier exercice"
+- assertVisible: "Rowing unilatéral machine"
+- assertVisible: "(?i).*goblet squat.*"
+- assertVisible: "(?i).*(développé couché|dumbbell bench press).*"
+- tapOn: "Démarrer la séance"
+- extendedWaitUntil:
+    notVisible: "APERÇU DU PROGRAMME"
+    timeout: 30000
+- takeScreenshot: n03b-05-session-started
+- assertNotVisible: "Ajoute ton premier exercice"

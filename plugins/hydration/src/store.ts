@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { localDateKey } from './settings';
 
 export interface HydrationLog {
   id: string;
@@ -17,10 +18,10 @@ export interface Container {
 }
 
 const DEFAULT_CONTAINERS: Container[] = [
-  { id: 'glass', label: 'Verre', ml: 250, icon: '🥛', isDefault: true },
-  { id: 'bottle', label: 'Bouteille', ml: 500, icon: '🧴', isDefault: true },
-  { id: 'large-bottle', label: 'Grande bouteille', ml: 750, icon: '🍶', isDefault: true },
-  { id: 'litre', label: 'Litre', ml: 1000, icon: '💧', isDefault: true },
+  { id: 'glass', label: 'Verre', ml: 250, icon: 'water-outline', isDefault: true },
+  { id: 'bottle', label: 'Bouteille', ml: 500, icon: 'water-outline', isDefault: true },
+  { id: 'large-bottle', label: 'Grande bouteille', ml: 750, icon: 'water-outline', isDefault: true },
+  { id: 'litre', label: 'Litre', ml: 1000, icon: 'water-outline', isDefault: true },
 ];
 
 interface HydrationStore {
@@ -90,7 +91,7 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
   },
 
   getTodayTotal: () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateKey();
     return get().logs
       .filter((l) => l.date === today)
       .reduce((sum, l) => sum + l.amount_ml, 0);
@@ -108,7 +109,7 @@ export const useHydrationStore = create<HydrationStore>((set, get) => ({
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data } = await supabase
         .from('ziko_hydration_logs')
         .select('*')

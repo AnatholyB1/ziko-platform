@@ -13,7 +13,11 @@
     "./screens/PantryRecipes": "./src/screens/PantryRecipes.tsx",
     "./screens/RecipeDetail": "./src/screens/RecipeDetail.tsx",
     "./screens/RecipeConfirm": "./src/screens/RecipeConfirm.tsx",
-    "./screens/ShoppingList": "./src/screens/ShoppingList.tsx"
+    "./screens/ShoppingList": "./src/screens/ShoppingList.tsx",
+    "./utils/pantryLogic": "./src/utils/pantryLogic.ts",
+    "./utils/barcode": "./src/utils/barcode.ts",
+    "./utils/copy": "./src/utils/copy.ts",
+    "./utils/data": "./src/utils/data.ts"
   },
   "dependencies": {
     "@ziko/plugin-sdk": "*",
@@ -21,8 +25,8 @@
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*",
-    "expo-router": "*"
+    "react": "^19.0.0",
+    "react-native": "^0.81.5",
+    "expo-router": "~6.0.23"
   }
 }

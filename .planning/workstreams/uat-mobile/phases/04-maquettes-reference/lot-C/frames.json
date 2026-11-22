@@ -1,0 +1,272 @@
+[
+ {
+  "id": "c01-biblio",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C01 Stretching, Bibliothèque : exercices fournis et les tiens, filtre par zone (STRE-01, 02)"
+ },
+ {
+  "id": "c02-mes-exercices-vide",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C02 Filtre \"Mes exercices\" sans exercice : invitation à créer, pas de liste factice"
+ },
+ {
+  "id": "c03-creer-exercice",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C03 Créer un exercice : 4 champs, durée ou répétitions, côté (STRE-02)"
+ },
+ {
+  "id": "c04-routines",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C04 Routines : la routine par défaut est marquée, création en un tap (STRE-03, 05)"
+ },
+ {
+  "id": "c05-edit-routine",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C05 Éditer une routine : ordre, durée totale, case \"Routine par défaut\" (STRE-03, 05)"
+ },
+ {
+  "id": "c06-suivi",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C06 Suivi : séances de la semaine, minutes, série, dernière séance, calendrier (STRE-04)"
+ },
+ {
+  "id": "c07-suivi-vide",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C07 Suivi sans séance : zéros honnêtes et invitation (STRE-04)"
+ },
+ {
+  "id": "c08-seance-routine-defaut",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C08 Démarrage d'une séance avec routine par défaut : ajoutée en tête, passable d'un tap (STRE-06)"
+ },
+ {
+  "id": "c09-seance-sans-defaut",
+  "file": "01-stretching.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C09 Séance sans routine par défaut : aucune carte ajoutée, rien à passer (STRE-06)"
+ },
+ {
+  "id": "c10-aujourdhui",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C10 Compléments, Aujourd'hui : 4 onglets, prises regroupées par moment (SUPP-01, 04)"
+ },
+ {
+  "id": "c11-stack",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C11 Mon stack : uniquement les produits choisis, dose et moment visibles, modifiable (SUPP-04, 05)"
+ },
+ {
+  "id": "c12-stack-vide",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C12 Mon stack vide : aucun produit préchargé, renvoi vers le Catalogue (SUPP-05)"
+ },
+ {
+  "id": "c13-catalogue",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C13 Catalogue : recherche, filtres Marque et Catégorie, prix toujours lisibles (SUPP-02, 06)"
+ },
+ {
+  "id": "c14-filtres",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C14 Filtres en feuille : marques et catégories multi-choix, résultat annoncé avant d'appliquer"
+ },
+ {
+  "id": "c15-comparateur",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C15 Détail et comparateur de prix : offres triées, prix par prise, liens externes (SUPP-03, 06)"
+ },
+ {
+  "id": "c16-ajout-stack",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C16 Ajouter au stack : dose et moment(s) de prise, enregistrement en un tap (SUPP-04, SUPP-07)"
+ },
+ {
+  "id": "c17-rappels",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C17 Rappels par moment de la journée : 3 créneaux, une heure chacun (SUPP-07, décision D-04a)"
+ },
+ {
+  "id": "c18-catalogue-vide",
+  "file": "02-complements.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C18 Catalogue sans résultat : message clair et sortie en un tap, jamais d'écran blanc"
+ },
+ {
+  "id": "c19-timer-seance",
+  "file": "03-timer.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C19 Timer, onglet Séance : presets à toi, créer / modifier / supprimer ; plus de preset \"Exemple\" (TIMR-01, 03)"
+ },
+ {
+  "id": "c20-timer-tabata",
+  "file": "03-timer.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C20 Onglet Tabata : même structure, résumé effort / repos / rounds (TIMR-01, 02)"
+ },
+ {
+  "id": "c21-timer-vide",
+  "file": "03-timer.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C21 Onglet Intervalle sans preset : état vide, aucun exemple préchargé (TIMR-03)"
+ },
+ {
+  "id": "c22-timer-editeur",
+  "file": "03-timer.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C22 Éditeur de preset Intervalle : nom, échauffement, effort, repos, séries, rounds + repos entre rounds (TIMR-02)"
+ },
+ {
+  "id": "c23-timer-menu",
+  "file": "03-timer.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C23 Menu d'un preset : Modifier, Dupliquer, Supprimer (confirmation écrite avant suppression)"
+ },
+ {
+  "id": "c24-sommeil-vide",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C24 Sommeil sans donnée : état vide et \"Logger ma nuit\" ; plus de 8h00 ni de score factices (SLP-02)"
+ },
+ {
+  "id": "c25-saisie",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C25 Saisie d'une nuit : coucher, lever, qualité sur 5, réveils ; durée calculée en direct (SLP-01)"
+ },
+ {
+  "id": "c26-saisie-erreur",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C26 Saisie incohérente : message sous le champ, enregistrement bloqué, rien n'est effacé"
+ },
+ {
+  "id": "c27-donnees-manuelles",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C27 Sommeil avec saisie manuelle : pas de phases (aucune source), invitation à connecter (SLP-03, 06)"
+ },
+ {
+  "id": "c28-source-connectee",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C28 Source connectée : les phases apparaissent et la source prime sur la saisie manuelle (SLP-03, 04)"
+ },
+ {
+  "id": "c29-reglages",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C29 Réglages du sommeil : cible, rappel du coucher, source, réveil intelligent, routine pré-sommeil, tous éditables (SLP-05)"
+ },
+ {
+  "id": "c30-accueil-coherent",
+  "file": "04-sommeil.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "C30 Carte Sommeil de l'accueil : mêmes chiffres que l'écran Sommeil, ou état vide (SLP-06)"
+ }
+]

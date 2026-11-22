@@ -9,6 +9,7 @@
     "./store": "./src/store.ts",
     "./screens/CommunityPlugin": "./src/screens/CommunityPlugin.tsx",
     "./screens/CommunityDashboard": "./src/screens/CommunityDashboard.tsx",
+    "./components/FriendRelationButton": "./src/components/FriendRelationButton.tsx",
     "./screens/FriendsScreen": "./src/screens/FriendsScreen.tsx",
     "./screens/ChatListScreen": "./src/screens/ChatListScreen.tsx",
     "./screens/ConversationScreen": "./src/screens/ConversationScreen.tsx",
@@ -18,7 +19,11 @@
     "./screens/CompareScreen": "./src/screens/CompareScreen.tsx",
     "./screens/InviteScreen": "./src/screens/InviteScreen.tsx",
     "./screens/PostDetailScreen": "./src/screens/PostDetailScreen.tsx",
-    "./screens/GroupsScreen": "./src/screens/GroupsScreen.tsx"
+    "./screens/GroupsScreen": "./src/screens/GroupsScreen.tsx",
+    "./screens/LeagueScreen": "./src/screens/LeagueScreen.tsx",
+    "./league/cards": "./src/league/cards.tsx",
+    "./league/rules": "./src/league/rules.ts",
+    "./league/api": "./src/league/api.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
@@ -30,7 +35,7 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0"
+    "react-native": "^0.81.5"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

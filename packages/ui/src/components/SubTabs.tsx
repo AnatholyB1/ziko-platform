@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { useThemeStore } from '@ziko/plugin-sdk';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useThemeStore, tabsSideMargin } from '@ziko/plugin-sdk';
 
 interface SubTabsProps {
   tabs: string[];
@@ -10,10 +10,19 @@ interface SubTabsProps {
 
 export function SubTabs({ tabs, active, onChange }: SubTabsProps) {
   const theme = useThemeStore((s) => s.theme);
+  const { width: screenW } = useWindowDimensions();
+  // XCUT-05 : gouttiere 16 si la barre est collee aux bords de l'ecran.
+  const [side, setSide] = useState(0);
 
   return (
     <View
+      onLayout={(e) => {
+        const w = e.nativeEvent.layout.width + side * 2;
+        const next = tabsSideMargin(w, screenW);
+        if (next !== side) setSide(next);
+      }}
       style={{
+        marginHorizontal: side,
         flexDirection: 'row',
         gap: 4,
         padding: 4,

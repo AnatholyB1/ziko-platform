@@ -1,0 +1,68 @@
+<!-- title: Lot D, 01 Amis -->
+<div class="fr" data-id="d01-amis"><h2>D01 Amis : le champ de recherche est en haut, toujours visible ; liste des amis (SOC-05)</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp"><i class="ic" data-n="search"></i>Rechercher un pseudo ou un nom</div>
+ <!--TABS:Amis 12|En attente 2:0-->
+ <div class="card np" style="margin-top:12px">
+  <div class="li" data-tap style="min-height:68px"><div class="av">LB</div><div class="sp"><div class="b">Léna Brasseur</div><div class="sm mu num">Niveau 14 · série de 5 jours</div></div><i class="ic mu" data-n="chevron-forward"></i></div>
+  <div class="li" data-tap style="min-height:68px"><div class="av">MQ</div><div class="sp"><div class="b">Malo Quéméner</div><div class="sm mu num">Niveau 9 · série de 12 jours</div></div><i class="ic mu" data-n="chevron-forward"></i></div>
+  <div class="li" data-tap style="min-height:68px"><div class="av">IT</div><div class="sp"><div class="b">Inès Tavares</div><div class="sm mu num">Niveau 21 · aucune série</div></div><i class="ic mu" data-n="chevron-forward"></i></div>
+  <div class="li" data-tap style="min-height:68px"><div class="av">YO</div><div class="sp"><div class="b">Yanis Okafor</div><div class="sm mu num">Niveau 6 · série de 2 jours</div></div><i class="ic mu" data-n="chevron-forward"></i></div>
+ </div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d02-recherche-live"><h2>D02 Recherche en direct, sans bouton "Rechercher" : le bouton de chaque ligne reflète l'état (SOC-01, 04, 05, 08)</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp foc" style="color:var(--text)"><i class="ic mu" data-n="search"></i>ma<i class="ic mu" data-n="close-circle" style="margin-left:auto"></i></div>
+ <div class="sm mu num" style="margin:12px 0 8px">4 résultats</div>
+ <div class="card np">
+  <div class="li" style="min-height:72px"><div class="av">MQ</div><div class="sp"><div class="b">Malo Quéméner</div><div class="sm mu">@malo.q</div></div><span class="bdg-st ok"><i class="ic" data-n="checkmark"></i>Ami</span></div>
+  <div class="li" style="min-height:72px"><div class="av">MA</div><div class="sp"><div class="b">Maëlys Aubry</div><div class="sm mu">@maelys</div></div><div class="btn p sm" data-tap><i class="ic" data-n="person-add"></i>Ajouter</div></div>
+  <div class="li" style="min-height:72px"><div class="av">MD</div><div class="sp"><div class="b">Marco Delmas</div><div class="sm mu">@marcod</div></div><span class="bdg-st"><i class="ic" data-n="time"></i>Envoyée</span></div>
+  <div class="li" style="min-height:72px"><div class="av">MR</div><div class="sp"><div class="b">Manon Rouvière</div><div class="sm mu">@manon.r</div></div><div class="btn sm" data-tap>Accepter</div></div>
+ </div>
+ <div class="toast" style="bottom:100px"><i class="ic" data-n="checkmark-circle" data-f style="font-size:20px;color:#8EDBA9"></i><div>Demande envoyée à Marco Delmas</div></div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d03-recherche-aucun"><h2>D03 Recherche sans résultat : message et conseil, le champ garde le focus</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp foc" style="color:var(--text)"><i class="ic mu" data-n="search"></i>zzq<i class="ic mu" data-n="close-circle" style="margin-left:auto"></i></div>
+ <div class="card empty" style="margin-top:24px"><div class="ico"><i class="ic" data-n="search"></i></div><div class="h2">Personne ne s'appelle « zzq »</div><div class="body mu" style="max-width:280px">Vérifie l'orthographe, ou cherche avec le pseudo exact de ton ami.</div></div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d04-envoi-echec"><h2>D04 Échec de l'envoi : la ligne revient à "Ajouter", message précis, nouvel essai en un tap (SOC-01)</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp foc" style="color:var(--text)"><i class="ic mu" data-n="search"></i>maëlys<i class="ic mu" data-n="close-circle" style="margin-left:auto"></i></div>
+ <div class="card np" style="margin-top:12px">
+  <div class="li" style="min-height:72px"><div class="av">MA</div><div class="sp"><div class="b">Maëlys Aubry</div><div class="sm mu">@maelys</div></div><div class="btn p sm" data-tap>Ajouter</div></div></div>
+ <div class="banner er" style="margin-top:12px"><i class="ic" data-n="alert-circle"></i><div style="flex:1"><div class="b">Demande non envoyée</div><div>Vérifie ta connexion puis réessaie. Rien n'a été envoyé à Maëlys.</div></div></div>
+ <div class="btn full" style="margin-top:12px"><i class="ic" data-n="refresh"></i>Réessayer</div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d05-en-attente"><h2>D05 En attente : Reçues (Accepter / Refuser) et Envoyées (Annuler), deux sections distinctes (SOC-02, 03)</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp"><i class="ic" data-n="search"></i>Rechercher un pseudo ou un nom</div>
+ <!--TABS:Amis 12|En attente 2:1-->
+ <div class="rowb" style="margin:16px 0 8px"><div class="ov" style="margin:0">Reçues</div><span class="sm mu num">2</span></div>
+ <div class="card np">
+  <div class="li" style="min-height:88px;align-items:flex-start;padding-top:14px"><div class="av">MR</div><div class="sp stack g8"><div><div class="b">Manon Rouvière</div><div class="sm mu">@manon.r · il y a 2 h</div></div><div class="row"><div class="btn p sm sp">Accepter</div><div class="btn sm sp">Refuser</div></div></div></div>
+  <div class="li" style="min-height:88px;align-items:flex-start;padding-top:14px"><div class="av">TL</div><div class="sp stack g8"><div><div class="b">Théo Lambert</div><div class="sm mu">@theo.l · hier</div></div><div class="row"><div class="btn p sm sp">Accepter</div><div class="btn sm sp">Refuser</div></div></div></div>
+ </div>
+ <div class="rowb" style="margin:20px 0 8px"><div class="ov" style="margin:0">Envoyées</div><span class="sm mu num">1</span></div>
+ <div class="card np"><div class="li" style="min-height:72px"><div class="av">MD</div><div class="sp"><div class="b">Marco Delmas</div><div class="sm mu">@marcod · il y a 5 min</div></div><div class="btn sm" data-tap>Annuler</div></div></div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d06-en-attente-vide"><h2>D06 En attente vide : deux sections gardées, texte honnête dans chacune (SOC-03)</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp"><i class="ic" data-n="search"></i>Rechercher un pseudo ou un nom</div>
+ <!--TABS:Amis 12|En attente:1-->
+ <div class="ov" style="margin:16px 0 8px">Reçues</div><div class="card" style="padding:16px"><div class="sm mu">Aucune demande reçue.</div></div>
+ <div class="ov" style="margin:20px 0 8px">Envoyées</div><div class="card" style="padding:16px"><div class="sm mu">Aucune demande en cours. Cherche un ami par son pseudo.</div></div>
+</div><!--TB:3--></div></div>
+
+<div class="fr" data-id="d07-amis-vide"><h2>D07 Aucun ami : la recherche reste en haut, une action claire, pas de liste factice</h2>
+<div class="phone"><!--SB--><div class="scr pb"><!--AB:Amis|person-add-->
+ <div class="inp"><i class="ic" data-n="search"></i>Rechercher un pseudo ou un nom</div>
+ <!--TABS:Amis 0|En attente:0-->
+ <div class="card empty" style="margin-top:24px"><div class="ico pr"><i class="ic" data-n="people" data-f></i></div><div class="h2">Pas encore d'amis</div><div class="body mu" style="max-width:280px">Tape un pseudo dans la recherche, ou partage ton lien pour qu'un ami te trouve.</div><div class="btn p"><i class="ic" data-n="share-social"></i>Partager mon lien</div></div>
+</div><!--TB:3--></div></div>

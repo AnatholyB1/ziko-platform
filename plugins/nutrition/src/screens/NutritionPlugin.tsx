@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Svg, { Circle } from 'react-native-svg';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, DEFAULT_NUTRITION_TARGETS, localDateKey } from '@ziko/plugin-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,10 +50,10 @@ const MEAL_TYPES = [
 ] as const;
 
 const DEFAULT_GOALS: UserGoals = {
-  calorie_goal: 2000,
-  protein_goal_g: 140,
-  carbs_goal_g: 200,
-  fat_goal_g: 60,
+  calorie_goal: DEFAULT_NUTRITION_TARGETS.calories,
+  protein_goal_g: DEFAULT_NUTRITION_TARGETS.protein_g,
+  carbs_goal_g: DEFAULT_NUTRITION_TARGETS.carbs_g,
+  fat_goal_g: DEFAULT_NUTRITION_TARGETS.fat_g,
 };
 
 const CARD_STYLE = {
@@ -113,7 +113,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
   const [searchText, setSearchText] = useState('');
   const [calorieSlider, setCalorieSlider] = useState(2000);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   // Get userId
   useEffect(() => {
@@ -150,16 +150,21 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
           .eq('id', userId)
           .single();
         if (error) throw error;
-        // Derive sensible defaults from goal field (maintenance / fat_loss / muscle_gain)
-        const goal = data?.goal ?? 'maintenance';
-        const weight = data?.weight_kg ?? 75;
-        const baseCalories = goal === 'fat_loss' ? 1800 : goal === 'muscle_gain' ? 2400 : 2000;
-        const protein = Math.round(weight * 1.8);
+        // Source unique : objectifs enregistres (ziko_user_plugins.settings), sinon repli commun.
+        const { data: stored } = await supabase
+          .from('ziko_user_plugins')
+          .select('settings')
+          .eq('user_id', userId)
+          .eq('plugin_id', 'nutrition')
+          .maybeSingle();
+        const st = (stored?.settings ?? {}) as Record<string, unknown>;
+        const pick = (v: unknown, fallback: number) => (typeof v === 'number' && v > 0 ? v : fallback);
+        // Repli commun (DEFAULT_NUTRITION_TARGETS) : memes valeurs que l'ecran repas et les recettes (P10).
         return {
-          calorie_goal: baseCalories,
-          protein_goal_g: protein,
-          carbs_goal_g: Math.round((baseCalories * 0.45) / 4),
-          fat_goal_g: Math.round((baseCalories * 0.25) / 9),
+          calorie_goal: pick(st.calorie_goal, DEFAULT_NUTRITION_TARGETS.calories),
+          protein_goal_g: pick(st.protein_goal, DEFAULT_NUTRITION_TARGETS.protein_g),
+          carbs_goal_g: pick(st.carbs_goal, DEFAULT_NUTRITION_TARGETS.carbs_g),
+          fat_goal_g: pick(st.fat_goal, DEFAULT_NUTRITION_TARGETS.fat_g),
         };
       },
       enabled: !!userId,
@@ -177,7 +182,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
       queryFn: async () => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+        const fromDate = localDateKey(sevenDaysAgo);
         const { data, error } = await supabase
           .from('ziko_nutrition_logs')
           .select('*')
@@ -234,7 +239,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
+    return localDateKey(d);
   });
 
   const dailyKcal = last7Days.map((date) => ({
@@ -567,7 +572,7 @@ export default function NutritionPlugin({ supabase }: { supabase: SupabaseClient
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: chartMaxHeight }}>
             {dailyKcal.map((day) => {
               const barHeight = maxKcal > 0 ? (day.kcal / maxKcal) * chartMaxHeight : 4;
-              const dayLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 3);
+              const dayLabel = formatDateFr(new Date(day.date + 'T12:00:00'), { weekday: 'short' }).slice(0, 3);
               return (
                 <View key={day.date} style={{ flex: 1, alignItems: 'center' }}>
                   <View

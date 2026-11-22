@@ -11,12 +11,24 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery } from '@tanstack/react-query';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatDateFr, goalLabel, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useThemeStore } from '../../../src/stores/themeStore';
 import { supabase } from '../../../src/lib/supabase';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import WSHeader from '../../../src/components/WSHeader';
+import ProgramRelaunchBanner from '../../../src/components/ProgramRelaunchBanner';
+import { applyPlannedStartFeedback } from '../../../src/lib/plannedStartFeedback';
+import { neutralToast } from '../../../src/lib/neutralToast';
+import { isStaleSession } from '../../../src/lib/staleSession';
+import { activeProgramView } from '../../../src/lib/activeProgram';
+import { programHeader, programProgress } from '../../../src/lib/programs';
+import { useActiveAIProgram } from '../../../src/hooks/useHomeData';
+import { useCreditInfo } from '../../../src/hooks/useFirstWorkout';
+import { computeCreditView, sessionButtonBadge, FIRST_WORKOUT_PATHS, TRAINING_EMPTY_COPY } from '../../../src/lib/firstWorkout';
+import CreateProgramSheet from '../../../src/components/workout/CreateProgramSheet';
+import { openPath } from '../../../src/components/home/FirstWorkoutCard';
+import { normalizePlanSessions, buildWeekLayout, pickSessionForToday, jsDayToIndex } from '../../../src/lib/workoutPlan';
 import type { WorkoutSession } from '@ziko/plugin-sdk';
 
 // ── ResumeBar ──────────────────────────────────────────────────────────────────
@@ -26,7 +38,16 @@ function ResumeBar({ session, theme }: { session: WorkoutSession; theme: any }) 
     : 0;
   return (
     <TouchableOpacity
-      onPress={() => router.push('/(app)/workout/session')}
+      onPress={() => {
+        // "Reprendre" ne doit JAMAIS ouvrir une autre seance (vide) : on re-verifie la seance au moment du tap.
+        const live = useWorkoutStore.getState().currentSession;
+        if (!live || live.id !== session.id || isStaleSession(live.started_at)) {
+          neutralToast("Cette séance n'est plus disponible.");
+          useWorkoutStore.getState().settleStaleSession();
+          return;
+        }
+        router.push('/(app)/workout/session');
+      }}
       style={{
         marginHorizontal: 16,
         marginBottom: 12,
@@ -55,7 +76,7 @@ function ResumeBar({ session, theme }: { session: WorkoutSession; theme: any }) 
           Séance en cours
         </Text>
         <Text style={{ color: 'rgba(255,250,246,0.7)', fontSize: 13, marginTop: 2 }}>
-          {session.name ?? 'Workout'} · {elapsed}min
+          {session.name ?? 'Séance'} · {elapsed}min
         </Text>
       </View>
       <View
@@ -132,7 +153,7 @@ function SubTabs({
 interface SessionEntry {
   name: string;
   focus?: string;
-  exercises?: Array<{ name: string; sets: number; reps: string; exercise_id?: string }>;
+  exercises?: Array<{ name: string; sets: number; reps: string | number | null; exercise_id?: string | null }>;
 }
 
 function DayRow({
@@ -214,7 +235,7 @@ function DayRow({
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
               >
                 <Text style={{ fontSize: 10, color: theme.muted }}>
-                  {ex.name} · {ex.sets} × {ex.reps}
+                  {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)} · {ex.sets} × {ex.reps}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -321,7 +342,7 @@ function SessionCard({ session, theme }: { session: WorkoutSession; theme: any }
     const diff = Math.floor((today.getTime() - d.getTime()) / 86400000);
     if (diff === 0) return "Aujourd'hui";
     if (diff === 1) return 'Hier';
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return formatDateFr(d, { day: 'numeric', month: 'short' });
   }
 
   function fmtDuration(s: WorkoutSession) {
@@ -334,7 +355,7 @@ function SessionCard({ session, theme }: { session: WorkoutSession; theme: any }
 
   return (
     <TouchableOpacity
-      onPress={() => router.push('/(app)/workout/history' as any)}
+      onPress={() => router.push(`/(app)/workout/session/${session.id}` as any)}
       style={{
         backgroundColor: theme.surface,
         borderRadius: 14,
@@ -417,51 +438,72 @@ export default function WorkoutIndexScreen() {
   const currentSession = useWorkoutStore((s) => s.currentSession);
   const recentSessions = useWorkoutStore((s) => s.recentSessions);
   const loadRecentSessions = useWorkoutStore((s) => s.loadRecentSessions);
+  const startPlannedSession = useWorkoutStore((s) => s.startPlannedSession);
+  const [starting, setStarting] = useState(false);
 
   const [activeTab, setActiveTab] = useState(0);
+  // CLAR-01 : feuilles de choix (Créer un programme / bouton "+")
+  const [createSheet, setCreateSheet] = useState<null | 'program' | 'plus'>(null);
 
   useEffect(() => {
     loadRecentSessions(90);
   }, [userId]);
 
-  // TanStack Query for ai_generated_programs
-  const { data: activeProgram, isLoading } = useQuery<AiGeneratedProgram | null>({
-    queryKey: ['active-program', userId],
-    queryFn: async () => {
-      if (!userId) return null;
-      const { data, error } = await supabase
-        .from('ziko_ai_generated_programs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (error) return null;
-      return data as AiGeneratedProgram;
-    },
-    enabled: !!userId,
-  });
+  // Seance fantome : une seance ouverte depuis trop longtemps est cloturee (sans credit ni XP), plus proposee.
+  const settleStaleSession = useWorkoutStore((s) => s.settleStaleSession);
+  useEffect(() => {
+    if (currentSession) settleStaleSession();
+  }, [currentSession?.id]);
+
+  // Meme lecture que l'accueil (getActiveProgram via useActiveAIProgram, cle partagee). Une erreur n'est jamais
+  // transformee en "aucun programme" (run 7 : l'onglet affichait "Aucun programme actif" apres reconnexion).
+  const { data: activeProgramRaw, isLoading, isError, refetch } = useActiveAIProgram({ refetchOnMount: 'always' });
+  const activeProgram = (activeProgramRaw ?? null) as unknown as AiGeneratedProgram | null;
+  const programView = activeProgramView({ isLoading, isError, program: activeProgramRaw as any });
+  // Cout / solde serveur (meme source que la carte d'accueil). Lu des que la feuille "+" / "Créer un programme" peut
+  // s'ouvrir, y compris avec un programme actif (staleTime 60 s) ; en erreur : repli neutre.
+  const creditInfo = useCreditInfo(true);
+  const credit = React.useMemo(() => computeCreditView(creditInfo.isError ? null : creditInfo.data), [creditInfo.data, creditInfo.isError]);
 
   const programData = activeProgram?.program_data ?? null;
   const weeks = programData?.weeks ?? [];
-  const totalWeeks = weeks.length;
-  const currentWeek = 1; // Most recent program starts at week 1
-  const progressPct = totalWeeks > 0 ? (currentWeek / totalWeeks) * 100 : 0;
-  const weekSessions = weeks[0]?.sessions ?? [];
+  // Une seule progression pour Programmes et Entrainement (programProgress) : la semaine n'est plus inventee a 1 et le
+  // total vient du cycle (un programme coach n'a pas de `program_data.weeks`). Sans donnee reelle : compteur masque.
+  const progress = programProgress(activeProgram as any);
+  const totalWeeks = progress?.total ?? weeks.length;
+  const currentWeek = progress?.week ?? 0;
+  const progressPct = progress?.percent ?? 0;
+  const header = programHeader(activeProgram as any, userId, goalLabel);
+  // TRAIN-04: weekday-resolved layout (Mon..Sun), `null` = real rest day
+  const planSessions = React.useMemo(() => normalizePlanSessions(programData), [programData]);
+  const weekSlots = React.useMemo(() => buildWeekLayout(planSessions), [planSessions]);
 
-  // Today's session name for sticky CTA
-  const todayIndex = (new Date().getDay() + 6) % 7; // 0=Mon … 6=Sun
-  const todaySessionName = weekSessions[todayIndex]?.name ?? weekSessions[0]?.name ?? 'Séance';
+  // TRAIN-02: the sticky CTA starts the planned session (with its exercises), same resolver as home
+  const todayIndex = jsDayToIndex(new Date().getDay()); // 0=Mon … 6=Sun
+  const todayPick = pickSessionForToday(planSessions, todayIndex);
+  const todaySessionName = todayPick?.session.name ?? 'Séance';
+
+  const handleStartToday = async () => {
+    if (!activeProgram || starting) return;
+    setStarting(true);
+    try {
+      const res = await startPlannedSession(activeProgram.id, todayIndex);
+      applyPlannedStartFeedback(res, {
+        toast: neutralToast,
+        alert: showAlert,
+        openEdit: () => router.push('/(app)/workout/programs' as any),
+        openSession: () => router.push('/(app)/workout/session' as any),
+      });
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const tabLabels = ['Semaine type', `${totalWeeks || 'N'} semaines`];
 
+  // P7 (TRAIN-08): the old showAlert had 3 empty handlers; program actions live on the Programmes screen.
   const handleProgramActions = () => {
-    showAlert(activeProgram?.goal ?? 'Programme', undefined, [
-      { text: 'Activer', onPress: () => {} },
-      { text: 'Dupliquer', onPress: () => {} },
-      { text: 'Supprimer', style: 'destructive', onPress: () => {} },
-      { text: 'Annuler', style: 'cancel' },
-    ]);
+    router.push('/(app)/workout/programs' as any);
   };
 
   return (
@@ -469,11 +511,13 @@ export default function WorkoutIndexScreen() {
       {/* WSHeader — only when active program */}
       {activeProgram ? (
         <WSHeader
-          title={activeProgram.goal}
-          sub="Coach Ziko · Intermédiaire"
+          title={header.title}
+          sub={header.sub}
           right={
             <TouchableOpacity
               onPress={handleProgramActions}
+              accessibilityRole="button"
+              accessibilityLabel="Mes programmes"
               style={{
                 width: 32,
                 height: 32,
@@ -520,11 +564,13 @@ export default function WorkoutIndexScreen() {
             <Ionicons name="calendar-outline" size={18} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout/ai-generate' as any)}
+            onPress={() => setCreateSheet('plus')}
+            accessibilityRole="button"
+            accessibilityLabel={TRAINING_EMPTY_COPY.plusLabel}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
+              width: 44,
+              height: 44,
+              borderRadius: 22,
               backgroundColor: theme.surface,
               borderWidth: 1,
               borderColor: theme.border,
@@ -543,7 +589,10 @@ export default function WorkoutIndexScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ResumeBar */}
-        {currentSession && <ResumeBar session={currentSession} theme={theme} />}
+        {currentSession && !isStaleSession(currentSession.started_at) && <ResumeBar session={currentSession} theme={theme} />}
+
+        {/* P24 : fin de programme -> bilan + relance de l'atelier (bandeau neutre) */}
+        <ProgramRelaunchBanner />
 
         {/* Loading state */}
         {isLoading && (
@@ -620,6 +669,7 @@ export default function WorkoutIndexScreen() {
               {/* Week progress row */}
               <View
                 style={{
+                  display: progress ? 'flex' : 'none',
                   flexDirection: 'row',
                   alignItems: 'baseline',
                   gap: 16,
@@ -688,6 +738,7 @@ export default function WorkoutIndexScreen() {
               {/* Progress bar */}
               <View
                 style={{
+                  display: progress ? 'flex' : 'none',
                   marginTop: 16,
                   height: 6,
                   borderRadius: 999,
@@ -734,27 +785,15 @@ export default function WorkoutIndexScreen() {
             <View style={{ marginTop: 8 }}>
               {activeTab === 0 ? (
                 /* Semaine type */
-                weekSessions.length > 0 ? (
-                  weekSessions.map((session, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={DAY_LABELS[i] ?? String(i + 1)}
-                      session={session}
-                      isRest={false}
-                      theme={theme}
-                    />
-                  ))
-                ) : (
-                  DAY_LABELS.map((label, i) => (
-                    <DayRow
-                      key={i}
-                      dayLabel={label}
-                      session={null}
-                      isRest={true}
-                      theme={theme}
-                    />
-                  ))
-                )
+                DAY_LABELS.map((label, i) => (
+                  <DayRow
+                    key={i}
+                    dayLabel={label}
+                    session={weekSlots[i]}
+                    isRest={weekSlots[i] === null}
+                    theme={theme}
+                  />
+                ))
               ) : (
                 /* N semaines */
                 weeks.map((week, i) => (
@@ -770,61 +809,119 @@ export default function WorkoutIndexScreen() {
           </View>
         ) : null}
 
-        {/* Empty state — no active program */}
-        {!isLoading && !activeProgram && (
+        {/* Erreur de lecture : jamais presentee comme "aucun programme" */}
+        {programView === 'error' && (
+          <View
+            style={{
+              marginHorizontal: 16,
+              marginTop: 24,
+              borderRadius: 16,
+              padding: 24,
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.border,
+              alignItems: 'center',
+            }}
+          >
+            <Ionicons name="cloud-offline-outline" size={36} color={theme.muted} style={{ marginBottom: 12 }} />
+            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, marginBottom: 4 }}>
+              Impossible de charger ton programme
+            </Text>
+            <Text style={{ fontSize: 12, color: theme.muted, textAlign: 'center', marginBottom: 16 }}>
+              Vérifie ta connexion, puis réessaie.
+            </Text>
+            <TouchableOpacity
+              onPress={() => refetch()}
+              style={{ backgroundColor: theme.primary, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10 }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>Réessayer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Programme actif sans aucune seance : message clair, jamais un ecran vide */}
+        {programView === 'no-sessions' && (
+          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
+            <Text style={{ fontSize: 13, color: theme.muted, textAlign: 'center' }}>
+              Ce programme n'a pas encore de séances.
+            </Text>
+          </View>
+        )}
+
+        {/* Empty state — no active program (CLAR-01 : chaque bouton dit son livrable) */}
+        {programView === 'empty' && (
           <View
             style={{
               marginHorizontal: 16,
               marginTop: 24,
               marginBottom: 16,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: 24,
               backgroundColor: theme.surface,
-              borderWidth: 1.5,
+              borderWidth: 1,
               borderColor: theme.border,
-              borderStyle: 'dashed',
               alignItems: 'center',
             }}
           >
-            <Ionicons
-              name="barbell-outline"
-              size={36}
-              color={theme.muted}
-              style={{ marginBottom: 12 }}
-            />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: theme.text,
-                marginBottom: 4,
-              }}
-            >
-              Aucun programme actif
+            <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: '#F0EFE9', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ionicons name="barbell-outline" size={36} color={theme.text} />
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: theme.text, marginBottom: 6 }}>
+              {TRAINING_EMPTY_COPY.title}
             </Text>
-            <Text
-              style={{
-                fontSize: 12,
-                color: theme.muted,
-                textAlign: 'center',
-                marginBottom: 16,
-              }}
-            >
-              Structure tes entraînements pour progresser
+            <Text style={{ fontSize: 14, lineHeight: 20, color: theme.muted, textAlign: 'center', marginBottom: 20 }}>
+              {TRAINING_EMPTY_COPY.body}
             </Text>
             <TouchableOpacity
-              onPress={() => router.push('/(app)/workout/ai-generate' as any)}
+              testID="training-create-program"
+              onPress={() => setCreateSheet('program')}
+              accessibilityRole="button"
+              accessibilityLabel={TRAINING_EMPTY_COPY.primary}
               style={{
-                backgroundColor: '#FF5C1A',
-                borderRadius: 12,
-                paddingVertical: 12,
-                alignItems: 'center',
-                width: '100%',
+                backgroundColor: '#FF5C1A', borderRadius: 14, minHeight: 52, width: '100%',
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>
-                Créer un programme
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>{TRAINING_EMPTY_COPY.primary}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="training-generate-session"
+              onPress={() => openPath(FIRST_WORKOUT_PATHS[1], credit)}
+              accessibilityRole="button"
+              accessibilityLabel={credit.exhausted ? TRAINING_EMPTY_COPY.secondaryExhausted : TRAINING_EMPTY_COPY.secondary}
+              style={{
+                marginTop: 10, minHeight: 52, width: '100%', borderRadius: 14, borderWidth: 1.5,
+                borderColor: credit.exhausted ? '#8A5700' : theme.border,
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 12,
+              }}
+            >
+              <Ionicons
+                name={credit.exhausted ? 'lock-closed' : 'sparkles-outline'}
+                size={18}
+                color={credit.exhausted ? '#8A5700' : theme.text}
+              />
+              <Text style={{ fontWeight: '700', fontSize: 16, color: credit.exhausted ? '#8A5700' : theme.text, flexShrink: 1 }}>
+                {credit.exhausted ? TRAINING_EMPTY_COPY.secondaryExhausted : TRAINING_EMPTY_COPY.secondary}
               </Text>
+              {sessionButtonBadge(credit) ? (
+                <View style={{ minHeight: 24, paddingHorizontal: 10, borderRadius: 12, backgroundColor: '#FFF0E8', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#B53D05' }}>{sessionButtonBadge(credit)}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+            {credit.exhausted && (
+              <Text style={{ marginTop: 8, fontSize: 14, color: '#8A5700', textAlign: 'center' }}>
+                {TRAINING_EMPTY_COPY.exhaustedHint}
+              </Text>
+            )}
+            <TouchableOpacity
+              onPress={handleProgramActions}
+              accessibilityRole="button"
+              accessibilityLabel={TRAINING_EMPTY_COPY.myPrograms}
+              style={{ minHeight: 44, marginTop: 8, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 14 }}>{TRAINING_EMPTY_COPY.myPrograms}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -870,7 +967,8 @@ export default function WorkoutIndexScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => router.push('/(app)/workout/session')}
+            onPress={handleStartToday}
+            disabled={starting}
             style={{
               width: '100%',
               paddingVertical: 12,
@@ -887,6 +985,12 @@ export default function WorkoutIndexScreen() {
           </TouchableOpacity>
         </View>
       )}
+      <CreateProgramSheet
+        visible={createSheet !== null}
+        onClose={() => setCreateSheet(null)}
+        credit={credit}
+        withSession={createSheet === 'plus'}
+      />
     </SafeAreaView>
   );
 }

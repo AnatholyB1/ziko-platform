@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,11 @@ import Svg, {
   LinearGradient as SvgLinearGradient,
   Stop,
 } from 'react-native-svg';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, exerciseDisplayName, exerciseNames } from '@ziko/plugin-sdk';
 import { useWorkoutStore } from '../../../src/stores/workoutStore';
 import { supabase } from '../../../src/lib/supabase';
 import WSHeader from '../../../src/components/WSHeader';
+import { setsCompletedLabel, frCount } from '../../../src/lib/frLabels';
 
 export default function WorkoutSummaryScreen() {
   const theme = useThemeStore((s) => s.theme);
@@ -27,10 +28,14 @@ export default function WorkoutSummaryScreen() {
   const [notes, setNotes] = useState(() => '');
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!session) {
-    router.replace('/(app)/workout/');
-    return null;
-  }
+  // Navigation hors rendu : router.replace pendant le rendu declenche
+  // "Cannot update a component (Navigator)" (UAT run 6).
+  const hasSession = !!session;
+  useEffect(() => {
+    if (!hasSession) router.replace('/(app)/workout');
+  }, [hasSession]);
+
+  if (!session) return null;
 
   // Derived values
   const durationMin = Math.round((session.durationSeconds ?? 0) / 60);
@@ -60,13 +65,13 @@ export default function WorkoutSummaryScreen() {
     } finally {
       setIsSaving(false);
     }
-    router.replace('/(app)/(tabs)/workout' as any);
+    router.replace('/(app)/workout');
   };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `${session.highlight ?? 'Séance'}\n${durationMin} min · ${totalSets} séries · ${(totalVolume / 1000).toFixed(1)}t${prs.length ? '\n' + prs.map((p) => p.name).join(', ') + ' — nouveau record !' : ''}`,
+        message: `${session.highlight ?? 'Séance'}\n${durationMin} min · ${totalSets} ${totalSets < 2 ? 'série' : 'séries'} · ${(totalVolume / 1000).toFixed(1)}t${prs.length ? '\n' + prs.map((p) => p.name).join(', ') + ' — nouveau record !' : ''}`,
       });
     } catch (_) {
       // user cancelled
@@ -136,7 +141,7 @@ export default function WorkoutSummaryScreen() {
                   textTransform: 'uppercase',
                 }}
               >
-                Highlight
+                Temps fort
               </Text>
             </View>
 
@@ -151,7 +156,7 @@ export default function WorkoutSummaryScreen() {
               }}
             >
               {session.highlight ??
-                `${durationMin} min · ${totalSets} séries complétées`}
+                `${durationMin} min · ${setsCompletedLabel(totalSets)}`}
             </Text>
 
             {/* 4-up stats grid */}
@@ -440,7 +445,7 @@ export default function WorkoutSummaryScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={{ fontSize: 12, fontWeight: '700', color: theme.text }}>
-                        {ex.name}
+                        {exerciseDisplayName(ex.name, (ex as any).name_fr, exerciseNames)}
                       </Text>
                       {ex.isNewPR ? (
                         <Text
@@ -457,7 +462,7 @@ export default function WorkoutSummaryScreen() {
                       ) : null}
                     </View>
                     <Text style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>
-                      {ex.sets.length} séries · meilleure : {ex.bestSetLabel ?? '—'}
+                      {frCount(ex.sets.length, 'série', 'séries')} · meilleure : {ex.bestSetLabel ?? '—'}
                     </Text>
                   </View>
 

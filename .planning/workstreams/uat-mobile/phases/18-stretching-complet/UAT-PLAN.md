@@ -1,0 +1,16 @@
+# Phase 18 : plan UAT émulateur (en file, après P1 et application des migrations 20261201180100/02 sur la base de test)
+
+Prérequis : migrations `20261201180100_stretching_exercises.sql` et `20261201180200_stretching_default_routine.sql` appliquées à la base de TEST (jamais prod sans accord), compte athlète du harnais P1 avec le plugin `stretching` activé, 0 routine, 0 exercice perso. Vérification base = requêtes en lecture seule sur la base de test.
+
+| Id | Scénario | Pas | Mesure / preuve attendue |
+|---|---|---|---|
+| ST-1 | Bibliothèque : compteur = lignes | Modules > Stretching, onglet Bibliothèque (1er onglet) ; compter les lignes sous `Tous` ; toucher `Dos`, `Jambes`, `Épaules`, `Hanches` | compteur `Tous` = 24 = nombre de lignes ; chaque puce réduit la liste sans rechargement et son compteur = lignes affichées |
+| ST-2 | Création d'un exercice perso | `Créer un exercice` : nom `Pigeon test`, zone Hanches, mesure Durée 40 s, côtés 2, `Enregistrer l'exercice` ; puis relancer l'app | ligne avec badge `PERSO` en < 1 s ; `Mes exercices` = 1 ; présent après relance ; `select * from ziko_stretching_exercises where user_id = <athlète>` = 1 ligne. Avant création : puce `Mes exercices 0` = carte `Aucun exercice à toi` (C02) |
+| ST-3 | Une seule routine par défaut | Onglet Routines > `Créer une routine` `A` (2 exercices via `Ajouter un exercice`, `Monter`/`Descendre` testés), interrupteur `Routine par défaut` ON ; créer `B` idem avec défaut ON | arbre d'accessibilité : exactement 1 `PAR DÉFAUT` (B) ; base : 1 seule ligne `is_default` ; réordonner : l'ordre des exercices persiste après relance |
+| ST-4 | Carte en tête de séance | (a) avec défaut B : Séances > séance libre / programme (écran de revue) ; (b) toucher `Passer` ; (c) repasser A/B en non défaut (ou nouveau compte) et rouvrir une séance | (a) carte `Ajoutée en début de séance` en 1re position avant le 1er exercice ; (b) disparaît en 1 tap, reste masquée pendant la séance, revient à la séance suivante (non persisté) ; (c) 0 carte (phrase d'indication seulement). 3 captures |
+| ST-4b | Lancer depuis la carte (Q-P18) | Toucher la carte, dérouler la routine jusqu'à `Terminer` | retour à la séance ; 1 ligne `ziko_stretching_logs` (routine_id, date locale) ; aucune série ni séance d'entraînement créée (`ziko_workout_sessions`/`session_sets` inchangés) |
+| ST-5 | Suivi recalculé | Faire 2 routines sur 2 jours (ou insérer 2 logs de test), onglet Suivi ; comparer à la requête base | séances semaine, minutes (somme `duration_sec` / 60), série (jours consécutifs), dernière séance, jours marqués du calendrier = valeurs base (écart 0) ; compte vide : `Aucune séance pour l'instant` + zéros (C07) ; contrôle fuseau : log à 23:50 locale = bon jour |
+| ST-6 | Barre d'onglets | Capture Stretching ; taille de police 130 % | ordre Bibliothèque / Routines / Suivi ; marge latérale >= 16 dp ; aucun libellé coupé |
+
+Cas d'erreur à capturer : bibliothèque sans migration appliquée = carte d'erreur + `Réessayer` (aucune donnée de secours) ; échec d'enregistrement d'un log = alerte `Séance non enregistrée`, la séance reste ouverte.
+Non couvert par ce plan : drag-and-drop de tri (alternative `Monter`/`Descendre` uniquement).

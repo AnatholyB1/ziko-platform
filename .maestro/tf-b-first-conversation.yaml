@@ -1,0 +1,33 @@
+# TF-B: premiere conversation Ziko apres l'onboarding (compte frais, backend local + faux Anthropic).
+# Prerequis: node scripts/uat/create-fresh-athlete.mjs ; SKIP=1 bash scripts/uat/fake-script.sh assess hydration_log ;
+#   app sans session (adb shell pm clear com.ziko.mobile + bash scripts/uat/dev-open.sh) ; Metro 8281 ; backend 8200.
+# Lancer: bash scripts/uat/evidence.sh run tf b-first-conversation .maestro/tf-b-first-conversation.yaml UAT_EMAIL=... UAT_PASSWORD=...
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: tf-common-login.yaml
+- takeScreenshot: 01-after-login
+- runFlow: tf-common-onboarding-steps.yaml
+# 1er tour: Ziko doit repondre (avant le correctif: erreur Anthropic avale -> "On dirait qu'on tourne en rond")
+- extendedWaitUntil:
+    visible: "Reponse simulee du coach IA.*"
+    timeout: 60000
+- takeScreenshot: 02-ziko-first-reply
+- assertNotVisible: "On dirait qu'on tourne en rond.*"
+- assertNotVisible: "Ziko n'a pas pu répondre.*"
+- tapOn: "Écris ta réponse…"
+- inputText: "Je debute, je veux me remettre au sport"
+# Le clavier Android de l'emulateur recouvre la ligne de saisie : on le ferme pour exposer le bouton.
+- hideKeyboard
+- tapOn: "Envoyer"
+# 2e tour: le faux appelle assess_profile -> carte mission
+- extendedWaitUntil:
+    visible: "TA PREMIÈRE MISSION"
+    timeout: 60000
+- takeScreenshot: 03-mission-card
+- assertVisible: "Bois un premier verre d'eau"
+- assertVisible: "Boire un verre d'eau →"
+- assertNotVisible: "On dirait qu'on tourne en rond.*"
+- assertNotVisible: "Conclus maintenant et donne-moi ma mission.*"

@@ -7,10 +7,15 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr, getActionPrimary, localDateKey, requestQuestRefresh } from '@ziko/plugin-sdk';
+import GoalsTab, { GOALS_QUERY_KEY, RECENT_MEASURES_QUERY_KEY } from './GoalsTab';
+import { ENTRY_ORDER, getMeasure, parseDecimal, type MeasureKey } from '../lib/goals';
+import { weightCoachTip } from '../lib/coachTip';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -70,19 +75,19 @@ function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+    return formatDateFr(d, { day: '2-digit', month: '2-digit' });
   } catch {
     return dateStr;
   }
 }
 
 function getWeekKey(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = new Date(`${dateStr}T12:00:00`); // midi local : evite tout decalage de jour
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d);
   monday.setDate(diff);
-  return monday.toISOString().slice(0, 10);
+  return localDateKey(monday);
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -95,13 +100,10 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
   const [modalVisible, setModalVisible] = useState(false);
 
   // Modal form state
-  const [weight, setWeight] = useState('');
-  const [bodyFat, setBodyFat] = useState('');
-  const [waist, setWaist] = useState('');
-  const [chest, setChest] = useState('');
-  const [arm, setArm] = useState('');
-  const [thigh, setThigh] = useState('');
-  const [hip, setHip] = useState('');
+  const emptyEntry = (): Record<MeasureKey, string> => ({
+    weight_kg: '', body_fat_pct: '', waist_cm: '', chest_cm: '', arm_cm: '', thigh_cm: '', hip_cm: '',
+  });
+  const [entry, setEntry] = useState<Record<MeasureKey, string>>(emptyEntry);
 
   // Fetch current user
   const { data: userInfo } = useQuery({
@@ -153,7 +155,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
         .from('ziko_body_measurements')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', since.toISOString().slice(0, 10))
+        .gte('date', localDateKey(since))
         .order('date', { ascending: true });
       return data ?? [];
     },
@@ -179,7 +181,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
       weekMap[wk].push(m.weight_kg);
     }
     const weeks = Object.keys(weekMap).sort();
-    const currentWeek = getWeekKey(new Date().toISOString());
+    const currentWeek = getWeekKey(localDateKey());
     return weeks.slice(-6).map((wk, i) => ({
       l: `S${i + 1}`,
       v: parseFloat(
@@ -207,34 +209,28 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Non authentifié');
-      if (!weight.trim()) throw new Error('Le poids est requis');
-      const weightVal = parseFloat(weight.trim());
-      if (isNaN(weightVal) || weightVal <= 0) throw new Error('Poids invalide');
+      const weightVal = parseDecimal(entry.weight_kg);
+      if (weightVal == null || weightVal <= 0) throw new Error('Le poids est requis');
       const payload: Record<string, unknown> = {
         user_id: user.id,
-        weight_kg: weightVal,
-        date: new Date().toISOString().slice(0, 10),
+        date: localDateKey(),
       };
-      if (bodyFat.trim()) payload.body_fat_pct = parseFloat(bodyFat.trim());
-      if (waist.trim()) payload.waist_cm = parseFloat(waist.trim());
-      if (chest.trim()) payload.chest_cm = parseFloat(chest.trim());
-      if (arm.trim()) payload.arm_cm = parseFloat(arm.trim());
-      if (thigh.trim()) payload.thigh_cm = parseFloat(thigh.trim());
-      if (hip.trim()) payload.hip_cm = parseFloat(hip.trim());
+      for (const key of ENTRY_ORDER) {
+        const v = parseDecimal(entry[key]);
+        if (v != null) payload[key] = v;
+      }
       const { error } = await supabase.from('ziko_body_measurements').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       queryClient.invalidateQueries({ queryKey: ['latest_measurement'] });
       queryClient.invalidateQueries({ queryKey: ['measurements_6weeks'] });
+      // P15 : une nouvelle mesure peut atteindre un objectif (trigger SQL) et change le % affiché.
+      queryClient.invalidateQueries({ queryKey: [RECENT_MEASURES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [GOALS_QUERY_KEY] });
       setModalVisible(false);
-      setWeight('');
-      setBodyFat('');
-      setWaist('');
-      setChest('');
-      setArm('');
-      setThigh('');
-      setHip('');
+      setEntry(emptyEntry());
       showAlert('Mesure enregistrée', 'Tes mesures ont bien été sauvegardées.');
     },
     onError: (err: any) => {
@@ -403,7 +399,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
             {/* AISuggestion */}
             <View style={{ marginBottom: 16 }}>
               <AISuggestion
-                text="Pèse-toi le matin à jeun, toujours au même moment. Tes dernières mesures sont bien stables."
+                text={weightCoachTip(latestMeasurement)}
                 tintColor={SUCCESS}
               />
             </View>
@@ -460,14 +456,14 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
             <TouchableOpacity
               onPress={() => setModalVisible(true)}
               style={{
-                backgroundColor: theme.primary,
+                backgroundColor: getActionPrimary(theme),
                 borderRadius: 12,
                 padding: 14,
                 alignItems: 'center',
               }}
             >
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-                Logger des mesures
+                Nouvelle mesure
               </Text>
             </TouchableOpacity>
           </>
@@ -508,40 +504,8 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
           </>
         )}
 
-        {/* ── ONGLET OBJECTIFS ─────────────────────────────────────────────── */}
-        {activeTab === 'Objectifs' && (
-          <>
-            <View style={{ gap: 8 }}>
-              <RowItem
-                label="Atteindre 76 kg"
-                sub={
-                  latest?.weight_kg != null
-                    ? `À ${Math.abs(latest.weight_kg - 76).toFixed(1)} kg · ~${Math.ceil(Math.abs(latest.weight_kg - 76) / 0.5)} sem au rythme actuel`
-                    : 'Commence par logger ton poids'
-                }
-                right={latest?.weight_kg != null ? `${latest.weight_kg.toFixed(1)} → 76` : '—'}
-              />
-              <RowItem
-                label="Tour de taille 78 cm"
-                sub={
-                  latest?.waist_cm != null
-                    ? `À ${Math.abs(latest.waist_cm - 78).toFixed(1)} cm · objectif sec`
-                    : 'Mesure ta taille pour voir'
-                }
-                right={latest?.waist_cm != null ? `${latest.waist_cm} → 78` : '—'}
-              />
-              <RowItem
-                label="Bras 40 cm"
-                sub={
-                  latest?.arm_cm != null
-                    ? `+${Math.max(0, 40 - latest.arm_cm).toFixed(1)} cm · phase prise de masse`
-                    : 'Mesure tes bras pour voir'
-                }
-                right={latest?.arm_cm != null ? `${latest.arm_cm} → 40` : '—'}
-              />
-            </View>
-          </>
-        )}
+        {/* ── ONGLET OBJECTIFS (en base : ziko_athlete_goals, P15) ───────────── */}
+        {activeTab === 'Objectifs' && <GoalsTab supabase={supabase} userId={userId} />}
       </ScrollView>
 
       {/* ── MODAL SAISIE ──────────────────────────────────────────────────── */}
@@ -551,7 +515,8 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <View
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.4)',
@@ -575,49 +540,52 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
                 marginBottom: 20,
               }}
             >
-              Logger des mesures
+              Nouvelle mesure
             </Text>
 
-            {/* Champs */}
-            {[
-              { label: 'Poids (kg) *', value: weight, setter: setWeight },
-              { label: '% Masse grasse', value: bodyFat, setter: setBodyFat },
-              { label: 'Tour de taille (cm)', value: waist, setter: setWaist },
-              { label: 'Poitrine (cm)', value: chest, setter: setChest },
-              { label: 'Tour de bras (cm)', value: arm, setter: setArm },
-              { label: 'Tour de cuisse (cm)', value: thigh, setter: setThigh },
-              { label: 'Hanches (cm)', value: hip, setter: setHip },
-            ].map(({ label, value, setter }) => (
-              <View key={label} style={{ marginBottom: 12 }}>
-                <Text
-                  style={{ fontSize: 12, color: theme.muted, fontWeight: '600', marginBottom: 4 }}
-                >
-                  {label}
-                </Text>
-                <TextInput
-                  value={value}
-                  onChangeText={setter}
-                  keyboardType="decimal-pad"
-                  placeholder="—"
-                  placeholderTextColor={theme.muted}
-                  style={{
-                    backgroundColor: theme.surface,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    padding: 12,
-                    fontSize: 15,
-                    color: theme.text,
-                  }}
-                />
-              </View>
-            ))}
+            {/* Champs : 7 mesures (E15). Seul le poids est obligatoire ; libellé toujours visible. */}
+            <ScrollView style={{ maxHeight: 420 }} keyboardShouldPersistTaps="handled">
+              {ENTRY_ORDER.map((key) => {
+                const def = getMeasure(key)!;
+                const required = key === 'weight_kg';
+                return (
+                  <View key={key} style={{ marginBottom: 12 }}>
+                    <Text style={{ fontSize: 14, color: theme.muted, fontWeight: '700', marginBottom: 4 }}>
+                      {required ? `${def.label} (obligatoire)` : def.label}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <TextInput
+                        value={entry[key]}
+                        onChangeText={(v) => setEntry((e) => ({ ...e, [key]: v }))}
+                        keyboardType="decimal-pad"
+                        accessibilityLabel={def.label}
+                        placeholder={required ? '—' : 'Facultatif'}
+                        placeholderTextColor={theme.muted}
+                        style={{
+                          flex: 1,
+                          minHeight: 48,
+                          backgroundColor: theme.surface,
+                          borderRadius: 10,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                          paddingHorizontal: 12,
+                          fontSize: 16,
+                          color: theme.text,
+                        }}
+                      />
+                      <Text style={{ width: 32, fontSize: 15, color: theme.muted }}>{def.unit}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
 
             <TouchableOpacity
               onPress={() => logMutation.mutate()}
               disabled={logMutation.isPending}
+              accessibilityRole="button"
               style={{
-                backgroundColor: SUCCESS,
+                backgroundColor: getActionPrimary(theme),
                 borderRadius: 12,
                 padding: 14,
                 alignItems: 'center',
@@ -625,7 +593,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
               }}
             >
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-                {logMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                {logMutation.isPending ? 'Enregistrement...' : 'Enregistrer la mesure'}
               </Text>
             </TouchableOpacity>
 
@@ -643,7 +611,7 @@ export default function MeasurementsPlugin({ supabase }: { supabase: any }) {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

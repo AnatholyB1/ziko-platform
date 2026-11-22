@@ -1,0 +1,30 @@
+# v1.21 bonus "Bravo, tout est fait", partie 1 : accueil compte frais -> Hydratation -> 2 L (750 + 750 + 500).
+# Les quetes repas et seance sont ensuite inserees par scripts/uat/v121-complete-quests.mjs (service role, branche jetable).
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- scrollUntilVisible:
+    element: "Quêtes du jour"
+    direction: DOWN
+    timeout: 20000
+- scrollUntilVisible:
+    element: "Termine une séance"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "Boire"
+- extendedWaitUntil:
+    visible: "Logger rapide"
+    timeout: 30000
+- tapOn: "Ajouter 750 millilitres"
+- extendedWaitUntil:
+    visible: "Ajouter 750 millilitres"
+    timeout: 10000
+- tapOn: "Ajouter 750 millilitres"
+- extendedWaitUntil:
+    visible: "Ajouter 500 millilitres"
+    timeout: 10000
+- tapOn: "Ajouter 500 millilitres"
+- takeScreenshot: n02b-01-water-logged

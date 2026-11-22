@@ -14,6 +14,7 @@ import * as NavigationTools from './navigation.js';
 import * as CoachTools from './coach.js';
 import * as OnboardingTools from './onboarding.js';
 import * as CoachingEngineTools from '../coaching-engine/tools.js';
+import * as QuestsTools from './quests.js';
 
 // Local copy of AITool type (from @ziko/plugin-sdk) to avoid workspace dep on Vercel
 export interface AIToolParameter {
@@ -191,6 +192,10 @@ const executors: Record<string, ToolExecutor['execute']> = {
   // the weekly engine grants rewards; its schema is filtered out of
   // allToolSchemas below so chat cannot trigger a grant.
   create_reward: CoachingEngineTools.create_reward,
+  // v1.20 Phase 14 (QUEST-03) : quetes IA (plafond de 3 actives applique en base).
+  quests_get: QuestsTools.quests_get,
+  quests_create: QuestsTools.quests_create,
+  measurements_goals: MeasurementsTools.measurements_goals,
 };
 
 // ── Tool schemas from plugin manifests ─────────────────────
@@ -405,9 +410,9 @@ const hydrationToolSchemas: AITool[] = [
     parameters: {
       type: 'object',
       properties: {
-        amount_ml: { type: 'integer', description: 'Amount in milliliters (e.g. 250 for a glass)' },
+        amount_ml: { type: 'integer', description: "Amount in milliliters (e.g. 250 for a glass). Omit to use the user's default glass size." },
       },
-      required: ['amount_ml'],
+      required: [],
     },
   },
   {
@@ -591,6 +596,63 @@ const coachToolSchemas: AITool[] = [
   },
 ];
 
+// ── Quests tool schemas (v1.20 Phase 14, QUEST-03) ─────────
+const questsToolSchemas: AITool[] = [
+  {
+    name: 'quests_get',
+    description:
+      "List the user's quests (active, completed, and not-completed ones) with the number of free slots (max 3 active). Call before creating a quest. A quest that was not completed in time is shown neutrally as 'Non terminée' with no penalty.",
+    parameters: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'quests_create',
+    description:
+      "Create ONE time-limited quest for the user, personalized to their profile, level and goal (call once per quest, at most as many as there are free slots; never more than 3 active in total). The user cannot refuse or delete a quest. Progress is measured automatically from real data: workout_sessions (sessions with at least one set), hydration_ml (water in ml), nutrition_logs (meals logged), habit_logs (habits ticked). Always give a duration. Never describe a missed quest as a failure or punishment.",
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short French title, e.g. "Boire 2,5 litres d\'eau"' },
+        description: { type: 'string', description: 'One short French sentence (optional)' },
+        icon: { type: 'string', description: 'Ionicons name, lowercase with dashes (e.g. water, barbell). Never an emoji.' },
+        metric: { type: 'string', enum: ['workout_sessions', 'hydration_ml', 'nutrition_logs', 'habit_logs', 'measurement_logs'] },
+        target: { type: 'number', description: 'Target value (sessions / ml / meals / habits / measurement entries)' },
+        scope: { type: 'string', enum: ['daily', 'weekly'] },
+        duration_hours: { type: 'integer', description: 'Time limit in hours (daily 12-48, weekly 72-336)' },
+        reward_coins: { type: 'integer', description: 'Coin reward (daily 5-40, weekly 20-120)' },
+      },
+      required: ['title', 'metric', 'target', 'scope', 'duration_hours'],
+    },
+  },
+];
+
+// ── Measurement goals tool schema (v1.20 Phase 16, MEAS-03/07/08/09) ─────
+const measurementGoalsToolSchemas: AITool[] = [
+  {
+    name: 'measurements_goals',
+    description:
+      "Manage the user's body-measurement goals. action=list: goals with progress and recent revisions (call first). action=create: set a goal (measure_key, target_value; start_value defaults to the latest logged value; optional target_date YYYY-MM-DD) - only when the user agrees on the target. action=revise: change a goal that is IN PROGRESS, allowed ONLY for these reasons: stagnation (>= 4 weeks without progress), pace (too fast or too slow), injury_pause (the user declared an injury/pause; pass their words in user_statement), main_goal_change (the user changed their main goal; pass their words in user_statement). Any other change is refused. You MUST tell the user the new target and the reason in your reply. action=quest: create one time-limited quest (counts measurement entries) tied to an active goal; subject to the 3-active-quests cap. Never invent measurements.",
+    parameters: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['list', 'create', 'revise', 'quest'] },
+        measure_key: { type: 'string', enum: ['weight_kg', 'waist_cm', 'arm_cm', 'chest_cm', 'thigh_cm', 'hip_cm', 'body_fat_pct'] },
+        goal_id: { type: 'string', description: 'Goal id (revise/quest), alternative to measure_key' },
+        start_value: { type: 'number', description: 'create: starting value (optional, defaults to latest measurement)' },
+        target_value: { type: 'number', description: 'create: target value' },
+        target_date: { type: 'string', description: 'create: optional target date YYYY-MM-DD (in the future)' },
+        reason: { type: 'string', enum: ['stagnation', 'pace', 'injury_pause', 'main_goal_change'], description: 'revise: why the goal is changed' },
+        new_target_value: { type: 'number', description: 'revise: new target' },
+        new_target_date: { type: 'string', description: 'revise: new target date YYYY-MM-DD' },
+        user_statement: { type: 'string', description: "revise (injury_pause / main_goal_change): the user's own words" },
+        scope: { type: 'string', enum: ['daily', 'weekly'], description: 'quest: scope (default weekly)' },
+        target: { type: 'number', description: 'quest: number of measurement entries to log (1-7)' },
+        duration_hours: { type: 'integer', description: 'quest: time limit in hours' },
+      },
+      required: ['action'],
+    },
+  },
+];
+
 export const allToolSchemas: AITool[] = [
   ...habitsToolSchemas,
   ...nutritionToolSchemas,
@@ -606,6 +668,8 @@ export const allToolSchemas: AITool[] = [
   ...pantryToolSchemas,
   ...navigationToolSchemas,
   ...coachToolSchemas,
+  ...questsToolSchemas,
+  ...measurementGoalsToolSchemas,
   // create_goal/create_program (Phase 44, ENGINE-06) — deliberately
   // included here, the inverse of the onboarding executor's deliberate
   // exclusion from this array (see the `executors` map above): ENGINE-06

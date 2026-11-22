@@ -1,0 +1,1 @@
+<div style="position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px 24px"><div class="btn p full" style="justify-content:space-between"><span>Ajouter 2 aliments</span><span class="num">640 kcal</span></div></div>

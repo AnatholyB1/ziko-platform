@@ -12,6 +12,9 @@ import {
 } from '../context/conversation.js';
 import { AGENT_MODEL, VISION_MODEL } from '../config/models.js';
 import { creditCheck, creditDeduct } from '../middleware/creditGate.js';
+import { userRateLimit } from '../middleware/userRateLimit.js';
+import type { CreditAction } from '../config/credits.js';
+import type { Context, Next } from 'hono';
 import { STORAGE_BUCKETS } from '../config/buckets.js';
 
 const router = new Hono();
@@ -169,7 +172,31 @@ function logTokenUsage(
 
 router.get('/tools', (c) => c.json({ tools: allToolSchemas }));
 
-router.post('/tools/execute', async (c) => {
+// Audit securite v1.20 (constat 6) : /tools/execute etait un contournement du credit gate. Les outils qui appellent un
+// LLM (ai_programs_generate / ai_programs_adjust : Sonnet jusqu'a 4000 tokens) sont soumis au MEME credit que
+// POST /ai/programs/generate ('program') et a un plafond de debit plus serre ; tous les outils ont un plafond par
+// utilisateur. Un outil LLM ajoute plus tard doit etre declare ici.
+export const LLM_TOOL_CREDIT: Readonly<Record<string, CreditAction>> = {
+  ai_programs_generate: 'program',
+  ai_programs_adjust: 'program',
+};
+const toolsExecuteLimiter = userRateLimit(30, '1 m', 'ai-tools-execute');
+const llmToolsLimiter = userRateLimit(4, '1 m', 'ai-tools-execute-llm');
+
+async function llmToolGate(c: Context, next: Next) {
+  let toolName: unknown;
+  try {
+    toolName = ((await c.req.json()) as { tool_name?: unknown } | null)?.tool_name;
+  } catch {
+    return next(); // corps invalide : le handler repond 400
+  }
+  const action = typeof toolName === 'string' && Object.hasOwn(LLM_TOOL_CREDIT, toolName) ? LLM_TOOL_CREDIT[toolName] : undefined;
+  if (!action) return next();
+  const deduct = (() => creditDeduct(action)(c, next)) as Next;
+  return llmToolsLimiter(c, (() => creditCheck(action)(c, deduct)) as Next);
+}
+
+router.post('/tools/execute', toolsExecuteLimiter, llmToolGate, async (c) => {
   const auth = c.get('auth');
   const userToken = c.req.header('Authorization')?.replace('Bearer ', '');
   const { tool_name, parameters = {} } = await c.req.json<{
@@ -188,7 +215,8 @@ router.post('/tools/execute', async (c) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[Tool Error] ${tool_name}:`, msg);
-    return c.json({ error: msg }, 500);
+    // Message generique : le detail (Postgres, SDK) reste dans les logs serveur.
+    return c.json({ error: 'Tool execution failed' }, 500);
   }
 });
 
@@ -529,6 +557,81 @@ router.post('/programs/generate', creditCheck('program'), creditDeduct('program'
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[Programs Generate Error]', msg);
     return c.json({ error: msg }, 500);
+  }
+});
+
+// ─── Single-session generation (mobile Coach IA wizard) ───────
+// Body: { energy: 1-10, duration: minutes, zone: haut|bas|full|cardio, equipment: salle|maison|outdoor|hotel }
+// Returns: { result: { exercises: [{ name, sets, note? }], adaptation_note } }
+
+const SESSION_ZONES: Record<string, string> = {
+  haut: 'upper body (chest, back, shoulders, arms)',
+  bas: 'lower body (quads, hamstrings, glutes, calves)',
+  full: 'full body, balanced',
+  cardio: 'light cardio and core, active recovery',
+};
+const SESSION_EQUIPMENT: Record<string, string> = {
+  salle: 'full commercial gym',
+  maison: 'home with dumbbells only',
+  outdoor: 'outdoors, bodyweight only',
+  hotel: 'hotel room, minimal equipment / bodyweight',
+};
+
+router.post('/session/generate', creditCheck('chat'), creditDeduct('chat'), async (c) => {
+  const body = await c.req
+    .json<{ energy?: number; duration?: number; zone?: string; equipment?: string }>()
+    .catch(() => ({}) as { energy?: number; duration?: number; zone?: string; equipment?: string });
+
+  const energy = Math.min(10, Math.max(1, Math.round(Number(body.energy) || 7)));
+  const duration = Math.min(120, Math.max(10, Math.round(Number(body.duration) || 45)));
+  const zone = SESSION_ZONES[body.zone ?? ''] ?? SESSION_ZONES.full;
+  const equipment = SESSION_EQUIPMENT[body.equipment ?? ''] ?? SESSION_EQUIPMENT.salle;
+  const exerciseCount = Math.max(3, Math.min(8, Math.round(duration / 9)));
+
+  const prompt = `Generate ONE workout session in French.
+Energy level today: ${energy}/10 (lower energy = lighter loads / fewer sets)
+Duration: ${duration} minutes (about ${exerciseCount} exercises)
+Target: ${zone}
+Equipment: ${equipment}
+
+Return ONLY valid JSON, no markdown:
+{
+  "adaptation_note": "one short sentence explaining how the session was adapted to the energy level",
+  "exercises": [
+    { "name": "Exercise name", "sets": "3 × 8-10", "note": "optional short tip" }
+  ]
+}`;
+
+  try {
+    const { text } = await generateText({
+      model: AGENT_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      maxOutputTokens: 1500,
+    });
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Model returned no JSON');
+    const parsed = JSON.parse(match[0]) as {
+      adaptation_note?: unknown;
+      exercises?: Array<{ name?: unknown; sets?: unknown; note?: unknown }>;
+    };
+    const exercises = (Array.isArray(parsed.exercises) ? parsed.exercises : [])
+      .filter((e) => typeof e?.name === 'string' && e.name.length > 0)
+      .map((e) => ({
+        name: String(e.name),
+        sets: String(e.sets ?? '3 × 10'),
+        ...(typeof e.note === 'string' && e.note ? { note: e.note } : {}),
+      }));
+    if (exercises.length === 0) throw new Error('Model returned no exercises');
+    return c.json({
+      result: {
+        exercises,
+        adaptation_note: typeof parsed.adaptation_note === 'string' ? parsed.adaptation_note : undefined,
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Session Generate Error]', msg);
+    return c.json({ error: 'Failed to generate session' }, 500);
   }
 });
 

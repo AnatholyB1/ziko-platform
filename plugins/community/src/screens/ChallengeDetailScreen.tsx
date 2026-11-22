@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, formatDateFr } from '@ziko/plugin-sdk';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -184,9 +184,9 @@ export default function ChallengeDetailScreen({ supabase }: { supabase: any }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Ionicons name="calendar" size={16} color={theme.primary} />
                 <Text style={{ fontSize: 13, color: theme.muted }}>
-                  {new Date(challenge.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  {formatDateFr(new Date(challenge.start_date), { day: 'numeric', month: 'long' })}
                   {' → '}
-                  {new Date(challenge.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  {formatDateFr(new Date(challenge.end_date), { day: 'numeric', month: 'long' })}
                 </Text>
               </View>
               {challenge.status === 'active' && (

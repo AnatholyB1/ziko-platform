@@ -6,10 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./manifest": "./src/manifest.ts",
-    "./store": "./src/store.ts",
-    "./screens/TimerDashboard": "./src/screens/TimerDashboard.tsx",
+    "./presets": "./src/presets.ts",
     "./screens/TimerPlugin": "./src/screens/TimerPlugin.tsx",
-    "./screens/TimerManager": "./src/screens/TimerManager.tsx",
     "./screens/TimerEditor": "./src/screens/TimerEditor.tsx"
   },
   "scripts": {
@@ -21,7 +19,7 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0",
-    "expo-router": "*"
+    "react-native": "^0.81.5",
+    "expo-router": "~6.0.23"
   }
 }

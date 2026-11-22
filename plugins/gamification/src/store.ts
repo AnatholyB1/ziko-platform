@@ -1,4 +1,10 @@
 import { create } from 'zustand';
+import {
+  buildAchievements, parseAwarded,
+  type AwardedBadge, type BadgeDefinition, type BadgeProgressRow, type EarnedBadge,
+} from './rewards';
+import { parseQuestSync, type QuestSync } from './quests';
+import { computeNextStreak } from './streak';
 
 // ── Types ────────────────────────────────────────────────
 export interface LevelDef {
@@ -72,6 +78,8 @@ const COIN_REWARDS = {
 
 const STREAK_MILESTONES = [7, 14, 30, 60, 90];
 
+export const HISTORY_PAGE_SIZE = 50;
+
 // ── Store ────────────────────────────────────────────────
 interface GamificationState {
   profile: GamificationProfile | null;
@@ -108,7 +116,7 @@ export const useGamificationStore = create<GamificationState>()((set) => ({
 }));
 
 // ── Helpers ─────────────────────────────────────────────
-function computeLevelProgress(xp: number, levels: LevelDef[]) {
+export function computeLevelProgress(xp: number, levels: LevelDef[]) {
   if (levels.length === 0) {
     return { currentLevel: { level: 1, xp_required: 0, title: 'Débutant', reward_coins: 0 } as LevelDef, nextLevel: null, xpToNext: 0, xpProgress: 1 };
   }
@@ -132,7 +140,7 @@ function computeLevelProgress(xp: number, levels: LevelDef[]) {
 }
 
 // ── Ensure profile exists (server-side, bypasses the now-locked-down INSERT) ──
-async function ensureProfile(supabase: any, userId: string): Promise<GamificationProfile> {
+export async function ensureProfile(supabase: any, userId: string): Promise<GamificationProfile> {
   const { data } = await supabase.rpc('ziko_ensure_gamification_profile', { p_user_id: userId });
   return data;
 }
@@ -150,7 +158,7 @@ export async function loadGamification(supabase: any) {
       ensureProfile(supabase, user.id),
       supabase.from('ziko_level_definitions').select('*').order('level'),
       supabase.from('ziko_xp_transactions').select('*').order('created_at', { ascending: false }).limit(20),
-      supabase.from('ziko_coin_transactions').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('ziko_coin_transactions').select('*').order('created_at', { ascending: false }).limit(HISTORY_PAGE_SIZE),
       supabase.from('ziko_shop_items').select('*').eq('is_active', true).order('price'),
       supabase.from('ziko_user_inventory').select('*'),
     ]);
@@ -176,31 +184,27 @@ export async function loadGamification(supabase: any) {
 
 // ── Update streak ───────────────────────────────────────
 async function updateStreak(supabase: any, userId: string, profile: GamificationProfile) {
-  const today = new Date().toISOString().split('T')[0];
-  if (profile.last_activity_date === today) return profile;
+  const next = computeNextStreak(profile);
+  if (!next.changed) return profile;
+  const newStreak = next.current_streak;
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-  let newStreak = 1;
-  if (profile.last_activity_date === yesterdayStr) {
-    newStreak = profile.current_streak + 1;
-  }
-
-  const longestStreak = Math.max(profile.longest_streak, newStreak);
-
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('ziko_user_gamification')
     .update({
       current_streak: newStreak,
-      longest_streak: longestStreak,
-      last_activity_date: today,
+      longest_streak: next.longest_streak,
+      last_activity_date: next.today,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId)
     .select('*')
     .single();
+
+  // Never silent: if the client DML is revoked in prod, the streak would never progress (review A #17).
+  if (error) {
+    console.warn('[gamification] streak update failed:', error.message ?? error);
+    return profile;
+  }
 
   // Check streak milestones
   for (const milestone of STREAK_MILESTONES) {
@@ -213,13 +217,13 @@ async function updateStreak(supabase: any, userId: string, profile: Gamification
       if (xpAmount > 0) {
         await supabase.rpc('ziko_award_xp', {
           p_user_id: userId, p_amount: xpAmount, p_source: 'streak_bonus',
-          p_source_id: null, p_description: `🔥 Streak ${milestone} jours !`,
+          p_source_id: null, p_description: `Streak ${milestone} jours !`,
         });
       }
       if (coinAmount > 0) {
         await supabase.rpc('ziko_award_coins', {
           p_user_id: userId, p_amount: coinAmount, p_source: 'streak_bonus',
-          p_source_id: null, p_description: `🔥 Bonus streak ${milestone} jours`,
+          p_source_id: null, p_description: `Bonus streak ${milestone} jours`,
         });
       }
     }
@@ -238,12 +242,16 @@ export async function awardWorkoutXP(supabase: any, sessionId: string) {
 
   await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.workout, p_source: 'workout',
-    p_source_id: sessionId, p_description: `💪 Séance terminée : +${XP_REWARDS.workout} XP`,
+    p_source_id: sessionId, p_description: `Séance terminée : +${XP_REWARDS.workout} XP`,
   });
   await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.workout, p_source: 'workout',
-    p_source_id: sessionId, p_description: `💰 Séance terminée : +${COIN_REWARDS.workout} pièces`,
+    p_source_id: sessionId, p_description: `Séance terminée : +${COIN_REWARDS.workout} pièces`,
   });
+  // D-08 : l'attribution des succes suit la fin de seance (jamais bloquant).
+  await awardBadges(supabase);
+  // P13 : la progression des quetes suit la fin de seance (jamais bloquant).
+  await syncQuestsQuiet(supabase);
 }
 
 // ── Award Habit Completion ──────────────────────────────
@@ -256,11 +264,11 @@ export async function awardHabitXP(supabase: any, habitName: string) {
 
   await supabase.rpc('ziko_award_xp', {
     p_user_id: user.id, p_amount: XP_REWARDS.habit, p_source: 'habit',
-    p_source_id: null, p_description: `✅ ${habitName} : +${XP_REWARDS.habit} XP`,
+    p_source_id: null, p_description: `${habitName} : +${XP_REWARDS.habit} XP`,
   });
   await supabase.rpc('ziko_award_coins', {
     p_user_id: user.id, p_amount: COIN_REWARDS.habit, p_source: 'habit',
-    p_source_id: null, p_description: `💰 ${habitName} : +${COIN_REWARDS.habit} pièces`,
+    p_source_id: null, p_description: `${habitName} : +${COIN_REWARDS.habit} pièces`,
   });
 }
 
@@ -278,97 +286,102 @@ export async function purchaseItem(supabase: any, itemId: string): Promise<{ suc
   return data as { success: boolean; error?: string };
 }
 
-// ── Equip Item ──────────────────────────────────────────
-export async function equipItem(supabase: any, itemId: string, category: string) {
+// ── Equip Item (atomique cote base : ziko_equip_item, D-12) ─────────
+export async function equipItem(supabase: any, itemId: string): Promise<{ success: boolean; error?: string; category?: string }> {
+  const { data, error } = await supabase.rpc('ziko_equip_item', { p_item_id: itemId });
+  if (error) return { success: false, error: error.message };
+  return (data ?? { success: false, error: 'Réponse vide' }) as { success: boolean; error?: string; category?: string };
+}
+
+// ── Succes : attribution + chargement (D-08, D-09) ─────────────────
+/**
+ * Verifie et attribue les succes (RPC SECURITY DEFINER). Ne leve jamais : un echec renvoie [].
+ * Les succes nouvellement debloques servent au toast.
+ */
+export async function awardBadges(supabase: any): Promise<AwardedBadge[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase.rpc('ziko_check_and_award_badges', { p_user_id: user.id });
+    if (error) return [];
+    return parseAwarded(data);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Charge definitions + succes obtenus + progression. LEVE en cas d'erreur reseau/serveur :
+ * l'ecran affiche alors la carte d'erreur, jamais une liste de secours (REWD-10).
+ */
+export async function fetchAchievements(supabase: any, userId: string) {
+  const [defsRes, earnedRes, progRes] = await Promise.all([
+    supabase.from('ziko_badge_definitions').select('slug, name, description, icon, condition_type, condition_value, tier'),
+    supabase.from('ziko_user_badges').select('badge_slug, earned_at').eq('user_id', userId),
+    supabase.rpc('ziko_get_badge_progress', { p_user_id: userId }),
+  ]);
+  if (defsRes.error) throw defsRes.error;
+  if (earnedRes.error) throw earnedRes.error;
+  if (progRes.error) throw progRes.error;
+  const defs = (defsRes.data ?? []) as BadgeDefinition[];
+  const earned = (earnedRes.data ?? []) as EarnedBadge[];
+  const progress = ((progRes.data as any)?.badges ?? []) as BadgeProgressRow[];
+  return buildAchievements(defs, earned, progress);
+}
+
+// ── Quetes (P13) ───────────────────────────────────────────────────
+/**
+ * Synchronise les quetes (RPC SECURITY DEFINER `ziko_sync_quests`) : cree les quetes de depart de la
+ * periode, mesure la progression sur les donnees reelles, termine et credite. LEVE en cas d'erreur :
+ * l'onglet affiche la carte d'erreur, jamais de quete de secours (REWD-10).
+ */
+export async function syncQuests(supabase: any): Promise<QuestSync> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) throw new Error('not-authenticated');
+  const { data, error } = await supabase.rpc('ziko_sync_quests', { p_user_id: user.id });
+  if (error) throw error;
+  return parseQuestSync(data);
+}
 
-  // Unequip all items in this category
-  const { data: ownedInCategory } = await supabase
-    .from('ziko_user_inventory')
-    .select('id, item_id, shop_items:ziko_shop_items(category)')
-    .eq('user_id', user.id)
-    .eq('is_equipped', true);
-
-  if (ownedInCategory) {
-    for (const item of ownedInCategory) {
-      if ((item.shop_items as any)?.category === category) {
-        await supabase
-          .from('ziko_user_inventory')
-          .update({ is_equipped: false })
-          .eq('id', item.id);
-      }
-    }
+/**
+ * P14 (QUEST-04) : demande au backend de generer des quetes IA. Le declenchement (passage de niveau, plus aucune
+ * quete) et le plafond de 3 sont decides cote serveur : si rien n'est a creer, la reponse est `skipped` et aucun
+ * appel IA n'a lieu. Ne leve jamais ; renvoie true si au moins une quete a ete creee.
+ */
+export async function requestAiQuests(supabase: any): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return false;
+    const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? ''}/quests/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: '{}',
+    });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return body?.status === 'created' && Number(body.created) > 0;
+  } catch {
+    return false;
   }
+}
 
-  // Equip this one
-  await supabase
-    .from('ziko_user_inventory')
-    .update({ is_equipped: true })
-    .eq('user_id', user.id)
-    .eq('item_id', itemId);
-
-  // If it's a title, update equipped_title
-  if (category === 'title') {
-    const { data: shopItem } = await supabase
-      .from('ziko_shop_items')
-      .select('name')
-      .eq('id', itemId)
-      .single();
-
-    if (shopItem) {
-      await supabase
-        .from('ziko_user_gamification')
-        .update({ equipped_title: shopItem.name, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-    }
+/** Variante silencieuse (ex. fin de seance) : ne leve jamais, renvoie les quetes terminees. */
+export async function syncQuestsQuiet(supabase: any): Promise<QuestSync | null> {
+  try {
+    return await syncQuests(supabase);
+  } catch {
+    return null;
   }
+}
 
-  // If it's a badge, update equipped_badge
-  if (category === 'badge') {
-    const { data: shopItem } = await supabase
-      .from('ziko_shop_items')
-      .select('icon')
-      .eq('id', itemId)
-      .single();
-
-    if (shopItem) {
-      await supabase
-        .from('ziko_user_gamification')
-        .update({ equipped_badge: shopItem.icon, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-    }
-  }
-
-  // If it's a banner, update equipped_banner_name
-  if (category === 'banner') {
-    const { data: shopItem } = await supabase
-      .from('ziko_shop_items')
-      .select('name')
-      .eq('id', itemId)
-      .single();
-
-    if (shopItem) {
-      await supabase
-        .from('ziko_user_gamification')
-        .update({ equipped_banner_name: shopItem.name, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-    }
-  }
-
-  // If it's a theme, update equipped_theme
-  if (category === 'theme') {
-    const { data: shopItem } = await supabase
-      .from('ziko_shop_items')
-      .select('name')
-      .eq('id', itemId)
-      .single();
-
-    if (shopItem) {
-      await supabase
-        .from('ziko_user_gamification')
-        .update({ equipped_theme: shopItem.name, updated_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-    }
-  }
+// ── Historique des gains (pagine, D-14) ────────────────────────────
+export async function fetchCoinHistory(supabase: any, page: number, pageSize = HISTORY_PAGE_SIZE) {
+  const from = page * pageSize;
+  const { data, error } = await supabase
+    .from('ziko_coin_transactions')
+    .select('id, amount, source, description, created_at')
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+  return (data ?? []) as Transaction[];
 }

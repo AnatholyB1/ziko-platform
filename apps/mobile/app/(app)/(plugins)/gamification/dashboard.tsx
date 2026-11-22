@@ -1,7 +1,6 @@
 import React from 'react';
-import GamificationPlugin from '@ziko/plugin-gamification/screens/GamificationPlugin';
-import { supabase } from '../../../../src/lib/supabase';
+import RewardsRoute from '../../../../src/components/RewardsRoute';
 
 export default function GamificationDashboardRoute() {
-  return <GamificationPlugin supabase={supabase} />;
+  return <RewardsRoute initialTab="Niveau" />;
 }

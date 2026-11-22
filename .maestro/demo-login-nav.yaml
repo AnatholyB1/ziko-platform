@@ -1,0 +1,27 @@
+# Demo flow: login -> navigation -> captures. Pre-requis: `bash scripts/uat/dev-open.sh` (app ouverte sur Metro 8281 par lien profond adb).
+# Lancer: bash scripts/uat/evidence.sh run p0 demo-login .maestro/demo-login-nav.yaml UAT_EMAIL=... UAT_PASSWORD=...
+# Identifiants passes en env (-e), jamais stockes dans le repo.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- tapOn:
+    text: "Continue"
+    optional: true
+- extendedWaitUntil:
+    visible: "Connecte-toi"
+    timeout: 60000
+- takeScreenshot: 01-login-screen
+- tapOn: "toi@email.com"
+- inputText: ${UAT_EMAIL}
+- tapOn:
+    point: "50%,49%"
+- inputText: ${UAT_PASSWORD}
+- hideKeyboard
+- takeScreenshot: 02-login-filled
+- tapOn: "Se connecter"
+- extendedWaitUntil:
+    notVisible: "Connecte-toi"
+    timeout: 60000
+- takeScreenshot: 03-after-login

@@ -8,14 +8,17 @@ import {
   TextInput,
   Dimensions,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, localDateKey, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { router } from 'expo-router';
 import { scheduleHabitReminder, cancelHabitReminder, scheduleAllReminders } from '../notifications';
+import { normalizeHabits, normalizeHabitLogs } from '../normalize';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,7 +163,7 @@ function getStreak(habitId: string, monthLogs: HabitLog[]): number {
   for (let i = 0; i < 30; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateKey(d);
     const found = monthLogs.some((l) => l.habit_id === habitId && l.date === dateStr);
     if (found) {
       streak++;
@@ -188,7 +191,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     staleTime: Infinity,
   });
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
 
   // ── Habits query ─────────────────────────────────────────
   const { data: habits = [], isLoading: habitsLoading, isError: habitsError, refetch: habitsRefetch } = useQuery<Habit[]>({
@@ -200,16 +203,23 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .select('*')
         .eq('user_id', userId);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabits(data);
     },
     enabled: !!userId,
+    retry: 1,
   });
 
   // ── App-start recovery: reschedule all reminders when habits load ────────────
+  // Deferred + fire-and-forget: scheduling is a native side effect and must never
+  // run inside the first paint of the screen nor reject unhandled (HABT-01).
   useEffect(() => {
-    if (habits && habits.length > 0) {
-      scheduleAllReminders(habits as any, 'Ziko');
-    }
+    if (!Array.isArray(habits) || habits.length === 0) return;
+    const timer = setTimeout(() => {
+      scheduleAllReminders(habits as any, 'Ziko').catch((e) =>
+        console.warn('[Habits] reminder recovery failed:', e),
+      );
+    }, 1500);
+    return () => clearTimeout(timer);
   }, [habits]);
 
   // ── Today's logs ─────────────────────────────────────────
@@ -223,7 +233,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .eq('user_id', userId)
         .eq('date', today);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabitLogs(data);
     },
     enabled: !!userId,
   });
@@ -232,7 +242,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
   const since30 = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 29);
-    return d.toISOString().split('T')[0];
+    return localDateKey(d);
   }, []);
 
   const { data: monthLogs = [] } = useQuery<HabitLog[]>({
@@ -245,7 +255,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         .eq('user_id', userId)
         .gte('date', since30);
       if (error) throw error;
-      return data ?? [];
+      return normalizeHabitLogs(data);
     },
     enabled: !!userId,
   });
@@ -296,6 +306,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       showAlert('Erreur de sauvegarde', 'Impossible de mettre à jour votre habitude.');
     },
     onSuccess: () => {
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
       queryClient.invalidateQueries({ queryKey: ['habit_logs_today', userId, today] });
     },
   });
@@ -339,7 +350,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      last7Dates.push(d.toISOString().split('T')[0]);
+      last7Dates.push(localDateKey(d));
     }
     let worstHabit: Habit | null = null;
     let worstMissed = 0;
@@ -354,7 +365,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
       }
     }
     if (worstHabit) {
-      return `Tu rates "${worstHabit.name}" ${worstMissed} fois sur 7. On baisse la cible ?`;
+      return `"${worstHabit.name}" est plus difficile en ce moment (${7 - worstMissed} jour${7 - worstMissed > 1 ? 's' : ''} sur 7). On ajuste la cible pour repartir sur de bonnes bases ?`;
     }
     // Generic streak encouragement
     const completedToday = todayLogs.length;
@@ -405,7 +416,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
         {/* Habit list */}
         {habits.length === 0 ? (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🌱</Text>
+            <Ionicons name="leaf-outline" size={48} color={theme.primary} style={{ marginBottom: 12 }} />
             <Text style={{ color: theme.text, fontWeight: '700', fontSize: 18, marginBottom: 6 }}>
               Aucune habitude
             </Text>
@@ -501,7 +512,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      days.push(d.toISOString().split('T')[0]);
+      days.push(localDateKey(d));
     }
 
     const totalHabits = habits.length;
@@ -759,7 +770,8 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
           animationType="slide"
           onRequestClose={() => setShowCreateModal(false)}
         >
-          <View
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{
               flex: 1,
               backgroundColor: 'rgba(0,0,0,0.5)',
@@ -944,7 +956,7 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
                 <Text style={{ color: '#6B6963', fontSize: 14 }}>Annuler</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       </View>
     );
@@ -952,19 +964,29 @@ export default function HabitsPlugin({ supabase }: { supabase: any }) {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
+  // Loading / error states keep the themed background and the header with a working back
+  // button: they used to be a bare, header-less view (blank screen with no way out).
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(app)/' as any);
+  };
+
   if (habitsLoading) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#FF5C1A" />
-    </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PluginHeader title="Habits" onBack={goBack} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 }}>
+        <ActivityIndicator size="large" color="#FF5C1A" />
+      </View>
+    </SafeAreaView>
   );
 
   if (habitsError) return (
-    <ErrorScreen variant="network" onRetry={habitsRefetch} />
+    <ErrorScreen variant="network" onRetry={habitsRefetch} onGoBack={goBack} />
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
-      <PluginHeader title="Habits" onBack={() => router.back()} />
+      <PluginHeader title="Habits" onBack={goBack} />
       <SubTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
       <ScrollView
         contentContainerStyle={{

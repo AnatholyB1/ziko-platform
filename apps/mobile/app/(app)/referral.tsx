@@ -460,7 +460,7 @@ export default function ReferralScreen() {
                     Code valide
                   </Text>
                   <Text style={{ fontSize: 11.5, color: theme.muted, marginTop: 1 }}>
-                    -20% sur ton premier mois Premium
+                    Code valide et enregistre
                   </Text>
                 </View>
               </View>

@@ -1,0 +1,146 @@
+[
+ {
+  "id": "h01-defaut",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h01-defaut Accueil, compte neuf, crédits disponibles (avec contenu)"
+ },
+ {
+  "id": "h02-credits-epuises",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h02-credits-epuises Crédits épuisés : les chemins IA le disent avant l’ouverture, Manuel reste offert"
+ },
+ {
+  "id": "h03-chargement",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h03-chargement Chargement (sans contenu) : squelette après 400 ms seulement"
+ },
+ {
+  "id": "h04-disparue",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h04-disparue Carte disparue (sans contenu) : programme actif ou séance terminée, l’accueil ne montre que Mission + Quêtes"
+ },
+ {
+  "id": "h05-appui-focus",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h05-appui-focus Rangée pressée (fond #F0EFE9) et anneau de focus clavier/lecteur d’écran"
+ },
+ {
+  "id": "h06-texte-130",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h06-texte-130 Taille de texte système 130 % : rien n’est coupé, les lignes se replient"
+ },
+ {
+  "id": "h07-solde-inconnu",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h07-solde-inconnu Solde ou coût non disponible (hors ligne / lecture échouée) : libellé générique, jamais un chiffre inventé"
+ },
+ {
+  "id": "h08-quota-gratuit",
+  "file": "01-home.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "h08-quota-gratuit Quota gratuit restant (nouveau compte) : le coût devient « gratuit », lu sur le serveur"
+ },
+ {
+  "id": "t01-vide",
+  "file": "02-training.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "t01-vide Onglet Entraînement vide : deux boutons qui disent ce qu’ils créent (avec contenu : textes, coût)"
+ },
+ {
+  "id": "t02-choix-programme",
+  "file": "02-training.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "t02-choix-programme « Créer un programme » ouvre le choix des deux façons de construire un programme"
+ },
+ {
+  "id": "t03-vide-credits-epuises",
+  "file": "02-training.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "t03-vide-credits-epuises Même écran, crédits épuisés : le bouton IA le dit, Manuel reste le bouton principal"
+ },
+ {
+  "id": "t04-choix-credits-epuises",
+  "file": "02-training.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "t04-choix-credits-epuises Choix du programme, Atelier IA épuisé : l’Assistant en 4 étapes reste ouvert"
+ },
+ {
+  "id": "o01-chargement",
+  "file": "03-onboarding.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "o01-chargement Écran de chargement corrigé : 4 étapes qui existent vraiment (plus de « Construction de ton programme »)"
+ },
+ {
+  "id": "o02-variante-a",
+  "file": "03-onboarding.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "o02-variante-a Variante A, « Ce qu’on a retenu » : récapitule les réponses, annonce Ziko"
+ },
+ {
+  "id": "o03-variante-b",
+  "file": "03-onboarding.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "o03-variante-b Variante B, « La suite » (recommandée) : 3 étapes, la dernière prépare la carte de l’accueil"
+ },
+ {
+  "id": "o04-variante-c",
+  "file": "03-onboarding.html",
+  "w": 390,
+  "h": 844,
+  "bad": [],
+  "small": [],
+  "title": "o04-variante-c Variante C, minimale : une phrase, pas de carte"
+ }
+]

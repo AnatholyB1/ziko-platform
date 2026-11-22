@@ -1,19 +1,29 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Modal,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Svg, { Path, Rect, Defs, ClipPath } from 'react-native-svg';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
+import { useThemeStore, showAlert, getActionPrimary, requestQuestRefresh } from '@ziko/plugin-sdk';
 import { SubTabs, AISuggestion, PluginHeader } from '@ziko/ui';
+import {
+  type HydrationSettings, DEFAULT_SETTINGS, QUICK_AMOUNTS, MAX_LOG_ML, localDateKey,
+  DEFAULT_GOAL_ML, fetchBaseGoalMl, fetchEffectiveGoalMl, resolveGoalMl, fetchSettings, saveSettings, effectiveGoalMl, coffeeCountedMl,
+  remindersRowValue, glassRowValue, coffeeRowValue, bonusRowValue, formatLitres,
+} from '../settings';
+import { loadNotifModule, getReminderPermission, syncHydrationReminders, resyncRemindersFromDb, type PermissionState } from '../reminders';
+import { lightImpact } from '../haptics';
+import { QUICK_TILE_OUTER_STYLE, quickTileCardStyle } from '../tileStyles';
+import {
+  WATER, RemindersSheet, GlassSheet, CoffeeSheet, BonusSheet, GoalSheet, AmountSheet,
+} from './HydrationSheets';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,11 +41,10 @@ interface HydrationPluginProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const INFO_BLUE = '#2E7BF6';
+const INFO_BLUE = WATER; // #2563C9 (contrat lot E : 5,67:1 sur blanc)
 const TABS = ["Aujourd'hui", 'Historique', 'Réglages'];
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const MAX_BAR_ML = 3000;
-const DEFAULT_GOAL = 2000;
 
 // ─── Card shadow style ─────────────────────────────────────────────────────────
 
@@ -49,8 +58,9 @@ const CARD_SHADOW = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Dates LOCALES (comme le Quick Log de l'accueil, P8) : jamais UTC.
 function getToday(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateKey();
 }
 
 function getLast7Days(): string[] {
@@ -58,10 +68,12 @@ function getLast7Days(): string[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push(d.toISOString().split('T')[0]);
+    days.push(localDateKey(d));
   }
   return days;
 }
+
+type SheetKind = null | 'goal' | 'custom' | 'coffee-add' | 'reminders' | 'glass' | 'coffee' | 'bonus';
 
 function formatTime(isoString: string): string {
   const d = new Date(isoString);
@@ -123,17 +135,21 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
   // Tab state
   const [activeTab, setActiveTab] = useState("Aujourd'hui");
 
-  // Custom sheet state
-  const [showCustomSheet, setShowCustomSheet] = useState(false);
-  const [customAmount, setCustomAmount] = useState('');
+  // Feuille ouverte (une seule a la fois)
+  const [sheet, setSheet] = useState<SheetKind>(null);
 
-  // Goal edit sheet state
-  const [showGoalSheet, setShowGoalSheet] = useState(false);
-  const [goalInput, setGoalInput] = useState('');
+  // Anti double-ajout (300 ms) + toast d'annulation (5 s)
+  const [tilesLocked, setTilesLocked] = useState(false);
+  const lockTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [toast, setToast] = useState<null | { id: string; ml: number }>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [writeError, setWriteError] = useState<null | string>(null);
+  const [permission, setPermission] = useState<PermissionState>('granted');
 
-  // Flash confirmation state
-  const [flashingButton, setFlashingButton] = useState<null | number>(null);
-  const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (lockTimeout.current) clearTimeout(lockTimeout.current);
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+  }, []);
 
   // ─── Queries ────────────────────────────────────────────────────────────────
 
@@ -183,38 +199,101 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     enabled: !!userId,
   });
 
-  // Fetch goal from user_profiles
-  const { data: goalMl = DEFAULT_GOAL } = useQuery<number>({
+  // Reglages persistes (table ziko_hydration_settings)
+  const { data: settings = DEFAULT_SETTINGS } = useQuery<HydrationSettings>({
+    queryKey: ['hydration_settings', userId],
+    queryFn: () => fetchSettings(supabase, userId as string),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+
+  // Objectif de base (reglage du profil) : sert a la ligne "Objectif" et a la feuille de reglage uniquement.
+  // Une erreur de lecture est remontee par fetchBaseGoalMl (jamais un 2,0 L par defaut mis en cache).
+  const { data: baseGoalMl = DEFAULT_GOAL_ML } = useQuery<number>({
     queryKey: ['hydration_goals', userId],
-    queryFn: async () => {
-      if (!userId) return DEFAULT_GOAL;
-      const { data } = await supabase
-        .from('ziko_user_profiles')
-        .select('settings')
-        .eq('id', userId)
-        .single();
-      return data?.settings?.hydration_goal_ml ?? DEFAULT_GOAL;
-    },
+    queryFn: () => fetchBaseGoalMl(supabase, userId as string),
     enabled: !!userId,
   });
+
+  // Objectif affiche = base + bonus les jours de seance (HYDR-05) : MEME fonction et MEME cache que l'accueil
+  // (['hydration','today'].goalMl) => une seule source, pas de valeur par defaut avant chargement.
+  const homeCached = queryClient.getQueryData<{ goalMl?: number }>(['hydration', 'today', userId])?.goalMl;
+  const { data: goalData } = useQuery<number>({
+    queryKey: ['hydration_goal_effective', userId, today],
+    queryFn: () =>
+      resolveGoalMl(() => fetchEffectiveGoalMl(supabase, userId as string), {
+        previous: queryClient.getQueryData<{ goalMl?: number }>(['hydration', 'today', userId])?.goalMl,
+      }),
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+  const goalMl = goalData ?? homeCached ?? effectiveGoalMl(baseGoalMl, false, settings);
 
   // ─── Mutations ──────────────────────────────────────────────────────────────
 
   const logMutation = useMutation({
-    mutationFn: async (amount_ml: number) => {
+    mutationFn: async (amount_ml: number): Promise<{ id: string; ml: number }> => {
       if (!userId) throw new Error('Non authentifié');
       // Security: validate amount > 0 and <= 5000 (T-37-02-01)
-      if (!amount_ml || amount_ml <= 0 || amount_ml > 5000 || isNaN(amount_ml)) {
+      if (!amount_ml || amount_ml <= 0 || amount_ml > MAX_LOG_ML || isNaN(amount_ml)) {
         throw new Error('Quantité invalide (1–5000 ml)');
       }
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('ziko_hydration_logs')
-        .insert({ user_id: userId, amount_ml, date: today });
+        .insert({ user_id: userId, amount_ml, date: today })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return { id: data.id as string, ml: amount_ml };
+    },
+    onSuccess: (res) => {
+      setWriteError(null);
+      requestQuestRefresh(); // quetes : progression re-mesuree (debounce)
+      setToast(res);
+      if (toastTimeout.current) clearTimeout(toastTimeout.current);
+      toastTimeout.current = setTimeout(() => setToast(null), 5000);
+      queryClient.invalidateQueries({ queryKey: ['hydration_today', userId, today] });
+      queryClient.invalidateQueries({ queryKey: ['hydration_history', userId] });
+    },
+    onError: () => {
+      setWriteError('Impossible d\'enregistrer. Vérifie ta connexion.');
+    },
+  });
+
+  const undoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('ziko_hydration_logs').delete().eq('id', id).eq('user_id', userId);
       if (error) throw error;
     },
     onSuccess: () => {
+      requestQuestRefresh();
+      setToast(null);
       queryClient.invalidateQueries({ queryKey: ['hydration_today', userId, today] });
       queryClient.invalidateQueries({ queryKey: ['hydration_history', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      if (userId) void resyncRemindersFromDb(supabase, userId);
+    },
+    onError: () => setWriteError('Impossible d\'annuler. Vérifie ta connexion.'),
+  });
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (next: HydrationSettings) => {
+      if (!userId) throw new Error('Non authentifié');
+      const saved = await saveSettings(supabase, userId, next);
+      // Rappels : replanifies a chaque enregistrement (le goal atteint coupe le reste du jour)
+      const n = loadNotifModule();
+      if (n) {
+        const reached = todayLogs.reduce((s, l) => s + l.amount_ml, 0) >= goalMl;
+        await syncHydrationReminders(n, saved, { goalReachedToday: reached });
+      }
+      return saved;
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(['hydration_settings', userId], saved);
+      // L'objectif de l'accueil vit dans ['hydration','today',userId] (goalMl), pas dans une cle 'goal'.
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['hydration_goal_effective', userId] });
+      setSheet(null);
     },
     onError: (err: any) => {
       showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
@@ -239,7 +318,9 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hydration_goals', userId] });
-      setShowGoalSheet(false);
+      queryClient.invalidateQueries({ queryKey: ['hydration_goal_effective', userId] });
+      queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      setSheet(null);
     },
     onError: (err: any) => {
       showAlert('Erreur', err.message ?? 'Impossible de sauvegarder');
@@ -251,6 +332,22 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
   const todayMl = todayLogs.reduce((sum, l) => sum + l.amount_ml, 0);
   const fillRatio = Math.min(1, todayMl / goalMl);
   const remainingL = Math.max(0, (goalMl - todayMl) / 1000);
+  const goalReached = todayMl >= goalMl;
+
+  // Resynchronise les rappels a l'ouverture / quand l'objectif est atteint (HY-5 : 0 rappel
+  // pour le reste du jour une fois atteint ; les DAILY reviennent a la prochaine ouverture).
+  useEffect(() => {
+    if (!userId || loadingToday || !settings.remindersEnabled) return;
+    const n = loadNotifModule();
+    if (!n) return;
+    let cancelled = false;
+    (async () => {
+      const p = await getReminderPermission(n, false);
+      if (cancelled || p !== 'granted') return;
+      await syncHydrationReminders(n, settings, { goalReachedToday: goalReached });
+    })().catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [userId, loadingToday, settings, goalReached]);
 
   // Compute 7-day sums
   const last7Days = getLast7Days();
@@ -279,32 +376,38 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
+  // Un appui = une ligne ; tuiles verrouillees 300 ms et tant que l'ecriture est en cours.
   const handleQuickLog = (amount: number) => {
-    // Flash effect
-    if (flashTimeout.current) clearTimeout(flashTimeout.current);
-    setFlashingButton(amount);
-    flashTimeout.current = setTimeout(() => setFlashingButton(null), 300);
+    if (tilesLocked || logMutation.isPending) return;
+    setTilesLocked(true);
+    if (lockTimeout.current) clearTimeout(lockTimeout.current);
+    lockTimeout.current = setTimeout(() => setTilesLocked(false), 300);
+    lightImpact();
     logMutation.mutate(amount);
   };
 
-  const handleCustomLog = () => {
-    const parsed = parseInt(customAmount, 10);
-    if (!parsed || parsed <= 0 || parsed > 5000 || isNaN(parsed)) {
-      showAlert('Erreur', 'Saisissez une quantité valide entre 1 et 5000 ml.');
-      return;
-    }
-    logMutation.mutate(parsed);
-    setCustomAmount('');
-    setShowCustomSheet(false);
+  const handleCustomLog = (ml: number) => {
+    logMutation.mutate(ml);
+    setSheet(null);
   };
 
-  const handleSaveGoal = () => {
-    const parsed = parseInt(goalInput, 10);
-    if (!parsed || parsed < 1000 || parsed > 5000) {
-      showAlert('Erreur', "L'objectif doit être entre 1000 et 5000 ml.");
-      return;
-    }
-    saveGoalMutation.mutate(parsed);
+  // Cafe / the : n'ajoute que la part comptee (0 si le reglage est eteint)
+  const handleCoffeeLog = (drinkMl: number) => {
+    const counted = coffeeCountedMl(drinkMl, settings);
+    setSheet(null);
+    if (counted <= 0) return;
+    logMutation.mutate(counted);
+  };
+
+  const requestReminderPermission = async (): Promise<PermissionState> => {
+    const p = await getReminderPermission(loadNotifModule(), true);
+    setPermission(p);
+    return p;
+  };
+
+  const openReminders = async () => {
+    setPermission(await getReminderPermission(loadNotifModule(), false));
+    setSheet('reminders');
   };
 
   // ─── Tab: Aujourd'hui ────────────────────────────────────────────────────────
@@ -344,10 +447,10 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             pointerEvents="none"
           >
             <Text style={{ fontSize: 14, fontWeight: '700', color: INFO_BLUE, textAlign: 'center' }}>
-              {(todayMl / 1000).toFixed(1)}L
+              {formatLitres(todayMl)}
             </Text>
             <Text style={{ fontSize: 11, color: theme.muted, textAlign: 'center' }}>
-              / {(goalMl / 1000).toFixed(1)}L
+              / {formatLitres(goalMl)}
             </Text>
           </View>
         </View>
@@ -358,11 +461,11 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
             HYDRATATION
           </Text>
           <Text style={{ fontSize: 28, fontWeight: '700', color: theme.text, marginTop: 4 }}>
-            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${remainingL.toFixed(1)}L`}
+            {todayMl >= goalMl ? 'Objectif atteint !' : `Encore ${formatLitres(remainingL * 1000)}`}
           </Text>
           <Text style={{ fontSize: 13, color: theme.muted, lineHeight: 20, marginTop: 4 }}>
             {todayMl >= goalMl
-              ? `Tu as bu ${(todayMl / 1000).toFixed(1)}L aujourd'hui.`
+              ? `Tu as bu ${formatLitres(todayMl)} aujourd'hui.`
               : streak > 0
               ? `Allez, c'est presque plié. ${streak} jour${streak > 1 ? 's' : ''} d'affilée à objectif`
               : "Commence bien ta journée en t'hydratant régulièrement."}
@@ -408,60 +511,86 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       <Text style={{ fontSize: 13, fontWeight: '700', color: theme.text, marginBottom: 8 }}>
         Logger rapide
       </Text>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-        {[250, 500, 750].map((amount) => (
-          <TouchableOpacity
+      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
+        {QUICK_AMOUNTS.map((amount, i) => (
+          <Pressable
             key={amount}
             onPress={() => handleQuickLog(amount)}
-            style={[
-              CARD_SHADOW,
-              {
-                flex: 1,
-                backgroundColor: flashingButton === amount
-                  ? 'rgba(46,123,246,0.20)'
-                  : 'rgba(46,123,246,0.12)',
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: theme.border,
-                paddingVertical: 16,
-                paddingHorizontal: 8,
-                alignItems: 'center',
-                gap: 4,
-              },
-            ]}
+            disabled={tilesLocked || logMutation.isPending}
+            accessibilityRole="button"
+            accessibilityLabel={`Ajouter ${amount} millilitres`}
+            style={QUICK_TILE_OUTER_STYLE}
           >
-            <Ionicons
-              name="water-outline"
-              size={amount === 250 ? 16 : amount === 500 ? 20 : 24}
-              color={INFO_BLUE}
-            />
-            <Text style={{ fontSize: 11, fontWeight: '700', color: INFO_BLUE }}>
-              +{amount}ml
-            </Text>
-          </TouchableOpacity>
+            {({ pressed }) => (
+            <View
+              style={quickTileCardStyle({
+                pressed,
+                locked: tilesLocked || logMutation.isPending,
+                surface: theme.surface,
+                border: theme.border,
+                primary: getActionPrimary(theme),
+              })}
+            >
+            <View style={{ height: 14, justifyContent: 'center' }}>
+              {settings.glassMl === amount ? (
+                <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: '800', color: '#B53D05' }}>PAR DÉFAUT</Text>
+              ) : null}
+            </View>
+            <View style={{ height: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="water" size={[24, 30, 36][i]} color={INFO_BLUE} />
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ fontSize: 22, fontWeight: '800', color: theme.text }}>+{amount}</Text>
+              <Text style={{ fontSize: 14, color: theme.muted }}>ml</Text>
+            </View>
+            </View>
+            )}
+          </Pressable>
         ))}
-        {/* Custom button */}
+      </View>
+
+      {/* Actions texte sous les tuiles : quantite libre, cafe ou the */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, marginBottom: 8 }}>
         <TouchableOpacity
-          onPress={() => setShowCustomSheet(true)}
-          style={[
-            CARD_SHADOW,
-            {
-              flex: 1,
-              backgroundColor: theme.surface,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: theme.border,
-              paddingVertical: 16,
-              paddingHorizontal: 8,
-              alignItems: 'center',
-              gap: 4,
-            },
-          ]}
+          onPress={() => setSheet('custom')}
+          accessibilityRole="button"
+          style={{ minHeight: 44, justifyContent: 'center' }}
         >
-          <Ionicons name="add-circle-outline" size={20} color={INFO_BLUE} />
-          <Text style={{ fontSize: 11, fontWeight: '700', color: INFO_BLUE }}>Personnalisé</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#B53D05' }}>Autre quantité</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setSheet('coffee-add')}
+          accessibilityRole="button"
+          style={{ minHeight: 44, justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#B53D05' }}>Ajouter un café ou un thé</Text>
         </TouchableOpacity>
       </View>
+
+      {writeError ? (
+        <View accessibilityRole="alert" style={{ backgroundColor: '#FDECEA', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ flex: 1, fontSize: 14, color: '#B3261E' }}>{writeError}</Text>
+          <TouchableOpacity onPress={() => setWriteError(null)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: '800', color: '#B53D05' }}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {toast ? (
+        <View
+          accessibilityLiveRegion="polite"
+          style={{ backgroundColor: theme.text, borderRadius: 12, paddingLeft: 16, paddingRight: 4, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}
+        >
+          <Text style={{ flex: 1, fontSize: 14, color: '#FFFFFF' }}>{`+${toast.ml} ml ajoutés`}</Text>
+          <TouchableOpacity
+            onPress={() => undoMutation.mutate(toast.id)}
+            accessibilityRole="button"
+            style={{ minHeight: 44, minWidth: 44, paddingHorizontal: 12, justifyContent: 'center' }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFB48A' }}>Annuler</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {/* Today log list */}
       {todayLogs.length > 0 && (
@@ -616,7 +745,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
               MOYENNE 7J
             </Text>
             <Text style={{ fontSize: 28, fontWeight: '700', color: INFO_BLUE, marginTop: 4 }}>
-              {(avgMl / 1000).toFixed(1)}L/j
+              {formatLitres(avgMl)}/j
             </Text>
           </View>
           <View
@@ -643,7 +772,7 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
 
         {/* AISuggestion */}
         <AISuggestion
-          text="Tes journées de séance tu bois +30% : ton corps réclame plus. On adapte la cible les jours d'entraînement ?"
+          text={`Les jours de séance, ton objectif passe à +${settings.workoutBonusMl} ml : ton corps réclame plus. On adapte le bonus ?`}
           actionLabel="Adapter"
           onAction={() => setActiveTab('Réglages')}
           tintColor={INFO_BLUE}
@@ -676,26 +805,28 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
           OBJECTIF QUOTIDIEN
         </Text>
         <Text style={{ fontSize: 28, fontWeight: '700', color: INFO_BLUE, marginTop: 4 }}>
-          {(goalMl / 1000).toFixed(1)}L
+          {formatLitres(baseGoalMl)}
         </Text>
-        <Text style={{ fontSize: 11, color: theme.muted, marginTop: 2 }}>
-          recommandé selon ton poids et activité
+        <Text style={{ fontSize: 14, color: theme.muted, marginTop: 2 }}>
+          {settings.workoutBonusMl > 0
+            ? `+ ${(settings.workoutBonusMl / 1000).toFixed(1).replace('.', ',')} L les jours de séance`
+            : 'Aucun bonus les jours de séance'}
         </Text>
         <TouchableOpacity
-          onPress={() => {
-            setGoalInput(String(goalMl));
-            setShowGoalSheet(true);
-          }}
+          onPress={() => setSheet('goal')}
+          accessibilityRole="button"
+          accessibilityLabel="Modifier l'objectif quotidien"
           style={{
             marginTop: 12,
-            paddingVertical: 10,
+            minHeight: 44,
+            justifyContent: 'center',
             paddingHorizontal: 16,
             borderRadius: 12,
-            backgroundColor: INFO_BLUE,
+            backgroundColor: getActionPrimary(theme),
             alignSelf: 'flex-start',
           }}
         >
-          <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFF' }}>Modifier</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFF' }}>Modifier</Text>
         </TouchableOpacity>
       </View>
 
@@ -712,31 +843,35 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
           },
         ]}
       >
-        {[
-          { icon: 'notifications-outline' as const, label: 'Rappels intelligents', sub: 'Toutes les 90 min, 8h-21h' },
-          { icon: 'water-outline' as const, label: 'Taille de verre par défaut', sub: '250 ml' },
-          { icon: 'cafe-outline' as const, label: 'Compter le café/thé', sub: 'Oui (à 50%)' },
-          { icon: 'barbell-outline' as const, label: 'Bonus jour de séance', sub: '+500 ml' },
-        ].map((row, idx) => (
-          <View
+        {([
+          { icon: 'notifications-outline' as const, label: 'Rappels intelligents', sub: remindersRowValue(settings), onPress: openReminders },
+          { icon: 'water-outline' as const, label: 'Taille de verre par défaut', sub: glassRowValue(settings), onPress: () => setSheet('glass') },
+          { icon: 'cafe-outline' as const, label: 'Compter le café/thé', sub: coffeeRowValue(settings), onPress: () => setSheet('coffee') },
+          { icon: 'barbell-outline' as const, label: 'Bonus jour de séance', sub: bonusRowValue(settings), onPress: () => setSheet('bonus') },
+        ]).map((row, idx) => (
+          <TouchableOpacity
             key={idx}
+            onPress={row.onPress}
+            accessibilityRole="button"
+            accessibilityLabel={`${row.label}, ${row.sub}`}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
-              paddingVertical: 12,
+              minHeight: 56,
+              paddingVertical: 8,
               paddingHorizontal: 16,
               borderTopWidth: idx === 0 ? 0 : 1,
               borderTopColor: theme.border,
             }}
           >
-            <Ionicons name={row.icon} size={16} color={theme.muted} />
+            <Ionicons name={row.icon} size={18} color={theme.muted} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '500', color: theme.text }}>{row.label}</Text>
-              <Text style={{ fontSize: 11, color: theme.muted }}>{row.sub}</Text>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: theme.text }}>{row.label}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#B53D05' }}>{row.sub}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </ScrollView>
@@ -762,133 +897,25 @@ export default function HydrationPlugin({ supabase }: HydrationPluginProps) {
       {activeTab === 'Historique' && renderHistorique()}
       {activeTab === 'Réglages' && renderReglages()}
 
-      {/* Custom amount BottomSheet */}
-      <Modal
-        visible={showCustomSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCustomSheet(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}
-          activeOpacity={1}
-          onPress={() => setShowCustomSheet(false)}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: theme.surface,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            padding: 20,
-            paddingBottom: 40,
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: theme.text }}>Quantité personnalisée</Text>
-            <TouchableOpacity onPress={() => setShowCustomSheet(false)}>
-              <Ionicons name="close" size={24} color={theme.muted} />
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            value={customAmount}
-            onChangeText={setCustomAmount}
-            placeholder="Quantité en ml (ex: 350)"
-            placeholderTextColor={theme.muted}
-            keyboardType="numeric"
-            style={{
-              backgroundColor: theme.background,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: theme.border,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              fontSize: 17,
-              color: theme.text,
-              marginBottom: 16,
-            }}
-            autoFocus
-          />
-          <TouchableOpacity
-            onPress={handleCustomLog}
-            style={{
-              backgroundColor: INFO_BLUE,
-              borderRadius: 14,
-              paddingVertical: 16,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>Logger</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-
-      {/* Goal edit sheet */}
-      <Modal
-        visible={showGoalSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowGoalSheet(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }}
-          activeOpacity={1}
-          onPress={() => setShowGoalSheet(false)}
-        />
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: theme.surface,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            padding: 20,
-            paddingBottom: 40,
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: theme.text }}>Objectif quotidien</Text>
-            <TouchableOpacity onPress={() => setShowGoalSheet(false)}>
-              <Ionicons name="close" size={24} color={theme.muted} />
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            value={goalInput}
-            onChangeText={setGoalInput}
-            placeholder="Objectif en ml (1000–5000)"
-            placeholderTextColor={theme.muted}
-            keyboardType="numeric"
-            style={{
-              backgroundColor: theme.background,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: theme.border,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              fontSize: 17,
-              color: theme.text,
-              marginBottom: 16,
-            }}
-            autoFocus
-          />
-          <TouchableOpacity
-            onPress={handleSaveGoal}
-            style={{
-              backgroundColor: INFO_BLUE,
-              borderRadius: 14,
-              paddingVertical: 16,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>Sauvegarder</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      {/* Feuilles : quantite libre, cafe/the, reglages, objectif (au-dessus du clavier) */}
+      <AmountSheet theme={theme} visible={sheet === 'custom'} title="Autre quantité" saveLabel="Ajouter" onClose={() => setSheet(null)} onSave={handleCustomLog} />
+      <AmountSheet
+        theme={theme}
+        visible={sheet === 'coffee-add'}
+        title="Ajouter un café ou un thé"
+        saveLabel="Ajouter"
+        hint={(ml) => (!settings.countCoffeeTea
+          ? 'Le café et le thé ne sont pas comptés (réglage éteint) : rien ne sera ajouté.'
+          : ml ? `${ml} ml ajoutent ${coffeeCountedMl(ml, settings)} ml (${settings.coffeeTeaPct} % comptés).` : `${settings.coffeeTeaPct} % de la quantité est compté.`)}
+        onClose={() => setSheet(null)}
+        onSave={handleCoffeeLog}
+      />
+      <GoalSheet theme={theme} visible={sheet === 'goal'} goalMl={baseGoalMl} saving={saveGoalMutation.isPending} onClose={() => setSheet(null)} onSave={(g) => saveGoalMutation.mutate(g)} />
+      <RemindersSheet theme={theme} visible={sheet === 'reminders'} settings={settings} permission={permission} saving={saveSettingsMutation.isPending}
+        onClose={() => setSheet(null)} onSave={(s) => saveSettingsMutation.mutate(s)} onRequestPermission={requestReminderPermission} />
+      <GlassSheet theme={theme} visible={sheet === 'glass'} settings={settings} saving={saveSettingsMutation.isPending} onClose={() => setSheet(null)} onSave={(s) => saveSettingsMutation.mutate(s)} />
+      <CoffeeSheet theme={theme} visible={sheet === 'coffee'} settings={settings} saving={saveSettingsMutation.isPending} onClose={() => setSheet(null)} onSave={(s) => saveSettingsMutation.mutate(s)} />
+      <BonusSheet theme={theme} visible={sheet === 'bonus'} settings={settings} baseGoalMl={baseGoalMl} saving={saveSettingsMutation.isPending} onClose={() => setSheet(null)} onSave={(s) => saveSettingsMutation.mutate(s)} />
     </SafeAreaView>
   );
 }

@@ -9,6 +9,9 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { usePluginRegistry, useTranslation, showAlert, isPluginUnlocked, getPluginMinLevel } from '@ziko/plugin-sdk';
 import type { PluginManifest } from '@ziko/plugin-sdk';
 import { ErrorScreen } from '@ziko/ui';
+import { storeDescription } from '../../../src/lib/pluginCopy';
+import PluginStoreButton from '../../../src/components/PluginStoreButton';
+import { isMandatoryPlugin, uninstallDecision } from '../../../src/lib/mandatoryPlugins';
 
 // ── Design tokens ──────────────────────────────────────────
 const BG      = '#F7F6F3';
@@ -153,6 +156,12 @@ export default function PluginStoreScreen() {
 
   const uninstallPlugin = async (pluginId: string) => {
     if (!user) return;
+    // P25 (MCOA-02) : un module obligatoire (Mon coach) ne se desinstalle jamais, meme si l'UI l'appelle.
+    const decision = uninstallDecision(pluginId, plugins.find((p) => p.plugin_id === pluginId)?.manifest as any);
+    if (!decision.allowed) {
+      showAlert(decision.title, decision.message);
+      return;
+    }
     showAlert(t('store.uninstall') + ' ?', t('store.uninstallConfirm'), [
       { text: t('general.cancel'), style: 'cancel' },
       {
@@ -282,7 +291,7 @@ export default function PluginStoreScreen() {
                       numberOfLines={2}
                       style={{ fontSize: 12, color: 'rgba(255,250,246,0.65)', marginTop: 4, lineHeight: 18 }}
                     >
-                      {m.description}
+                      {storeDescription(p.plugin_id, m.description)}
                     </Text>
 
                     {/* Install CTA */}
@@ -297,7 +306,7 @@ export default function PluginStoreScreen() {
                       }}
                     >
                       <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFAF6' }}>
-                        {isInstalled ? 'Installé \u2713' : 'Installer'}
+                        {isInstalled && isMandatoryPlugin(p.plugin_id, m as any) ? 'Obligatoire' : isInstalled ? 'Installé \u2713' : 'Installer'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -357,6 +366,7 @@ const PluginCard = React.memo(function PluginCard({
 }) {
   const m = plugin.manifest;
   const color = PLUGIN_COLORS[plugin.plugin_id] ?? PRIMARY;
+  const mandatory = isMandatoryPlugin(plugin.plugin_id, m as any);
 
   return (
     <View style={{
@@ -381,7 +391,7 @@ const PluginCard = React.memo(function PluginCard({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: TEXT }}>{m.name}</Text>
           <Text numberOfLines={2} style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 17 }}>
-            {m.description}
+            {storeDescription(plugin.plugin_id, m.description)}
           </Text>
           {rating ? (
             <Text style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>
@@ -390,23 +400,15 @@ const PluginCard = React.memo(function PluginCard({
           ) : null}
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity
-          onPress={isInstalled ? onUninstall : onInstall}
-          activeOpacity={0.8}
-          style={{
-            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-            backgroundColor: isInstalled ? '#E2E0DA' : PRIMARY,
-            flexShrink: 0,
-          }}
-        >
-          <Text style={{
-            fontSize: 12, fontWeight: '700',
-            color: isInstalled ? MUTED : '#FFFFFF',
-          }}>
-            {isInstalled ? 'Installé' : 'Installer'}
-          </Text>
-        </TouchableOpacity>
+        {/* CTA : reste pressable pour un module obligatoire (alerte explicative) */}
+        <PluginStoreButton
+          isInstalled={isInstalled}
+          mandatory={mandatory}
+          onInstall={onInstall}
+          onUninstall={onUninstall}
+          primary={PRIMARY}
+          muted={MUTED}
+        />
       </View>
     </View>
   );

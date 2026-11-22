@@ -1,57 +1,69 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  AppState,
   Vibration,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useThemeStore, showAlert } from '@ziko/plugin-sdk';
-import { SubTabs, AISuggestion, PluginHeader, ErrorScreen } from '@ziko/ui';
+import { useThemeStore, showAlert, getActionPrimary } from '@ziko/plugin-sdk';
+import { SubTabs, PluginHeader, ErrorScreen } from '@ziko/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { playSound, playCountdownBeep } from '@ziko/sounds';
+import {
+  TIMER_TABS, type TimerTab, type TimerPresetItem, type Phase,
+  rowToPreset, visiblePresets, tabForType, presetSummary, totalDuration, formatTotal, buildPhases, phaseAt,
+  duplicateName, toDbPayload, PHASE_LABEL,
+} from '../presets';
 
-const TABS = ['Séance', 'Tabata', 'Intervalle'];
+const TAB_PARAM: Record<TimerTab, string> = { 'Séance': 'seance', Tabata: 'tabata', Intervalle: 'intervalle' };
+const TAB_ICON: Record<TimerTab, keyof typeof Ionicons.glyphMap> = {
+  'Séance': 'timer-outline',
+  Tabata: 'flash',
+  Intervalle: 'timer',
+};
+const EMPTY_TITLE: Record<TimerTab, string> = {
+  'Séance': 'Aucun preset de séance',
+  Tabata: 'Aucun preset Tabata',
+  Intervalle: "Aucun preset d'intervalle",
+};
+const TEXT_ORANGE = '#B53D05';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-const formatTime = (s: number): string =>
-  Math.floor(s / 60)
-    .toString()
-    .padStart(2, '0') +
-  ':' +
-  (s % 60).toString().padStart(2, '0');
+const formatClock = (s: number): string =>
+  Math.floor(s / 60).toString().padStart(2, '0') + ':' + (s % 60).toString().padStart(2, '0');
+
+interface Session {
+  preset: TimerPresetItem;
+  phases: Phase[];
+  /** Secondes ecoulees cumulees avant la derniere reprise. */
+  base: number;
+  /** Horloge murale (ms) de la derniere reprise, null si en pause / arrete. */
+  resumedAt: number | null;
+  startedAt: Date | null;
+  finished: boolean;
+}
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 export default function TimerPlugin({ supabase }: { supabase: any }) {
   const theme = useThemeStore((s) => s.theme);
+  const action = getActionPrimary(theme);
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState('Séance');
+  const [activeTab, setActiveTab] = useState<TimerTab>('Séance');
+  const [menuPreset, setMenuPreset] = useState<TimerPresetItem | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  // ── Countdown state (shared across tabs) ─────────────────────────────────
-  const [secondsLeft, setSecondsLeft] = useState(90);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<any>(null);
-  const [sessionStart, setSessionStart] = useState<Date | null>(null);
-  const [currentRound, setCurrentRound] = useState(1);
+  const [session, setSession] = useState<Session | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const lastIndexRef = useRef<number>(-1);
+  const lastBeepRef = useRef<number>(-1);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startedAtRef = useRef<number | null>(null);
-
-  // Intervalle tab state
-  const [effortSec, setEffortSec] = useState(45);
-  const [restSec, setRestSec] = useState(15);
-  const [rounds, setRounds] = useState(10);
-  const [sets, setSets] = useState(3);
-
-  // Fetch current user
   const { data: userInfo } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
@@ -61,179 +73,147 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
   });
   const userId = userInfo?.id ?? null;
 
-  // ── Query: timer presets ─────────────────────────────────────────────────
-  const { data: dbPresets, isLoading: presetsLoading, isError: presetsError, refetch: presetsRefetch } = useQuery({
+  // ── Presets de l'utilisateur : aucune valeur de repli (TIMR-03) ───────────
+  const { data: presets, isLoading: presetsLoading, isError: presetsError, refetch: presetsRefetch } = useQuery({
     queryKey: ['timer_presets', userId],
     enabled: !!userId,
-    queryFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return [];
-      const { data } = await supabase
+    queryFn: async (): Promise<TimerPresetItem[]> => {
+      const { data, error } = await supabase
         .from('ziko_timer_presets')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
-      return (data ?? []).map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        type: row.type,
-        work_seconds: row.work_sec,
-        rest_seconds: row.rest_sec,
-        rounds: row.rounds ?? 1,
-        exercises: row.exercises ?? [],
-      }));
+      if (error) throw error;
+      return visiblePresets((data ?? []).map(rowToPreset));
     },
   });
 
-  // Builtin presets (fallback si aucun preset DB)
-  const builtinPresets = [
-    { id: 'b1', name: 'Force', type: 'custom', work_seconds: 180, rest_seconds: 90, rounds: 5 },
-    { id: 'b2', name: 'Hypertrophie', type: 'hiit', work_seconds: 90, rest_seconds: 60, rounds: 8 },
-    { id: 'b3', name: 'Endurance', type: 'emom', work_seconds: 45, rest_seconds: 15, rounds: 10 },
-    { id: 'b4', name: 'Cardio HIIT', type: 'tabata', work_seconds: 20, rest_seconds: 10, rounds: 8 },
-  ];
+  const tabPresets = useMemo(
+    () => (presets ?? []).filter((p) => tabForType(p.type) === activeTab),
+    [presets, activeTab],
+  );
 
-  const presetsToShow =
-    dbPresets && dbPresets.length > 0 ? dbPresets : builtinPresets;
-
-  // ── Mutation: save workout session ────────────────────────────────────────
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non authentifié');
-      const { error } = await supabase.from('ziko_workout_sessions').insert({
-        user_id: user.id,
-        name: selectedPreset?.name ?? 'Séance Timer',
-        started_at: sessionStart?.toISOString() ?? new Date().toISOString(),
-        ended_at: new Date().toISOString(),
-        notes: selectedPreset
-          ? `${selectedPreset.name} — ${selectedPreset.rounds ?? 1} rounds`
-          : '',
+  const duplicateMutation = useMutation({
+    mutationFn: async (p: TimerPresetItem) => {
+      const { error } = await supabase.from('ziko_timer_presets').insert({
+        ...toDbPayload({ ...p, name: duplicateName(p.name) }),
+        exercises: p.exercises,
+        user_id: userId,
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      showAlert('Séance sauvegardée', 'Ta séance a été enregistrée dans ton historique.');
-    },
-    onError: (err: any) => {
-      showAlert('Erreur', err.message ?? 'Impossible de sauvegarder la séance');
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['timer_presets'] }),
+    onError: (err: any) => showAlert('Erreur', err?.message ?? 'Impossible de dupliquer le preset'),
   });
 
-  // ── Countdown logic (D-08) ────────────────────────────────────────────────
-  const handleComplete = useCallback(() => {
-    setIsRunning(false);
-    setIsPaused(false);
-    Vibration.vibrate([0, 400, 200, 400]);
-    playSound('complete');
+  const deleteMutation = useMutation({
+    mutationFn: async (p: TimerPresetItem) => {
+      const { error } = await supabase.from('ziko_timer_presets').delete().eq('id', p.id).eq('user_id', userId);
+      if (error) throw error;
+    },
+    onSuccess: (_d, p) => {
+      setSession((s) => (s && s.preset.id === p.id ? null : s));
+      return queryClient.invalidateQueries({ queryKey: ['timer_presets'] });
+    },
+    onError: (err: any) => showAlert('Erreur', err?.message ?? 'Impossible de supprimer le preset'),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!session) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Non authentifié');
+      const { error } = await supabase.from('ziko_workout_sessions').insert({
+        user_id: user.id,
+        name: session.preset.name,
+        started_at: session.startedAt?.toISOString() ?? new Date().toISOString(),
+        ended_at: new Date().toISOString(),
+        notes: `${session.preset.name} — ${session.preset.rounds} round${session.preset.rounds > 1 ? 's' : ''}`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => showAlert('Séance sauvegardée', 'Ta séance a été enregistrée dans ton historique.'),
+    onError: (err: any) => showAlert('Erreur', err.message ?? 'Impossible de sauvegarder la séance'),
+  });
+
+  // ── Moteur de decompte : base sur l'horloge murale (G-06) ──────────────────
+  const running = !!session && session.resumedAt !== null && !session.finished;
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const elapsed = session
+    ? Math.floor(session.base + (session.resumedAt !== null ? (now - session.resumedAt) / 1000 : 0))
+    : 0;
+  const position = session ? phaseAt(session.phases, elapsed) : null;
+
+  // Fin de sequence + changement de phase (sons / vibration)
+  useEffect(() => {
+    if (!session || !position || session.finished || session.resumedAt === null) return;
+    if (position.done) {
+      Vibration.vibrate([0, 400, 200, 400]);
+      playSound('complete');
+      setSession((s) => (s ? { ...s, finished: true, base: totalDuration(s.preset), resumedAt: null } : s));
+      return;
+    }
+    if (position.index !== lastIndexRef.current) {
+      lastIndexRef.current = position.index;
+      if (position.index > 0) playSound(position.phase?.kind === 'work' ? 'start' : 'rest');
+    }
+    if (position.secondsLeft <= 3 && position.secondsLeft !== lastBeepRef.current) {
+      lastBeepRef.current = position.secondsLeft;
+      playCountdownBeep(position.secondsLeft);
+    }
+  }, [position?.index, position?.secondsLeft, position?.done, session?.finished]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectPreset = useCallback((p: TimerPresetItem) => {
+    lastIndexRef.current = -1;
+    lastBeepRef.current = -1;
+    setSession({ preset: p, phases: buildPhases(p), base: 0, resumedAt: null, startedAt: null, finished: false });
   }, []);
 
-  useEffect(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            handleComplete();
-            return 0;
-          }
-          if (s <= 3) {
-            playCountdownBeep(s);
-          }
-          return s - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, isPaused, handleComplete]);
-
-  // AppState correction (D-08) — background correction
-  useEffect(() => {
-    const totalSeconds = selectedPreset?.work_seconds ?? 90;
-    const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active' && startedAtRef.current && isRunning && !isPaused) {
-        const elapsed = Math.round((Date.now() - startedAtRef.current) / 1000);
-        setSecondsLeft(Math.max(0, totalSeconds - elapsed));
+  const handlePlayPause = useCallback(() => {
+    setSession((s) => {
+      if (!s) return s;
+      if (s.finished) return { ...s, finished: false, base: 0, resumedAt: Date.now(), startedAt: new Date() };
+      if (s.resumedAt !== null) {
+        const e = s.base + (Date.now() - s.resumedAt) / 1000;
+        playSound('rest');
+        return { ...s, base: e, resumedAt: null };
       }
+      if (s.startedAt === null) playSound('start');
+      return { ...s, resumedAt: Date.now(), startedAt: s.startedAt ?? new Date() };
     });
-    return () => {
-      sub.remove();
-    };
-  }, [isRunning, isPaused, selectedPreset]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    setNow(Date.now());
   }, []);
-
-  const handleStart = useCallback(() => {
-    setIsRunning(true);
-    setIsPaused(false);
-    const now = new Date();
-    setSessionStart(now);
-    startedAtRef.current = Date.now();
-    playSound('start');
-  }, []);
-
-  const handlePause = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setIsPaused(true);
-    playSound('rest');
-  }, []);
-
-  const handleResume = useCallback(() => {
-    setIsPaused(false);
-    // Recalibrate startedAt to reflect the paused gap
-    startedAtRef.current =
-      Date.now() - ((selectedPreset?.work_seconds ?? 90) - secondsLeft) * 1000;
-  }, [secondsLeft, selectedPreset]);
 
   const handleAdjust = useCallback((delta: number) => {
-    setSecondsLeft((s) => Math.max(0, s + delta));
+    // +15 s = plus de temps restant ; -15 s = moins de temps restant
+    setSession((s) => {
+      if (!s || s.finished) return s;
+      const cur = s.base + (s.resumedAt !== null ? (Date.now() - s.resumedAt) / 1000 : 0);
+      const next = Math.max(0, cur - delta);
+      return { ...s, base: next, resumedAt: s.resumedAt !== null ? Date.now() : null };
+    });
+    setNow(Date.now());
   }, []);
 
-  const selectPreset = useCallback(
-    (p: any) => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setSelectedPreset(p);
-      setSecondsLeft(p.work_seconds);
-      setIsRunning(false);
-      setIsPaused(false);
-      setCurrentRound(1);
-    },
-    [],
-  );
+  const openCreate = () => router.push({ pathname: '/(plugins)/timer/editor', params: { tab: TAB_PARAM[activeTab] } } as any);
+  const openEdit = (p: TimerPresetItem) => router.push({ pathname: '/(plugins)/timer/editor', params: { presetId: p.id } } as any);
 
-  // ── Card shadow style ─────────────────────────────────────────────────────
-  const cardStyle = {
-    backgroundColor: theme.surface,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#1C1A17',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    marginBottom: 12,
+  const closeMenu = () => {
+    setMenuPreset(null);
+    setConfirmingDelete(false);
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  if (presetsLoading) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#FF5C1A" />
+  if (presetsLoading || (!userId && !presetsError)) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <ActivityIndicator size="large" color={action} />
     </View>
   );
 
@@ -241,415 +221,250 @@ export default function TimerPlugin({ supabase }: { supabase: any }) {
     <ErrorScreen variant="network" onRetry={presetsRefetch} />
   );
 
+  const cardStyle = {
+    backgroundColor: theme.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.border,
+    shadowColor: '#1C1A17',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    marginBottom: 12,
+  } as const;
+
+  const secondsLeft = position ? position.secondsLeft : 0;
+  const phaseLabel = session?.finished ? 'Terminé' : position?.phase ? PHASE_LABEL[position.phase.kind] : 'Prêt';
+  const isPlaying = !!session && session.resumedAt !== null && !session.finished;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <PluginHeader title="Timer" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-        <SubTabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <SubTabs
+          tabs={TIMER_TABS}
+          active={activeTab}
+          onChange={(t) => setActiveTab(t as TimerTab)}
+        />
 
-        {/* ── ONGLET SÉANCE ──────────────────────────────────────────────── */}
-        {activeTab === 'Séance' && (
-          <>
-            {/* Carte dark countdown */}
-            <View
-              style={{
-                backgroundColor: '#1C1A17',
-                borderRadius: 20,
-                padding: 24,
-                marginBottom: 12,
-              }}
+        {/* ── Decompte du preset choisi ─────────────────────────────────── */}
+        {session && (
+          <View style={{ backgroundColor: '#1C1A17', borderRadius: 20, padding: 20, marginBottom: 16 }}>
+            <Text style={{ fontSize: 12, opacity: 0.7, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: '#FFFAF6', textAlign: 'center' }}>
+              {phaseLabel}
+            </Text>
+            <Text
+              accessibilityLabel={`${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} secondes restantes`}
+              style={{ fontSize: 64, fontWeight: '900', color: '#FF8A4C', textAlign: 'center', marginTop: 6, fontVariant: ['tabular-nums'] }}
             >
-              <Text
-                style={{
-                  fontSize: 11,
-                  opacity: 0.6,
-                  fontWeight: '700',
-                  letterSpacing: 0.1,
-                  textTransform: 'uppercase',
-                  color: '#FFFAF6',
-                  textAlign: 'center',
-                }}
+              {formatClock(secondsLeft)}
+            </Text>
+            <Text style={{ fontSize: 13, color: '#FFFAF6', opacity: 0.75, textAlign: 'center', marginTop: 6 }}>
+              {session.preset.name}
+              {position?.phase ? ` · Round ${position.phase.round}/${session.preset.rounds} · Série ${position.phase.set}/${session.preset.sets}` : ''}
+            </Text>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 18, alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => handleAdjust(-15)}
+                accessibilityRole="button"
+                accessibilityLabel="Retirer 15 secondes"
+                style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: 'rgba(255,250,246,0.3)', justifyContent: 'center', alignItems: 'center' }}
               >
-                Effort
-              </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFAF6' }}>-15s</Text>
+              </TouchableOpacity>
 
-              <Text
-                style={{
-                  fontSize: 72,
-                  fontWeight: '900',
-                  color: '#FF5C1A',
-                  textAlign: 'center',
-                  marginTop: 8,
-                  fontVariant: ['tabular-nums'],
-                }}
+              <TouchableOpacity
+                onPress={handlePlayPause}
+                accessibilityRole="button"
+                accessibilityLabel={isPlaying ? 'Pause' : session.finished ? 'Relancer' : 'Démarrer'}
+                style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: action, justifyContent: 'center', alignItems: 'center' }}
               >
-                {formatTime(secondsLeft)}
-              </Text>
+                <Ionicons name={isPlaying ? 'pause' : session.finished ? 'refresh' : 'play'} size={26} color="#fff" />
+              </TouchableOpacity>
 
-              <Text
-                style={{
-                  fontSize: 12,
-                  opacity: 0.55,
-                  color: '#FFFAF6',
-                  textAlign: 'center',
-                  marginTop: 8,
-                }}
+              <TouchableOpacity
+                onPress={() => handleAdjust(15)}
+                accessibilityRole="button"
+                accessibilityLabel="Ajouter 15 secondes"
+                style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 1, borderColor: 'rgba(255,250,246,0.3)', justifyContent: 'center', alignItems: 'center' }}
               >
-                Série {currentRound}/{selectedPreset?.rounds ?? 1} ·{' '}
-                {selectedPreset?.name ?? '—'}
-              </Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: '#FFFAF6' }}>+15s</Text>
+              </TouchableOpacity>
+            </View>
 
-              {/* Contrôles */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  gap: 8,
-                  marginTop: 18,
-                  alignItems: 'center',
-                }}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 14 }}>
+              <TouchableOpacity
+                onPress={() => setSession(null)}
+                accessibilityRole="button"
+                style={{ paddingVertical: 10, paddingHorizontal: 16, minHeight: 44, justifyContent: 'center' }}
               >
-                {/* -15s */}
-                <TouchableOpacity
-                  onPress={() => handleAdjust(-15)}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,250,246,0.2)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFAF6' }}>
-                    -15s
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Bouton central */}
-                <TouchableOpacity
-                  onPress={
-                    !isRunning
-                      ? handleStart
-                      : isPaused
-                      ? handleResume
-                      : handlePause
-                  }
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
-                    backgroundColor: '#FF5C1A',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons
-                    name={isRunning && !isPaused ? 'pause-outline' : 'play-outline'}
-                    size={26}
-                    color="#fff"
-                  />
-                </TouchableOpacity>
-
-                {/* +15s */}
-                <TouchableOpacity
-                  onPress={() => handleAdjust(15)}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 25,
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,250,246,0.2)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#FFFAF6' }}>
-                    +15s
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* CTA Sauvegarder */}
-              {!isRunning && sessionStart !== null && (
+                <Text style={{ color: '#FFFAF6', opacity: 0.8, fontWeight: '700' }}>Fermer</Text>
+              </TouchableOpacity>
+              {!isPlaying && session.startedAt !== null && (
                 <TouchableOpacity
                   onPress={() => saveMutation.mutate()}
                   disabled={saveMutation.isPending}
-                  style={{
-                    padding: 12,
-                    backgroundColor: 'rgba(255,92,26,0.14)',
-                    borderRadius: 12,
-                    marginTop: 12,
-                  }}
+                  accessibilityRole="button"
+                  style={{ paddingVertical: 10, paddingHorizontal: 16, minHeight: 44, justifyContent: 'center', backgroundColor: 'rgba(255,250,246,0.12)', borderRadius: 12 }}
                 >
-                  <Text
-                    style={{
-                      color: '#FF5C1A',
-                      fontWeight: '700',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder comme séance'}
+                  <Text style={{ color: '#FFFAF6', fontWeight: '700' }}>
+                    {saveMutation.isPending ? 'Enregistrement…' : 'Sauvegarder comme séance'}
                   </Text>
                 </TouchableOpacity>
               )}
             </View>
+          </View>
+        )}
 
-            {/* AISuggestion */}
-            <View style={{ marginBottom: 16 }}>
-              <AISuggestion
-                text="Commence par 2 min de mobilité articulaire avant chaque séance pour prévenir les blessures et améliorer tes performances."
-              />
+        {/* ── Mes presets (onglet courant) ──────────────────────────────── */}
+        {tabPresets.length === 0 ? (
+          <View style={{ ...cardStyle, alignItems: 'center', padding: 28, marginTop: 24 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <Ionicons name={TAB_ICON[activeTab]} size={30} color={TEXT_ORANGE} />
             </View>
-
-            {/* Section Presets */}
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: '700',
-                color: theme.muted,
-                textTransform: 'uppercase',
-                letterSpacing: 0.05,
-                marginBottom: 8,
-              }}
-            >
-              Presets
+            <Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: '800', color: theme.text, textAlign: 'center' }}>
+              {EMPTY_TITLE[activeTab]}
             </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {presetsToShow.map((p: any) => (
-                <TouchableOpacity
-                  key={p.id}
-                  onPress={() => selectPreset(p)}
-                  style={{
-                    backgroundColor:
-                      selectedPreset?.id === p.id
-                        ? theme.primary + '18'
-                        : theme.surface,
-                    borderRadius: 16,
-                    padding: 14,
-                    width: '48%',
-                    borderWidth: 1,
-                    borderColor:
-                      selectedPreset?.id === p.id ? theme.primary : theme.border,
-                  }}
-                >
-                  <Text
+            <Text style={{ fontSize: 14, color: theme.muted, textAlign: 'center', marginTop: 6 }}>
+              Crée ton premier preset : effort, repos, séries et rounds.
+            </Text>
+            <TouchableOpacity
+              onPress={openCreate}
+              accessibilityRole="button"
+              style={{ marginTop: 16, minHeight: 48, paddingHorizontal: 22, borderRadius: 14, backgroundColor: action, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            >
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontWeight: '800' }}>Nouveau preset</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 8 }}>
+              <Text accessibilityRole="header" style={{ fontSize: 12, fontWeight: '700', color: theme.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Mes presets
+              </Text>
+              <Text style={{ fontSize: 13, color: theme.muted }}>{tabPresets.length}</Text>
+            </View>
+            <View style={{ ...cardStyle, overflow: 'hidden' }}>
+              {tabPresets.map((p, i) => {
+                const selected = session?.preset.id === p.id;
+                return (
+                  <View
+                    key={p.id}
                     style={{
-                      fontSize: 11,
-                      color: theme.muted,
-                      fontWeight: '700',
-                      letterSpacing: 0.05,
-                      textTransform: 'uppercase',
+                      flexDirection: 'row', alignItems: 'center', minHeight: 80,
+                      borderTopWidth: i === 0 ? 0 : 1, borderTopColor: theme.border,
+                      backgroundColor: selected ? theme.background : theme.surface,
                     }}
                   >
-                    {p.type}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: '700',
-                      color: theme.primary,
-                      marginTop: 4,
-                    }}
-                  >
-                    {p.name}
-                  </Text>
-                  <Text
-                    style={{ fontSize: 10, color: theme.muted, marginTop: 2 }}
-                  >
-                    {p.work_seconds}s effort · {p.rest_seconds}s repos
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* ── ONGLET TABATA ──────────────────────────────────────────────── */}
-        {activeTab === 'Tabata' && (
-          <>
-            <View style={cardStyle}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: theme.muted,
-                  fontWeight: '700',
-                  letterSpacing: 0.05,
-                  textTransform: 'uppercase',
-                  marginBottom: 4,
-                }}
-              >
-                TABATA CLASSIQUE
-              </Text>
-              <Text style={{ fontSize: 22, fontWeight: '700', color: theme.text, marginTop: 4 }}>
-                20s effort · 10s repos · 8 rounds
-              </Text>
-              <Text style={{ fontSize: 12, color: theme.muted, marginTop: 4 }}>
-                4 minutes intense — méthode validée pour le HIIT
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  const tabataPreset = {
-                    id: 'tabata-classic',
-                    name: 'Tabata classique',
-                    type: 'tabata' as const,
-                    work_seconds: 20,
-                    rest_seconds: 10,
-                    rounds: 8,
-                  };
-                  selectPreset(tabataPreset);
-                  setActiveTab('Séance');
-                }}
-                style={{
-                  backgroundColor: theme.primary,
-                  borderRadius: 12,
-                  padding: 12,
-                  width: '100%',
-                  marginTop: 14,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  Démarrer Tabata
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <AISuggestion
-              text="Tabata mardi + jeudi maximise l'EPOC sans entamer ta récup force."
-            />
-          </>
-        )}
-
-        {/* ── ONGLET INTERVALLE ──────────────────────────────────────────── */}
-        {activeTab === 'Intervalle' && (
-          <>
-            <View style={cardStyle}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: theme.muted,
-                  fontWeight: '700',
-                  letterSpacing: 0.05,
-                  textTransform: 'uppercase',
-                  marginBottom: 12,
-                }}
-              >
-                PERSONNALISÉ
-              </Text>
-
-              {/* Effort */}
-              {[
-                {
-                  label: 'Effort',
-                  value: effortSec,
-                  unit: 's',
-                  inc: () => setEffortSec((v) => v + 5),
-                  dec: () => setEffortSec((v) => Math.max(5, v - 5)),
-                },
-                {
-                  label: 'Repos',
-                  value: restSec,
-                  unit: 's',
-                  inc: () => setRestSec((v) => v + 5),
-                  dec: () => setRestSec((v) => Math.max(0, v - 5)),
-                },
-                {
-                  label: 'Rounds',
-                  value: rounds,
-                  unit: '',
-                  inc: () => setRounds((v) => v + 1),
-                  dec: () => setRounds((v) => Math.max(1, v - 1)),
-                },
-                {
-                  label: 'Sets',
-                  value: sets,
-                  unit: '',
-                  inc: () => setSets((v) => v + 1),
-                  dec: () => setSets((v) => Math.max(1, v - 1)),
-                },
-              ].map(({ label, value, unit, inc, dec }) => (
-                <View
-                  key={label}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingVertical: 12,
-                    borderBottomWidth: 1,
-                    borderBottomColor: theme.border,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: theme.text, fontWeight: '600' }}>
-                    {label}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <TouchableOpacity
-                      onPress={dec}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        backgroundColor: theme.border,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
+                      onPress={() => selectPreset(p)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${p.name}, ${presetSummary(p)}, durée ${formatTotal(totalDuration(p))}. Choisir`}
+                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}
                     >
-                      <Text style={{ color: theme.text, fontWeight: '700' }}>−</Text>
+                      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name={TAB_ICON[activeTab]} size={22} color={TEXT_ORANGE} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>{p.name}</Text>
+                        <Text numberOfLines={2} style={{ fontSize: 13, color: theme.muted, marginTop: 2 }}>{presetSummary(p)}</Text>
+                        <Text style={{ fontSize: 13, color: TEXT_ORANGE, fontWeight: '700', marginTop: 2 }}>
+                          Durée {formatTotal(totalDuration(p))}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text, minWidth: 36, textAlign: 'center' }}>
-                      {value}{unit}
-                    </Text>
                     <TouchableOpacity
-                      onPress={inc}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 14,
-                        backgroundColor: theme.primary,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
+                      onPress={() => setMenuPreset(p)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Options de ${p.name}`}
+                      style={{ width: 48, height: 80, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Text style={{ color: '#fff', fontWeight: '700' }}>+</Text>
+                      <Ionicons name="ellipsis-horizontal" size={22} color={theme.muted} />
                     </TouchableOpacity>
                   </View>
-                </View>
-              ))}
-
-              <TouchableOpacity
-                onPress={() => {
-                  const intervalPreset = {
-                    id: `interval-${Date.now()}`,
-                    name: `Intervalle ${effortSec}s/${restSec}s`,
-                    type: 'custom' as const,
-                    work_seconds: effortSec,
-                    rest_seconds: restSec,
-                    rounds: rounds * sets,
-                  };
-                  selectPreset(intervalPreset);
-                  setSecondsLeft(effortSec);
-                  setActiveTab('Séance');
-                }}
-                style={{
-                  backgroundColor: theme.primary,
-                  borderRadius: 12,
-                  padding: 12,
-                  width: '100%',
-                  marginTop: 14,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  Lancer · {Math.round((effortSec * rounds * sets) / 60)} min
-                </Text>
-              </TouchableOpacity>
+                );
+              })}
             </View>
           </>
         )}
       </ScrollView>
+
+      {tabPresets.length > 0 && (
+        <TouchableOpacity
+          onPress={openCreate}
+          accessibilityRole="button"
+          accessibilityLabel="Nouveau preset"
+          style={{
+            position: 'absolute', right: 16, bottom: 100, minHeight: 52, paddingHorizontal: 20, borderRadius: 26,
+            backgroundColor: action, flexDirection: 'row', alignItems: 'center', gap: 8,
+            shadowColor: '#1C1A17', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+          }}
+        >
+          <Ionicons name="add" size={22} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '800' }}>Nouveau preset</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* ── Menu d'un preset (C23) ─────────────────────────────────────── */}
+      <Modal visible={!!menuPreset} transparent animationType="slide" onRequestClose={closeMenu}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(28,26,23,0.4)' }} activeOpacity={1} onPress={closeMenu} accessibilityLabel="Fermer" />
+          {menuPreset && (
+            <View accessibilityViewIsModal style={{ backgroundColor: theme.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 28 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: theme.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Preset</Text>
+              <Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: '800', color: theme.text, marginBottom: 8 }}>{menuPreset.name}</Text>
+
+              {!confirmingDelete ? (
+                <>
+                  <MenuAction icon="create-outline" label="Modifier" color={theme.text} onPress={() => { const p = menuPreset; closeMenu(); openEdit(p); }} />
+                  <MenuAction icon="copy-outline" label="Dupliquer" color={theme.text} onPress={() => { const p = menuPreset; closeMenu(); duplicateMutation.mutate(p); }} />
+                  <MenuAction icon="trash-outline" label="Supprimer" color="#B3261E" onPress={() => setConfirmingDelete(true)} />
+                </>
+              ) : (
+                <>
+                  <View style={{ flexDirection: 'row', gap: 10, padding: 14, borderRadius: 14, backgroundColor: '#FDECEA', marginTop: 8 }}>
+                    <Ionicons name="alert-circle" size={22} color="#B3261E" />
+                    <Text style={{ flex: 1, fontSize: 15, color: '#1C1A17' }}>Supprimer ce preset ? Cette action est définitive.</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+                    <TouchableOpacity
+                      onPress={closeMenu}
+                      accessibilityRole="button"
+                      style={{ flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ fontWeight: '700', color: theme.text }}>Annuler</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => { const p = menuPreset; closeMenu(); deleteMutation.mutate(p); }}
+                      accessibilityRole="button"
+                      style={{ flex: 1, minHeight: 48, borderRadius: 12, backgroundColor: '#B3261E', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ fontWeight: '700', color: '#fff' }}>Supprimer</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
+  );
+}
+
+function MenuAction({ icon, label, color, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; color: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      accessibilityRole="button"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56 }}
+    >
+      <Ionicons name={icon} size={22} color={color} />
+      <Text style={{ fontSize: 16, fontWeight: '600', color }}>{label}</Text>
+    </TouchableOpacity>
   );
 }

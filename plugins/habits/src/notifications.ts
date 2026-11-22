@@ -52,14 +52,14 @@ export async function scheduleHabitReminder(
   if (!habit.reminder_time) return;
   const n = N();
   if (!n) return;
-  ensureHandler(n);
   try {
+    ensureHandler(n);
     const [h, m] = habit.reminder_time.split(':').map(Number);
     await cancelHabitReminder(habit.id);
     await n.scheduleNotificationAsync({
       content: {
         title: `${habit.emoji} ${habit.name}`,
-        body: `${agentName} here — don't forget your ${habit.name.toLowerCase()} today! 💪`,
+        body: `${agentName} : c'est l'heure de ${habit.name.toLowerCase()}.`,
         data: { habitId: habit.id },
       },
       trigger: {

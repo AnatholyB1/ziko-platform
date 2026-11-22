@@ -1,0 +1,45 @@
+# SEV4 verification (checks 1 and 2): IA simple, seance scriptee contenant "Gainage planche" "3 x 40 s".
+# Apercu : "40 s" (pas "40 rép."), toast de remplacement capture au plus pres, seance demarree avec duree/chrono.
+appId: com.ziko.mobile
+env:
+  UAT_EMAIL: ${UAT_EMAIL}
+  UAT_PASSWORD: ${UAT_PASSWORD}
+---
+- runFlow: v121-common-to-home.yaml
+- tapOn: "IA simple"
+- extendedWaitUntil:
+    visible: "Étape 1/4"
+    timeout: 30000
+- tapOn: "Continuer"
+- tapOn: "45 min"
+- tapOn: "Continuer"
+- tapOn: "Full body"
+- tapOn: "Continuer"
+- tapOn: "Salle complète"
+- runScript: scripts/v121-queue-session.js
+- tapOn: "Générer ma séance"
+- extendedWaitUntil:
+    visible: "Ta séance générée"
+    timeout: 60000
+- takeScreenshot: sev4-01-generated
+- tapOn: "Démarrer cette séance"
+- takeScreenshot: sev4-02-toast-immediate
+- extendedWaitUntil:
+    visible: "Démarrer la séance"
+    timeout: 30000
+- takeScreenshot: sev4-03-preview
+- scrollUntilVisible:
+    element: "(?i).*(planche|plank).*"
+    timeout: 20000
+- takeScreenshot: sev4-04-preview-plank
+- assertVisible: "(?i).*40 ?s.*"
+- assertNotVisible: "(?i).*40 ?rép.*"
+- tapOn: "Démarrer la séance"
+- extendedWaitUntil:
+    notVisible: "APERÇU DU PROGRAMME"
+    timeout: 30000
+- takeScreenshot: sev4-05-session-started
+- scrollUntilVisible:
+    element: "(?i).*(planche|plank).*"
+    timeout: 20000
+- takeScreenshot: sev4-06-session-plank

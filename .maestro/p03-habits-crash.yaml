@@ -1,0 +1,47 @@
+# P3 (HABT-01/02): ouverture Habitudes x3 + erreur de rendu forcee (route crash-test).
+# Run: bash scripts/uat/evidence.sh run 03 habits-crash .maestro/p03-habits-crash.yaml UAT_EMAIL=... UAT_PASSWORD=...
+# Pre-requis : build dev-client (route crash-test active car __DEV__) deja connecte, ou flow login de demo-login-nav.yaml avant.
+# Selecteurs a confirmer sur le vrai dev-client (premiere execution).
+appId: com.ziko.mobile
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "(?i)(tous mes outils)"
+    timeout: 60000
+- takeScreenshot: 01-home
+
+# --- HABT-01 : 3 ouvertures consecutives, aucun ecran blanc ---
+- repeat:
+    times: 3
+    commands:
+      - tapOn: "Tous mes outils"
+      - tapOn:
+          text: "(?i)daily habits.*|habit.*"
+      - extendedWaitUntil:
+          visible: "(?i)(aujourd.*hui)"
+          timeout: 10000
+      # laisse passer les ~0,5 s + le fetch + les rappels differes (1,5 s) : l'ecran doit rester la
+      - waitForAnimationToEnd:
+          timeout: 4000
+      - assertVisible: "(?i)(aujourd.*hui)"
+      - assertVisible: "(?i)(historique)"
+      - takeScreenshot: 02-habits-stable
+      - tapOn:
+          id: "chevron-back"
+          optional: true
+      - pressKey: back
+      - extendedWaitUntil:
+          visible: "(?i)(tous mes outils)"
+          timeout: 10000
+
+# --- HABT-02 : erreur de rendu forcee dans un module ---
+- openLink: "ziko://crash-test"
+- extendedWaitUntil:
+    visible: "Ce module a rencontré un problème"
+    timeout: 15000
+- takeScreenshot: 03-module-error-screen
+- tapOn: "Retour à l'accueil"
+- extendedWaitUntil:
+    visible: "(?i)(tous mes outils)"
+    timeout: 10000
+- takeScreenshot: 04-back-home

@@ -118,8 +118,8 @@ export interface PluginLevelInfo {
  */
 export const PLUGIN_LEVEL_MAP: Readonly<Record<string, PluginLevelInfo>> = {
   coach:        { id: 'coach',        name: 'Mon coach',               icon: 'person-outline',         minLevel: 1, mandatory: true },
-  habits:       { id: 'habits',       name: 'Daily Habits & Goals',    icon: 'checkmark-circle-outline', minLevel: 1 },
-  nutrition:    { id: 'nutrition',    name: 'Nutrition Tracker',       icon: 'restaurant',             minLevel: 1 },
+  habits:       { id: 'habits',       name: 'Habitudes & Objectifs',    icon: 'checkmark-circle-outline', minLevel: 1 },
+  nutrition:    { id: 'nutrition',    name: 'Suivi nutritionnel',      icon: 'restaurant',             minLevel: 1 },
   timer:        { id: 'timer',        name: 'Timer & Chrono',          icon: 'timer-outline',          minLevel: 1 },
   hydration:    { id: 'hydration',    name: 'Hydratation',             icon: 'water-outline',          minLevel: 1 },
   stretching:   { id: 'stretching',   name: 'Stretching & Mobilité', icon: 'body-outline',        minLevel: 1 },
@@ -127,14 +127,14 @@ export const PLUGIN_LEVEL_MAP: Readonly<Record<string, PluginLevelInfo>> = {
   journal:      { id: 'journal',      name: 'Journal & Mindset',       icon: 'journal-outline',        minLevel: 2 },
   sleep:        { id: 'sleep',        name: 'Sommeil & Récupération', icon: 'moon-outline',  minLevel: 2 },
   measurements: { id: 'measurements', name: 'Mesures & Progression',   icon: 'resize-outline',         minLevel: 2 },
-  stats:        { id: 'stats',        name: 'Analytics',               icon: 'stats-chart',            minLevel: 2 },
-  pantry:       { id: 'pantry',       name: 'Garde-Manger',            icon: 'storefront-outline',     minLevel: 2 },
+  stats:        { id: 'stats',        name: 'Statistiques',             icon: 'stats-chart',            minLevel: 2 },
+  pantry:       { id: 'pantry',       name: 'Garde-manger',            icon: 'storefront-outline',     minLevel: 2 },
   persona:      { id: 'persona',      name: 'AI Persona & Habits',     icon: 'person-circle-outline',  minLevel: 2 },
   gamification: { id: 'gamification', name: 'Récompenses',        icon: 'trophy',                 minLevel: 3 },
   cardio:       { id: 'cardio',       name: 'Cardio & Running',        icon: 'fitness-outline',        minLevel: 3 },
   community:    { id: 'community',    name: 'Communauté',         icon: 'people',                 minLevel: 3 },
   wearables:    { id: 'wearables',    name: 'Wearables & Santé',  icon: 'watch-outline',          minLevel: 3 },
-  'ai-programs': { id: 'ai-programs', name: 'Programmes IA',           icon: 'sparkles-outline',       minLevel: 4 },
+  'ai-programs': { id: 'ai-programs', name: 'Programmes IA',           icon: 'sparkles-outline',       minLevel: 1 },
   supplements:  { id: 'supplements',  name: 'Compléments Alimentaires', icon: 'flask',            minLevel: 4 },
 };
 

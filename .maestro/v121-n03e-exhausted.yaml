@@ -1,0 +1,18 @@
+# v1.21 UATN-03 (Credits epuises), etape 3 : solde 0 + quota chat consomme -> les lignes IA indiquent "Crédits épuisés"
+# AVANT l'ouverture, Manuel reste disponible (Gratuit) et ouvre le program-builder.
+appId: com.ziko.mobile
+---
+- tapOn:
+    text: "Plus tard"
+    optional: true
+- extendedWaitUntil:
+    visible: "Crée ton premier entraînement"
+    timeout: 90000
+- takeScreenshot: n03e-02-card-exhausted
+- assertVisible: "Crédits épuisés"
+- assertVisible: "Gratuit"
+- tapOn: "Manuel"
+- extendedWaitUntil:
+    visible: "Etape 1/4"
+    timeout: 30000
+- takeScreenshot: n03e-03-manual-still-open

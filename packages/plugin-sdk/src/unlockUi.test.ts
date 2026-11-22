@@ -17,9 +17,9 @@ import { PLUGIN_LEVEL_MAP } from './gating';
 import { translations } from './i18n';
 
 describe('buildLockedSection (B-08, B-12)', () => {
-  it('level 1 lists all 12 locked plugins, minLevel ascending', () => {
+  it('level 1 lists all 11 locked plugins, minLevel ascending', () => {
     const m = buildLockedSection(1);
-    expect(m.tiles).toHaveLength(12);
+    expect(m.tiles).toHaveLength(11);
     const levels = m.tiles.map((t) => t.minLevel);
     expect([...levels].sort((a, b) => a - b)).toEqual(levels);
     expect(m.tiles[0].id).toBe('journal');
@@ -32,15 +32,15 @@ describe('buildLockedSection (B-08, B-12)', () => {
     expect(m.showLockedSection).toBe(false);
     expect(m.showAllUnlocked).toBe(true);
   });
-  it('level 3 leaves the two level-4 plugins', () => {
-    expect(buildLockedSection(3).tiles.map((t) => t.id)).toEqual(['ai-programs', 'supplements']);
+  it('level 3 leaves the level-4 plugin', () => {
+    expect(buildLockedSection(3).tiles.map((t) => t.id)).toEqual(['supplements']);
   });
   it('only next-level tiles get the primary pill tone', () => {
     const m = buildLockedSection(1);
     for (const t of m.tiles) expect(t.pillTone).toBe(t.minLevel === 2 ? 'next' : 'later');
   });
   it('clamps garbage levels to 1', () => {
-    expect(buildLockedSection(NaN).tiles).toHaveLength(12);
+    expect(buildLockedSection(NaN).tiles).toHaveLength(11);
     expect(buildLockedSection(99).tiles).toHaveLength(0);
   });
   it('every locked plugin has a short name', () => {
@@ -53,7 +53,26 @@ describe('buildLockedSection (B-08, B-12)', () => {
 describe('locked tap alert (B-09)', () => {
   it('is a title-only key with the required level', () => {
     expect(lockedTapAlertArgs(3)).toEqual({ key: 'plugins.locked.required', params: { n: 3 } });
-    expect(translations.fr['plugins.locked.required'].replace('{n}', '3')).toBe('Niveau 3 requis');
+    expect(translations.fr['plugins.locked.required'].replace('{n}', '3')).toBe('Palier 3 requis');
+  });
+});
+
+// UAT run 9, defaut 8 : le deverrouillage lit `ziko_athlete_state.tier` (D-02), pas le niveau de gamification (Recompenses).
+// Le meme mot "niveau" pour deux notions donnait "niveau 1" en Communaute et "niveau 3" en Recompenses.
+describe('copie de deverrouillage : "palier", jamais "niveau"', () => {
+  const keys = Object.keys(translations.fr).filter((k) => k.startsWith('plugins.locked.') || k.startsWith('plugins.unlocked.'));
+  it('couvre bien les cles de modules verrouilles', () => {
+    expect(keys.length).toBeGreaterThanOrEqual(10);
+  });
+  it.each(keys)('%s (fr) ne dit pas "niveau" / "Niv."', (k) => {
+    expect(translations.fr[k].replace(/\{[a-z]+\}/g, '')).not.toMatch(/niveau|\bniv\./i);
+  });
+  it.each(keys)('%s (en) ne dit pas "level" / "lvl"', (k) => {
+    expect(translations.en[k].replace(/\{[a-z]+\}/g, '')).not.toMatch(/\blevel\b|\blvl\b/i);
+  });
+  it('les parametres de message restent {level} / {current} / {n}', () => {
+    expect(translations.fr['plugins.locked.message']).toContain('palier {level}');
+    expect(translations.fr['plugins.locked.message']).toContain('palier {current}');
   });
 });
 

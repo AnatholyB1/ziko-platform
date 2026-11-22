@@ -22,6 +22,14 @@ export const SOURCES = {
   weeklyReviewCron: 'weekly_review_cron',
   appOpenFallback: 'app_open_fallback',
   rewardSelection: 'reward_selection',
+  // v1.20 Phase 23 : sous-appels de recherche web de l'atelier (absorbes, plafonnes)
+  workshopWebSearch: 'workshop_web_search',
+  // v1.20 Phase 14 : generation automatique de quetes (passage de niveau / plus aucune quete).
+  questGeneration: 'quest_generation',
+  // v1.20 Phase 24 : proposition automatique du programme suivant en fin de programme (absorbee, plafonnee).
+  programRelaunch: 'program_relaunch',
+  // v1.20 Phase 26 : decision automatique de transition Habitudes -> Performance de la Ligue (absorbee, plafonnee 1/jour).
+  leagueTransition: 'league_transition',
 } as const;
 
 export type AutonomousCostSource = (typeof SOURCES)[keyof typeof SOURCES];

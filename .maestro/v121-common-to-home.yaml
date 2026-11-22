@@ -1,0 +1,30 @@
+# v1.21 : login -> onboarding -> 1re conversation Ziko -> 1re mission -> ACCUEIL (compte frais, etat de reset de v121-n01).
+appId: com.ziko.mobile
+---
+- runFlow: tf-common-login.yaml
+- runFlow: v121-common-onboarding.yaml
+- extendedWaitUntil:
+    visible: "Reponse simulee du coach IA.*"
+    timeout: 60000
+- tapOn: "Écris ta réponse…"
+- inputText: "Je debute, je veux me remettre au sport"
+- hideKeyboard
+- tapOn: "Envoyer"
+- extendedWaitUntil:
+    visible: "TA PREMIÈRE MISSION"
+    timeout: 60000
+- tapOn: "Boire un verre d'eau →"
+- extendedWaitUntil:
+    visible: "Plus tard"
+    timeout: 30000
+- tapOn: "Plus tard"
+- extendedWaitUntil:
+    visible: "Hydratation"
+    timeout: 60000
+- tapOn: "Accueil"
+- tapOn:
+    text: "Plus tard"
+    optional: true
+- extendedWaitUntil:
+    visible: "Crée ton premier entraînement"
+    timeout: 60000

@@ -7,14 +7,22 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { useWorkoutStore, type CompletedSession } from '../../../src/stores/workoutStore';
+import { shouldPersistSession } from '../../../src/lib/workoutPlan';
+import { frCount } from '../../../src/lib/frLabels';
 import { useThemeStore } from '../../../src/stores/themeStore';
-import { showAlert } from '@ziko/plugin-sdk';
+import { showAlert, formatKgFr } from '@ziko/plugin-sdk';
+import { useQueryClient } from '@tanstack/react-query';
+import { localDateKey } from '../../../src/lib/localDate';
+import { writeSessionTotals, saveWithRetry } from '../../../src/lib/sessionFinish';
+import { invalidateHomeQueries } from '../../../src/lib/homeQueries';
+import { resyncRemindersFromDb } from '@ziko/plugin-hydration/reminders';
 import { supabase } from '../../../src/lib/supabase';
 import type { ProgramExercise, Exercise } from '@ziko/plugin-sdk';
 import { useTranslation, usePluginRegistry } from '@ziko/plugin-sdk';
 import { awardWorkoutXP } from '@ziko/plugin-gamification/store';
 import { playSound, playCountdownBeep, isSoundEnabled, setSoundEnabled } from '../../../src/lib/sounds';
 import RestTimer from '../../../src/components/RestTimer';
+import { DefaultStretchingCard } from '@ziko/plugin-stretching/components/DefaultStretchingCard';
 
 let useHydrationStore: any = null;
 try { useHydrationStore = require('@ziko/plugin-hydration').useHydrationStore; } catch {}
@@ -72,7 +80,7 @@ function RPEModal({ visible, onClose, theme }: { visible: boolean; onClose: () =
           {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <View>
-              <Text style={{ color: theme.text, fontWeight: '900', fontSize: 22 }}>🧮 Calculateur RPE</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Ionicons name="calculator-outline" size={22} color={theme.text} /><Text style={{ color: theme.text, fontWeight: '900', fontSize: 22 }}>Calculateur RPE</Text></View>
               <Text style={{ color: theme.muted, fontSize: 13, marginTop: 2 }}>1RM estimé · Zones d'entraînement</Text>
             </View>
             <TouchableOpacity
@@ -171,7 +179,7 @@ function RPEModal({ visible, onClose, theme }: { visible: boolean; onClose: () =
                 {zones.map(({ label, pct }) => (
                   <View key={label} style={{ backgroundColor: theme.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: theme.border }}>
                     <Text style={{ color: theme.muted, fontSize: 10, fontWeight: '700' }}>{label}</Text>
-                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 14 }}>{(oneRM * pct).toFixed(1)} kg</Text>
+                    <Text style={{ color: theme.text, fontWeight: '800', fontSize: 14 }}>{formatKgFr(oneRM * pct)}</Text>
                   </View>
                 ))}
               </View>
@@ -241,6 +249,7 @@ export default function WorkoutSessionScreen() {
   const startSession = useWorkoutStore((s) => s.startSession);
   const cycleConfig = useWorkoutStore((s) => s.cycleConfig);
   const theme = useThemeStore((s) => s.theme);
+  const queryClient = useQueryClient();
 
   // ── Cycle weight helper ────────────────────────────────
   const getCycledWeight = (baseWeight: number | null): number | null => {
@@ -255,6 +264,10 @@ export default function WorkoutSessionScreen() {
   const isGuided = workoutExercises.length > 0;
   const enabledPlugins = usePluginRegistry((s) => s.enabledPlugins);
   const hasStretching = enabledPlugins.includes('stretching');
+  // P18 (STRE-06) : `Passer` retire la routine par defaut pour la seance en cours (etat local, non persiste).
+  const [stretchSkipped, setStretchSkipped] = useState(false);
+  // Revue B M9 : cle de la seance pour le lancement automatique de la routine par defaut (une fois par seance).
+  const stretchSessionKey = useRef(`session-${Date.now()}`).current;
   const hasHydration = enabledPlugins.includes('hydration');
 
   // ── Hydration quick-add ────────────────────────────────
@@ -267,7 +280,7 @@ export default function WorkoutSessionScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateKey();
       const { data, error } = await supabase
         .from('ziko_hydration_logs')
         .insert({ user_id: user.id, amount_ml: favContainer.ml, date: today })
@@ -276,6 +289,8 @@ export default function WorkoutSessionScreen() {
       if (error) throw error;
       hydrationStore.addLog(data);
       setWaterAdded((w) => w + favContainer.ml);
+      void queryClient.invalidateQueries({ queryKey: ['hydration', 'today'] });
+      void resyncRemindersFromDb(supabase, user.id);
     } catch {}
   };
 
@@ -509,7 +524,7 @@ export default function WorkoutSessionScreen() {
         supabase.from('ziko_session_exercises').insert({
           session_id: currentSession.id,
           exercise_id: pe.exercise_id,
-          program_exercise_id: pe.id,
+          program_exercise_id: (pe as any).isPlanned ? null : pe.id,
           order_index: exIdx,
           started_at: now,
           prescribed_sets: pe.sets ?? 3,
@@ -765,7 +780,7 @@ export default function WorkoutSessionScreen() {
       if (pw) programId = pw.program_id;
     }
 
-    await supabase.from('ziko_workout_sessions').update({
+    await writeSessionTotals(supabase, currentSession.id, {
       ended_at: new Date().toISOString(),
       total_volume_kg: totalVolume,
       total_sets: totalSetsCount,
@@ -775,7 +790,7 @@ export default function WorkoutSessionScreen() {
       total_duration_active_seconds: totalDurationActiveSec,
       day_of_week: new Date().getDay() || 7,
       program_id: programId,
-    }).eq('id', currentSession.id);
+    });
 
     await endSession();
   };
@@ -817,40 +832,70 @@ export default function WorkoutSessionScreen() {
   };
 
   // ── End session ────────────────────────────────────────
-  const handleEndSession = () => {
-    showAlert(t('workout.endWorkout'), t('workout.endWorkoutConfirm'), [
-      { text: t('general.cancel'), style: 'cancel' },
-      {
-        text: t('workout.finish'), onPress: async () => {
-          const completed = buildCompletedSession();
-          try { await saveSessionStats(); } catch {}
-          try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
-          useWorkoutStore.getState().setLastCompletedSession(completed);
-          router.replace('/(app)/workout/summary');
-        },
-      },
-    ]);
+  // TRAIN-03 (D-02): a session with no validated set is neither saved nor counted.
+  const countCompletedSets = (): number => {
+    if (isGuided) {
+      let n = 0;
+      trackedSets.forEach((sets) => { n += sets.filter((x) => x.completed).length; });
+      return n;
+    }
+    return freeExercises.reduce((acc, ex) => acc + ex.sets.filter((x) => x.completed).length, 0);
   };
 
-  const handleFinish = async () => {
+  const discardEmptySession = async () => {
+    await useWorkoutStore.getState().discardSession();
+    showAlert('Séance non enregistrée', "Aucune série validée : cette séance n'a pas été enregistrée.");
+    router.replace('/(app)/workout');
+  };
+
+  const handleEndSession = () => {
+    const empty = !shouldPersistSession(countCompletedSets());
+    showAlert(
+      t('workout.endWorkout'),
+      empty ? "Aucune série n'a été validée : la séance ne sera pas enregistrée." : t('workout.endWorkoutConfirm'),
+      [
+        { text: t('general.cancel'), style: 'cancel' },
+        {
+          text: t('workout.finish'), onPress: async () => {
+            if (empty) { await discardEmptySession(); return; }
+            await handleFinish();
+          },
+        },
+      ],
+    );
+  };
+
+  // Returns true when the session was saved (and we navigated to the summary), false otherwise.
+  const handleFinish = async (): Promise<boolean> => {
+    if (!shouldPersistSession(countCompletedSets())) { await discardEmptySession(); return false; }
     const completed = buildCompletedSession();
-    await saveSessionStats();
+    // Never swallow a failed totals write: without totals the session is lost (TRAIN-03 filter).
+    const saved = await saveWithRetry(saveSessionStats);
+    if (!saved) {
+      showAlert(
+        'Séance non enregistrée',
+        "Impossible de sauvegarder la séance. Vérifie ta connexion puis appuie de nouveau sur Terminer : tes séries sont conservées.",
+      );
+      return false;
+    }
     try { await awardWorkoutXP(supabase, currentSession!.id); } catch {}
+    void invalidateHomeQueries(queryClient);
     useWorkoutStore.getState().setLastCompletedSession(completed);
     router.replace('/(app)/workout/summary');
+    return true;
   };
 
   // ── Exercise description ───────────────────────────────
   const describeExercise = (pe: ExerciseWithInfo) => {
     const mode = getExMode(pe);
     const parts: string[] = [];
-    parts.push(`${pe.sets ?? 3} sets`);
-    if (mode === 'reps') parts.push(`${pe.reps ?? '?'} reps`);
-    else if (mode === 'repRange') parts.push(`${pe.reps_min}-${pe.reps_max} reps`);
+    parts.push(frCount(pe.sets ?? 3, 'série', 'séries'));
+    if (mode === 'reps') parts.push(`${pe.reps ?? '?'} rép.`);
+    else if (mode === 'repRange') parts.push(`${pe.reps_min}-${pe.reps_max} rép.`);
     else if (mode === 'time') parts.push(`${pe.duration_seconds}s`);
     else if (mode === 'timeRange') parts.push(`${pe.duration_min}-${pe.duration_max}s`);
     if (pe.weight_kg) parts.push(`@ ${pe.weight_kg}kg`);
-    if (pe.rest_seconds) parts.push(`${pe.rest_seconds}s rest`);
+    if (pe.rest_seconds) parts.push(`${pe.rest_seconds}s de repos`);
     return parts.join(' · ');
   };
 
@@ -919,15 +964,18 @@ export default function WorkoutSessionScreen() {
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 20 }}>
-                {currentSession?.name ?? 'Workout'}
+                {currentSession?.name ?? 'Séance'}
               </Text>
-              <Text style={{ color: theme.muted, fontSize: 13 }}>{totalExercises} exercises</Text>
+              <Text style={{ color: theme.muted, fontSize: 13 }}>{totalExercises} exercice{totalExercises > 1 ? 's' : ''}</Text>
             </View>
           </View>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 120 }}>
+            {hasStretching && (
+              <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} sessionKey={stretchSessionKey} />
+            )}
             <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600', marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>
-              Program Overview
+              Aperçu du programme
             </Text>
 
             {workoutExercises.map((pe, idx) => (
@@ -949,14 +997,14 @@ export default function WorkoutSessionScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15 }}>
-                      {tExercise(pe.exercises?.name ?? 'Exercise', pe.exercises?.name_fr)}
+                      {tExercise(pe.exercises?.name ?? 'Exercice', pe.exercises?.name_fr)}
                     </Text>
                     <Text style={{ color: theme.muted, fontSize: 12, marginTop: 3 }}>
                       {describeExercise(pe)}
                     </Text>
                     {(pe.exercises as any)?.instructions ? (
                       <Text style={{ color: theme.muted, fontSize: 11, marginTop: 4, fontStyle: 'italic' }} numberOfLines={2}>
-                        {(pe.exercises as any).instructions}
+                        {(pe.exercises as any).instructions_fr ?? (pe.exercises as any).instructions}
                       </Text>
                     ) : null}
                     {pe.notes ? (
@@ -974,26 +1022,10 @@ export default function WorkoutSessionScreen() {
           </ScrollView>
 
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 36, backgroundColor: theme.background }}>
-            {hasStretching && (
-              <TouchableOpacity
-                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
-                style={{
-                  backgroundColor: theme.warn + '15', borderRadius: 14, padding: 14, marginBottom: 12,
-                  borderWidth: 1, borderColor: theme.warn + '44', flexDirection: 'row', alignItems: 'center', gap: 10,
-                }}
-              >
-                <Text style={{ fontSize: 20 }}>🔥</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
-                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant la séance</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity onPress={startWorkout}
               style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
               <Ionicons name="play" size={20} color="#fff" />
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Start Workout</Text>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Démarrer la séance</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -1022,18 +1054,18 @@ export default function WorkoutSessionScreen() {
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.muted, fontSize: 12 }}>
-                Exercise {currentExIdx + 1}/{totalExercises} · Set {currentSetIdx + 1}/{allSets.length}
+                Exercice {currentExIdx + 1}/{totalExercises} · Série {currentSetIdx + 1}/{allSets.length}
               </Text>
               <Text style={{ color: theme.primary, fontSize: 13, fontWeight: '600' }}>{formatTime(elapsed)}</Text>
             </View>
             <TouchableOpacity onPress={handleEndSession}
               style={{ backgroundColor: theme.danger + '22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 13 }}>End</Text>
+              <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 13 }}>Terminer</Text>
             </TouchableOpacity>
             {hasHydration && favContainer && (
               <TouchableOpacity onPress={handleQuickWater}
                 style={{ backgroundColor: theme.info + '22', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+                <Ionicons name="water-outline" size={16} color={theme.primary} />
                 <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>
                   {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
                 </Text>
@@ -1049,11 +1081,11 @@ export default function WorkoutSessionScreen() {
               transition={{ type: 'spring' }}
             >
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 24, textAlign: 'center', marginBottom: 4 }}>
-                {tExercise(currentEx.exercises?.name ?? 'Exercise', currentEx.exercises?.name_fr)}
+                {tExercise(currentEx.exercises?.name ?? 'Exercice', currentEx.exercises?.name_fr)}
               </Text>
               {(currentEx.exercises as any)?.instructions ? (
                 <Text style={{ color: theme.muted, fontSize: 12, textAlign: 'center', marginBottom: 4, fontStyle: 'italic' }} numberOfLines={2}>
-                  {(currentEx.exercises as any).instructions}
+                  {(currentEx.exercises as any).instructions_fr ?? (currentEx.exercises as any).instructions}
                 </Text>
               ) : null}
               {currentEx.notes ? (
@@ -1092,18 +1124,18 @@ export default function WorkoutSessionScreen() {
                       )}
                       {hitMin && !hitMax && (
                         <Text style={{ color: theme.success, fontSize: 12, fontWeight: '600' }}>
-                          ✓ Min reached! Target: {formatTime(currentEx.duration_max ?? 0)}
+                          Minimum atteint. Objectif : {formatTime(currentEx.duration_max ?? 0)}
                         </Text>
                       )}
                       {hitMax && (
                         <Text style={{ color: theme.success, fontSize: 12, fontWeight: '700' }}>
-                          ✓ Target reached!
+                          Objectif atteint
                         </Text>
                       )}
                     </View>
                   ) : (
                     <Text style={{ color: theme.muted, fontSize: 12, marginTop: 4 }}>
-                      Target: {formatTime(currentEx.duration_seconds ?? 0)}
+                      Objectif : {formatTime(currentEx.duration_seconds ?? 0)}
                     </Text>
                   )}
                 </View>
@@ -1139,7 +1171,7 @@ export default function WorkoutSessionScreen() {
                       style={{ backgroundColor: theme.primary, borderRadius: 16, paddingHorizontal: 32, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Ionicons name="play" size={18} color="#fff" />
                       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>
-                        {exTimer > 0 ? 'Resume' : 'Start Timer'}
+                        {exTimer > 0 ? 'Reprendre' : 'Lancer le minuteur'}
                       </Text>
                     </TouchableOpacity>
                   ) : (
@@ -1174,19 +1206,19 @@ export default function WorkoutSessionScreen() {
                 }}>
                   {mode === 'repRange' ? (
                     <>
-                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>OBJECTIF</Text>
                       <Text style={{ fontSize: 40, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps_min}-{currentEx.reps_max}
                       </Text>
-                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>rép.</Text>
                     </>
                   ) : (
                     <>
-                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>TARGET</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>OBJECTIF</Text>
                       <Text style={{ fontSize: 48, fontWeight: '800', color: theme.text }}>
                         {currentEx.reps ?? '?'}
                       </Text>
-                      <Text style={{ color: theme.muted, fontSize: 13 }}>reps</Text>
+                      <Text style={{ color: theme.muted, fontSize: 13 }}>rép.</Text>
                     </>
                   )}
                 </View>
@@ -1197,7 +1229,7 @@ export default function WorkoutSessionScreen() {
             <View style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.border, marginBottom: 16 }}>
               {/* Sets count */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Sets</Text>
+                <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Séries</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <TouchableOpacity onPress={() => updateSetsCount(allSets.length - 1)}
                     style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -1215,7 +1247,7 @@ export default function WorkoutSessionScreen() {
               {!isTimedEx && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>
-                    {mode === 'repRange' ? `Reps done (${currentEx.reps_min}-${currentEx.reps_max})` : 'Reps done'}
+                    {mode === 'repRange' ? `Répétitions effectuées (${currentEx.reps_min}-${currentEx.reps_max})` : 'Répétitions effectuées'}
                   </Text>
                   <TextInput
                     value={editReps}
@@ -1235,7 +1267,7 @@ export default function WorkoutSessionScreen() {
               {/* Weight */}
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View>
-                  <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Weight (kg)</Text>
+                  <Text style={{ color: theme.muted, fontSize: 13, fontWeight: '600' }}>Poids (kg)</Text>
                   {cycleConfig && currentEx.weight_kg && getCycledWeight(currentEx.weight_kg) !== currentEx.weight_kg && (
                     <Text style={{ color: theme.primary, fontSize: 10, marginTop: 1 }}>
                       {t('workout.cycleWeekLabel', { current: String(cycleConfig.current_cycle_week), total: String(cycleConfig.cycle_weeks) })} · {t('workout.baseWeight')}: {currentEx.weight_kg}kg
@@ -1297,14 +1329,14 @@ export default function WorkoutSessionScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: currentExIdx === 0 ? 0.3 : 1 }}
               >
                 <Ionicons name="chevron-back" size={16} color={theme.muted} />
-                <Text style={{ color: theme.muted, fontSize: 13 }}>Prev exercise</Text>
+                <Text style={{ color: theme.muted, fontSize: 13 }}>Exercice précédent</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={currentExIdx >= totalExercises - 1}
                 onPress={() => goToExercise(currentExIdx + 1, 0)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, opacity: currentExIdx >= totalExercises - 1 ? 0.3 : 1 }}
               >
-                <Text style={{ color: theme.muted, fontSize: 13 }}>Next exercise</Text>
+                <Text style={{ color: theme.muted, fontSize: 13 }}>Exercice suivant</Text>
                 <Ionicons name="chevron-forward" size={16} color={theme.muted} />
               </TouchableOpacity>
             </View>
@@ -1344,7 +1376,7 @@ export default function WorkoutSessionScreen() {
               }}>
               <Ionicons name="checkmark-circle" size={20} color="#fff" />
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>
-                Complete Set {currentSetIdx + 1}
+                Valider la série {currentSetIdx + 1}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1361,8 +1393,8 @@ export default function WorkoutSessionScreen() {
       const nextSetIdx = isLastSet ? 0 : currentSetIdx + 1;
       const nextEx = workoutExercises[nextExIdx];
       const nextLabel = isLastSet
-        ? `Next: ${tExercise(nextEx?.exercises?.name ?? 'Exercise', nextEx?.exercises?.name_fr)}`
-        : `Next: Set ${nextSetIdx + 1}`;
+        ? `Suivant : ${tExercise(nextEx?.exercises?.name ?? 'Exercice', nextEx?.exercises?.name_fr)}`
+        : `Suivant : série ${nextSetIdx + 1}`;
 
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -1374,7 +1406,7 @@ export default function WorkoutSessionScreen() {
               transition={{ type: 'spring' }}
             >
               <Text style={{ color: theme.muted, fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Rest Time
+                Temps de repos
               </Text>
 
               <View style={{
@@ -1414,7 +1446,7 @@ export default function WorkoutSessionScreen() {
                 {hasHydration && favContainer && (
                   <TouchableOpacity onPress={handleQuickWater}
                     style={{ backgroundColor: theme.info + '18', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.info + '44', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontSize: 16 }}>{favContainer.icon}</Text>
+                    <Ionicons name="water-outline" size={18} color={theme.primary} />
                     <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>{favContainer.ml}ml</Text>
                   </TouchableOpacity>
                 )}
@@ -1434,7 +1466,7 @@ export default function WorkoutSessionScreen() {
                   flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center',
                 }}
               >
-                <Text style={{ fontSize: 18 }}>🧮</Text>
+                <Ionicons name="calculator-outline" size={20} color={theme.violet} />
                 <Text style={{ color: theme.violet, fontWeight: '700', fontSize: 14 }}>Calculateur RPE / 1RM</Text>
               </TouchableOpacity>
             </MotiView>
@@ -1443,7 +1475,7 @@ export default function WorkoutSessionScreen() {
           <View style={{ padding: 20, paddingBottom: 36 }}>
             <TouchableOpacity onPress={skipRest}
               style={{ backgroundColor: theme.primary, borderRadius: 16, paddingVertical: 18, alignItems: 'center' }}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Skip Rest</Text>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>Passer le repos</Text>
             </TouchableOpacity>
           </View>
           <RestTimer
@@ -1484,7 +1516,7 @@ export default function WorkoutSessionScreen() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', damping: 12 }}
             >
-              <Text style={{ fontSize: 64, textAlign: 'center' }}>🎉</Text>
+              <View style={{ alignItems: 'center' }}><Ionicons name="trophy-outline" size={64} color={theme.primary} /></View>
               <Text style={{ color: theme.text, fontWeight: '800', fontSize: 28, textAlign: 'center', marginTop: 16 }}>
                 {t('workout.complete')}
               </Text>
@@ -1529,7 +1561,7 @@ export default function WorkoutSessionScreen() {
                   return (
                     <View key={pe.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                       <Ionicons name={done === sets.length ? 'checkmark-circle' : 'ellipse-outline'} size={18} color={done === sets.length ? theme.success : theme.border} />
-                      <Text style={{ color: theme.text, fontSize: 14, flex: 1 }}>{tExercise(pe.exercises?.name ?? 'Exercise', pe.exercises?.name_fr)}</Text>
+                      <Text style={{ color: theme.text, fontSize: 14, flex: 1 }}>{tExercise(pe.exercises?.name ?? 'Exercice', pe.exercises?.name_fr)}</Text>
                       <Text style={{ color: theme.muted, fontSize: 12 }}>{done}/{sets.length} sets</Text>
                     </View>
                   );
@@ -1543,34 +1575,34 @@ export default function WorkoutSessionScreen() {
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/stretching/dashboard' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/stretching/dashboard' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
-                    <Text style={{ fontSize: 24 }}>🧘</Text>
+                    <Ionicons name="body-outline" size={26} color={theme.primary} />
                     <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Stretching</Text>
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Retour au calme</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/journal/entry' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/journal/entry' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
-                    <Text style={{ fontSize: 24 }}>📝</Text>
+                    <Ionicons name="create-outline" size={26} color={theme.primary} />
                     <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Journal</Text>
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Humeur post-séance</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/hydration/dashboard' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/hydration/dashboard' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
-                    <Text style={{ fontSize: 24 }}>💧</Text>
+                    <Ionicons name="water-outline" size={26} color={theme.primary} />
                     <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Hydratation</Text>
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Boire de l'eau</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => { handleFinish().then(() => router.push('/(app)/(plugins)/nutrition/log' as any)); }}
+                    onPress={() => { handleFinish().then((ok) => { if (ok) router.push('/(app)/(plugins)/nutrition/log' as any); }); }}
                     style={{ flex: 1, minWidth: '45%', backgroundColor: theme.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.border, alignItems: 'center', gap: 6 }}
                   >
-                    <Text style={{ fontSize: 24 }}>🥗</Text>
+                    <Ionicons name="nutrition-outline" size={26} color={theme.primary} />
                     <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13 }}>Nutrition</Text>
                     <Text style={{ color: theme.muted, fontSize: 11 }}>Repas post-workout</Text>
                   </TouchableOpacity>
@@ -1605,12 +1637,12 @@ export default function WorkoutSessionScreen() {
         </View>
         <TouchableOpacity onPress={handleEndSession}
           style={{ backgroundColor: theme.danger + '22', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
-          <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 14 }}>End</Text>
+          <Text style={{ color: theme.danger, fontWeight: '600', fontSize: 14 }}>Terminer</Text>
         </TouchableOpacity>
         {hasHydration && favContainer && (
           <TouchableOpacity onPress={handleQuickWater}
             style={{ backgroundColor: theme.info + '22', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginLeft: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={{ fontSize: 14 }}>{favContainer.icon}</Text>
+            <Ionicons name="water-outline" size={16} color={theme.primary} />
             <Text style={{ color: theme.info, fontWeight: '600', fontSize: 13 }}>
               {waterAdded > 0 ? `${waterAdded}ml` : `${favContainer.ml}ml`}
             </Text>
@@ -1619,28 +1651,14 @@ export default function WorkoutSessionScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 0, paddingBottom: 120 }}>
+        {hasStretching && (
+          <DefaultStretchingCard supabase={supabase} skipped={stretchSkipped} onSkip={() => setStretchSkipped(true)} sessionKey={stretchSessionKey} />
+        )}
         {freeExercises.length === 0 && (
           <View style={{ alignItems: 'center', marginTop: 48 }}>
-            <Text style={{ fontSize: 40 }}>🏋️</Text>
+            <Ionicons name="barbell-outline" size={44} color={theme.muted} />
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: '600', marginTop: 12 }}>{t('workout.addFirstExercise')}</Text>
             <Text style={{ color: theme.muted, marginTop: 8, textAlign: 'center' }}>{t('workout.addFirstExerciseDesc')}</Text>
-            {hasStretching && (
-              <TouchableOpacity
-                onPress={() => router.push('/(app)/(plugins)/stretching/dashboard' as any)}
-                style={{
-                  backgroundColor: theme.warn + '15', borderRadius: 14, padding: 14, marginTop: 20,
-                  borderWidth: 1, borderColor: theme.warn + '44', flexDirection: 'row', alignItems: 'center', gap: 10,
-                  width: '100%',
-                }}
-              >
-                <Text style={{ fontSize: 20 }}>🔥</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 14 }}>Échauffement stretching</Text>
-                  <Text style={{ color: theme.muted, fontSize: 12 }}>S'étirer avant ta séance</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={theme.muted} />
-              </TouchableOpacity>
-            )}
           </View>
         )}
 
@@ -1648,9 +1666,9 @@ export default function WorkoutSessionScreen() {
           <View key={`${ex.id}-${exIdx}`} style={{ backgroundColor: theme.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
             <Text style={{ color: theme.text, fontWeight: '700', fontSize: 15, marginBottom: 12 }}>{tExercise(ex.name, ex.name_fr)}</Text>
             <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-              <Text style={{ color: theme.muted, fontSize: 12, width: 30 }}>Set</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, width: 30 }}>Série</Text>
               <Text style={{ color: theme.muted, fontSize: 12, flex: 1, textAlign: 'center' }}>Reps</Text>
-              <Text style={{ color: theme.muted, fontSize: 12, flex: 1, textAlign: 'center' }}>Weight (kg)</Text>
+              <Text style={{ color: theme.muted, fontSize: 12, flex: 1, textAlign: 'center' }}>Poids (kg)</Text>
               <View style={{ width: 40 }} />
             </View>
             {ex.sets.map((s, setIdx) => (

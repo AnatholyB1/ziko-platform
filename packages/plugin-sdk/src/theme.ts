@@ -12,6 +12,7 @@ export interface ThemePalette {
   primaryLight: string;   // 8%  — badge bg, overlays
   primarySubtle: string;  // 5%  — very light background
   primaryBorder: string;  // 20% — borders, rings, dividers
+  actionPrimary?: string; // fond des boutons pleins a texte blanc (AA >= 4.5:1). Fallback: primary (voir getActionPrimary)
   text: string;
   muted: string;
   tabBarBg: string;
@@ -36,6 +37,9 @@ export interface ThemePalette {
   fontBody: string;
 }
 
+/** Couleur de fond des boutons pleins a texte blanc (decision v1.20: #CF4509, 4,66:1). */
+export const getActionPrimary = (t: Pick<ThemePalette, 'primary' | 'actionPrimary'>): string => t.actionPrimary ?? t.primary;
+
 // ── Default (Sport Orange) ──────────────────────────────
 export const DEFAULT_THEME: ThemePalette = {
   id: 'default',
@@ -47,6 +51,7 @@ export const DEFAULT_THEME: ThemePalette = {
   primaryLight: '#FF5C1A15',
   primarySubtle: '#FF5C1A0D',
   primaryBorder: '#FF5C1A33',
+  actionPrimary: '#CF4509',
   text: '#1C1A17',
   muted: '#6B6963',
   tabBarBg: '#FFFFFF',

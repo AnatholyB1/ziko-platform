@@ -4,6 +4,7 @@ import type { PluginManifest } from '@ziko/plugin-sdk';
 import { supabase } from '../lib/supabase';
 import { aiBridge } from '../lib/ai';
 import { useAuthStore } from '../stores/authStore';
+import { MANDATORY_PLUGIN_IDS } from './mandatoryPlugins';
 
 // Static plugin loaders — Metro bundler requires statically-analyzable imports
 const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>> = {
@@ -28,9 +29,8 @@ const PLUGIN_LOADERS: Record<string, () => Promise<{ default: PluginManifest }>>
   coach:         () => import('@ziko/plugin-coach/manifest') as any,
 };
 
-// Plugins pre-loaded unconditionally regardless of user_plugins — keep in
-// sync with any manifest.ts declaring `mandatory: true`.
-const MANDATORY_PLUGIN_IDS: string[] = ['coach'];
+// Plugins pre-loaded unconditionally regardless of user_plugins — `MANDATORY_PLUGIN_IDS` (shared with
+// the store uninstall guard, P25) must stay in sync with any manifest.ts declaring `mandatory: true`.
 
 /** Auto-install the coach plugin for athletes (role 'client' or 'both') — idempotent */
 async function autoInstallCoachPlugin(userId: string): Promise<void> {

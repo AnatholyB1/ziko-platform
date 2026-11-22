@@ -165,11 +165,15 @@ export function creditDeduct(action: CreditAction) {
     // Free-quota slot, or the legacy premium pass-through while the activation
     // flag is off — track usage so getQuotaStatus advances, then skip deduction
     if (c.get('creditPassThrough') === true) {
+      // SC5 aussi pour le quota gratuit : un tour en echec ne consomme pas de slot.
+      if (c.res.status >= 400) return;
       const userId = c.get('auth').userId;
-      const idempotencyKey = c.req.header('X-Request-Id') ?? crypto.randomUUID();
-      creditService
-        .trackQuotaUsage(userId, action, idempotencyKey)
-        .catch(() => {});
+      // Cle TOUJOURS generee cote serveur pour la ligne de quota : l'index unique
+      // (user_id, source, idempotency_key) fait avorter silencieusement un second INSERT portant la
+      // meme cle ; reutiliser un X-Request-Id fourni par le client laissait dailyUsed bloque, donc un
+      // quota gratuit sans borne (run3 P23). Attendu (et non fire-and-forget) : sur serverless, une
+      // promesse non attendue peut etre gelee avec l'instance et la consommation perdue.
+      await creditService.trackQuotaUsage(userId, action, crypto.randomUUID());
       return;
     }
 
@@ -184,6 +188,15 @@ export function creditDeduct(action: CreditAction) {
     // Fire-and-forget: deduction errors must not fail the response the client already received
     creditService
       .deductCredits(userId, action, idempotencyKey)
+      .then((res) => {
+        // Un solde insuffisant au moment du debit (course) ou une RPC en erreur : le tour est deja
+        // servi, on ne peut plus refuser, mais la perte doit etre visible dans les logs.
+        if (res && res.success === false) {
+          console.error(
+            `[creditDeduct] charge NOT applied (action=${action}, user=${userId}, required=${res.required ?? '?'}, balance=${res.balance})`,
+          );
+        }
+      })
       .catch((err) => {
         console.error('[creditDeduct] deduction failed:', err);
       });
