@@ -188,7 +188,7 @@ onboardingRouter.post('/onboarding/stream', async (c) => {
     onFinish: ({ totalUsage }) => {
       logAutonomousCost(supabase, {
         userId,
-        model: 'claude-sonnet-5-5',
+        model: 'claude-sonnet-4-6',
         usage: totalUsage,
         source: SOURCES.onboardingAssess,
       });

@@ -241,7 +241,7 @@ workshopRouter.post('/stream', creditCheck('chat'), creditDeduct('chat'), async 
     messages: [...history, { role: 'user', content: message }],
     tools,
     stopWhen: stepCountIs(WORKSHOP_MAX_STEPS),
-    onFinish: ({ totalUsage }) => logTokenUsageRow(db, userId, 'claude-sonnet-5-5', totalUsage),
+    onFinish: ({ totalUsage }) => logTokenUsageRow(db, userId, 'claude-sonnet-4-6', totalUsage),
   });
 
   // A14 : on ne s'engage en 200 (donc en debit) qu'apres le premier signal utile du modele. Une panne
