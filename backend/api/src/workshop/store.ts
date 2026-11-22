@@ -4,6 +4,7 @@ import type { DraftProgram } from './draft.js';
 import { normalizeProgram, toProgramRow } from './draft.js';
 import type { WorkshopDb } from './context.js';
 import { WORKSHOP_MAX_DRAFTS } from './limits.js';
+import { withCatalogIds } from './catalogIds.js';
 
 export interface DraftRecord {
   id: string;
@@ -135,7 +136,7 @@ export async function publishDraft(
   const programId = publishedProgramId(draft.id);
   const { data, error } = await db
     .from('ziko_ai_generated_programs')
-    .insert({ id: programId, ...toProgramRow(userId, draft.program), ...sequenceCols })
+    .insert({ id: programId, ...toProgramRow(userId, await withCatalogIds(db, draft.program)), ...sequenceCols })
     .select('id')
     .single();
   let id: string | undefined = data?.id;
