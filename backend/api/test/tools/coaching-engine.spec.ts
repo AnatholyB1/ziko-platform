@@ -862,7 +862,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -881,7 +881,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -905,7 +905,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -924,7 +924,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -946,7 +946,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -966,7 +966,7 @@ describe('coaching-engine — trajectory application (ENGINE-03)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1025,7 +1025,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 512, outputTokens: 128 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1054,7 +1054,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 512, outputTokens: 128 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1076,7 +1076,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 512, outputTokens: 128 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1095,7 +1095,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 512, outputTokens: 128 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1119,7 +1119,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 777, outputTokens: 333 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1127,7 +1127,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
     expect(rows.length).toBe(1);
     expect(rows[0]).toMatchObject({
       user_id: 'athlete-1',
-      model: 'claude-sonnet-5-5',
+      model: 'claude-sonnet-4-6',
       source: 'weekly_review_cron',
       input_tokens: 777,
       output_tokens: 333,
@@ -1145,7 +1145,7 @@ describe('coaching-engine — shared apply path (ENGINE-06)', () => {
         context,
         'weekly_review_cron',
         { inputTokens: 512, outputTokens: 128 },
-        'claude-sonnet-5-5',
+        'claude-sonnet-4-6',
         'token-1',
       ),
     ).resolves.toMatchObject({ success: true });
@@ -1276,7 +1276,7 @@ describe('coaching-engine — rolling summary (FOUND-05)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1299,7 +1299,7 @@ describe('coaching-engine — rolling summary (FOUND-05)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 
@@ -1379,7 +1379,7 @@ describe('coaching-engine — rolling summary (FOUND-05)', () => {
       context,
       'weekly_review_cron',
       { inputTokens: 500, outputTokens: 100 },
-      'claude-sonnet-5-5',
+      'claude-sonnet-4-6',
       'token-1',
     );
 

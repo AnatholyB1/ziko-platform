@@ -506,7 +506,7 @@ router.post(
       tools: buildCoachSDKTools(coachId, jwt),
       stopWhen: stepCountIs(5),
       onFinish: ({ totalUsage }) => {
-        logTokenUsage(coachId, 'claude-sonnet-5-5', totalUsage);
+        logTokenUsage(coachId, 'claude-sonnet-4-6', totalUsage);
       },
     });
 
