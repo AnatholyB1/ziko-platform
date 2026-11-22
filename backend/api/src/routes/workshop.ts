@@ -300,6 +300,12 @@ workshopRouter.post('/stream', creditCheck('chat'), creditDeduct('chat'), async 
       }
     };
 
+    // Keep-alive : ecrire un programme complet peut durer >60 s sans octet utile (tool-input en cours) et iOS
+    // coupe alors la connexion. Un commentaire SSE est ignore par parseSseBuffer (pas de prefixe 'data: ').
+    const heartbeat = setInterval(() => {
+      void Promise.resolve(s.write(': ping\n\n')).catch(() => {});
+    }, 8000);
+
     try {
       await send({ type: 'meta', draft_id: draftId, conversation_id: conversationId, cost: CREDIT_COSTS.chat });
       for (const p of buffered) await handle(p);
@@ -315,6 +321,8 @@ workshopRouter.post('/stream', creditCheck('chat'), creditDeduct('chat'), async 
       console.error('[workshop stream error]', err instanceof Error ? err.message : err);
       await send({ type: 'error', error: 'stream_interrupted' });
       await s.write('data: [DONE]\n\n');
+    } finally {
+      clearInterval(heartbeat);
     }
 
     const toSave: Array<{ role: 'user' | 'assistant'; content: string }> = [{ role: 'user', content: message }];
