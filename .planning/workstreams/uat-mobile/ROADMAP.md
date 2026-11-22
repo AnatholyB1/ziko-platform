@@ -449,29 +449,29 @@ Règle de fusion : les phases d'une même vague touchent des fichiers disjoints 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Harness UAT Android | 0/0 | Not started | - |
-| 2. Session & authentification robustes | 0/0 | Not started | - |
-| 3. Crash Habitudes & garde d'erreur modules | 0/0 | Not started | - |
-| 4. Maquettes de référence (DSGN) | 0/0 | Not started | - |
-| 5. Corrections transverses | 0/0 | Not started | - |
-| 6. Séance d'entraînement fiable | 0/0 | Not started | - |
-| 7. Programmes : liste, actif unique, menu | 0/0 | Not started | - |
-| 8. Accueil & Quick Log | 0/0 | Not started | - |
-| 9. Ajout de repas en un écran | 0/0 | Not started | - |
-| 10. Pantry utile et en français | 0/0 | Not started | - |
-| 11. Hydratation : boutons et réglages | 0/0 | Not started | - |
-| 12. Récompenses : Succès & Boutique | 0/0 | Not started | - |
-| 13. Quêtes en base | 0/0 | Not started | - |
-| 14. Outil IA de quêtes | 0/0 | Not started | - |
-| 15. Mesures & objectifs en base | 0/0 | Not started | - |
-| 16. IA des mesures & onboarding objectifs | 0/0 | Not started | - |
-| 17. Sommeil : saisie manuelle et données réelles | 0/0 | Not started | - |
-| 18. Stretching complet | 0/0 | Not started | - |
-| 19. Compléments : catalogue & comparateur | 0/0 | Not started | - |
-| 20. Timer : presets éditables | 0/0 | Not started | - |
-| 21. Social & Amis | 0/0 | Not started | - |
-| 22. Journal & écran Mon coach | 0/0 | Not started | - |
-| 23. Atelier IA de création de programme | 0/0 | Not started | - |
-| 24. Périodisation & relance automatique | 0/0 | Not started | - |
-| 25. Mon coach complet (SEED-002) | 0/0 | Not started | - |
-| 26. Factions & Ligues (SEED-001) | 0/0 | Not started | - |
+| 1. Harness UAT Android | 1/1 | Implemented (UAT pending) | - |
+| 2. Session & authentification robustes | 1/1 | Implemented (UAT pending) | - |
+| 3. Crash Habitudes & garde d'erreur modules | 1/1 | Implemented (UAT pending) | - |
+| 4. Maquettes de référence (DSGN) | 0/0 | Design lots A-F delivered (mockups ; no SUMMARY) | - |
+| 5. Corrections transverses | 1/1 | Implemented (UAT pending) | - |
+| 6. Séance d'entraînement fiable | 1/1 | Implemented (UAT pending) | - |
+| 7. Programmes : liste, actif unique, menu | 1/1 | Implemented (UAT pending) | - |
+| 8. Accueil & Quick Log | 1/1 | Implemented (UAT pending) | - |
+| 9. Ajout de repas en un écran | 1/1 | Implemented (UAT pending) | - |
+| 10. Pantry utile et en français | 1/1 | Implemented (UAT pending) | - |
+| 11. Hydratation : boutons et réglages | 1/1 | Implemented (UAT pending) | - |
+| 12. Récompenses : Succès & Boutique | 1/1 | Implemented (UAT pending) | - |
+| 13. Quêtes en base | 1/1 | Implemented (UAT pending) | - |
+| 14. Outil IA de quêtes | 1/1 | Implemented (UAT pending) | - |
+| 15. Mesures & objectifs en base | 1/1 | Implemented (UAT pending) | - |
+| 16. IA des mesures & onboarding objectifs | 1/1 | Implemented (UAT pending) | - |
+| 17. Sommeil : saisie manuelle et données réelles | 1/1 | Implemented (UAT pending) | - |
+| 18. Stretching complet | 1/1 | Implemented (UAT pending) | - |
+| 19. Compléments : catalogue & comparateur | 1/1 | Implemented (UAT pending) | - |
+| 20. Timer : presets éditables | 1/1 | Implemented (UAT pending) | - |
+| 21. Social & Amis | 1/1 | Implemented (UAT pending) | - |
+| 22. Journal & écran Mon coach | 1/1 | Implemented (UAT pending) | - |
+| 23. Atelier IA de création de programme | 1/1 | Implemented (UAT pending) | - |
+| 24. Périodisation & relance automatique | 1/1 | Implemented (UAT pending) | - |
+| 25. Mon coach complet (SEED-002) | 1/1 | Implemented (UAT pending) | - |
+| 26. Factions & Ligues (SEED-001) | 1/1 | Implemented (UAT pending) | - |

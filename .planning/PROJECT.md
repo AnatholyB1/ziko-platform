@@ -81,7 +81,23 @@ A fitness user has a single app that coaches them, tracks everything, tells them
 
 </details>
 
-## Current Milestone: v1.20 UAT Mobile — Refonte & corrections (`uat-mobile`)
+## Current Milestone: v1.21 Activation du nouvel inscrit (`activation-inscrit`)
+
+**Goal:** Un compte neuf sait quoi faire dès l'accueil : quêtes visibles et utilisables dès l'inscription, et un chemin clair vers son premier entraînement (manuel, IA simple ou atelier IA).
+
+**Source:** revue du flux d'inscription après les 4 correctifs TestFlight du 2026-11-20 (`.planning/debug/UAT-TESTFLIGHT-FIXES-2026-11-20.md`).
+
+**Target features:**
+- Quêtes dès l'inscription : la synchro `ziko_sync_quests` sort de l'écran Récompenses (verrouillé niveau 3) pour que les quêtes existent dès l'arrivée ; bloc Quêtes sur l'accueil avec progression/complétion et actions à faire pour compléter ; quêtes renvoyant vers des plugins ouverts au niveau 1
+- Toute première carte d'accueil « Crée ton premier entraînement » à 3 chemins : manuel (assistant `program-builder` en 4 étapes), IA simple (séance unique `ai-generate`), IA conversationnelle (atelier IA)
+- Clarifications du parcours : bouton « Créer un programme » de l'onglet Entraînement (ne génère qu'une séance), texte de fin d'onboarding `step-7` qui promet « Ton programme / Première séance demain matin » sans programme créé, première mission de Ziko limitée à l'hydratation côté backend (journal/mesures se débloquent au niveau 2)
+- UAT sur compte neuf, de l'inscription à la première séance lancée
+
+**Key constraints:** phases 1 et 2 passent par maquette Claude Design / `/gsd-ui-phase` avant plan et exécution (UI-design-first, rendu exact de la maquette) ; démarrage après l'envoi TestFlight des 4 correctifs (`fix/testflight-4-bugs`) ; UAT par Claude sur émulateur Android (harness v1.20 réutilisé) ; nouvelles migrations uniquement.
+
+**Overlap note:** réutilise les quêtes et le déblocage progressif de v1.18/v1.20 (non punitif) ; ne pas réintroduire de quêtes « échouées » visibles.
+
+## Previous Milestone: v1.20 UAT Mobile — Refonte & corrections (`uat-mobile`, mergé PR #69)
 
 **Goal:** Corriger et compléter l'app mobile suite à la revue UAT du 2026-11-12 (~35 captures, discussion écran par écran), avec des UAT faits par Claude sur émulateur Android.
 
@@ -434,7 +450,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-12 — v1.20 UAT Mobile — Refonte & corrections (`uat-mobile`) STARTED (récap : `.planning/MILESTONE-RECAP-2026-11-12.md`).*
+*Last updated: 2026-11-20 — v1.21 Activation du nouvel inscrit (`activation-inscrit`) STARTED.*
 
 *Previous update: 2026-10-06 after v1.19 milestone (Migration Supabase ziko → portfolio, `supabase-portfolio-migration`) — SHIPPED: backend and web on `portfolio`, `ziko` project deleted; DECOM-01 and the mobile flip waived; credential revocations and other carry-over items listed under "Active — v1.19 carry-over".*
 
